@@ -38,7 +38,8 @@ lbann::TrainingParams::TrainingParams(void)
     LrDecayRate(0.5), LrDecayCycles(5000),
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
-    SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "), TestFile(" "){
+    SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "),
+    TestFile(" "), SummaryDir("."), IntermodelCommMethod(0), ProcsPerModel(0) {
 
   MaxMBCount = MaxTrainingSamples > 0 ? ceil((double)MaxTrainingSamples / (double)MBSize) : 0;
 }
@@ -76,7 +77,13 @@ void lbann::TrainingParams::parse_params(void) {
   SaveModel = Input("--save-model", "Save the current model", SaveModel);
   LoadModel = Input("--load-model", "Load a saved model", LoadModel);
   Checkpoint = Input("--checkpoint", "Number of training epochs between checkpoints", Checkpoint);
+  SummaryDir = Input("--summary-dir", "Directory to write summary files", SummaryDir);
 
+  IntermodelCommMethod = Input("--imcomm", "Type of inter-model communication",
+                               IntermodelCommMethod);
+  ProcsPerModel = Input("--procs-per-model",
+                        "Number of processes per model (0 = one model)",
+                        ProcsPerModel);
 }
 
 lbann::PerformanceParams::PerformanceParams(void) : BlockSize(256), MaxParIOSize(0) {}

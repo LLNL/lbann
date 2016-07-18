@@ -65,6 +65,9 @@ int main(int argc, char* argv[])
     trainParams.MBSize = 10;
     trainParams.LearnRate = 0.0001;
     trainParams.DropOut = -1.0f;
+    trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
+    trainParams.IntermodelCommMethod = static_cast<int>(
+      lbann_callback_imcomm::COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
     PerformanceParams perfParams;
     perfParams.BlockSize = 256;
 
@@ -79,10 +82,11 @@ int main(int argc, char* argv[])
     SetBlocksize(perfParams.BlockSize);
 
     // Set up the communicator and get the grid.
-    lbann_comm* comm = new lbann_comm(12);
+    lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      cout << "Number of models: " << comm->get_num_models() << endl;
+      cout << "Number of models: " << comm->get_num_models() << 
+        " (" << comm->get_procs_per_model() << " procs per model)" << endl;
       cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
       cout << endl;
     }
@@ -151,13 +155,13 @@ int main(int argc, char* argv[])
     uint fcidx2 = dnn.add(
       "FullyConnected", 30, trainParams.ActivationType,
       {new dropout(trainParams.DropOut)});
-    dnn.add("SoftMax", 10);
+    uint smidx = dnn.add("SoftMax", 10);
     target_layer *target_layer = new target_layer_distributed_minibatch(
       comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
     //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
     dnn.add(target_layer);
 
-    lbann_summary summarizer("/p/lscratchf/dryden1", comm);
+    lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
@@ -169,8 +173,9 @@ int main(int argc, char* argv[])
     dnn.add_callback(&summary_cb);
     // Do global inter-model updates.
     lbann_callback_imcomm imcomm_cb(
-      lbann_callback_imcomm::COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION,
-      {fcidx1, fcidx2}, &summarizer);
+      static_cast<lbann_callback_imcomm::comm_type>(
+        trainParams.IntermodelCommMethod),
+      {fcidx1, fcidx2, smidx}, &summarizer);
     dnn.add_callback(&imcomm_cb);
 
     if (comm->am_world_master()) {

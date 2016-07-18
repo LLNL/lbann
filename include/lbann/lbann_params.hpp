@@ -102,7 +102,13 @@ namespace lbann
     std::string TrainFile;
     /// Test data file name
     std::string TestFile;
+    /// Location to write summary files.
+    std::string SummaryDir;
 
+    /// Type of intermodel communication to use, if any.
+    int IntermodelCommMethod;
+    /// Number of processes to use in each model (if using multiple).
+    int ProcsPerModel;
   };
 
   /// Performance parameters

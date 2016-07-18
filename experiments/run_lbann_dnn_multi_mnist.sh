@@ -25,6 +25,9 @@ ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
+PROCS_PER_MODEL=
+SUMMARY_DIR=
+IMCOMM=
 
 RUN="srun"
 
@@ -65,6 +68,7 @@ function HELP {
   echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."  
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
+  echo "${REV}-k${NORM} <val> --Sets the ${BOLD}number of processes per model${NORM}. 0 for one model."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."
   echo "${REV}-m${NORM} <val> --Sets the ${BOLD}mode${NORM}. Default is ${BOLD}${MODE}${NORM}."
   echo "${REV}-n${NORM} <val> --Sets the ${BOLD}network topology${NORM}. Default is ${BOLD}${NETWORK}${NORM}."
@@ -76,12 +80,14 @@ function HELP {
   echo "${REV}-t${NORM} <val> --Sets the number of ${BOLD}training samples${NORM}. Default is ${BOLD}${TRAINING_SAMPLES}${NORM}."
   echo "${REV}-u${NORM}       --Use the ${BOLD}Lustre filesystem${NORM} directly. Default is ${BOLD}${USE_LUSTRE_DIRECT}${NORM}."
   echo "${REV}-v${NORM} <val> --Sets the number of ${BOLD}validation samples${NORM}. Default is ${BOLD}${VALIDATION_SAMPLES}${NORM}."
+  echo "${REV}-w${NORM} <val> --Sets the ${BOLD}summary output directory${NORM}."
+  echo "${REV}-x${NORM} <val> --Sets the type of ${BOLD}intermodel communication${NORM}."
   echo "${REV}-z${NORM} <val> --Sets the ${BOLD}tasks per node${NORM}. Default is ${BOLD}${TASKS_PER_NODE}${NORM}."
   echo -e "${REV}-h${NORM}    --Displays this help message. No further functions are performed."\\n
   exit 1
 }
 
-while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
+while getopts ":a:b:cde:f:hi:j:k:l:m:n:o:p:q:r:s:t:uv:w:x:z:" opt; do
   case $opt in
     a)
       ACT=$OPTARG
@@ -110,6 +116,9 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
       ;;
     j)
       LR_DECAY=$OPTARG
+      ;;
+    k)
+      PROCS_PER_MODEL="--procs-per-model $OPTARG"
       ;;
     l)
       LOAD_MODEL=$OPTARG
@@ -143,6 +152,12 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
       ;;
     v)
       VALIDATION_SAMPLES=$OPTARG
+      ;;
+    w)
+      SUMMARY_DIR="--summary-dir $OPTARG"
+      ;;
+    x)
+      IMCOMM="--imcomm $OPTARG"
       ;;
     z)
       TASKS_PER_NODE=$OPTARG
@@ -233,7 +248,7 @@ fi
 
 fi
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE}  ${BINDIR}/lbann_dnn_multi_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1"
+CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE}  ${BINDIR}/lbann_dnn_multi_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL}"
 #CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${DIRNAME}/lbann_dnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}

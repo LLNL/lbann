@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
         trainParams.MBSize = 10;
         trainParams.LearnRate = 0.0001;
         trainParams.DropOut = -1.0f;
+        trainParams.ProcsPerModel = 0;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
         SetBlocksize(perfParams.BlockSize);
 
         // Set up the communicator and get the grid.
-        lbann_comm* comm = new lbann_comm();
+        lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
         Grid& grid = comm->get_model_grid();
         if (comm->am_world_master()) {
           cout << "Number of models: " << comm->get_num_models() << endl;

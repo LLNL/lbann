@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann_comm.hpp"
-
+#include "lbann/utils/lbann_exception.hpp"
 #include "mpi.h"
 
 using namespace std;
@@ -39,10 +39,17 @@ lbann::lbann_comm::lbann_comm(int _procs_per_model) :
   procs_per_model(_procs_per_model), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
+  int world_size = mpi::Size(mpi::COMM_WORLD);
   if (procs_per_model == 0) {
-    procs_per_model = mpi::Size(mpi::COMM_WORLD);
+    procs_per_model = world_size;
   }
-  num_models = mpi::Size(mpi::COMM_WORLD) / procs_per_model;
+  if (procs_per_model > world_size) {
+    throw lbann_exception("lbann_comm: Not enough processes to create one model");
+  }
+  if (world_size % procs_per_model != 0) {
+    throw lbann_exception("lbann_comm: Procs per model does not divide total number of procs");
+  }
+  num_models = world_size / procs_per_model;
   model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
   rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
   mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
