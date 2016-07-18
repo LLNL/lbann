@@ -1,0 +1,194 @@
+/** \page getting_started Getting Started 
+\section getting_started_download Download
+
+You can clone LBANN from the <a href="https://lc.llnl.gov/bitbucket/projects/DL/repos/lbann/">CZ Bitbucket repository</a>:
+  
+\code{.sh}
+ $ git clone ssh://git@cz-bitbucket.llnl.gov:7999/dl/lbann.git
+or 
+ $ git clone https://<username>@lc.llnl.gov/bitbucket/scm/dl/lbann.git
+ $ git submodule init  # Initialize the Elemental library submodule
+ $ git submodule update
+\endcode
+
+\section getting_started_dependencies Dependencies
+
+LBANN depends on the following libraries:
+- \subpage Cmake
+- \subpage Doxygen
+- \subpage MPI
+- \subpage OpenCV
+- BLAS: \subpage OpenBLAS or Intel MKL BLAS  # Not necessary on OS X
+- cuDNN                                      # Optional
+- \subpage Elemental
+
+\section getting_started_compile Compile
+
+The example executables use 
+<a href="www.cmake.org">CMake</a> for its build system, and needs to be configured for your system and Boost library location.
+Configurations have been saved for a few systems at LLNL, for example on Catalyst do (From LBANN top directory):
+
+On catalyst.llnl.gov
+\code{.sh}
+ $ cd build/catalyst.llnl.gov
+ $ sh ../../scripts/catalyst.llnl.gov/do_cmake_gnu.sh
+ $ make
+ $ make doc         # Generate local documentation
+\endcode
+
+The repo has several example host configurations:
+
+Livermore Computing (LC) HPC Systems:
+- CPU+NVRAM: catalyst.llnl.gov (TOSS 2), flash.llnl.gov (TOSS 3)
+- CPU+GPU: surface.llnl.gov (TOSS 2)
+
+Individual Systems:
+- OS X: vandamme.llnl.gov (macbook pro)
+
+If you want to setup a new host, create a 
+\code{.sh}
+ $ mkdir build/<hostname>
+ $ cd build/<hostname>
+ $ cp scripts/catalyst.llnl.gov/do_cmake_gnu.sh scripts/<hostname>/do_cmake_gnu.sh # EDIT script
+ $ sh ../../scripts/<hostname>/do_cmake_gnu.sh
+ $ make
+ $ make doc         # Generate local documentation
+\endcode
+
+After successfully compiling, proceed to \ref basic_usage.
+
+
+
+
+*/
+
+
+/** \page Elemental
+LBANN depends on the Elemental distributed memory math library.
+
+\section elemental_code Getting the code
+To get the code, either pull down a tarball or clone in the the Git repo:
+
+Either:
+\code{.sh}
+ $ wget Elemental
+ $ tar -xzvf Elemental
+\endcode
+
+or
+
+\code{.sh}
+ $ git clone git://github.com/elemental/Elemental.git
+\endcode
+
+\section elemental_build Building the code
+To build on Linux
+
+TBD
+
+To build Elemental on OS X
+
+\code{.sh}
+ $ cmake -D CMAKE_INSTALL_PREFIX=/Users/vanessen1/Research/DeepLearning/tools -D CMAKE_CXX_COMPILER=/usr/bin/g++ ../../
+\endcode
+
+\section elemental_dependencies Elemental Dependencies
+
+Install QD (A C++/Fortran-90 double-double and quad-double package) - http://crd-legacy.lbl.gov/~dhbailey/mpdist/
+\code{.sh}
+curl -# http://crd-legacy.lbl.gov/~dhbailey/mpdist/qd-2.3.17.tar.gz -o qd-2.3.17.tar.gz
+vanessen1@vandamme: ~/Research/DeepLearning/tools$ tar xvzf qd-2.3.17.tar.gz
+./configure --prefix=/Users/vanessen1/Research/DeepLearning/tools CXX=/usr/local/bin/g++-5 CC=/usr/local/bin/gcc-5
+make; make install
+\endcode
+
+*/
+
+/** \page OpenCV
+\section opencv_installing_linux Installing OpenCV on Linux
+
+\code{.sh}
+catalyst160@vanessen:cd /usr/gapps/brain/tools
+catalyst160@vanessen:mkdir OpenCV
+https://sourceforge.net/projects/opencvlibrary/
+
+wget "https://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.4.13/opencv-2.4.13.zip/download"
+mv download opencv-2.4.13.zip
+unzip opencv-2.4.13.zip
+cd opencv-2.4.13
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/gapps/brain/tools/OpenCV/2.4.13 ../
+make -j 4
+make install
+\endcode
+
+\section opencv_installing_osx Installing OpenCV on OS X
+
+Use <a href="http://brew.sh">Homebrew</a>
+\code{.sh}
+ $ brew install opencv
+\endcode
+*/
+
+/** \page MPI
+\section mpi_installing_linux Installing MPI on Linux
+
+talk to your sysadmin
+
+\section mpi_installing_osx Installing MPI on OS X
+
+Use <a href="http://brew.sh">Homebrew</a>
+\code{.sh}
+ $ brew install mpich2
+\endcode
+*/
+
+
+/** \page Doxygen
+\section doxygen_installing_linux Installing Doxygen on Linux
+
+talk to your sysadmin
+
+\section doxygen_installing_osx Installing Doxygen on OS X
+
+Use <a href="http://brew.sh">Homebrew</a>
+\code{.sh}
+ $ brew install doxygen
+ $ brew install graphviz
+\endcode
+*/
+
+/** \page OpenBLAS
+
+\section openblas_installing_linux Installing OpenBLAS on Linux
+
+\code{.sh}
+git clone git://github.com/xianyi/OpenBLAS
+
+Building with GNU 4.8.2
+
+catalyst160@vanessen:mkdir build
+catalyst160@vanessen:cd build/
+catalyst160@vanessen:cmake ../
+
+cmake -DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/g++ -DCMAKE_C_COMPILER=/opt/rh/devtoolset-2/root/usr/bin/gcc -DCMAKE_INSTALL_PREFIX=/usr/gapps/brain/installs/BLAS/catalyst ..
+
+make CC=/opt/rh/devtoolset-2/root/usr/bin/gcc
+make PREFIX=/usr/gapps/brain/installs/BLAS/catalyst install
+\endcode
+
+*/
+
+/** \page Cmake
+\section cmake_installing_linux Installing Cmake on Linux
+
+talk to your sysadmin
+
+\section cmake_installing_osx Installing Cmake on OS X
+
+Use <a href="http://brew.sh">Homebrew</a>
+\code{.sh}
+ $ brew install cmake
+\endcode
+*/

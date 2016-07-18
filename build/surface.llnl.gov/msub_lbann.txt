@@ -1,0 +1,19 @@
+#!/bin/csh
+##### These lines are for Moab
+#MSUB -A 
+#MSUB -l nodes=1
+#MSUB -l partition=surface
+#MSUB -l walltime=2:00:00
+#MSUB -q pbatch
+#MSUB -m be
+#MSUB -V
+#MSUB -o /g/g90/kim63/src/lbann_dev/build/surface.llnl.gov/msub_lbann_out.txt 
+
+##### These are shell commands
+date
+cd /g/g90/kim63/src/lbann_dev/build/surface.llnl.gov
+
+##### Launch parallel job using srun
+srun -N1 -n1 model_zoo/lbann_cnn_mnist
+echo 'Done'
+

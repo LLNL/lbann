@@ -1,0 +1,70 @@
+/** \mainpage LBANN Documentation
+
+\section overview Overview
+
+LBANN: Livermore Big Artificial Neural Network Toolkit for HPC deep learning training
+
+\verbatim
+Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
+Produced at the Lawrence Livermore National Laboratory. 
+Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+
+LLNL-CODE-697807.
+All rights reserved.
+
+This file is part of LBANN: Livermore Big Artificial Neural Network Toolkit. For details, see http://software.llnl.gov/LBANN or http://github.com/LBANN. 
+Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the license.
+\endverbatim
+
+\warning This manual is under construction.  Please direct questions to lbann-dev@llnl.gov
+
+This manual is divided in the following sections:
+- \subpage getting_started
+- \subpage basic_usage
+- \subpage developer_guide
+- \subpage publications
+
+\section team LBANN Development Team
+
+LLNL Team
+- <a href="http://people.llnl.gov/vanessen1">Brian Van Essen</a> \<vanessen1@llnl.gov\>
+- <a href="http://people.llnl.gov/kim63">Hyojin Kim</a> \<kim63@llnl.gov\>
+- <a href="http://people.llnl.gov/jacobs32">Sam Jacobs</a> \<jacobs32@llnl.gov\>
+- <a href="http://people.llnl.gov/moody20">Adam Moody</a> \<moody20@llnl.gov\>
+
+LLNL Summer Interns
+
+- Nikoli Dryden \<dryden1@llnl.gov\>
+- Tim Moon \<moon13@llnl.gov\>
+*/
+
+//-----------------------------------------------------------
+
+/** \page basic_usage Basic Usage
+
+\section running_mpi_program Running MPI Program
+Familiarize yourself with how to execute an MPI program for your system.   For this manual, we will
+use <i>mpiexec</i> for launching an MPI job, but your system my require <i>srun</i>, <i>mpirun</i>, or some other method.
+Contact your local system administrator if you are unfamiliar with using MPI on your system.
+
+\subsection running_mpi_program_osx Running MPI Program on OS X
+
+\code{.sh}
+ $ From the <build dir>
+ $ mpiexec -n 1 -host localhost model_zoo/lbann_dnn_mnist
+\endcode
+
+\subpage using_tensorboard
+*/
+
+//-----------------------------------------------------------
+
+/** \page publications Publications
+Earlier incarnations of this code have been presented in the following publications:
+
+*/

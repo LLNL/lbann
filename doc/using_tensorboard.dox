@@ -1,0 +1,41 @@
+/** \page using_tensorboard Using TensorBoard to view LBANN results
+Here's a quick guide to building LBANN with Tensorboard support and using it.
+Locally install Google Protocol Buffers. The version on the LC systems is too old. I used the protobuf tag v3.0.0-beta-2 version; a newer release will probably work too. Note that I had problems building it with the intel/14.0 compiler, so try GCC. The installation directory can be changed as desired.
+
+\code{.sh}
+ $ git clone https://github.com/google/protobuf.git protobuf.git
+ $ cd protobuf.git
+ $ git checkout tags/v3.0.0-beta-2
+ $ ./autogen.sh
+ $ ./configure --prefix=$HOME/protobuf
+ $ make
+ $ make check
+ $ make install
+\endcode
+
+Edit the cmake script to add -DCMAKE_TBINF=TRUE and -DCMAKE_PROTOBUF=${HOME}/protobuf
+
+Build LBANN as normal. If using an Intel compiler, ensure you loaded gnu/4.8.2 before you loaded the Intel compiler to get a recent standard library. Intel also produces some warnings, but you can ignore them.
+
+To get summary statistics for training, do something like the following in your model zoo file:
+
+\code{.cpp}
+#include "lbann/callbacks/lbann_callback_summary.hpp
+// Set up your model...
+lbann_summary summarizer("./out", comm);  // ./out can be changed to the output directory of your choice (ensure it exists).
+lbann_callback_summary summary_cb(summarizer, 25);  // Summarize results every 25 mini-batches.
+dnn.add_callback(&summary_cb);
+// Continue as usual.
+\endcode
+
+The model_zoo/lbann_dnn_multi_mnist.cpp example has a working demonstration of this.
+
+When you run LBANN, Tensorboard output should automatically be written to the output directory you chose. To view it with Tensorboard on an LC machine:
+
+\code{.sh}
+ $ use tensorflow
+ $ tensorboard --logdir=./out --host=localhost
+\endcode
+
+This will start a tensorboard instance on port 6006 on the machine you run it on. You can forward a local port on your laptop/desktop using SSH to access this if needed. E.g. for Catalyst: ssh -L 6006:localhost:6006 catalyst.llnl.gov will forward port 6006 on your local machine to the tensorboard instance running on the Catalyst login node. Navigate to localhost:6006 to view your graphs.
+*/

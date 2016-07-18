@@ -1,0 +1,17 @@
+# astyle --dry-run --options=lbann.astylerc --recursive 
+# --dry-run
+
+# Bracket Style Options
+--style=kr
+
+# Tab Option
+--indent=spaces=2
+
+# How are pointer and reference characters aligned: type or name
+--align-pointer=name
+
+# How are reference characters aligned: type or name (overrides align-pointer)
+--align-reference=type
+
+# Do not allow unbracketed one line conditional statements
+--add-brackets
