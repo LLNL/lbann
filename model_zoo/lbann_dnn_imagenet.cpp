@@ -619,6 +619,7 @@ int main(int argc, char* argv[])
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
         trainParams.DropOut = 0.1;
+        trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
         PerformanceParams perfParams;
         perfParams.parse_params();
@@ -657,7 +658,7 @@ int main(int argc, char* argv[])
         double sec_all_val = 0;
 
         // Set up the communicator and get the grid.
-        comm = new lbann_comm();
+        comm = new lbann_comm(trainParams.ProcsPerModel);
         Grid& grid = comm->get_model_grid();
         if (comm->am_world_master()) {
           cout << "Number of models: " << comm->get_num_models() << endl;
