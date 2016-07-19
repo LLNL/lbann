@@ -281,29 +281,22 @@ void lbann_quantizer::threshold_quantize(Mat& mat, ThreshQuantized& quant,
     neg_avg = neg_thresh;
   }
   const Int ldim = mat.LDim();
-  size_t prev_pos = ~0ull;
+  size_t prev_pos = 0;
   for (int col = 0; col < mat.Width(); ++col) {
     for (int row = 0; row < mat.Height(); ++row) {
       DataType val = mat.Get(row, col) + qerror.Get(row, col);
       size_t pos = row + col * ldim;
       if (val >= pos_thresh) {
-        if (prev_pos == ~0ull) {
-          prev_pos = pos;
-        } else {
-          pos -= prev_pos;
-          prev_pos += pos;
-        }
+        // Delta encoding.
+        pos -= prev_pos;
+        prev_pos += pos;
         uqtype q = pos << 1;
         q |= 1;
         qerror.Set(row, col, val - pos_avg);
         quant.push_back(q);
       } else if (val <= neg_thresh) {
-        if (prev_pos == ~0ull) {
-          prev_pos = pos;
-        } else {
-          pos -= prev_pos;
-          prev_pos += pos;
-        }
+        pos -= prev_pos;
+        prev_pos += pos;
         uqtype q = pos << 1;
         qerror.Set(row, col, val - neg_avg);
         quant.push_back(q);
@@ -333,20 +326,9 @@ void lbann_quantizer::threshold_unquantize(
   Mat& mat, DataType pos_avg, DataType neg_avg, bool apply) {
   DataType* buf = mat.Buffer();
   if (std::distance(quant_start, quant.end()) == 0) return;
-  // Decode the first location to start the delta decoding.
-  auto iter = quant_start;
-  uqtype q = *iter;
-  ++iter;
-  size_t prev_pos = q >> 1;
-  if (apply) {
-    if (q & 1) buf[prev_pos] += pos_avg;
-    else buf[prev_pos] += neg_avg;
-  } else {
-    if (q & 1) buf[prev_pos] = pos_avg;
-    else buf[prev_pos] = neg_avg;
-  }
-  for (; iter != quant.end(); ++iter) {
-    q = *iter;
+  size_t prev_pos = 0;
+  for (auto iter = quant_start; iter != quant.end(); ++iter) {
+    uqtype q = *iter;
     size_t pos = (q >> 1) + prev_pos;
     prev_pos = pos;
     if (apply) {
