@@ -40,7 +40,7 @@ lbann_quantizer::~lbann_quantizer() {
 
 }
 
-void lbann_quantizer::quantize(Mat& mat, QuantizedMatrix& qmat, Mat& qerror) {
+void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror) {
   // Set up the quantized matrix. (+2 for the averages.)
   size_t qheight = get_quantized_matrix_height(mat);
   size_t qwidth = mat.Width();
@@ -103,13 +103,12 @@ void lbann_quantizer::quantize(Mat& mat, QuantizedMatrix& qmat, Mat& qerror) {
   }
 }
 
-void lbann_quantizer::quantize(DistMat& mat, QuantizedMatrix& qmat,
+void lbann_quantizer::quantize(const DistMat& mat, QuantizedMatrix& qmat,
                                Mat& qerror) {
-  Mat& local_mat = mat.Matrix();
-  quantize(local_mat, qmat, qerror);
+  quantize(mat.LockedMatrix(), qmat, qerror);
 }
 
-void lbann_quantizer::unquantize(QuantizedMatrix& qmat, Mat& mat, bool apply) {
+void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply) {
   for (int col = 0; col < mat.Width(); ++col) {
     int row_chunk = 0;
     int qrow = 2;
@@ -139,10 +138,9 @@ void lbann_quantizer::unquantize(QuantizedMatrix& qmat, Mat& mat, bool apply) {
   }
 }
 
-void lbann_quantizer::unquantize(QuantizedMatrix& qmat, DistMat& mat,
+void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, DistMat& mat,
                                  bool apply) {
-  Mat& local_mat = mat.Matrix();
-  unquantize(qmat, local_mat, apply);
+  unquantize(qmat, mat.Matrix(), apply);
 }
 
 void lbann_quantizer::intermodel_sum_quantized(
@@ -270,7 +268,7 @@ void lbann_quantizer::intermodel_sum_quantized2(lbann_comm* comm, DistMat& mat,
   intermodel_sum_quantized2(comm, mat.Matrix(), qerror, im_qerror);
 }
 
-void lbann_quantizer::threshold_quantize(Mat& mat, ThreshQuantized& quant,
+void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
                                          Mat& qerror, DataType pos_thresh,
                                          DataType neg_thresh, DataType pos_avg,
                                          DataType neg_avg) {
@@ -307,22 +305,22 @@ void lbann_quantizer::threshold_quantize(Mat& mat, ThreshQuantized& quant,
   }
 }
 
-void lbann_quantizer::threshold_quantize(DistMat& mat, ThreshQuantized& q,
+void lbann_quantizer::threshold_quantize(const DistMat& mat, ThreshQuantized& q,
                                          Mat& qerror, DataType pos_thresh,
                                          DataType neg_thresh, DataType pos_avg,
                                          DataType neg_avg) {
-  threshold_quantize(mat.Matrix(), q, qerror, pos_thresh, neg_thresh,
+  threshold_quantize(mat.LockedMatrix(), q, qerror, pos_thresh, neg_thresh,
                      pos_avg, neg_avg);
 }
 
-void lbann_quantizer::threshold_unquantize(ThreshQuantized& quant, Mat& mat,
+void lbann_quantizer::threshold_unquantize(const ThreshQuantized& quant, Mat& mat,
                                            DataType pos_avg, DataType neg_avg,
                                            bool apply) {
   threshold_unquantize(quant, quant.begin(), mat, pos_avg, neg_avg, apply);
 }
 
 void lbann_quantizer::threshold_unquantize(
-  ThreshQuantized& quant, ThreshQuantized::iterator quant_start,
+  const ThreshQuantized& quant, ThreshQuantized::const_iterator quant_start,
   Mat& mat, DataType pos_avg, DataType neg_avg, bool apply) {
   DataType* buf = mat.Buffer();
   if (std::distance(quant_start, quant.end()) == 0) return;
@@ -341,13 +339,13 @@ void lbann_quantizer::threshold_unquantize(
   }
 }
 
-void lbann_quantizer::threshold_unquantize(ThreshQuantized& quant, DistMat& mat,
+void lbann_quantizer::threshold_unquantize(const ThreshQuantized& quant, DistMat& mat,
                                            DataType pos_avg, DataType neg_avg,
                                            bool apply) {
   threshold_unquantize(quant, mat.Matrix(), pos_avg, neg_avg, apply);
 }
 
-void lbann_quantizer::adaptive_threshold_quantize(Mat& mat, ThreshQuantized& q,
+void lbann_quantizer::adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q,
                                                   Mat& qerror, int proportion) {
   DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
   std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
@@ -362,14 +360,14 @@ void lbann_quantizer::adaptive_threshold_quantize(Mat& mat, ThreshQuantized& q,
   threshold_quantize(mat, q, qerror, pos_thresh, neg_thresh, pos_avg, neg_avg);
 }
 
-void lbann_quantizer::adaptive_threshold_quantize(DistMat& mat,
+void lbann_quantizer::adaptive_threshold_quantize(const DistMat& mat,
                                                   ThreshQuantized& q,
                                                   Mat& qerror, int proportion) {
-  adaptive_threshold_quantize(mat.Matrix(), q, qerror, proportion);
+  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  ThreshQuantized& q, Mat& mat, bool apply) {
+  const ThreshQuantized& q, Mat& mat, bool apply) {
   // Get the averages out.
   DataType pos_avg;
   memcpy(&pos_avg, &(q[0]), sizeof(pos_avg));
@@ -379,7 +377,7 @@ void lbann_quantizer::adaptive_threshold_unquantize(
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  ThreshQuantized& q, DistMat& mat, bool apply) {
+  const ThreshQuantized& q, DistMat& mat, bool apply) {
   adaptive_threshold_unquantize(q, mat.Matrix(), apply);
 }
 
@@ -562,13 +560,14 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
                                               proportion, im_qerror, compress);
 }
 
-void lbann_quantizer::compress_thresholds(ThreshQuantized& q,
+void lbann_quantizer::compress_thresholds(const ThreshQuantized& q,
                                           ThreshQuantized& cq) {
   compress_thresholds(q, q.begin(), cq);
 }
 
 void lbann_quantizer::compress_thresholds(
-  ThreshQuantized& q, ThreshQuantized::iterator qstart, ThreshQuantized& cq) {
+  const ThreshQuantized& q, ThreshQuantized::const_iterator qstart,
+  ThreshQuantized& cq) {
   // Handle empty input.
   if (std::distance(qstart, q.end()) == 0) {
     cq.push_back(~((uqtype) 0));
@@ -651,20 +650,21 @@ void lbann_quantizer::compress_thresholds(
   }
 }
 
-void lbann_quantizer::compress_adaptive_thresholds(ThreshQuantized& q,
+void lbann_quantizer::compress_adaptive_thresholds(const ThreshQuantized& q,
                                                    ThreshQuantized& cq) {
   cq.push_back(q[0]);
   cq.push_back(q[1]);
   compress_thresholds(q, q.begin() + 2, cq);
 }
 
-void lbann_quantizer::uncompress_thresholds(ThreshQuantized& cq,
+void lbann_quantizer::uncompress_thresholds(const ThreshQuantized& cq,
                                             ThreshQuantized& q) {
   uncompress_thresholds(cq, cq.begin(), q);
 }
 
 void lbann_quantizer::uncompress_thresholds(
-  ThreshQuantized& cq, ThreshQuantized::iterator cqstart, ThreshQuantized& q) {
+  const ThreshQuantized& cq, ThreshQuantized::const_iterator cqstart,
+  ThreshQuantized& q) {
   uqtype quotient = 0;
   uqtype remainder = 0;
   // Like in compress, cur_bit is the current bit being read.
@@ -720,7 +720,7 @@ void lbann_quantizer::uncompress_thresholds(
   }
 }
 
-void lbann_quantizer::uncompress_adaptive_thresholds(ThreshQuantized& cq,
+void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
                                                      ThreshQuantized& q) {
   q.push_back(cq[0]);
   q.push_back(cq[1]);
@@ -728,7 +728,7 @@ void lbann_quantizer::uncompress_adaptive_thresholds(ThreshQuantized& cq,
 }
 
 std::tuple<DataType, DataType, DataType, DataType>
-lbann_quantizer::proportion_threshold_average(Mat& mat, int proportion) {
+lbann_quantizer::proportion_threshold_average(const Mat& mat, int proportion) {
   // It would be nice if there were a better way to do this...
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;

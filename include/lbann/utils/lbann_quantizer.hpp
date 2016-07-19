@@ -75,16 +75,16 @@ public:
    * @param qmat The output quantized matrix (will be resized).
    * @param qerror Running quantization error.
    */
-  void quantize(Mat& mat, QuantizedMatrix& qmat, Mat& qerror);
-  void quantize(DistMat& mat, QuantizedMatrix& qmat, Mat& qerror);
+  void quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror);
+  void quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror);
   /**
    * Unquantize a matrix.
    * @param qmat The matrix to unquantize.
    * @param mat The output unquantized matrix.
    * @param apply Whether to add or replace existing entries.
    */
-  void unquantize(QuantizedMatrix& qmat, Mat& mat, bool apply = false);
-  void unquantize(QuantizedMatrix& qmat, DistMat& mat, bool apply = false);
+  void unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply = false);
+  void unquantize(const QuantizedMatrix& qmat, DistMat& mat, bool apply = false);
   /**
    * Do a sum reduction of mat over comm's inter-model communicator, with all
    * communication being quantized. im_querror is a separate quantization error
@@ -118,10 +118,10 @@ public:
    * @param pos_avg The positive quantization value (0 for default).
    * @param neg_avg The negative quantization value (0 for default).
    */
-  void threshold_quantize(Mat& mat, ThreshQuantized& q, Mat& qerror,
+  void threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
                           DataType pos_avg = 0.0f, DataType neg_avg = 0.0f);
-  void threshold_quantize(DistMat& mat, ThreshQuantized& q, Mat& qerror,
+  void threshold_quantize(const DistMat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
                           DataType pos_avg = 0.0f, DataType neg_avg = 0.0f);
   /**
@@ -133,10 +133,10 @@ public:
    * @param apply Whether to add unquantized data to existing entries or replace
    * existing entries.
    */
-  void threshold_unquantize(ThreshQuantized& q, Mat& mat,
+  void threshold_unquantize(const ThreshQuantized& q, Mat& mat,
                             DataType pos_avg, DataType neg_avg,
                             bool apply = false);
-  void threshold_unquantize(ThreshQuantized& q, DistMat& mat,
+  void threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
                             DataType pos_avg, DataType neg_avg,
                             bool apply = false);
   /**
@@ -147,9 +147,9 @@ public:
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
    */
-  void adaptive_threshold_quantize(Mat& mat, ThreshQuantized& q, Mat& qerror,
+  void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                                    int proportion);
-  void adaptive_threshold_quantize(DistMat& mat, ThreshQuantized& q,
+  void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
                                    Mat& qerror, int proportion);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
@@ -158,9 +158,9 @@ public:
    * @param apply Whether to add unquantized data to existing entries or replace
    * existing entries.
    */
-  void adaptive_threshold_unquantize(ThreshQuantized& q, Mat& mat,
+  void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
                                      bool apply = false);
-  void adaptive_threshold_unquantize(ThreshQuantized& q, DistMat& mat,
+  void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
                                      bool apply = false);
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
@@ -189,14 +189,14 @@ public:
    * This uses Golumb-Rice coding, with the quotient stored first, followed by
    * the remainder.
    */
-  void compress_thresholds(ThreshQuantized& q,
+  void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized& cq);
-  void compress_adaptive_thresholds(ThreshQuantized& q,
+  void compress_adaptive_thresholds(const ThreshQuantized& q,
                                     ThreshQuantized& cq);
   /** Corresponding uncompress. */
-  void uncompress_thresholds(ThreshQuantized& cq,
+  void uncompress_thresholds(const ThreshQuantized& cq,
                              ThreshQuantized& q);
-  void uncompress_adaptive_thresholds(ThreshQuantized& cq,
+  void uncompress_adaptive_thresholds(const ThreshQuantized& cq,
                                       ThreshQuantized& q);
 
   /**
@@ -210,7 +210,7 @@ public:
    * positive and negative averages.
    */
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
-    Mat& mat, int proportion);
+    const Mat& mat, int proportion);
 
 private:
   /** Number of bits per quantized word. */
@@ -229,16 +229,17 @@ private:
   }
 
   /** Handle threshold unquantization from arbitrary locations. */
-  void threshold_unquantize(ThreshQuantized& q,
-                            ThreshQuantized::iterator qstart, Mat& mat,
+  void threshold_unquantize(const ThreshQuantized& q,
+                            ThreshQuantized::const_iterator qstart, Mat& mat,
                             DataType pos_avg, DataType neg_avg,
                             bool apply = false);
   /** Handle compression starting from arbitrary locations. */
-  void compress_thresholds(ThreshQuantized& q, ThreshQuantized::iterator qstart,
+  void compress_thresholds(const ThreshQuantized& q,
+                           ThreshQuantized::const_iterator qstart,
                            ThreshQuantized& cq);
   /** Handle uncompression starting from arbitrary locations. */
-  void uncompress_thresholds(ThreshQuantized& cq,
-                             ThreshQuantized::iterator cqstart,
+  void uncompress_thresholds(const ThreshQuantized& cq,
+                             ThreshQuantized::const_iterator cqstart,
                              ThreshQuantized& q);
 
   template <typename T>
