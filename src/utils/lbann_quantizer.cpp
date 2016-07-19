@@ -331,7 +331,6 @@ void lbann_quantizer::threshold_unquantize(ThreshQuantized& quant, Mat& mat,
 void lbann_quantizer::threshold_unquantize(
   ThreshQuantized& quant, ThreshQuantized::iterator quant_start,
   Mat& mat, DataType pos_avg, DataType neg_avg, bool apply) {
-  const Int ldim = mat.LDim();
   DataType* buf = mat.Buffer();
   if (std::distance(quant_start, quant.end()) == 0) return;
   // Decode the first location to start the delta decoding.
@@ -390,8 +389,10 @@ void lbann_quantizer::adaptive_threshold_quantize(DistMat& mat,
 void lbann_quantizer::adaptive_threshold_unquantize(
   ThreshQuantized& q, Mat& mat, bool apply) {
   // Get the averages out.
-  DataType pos_avg = *((DataType*) &(q[0]));
-  DataType neg_avg = *((DataType*) &(q[1]));
+  DataType pos_avg;
+  memcpy(&pos_avg, &(q[0]), sizeof(pos_avg));
+  DataType neg_avg;
+  memcpy(&neg_avg, &(q[1]), sizeof(neg_avg));
   threshold_unquantize(q, q.begin() + 2, mat, pos_avg, neg_avg, apply);
 }
 
