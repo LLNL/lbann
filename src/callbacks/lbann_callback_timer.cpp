@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summary .hpp .cpp - Callback hooks to summarize to Tensorboard
-////////////////////////////////////////////////////////////////////////////////
+// lbann_callback_timer .hpp .cpp - Callback hooks to time training
+///////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
 #include "lbann/utils/lbann_timer.hpp"
