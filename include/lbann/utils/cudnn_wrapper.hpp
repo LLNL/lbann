@@ -59,42 +59,48 @@
     }                                                                   \
   }
 
-template <class DataType>
+template <typename DataType>
 class CudnnNet {
 
 public:
   /// Number of GPUs
-  const int numGPUs;
+  const int NumGPUs;
   /// List of cuDNN handles
   std::vector<cudnnHandle_t> cudnnHandles;
   /// cuDNN datatype
   const cudnnDataType_t cudnnDataType;
 
 private:
-  static int getNumGPUs() {
-    int count;
-    checkCUDA(cudaGetDeviceCount(&count));
-    return count;
+  /// Determine number of GPUs to use
+  /** If NumGPUs<0, then use all available GPUs. */
+  static int getNumGPUs(int NumGPUs=-1) {
+    if(NumGPUs < 0) {
+      int count;
+      checkCUDA(cudaGetDeviceCount(&count));
+      return count;
+    }
+    else
+      return NumGPUs;
   }
 
 public:
   /// Constructor
-  CudnnNet()
-    : numGPUs(getNumGPUs()),
+  CudnnNet(int _NumGPUs=-1)
+    : NumGPUs(getNumGPUs(_NumGPUs)),
       cudnnDataType((sizeof(DataType)==sizeof(float)) ?
                     CUDNN_DATA_FLOAT : CUDNN_DATA_DOUBLE) {
-    cudnnHandles.resize(numGPUs, NULL);
-    for(int i=0; i<numGPUs; ++i) {
-      checkCUDA(cudaSetDevice(i));
-      checkCUDNN(cudnnCreate(&cudnnHandles[i]));
+    cudnnHandles.resize(NumGPUs, NULL);
+    for(int dev=0; dev<NumGPUs; ++dev) {
+      checkCUDA(cudaSetDevice(dev));
+      checkCUDNN(cudnnCreate(&cudnnHandles[dev]));
     }
   }
 
   /// Destructor
   ~CudnnNet() {
-    for(int i=0; i<cudnnHandles.size(); ++i) {
-      if(cudnnHandles[i])
-        checkCUDNN(cudnnDestroy(cudnnHandles[i]));
+    for(int dev=0; dev<cudnnHandles.size(); ++dev) {
+      if(cudnnHandles[dev])
+        checkCUDNN(cudnnDestroy(cudnnHandles[dev]));
     }
   }
 
@@ -118,8 +124,6 @@ public:
   cudnnTensorDescriptor_t srcTensorDesc;
   /// Output tensor descriptor
   cudnnTensorDescriptor_t dstTensorDesc;
-  /// Bias tensor descriptor
-  cudnnTensorDescriptor_t biasTensorDesc;
   /// Filter descriptor
   cudnnFilterDescriptor_t filterDesc;
   /// Convolution descriptor
@@ -160,7 +164,6 @@ public:
 
     srcTensorDesc = NULL;
     dstTensorDesc = NULL;
-    biasTensorDesc = NULL;
     filterDesc = NULL;
     convDesc = NULL;
     poolDesc = NULL;
@@ -174,7 +177,6 @@ public:
 
     checkCUDNN(cudnnCreateTensorDescriptor(&srcTensorDesc));
     checkCUDNN(cudnnCreateTensorDescriptor(&dstTensorDesc));
-    checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
     checkCUDNN(cudnnCreateFilterDescriptor(&filterDesc));
     checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
     checkCUDNN(cudnnCreatePoolingDescriptor(&poolDesc));
@@ -184,7 +186,6 @@ public:
   ~CudnnLayer() {
     if (srcTensorDesc) checkCUDNN(cudnnDestroyTensorDescriptor(srcTensorDesc));
     if (dstTensorDesc) checkCUDNN(cudnnDestroyTensorDescriptor(dstTensorDesc));
-    if (biasTensorDesc) checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
     if (filterDesc) checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
     if (convDesc) checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
     if (poolDesc) checkCUDNN(cudnnDestroyPoolingDescriptor(poolDesc));
@@ -197,7 +198,7 @@ public:
                       int* dstTensorDims,
                       int* convPads,
                       int* convStrides) {
-
+    
     // Get parameters from cudnnNet
     std::vector<cudnnHandle_t>& handles = dnnNet->cudnnHandles;
     const cudnnDataType_t cudnnDataType = dnnNet->cudnnDataType;
@@ -248,7 +249,7 @@ public:
       filterSize  *= filterDims[n];
       dstDataSize *= dstTensorDims[n];
     }
-
+    
     // Set output tensor descriptor
     std::vector<int> dstStrides(nConvDims+2);
     dstStrides[nConvDims + 1] = 1;
@@ -368,7 +369,7 @@ public:
       srcDataSize *= srcTensorDims[n];
       dstDataSize *= dstTensorDims[n];
     }
-  
+
     // Set output tensor descriptor
     std::vector<int> dstStrides(nPoolDims+2);
     dstStrides[nPoolDims + 1] = 1;
@@ -382,7 +383,7 @@ public:
 
   }
 
-  void convForward(const int numSamples,
+  void convForward(const int NumSamples,
                    const DataType* srcData,
                    const DataType* filterData,
                    DataType* dstData) {
@@ -393,14 +394,14 @@ public:
  
     // Get parameters from cudnnNet
     std::vector<cudnnHandle_t>& handles = dnnNet->cudnnHandles;
-    const int numGPUs = dnnNet->numGPUs;
+    const int NumGPUs = dnnNet->NumGPUs;
   
     // Allocate memory on GPU
-    std::vector<DataType*> gpuSrcData(numGPUs, NULL);
-    std::vector<DataType*> gpuFtrData(numGPUs, NULL);
-    std::vector<DataType*> gpuDstData(numGPUs, NULL);
-    std::vector<DataType*> gpuWorkSpaces(numGPUs, NULL);
-    for(int dev=0; dev<numGPUs; ++dev) {
+    std::vector<DataType*> gpuSrcData(NumGPUs, NULL);
+    std::vector<DataType*> gpuFtrData(NumGPUs, NULL);
+    std::vector<DataType*> gpuDstData(NumGPUs, NULL);
+    std::vector<DataType*> gpuWorkSpaces(NumGPUs, NULL);
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaMalloc(&gpuSrcData[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMalloc(&gpuDstData[dev], sizeof(DataType)*dstDataSize));
@@ -414,15 +415,15 @@ public:
     }
 
     // Perform convolution on data samples
-    for(int i=0; i<numSamples; ++i) {
+    for(int j=0; j<NumSamples; ++j) {
 
       // Determine GPU
-      int dev = i % numGPUs;
+      int dev = j % NumGPUs;
       checkCUDA(cudaSetDevice(dev));
 
       // Transfer input data to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+i*srcDataSize,
+                                srcData+j*srcDataSize,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       
@@ -442,7 +443,7 @@ public:
                                          gpuDstData[dev]));
       
       // Transfer output data from GPU
-      checkCUDA(cudaMemcpyAsync(dstData+i*dstDataSize,
+      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataSize,
                                 gpuDstData[dev],
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -451,7 +452,7 @@ public:
     
     // Free memory on GPU
     // Note: cudaFree is synchronous
-    for(int dev=0; dev<numGPUs; ++dev) {
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaFree(gpuSrcData[dev]));
       checkCUDA(cudaFree(gpuDstData[dev]));
@@ -463,7 +464,7 @@ public:
 
   // Back filter: Given src=x (g_input), diff=dJ/dy (g_outputDelta), computes grad = dJ/dw (g_filterDelta)
   // Back data: Given filter=w (g_filter), diff = dJ/dy (g_outputDelta), computes grad = dJ/dx (g_inputDelta)
-  void convBackward(const int numSamples,
+  void convBackward(const int NumSamples,
                     const DataType* srcData,
                     const DataType* filterData,
                     const DataType* dstDelta,
@@ -476,28 +477,30 @@ public:
 
     // Get parameters from cudnnNet
     std::vector<cudnnHandle_t>& handles = dnnNet->cudnnHandles;
-    const int numGPUs = dnnNet->numGPUs;
+    const int NumGPUs = dnnNet->NumGPUs;
 
     // Allocate memory on GPU
-    std::vector<DataType*> gpuSrcData(numGPUs, NULL);
-    std::vector<DataType*> gpuFtrData(numGPUs, NULL);
-    std::vector<DataType*> gpuSrcDelta(numGPUs, NULL);
-    std::vector<DataType*> gpuDstDelta(numGPUs, NULL);
-    std::vector<DataType*> gpuFtrDelta(numGPUs, NULL);
-    std::vector<DataType*> gpuFilterWorkSpaces(numGPUs, NULL);
-    std::vector<DataType*> gpuDataWorkSpaces(numGPUs, NULL);
-    for(int dev=0; dev<numGPUs; ++dev) {
+    std::vector<DataType*> gpuSrcData(NumGPUs, NULL);
+    std::vector<DataType*> gpuFtrData(NumGPUs, NULL);
+    std::vector<DataType*> gpuSrcDelta(NumGPUs, NULL);
+    std::vector<DataType*> gpuDstDelta(NumGPUs, NULL);
+    std::vector<DataType*> gpuFtrDelta(NumGPUs, NULL);
+    std::vector<DataType*> gpuFilterWorkSpaces(NumGPUs, NULL);
+    std::vector<DataType*> gpuDataWorkSpaces(NumGPUs, NULL);
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaMalloc(&gpuSrcData[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMalloc(&gpuFtrData[dev], sizeof(DataType)*filterSize));
-      checkCUDA(cudaMalloc(&gpuSrcDelta[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMalloc(&gpuDstDelta[dev], sizeof(DataType)*dstDataSize));
       checkCUDA(cudaMalloc(&gpuFtrDelta[dev], sizeof(DataType)*filterSize));
+      checkCUDA(cudaMalloc(&gpuSrcDelta[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMemcpyAsync(gpuFtrData[dev],
                                 filterData,
                                 sizeof(DataType)*filterSize,
                                 cudaMemcpyHostToDevice));
-      checkCUDA(cudaMemset(gpuFtrDelta[dev], 0, sizeof(DataType)*filterSize));
+      checkCUDA(cudaMemsetAsync(gpuFtrDelta[dev],
+                                0,
+                                sizeof(DataType)*filterSize));
       if(convBackFilterWSSize > 0)
         checkCUDA(cudaMalloc(&gpuFilterWorkSpaces[dev], convBackFilterWSSize));
       if(convBackDataWSSize > 0)
@@ -505,19 +508,19 @@ public:
     }
 
     // Perform back prop on data samples
-    for(int i=0; i<numSamples; ++i) {
+    for(int j=0; j<NumSamples; ++j) {
 
       // Determine GPU
-      int dev = i % numGPUs;
+      int dev = j % NumGPUs;
       checkCUDA(cudaSetDevice(dev));
 
       // Transfer data and next layer's delta to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+i*srcDataSize,
+                                srcData+j*srcDataSize,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstDelta[dev],
-                                dstDelta+i*dstDataSize,
+                                dstDelta+j*dstDataSize,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
       
@@ -550,7 +553,7 @@ public:
                                               gpuSrcDelta[dev]));
 
       // Transfer data delta from GPU
-      checkCUDA(cudaMemcpyAsync(srcDelta+i*srcDataSize,
+      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDataSize,
                                 gpuSrcDelta[dev],
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -559,8 +562,8 @@ public:
 
     // Transfer filter deltas from GPU and accumulate
     DataType* filterDeltaTemp = new DataType[filterSize];
-    memset(filterDelta, 0, sizeof(DataType)*filterSize);
-    for(int dev=0; dev<numGPUs; ++dev) {
+    memset(filterDelta, 0, sizeof(DataType)*filterSize); //TODO
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaMemcpy(filterDeltaTemp,
                            gpuFtrDelta[dev],
                            sizeof(DataType)*filterSize,
@@ -573,7 +576,7 @@ public:
 
     // Free memory on GPU
     // Note: cudaFree is synchronous
-    for(int dev=0; dev<numGPUs; ++dev) {
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaFree(gpuSrcData[dev]));
       checkCUDA(cudaFree(gpuFtrData[dev]));
@@ -586,7 +589,7 @@ public:
   
   }
 
-  void poolForward(const int numSamples,
+  void poolForward(const int NumSamples,
                    const DataType* srcData,
                    DataType* dstData) {
 
@@ -596,27 +599,27 @@ public:
 
     // Get parameters from cudnnNet
     std::vector<cudnnHandle_t>& handles = dnnNet->cudnnHandles;
-    const int numGPUs = dnnNet->numGPUs;
+    const int NumGPUs = dnnNet->NumGPUs;
 
     // Allocate memory on GPU
-    std::vector<DataType*> gpuSrcData(numGPUs, NULL);
-    std::vector<DataType*> gpuDstData(numGPUs, NULL);
-    for(int dev=0; dev<numGPUs; ++dev) {
+    std::vector<DataType*> gpuSrcData(NumGPUs, NULL);
+    std::vector<DataType*> gpuDstData(NumGPUs, NULL);
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaMalloc(&gpuSrcData[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMalloc(&gpuDstData[dev], sizeof(DataType)*dstDataSize));
     }
     
     // Perform pooling on data samples
-    for(int i=0; i<numSamples; ++i) {
+    for(int j=0; j<NumSamples; ++j) {
 
       // Determine GPU
-      int dev = i % numGPUs;
+      int dev = j % NumGPUs;
       checkCUDA(cudaSetDevice(dev));
 
       // Transfer input data to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+i*srcDataSize,
+                                srcData+j*srcDataSize,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
 
@@ -631,7 +634,7 @@ public:
                                      gpuDstData[dev]));
 
       // Transfer output data from GPU
-      checkCUDA(cudaMemcpyAsync(dstData+i*dstDataSize,
+      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataSize,
                                 gpuDstData[dev],
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -639,7 +642,7 @@ public:
     }
 
     // Free memory on GPU
-    for(int dev=0; dev<numGPUs; ++dev) {
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaFree(gpuSrcData[dev]));
       checkCUDA(cudaFree(gpuDstData[dev]));
@@ -648,7 +651,7 @@ public:
   }
 
   // Given src=y (g_output), srcdiff = dJ/dy (g_outputDelta), dest=x (g_input), destdiff = dJ/dx
-  void poolBackward(const int numSamples,
+  void poolBackward(const int NumSamples,
                     const DataType* srcData,
                     const DataType* dstData,
                     const DataType* dstDelta,
@@ -660,14 +663,14 @@ public:
 
     // Get parameters from cudnnNet
     std::vector<cudnnHandle_t>& handles = dnnNet->cudnnHandles;
-    const int numGPUs = dnnNet->numGPUs;
+    const int NumGPUs = dnnNet->NumGPUs;
 
     // Allocate memory on GPU
-    std::vector<DataType*> gpuSrcData(numGPUs, NULL);
-    std::vector<DataType*> gpuSrcDelta(numGPUs, NULL);
-    std::vector<DataType*> gpuDstData(numGPUs, NULL);
-    std::vector<DataType*> gpuDstDelta(numGPUs, NULL);
-    for(int dev=0; dev<numGPUs; ++dev) {
+    std::vector<DataType*> gpuSrcData(NumGPUs, NULL);
+    std::vector<DataType*> gpuSrcDelta(NumGPUs, NULL);
+    std::vector<DataType*> gpuDstData(NumGPUs, NULL);
+    std::vector<DataType*> gpuDstDelta(NumGPUs, NULL);
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaMalloc(&gpuSrcData[dev], sizeof(DataType)*srcDataSize));
       checkCUDA(cudaMalloc(&gpuSrcDelta[dev], sizeof(DataType)*srcDataSize));
@@ -676,26 +679,26 @@ public:
     }
 
     // Perform back prop on data samples
-    for(int i=0; i<numSamples; ++i) {
+    for(int j=0; j<NumSamples; ++j) {
 
       // Determine GPU
-      int dev = i % numGPUs;
+      int dev = j % NumGPUs;
       checkCUDA(cudaSetDevice(dev));
 
       // Transfer data and next layer's delta to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+i*srcDataSize,
+                                srcData+j*srcDataSize,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstData[dev],
-                                dstData+i*dstDataSize,
+                                dstData+j*dstDataSize,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstDelta[dev],
-                                dstDelta+i*dstDataSize,
+                                dstDelta+j*dstDataSize,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
-
+      
       // Perform back prop 
       checkCUDNN(cudnnPoolingBackward(handles[dev],
                                       poolDesc,
@@ -711,7 +714,7 @@ public:
                                       gpuSrcDelta[dev]));
 
       // Transfer delta from GPU
-      checkCUDA(cudaMemcpyAsync(srcDelta+i*srcDataSize,
+      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDataSize,
                                 gpuSrcDelta[dev],
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -719,138 +722,22 @@ public:
     }
 
     // Free memory on GPU
-    for(int dev=0; dev<numGPUs; ++dev) {
+    for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaSetDevice(dev));
       checkCUDA(cudaFree(gpuSrcData[dev]));
       checkCUDA(cudaFree(gpuSrcDelta[dev]));
       checkCUDA(cudaFree(gpuDstData[dev]));
       checkCUDA(cudaFree(gpuDstDelta[dev]));
     }
-
+    
   }
-
-#if 0
-  void setupActLayer(int nTensorDims, int* TensorDims)
-  {
-    cudnnDataType_t datatype = dnnNet->cudnnDataType;
-  
-    int strides[5];
-    strides[nTensorDims - 1] = 1;
-    for (int n = nTensorDims - 2; n >= 0; n--)
-      strides[n] = strides[n + 1] * TensorDims[n + 1];
-
-    // set input tensor descriptor
-    checkCUDNN(cudnnSetTensorNdDescriptor(srcTensorDesc,
-                                          datatype, nTensorDims,
-                                          TensorDims,
-                                          strides));
-
-    // set output tensor descriptor
-    checkCUDNN(cudnnSetTensorNdDescriptor(dstTensorDesc,
-                                          datatype, nTensorDims,
-                                          TensorDims,
-                                          strides));
-
-    srcDataSize = 1;
-    dstDataSize = 1;
-    for (int n = 0; n < nTensorDims; n++) {
-      srcDataSize *= TensorDims[n];
-      dstDataSize *= TensorDims[n];
-    }
-  }
-
-  void setupSoftmaxLayer(int nTensorDims, int* TensorDims)
-  {
-    this->setupActLayer(nTensorDims, TensorDims);
-  }
-
-  bool actForward(DataType* srcData, DataType* dstData)
-  {
-    cudnnHandle_t handle = dnnNet->cudnnHandles;
-
-    DataType alpha = 1.0f;
-    DataType beta = 0.0f;
-    checkCUDNN(cudnnActivationForward(handle, &alpha,
-                                      srcTensorDesc, srcData, &beta, dstTensorDesc, dstData));
-
-    return true;
-  }
-
-  bool actBackward(DataType* srcData, DataType* dstData, DataType* dstDelta, DataType* srcDelta)
-  {
-    cudnnHandle_t handle = dnnNet->cudnnHandles;
-
-    DataType alpha = 1.0f;
-    DataType beta = 0.0f;
-    checkCUDNN(cudnnActivationBackward(handle, &alpha,
-                                       dstTensorDesc, dstData, dstTensorDesc, dstDelta,
-                                       srcTensorDesc, srcData, &beta, dstTensorDesc, srcDelta));
-
-    return true;
-  }
-
-  bool softmaxForward(DataType* srcData, DataType* dstData)
-  {
-    cudnnHandle_t handle = dnnNet->cudnnHandles;
-
-    DataType alpha = 1.0f;
-    DataType beta = 0.0f;
-    checkCUDNN(cudnnSoftmaxForward(handle,
-                                   CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, &alpha,
-                                   srcTensorDesc, srcData, &beta, dstTensorDesc, dstData));
-
-    return true;
-  }
- 
-  bool actForwardHost(DataType* srcDataHost, DataType* dstDataHost)
-  {
-    DataType *srcData, *dstData;
-    checkCUDA(cudaMalloc(&srcData, sizeof(DataType) * srcDataSize));
-    checkCUDA(cudaMalloc(&dstData, sizeof(DataType) * dstDataSize));
-
-    checkCUDA(cudaMemcpy(srcData, srcDataHost, sizeof(DataType) * srcDataSize, cudaMemcpyHostToDevice));
-    this->actForward(srcData, dstData);
-    checkCUDA(cudaMemcpy(dstDataHost, dstData, sizeof(DataType) * dstDataSize, cudaMemcpyDeviceToHost));
-
-    checkCUDA(cudaFree(srcData));
-    checkCUDA(cudaFree(dstData));
-  }
-
-  bool softmaxForwardHost(DataType* srcDataHost, DataType* dstDataHost)
-  {
-    DataType *srcData, *dstData;
-    checkCUDA(cudaMalloc(&srcData, sizeof(DataType) * srcDataSize));
-    checkCUDA(cudaMalloc(&dstData, sizeof(DataType) * dstDataSize));
-
-    checkCUDA(cudaMemcpy(srcData, srcDataHost, sizeof(DataType) * srcDataSize, cudaMemcpyHostToDevice));
-    this->softmaxForward(srcData, dstData);
-    checkCUDA(cudaMemcpy(dstDataHost, dstData, sizeof(DataType) * dstDataSize, cudaMemcpyDeviceToHost));
-
-    checkCUDA(cudaFree(srcData));
-    checkCUDA(cudaFree(dstData));
-    return true;
-  }
-
-  bool softmaxBackward(DataType* srcData, DataType* dstData, DataType* dstDelta, DataType* srcDelta)
-  {
-    cudnnHandle_t handle = dnnNet->cudnnHandle;
-
-    DataType alpha = 1.0f;
-    DataType beta = 0.0f;
-    checkCUDNN(cudnnSoftmaxBackward(handle,
-                                    CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, &alpha,
-                                    dstTensorDesc, dstData, dstTensorDesc, dstDelta, &beta,
-                                    srcTensorDesc, srcDelta));
-
-    return true;
-  }
-#endif
 
 };
 
+
 #else  // __LIB_CUDNN
 
-template <class T>
+template <typename DataType>
 class CudnnNet {};
 
 #endif  // __LIB_CUDNN

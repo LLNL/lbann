@@ -97,8 +97,8 @@ void lbann::ConvolutionalLayer::setup(CudnnNet<DataType> *cudnnNet)
                               FilterDims[0], FilterDims[1], FilterDims[2]};
     int cudnnDstTensorDims[5] = {1, OutputChannels,
                                  OutputDims[0], OutputDims[1], OutputDims[2]};
-    int convPads[] = {0,0,0,0,0};
-    int convStrides[] = {1,1,1,1,1};
+    int convPads[] = {0,0,0};
+    int convStrides[] = {1,1,1};
     if (cudnnLayer) delete cudnnLayer;
     cudnnLayer = new CudnnLayer<DataType>(cudnnNet);
     cudnnLayer->setupConvLayer(ConvDim,
@@ -145,8 +145,10 @@ void lbann::ConvolutionalLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, E
 
 #ifdef __LIB_CUDNN
   // Apply convolution
-  cudnnLayer->convForward(XLocal.Width(), XLocal.Buffer(),
-                          WB.Buffer(), ZLocal.Buffer());
+  cudnnLayer->convForward(XLocal.Width(),
+                          XLocal.LockedBuffer(),
+                          WB.LockedBuffer(),
+                          ZLocal.Buffer());
 #endif
 
   // Z and Y are identical after fp linearity step
@@ -172,9 +174,9 @@ void lbann::ConvolutionalLayer::bp_linearity() {
 #ifdef __LIB_CUDNN
   // Apply back prop
   cudnnLayer->convBackward(InputLocal.Width(),
-                           InputLocal.Buffer(),
-                           FilterLocal.Buffer(),
-                           OutputDeltaLocal.Buffer(),
+                           InputLocal.LockedBuffer(),
+                           FilterLocal.LockedBuffer(),
+                           OutputDeltaLocal.LockedBuffer(),
                            FilterDeltaLocal.Buffer(),
                            InputDeltaLocal.Buffer());
 #endif
