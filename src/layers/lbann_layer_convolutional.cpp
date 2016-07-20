@@ -27,11 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_convolutional.hpp"
-#include "lbann/models/lbann_model_sequential.hpp"
 
 using namespace std;
 using namespace El;
-
 
 lbann::ConvolutionalLayer::ConvolutionalLayer(const uint index,
                                               const int  _ConvDim,
@@ -99,10 +97,16 @@ void lbann::ConvolutionalLayer::setup(CudnnNet<DataType> *cudnnNet)
                               FilterDims[0], FilterDims[1], FilterDims[2]};
     int cudnnDstTensorDims[5] = {1, OutputChannels,
                                  OutputDims[0], OutputDims[1], OutputDims[2]};
+    int convPads[] = {0,0,0,0,0};
+    int convStrides[] = {1,1,1,1,1};
     if (cudnnLayer) delete cudnnLayer;
     cudnnLayer = new CudnnLayer<DataType>(cudnnNet);
-    cudnnLayer->setupConvLayer(ConvDim, cudnnSrcTensorDims,
-                               cudnnFilterDims, cudnnDstTensorDims);
+    cudnnLayer->setupConvLayer(ConvDim,
+                               cudnnSrcTensorDims,
+                               cudnnFilterDims,
+                               cudnnDstTensorDims,
+                               convPads,
+                               convStrides);
     //printf("convolutional layer: outputsize: %d\n", cudnnLayer->dstDataSize);
     //printf("convolutional layer: outputdim: %d %d %d %d\n", OutputDim[0], OutputDim[1], OutputDim[2], OutputDim[3]);
 
@@ -139,17 +143,11 @@ void lbann::ConvolutionalLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, E
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
 
-  // Iterate through samples in minibatch
-  for (int j = 0; j < XLocal.Width(); j++) {
-    DataType* src = XLocal.Buffer(0, j);
-    DataType* ftr = WB.Buffer();
-    DataType* dst = ZLocal.Buffer(0, j);
-
 #ifdef __LIB_CUDNN
-    // Apply convolution
-    cudnnLayer->convForwardHost(src, ftr, dst);
+  // Apply convolution
+  cudnnLayer->convForward(XLocal.Width(), XLocal.Buffer(),
+                          WB.Buffer(), ZLocal.Buffer());
 #endif
-  }
 
   // Z and Y are identical after fp linearity step
   Copy(ZLocal, YLocal);
@@ -166,31 +164,22 @@ void lbann::ConvolutionalLayer::bp_linearity() {
 
   // Get local matrices
   Mat& InputLocal = Input.Matrix();
-  Mat& OutputLocal = Acts->Matrix();
+  Mat& FilterLocal = WB->Matrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
+  Mat& FilterDeltaLocal = WB_D->Matrix();
   Mat& OutputDeltaLocal = OutputDelta.Matrix();
-  Mat FilterDeltaTemp(WB_D->Height(), WB_D->Width());
-
-  // Clear gradient
-  Zero(*WB_D);
-  
-  // Iterate through samples in minibatch
-  for (int j = 0; j < InputLocal.Width(); j++) {
-    DataType* src = InputLocal.Buffer(0, j);
-    DataType* ftr = WB->Buffer();
-    DataType* dst = OutputLocal.Buffer(0, j);
-    DataType* srcD = InputDeltaLocal.Buffer(0, j);
-    DataType* ftrD = FilterDeltaTemp.Buffer();
-    DataType* dstD = OutputDeltaLocal.Buffer(0, j);
 
 #ifdef __LIB_CUDNN
-    cudnnLayer->convBackwardHost(src, ftr, dstD, ftrD, srcD);
+  // Apply back prop
+  cudnnLayer->convBackward(InputLocal.Width(),
+                           InputLocal.Buffer(),
+                           FilterLocal.Buffer(),
+                           OutputDeltaLocal.Buffer(),
+                           FilterDeltaLocal.Buffer(),
+                           InputDeltaLocal.Buffer());
 #endif
-    
-    WB_D->Matrix() += FilterDeltaTemp;
 
-  }
-
+  // Obtain filter delta with reduction and scaling
   AllReduce(*WB_D, mpi::COMM_WORLD);  
   *WB_D *= 1.0/get_effective_minibatch_size();
   
