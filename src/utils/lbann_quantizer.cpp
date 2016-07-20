@@ -373,7 +373,7 @@ void lbann_quantizer::adaptive_threshold_unquantize(
   memcpy(&pos_avg, &(q[0]), sizeof(pos_avg));
   DataType neg_avg;
   memcpy(&neg_avg, &(q[1]), sizeof(neg_avg));
-  threshold_unquantize(q, q.begin() + 2, mat, pos_avg, neg_avg, apply);
+  threshold_unquantize(q, std::next(q.begin(), 2), mat, pos_avg, neg_avg, apply);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
@@ -575,32 +575,41 @@ void lbann_quantizer::compress_thresholds(
   }
   // Write to cur starting from cur's LSB.
   uqtype cur = 0;
-  // The current bit to write to. Thus there are NUM_BITS - cur_bit bits left.
+  // The current bit to write to. This is between 0 and NUM_BITS-1.
+  // E.g., between 0, ... 31 inclusive, so the bit is 1 << cur_bit.
+  // Thus there are NUM_BITS - cur_bit bits left that can be written.
   uqtype cur_bit = 0;
   for (auto iter = qstart; iter != q.end(); ++iter) {
     uqtype ent = *iter;
     uqtype quotient = ent >> GR_K;
     uqtype remainder = ent & (GR_M - 1);
-    // Write quotient in unary with a 0 as a terminator.
-    if (cur_bit + quotient <= NUM_BITS) {
-      // Can fit the quotient in the current chunk.
-      cur |= ((1 << quotient) - 1) << cur_bit;
-      cur_bit += quotient;
-      if (cur_bit == NUM_BITS) {
-        cq.push_back(cur);
-        cur = 0;
-        cur_bit = 0;
+    uqtype bits_left = NUM_BITS - cur_bit;
+    // Write quotient 1s.
+    if (bits_left >= quotient) {
+      // Can fit in the current chunk.
+      if (quotient == NUM_BITS) {
+        cq.push_back(~((uqtype) 0));
+        // Don't need to reset cur, cur_bit: already 0.
+      } else {
+        cur |= ((1 << quotient) - 1) << cur_bit;
+        cur_bit += quotient;
+        if (cur_bit == NUM_BITS) {
+          cq.push_back(cur);
+          cur = 0;
+          cur_bit = 0;
+        }
       }
     } else {
-      // Need to split the quotient into multiple chunks.
-      uqtype bits_left = NUM_BITS - cur_bit;
+      // Need to split quotient into multiple chunks.
       // Write the first bits_left 1s to the current chunk.
-      cur |= ((1 << bits_left) - 1) << cur_bit;
+      if (bits_left == NUM_BITS) {
+        cur = ~((uqtype) 0);
+      } else {
+        cur |= ((1 << bits_left) - 1) << cur_bit;
+      }
       cq.push_back(cur);
-      cur = 0;
-      cur_bit = 0;
       quotient -= bits_left;
-      // Now write chunks until we have less than NUM_BITS left to write.
+      // Write chunks of 1s until we have less than NUM_BITS left to write.
       for (uqtype i = 0; i < quotient / NUM_BITS; ++i) {
         cq.push_back(~((uqtype) 0));
       }
@@ -609,9 +618,12 @@ void lbann_quantizer::compress_thresholds(
       if (quotient > 0) {
         cur = (1 << quotient) - 1;
         cur_bit = quotient;
+      } else {
+        cur = 0;
+        cur_bit = 0;
       }
     }
-    // Write the 0 terminator.
+    // Write trailing 0.
     // There should always be at least one bit available here.
     cur_bit += 1;
     if (cur_bit == NUM_BITS) {
@@ -619,8 +631,10 @@ void lbann_quantizer::compress_thresholds(
       cur = 0;
       cur_bit = 0;
     }
-    // Write the remainder as a GR_K-bit binary string.
-    if (cur_bit + GR_K <= NUM_BITS) {
+    // Write remainder as a GR_K-length binary string.
+    // Always fits in at most two chunks, since GR_K <= 31.
+    bits_left = NUM_BITS - cur_bit;
+    if (bits_left >= GR_K) {
       // Can fit the remainder in the current chunk.
       cur |= remainder << cur_bit;
       cur_bit += GR_K;
@@ -631,7 +645,6 @@ void lbann_quantizer::compress_thresholds(
       }
     } else {
       // Need to split the remainder into two chunks.
-      uqtype bits_left = NUM_BITS - cur_bit;
       // Write the first bits_left bits to the current chunk.
       cur |= (remainder & ((1 << bits_left) - 1)) << cur_bit;
       cq.push_back(cur);
@@ -654,7 +667,7 @@ void lbann_quantizer::compress_adaptive_thresholds(const ThreshQuantized& q,
                                                    ThreshQuantized& cq) {
   cq.push_back(q[0]);
   cq.push_back(q[1]);
-  compress_thresholds(q, q.begin() + 2, cq);
+  compress_thresholds(q, std::next(q.begin(), 2), cq);
 }
 
 void lbann_quantizer::uncompress_thresholds(const ThreshQuantized& cq,
@@ -724,7 +737,7 @@ void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
                                                      ThreshQuantized& q) {
   q.push_back(cq[0]);
   q.push_back(cq[1]);
-  uncompress_thresholds(cq, cq.begin() + 2, q);
+  uncompress_thresholds(cq, std::next(cq.begin(), 2), q);
 }
 
 std::tuple<DataType, DataType, DataType, DataType>
