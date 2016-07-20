@@ -212,6 +212,13 @@ public:
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
     const Mat& mat, int proportion);
 
+  size_t get_bytes_sent() const { return bytes_sent; }
+  size_t get_bytes_received() const { return bytes_received; }
+  void reset_bytes_counters() {
+    bytes_sent = 0;
+    bytes_received = 0;
+  }
+
 private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
@@ -222,6 +229,9 @@ private:
   static const uqtype GR_M = 16;
   /** log_2(GR_M). */
   static const uqtype GR_K = 4;
+
+  size_t bytes_sent;
+  size_t bytes_received;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {
@@ -294,6 +304,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     // Send.
     lbann_mpi_req<T> req;
     comm->nb_send(send_buf, send_size, dst, req);
+    bytes_sent += send_size * sizeof(T);
     // Get receive buffer.
     int recv_size = 0;
     if (var_recv) {
@@ -302,6 +313,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     T* recv_buf = get_recv_buf(accum_view, recv_size);
     // Receive.
     comm->recv(recv_buf, recv_size, src);
+    bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
     recv_trans(recv_buf, accum_view);
     comm->wait<T>(req);
@@ -341,6 +353,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     int send_size;
     T* send_buf = get_send_buf(send_size);
     comm->nb_send(send_buf, send_size, dst, req);
+    bytes_sent += send_size * sizeof(T);
     // Compute the original rank that sent the data we're going to receive.
     int data_src = (rank - step - 1) % nprocs;
     if (data_src < 0) data_src += nprocs;
@@ -359,6 +372,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     T* recv_buf = get_recv_buf(recv_view, recv_size);
     // Receive data.
     comm->recv(recv_buf, recv_size, src);
+    bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
     recv_trans(recv_buf, recv_view);
     comm->wait<T>(req);
