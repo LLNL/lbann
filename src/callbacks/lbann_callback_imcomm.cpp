@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
 
@@ -64,6 +65,11 @@ void lbann_callback_imcomm::setup(Model* m) {
           // Set up gradient history and SGD optimizer for one-bit quantization.
           gradhistories.emplace(idx, Mat{});
           if (layer->optimizer != nullptr) {
+            if (typeid(*(layer->optimizer)) != typeid(Adagrad<DistMat>)) {
+              throw lbann_exception(
+                "lbann_callback_imcomm: Cannot do one-bit quantization for "
+                "layer that does not use Adagrad");
+            }
             // TODO: This leaks the old optimizer.
             layer->optimizer = new SGD<DistMat>(
               layer->comm, layer->optimizer->get_learning_rate(),
