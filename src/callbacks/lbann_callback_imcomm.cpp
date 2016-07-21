@@ -157,11 +157,10 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
     }
     double im_time = get_time() - start_time;
     if (summarizer != nullptr && ct != NONE) {
-      summarizer->reduce_scalar(
-        "layer" + std::to_string(
-          static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_time",
-        im_time, m->get_cur_step());
+      std::string prefix = "layer" + std::to_string(
+        static_cast<long long>(layers[l]->get_index())) + "/imcomm_";
+      summarizer->reduce_scalar(prefix + "time",
+                                im_time, m->get_cur_step());
       size_t bytes_sent = 0;
       size_t bytes_received = 0;
       if (ct_does_quantization()) {
@@ -172,50 +171,32 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
         bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
         bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
       }
-      summarizer->reduce_scalar(
-        "layer" + std::to_string(
-          static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_bytes_sent", bytes_sent, m->get_cur_step());
-      summarizer->reduce_scalar(
-        "layer" + std::to_string(
-          static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_bytes_received", bytes_received, m->get_cur_step());
+      summarizer->reduce_scalar(prefix + "bytes_sent",
+                                bytes_sent, m->get_cur_step());
+      summarizer->reduce_scalar(prefix + "bytes_received",
+                                bytes_received, m->get_cur_step());
       if (ct_does_quantization()) {
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_rs_bytes_sent",
-          quantizer.get_rs_bytes_sent(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_ag_bytes_sent",
-          quantizer.get_ag_bytes_sent(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_rs_bytes_received",
-          quantizer.get_rs_bytes_received(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_ag_bytes_received",
-          quantizer.get_ag_bytes_received(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_rs_send_trans_time",
-          quantizer.get_rs_send_trans_time(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_rs_recv_trans_time",
-          quantizer.get_rs_recv_trans_time(), m->get_cur_step());
-        summarizer->reduce_scalar(
-          "layer" + std::to_string(
-            static_cast<long long>(layers[l]->get_index())) +
-          "/imcomm_ag_recv_trans_time",
-          quantizer.get_ag_recv_trans_time(), m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_bytes_sent",
+                                  quantizer.get_rs_bytes_sent(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_bytes_sent",
+                                  quantizer.get_ag_bytes_sent(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_bytes_received",
+                                  quantizer.get_rs_bytes_received(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_bytes_received",
+                                  quantizer.get_ag_bytes_received(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_send_trans_time",
+                                  quantizer.get_rs_send_trans_time(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_recv_trans_time",
+                                  quantizer.get_rs_recv_trans_time(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_recv_trans_time",
+                                  quantizer.get_ag_recv_trans_time(),
+                                  m->get_cur_step());
         quantizer.reset_bytes_counters();
         quantizer.reset_time_counters();
       }
