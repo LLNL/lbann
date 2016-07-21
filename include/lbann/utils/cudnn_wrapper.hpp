@@ -385,8 +385,10 @@ public:
 
   void convForward(const int NumSamples,
                    const DataType* srcData,
+                   const int srcDataStride,
                    const DataType* filterData,
-                   DataType* dstData) {
+                   DataType* dstData,
+                   const int dstDataStride) {
 
     // Useful constants
     const DataType one = 1.0;
@@ -423,7 +425,7 @@ public:
 
       // Transfer input data to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+j*srcDataSize,
+                                srcData+j*srcDataStride,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       
@@ -443,7 +445,7 @@ public:
                                          gpuDstData[dev]));
       
       // Transfer output data from GPU
-      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataSize,
+      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataStride,
                                 gpuDstData[dev],
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -466,10 +468,13 @@ public:
   // Back data: Given filter=w (g_filter), diff = dJ/dy (g_outputDelta), computes grad = dJ/dx (g_inputDelta)
   void convBackward(const int NumSamples,
                     const DataType* srcData,
+                    const int srcDataStride,
                     const DataType* filterData,
                     const DataType* dstDelta,
+                    const int dstDeltaStride,
                     DataType* filterDelta,
-                    DataType* srcDelta) {
+                    DataType* srcDelta,
+                    const int srcDeltaStride) {
 
     // Useful constants
     const DataType one = 1.0;
@@ -516,11 +521,11 @@ public:
 
       // Transfer data and next layer's delta to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+j*srcDataSize,
+                                srcData+j*srcDataStride,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstDelta[dev],
-                                dstDelta+j*dstDataSize,
+                                dstDelta+j*dstDeltaStride,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
       
@@ -553,7 +558,7 @@ public:
                                               gpuSrcDelta[dev]));
 
       // Transfer data delta from GPU
-      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDataSize,
+      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDeltaStride,
                                 gpuSrcDelta[dev],
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -562,7 +567,7 @@ public:
 
     // Transfer filter deltas from GPU and accumulate
     DataType* filterDeltaTemp = new DataType[filterSize];
-    memset(filterDelta, 0, sizeof(DataType)*filterSize); //TODO
+    memset(filterDelta, 0, sizeof(DataType)*filterSize);
     for(int dev=0; dev<NumGPUs; ++dev) {
       checkCUDA(cudaMemcpy(filterDeltaTemp,
                            gpuFtrDelta[dev],
@@ -591,7 +596,9 @@ public:
 
   void poolForward(const int NumSamples,
                    const DataType* srcData,
-                   DataType* dstData) {
+                   const int srcDataStride,
+                   DataType* dstData,
+                   const int dstDataStride) {
 
     // Useful constants
     const DataType one = 1.0;
@@ -619,7 +626,7 @@ public:
 
       // Transfer input data to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+j*srcDataSize,
+                                srcData+j*srcDataStride,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
 
@@ -634,7 +641,7 @@ public:
                                      gpuDstData[dev]));
 
       // Transfer output data from GPU
-      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataSize,
+      checkCUDA(cudaMemcpyAsync(dstData+j*dstDataStride,
                                 gpuDstData[dev],
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyDeviceToHost));
@@ -653,9 +660,13 @@ public:
   // Given src=y (g_output), srcdiff = dJ/dy (g_outputDelta), dest=x (g_input), destdiff = dJ/dx
   void poolBackward(const int NumSamples,
                     const DataType* srcData,
+                    const int srcDataStride,
                     const DataType* dstData,
+                    const int dstDataStride,
                     const DataType* dstDelta,
-                    DataType* srcDelta) {
+                    const int dstDeltaStride,
+                    DataType* srcDelta,
+                    const int srcDeltaStride) {
 
     // Useful constants
     const DataType one = 1.0;
@@ -687,15 +698,15 @@ public:
 
       // Transfer data and next layer's delta to GPU
       checkCUDA(cudaMemcpyAsync(gpuSrcData[dev],
-                                srcData+j*srcDataSize,
+                                srcData+j*srcDataStride,
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstData[dev],
-                                dstData+j*dstDataSize,
+                                dstData+j*dstDataStride,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
       checkCUDA(cudaMemcpyAsync(gpuDstDelta[dev],
-                                dstDelta+j*dstDataSize,
+                                dstDelta+j*dstDeltaStride,
                                 sizeof(DataType)*dstDataSize,
                                 cudaMemcpyHostToDevice));
       
@@ -714,7 +725,7 @@ public:
                                       gpuSrcDelta[dev]));
 
       // Transfer delta from GPU
-      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDataSize,
+      checkCUDA(cudaMemcpyAsync(srcDelta+j*srcDeltaStride,
                                 gpuSrcDelta[dev],
                                 sizeof(DataType)*srcDataSize,
                                 cudaMemcpyDeviceToHost));

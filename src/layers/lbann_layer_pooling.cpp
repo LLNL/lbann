@@ -129,7 +129,9 @@ void lbann::PoolingLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
 #ifdef __LIB_CUDNN
   cudnnLayer->poolForward(XLocal.Width(),
                           XLocal.LockedBuffer(),
-                          ZLocal.Buffer());
+                          XLocal.Height(),
+                          ZLocal.Buffer(),
+                          ZLocal.Height());
 #endif
   
   // Z and Y are identical after fp linearity step
@@ -149,13 +151,17 @@ void lbann::PoolingLayer::bp_linearity() {
   Mat& OutputLocal = Acts->Matrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
   Mat& OutputDeltaLocal = OutputDelta.Matrix();
-
+  
 #ifdef __LIB_CUDNN
   cudnnLayer->poolBackward(InputLocal.Width(),
                            InputLocal.LockedBuffer(),
+                           InputLocal.Height(),
                            OutputLocal.LockedBuffer(),
+                           OutputLocal.Height(),
                            OutputDeltaLocal.LockedBuffer(),
-                           InputDeltaLocal.Buffer());
+                           OutputDeltaLocal.Height(),
+                           InputDeltaLocal.Buffer(),
+                           InputDeltaLocal.Height());
 #endif
 
 }

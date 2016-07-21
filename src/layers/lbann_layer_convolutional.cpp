@@ -147,8 +147,10 @@ void lbann::ConvolutionalLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, E
   // Apply convolution
   cudnnLayer->convForward(XLocal.Width(),
                           XLocal.LockedBuffer(),
+                          XLocal.Height(),
                           WB.LockedBuffer(),
-                          ZLocal.Buffer());
+                          ZLocal.Buffer(),
+                          ZLocal.Height());
 #endif
 
   // Z and Y are identical after fp linearity step
@@ -175,10 +177,13 @@ void lbann::ConvolutionalLayer::bp_linearity() {
   // Apply back prop
   cudnnLayer->convBackward(InputLocal.Width(),
                            InputLocal.LockedBuffer(),
+                           InputLocal.Height(),
                            FilterLocal.LockedBuffer(),
                            OutputDeltaLocal.LockedBuffer(),
+                           OutputDeltaLocal.Height(),
                            FilterDeltaLocal.Buffer(),
-                           InputDeltaLocal.Buffer());
+                           InputDeltaLocal.Buffer(),
+                           InputDeltaLocal.Height());
 #endif
 
   // Obtain filter delta with reduction and scaling
