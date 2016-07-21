@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
 
@@ -64,6 +65,11 @@ void lbann_callback_imcomm::setup(Model* m) {
           // Set up gradient history and SGD optimizer for one-bit quantization.
           gradhistories.emplace(idx, Mat{});
           if (layer->optimizer != nullptr) {
+            if (typeid(*(layer->optimizer)) != typeid(Adagrad<DistMat>)) {
+              throw lbann_exception(
+                "lbann_callback_imcomm: Cannot do one-bit quantization for "
+                "layer that does not use Adagrad");
+            }
             // TODO: This leaks the old optimizer.
             layer->optimizer = new SGD<DistMat>(
               layer->comm, layer->optimizer->get_learning_rate(),
@@ -156,6 +162,47 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
           static_cast<long long>(layers[l]->get_index())) +
         "/imcomm_time",
         im_time, m->get_cur_step());
+      size_t bytes_sent = 0;
+      size_t bytes_received = 0;
+      if (ct_does_quantization()) {
+        bytes_sent = quantizer.get_bytes_sent();
+        bytes_received = quantizer.get_bytes_received();
+      } else {
+        // Use the same approximation the comm layer does.
+        bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+        bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+      }
+      summarizer->reduce_scalar(
+        "layer" + std::to_string(
+          static_cast<long long>(layers[l]->get_index())) +
+        "/imcomm_bytes_sent", bytes_sent, m->get_cur_step());
+      summarizer->reduce_scalar(
+        "layer" + std::to_string(
+          static_cast<long long>(layers[l]->get_index())) +
+        "/imcomm_bytes_received", bytes_received, m->get_cur_step());
+      if (ct_does_quantization()) {
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_rs_bytes_sent",
+          quantizer.get_rs_bytes_sent(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_ag_bytes_sent",
+          quantizer.get_ag_bytes_sent(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_rs_bytes_received",
+          quantizer.get_rs_bytes_received(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_ag_bytes_received",
+          quantizer.get_ag_bytes_received(), m->get_cur_step());
+        quantizer.reset_bytes_counters();
+      }
     }
   }
 }

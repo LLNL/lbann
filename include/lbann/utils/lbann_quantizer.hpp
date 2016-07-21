@@ -212,6 +212,28 @@ public:
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
     const Mat& mat, int proportion);
 
+  /** Get the total number of bytes sent during quantization. */
+  size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
+  /** Get the total number of bytes sent during the reduce-scatter phase. */
+  size_t get_rs_bytes_sent() const { return rs_bytes_sent; }
+  /** Get the total number of bytes sent during the all-gather phase. */
+  size_t get_ag_bytes_sent() const { return ag_bytes_sent; }
+  /** Get the total number of bytes received during quantization. */
+  size_t get_bytes_received() const {
+    return rs_bytes_received + ag_bytes_received;
+  }
+  /** Get the total number of bytes received during the reduce-scatter phase. */
+  size_t get_rs_bytes_received() const { return rs_bytes_received; }
+  /** Get the total number of bytes received during the all-gather phase. */
+  size_t get_ag_bytes_received() const { return ag_bytes_received; }
+  /** Reset recorded bytes counters. */
+  void reset_bytes_counters() {
+    rs_bytes_sent = 0;
+    ag_bytes_sent = 0;
+    rs_bytes_received = 0;
+    ag_bytes_received = 0;
+  }
+
 private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
@@ -222,6 +244,15 @@ private:
   static const uqtype GR_M = 16;
   /** log_2(GR_M). */
   static const uqtype GR_K = 4;
+
+  /** Bytes sent in doing the reduce-scatter. */
+  size_t rs_bytes_sent;
+  /** Bytes sent in doing the all-gather. */
+  size_t ag_bytes_sent;
+  /** Bytes received in doing the reduce-scatter. */
+  size_t rs_bytes_received;
+  /** Bytes received in doing the all-gather. */
+  size_t ag_bytes_received;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {
@@ -294,6 +325,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     // Send.
     lbann_mpi_req<T> req;
     comm->nb_send(send_buf, send_size, dst, req);
+    rs_bytes_sent += send_size * sizeof(T);
     // Get receive buffer.
     int recv_size = 0;
     if (var_recv) {
@@ -302,6 +334,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     T* recv_buf = get_recv_buf(accum_view, recv_size);
     // Receive.
     comm->recv(recv_buf, recv_size, src);
+    rs_bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
     recv_trans(recv_buf, accum_view);
     comm->wait<T>(req);
@@ -341,6 +374,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     int send_size;
     T* send_buf = get_send_buf(send_size);
     comm->nb_send(send_buf, send_size, dst, req);
+    ag_bytes_sent += send_size * sizeof(T);
     // Compute the original rank that sent the data we're going to receive.
     int data_src = (rank - step - 1) % nprocs;
     if (data_src < 0) data_src += nprocs;
@@ -359,6 +393,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     T* recv_buf = get_recv_buf(recv_view, recv_size);
     // Receive data.
     comm->recv(recv_buf, recv_size, src);
+    ag_bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
     recv_trans(recv_buf, recv_view);
     comm->wait<T>(req);

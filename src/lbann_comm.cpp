@@ -31,9 +31,7 @@
 #include "mpi.h"
 
 using namespace std;
-#ifdef __LIB_ELEMENTAL
 using namespace El;
-#endif
 
 lbann::lbann_comm::lbann_comm(int _procs_per_model) :
   procs_per_model(_procs_per_model), num_model_barriers(0),
