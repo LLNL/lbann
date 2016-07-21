@@ -28,6 +28,7 @@
 
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/regularization/lbann_regularizer.hpp"
+#include "lbann/utils/lbann_timer.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,7 +40,8 @@ using namespace El;
 lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
                     uint mbsize, std::vector<regularizer*> regs)
   : optimizer(optimizer), comm(comm), regularizers(regs),
-    m_mini_batch_size(mbsize), m_effective_mbsize(mbsize)
+    m_mini_batch_size(mbsize), m_effective_mbsize(mbsize),
+    fp_time(0.0), bp_time(0.0)
 {
     Index = index;
     m_execution_mode = training;
@@ -53,7 +55,6 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     Ds = new DistMat(comm->get_model_grid());
     Ds_Temp = new DistMat(comm->get_model_grid());
     Acts = new DistMat(comm->get_model_grid());
-
 }
 
 lbann::Layer::~Layer() {
@@ -70,6 +71,7 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
   Layer(index, comm, optimizer, mbsize, {}) {}
 
 DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
+  double fp_start = get_time();
   // Apply connection regularization. (e.g. DropConnect).
   for (regularizer* reg : regularizers) reg->fp_connections();
   // Layer layer's linearity.
@@ -80,10 +82,12 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   fp_nonlinearity();
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
+  fp_time += get_time() - fp_start;
   return prev_WBL2NormSum;
 }
 
 void lbann::Layer::backProp() {
+  double bp_start = get_time();
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
@@ -94,6 +98,7 @@ void lbann::Layer::backProp() {
   bp_linearity();
   // Backprop connection regularization.
   for (regularizer* reg : regularizers) reg->bp_connections();
+  bp_time += get_time() - bp_start;
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
@@ -108,6 +113,12 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_min(prefix + "min", (DistMat&) *WB_D, step);
   summarizer.reduce_max(prefix + "max", (DistMat&) *WB_D, step);
   summarizer.reduce_stdev(prefix + "stdev", (DistMat&) *WB_D, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
+  summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
+  // Reset timers.
+  fp_time = 0.0;
+  bp_time = 0.0;
 }
 
 void lbann::Layer::setup(int) {

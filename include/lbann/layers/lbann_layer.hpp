@@ -145,6 +145,11 @@ class regularizer;
     uint m_mini_batch_size;
     /** "Effective" mini-batch size for backward propagation, etc.. */
     uint m_effective_mbsize;
+
+    /** Time spent in forward propagation. */
+    double fp_time;
+    /** Time spent in backward propagation. */
+    double bp_time;
   };
 }
 
