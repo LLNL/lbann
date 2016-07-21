@@ -32,7 +32,9 @@
 
 namespace lbann {
 
-lbann_quantizer::lbann_quantizer() : bytes_sent(0), bytes_received(0) {
+lbann_quantizer::lbann_quantizer() :
+  rs_bytes_sent(0), ag_bytes_sent(0),
+  rs_bytes_received(0), ag_bytes_received(0) {
 
 }
 
