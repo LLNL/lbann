@@ -42,6 +42,7 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lban
 }
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
+  Layer::setup(num_prev_neurons);
   if(m_training_data_reader != NULL) {
     m_training_data_reader->setup(0, m_mini_batch_size);
   }
@@ -63,7 +64,7 @@ void lbann::input_layer_distributed_minibatch::fp_linearity(
     data_reader->fetch_data(X_local);
     /// Set the bias term in the last row of the input matrix
     int linear_data_size = data_reader->get_linearized_data_size();
-    for(int n = 0; n < m_mini_batch_size; n++) {
+    for(size_t n = 0; n < m_mini_batch_size; n++) {
       X_local.Set(linear_data_size, n, 1);
     }
   }
