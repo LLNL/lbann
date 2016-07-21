@@ -162,17 +162,25 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
           static_cast<long long>(layers[l]->get_index())) +
         "/imcomm_time",
         im_time, m->get_cur_step());
+      size_t bytes_sent = 0;
+      size_t bytes_received = 0;
+      if (ct_does_quantization()) {
+        bytes_sent = quantizer.get_bytes_sent();
+        bytes_received = quantizer.get_bytes_received();
+        quantizer.reset_bytes_counters();
+      } else {
+        // Use the same approximation the comm layer does.
+        bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+        bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+      }
       summarizer->reduce_scalar(
         "layer" + std::to_string(
           static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_bytes_sent",
-        quantizer.get_bytes_sent(), m->get_cur_step());
+        "/imcomm_bytes_sent", bytes_sent, m->get_cur_step());
       summarizer->reduce_scalar(
         "layer" + std::to_string(
           static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_bytes_received",
-        quantizer.get_bytes_received(), m->get_cur_step());
-      quantizer.reset_bytes_counters();
+        "/imcomm_bytes_received", bytes_received, m->get_cur_step());
     }
   }
 }
