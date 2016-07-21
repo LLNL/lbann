@@ -31,9 +31,8 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#ifdef __LIB_ELEMENTAL
+#include "lbann/utils/lbann_timer.hpp"
 using namespace El;
-#endif
 
 namespace lbann
 {
@@ -233,6 +232,18 @@ public:
     rs_bytes_received = 0;
     ag_bytes_received = 0;
   }
+  /** Get the time spent in the reduce-scatter send_trans. */
+  double get_rs_send_trans_time() const { return rs_send_trans_time; }
+  /** Get the time spent in the reduce-scatter recv_trans. */
+  double get_rs_recv_trans_time() const { return rs_recv_trans_time; }
+  /** Get the time spent in the all-gather send_trans. */
+  double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
+  /** Reset recorded time counters. */
+  void reset_time_counters() {
+    rs_send_trans_time = 0.0;
+    rs_recv_trans_time = 0.0;
+    ag_recv_trans_time = 0.0;
+  }
 
 private:
   /** Number of bits per quantized word. */
@@ -253,6 +264,12 @@ private:
   size_t rs_bytes_received;
   /** Bytes received in doing the all-gather. */
   size_t ag_bytes_received;
+  /** Time spent in the reduce-scatter send_trans. */
+  double rs_send_trans_time;
+  /** Time spent in the reduce-scatter recv_trans. */
+  double rs_recv_trans_time;
+  /** Time spent in the all-gather recv_trans. */
+  double ag_recv_trans_time;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {
@@ -319,9 +336,11 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     if (dst == nprocs - 1) send_col_width += cols_remainder;
     // Transform the portion to send.
     int send_size;
+    double send_trans_start = get_time();
     T* send_buf = send_trans(
       mat, IR(0, mat.Height()),
       IR(dst * cols_per_proc, dst * cols_per_proc + send_col_width), send_size);
+    rs_send_trans_time += get_time() - send_trans_start;
     // Send.
     lbann_mpi_req<T> req;
     comm->nb_send(send_buf, send_size, dst, req);
@@ -336,7 +355,9 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     comm->recv(recv_buf, recv_size, src);
     rs_bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
+    double recv_trans_start = get_time();
     recv_trans(recv_buf, accum_view);
+    rs_recv_trans_time += get_time() - recv_trans_start;
     comm->wait<T>(req);
   }
 }
@@ -395,7 +416,9 @@ void lbann_quantizer::intermodel_ring_allgather(
     comm->recv(recv_buf, recv_size, src);
     ag_bytes_received += recv_size * sizeof(T);
     // Transform the received portion.
+    double recv_trans_start = get_time();
     recv_trans(recv_buf, recv_view);
+    ag_recv_trans_time += get_time() - recv_trans_start;
     comm->wait<T>(req);
     // Swap so we forward the data we just received.
     swap_bufs(send_buf, recv_buf);

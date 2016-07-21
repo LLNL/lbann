@@ -201,7 +201,23 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
             static_cast<long long>(layers[l]->get_index())) +
           "/imcomm_ag_bytes_received",
           quantizer.get_ag_bytes_received(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_rs_send_trans_time",
+          quantizer.get_rs_send_trans_time(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_rs_recv_trans_time",
+          quantizer.get_rs_recv_trans_time(), m->get_cur_step());
+        summarizer->reduce_scalar(
+          "layer" + std::to_string(
+            static_cast<long long>(layers[l]->get_index())) +
+          "/imcomm_ag_recv_trans_time",
+          quantizer.get_ag_recv_trans_time(), m->get_cur_step());
         quantizer.reset_bytes_counters();
+        quantizer.reset_time_counters();
       }
     }
   }
