@@ -126,15 +126,14 @@ void lbann::PoolingLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
  
-  for (int j = 0; j < XLocal.Width(); j++) {
-    DataType* src = XLocal.Buffer(0, j);
-    DataType* dst = ZLocal.Buffer(0, j);
-
 #ifdef __LIB_CUDNN
-    cudnnLayer->poolForwardHost(src, dst);
+  cudnnLayer->poolForward(XLocal.Width(),
+                          XLocal.LockedBuffer(),
+                          XLocal.Height(),
+                          ZLocal.Buffer(),
+                          ZLocal.Height());
 #endif
-  }
-
+  
   // Z and Y are identical after fp linearity step
   Copy(ZLocal, YLocal);
 
@@ -152,18 +151,18 @@ void lbann::PoolingLayer::bp_linearity() {
   Mat& OutputLocal = Acts->Matrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
   Mat& OutputDeltaLocal = OutputDelta.Matrix();
-
-  // Iterate through samples in minibatch
-  for (int j = 0; j < InputLocal.Width(); j++) {
-    DataType* src = InputLocal.Buffer(0, j);
-    DataType* dst = OutputLocal.Buffer(0, j);
-    DataType* srcD = InputDeltaLocal.Buffer(0, j);
-    DataType* dstD = OutputDeltaLocal.Buffer(0, j);
-
+  
 #ifdef __LIB_CUDNN
-    cudnnLayer->poolBackwardHost(src, dst, dstD, srcD);
+  cudnnLayer->poolBackward(InputLocal.Width(),
+                           InputLocal.LockedBuffer(),
+                           InputLocal.Height(),
+                           OutputLocal.LockedBuffer(),
+                           OutputLocal.Height(),
+                           OutputDeltaLocal.LockedBuffer(),
+                           OutputDeltaLocal.Height(),
+                           InputDeltaLocal.Buffer(),
+                           InputDeltaLocal.Height());
 #endif
-  }
 
 }
 
