@@ -70,19 +70,19 @@ public:
   ~lbann_summary();
 
   /** Report the mean of mat. */
-  void reduce_mean(std::string tag, DistMat& mat, int64_t step);
+  void reduce_mean(const std::string tag, const DistMat& mat, int64_t step);
   /** Report the minimum value of mat. */
-  void reduce_min(std::string tag, DistMat& mat, int64_t step);
+  void reduce_min(const std::string tag, const DistMat& mat, int64_t step);
   /** Report the maximum value of mat. */
-  void reduce_max(std::string tag, DistMat& mat, int64_t step);
+  void reduce_max(const std::string tag, const DistMat& mat, int64_t step);
   /** Report the standard deviation of mat. */
-  void reduce_stdev(std::string tag, DistMat& mat, int64_t step);
+  void reduce_stdev(const std::string tag, const DistMat& mat, int64_t step);
   /** Report a scalar from each model (only meaningful on model masters). */
-  void reduce_scalar(std::string tag, DataType s, int64_t step);
+  void reduce_scalar(const std::string tag, DataType s, int64_t step);
   /** Do a model_reduce (sum) on a scalar, then report that sum. */
-  void sum_reduce_scalar(std::string tag, DataType s, int64_t step);
+  void sum_reduce_scalar(const std::string tag, DataType s, int64_t step);
   /** Report a histogram of the values in mat. */
-  void reduce_histogram(std::string tag, DistMat& mat, int64_t step);
+  void reduce_histogram(const std::string tag, const DistMat& mat, int64_t step);
 
   /**
    * Write all summaries out.
@@ -97,11 +97,11 @@ private:
 
   /** Represent a pending summary operation. */
   struct pending_op {
-    pending_op(std::string tag, int64_t step, DataType local,
+    pending_op(const std::string tag, int64_t step, DataType local,
                DataType local2 = 0.0f, int num = 0) :
       tag(tag), step(step), local(local), local2(local2), num(num) {}
     /** Associated tag. */
-    std::string tag;
+    const std::string tag;
     /** Global step. */
     int64_t step;
     /** Locally-computed data. */
@@ -139,11 +139,11 @@ private:
   void flush_sum_scalars();
 
   /** Compute the sum of local elements in mat. */
-  DataType local_sum(DistMat& mat);
+  DataType local_sum(const DistMat& mat) const;
   /** Prepend "model<model>/" to tag. */
-  std::string prepend_model(std::string tag, int model);
+  std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
-  void gather_scalar_summary(std::string tag, DataType s, int64_t step);
+  void gather_scalar_summary(const std::string tag, DataType s, int64_t step);
 };
 
 #else
@@ -153,13 +153,13 @@ class lbann_summary {
 public:
   lbann_summary(std::string logdir, lbann_comm* comm) {}
 
-  void reduce_mean(std::string tag, DistMat& mat, int64_t step) {}
-  void reduce_min(std::string tag, DistMat& mat, int64_t step) {}
-  void reduce_max(std::string tag, DistMat& mat, int64_t step) {}
-  void reduce_stdev(std::string tag, DistMat& mat, int64_t step) {}
-  void reduce_scalar(std::string tag, DataType s, int64_t step) {}
-  void sum_reduce_scalar(std::string tag, DataType s, int64_t step) {}
-  void reduce_histogram(std::string tag, DistMat& mat, int64_t step) {}
+  void reduce_mean(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_min(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_max(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_stdev(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_scalar(const std::string tag, DataType s, int64_t step) {}
+  void sum_reduce_scalar(const std::string tag, DataType s, int64_t step) {}
+  void reduce_histogram(const std::string tag, const DistMat& mat, int64_t step) {}
   void flush() {}
 };
 

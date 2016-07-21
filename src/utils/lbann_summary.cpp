@@ -46,30 +46,30 @@ lbann::lbann_summary::~lbann_summary() {
   }
 }
 
-void lbann::lbann_summary::reduce_mean(std::string tag, DistMat& mat,
+void lbann::lbann_summary::reduce_mean(const std::string tag, const DistMat& mat,
                                        int64_t step) {
   DataType sum = local_sum(mat);
   pending_means.emplace_back(tag, step, sum, 0.0f, mat.Height() * mat.Width());
 }
 
-void lbann::lbann_summary::reduce_min(std::string tag, DistMat& mat,
+void lbann::lbann_summary::reduce_min(const std::string tag, const DistMat& mat,
                                       int64_t step) {
-  DataType local_min = El::Min(mat.Matrix());
+  DataType local_min = El::Min(mat.LockedMatrix());
   pending_mins.emplace_back(tag, step, local_min);
 }
 
-void lbann::lbann_summary::reduce_max(std::string tag, DistMat& mat,
+void lbann::lbann_summary::reduce_max(const std::string tag, const DistMat& mat,
                                       int64_t step) {
-  DataType local_max = El::Max(mat.Matrix());
+  DataType local_max = El::Max(mat.LockedMatrix());
   pending_maxes.emplace_back(tag, step, local_max);
 }
 
-void lbann::lbann_summary::reduce_stdev(std::string tag, DistMat& mat,
+void lbann::lbann_summary::reduce_stdev(const std::string tag, const DistMat& mat,
                                         int64_t step) {
   // Compute the local sum and squared sum.
   DataType sum = 0.0f;
   DataType sqsum = 0.0f;
-  Mat& local_mat = mat.Matrix();
+  const Mat& local_mat = mat.LockedMatrix();
   for (int row = 0; row < local_mat.Height(); ++row) {
     for (int col = 0; col < local_mat.Width(); ++col) {
       DataType v = local_mat.Get(row, col);
@@ -80,19 +80,19 @@ void lbann::lbann_summary::reduce_stdev(std::string tag, DistMat& mat,
   pending_stdevs.emplace_back(tag, step, sum, sqsum, mat.Height() * mat.Width());
 }
 
-void lbann::lbann_summary::reduce_scalar(std::string tag, DataType s,
+void lbann::lbann_summary::reduce_scalar(const std::string tag, DataType s,
                                          int64_t step) {
   if (comm->am_model_master()) {
     pending_scalars.emplace_back(tag, step, s);
   }
 }
 
-void lbann::lbann_summary::sum_reduce_scalar(std::string tag, DataType s,
+void lbann::lbann_summary::sum_reduce_scalar(const std::string tag, DataType s,
                                              int64_t step) {
   pending_sum_scalars.emplace_back(tag, step, s);
 }
 
-void lbann::lbann_summary::reduce_histogram(std::string tag, DistMat& mat,
+void lbann::lbann_summary::reduce_histogram(const std::string tag, const DistMat& mat,
                                             int64_t step) {
   
 }
@@ -189,8 +189,8 @@ void lbann::lbann_summary::flush_sum_scalars() {
   pending_sum_scalars.clear();
 }
 
-DataType lbann::lbann_summary::local_sum(DistMat& _mat) {
-  Mat& mat = _mat.Matrix();
+DataType lbann::lbann_summary::local_sum(const DistMat& _mat) const {
+  const Mat& mat = _mat.LockedMatrix();
   // Note there are more numerically stable ways to compute a sum.
   DataType sum = 0.0;
   for (int row = 0; row < mat.Height(); ++row) {
@@ -201,11 +201,11 @@ DataType lbann::lbann_summary::local_sum(DistMat& _mat) {
   return sum;
 }
 
-std::string lbann::lbann_summary::prepend_model(std::string tag, int model) {
+std::string lbann::lbann_summary::prepend_model(const std::string tag, int model) const {
   return "model" + std::to_string(model) + "/" + tag;
 }
 
-void lbann::lbann_summary::gather_scalar_summary(std::string tag, DataType s,
+void lbann::lbann_summary::gather_scalar_summary(const std::string tag, DataType s,
                                                  int64_t step) {
   if (comm->am_world_master()) {
     std::vector<DataType> data(comm->get_num_models());
