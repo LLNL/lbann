@@ -74,6 +74,8 @@ class regularizer;
     virtual ElMat& get_weights_biases() { return *WB; }
     /** Return (a view of) the weights/biases gradient matrix for this layer. */
     virtual ElMat& get_weights_biases_gradient() { return *WB_D; }
+    /** Return (a view of) the activations matrix for this layer. */
+    virtual ElMat& get_activations() { return *Acts; }
     /** Return the layer's optimizer. */
     virtual Optimizer* get_optimizer() const { return optimizer; }
 

@@ -62,7 +62,8 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(
   lbann_comm* comm, Optimizer *optimizer,
   std::vector<regularizer*> regs)
   : Layer(index, comm, optimizer, miniBatchSize, regs),
-    WB_view(comm->get_model_grid()), WB_D_view(comm->get_model_grid())
+    WB_view(comm->get_model_grid()), WB_D_view(comm->get_model_grid()),
+    Acts_view(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
@@ -122,6 +123,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
         View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
     }
     Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
+    View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
 
 #if 0
     printf("Layer[%d] has %d neurons and %d inputs\n", Index, NumNeurons + 1, numPrevNeurons + 1);

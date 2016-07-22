@@ -115,6 +115,12 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_min(prefix + "min", wb_d, step);
   summarizer.reduce_max(prefix + "max", wb_d, step);
   summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/Acts/";
+  const DistMat& acts = (DistMat&) get_activations();
+  summarizer.reduce_mean(prefix + "mean", acts, step);
+  summarizer.reduce_min(prefix + "min", acts, step);
+  summarizer.reduce_max(prefix + "max", acts, step);
+  summarizer.reduce_stdev(prefix + "stdev", acts, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
