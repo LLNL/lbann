@@ -18,14 +18,16 @@ NETWORK="1000"
 PARIO=0
 BLOCK_SIZE=256
 MODE="false"
-MB_SIZE=50
+MB_SIZE=128
 LR=0.0001
 ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
-TRAIN_FILE="shuffle.trn.1"
-TEST_FILE="shuffle.tst.1"
+#TRAIN_FILE="shuffle.trn.1"
+#TEST_FILE="shuffle.tst.1"
+TRAIN_FILE="cl.LE.SR.dsc.all.norm" #small unbalanced
+TEST_FILE="cl.LE.SR.dsc.all.norm"
 
 RUN="srun"
 
@@ -36,7 +38,7 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
-TASKS_PER_NODE=2
+TASKS_PER_NODE=8
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
