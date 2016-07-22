@@ -44,7 +44,7 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     fp_time(0.0), bp_time(0.0)
 {
     Index = index;
-    m_execution_mode = training;
+    m_execution_mode = execution_mode::training;
     fp_input = NULL;
     bp_input = NULL;
 

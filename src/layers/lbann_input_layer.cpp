@@ -93,13 +93,13 @@ lbann::DataReader *lbann::input_layer::set_testing_data_reader(DataReader *data_
 
 lbann::DataReader *lbann::input_layer::select_data_reader() {
   switch(m_execution_mode) {
-  case training:
+  case execution_mode::training:
     return m_training_data_reader;
     break;
-  case validation:
+  case execution_mode::validation:
     throw lbann_exception("lbann_input_layer: validation phase is not properly setup");
     break;
-  case testing:
+  case execution_mode::testing:
     return m_testing_data_reader;
     break;
   // case prediction:
@@ -112,14 +112,14 @@ lbann::DataReader *lbann::input_layer::select_data_reader() {
 
 long lbann::input_layer::update_num_samples_processed(long num_samples) {
   switch(m_execution_mode) {
-  case training:
+  case execution_mode::training:
     m_num_training_samples_processed += num_samples;
     return m_num_training_samples_processed;
     break;
-  case validation:
+  case execution_mode::validation:
     throw lbann_exception("lbann_input_layer: validation phase is not properly setup");
     break;
-  case testing:
+  case execution_mode::testing:
     m_num_testing_samples_processed += num_samples;
     return m_num_testing_samples_processed;
     break;

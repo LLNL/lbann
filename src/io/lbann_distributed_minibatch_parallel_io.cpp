@@ -154,10 +154,10 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
 int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
   int num_parallel_readers = 0;
   switch(get_execution_mode()) {
-  case training:
+  case execution_mode::training:
     num_parallel_readers = m_num_parallel_readers_training;
     break;
-  case testing:
+  case execution_mode::testing:
     num_parallel_readers = m_num_parallel_readers_testing;
     break;
   default:
