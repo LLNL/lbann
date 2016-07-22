@@ -30,103 +30,132 @@
 
 using namespace std;
 using namespace El;
+using namespace lbann;
 
-lbann::ConvolutionalLayer::ConvolutionalLayer(const uint index,
-                                              const int  _ConvDim,
-                                              const int  _InputChannels,
-                                              const int* _InputDims,
-                                              const int  _OutputChannels,
-                                              const int* _FilterDims,
-                                              const uint miniBatchSize,
-                                              lbann_comm* comm,
-                                              Optimizer* optimizer)
-  : Layer(index, comm, optimizer, miniBatchSize),
-    ConvDim(_ConvDim), InputChannels(_InputChannels),
-    OutputChannels(_OutputChannels)
+convolutional_layer::convolutional_layer(const uint index,
+                                         const int num_dims,
+                                         const int num_input_channels,
+                                         const int* input_dims,
+                                         const int num_output_channels,
+                                         const int* filter_dims,
+                                         const int* conv_pads,
+                                         const int* conv_strides,
+                                         const uint mini_batch_size,
+                                         lbann_comm* comm,
+                                         Optimizer* optimizer,
+                                         cudnn::cudnn_manager* cudnn)
+  : Layer(index, comm, optimizer, mini_batch_size),
+    m_num_dims(num_dims), m_num_input_channels(num_input_channels),
+    m_num_output_channels(num_output_channels)
 {
-    // Initialize input, output, and filter dimensions
-    for(int d=0; d<ConvDim; d++) {
-      InputDims[d] = _InputDims[d];
-      FilterDims[d] = _FilterDims[d];
-      OutputDims[d] = InputDims[d] - FilterDims[d] + 1;
-    }
-    for(int d=ConvDim; d<3; d++) {
-      InputDims[d] = 1;
-      FilterDims[d] = 1;
-      OutputDims[d] = 1;
-    }
 
-    // Matrices should be in Star,Star and Star,VC distributions
-    delete WB;
-    delete WB_D;
-    delete Zs;
-    delete Ds;
-    delete Ds_Temp;
-    delete Acts;
-    WB = new StarMat(comm->get_model_grid());
-    WB_D = new StarMat(comm->get_model_grid());
-    Zs = new StarVCMat(comm->get_model_grid());
-    Ds = new StarVCMat(comm->get_model_grid());
-    Ds_Temp = new StarVCMat(comm->get_model_grid());
-    Acts = new StarVCMat(comm->get_model_grid());
+  // Initialize input dimensions and convolution parameters
+  m_input_dims.resize(num_dims);
+  m_filter_dims.resize(num_dims);
+  m_filter_size = num_input_channels*num_output_channels;
+  m_conv_pads.resize(num_dims);
+  m_conv_strides.resize(num_dims);
+  for(int i=0; i<num_dims; ++i) {
+    m_input_dims[i] = input_dims[i];
+    m_filter_dims[i] = filter_dims[i];
+    m_filter_size *= filter_dims[i];
+    m_conv_pads[i] = conv_pads[i];
+    m_conv_strides[i] = conv_strides[i];
+  }
 
-    // TODO: obtain dimensions from cudnnNet
-    NumNeurons = OutputChannels*OutputDims[0]*OutputDims[1]*OutputDims[2];
-    std::cout << "conv layer neurons = "<< NumNeurons << std::endl;
+  // Calculate output dimensions
+  m_output_dims.resize(num_dims);
+  NumNeurons = num_output_channels;
+  for(int i=0; i<num_dims; ++i) {
+    m_output_dims[i] = input_dims[i]+2*conv_pads[i]-filter_dims[i]+1;
+    m_output_dims[i] = (m_output_dims[i]+conv_strides[i]-1)/conv_strides[i];
+    NumNeurons *= m_output_dims[i];
+  }
+  
+  // Matrices should be in Star,Star and Star,VC distributions
+  delete WB;
+  delete WB_D;
+  delete Zs;
+  delete Ds;
+  delete Ds_Temp;
+  delete Acts;
+  WB = new StarMat(comm->get_model_grid());
+  WB_D = new StarMat(comm->get_model_grid());
+  Zs = new StarVCMat(comm->get_model_grid());
+  Ds = new StarVCMat(comm->get_model_grid());
+  Ds_Temp = new StarVCMat(comm->get_model_grid());
+  Acts = new StarVCMat(comm->get_model_grid());
 
+  // Initialize cuDNN convolutional layer
+  m_cudnn_layer = NULL;
 #ifdef __LIB_CUDNN
-    cudnnLayer = NULL;
-#endif
+  if(cudnn)
+    m_cudnn_layer
+      = new cudnn::cudnn_convolutional_layer(num_dims,
+                                             num_input_channels,
+                                             num_output_channels,
+                                             input_dims,
+                                             filter_dims,
+                                             conv_pads,
+                                             conv_strides,
+                                             cudnn);
+#endif // __LIB_CUDNN
+
 }
 
-lbann::ConvolutionalLayer::~ConvolutionalLayer()
+convolutional_layer::~convolutional_layer()
 {
 #ifdef __LIB_CUDNN
-    if (cudnnLayer) delete cudnnLayer;
-#endif
+  delete m_cudnn_layer;
+#endif // __LIB_CUDNN
 }
 
-void lbann::ConvolutionalLayer::setup(CudnnNet<DataType> *cudnnNet)
+void convolutional_layer::setup(const int num_prev_neurons)
 {
+
 #ifdef __LIB_CUDNN
+  if(m_cudnn_layer) {
+    // Setup cuDNN convolutional layer
+    m_cudnn_layer->setup();
 
-    // setup cudnn-based convolutional layer instance
-    int cudnnSrcTensorDims[5] = {1, InputChannels,
-                                 InputDims[0], InputDims[1], InputDims[2]};
-    int cudnnFilterDims[5] = {OutputChannels, InputChannels,
-                              FilterDims[0], FilterDims[1], FilterDims[2]};
-    int cudnnDstTensorDims[5] = {1, OutputChannels,
-                                 OutputDims[0], OutputDims[1], OutputDims[2]};
-    int convPads[] = {0,0,0};
-    int convStrides[] = {1,1,1};
-    if (cudnnLayer) delete cudnnLayer;
-    cudnnLayer = new CudnnLayer<DataType>(cudnnNet);
-    cudnnLayer->setupConvLayer(ConvDim,
-                               cudnnSrcTensorDims,
-                               cudnnFilterDims,
-                               cudnnDstTensorDims,
-                               convPads,
-                               convStrides);
-    //printf("convolutional layer: outputsize: %d\n", cudnnLayer->dstDataSize);
-    //printf("convolutional layer: outputdim: %d %d %d %d\n", OutputDim[0], OutputDim[1], OutputDim[2], OutputDim[3]);
+    // Get output dimensions
+    NumNeurons = m_cudnn_layer->m_dst_size;
+    for(int i=0; i<m_num_dims; ++i)
+      m_output_dims[i] = m_cudnn_layer->m_dst_dims[i+2];
+  }
+#endif // __LIB_CUDNN
 
-    if(optimizer != NULL) {
-      optimizer->setup(1, cudnnLayer->filterSize);
-    }
+  // Check if input dimensions are valid
+  int num_inputs = m_num_input_channels;
+  for(int i=0; i<m_num_dims; ++i)
+    num_inputs *= m_input_dims[i];
+  if(num_inputs != num_prev_neurons) {
+    std::cerr << "Error: convolutional layer input dimensions don't match number of input neurons\n";
+    exit(EXIT_FAILURE);
+  }
 
-    // Initialize matrices
-    DataType var_scale = sqrt(3.0 / (cudnnLayer->srcDataSize));
-    Gaussian(*WB, cudnnLayer->filterSize, 1, (DataType)0.0, var_scale);
-    Zeros(*WB_D, cudnnLayer->filterSize, 1);
-    Ones(*Zs, cudnnLayer->dstDataSize+1, m_mini_batch_size);
-    Zeros(*Ds, cudnnLayer->srcDataSize+1, m_mini_batch_size);
-    Zeros(*Ds_Temp, cudnnLayer->srcDataSize+1, m_mini_batch_size);
-    Ones(*Acts, cudnnLayer->dstDataSize+1, m_mini_batch_size);
+  // Initialize optimizer
+  if(optimizer)
+    optimizer->setup(1, m_filter_size);
 
-#endif
+  // Initialize filter with Xavier initialization
+  // TODO: this is implemented naively
+  DataType var_scale = sqrt(3.0 / num_prev_neurons);
+  Gaussian(*WB, m_filter_size, 1, (DataType)0.0, var_scale);
+  
+  // Initialize matrices
+  Zeros(*WB_D, m_filter_size, 1);
+  Ones(*Zs, NumNeurons+1, m_mini_batch_size);
+  Zeros(*Ds, num_prev_neurons+1, m_mini_batch_size);
+  Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
+  Ones(*Acts, NumNeurons+1, m_mini_batch_size);
+
 }
 
-void lbann::ConvolutionalLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y) {
+void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
+                                              ElMat& _X,
+                                              ElMat& _Z,
+                                              ElMat& _Y) {
   
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,STAR> WBProxy(_WB);
@@ -139,26 +168,29 @@ void lbann::ConvolutionalLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, E
   StarVCMat& Y = YProxy.Get();
 
   // Get local matrices
-  Mat& XLocal = X.Matrix();
+  const Mat& WBLocal = WB.LockedMatrix();
+  const Mat& XLocal = X.LockedMatrix();
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
 
+  // Apply convolution on local data samples
+  if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-  // Apply convolution
-  cudnnLayer->convForward(XLocal.Width(),
-                          XLocal.LockedBuffer(),
-                          XLocal.Height(),
-                          WB.LockedBuffer(),
-                          ZLocal.Buffer(),
-                          ZLocal.Height());
+    m_cudnn_layer->forward(XLocal, WBLocal, ZLocal);
 #endif
+  }
+  else {
+    // TODO: implement convolution on CPU
+    std::cerr << "Error: convolution forward pass not implemented on CPU\n";
+    exit(EXIT_FAILURE);
+  }
 
   // Z and Y are identical after fp linearity step
   Copy(ZLocal, YLocal);
 
 }
 
-void lbann::ConvolutionalLayer::bp_linearity() {
+void lbann::convolutional_layer::bp_linearity() {
 
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,VC> OutputDeltaProxy(*bp_input);
@@ -167,37 +199,37 @@ void lbann::ConvolutionalLayer::bp_linearity() {
   StarVCMat& Input = InputProxy.Get();
 
   // Get local matrices
-  Mat& InputLocal = Input.Matrix();
-  Mat& FilterLocal = WB->Matrix();
-  Mat& InputDeltaLocal = Ds_Temp->Matrix();
+  const Mat& InputLocal = Input.LockedMatrix();
+  const Mat& FilterLocal = WB->LockedMatrix();
+  const Mat& OutputDeltaLocal = OutputDelta.LockedMatrix();
   Mat& FilterDeltaLocal = WB_D->Matrix();
-  Mat& OutputDeltaLocal = OutputDelta.Matrix();
+  Mat& InputDeltaLocal = Ds_Temp->Matrix();
 
+  // Compute gradients on local data samples
+  if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-  // Apply back prop
-  cudnnLayer->convBackward(InputLocal.Width(),
-                           InputLocal.LockedBuffer(),
-                           InputLocal.Height(),
-                           FilterLocal.LockedBuffer(),
-                           OutputDeltaLocal.LockedBuffer(),
-                           OutputDeltaLocal.Height(),
-                           FilterDeltaLocal.Buffer(),
-                           InputDeltaLocal.Buffer(),
-                           InputDeltaLocal.Height());
+    m_cudnn_layer->backward(InputLocal,
+                            FilterLocal,
+                            OutputDeltaLocal,
+                            FilterDeltaLocal,
+                            InputDeltaLocal);
 #endif
+  }
+  else {
+    // TODO: implement backward pass on CPU
+    std::cerr << "Error: convolution backward pass not implemented on CPU\n";
+    exit(EXIT_FAILURE);
+  }
 
-  // Obtain filter delta with reduction and scaling
+  // Obtain filter gradient with reduction and scaling
   AllReduce(*WB_D, mpi::COMM_WORLD);  
   *WB_D *= 1.0/get_effective_minibatch_size();
   
 }
 
-///
-/// @todo Convolutional layer weight/bias update
-///
-bool lbann::ConvolutionalLayer::update()
+bool convolutional_layer::update()
 {
-  // add a new function to optimizer
   optimizer->update_weight_bias_matrix(*WB_D, *WB);
   return true;
 }
+
