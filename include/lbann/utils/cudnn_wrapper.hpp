@@ -241,9 +241,9 @@ namespace cudnn
 {
   class cudnn_manager {};
 
-  class cudnn_layer_convolutional {};
+  class cudnn_convolutional_layer {};
 
-  class cudnn_layer_pooling {};
+  class cudnn_pooling_layer {};
 }
 
 #endif  // __LIB_CUDNN

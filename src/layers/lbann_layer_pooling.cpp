@@ -44,8 +44,8 @@ pooling_layer::pooling_layer(const uint index,
                              lbann_comm* comm,
                              cudnn::cudnn_manager* cudnn)
   : Layer(index, comm, NULL, mini_batch_size),
+    m_pool_mode(pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels),
-    m_pool_mode(pool_mode)
 {
 
   // Initialize input dimensions and pooling parameters
