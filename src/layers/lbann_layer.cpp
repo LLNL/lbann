@@ -104,15 +104,17 @@ void lbann::Layer::backProp() {
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB/";
   // TODO: implement summarizer functions for other matrix distributions
-  summarizer.reduce_mean(prefix + "mean", (DistMat&) *WB, step);
-  summarizer.reduce_min(prefix + "min", (DistMat&) *WB, step);
-  summarizer.reduce_max(prefix + "max", (DistMat&) *WB, step);
-  summarizer.reduce_stdev(prefix + "stdev", (DistMat&) *WB, step);
+  const DistMat& wb = (DistMat&) get_weights_biases();
+  summarizer.reduce_mean(prefix + "mean", wb, step);
+  summarizer.reduce_min(prefix + "min", wb, step);
+  summarizer.reduce_max(prefix + "max", wb, step);
+  summarizer.reduce_stdev(prefix + "stdev", wb, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB_D/";
-  summarizer.reduce_mean(prefix + "mean", (DistMat&) *WB_D, step);
-  summarizer.reduce_min(prefix + "min", (DistMat&) *WB_D, step);
-  summarizer.reduce_max(prefix + "max", (DistMat&) *WB_D, step);
-  summarizer.reduce_stdev(prefix + "stdev", (DistMat&) *WB_D, step);
+  const DistMat& wb_d = (DistMat&) get_weights_biases_gradient();
+  summarizer.reduce_mean(prefix + "mean", wb_d, step);
+  summarizer.reduce_min(prefix + "min", wb_d, step);
+  summarizer.reduce_max(prefix + "max", wb_d, step);
+  summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
