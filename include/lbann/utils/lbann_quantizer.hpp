@@ -204,12 +204,13 @@ public:
    * the threshold. Additionally, compute the average value of the positive and
    * negative values greater than this threshold.
    * @param mat The matrix to compute threshold values for.
+   * @param qerror The accumulated quantization error in mat.
    * @param proportion Proportion of entries to keep.
    * @return In this order: The positive and negative threshold values, then the
    * positive and negative averages.
    */
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
-    const Mat& mat, int proportion);
+    const Mat& mat, const Mat& qerror, int proportion);
 
   /** Get the total number of bytes sent during quantization. */
   size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }

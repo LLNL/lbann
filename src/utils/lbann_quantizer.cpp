@@ -350,7 +350,7 @@ void lbann_quantizer::adaptive_threshold_quantize(const Mat& mat, ThreshQuantize
                                                   Mat& qerror, int proportion) {
   DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
   std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
-    proportion_threshold_average(mat, proportion);
+    proportion_threshold_average(mat, qerror, proportion);
   // Store the averages for reconstruction.
   uqtype tmp;
   memcpy(&tmp, &pos_avg, sizeof(pos_avg));
@@ -742,13 +742,14 @@ void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
 }
 
 std::tuple<DataType, DataType, DataType, DataType>
-lbann_quantizer::proportion_threshold_average(const Mat& mat, int proportion) {
+lbann_quantizer::proportion_threshold_average(
+  const Mat& mat, const Mat& qerror, int proportion) {
   // It would be nice if there were a better way to do this...
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
   for (int row = 0; row < mat.Height(); ++row) {
     for (int col = 0; col < mat.Width(); ++col) {
-      DataType val = mat.Get(row, col);
+      DataType val = mat.Get(row, col) + qerror.Get(row, col);
       if (val >= 0.0f) {
         pos_entries.push_back(val);
       } else {
