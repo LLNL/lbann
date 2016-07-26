@@ -27,92 +27,118 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_pooling.hpp"
-#include "lbann/models/lbann_model_sequential.hpp"
 
 using namespace std;
 using namespace El;
+using namespace lbann;
 
-
-lbann::PoolingLayer::PoolingLayer(const uint index,
-                                  const int _PoolDim,
-                                  const int _Channels,
-                                  const int* _InputDims,
-                                  const int* _PoolWindowDim,
-                                  const int* _PoolPad,
-                                  const int* _PoolStride,
-                                  const int _PoolMode,
-                                  const uint miniBatchSize,
-                                  lbann_comm* comm,
-                                  Optimizer* optimizer)
-  : Layer(index, comm, optimizer, miniBatchSize),
-    PoolDim(_PoolDim), Channels(_Channels), PoolMode(_PoolMode)
+pooling_layer::pooling_layer(const uint index,
+                             const int  num_dims,
+                             const int  num_channels,
+                             const int* input_dims,
+                             const int* pool_dims,
+                             const int* pool_pads,
+                             const int* pool_strides,
+                             const int  pool_mode,
+                             const uint mini_batch_size,
+                             lbann_comm* comm,
+                             cudnn::cudnn_manager* cudnn)
+  : Layer(index, comm, NULL, mini_batch_size),
+    m_pool_mode(pool_mode),
+    m_num_dims(num_dims), m_num_channels(num_channels),
 {
-    for(int d=0; d<PoolDim; d++) {
-      InputDims[d] = _InputDims[d];
-      PoolWindowDim[d] = _PoolWindowDim[d];
-      PoolPad[d] = _PoolPad[d];
-      PoolStride[d] = _PoolStride[d];
-      OutputDims[d] = (InputDims[d]+2*PoolPad[d])/PoolStride[d];
-    }
-    for(int d=PoolDim; d<3; d++) {
-      InputDims[d] = 1;
-      PoolWindowDim[d] = 1;
-      PoolPad[d] = 1;
-      PoolStride[d] = 1;
-      OutputDims[d] = 1;
-    }
 
-    // Matrices are in Star,VC format, not default MC,MR
-    delete Zs;
-    delete Ds;
-    delete Ds_Temp;
-    delete Acts;
-    Zs = new StarVCMat(comm->get_model_grid());
-    Ds = new StarVCMat(comm->get_model_grid());
-    Ds_Temp = new StarVCMat(comm->get_model_grid());
-    Acts = new StarVCMat(comm->get_model_grid());
-    
+  // Initialize input dimensions and pooling parameters
+  m_input_dims.resize(num_dims);
+  m_pool_dims.resize(num_dims);
+  m_pool_pads.resize(num_dims);
+  m_pool_strides.resize(num_dims);
+  for(int i=0; i<num_dims; ++i) {
+    m_input_dims[i] = input_dims[i];
+    m_pool_dims[i] = pool_dims[i];
+    m_pool_pads[i] = pool_pads[i];
+    m_pool_strides[i] = pool_strides[i];
+  }
 
-    // TODO: obtain dimensions from cudnnNet
-    NumNeurons = Channels*OutputDims[0]*OutputDims[1]*OutputDims[2];
+  // Calculate output dimensions
+  m_output_dims.resize(num_dims);
+  NumNeurons = num_channels;
+  for(int i=0; i<num_dims; ++i) {
+    m_output_dims[i] = input_dims[i]+2*pool_pads[i]-pool_dims[i]+1;
+    m_output_dims[i] = (m_output_dims[i]+pool_strides[i]-1)/pool_strides[i];
+    NumNeurons *= m_output_dims[i];
+  }
+  
+  // Matrices should be in Star,Star and Star,VC distributions
+  delete Zs;
+  delete Ds;
+  delete Ds_Temp;
+  delete Acts;
+  Zs = new StarVCMat(comm->get_model_grid());
+  Ds = new StarVCMat(comm->get_model_grid());
+  Ds_Temp = new StarVCMat(comm->get_model_grid());
+  Acts = new StarVCMat(comm->get_model_grid());
 
+  // Initialize cuDNN pooling layer
+  m_cudnn_layer = NULL;
 #ifdef __LIB_CUDNN
-    cudnnLayer = NULL;
-#endif
+  if(cudnn)
+    m_cudnn_layer = new cudnn::cudnn_pooling_layer(num_dims,
+                                                   num_channels,
+                                                   input_dims,
+                                                   pool_mode,
+                                                   pool_dims,
+                                                   pool_pads,
+                                                   pool_strides,
+                                                   cudnn);
+#endif // __LIB_CUDNN
+
 }
 
-lbann::PoolingLayer::~PoolingLayer()
+pooling_layer::~pooling_layer()
 {
 #ifdef __LIB_CUDNN
-    if (cudnnLayer) delete cudnnLayer;
-#endif
+  delete m_cudnn_layer;
+#endif // __LIB_CUDNN
 }
 
-void lbann::PoolingLayer::setup(CudnnNet<DataType> *cudnnNet)
+void pooling_layer::setup(const int num_prev_neurons)
 {
+
 #ifdef __LIB_CUDNN
-    // setup cudnn-based pooling layer instance
-    int cudnnSrcTensorDims[] = {1, Channels,
-                                InputDims[0], InputDims[1], InputDims[2]};
-    int cudnnDstTensorDims[] = {1, Channels,
-                                OutputDims[0], OutputDims[1], OutputDims[2]};
-    if (cudnnLayer) delete cudnnLayer;
-    cudnnLayer = new CudnnLayer<DataType>(cudnnNet);
-    cudnnLayer->setupPoolLayer(PoolDim, cudnnSrcTensorDims, PoolMode,
-                               PoolWindowDim, PoolPad, PoolStride,
-                               cudnnDstTensorDims);
-    //printf("pooling layer: outputsize: %d\n", cudnnLayer->dstDataSize);
+  if(m_cudnn_layer) {
+    // Setup cuDNN pooling layer
+    m_cudnn_layer->setup();
 
-    // create matrix for output and input deltas
-    Ones(*Zs, cudnnLayer->dstDataSize+1, m_mini_batch_size);
-    Zeros(*Ds, cudnnLayer->srcDataSize+1, m_mini_batch_size);
-    Zeros(*Ds_Temp, cudnnLayer->srcDataSize+1, m_mini_batch_size);
-    Ones(*Acts, cudnnLayer->dstDataSize+1, m_mini_batch_size);
+    // Get output dimensions
+    NumNeurons = m_cudnn_layer->m_dst_size;
+    for(int i=0; i<m_num_dims; ++i)
+      m_output_dims[i] = m_cudnn_layer->m_dst_dims[i+2];
+  }
+#endif // __LIB_CUDNN
 
-#endif
+  // Check if input dimensions are valid
+  int num_inputs = m_num_channels;
+  for(int i=0; i<m_num_dims; ++i)
+    num_inputs *= m_input_dims[i];
+  if(num_inputs != num_prev_neurons) {
+    std::cerr << "Error: pooling layer input dimensions don't match number of input neurons\n";
+    exit(EXIT_FAILURE);
+  }
+
+  // Initialize matrices
+  Ones(*Zs, NumNeurons+1, m_mini_batch_size);
+  Zeros(*Ds, num_prev_neurons+1, m_mini_batch_size);
+  Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
+  Ones(*Acts, NumNeurons+1, m_mini_batch_size);
+
 }
 
-void lbann::PoolingLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y) {
+void lbann::pooling_layer::fp_linearity(ElMat& _WB,
+                                        ElMat& _X,
+                                        ElMat& _Z,
+                                        ElMat& _Y) {
+  
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(_X);
   DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(_Z);
@@ -122,24 +148,29 @@ void lbann::PoolingLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   StarVCMat& Y = YProxy.Get();
 
   // Get local matrices
-  Mat& XLocal = X.Matrix();
+  const Mat& XLocal = X.LockedMatrix();
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
- 
+
+  // Apply pooling on local data samples
+  if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-  cudnnLayer->poolForward(XLocal.Width(),
-                          XLocal.LockedBuffer(),
-                          XLocal.Height(),
-                          ZLocal.Buffer(),
-                          ZLocal.Height());
+    m_cudnn_layer->forward(XLocal, ZLocal);
 #endif
-  
+  }
+  else {
+    // TODO: implement pooling on CPU
+    std::cerr << "Error: pooling forward pass not implemented on CPU\n";
+    exit(EXIT_FAILURE);
+  }
+
   // Z and Y are identical after fp linearity step
   Copy(ZLocal, YLocal);
 
 }
 
-void lbann::PoolingLayer::bp_linearity() {
+void lbann::pooling_layer::bp_linearity() {
+
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,VC> OutputDeltaProxy(*bp_input);
   DistMatrixReadProxy<DataType,DataType,STAR,VC> InputProxy(*fp_input); // TODO: store from fp step
@@ -147,27 +178,30 @@ void lbann::PoolingLayer::bp_linearity() {
   StarVCMat& Input = InputProxy.Get();
 
   // Get local matrices
-  Mat& InputLocal = Input.Matrix();
-  Mat& OutputLocal = Acts->Matrix();
+  const Mat& InputLocal = Input.LockedMatrix();
+  const Mat& OutputLocal = Acts->LockedMatrix();
+  const Mat& OutputDeltaLocal = OutputDelta.LockedMatrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
-  Mat& OutputDeltaLocal = OutputDelta.Matrix();
-  
-#ifdef __LIB_CUDNN
-  cudnnLayer->poolBackward(InputLocal.Width(),
-                           InputLocal.LockedBuffer(),
-                           InputLocal.Height(),
-                           OutputLocal.LockedBuffer(),
-                           OutputLocal.Height(),
-                           OutputDeltaLocal.LockedBuffer(),
-                           OutputDeltaLocal.Height(),
-                           InputDeltaLocal.Buffer(),
-                           InputDeltaLocal.Height());
-#endif
 
+  // Compute gradients on local data samples
+  if(m_cudnn_layer) {
+#ifdef __LIB_CUDNN
+    m_cudnn_layer->backward(InputLocal,
+                            OutputLocal,
+                            OutputDeltaLocal,
+                            InputDeltaLocal);
+#endif
+  }
+  else {
+    // TODO: implement backward pass on CPU
+    std::cerr << "Error: pooling backward pass not implemented on CPU\n";
+    exit(EXIT_FAILURE);
+  }
+  
 }
 
-bool lbann::PoolingLayer::update()
+bool pooling_layer::update()
 {
-    // nothing to update in pooling layer
-    return true;
+  // Nothing to update in pooling layer
+  return true;
 }
