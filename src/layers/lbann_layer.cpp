@@ -124,9 +124,7 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
-  // Reset timers.
-  fp_time = 0.0;
-  bp_time = 0.0;
+  reset_counters();
 }
 
 void lbann::Layer::setup(int) {

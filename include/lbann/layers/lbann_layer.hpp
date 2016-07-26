@@ -78,6 +78,11 @@ class regularizer;
     virtual ElMat& get_activations() { return *Acts; }
     /** Return the layer's optimizer. */
     virtual Optimizer* get_optimizer() const { return optimizer; }
+    /** Reset layer stat counters. */
+    virtual void reset_counters() {
+      fp_time = 0.0;
+      bp_time = 0.0;
+    }
 
     /**
      * Get the "effective" size of a mini-batch.
