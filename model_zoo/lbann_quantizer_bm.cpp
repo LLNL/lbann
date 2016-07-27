@@ -30,18 +30,62 @@
 #include "lbann/utils/lbann_quantizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 
+/** Number of times to run the quantization. */
 const int num_trials = 10;
 
 using namespace lbann;
+
+// Summarizers for different approaches.
+lbann_summary* normal_summarizer;
+lbann_summary* onebit_summarizer;
+lbann_summary* thresh_summarizer;
+lbann_summary* comp_thresh_summarizer;
+lbann_summary* adaptive_summarizer;
+lbann_summary* comp_adaptive_summarizer;
 
 std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
   std::vector<double> times;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     comm->intermodel_sum_matrix(mat);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    normal_summarizer->reduce_scalar("time", tot, trial);
   }
   return times;
+}
+
+void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
+                      int trial) {  
+  summarizer->reduce_scalar("bytes_sent",
+                            quantizer.get_bytes_sent(),
+                            trial);
+  summarizer->reduce_scalar("bytes_received",
+                            quantizer.get_bytes_received(),
+                            trial);
+  summarizer->reduce_scalar("rs_bytes_sent",
+                            quantizer.get_rs_bytes_sent(),
+                            trial);
+  summarizer->reduce_scalar("ag_bytes_sent",
+                            quantizer.get_ag_bytes_sent(),
+                            trial);
+  summarizer->reduce_scalar("rs_bytes_received",
+                            quantizer.get_rs_bytes_received(),
+                            trial);
+  summarizer->reduce_scalar("ag_bytes_received",
+                            quantizer.get_ag_bytes_received(),
+                            trial);
+  summarizer->reduce_scalar("rs_send_trans_time",
+                            quantizer.get_rs_send_trans_time(),
+                            trial);
+  summarizer->reduce_scalar("rs_recv_trans_time",
+                            quantizer.get_rs_recv_trans_time(),
+                            trial);
+  summarizer->reduce_scalar("ag_recv_trans_time",
+                            quantizer.get_ag_recv_trans_time(),
+                            trial);
+  quantizer.reset_bytes_counters();
+  quantizer.reset_time_counters();
 }
 
 std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
@@ -55,7 +99,10 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
     double start = get_time();
     quantizer.intermodel_sum_quantized(comm, mat, qerror, im_qerror,
                                        true, &gradhist);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    onebit_summarizer->reduce_scalar("time", tot, trial);
+    quantize_summary(onebit_summarizer, quantizer, trial);
   }
   return times;
 }
@@ -71,7 +118,10 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
     double start = get_time();
     quantizer.intermodel_sum_threshold_quantized(
       comm, mat, qerror, thresh, -thresh, im_qerror, false);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    thresh_summarizer->reduce_scalar("time", tot, trial);
+    quantize_summary(thresh_summarizer, quantizer, trial);
   }
   return times;
 }
@@ -87,7 +137,10 @@ std::vector<double> test_comp_thresh(lbann_comm* comm, DistMat& mat,
     double start = get_time();
     quantizer.intermodel_sum_threshold_quantized(
       comm, mat, qerror, thresh, -thresh, im_qerror, true);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    comp_thresh_summarizer->reduce_scalar("time", tot, trial);
+    quantize_summary(comp_thresh_summarizer, quantizer, trial);
   }
   return times;
 }
@@ -103,7 +156,10 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
     double start = get_time();
     quantizer.intermodel_sum_adaptive_threshold_quantized(
       comm, mat, qerror, proportion, im_qerror, false);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    adaptive_summarizer->reduce_scalar("time", tot, trial);
+    quantize_summary(adaptive_summarizer, quantizer, trial);
   }
   return times;
 }
@@ -119,7 +175,10 @@ std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
     double start = get_time();
     quantizer.intermodel_sum_adaptive_threshold_quantized(
       comm, mat, qerror, proportion, im_qerror, true);
-    times.push_back(get_time() - start);
+    double tot = get_time() - start;
+    times.push_back(tot);
+    comp_adaptive_summarizer->reduce_scalar("time", tot, trial);
+    quantize_summary(comp_adaptive_summarizer, quantizer, trial);
   }
   return times;
 }
@@ -190,14 +249,29 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
 int main(int argc, char** argv) {
   El::Initialize(argc, argv);
   lbann_comm* comm = new lbann_comm(2);
+  normal_summarizer = new lbann_summary("qbm/normal", comm);
+  onebit_summarizer = new lbann_summary("qbm/onebit", comm);
+  thresh_summarizer = new lbann_summary("qbm/thresh", comm);
+  comp_thresh_summarizer = new lbann_summary("qbm/comp_thresh", comm);
+  adaptive_summarizer = new lbann_summary("qbm/adaptive", comm);
+  comp_adaptive_summarizer = new lbann_summary("qbm/comp_adaptive", comm);
+
   if (comm->am_world_master()) {
     std::cout << "Models: " << comm->get_num_models() << std::endl;
     std::cout << "Procs per model: " << comm->get_procs_per_model() << std::endl;
   }
-  for (int mat_size = 64; mat_size <= 65536; mat_size *= 2) {
+  for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
     DistMat mat(comm->get_model_grid());
     El::Uniform(mat, mat_size, mat_size, 0.0f, 4.0f);
     test_mat(comm, mat);
   }
+
+  delete normal_summarizer;
+  delete onebit_summarizer;
+  delete thresh_summarizer;
+  delete comp_thresh_summarizer;
+  delete adaptive_summarizer;
+  delete comp_adaptive_summarizer;
+  delete comm;
   El::Finalize();
 }
