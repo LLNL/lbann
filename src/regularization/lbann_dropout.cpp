@@ -38,7 +38,7 @@ dropout::dropout(float keep_prob) : m_keep_prob(keep_prob) {}
 void dropout::fp_activations() {
 
   // Terminate early if dropout is disabled
-  if(m_layer->m_execution_mode != training
+  if(m_layer->m_execution_mode != execution_mode::training
      || m_keep_prob < 0.0f) return;
 
   // Get local activations
@@ -69,7 +69,7 @@ void dropout::fp_activations() {
 void dropout::bp_activations() {
 
   // Terminate early if dropout is disabled
-  if(m_layer->m_execution_mode != training
+  if(m_layer->m_execution_mode != execution_mode::training
      || m_keep_prob < 0.0f) return;
 
   // Re-weight the incoming loss using dropout mask

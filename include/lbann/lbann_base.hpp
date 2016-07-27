@@ -49,7 +49,7 @@ typedef El::ElementalMatrix<DataType> ElMat;
 
 enum matrix_distribution {McMr, CircCirc, StarStar, MrStar, StarVc};
 
-enum execution_mode {training, validation, testing, prediction, invalid};
+enum class execution_mode {training, validation, testing, prediction, invalid};
 
 namespace lbann
 {
