@@ -73,6 +73,9 @@ void lbann_callback_summary::on_test_end(Model* m) {
                             m->get_cur_step());
   // Reset counters incremented during test phase.
   comm->reset_stats_counters();
+  for (auto&& layer : m->get_layers()) {
+    layer->reset_counters();
+  }
 }
 
 }  // namespace lbann

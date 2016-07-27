@@ -111,7 +111,7 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
     /// Set the correct execution mode so that the proper data reader
     /// is used
     for (size_t l = 0; l < Layers.size(); l++) {
-      Layers[l]->m_execution_mode = training;
+      Layers[l]->m_execution_mode = execution_mode::training;
     }
 
     long num_samples = 0;
@@ -199,7 +199,7 @@ DataType lbann::Dnn::evaluate()
 
   /// Set the mode for each layer so that validation data is used
   for (size_t l = 0; l < Layers.size(); l++) {
-    Layers[l]->m_execution_mode = testing;
+    Layers[l]->m_execution_mode = execution_mode::testing;
   }
 
   // Trigger a shuffle of the input data

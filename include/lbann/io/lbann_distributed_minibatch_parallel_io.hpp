@@ -46,7 +46,7 @@ namespace lbann
     virtual int fetch_from_data_reader(Mat& M_local) { return 0; }
     virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
     virtual bool update_data_reader() { return false; }
-    virtual execution_mode get_execution_mode() { return invalid; }
+    virtual execution_mode get_execution_mode() { return execution_mode::invalid; }
 
     /// Is this rank the current root node for the Elemental Distribution
     bool is_current_root() { return (comm->get_rank_in_model() == m_root); }
