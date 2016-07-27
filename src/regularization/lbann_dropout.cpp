@@ -55,15 +55,14 @@ void dropout::fp_activations() {
   //   implementation assumes 'acts' is in MC,MR; Star,VC; Star,VR; or
   //   similar format.
   Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
-  m_cur_mask *= 1.0 / m_keep_prob; // TODO: apply scaling
+  m_cur_mask *= 1.0 / m_keep_prob;
   if(acts->GlobalRow(local_height-1) == global_height-1) {
     for(int j=0; j<local_width; ++j)
       m_cur_mask.Set(local_height-1, j, 1.0);
   }
 
   // Apply dropout mask to local activations
-  Mat local_acts_copy(local_acts);
-  Hadamard(local_acts_copy, m_cur_mask, local_acts);
+  Hadamard(local_acts, m_cur_mask, local_acts);
 
 }
 
@@ -75,8 +74,7 @@ void dropout::bp_activations() {
 
   // Re-weight the incoming loss using dropout mask
   Mat& local_Ds = m_layer->Ds->Matrix();
-  Mat local_Ds_copy(local_Ds);
-  Hadamard(local_Ds_copy, m_cur_mask, local_Ds);
+  Hadamard(local_Ds, m_cur_mask, local_Ds);
 
 }
 

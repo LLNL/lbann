@@ -165,7 +165,8 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize, comm,
                                       convolution_layer_optimizer,
-                                      {new dropout(trainParams.DropOut)},
+                                      //{new dropout(trainParams.DropOut)},
+                                      {},
                                       cudnn);
           dnn.add(layer);
         }
@@ -184,7 +185,8 @@ int main(int argc, char* argv[])
                                 poolWindowDims,
                                 poolPads, poolStrides, poolMode,
                                 trainParams.MBSize, comm,
-                                {new dropout(trainParams.DropOut)},
+                                //{new dropout(trainParams.DropOut)},
+                                {},
                                 cudnn);
           dnn.add(layer);
         }
@@ -205,7 +207,8 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize, comm,
                                       convolution_layer_optimizer,
-                                      {new dropout(trainParams.DropOut)},
+                                      //{new dropout(trainParams.DropOut)},
+                                      {},
                                       cudnn);
           dnn.add(layer);
         }
@@ -229,8 +232,8 @@ int main(int argc, char* argv[])
         }
 
         // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
+        dnn.add("FullyConnected", 100, trainParams.ActivationType, {});//{new dropout(trainParams.DropOut)});
+        dnn.add("FullyConnected", 30, trainParams.ActivationType, {});//{new dropout(trainParams.DropOut)});
         dnn.add("SoftMax", 10);
 
         target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
