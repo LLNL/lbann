@@ -50,6 +50,7 @@ namespace lbann
                   const int* pool_strides, int pool_mode,
                   uint mini_batch_size,
                   lbann_comm* comm,
+                  std::vector<regularizer*> regs,
                   cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor

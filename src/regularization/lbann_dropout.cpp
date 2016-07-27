@@ -26,37 +26,58 @@
 // lbann_dropout .cpp .hpp - Dropout implementation
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/lbann_base.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
+
+using namespace El;
 
 namespace lbann {
 
 dropout::dropout(float keep_prob) : m_keep_prob(keep_prob) {}
 
 void dropout::fp_activations() {
-  if (m_keep_prob == -1.0f) return;
-  // Exclude the bottom row, which is 1s.
-  // TODO: handle case where Acts is in other distribution
-  auto acts = ((DistMat&) *(m_layer->Acts))(IR(0, m_layer->Acts->Height() - 1),
-                                 IR(0, m_layer->Acts->Width()));
-  Mat& local_mat = acts.Matrix();
-  Mat local_mat_copy(local_mat);
-  // Compute acts = (1/p)r * acts where r's elements are IID Bernoulli and * is
-  // element-wise multiplication.
-  El::Bernoulli(m_cur_mask, local_mat.Height(), local_mat.Width(), m_keep_prob);
-  El::Scale(1.0f / m_keep_prob, m_cur_mask);
-  El::Hadamard(m_cur_mask, local_mat_copy, local_mat);
+
+  // Terminate early if dropout is disabled
+  if(m_layer->m_execution_mode != training
+     || m_keep_prob < 0.0f) return;
+
+  // Get local activations
+  ElMat* acts = m_layer->Acts;
+  Mat& local_acts = acts->Matrix();
+  const Int global_height = acts->Height();
+  const Int local_height = local_acts.Height();
+  const Int local_width = local_acts.Width();
+
+  // Construct dropout mask
+  // Note: Construct Bernoulli matrix and scale by
+  //   1/m_keep_prob. Entries corresponding to bias row are set to 1
+  //   to ensure that mask doesn't affect bias row. This
+  //   implementation assumes 'acts' is in MC,MR; Star,VC; Star,VR; or
+  //   similar format.
+  Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
+  m_cur_mask *= 1.0 / m_keep_prob; // TODO: apply scaling
+  if(acts->GlobalRow(local_height-1) == global_height-1) {
+    for(int j=0; j<local_width; ++j)
+      m_cur_mask.Set(local_height-1, j, 1.0);
+  }
+
+  // Apply dropout mask to local activations
+  Mat local_acts_copy(local_acts);
+  Hadamard(local_acts_copy, m_cur_mask, local_acts);
+
 }
 
 void dropout::bp_activations() {
-  if (m_keep_prob == -1.0f) return;
-  // Exclude the bottom row, which is 1s.
-  auto bp_input = ((DistMat&) *(m_layer->bp_input))(IR(0, m_layer->bp_input->Height() - 1),
-                                         IR(0, m_layer->bp_input->Width()));
-  Mat& local_mat = bp_input.Matrix();
-  Mat local_mat_copy(local_mat);
-  // Re-weight the incoming loss according to how we adjusted weights during
-  // forward propagation.
-  El::Hadamard(m_cur_mask, local_mat_copy, local_mat);
+
+  // Terminate early if dropout is disabled
+  if(m_layer->m_execution_mode != training
+     || m_keep_prob < 0.0f) return;
+
+  // Re-weight the incoming loss using dropout mask
+  Mat& local_Ds = m_layer->Ds->Matrix();
+  Mat local_Ds_copy(local_Ds);
+  Hadamard(local_Ds_copy, m_cur_mask, local_Ds);
+
 }
 
 }  // namespace lbann

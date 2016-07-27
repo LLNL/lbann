@@ -155,15 +155,13 @@ void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
     // Convert forward and backward prop matrices to MC,MR format
-    DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*bp_input);
     DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: store from fp step
-    DistMat& DsNext = DsNextProxy.Get();
     DistMat& X = XProxy.Get();
-    
-    // Compute the delta using the results from "next" deeper layer
-    Hadamard(DsNext, *Zs, *Ds);
+
     // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, DsNext, (DataType) 0., *Ds_Temp);
+    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
+    // Compute the delta using the results from "next" deeper layer
+    Hadamard(*Ds, *Zs, *Ds);
     // BVE - an alternative approach is to compute the mean 
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);

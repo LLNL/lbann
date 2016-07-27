@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
         trainParams.LearnRateMethod = 2;
         trainParams.LearnRate = 0.005;
         trainParams.ActivationType = activation_type::RELU;
-        trainParams.DropOut = -1.0f;
+        trainParams.DropOut = 0.5;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -164,7 +164,9 @@ int main(int argc, char* argv[])
                                       outputChannels, filterDims,
                                       convPads, convStrides,
                                       trainParams.MBSize, comm,
-                                      convolution_layer_optimizer, cudnn);
+                                      convolution_layer_optimizer,
+                                      {new dropout(trainParams.DropOut)},
+                                      cudnn);
           dnn.add(layer);
         }
 
@@ -181,7 +183,9 @@ int main(int argc, char* argv[])
             = new pooling_layer(2, numDims, channels, inputDim,
                                 poolWindowDims,
                                 poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, comm, cudnn);
+                                trainParams.MBSize, comm,
+                                {new dropout(trainParams.DropOut)},
+                                cudnn);
           dnn.add(layer);
         }
 
@@ -200,7 +204,9 @@ int main(int argc, char* argv[])
                                       outputChannels, filterDims,
                                       convPads, convStrides,
                                       trainParams.MBSize, comm,
-                                      convolution_layer_optimizer, cudnn);
+                                      convolution_layer_optimizer,
+                                      {new dropout(trainParams.DropOut)},
+                                      cudnn);
           dnn.add(layer);
         }
 
@@ -216,7 +222,9 @@ int main(int argc, char* argv[])
           pooling_layer* layer
             = new pooling_layer(4, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, comm, cudnn);
+                                trainParams.MBSize, comm, 
+                                {new dropout(trainParams.DropOut)},
+                                cudnn);
           dnn.add(layer);
         }
 

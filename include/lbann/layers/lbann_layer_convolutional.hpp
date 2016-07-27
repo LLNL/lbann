@@ -50,6 +50,7 @@ namespace lbann
                         const int* conv_pads, const int* conv_strides,
                         uint mini_batch_size,
                         lbann_comm* comm, Optimizer* optimizer,
+                        std::vector<regularizer*> regs,
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor

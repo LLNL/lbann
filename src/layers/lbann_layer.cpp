@@ -88,6 +88,9 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
 
 void lbann::Layer::backProp() {
   double bp_start = get_time();
+
+  // Get incoming loss and convert matrix distribution if necessary
+  *Ds = *bp_input;
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.

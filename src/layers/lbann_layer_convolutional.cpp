@@ -43,8 +43,9 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const uint mini_batch_size,
                                          lbann_comm* comm,
                                          Optimizer* optimizer,
+                                         std::vector<regularizer*> regs,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, optimizer, mini_batch_size),
+  : Layer(index, comm, optimizer, mini_batch_size, regs),
     m_num_dims(num_dims), m_num_input_channels(num_input_channels),
     m_num_output_channels(num_output_channels)
 {
@@ -112,6 +113,7 @@ convolutional_layer::~convolutional_layer()
 
 void convolutional_layer::setup(const int num_prev_neurons)
 {
+  Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
   if(m_cudnn_layer) {
@@ -146,7 +148,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
   // Initialize matrices
   Zeros(*WB_D, m_filter_size, 1);
   Ones(*Zs, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds, num_prev_neurons+1, m_mini_batch_size);
+  Zeros(*Ds, NumNeurons+1, m_mini_batch_size);
   Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
   Ones(*Acts, NumNeurons+1, m_mini_batch_size);
 
@@ -177,6 +179,9 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
     m_cudnn_layer->forward(XLocal, WBLocal, ZLocal);
+#else
+    std::cerr << "Error: cuDNN not detected\n";
+    exit(EXIT_FAILURE);
 #endif
   }
   else {
@@ -193,15 +198,13 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
 void lbann::convolutional_layer::bp_linearity() {
 
   // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> OutputDeltaProxy(*bp_input);
   DistMatrixReadProxy<DataType,DataType,STAR,VC> InputProxy(*fp_input); // TODO: store from fp step
-  StarVCMat& OutputDelta = OutputDeltaProxy.Get();
   StarVCMat& Input = InputProxy.Get();
 
   // Get local matrices
   const Mat& InputLocal = Input.LockedMatrix();
   const Mat& FilterLocal = WB->LockedMatrix();
-  const Mat& OutputDeltaLocal = OutputDelta.LockedMatrix();
+  const Mat& OutputDeltaLocal = Ds->LockedMatrix();
   Mat& FilterDeltaLocal = WB_D->Matrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
 
@@ -213,6 +216,9 @@ void lbann::convolutional_layer::bp_linearity() {
                             OutputDeltaLocal,
                             FilterDeltaLocal,
                             InputDeltaLocal);
+#else
+    std::cerr << "Error: cuDNN not detected\n";
+    exit(EXIT_FAILURE);
 #endif
   }
   else {

@@ -42,10 +42,11 @@ pooling_layer::pooling_layer(const uint index,
                              const int  pool_mode,
                              const uint mini_batch_size,
                              lbann_comm* comm,
+                             std::vector<regularizer*> regs,
                              cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, NULL, mini_batch_size),
+  : Layer(index, comm, NULL, mini_batch_size, regs),
     m_pool_mode(pool_mode),
-    m_num_dims(num_dims), m_num_channels(num_channels),
+    m_num_dims(num_dims), m_num_channels(num_channels)
 {
 
   // Initialize input dimensions and pooling parameters
@@ -70,10 +71,14 @@ pooling_layer::pooling_layer(const uint index,
   }
   
   // Matrices should be in Star,Star and Star,VC distributions
+  delete WB;
+  delete WB_D;
   delete Zs;
   delete Ds;
   delete Ds_Temp;
   delete Acts;
+  WB = NULL;
+  WB_D = NULL;
   Zs = new StarVCMat(comm->get_model_grid());
   Ds = new StarVCMat(comm->get_model_grid());
   Ds_Temp = new StarVCMat(comm->get_model_grid());
@@ -104,6 +109,7 @@ pooling_layer::~pooling_layer()
 
 void pooling_layer::setup(const int num_prev_neurons)
 {
+  Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
   if(m_cudnn_layer) {
@@ -128,7 +134,7 @@ void pooling_layer::setup(const int num_prev_neurons)
 
   // Initialize matrices
   Ones(*Zs, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds, num_prev_neurons+1, m_mini_batch_size);
+  Zeros(*Ds, NumNeurons+1, m_mini_batch_size);
   Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
   Ones(*Acts, NumNeurons+1, m_mini_batch_size);
 
@@ -156,6 +162,9 @@ void lbann::pooling_layer::fp_linearity(ElMat& _WB,
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
     m_cudnn_layer->forward(XLocal, ZLocal);
+#else
+    std::cerr << "Error: cuDNN not detected\n";
+    exit(EXIT_FAILURE);
 #endif
   }
   else {
@@ -172,15 +181,13 @@ void lbann::pooling_layer::fp_linearity(ElMat& _WB,
 void lbann::pooling_layer::bp_linearity() {
 
   // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> OutputDeltaProxy(*bp_input);
   DistMatrixReadProxy<DataType,DataType,STAR,VC> InputProxy(*fp_input); // TODO: store from fp step
-  StarVCMat& OutputDelta = OutputDeltaProxy.Get();
   StarVCMat& Input = InputProxy.Get();
 
   // Get local matrices
   const Mat& InputLocal = Input.LockedMatrix();
   const Mat& OutputLocal = Acts->LockedMatrix();
-  const Mat& OutputDeltaLocal = OutputDelta.LockedMatrix();
+  const Mat& OutputDeltaLocal = Ds->LockedMatrix();
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
 
   // Compute gradients on local data samples
@@ -190,6 +197,9 @@ void lbann::pooling_layer::bp_linearity() {
                             OutputLocal,
                             OutputDeltaLocal,
                             InputDeltaLocal);
+#else
+    std::cerr << "Error: cuDNN not detected\n";
+    exit(EXIT_FAILURE);
 #endif
   }
   else {
