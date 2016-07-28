@@ -55,7 +55,7 @@ void dropout::fp_activations() {
   //   implementation assumes 'acts' is in MC,MR; Star,VC; Star,VR; or
   //   similar format.
   Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
-  // m_cur_mask *= 1.0 / m_keep_prob;
+  m_cur_mask *= 1.0 / m_keep_prob;
   if(acts->GlobalRow(local_height-1) == global_height-1) {
     for(int j=0; j<local_width; ++j)
       m_cur_mask.Set(local_height-1, j, 1.0);
