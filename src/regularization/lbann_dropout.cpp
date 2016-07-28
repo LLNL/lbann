@@ -43,7 +43,7 @@ void dropout::fp_activations() {
 
   // Get local activations
   ElMat* acts = m_layer->Acts;
-  Mat& local_acts = acts->Matrix();
+  Mat local_acts = acts->Matrix();
   const Int global_height = acts->Height();
   const Int local_height = local_acts.Height();
   const Int local_width = local_acts.Width();
@@ -73,7 +73,7 @@ void dropout::bp_activations() {
      || m_keep_prob < 0.0f) return;
 
   // Re-weight the incoming loss using dropout mask
-  Mat& local_Ds = m_layer->Ds->Matrix();
+  Mat local_Ds = m_layer->Ds->Matrix();
   Hadamard(local_Ds, m_cur_mask, local_Ds);
 
 }

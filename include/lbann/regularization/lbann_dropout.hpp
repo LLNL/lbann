@@ -55,7 +55,7 @@ public:
 protected:
   /** Probability of keeping each unit. */
   float m_keep_prob;
-  /** Current dropout mask (a Bernoulli random matrix). */
+  /** Current dropout mask (a scaled Bernoulli random matrix). */
   Mat m_cur_mask;
 };
 

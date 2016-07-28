@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
           int inputDims[] = {28, 28};
           int outputChannels = 32;
           int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
+          int convPads[] = {2, 2};
           int convStrides[] = {1, 1};
           convolutional_layer* layer
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           int numDims = 2;
           int inputChannels = 32;
-          int inputDims[] = {26, 26};
+          int inputDims[] = {30, 30};
           int outputChannels = 32;
           int filterDims[] = {3, 3};
           int convPads[] = {0, 0};
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
         {
           int numDims = 2;
           int channels = 32;
-          int inputDim[] = {24, 24};
+          int inputDim[] = {28, 28};
           int poolWindowDims[] = {2, 2};
           int poolPads[] = {0, 0};
           int poolStrides[] = {2, 2};
@@ -206,13 +206,13 @@ int main(int argc, char* argv[])
                                 poolWindowDims, poolPads, poolStrides, poolMode,
                                 trainParams.MBSize, activation_type::ID,
                                 comm,
-                                {}, //{new dropout(trainParams.DropOut)},
+                                {new dropout(0.75)},
                                 cudnn);
           dnn.add(layer);
         }
 
         // This is replaced by the input layer
-        dnn.add("FullyConnected", 128, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
+        dnn.add("FullyConnected", 128, trainParams.ActivationType, {new dropout(0.5)});
         dnn.add("SoftMax", 10);
 
         target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);

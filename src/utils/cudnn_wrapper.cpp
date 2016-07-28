@@ -26,9 +26,11 @@
 // cudnn_wrapper .hpp .cpp - cuDNN support - wrapper classes, utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/cudnn_wrapper.hpp"
+
 #include <iostream>
 
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "El.hpp"
 
 #ifdef __LIB_CUDNN
 
@@ -408,8 +410,11 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   const DataType zero = 0.0;
   const int num_gpus = m_cudnn->m_num_gpus;
 
-  // Bias gradient is equal to output gradient
-  Copy(grad_dst, grad_bias);
+  // Compute bias gradient
+  Mat ones;
+  El::Ones(ones, grad_dst.Width(), El::Int(1));
+  El::Gemv(El::NORMAL, DataType(1.0), grad_dst, ones,
+           DataType(0.0), grad_bias);
 
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);
