@@ -302,12 +302,12 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
         pos -= prev_pos;
         prev_pos += pos;
         quant.emplace_back((pos << 1) | 1);
-        qerror_buf[pos] = val - pos_avg;
+        qerror_buf[pos + prev_pos] = val - pos_avg;
       } else if (val <= neg_thresh) {
         pos -= prev_pos;
         prev_pos += pos;
         quant.emplace_back(pos << 1);
-        qerror_buf[pos] = val - neg_avg;
+        qerror_buf[pos + prev_pos] = val - neg_avg;
       } else {
         qerror_buf[pos] = val;
       }
