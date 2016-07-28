@@ -175,7 +175,7 @@ namespace lbann
   public:
     Adagrad_factory(lbann_comm* comm, float lr=0.01, float epsilon=1e-6);
     ~Adagrad_factory();
-    Optimizer *create_optimizer(matrix_distribution m_matrix_distribution=McMr);
+    Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
 
   public:
     lbann_comm* comm;

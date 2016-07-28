@@ -41,10 +41,11 @@ pooling_layer::pooling_layer(const uint index,
                              const int* pool_strides,
                              const int  pool_mode,
                              const uint mini_batch_size,
+                             activation_type activation,
                              lbann_comm* comm,
                              std::vector<regularizer*> regs,
                              cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, NULL, mini_batch_size, regs),
+  : Layer(index, comm, NULL, mini_batch_size, activation, regs),
     m_pool_mode(pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels)
 {

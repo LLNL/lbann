@@ -47,7 +47,7 @@ typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 
-enum matrix_distribution {McMr, CircCirc, StarStar, MrStar, StarVc};
+enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC};
 
 enum class execution_mode {training, validation, testing, prediction, invalid};
 

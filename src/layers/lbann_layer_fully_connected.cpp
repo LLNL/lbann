@@ -61,28 +61,16 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(
   uint miniBatchSize, activation_type activationType,
   lbann_comm* comm, Optimizer *optimizer,
   std::vector<regularizer*> regs)
-  : Layer(index, comm, optimizer, miniBatchSize, regs),
+  : Layer(index, comm, optimizer, miniBatchSize, activationType, regs),
     WB_view(comm->get_model_grid()), WB_D_view(comm->get_model_grid()),
     Acts_view(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
-    ActivationType = activationType;
     WBL2NormSum = 0.0;
-
-    activation_fn = new_activation(activationType);
 }
 
-lbann::FullyConnectedLayer::FullyConnectedLayer(
-  const uint index, const int numPrevNeurons, const uint numNeurons,
-  uint miniBatchSize, activation_type activationType,
-  lbann_comm* comm, Optimizer *optimizer) :
-  FullyConnectedLayer(index, numPrevNeurons, numNeurons, miniBatchSize, activationType,
-                      comm, optimizer, {}) {}
-
-lbann::FullyConnectedLayer::~FullyConnectedLayer() {
-  delete activation_fn;
-}
+lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
   Layer::setup(numPrevNeurons);
@@ -160,9 +148,7 @@ void lbann::FullyConnectedLayer::bp_linearity()
 
     // Compute the partial delta update for the next lower layer
     Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
-    // Compute the delta using the results from "next" deeper layer
-    Hadamard(*Ds, *Zs, *Ds);
-    // BVE - an alternative approach is to compute the mean 
+    // Compute update for weights
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);
 }
@@ -258,15 +244,15 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
             // J(theta)
             this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
-            this->fp_nonlinearity();
+            this->fp_nonlinearity(*Acts);
 
             // J(thetaPlus(i))
             this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
-            this->fp_nonlinearity();
+            this->fp_nonlinearity(Acts_E1);
 
             // J(thetaMinus(i))
             this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
-            this->fp_nonlinearity();
+            this->fp_nonlinearity(Acts_E2);
 
             //            this->getCost();
 

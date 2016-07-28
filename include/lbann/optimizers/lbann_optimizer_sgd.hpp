@@ -170,7 +170,7 @@ namespace lbann
   public:
     SGD_factory(lbann_comm* comm, float lr=0.01, float momentum=0.3, float decay=0.0, bool nesterov=false);
     ~SGD_factory();
-    Optimizer *create_optimizer(matrix_distribution m_matrix_distribution=McMr);
+    Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
 
   public:
     lbann_comm* comm;

@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
 
         // First convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(StarStar);
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           int numDims = 2;
           int inputChannels = 1;
           int inputDims[] = {28, 28};
@@ -163,77 +163,56 @@ int main(int argc, char* argv[])
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
                                       convPads, convStrides,
-                                      trainParams.MBSize, comm,
-                                      convolution_layer_optimizer,
-                                      //{new dropout(trainParams.DropOut)},
-                                      {},
-                                      cudnn);
-          dnn.add(layer);
-        }
-
-        // First pooling layer
-        {
-          int numDims = 2;
-          int channels = 32;
-          int inputDim[] = {26, 26};
-          int poolWindowDims[] = {2, 2};
-          int poolPads[] = {0, 0};
-          int poolStrides[] = {2, 2};
-          int poolMode = 0;
-          pooling_layer* layer
-            = new pooling_layer(2, numDims, channels, inputDim,
-                                poolWindowDims,
-                                poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, comm,
-                                //{new dropout(trainParams.DropOut)},
-                                {},
-                                cudnn);
+                                      trainParams.MBSize,
+                                      activation_type::RELU, 
+                                      comm, convolution_layer_optimizer, 
+                                      {}, cudnn);
           dnn.add(layer);
         }
 
         // Second convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(StarStar);
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           int numDims = 2;
           int inputChannels = 32;
-          int inputDims[] = {13, 13};
-          int outputChannels = 64;
-          int filterDims[] = {5, 5};
+          int inputDims[] = {26, 26};
+          int outputChannels = 32;
+          int filterDims[] = {3, 3};
           int convPads[] = {0, 0};
           int convStrides[] = {1, 1};
           convolutional_layer* layer
-            = new convolutional_layer(3, numDims, inputChannels, inputDims,
+            = new convolutional_layer(2, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
                                       convPads, convStrides,
-                                      trainParams.MBSize, comm,
-                                      convolution_layer_optimizer,
-                                      //{new dropout(trainParams.DropOut)},
+                                      trainParams.MBSize,
+                                      activation_type::RELU,
+                                      comm, convolution_layer_optimizer,
                                       {},
                                       cudnn);
           dnn.add(layer);
         }
 
-        // Second pooling layer
+        // Pooling layer
         {
           int numDims = 2;
-          int channels = 64;
-          int inputDim[] = {9, 9};
+          int channels = 32;
+          int inputDim[] = {24, 24};
           int poolWindowDims[] = {2, 2};
           int poolPads[] = {0, 0};
           int poolStrides[] = {2, 2};
           int poolMode = 0;
           pooling_layer* layer
-            = new pooling_layer(4, numDims, channels, inputDim,
+            = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, comm, 
-                                {new dropout(trainParams.DropOut)},
+                                trainParams.MBSize, activation_type::ID,
+                                comm,
+                                {}, //{new dropout(trainParams.DropOut)},
                                 cudnn);
           dnn.add(layer);
         }
 
-        // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, {});//{new dropout(trainParams.DropOut)});
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, {});//{new dropout(trainParams.DropOut)});
+        // This is replaced by the input layer
+        dnn.add("FullyConnected", 128, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
         dnn.add("SoftMax", 10);
 
         target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);

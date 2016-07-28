@@ -43,11 +43,8 @@ namespace lbann
     public:
       FullyConnectedLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
                           uint miniBatchSize, activation_type activationType,
-                          lbann_comm* comm, Optimizer *optimizer);
-      FullyConnectedLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                          uint miniBatchSize, activation_type activationType,
                           lbann_comm* comm, Optimizer *optimizer,
-                          std::vector<regularizer*> regs);
+                          std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void setup(int numPrevNeurons);
       DistMat& get_weights_biases() { return WB_view; }
@@ -70,17 +67,13 @@ namespace lbann
       DistMat Acts_view;
 
     public:
-      activation_type ActivationType;
-        //Probability of dropping neuron/input used in dropout_layer
-        //Range 0 to 1; default is -1 => no dropout
-        DataType  WBL2NormSum;
+      //Probability of dropping neuron/input used in dropout_layer
+      //Range 0 to 1; default is -1 => no dropout
+      DataType  WBL2NormSum;
 
-        Activation *activation_fn;  // Pointer to the layers activation function
     protected:
       void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
       void bp_linearity();
-      void fp_nonlinearity() { activation_fn->forwardProp(*Acts); }
-      void bp_nonlinearity() { activation_fn->backwardProp(*Zs); }
     };
 
 }

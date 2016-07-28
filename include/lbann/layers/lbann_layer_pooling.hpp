@@ -49,6 +49,7 @@ namespace lbann
                   const int* pool_dims, const int* pool_pads,
                   const int* pool_strides, int pool_mode,
                   uint mini_batch_size,
+                  activation_type activation,
                   lbann_comm* comm,
                   std::vector<regularizer*> regs,
                   cudnn::cudnn_manager* cudnn=NULL);

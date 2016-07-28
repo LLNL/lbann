@@ -86,11 +86,11 @@ namespace cudnn
     void setup();
 
     /// Convolutional layer forward pass
-    void forward(const Mat& src, const Mat& filter, Mat& dst);
+    void forward(const Mat& src, const Mat& filter, const Mat& bias, Mat& dst);
     
     /// Convolutional layer backward pass
     void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
-                  Mat& grad_filter, Mat& grad_src);
+                  Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
 
   public:
       

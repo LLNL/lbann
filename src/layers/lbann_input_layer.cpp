@@ -35,7 +35,7 @@ using namespace std;
 using namespace El;
 
 lbann::input_layer::input_layer(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : Layer(0, comm, NULL, mini_batch_size, regs)
+  : Layer(0, comm, NULL, mini_batch_size, activation_type::ID, regs)
 {
   m_training_data_reader = training_data_reader;
   m_testing_data_reader = testing_data_reader;

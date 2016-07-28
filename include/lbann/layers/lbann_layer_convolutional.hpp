@@ -49,6 +49,7 @@ namespace lbann
                         int num_output_channels, const int* filter_dims,
                         const int* conv_pads, const int* conv_strides,
                         uint mini_batch_size,
+                        activation_type activation,
                         lbann_comm* comm, Optimizer* optimizer,
                         std::vector<regularizer*> regs,
                         cudnn::cudnn_manager* cudnn=NULL);

@@ -305,6 +305,7 @@ void cudnn_convolutional_layer::setup()
 
 void cudnn_convolutional_layer::forward(const Mat& src,
                                         const Mat& filter,
+                                        const Mat& bias,
                                         Mat& dst)
 {
 
@@ -316,23 +317,29 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_filter(num_gpus, NULL);
+  std::vector<DataType*> d_bias(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
   std::vector<DataType*> d_work_space(num_gpus, NULL);
   for(int dev=0; dev<num_gpus; ++dev) {
     checkCUDA(cudaSetDevice(dev));
     checkCUDA(cudaMalloc(&d_src[dev], m_src_size*sizeof(DataType)));
     checkCUDA(cudaMalloc(&d_filter[dev], m_filter_size*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_bias[dev], m_dst_size*sizeof(DataType)));
     checkCUDA(cudaMalloc(&d_dst[dev], m_dst_size*sizeof(DataType)));
     if(m_forward_work_space_size > 0)
       checkCUDA(cudaMalloc(&d_work_space[dev], m_forward_work_space_size));
   }
-
+  
   // Transfer filter data to GPU
   for(int dev=0; dev<num_gpus; ++dev) {
     checkCUDA(cudaSetDevice(dev));
     checkCUDA(cudaMemcpyAsync(d_filter[dev],
                               filter.LockedBuffer(),
                               m_filter_size*sizeof(DataType),
+                              cudaMemcpyHostToDevice));
+    checkCUDA(cudaMemcpyAsync(d_bias[dev],
+                              bias.LockedBuffer(),
+                              m_dst_size*sizeof(DataType),
                               cudaMemcpyHostToDevice));
   }
 
@@ -348,6 +355,10 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                               src.LockedBuffer(0,j),
                               m_src_size*sizeof(DataType),
                               cudaMemcpyHostToDevice));
+    checkCUDA(cudaMemcpyAsync(d_dst[dev],
+                              d_bias[dev],
+                              m_dst_size*sizeof(DataType),
+                              cudaMemcpyDeviceToDevice));
 
     // Perform convolution
     checkCUDNN(cudnnConvolutionForward(m_cudnn->m_handles[dev],
@@ -360,7 +371,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                                        m_forward_algo,
                                        d_work_space[dev],
                                        m_forward_work_space_size,
-                                       &zero,
+                                       &one,
                                        m_dst_desc,
                                        d_dst[dev]));
     
@@ -388,6 +399,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                          const Mat& filter,
                                          const Mat& grad_dst,
                                          Mat& grad_filter,
+                                         Mat& grad_bias,
                                          Mat& grad_src)
 {
 
@@ -395,6 +407,9 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   const DataType one = 1.0;
   const DataType zero = 0.0;
   const int num_gpus = m_cudnn->m_num_gpus;
+
+  // Bias gradient is equal to output gradient
+  Copy(grad_dst, grad_bias);
 
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);

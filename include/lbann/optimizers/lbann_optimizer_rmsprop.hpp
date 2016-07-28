@@ -175,7 +175,7 @@ namespace lbann
     // Default values from Keras - it is recommended that they are left at their default values
     RMSprop_factory(lbann_comm* comm, float lr=0.001, float rho=0.9, float epsilon=1e-6);
     ~RMSprop_factory();
-    Optimizer *create_optimizer(matrix_distribution m_matrix_distribution=McMr);
+    Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
 
   public:
     //    float LearnRate;

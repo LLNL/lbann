@@ -41,11 +41,12 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const int* conv_pads,
                                          const int* conv_strides,
                                          const uint mini_batch_size,
+                                         const activation_type activation,
                                          lbann_comm* comm,
                                          Optimizer* optimizer,
                                          std::vector<regularizer*> regs,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, optimizer, mini_batch_size, regs),
+  : Layer(index, comm, optimizer, mini_batch_size, activation, regs),
     m_num_dims(num_dims), m_num_input_channels(num_input_channels),
     m_num_output_channels(num_output_channels)
 {
@@ -138,15 +139,14 @@ void convolutional_layer::setup(const int num_prev_neurons)
 
   // Initialize optimizer
   if(optimizer)
-    optimizer->setup(1, m_filter_size);
+    optimizer->setup(1, m_filter_size+NumNeurons);
 
   // Initialize filter with Xavier initialization
-  // TODO: this is implemented naively
-  DataType var_scale = sqrt(3.0 / num_prev_neurons);
-  Gaussian(*WB, m_filter_size, 1, (DataType)0.0, var_scale);
+  DataType var_scale = sqrt(3.0 / m_filter_size);
+  Gaussian(*WB, m_filter_size+NumNeurons, 1, (DataType)0.0, var_scale);
   
   // Initialize matrices
-  Zeros(*WB_D, m_filter_size, 1);
+  Zeros(*WB_D, m_filter_size+NumNeurons, 1);
   Ones(*Zs, NumNeurons+1, m_mini_batch_size);
   Zeros(*Ds, NumNeurons+1, m_mini_batch_size);
   Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
@@ -178,7 +178,10 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    m_cudnn_layer->forward(XLocal, WBLocal, ZLocal);
+    m_cudnn_layer->forward(XLocal,
+                           WBLocal(IR(0,m_filter_size),ALL),
+                           WBLocal(IR(m_filter_size,END),ALL),
+                           ZLocal);
 #else
     std::cerr << "Error: cuDNN not detected\n";
     exit(EXIT_FAILURE);
@@ -203,9 +206,10 @@ void lbann::convolutional_layer::bp_linearity() {
 
   // Get local matrices
   const Mat& InputLocal = Input.LockedMatrix();
-  const Mat& FilterLocal = WB->LockedMatrix();
+  const Mat& FilterLocal = WB->LockedMatrix()(IR(0,m_filter_size),ALL);
   const Mat& OutputDeltaLocal = Ds->LockedMatrix();
-  Mat& FilterDeltaLocal = WB_D->Matrix();
+  Mat FilterDeltaLocal = WB_D->Matrix()(IR(0,m_filter_size),ALL);
+  Mat BiasDeltaLocal = WB_D->Matrix()(IR(m_filter_size,END),ALL);
   Mat& InputDeltaLocal = Ds_Temp->Matrix();
 
   // Compute gradients on local data samples
@@ -215,6 +219,7 @@ void lbann::convolutional_layer::bp_linearity() {
                             FilterLocal,
                             OutputDeltaLocal,
                             FilterDeltaLocal,
+                            BiasDeltaLocal,
                             InputDeltaLocal);
 #else
     std::cerr << "Error: cuDNN not detected\n";
@@ -230,7 +235,7 @@ void lbann::convolutional_layer::bp_linearity() {
   // Obtain filter gradient with reduction and scaling
   AllReduce(*WB_D, mpi::COMM_WORLD);  
   *WB_D *= 1.0/get_effective_minibatch_size();
-  
+
 }
 
 bool convolutional_layer::update()

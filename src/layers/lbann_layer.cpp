@@ -38,9 +38,11 @@ using namespace std;
 using namespace El;
 
 lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-                    uint mbsize, std::vector<regularizer*> regs)
+                    uint mbsize, activation_type activation,
+                    std::vector<regularizer*> regs)
   : optimizer(optimizer), comm(comm), regularizers(regs),
     m_mini_batch_size(mbsize), m_effective_mbsize(mbsize),
+    m_activation_type(activation),
     fp_time(0.0), bp_time(0.0)
 {
     Index = index;
@@ -55,9 +57,14 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     Ds = new DistMat(comm->get_model_grid());
     Ds_Temp = new DistMat(comm->get_model_grid());
     Acts = new DistMat(comm->get_model_grid());
+
+    // Initialize activation function
+    m_activation_fn = new_activation(activation);
+
 }
 
 lbann::Layer::~Layer() {
+  delete m_activation_fn;
   delete WB;
   delete WB_D;
   delete Zs;
@@ -65,10 +72,6 @@ lbann::Layer::~Layer() {
   delete Ds_Temp;
   delete Acts;
 }
-
-lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-                    uint mbsize) :
-  Layer(index, comm, optimizer, mbsize, {}) {}
 
 DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   double fp_start = get_time();
@@ -79,7 +82,7 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
   // Apply activation function/nonlinearity.
-  fp_nonlinearity();
+  fp_nonlinearity(*Acts);
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
   fp_time += get_time() - fp_start;
@@ -94,7 +97,7 @@ void lbann::Layer::backProp() {
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
-  bp_nonlinearity();
+  bp_nonlinearity(*Zs, *Ds);
   // Backprop weight regularization.
   for (regularizer* reg : regularizers) reg->bp_weights();
   // Backprop the layer's linearity.
@@ -602,4 +605,16 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 
     optimizer->loadFromCheckpointShared(dir, Index, bytes);
     return true;
+}
+
+void lbann::Layer::fp_nonlinearity(ElMat& _Z)
+{
+    m_activation_fn->forwardProp(_Z);
+}
+
+void lbann::Layer::bp_nonlinearity(ElMat& _Zs, ElMat& _Ds)
+{
+    m_activation_fn->backwardProp(_Zs);
+    if(m_activation_type != activation_type::ID)
+      Hadamard(_Ds, _Zs, _Ds);
 }
