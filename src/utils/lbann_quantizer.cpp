@@ -280,27 +280,30 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
     neg_avg = neg_thresh;
   }
   const Int ldim = mat.LDim();
+  if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
   size_t prev_pos = 0;
+  const DataType* mat_buf = mat.LockedBuffer();
+  DataType* qerror_buf = qerror.Buffer();
   for (int col = 0; col < mat.Width(); ++col) {
     for (int row = 0; row < mat.Height(); ++row) {
-      DataType val = mat.Get(row, col) + qerror.Get(row, col);
       size_t pos = row + col * ldim;
+      DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
         // Delta encoding.
         pos -= prev_pos;
         prev_pos += pos;
         uqtype q = pos << 1;
         q |= 1;
-        qerror.Set(row, col, val - pos_avg);
+        qerror_buf[pos] = val - pos_avg;
         quant.push_back(q);
       } else if (val <= neg_thresh) {
         pos -= prev_pos;
         prev_pos += pos;
         uqtype q = pos << 1;
-        qerror.Set(row, col, val - neg_avg);
+        qerror_buf[pos] = val - neg_avg;
         quant.push_back(q);
       } else {
-        qerror.Set(row, col, val);
+        qerror_buf[pos] = val;
       }
     }
   }
