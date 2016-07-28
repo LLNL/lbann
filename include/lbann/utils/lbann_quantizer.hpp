@@ -69,7 +69,8 @@ public:
   ~lbann_quantizer();
 
   /**
-   * Quantize a matrix.
+   * Quantize a matrix. qerror needs to be initialized with:
+   * Zeros(qerror, mat.Height(), mat.Width()).
    * @param mat The matrix to quantize.
    * @param qmat The output quantized matrix (will be resized).
    * @param qerror Running quantization error.
@@ -108,7 +109,8 @@ public:
                                  Mat& im_qerror);
 
   /**
-   * Threshold and quantize a matrix.
+   * Threshold and quantize a matrix. qerror needs to be initialized with:
+   * Zeros(qerror, mat.Height(), mat.Width())).
    * @param mat The matrix to quantize.
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.
@@ -140,7 +142,8 @@ public:
                             bool apply = false);
   /**
    * Threshold and quantize a matrix, dynamically choosing the threshold and
-   * quantization values.
+   * quantization values. qerror needs to be initialized with:
+   * Zeros(qerror, mat.Height(), mat.Width()).
    * @param mat The matrix to quantize.
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.

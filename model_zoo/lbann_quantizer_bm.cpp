@@ -92,7 +92,6 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   Mat gradhist;
   for (int trial = 0; trial < num_trials; ++trial) {
@@ -112,7 +111,6 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -131,7 +129,6 @@ std::vector<double> test_comp_thresh(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -150,7 +147,6 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -169,7 +165,6 @@ std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();

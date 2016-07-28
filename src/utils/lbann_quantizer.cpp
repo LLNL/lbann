@@ -147,6 +147,10 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, DistMat& mat,
 void lbann_quantizer::intermodel_sum_quantized(
   lbann_comm* comm, Mat& mat_, Mat& qerror_, Mat& im_qerror,
   bool do_adagrad, Mat* gradhist) {
+  // Initialize qerror.
+  if (qerror_.Height() == 0) {
+    Zeros(qerror_, mat_.Height(), mat_.Width());
+  }
   // Local transpose so that we quantize each neuron instead of each feature.
   Mat mat;
   Transpose(mat_, mat);
@@ -237,6 +241,9 @@ void lbann_quantizer::intermodel_sum_quantized(
 
 void lbann_quantizer::intermodel_sum_quantized2(lbann_comm* comm, Mat& mat_,
                                                 Mat& qerror_, Mat& im_qerror) {
+  if (qerror_.Height() == 0) {
+    Zeros(qerror_, mat_.Height(), mat_.Width());
+  }
   Mat mat;
   Transpose(mat_, mat);
   Mat qerror;
@@ -385,6 +392,9 @@ void lbann_quantizer::adaptive_threshold_unquantize(
 void lbann_quantizer::intermodel_sum_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh, Mat& im_qerror, bool compress) {
+  if (qerror.Height() == 0) {
+    Zeros(qerror, mat.Height(), mat.Width());
+  }
   ThreshQuantized rs_quant;
   ThreshQuantized rs_recv;
   auto rs_send_trans = 
@@ -474,6 +484,9 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
 void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
   bool compress) {
+  if (qerror.Height() == 0) {
+    Zeros(qerror, mat.Height(), mat.Width());
+  }
   ThreshQuantized rs_quant;
   ThreshQuantized rs_recv;
   ThreshQuantized comp_buf;
