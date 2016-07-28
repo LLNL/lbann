@@ -295,19 +295,17 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   DataType* qerror_buf = qerror.Buffer();
   for (int col = 0; col < width; ++col) {
     for (int row = 0; row < height; ++row) {
-      unsigned pos = row + col * ldim;
+      const unsigned pos = row + col * ldim;
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
-        // Delta encoding.
-        pos -= prev_pos;
-        prev_pos += pos;
-        quant.emplace_back((pos << 1) | 1);
-        qerror_buf[pos + prev_pos] = val - pos_avg;
+        qerror_buf[pos] = val - pos_avg;
+        // Delta encode pos.
+        quant.emplace_back(((pos - prev_pos) << 1) | 1);
+        prev_pos = pos;
       } else if (val <= neg_thresh) {
-        pos -= prev_pos;
-        prev_pos += pos;
-        quant.emplace_back(pos << 1);
-        qerror_buf[pos + prev_pos] = val - neg_avg;
+        qerror_buf[pos] = val - neg_avg;
+        quant.emplace_back((pos - prev_pos) << 1);
+        prev_pos = pos;
       } else {
         qerror_buf[pos] = val;
       }
