@@ -287,12 +287,14 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
     neg_avg = neg_thresh;
   }
   const Int ldim = mat.LDim();
+  const Int width = mat.Width();
+  const Int height = mat.Height();
   if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
   size_t prev_pos = 0;
   const DataType* mat_buf = mat.LockedBuffer();
   DataType* qerror_buf = qerror.Buffer();
-  for (int col = 0; col < mat.Width(); ++col) {
-    for (int row = 0; row < mat.Height(); ++row) {
+  for (int col = 0; col < width; ++col) {
+    for (int row = 0; row < height; ++row) {
       size_t pos = row + col * ldim;
       DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
@@ -760,8 +762,10 @@ lbann_quantizer::proportion_threshold_average(
   // It would be nice if there were a better way to do this...
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
-  for (int row = 0; row < mat.Height(); ++row) {
-    for (int col = 0; col < mat.Width(); ++col) {
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
       DataType val = mat.Get(row, col) + qerror.Get(row, col);
       if (val >= 0.0f) {
         pos_entries.push_back(val);
