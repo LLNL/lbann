@@ -405,7 +405,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
     };
   auto rs_get_recv_buf = 
     [&rs_recv] (Mat& mat, int& count) {
-      rs_recv.resize(count);
+      rs_recv.reserve(count);
       return rs_recv.data();
     };
   auto rs_recv_trans = 
@@ -441,7 +441,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
     };
   auto ag_get_recv_buf =
     [&ag_recv] (Mat& recv_view, int& count) {
-      ag_recv.resize(count);
+      ag_recv.reserve(count);
       return ag_recv.data();
     };
   auto ag_recv_trans = 
@@ -495,7 +495,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
     };
   auto rs_get_recv_buf = 
     [&rs_recv] (Mat& mat, int& count) {
-      rs_recv.resize(count);
+      rs_recv.reserve(count);
       return rs_recv.data();
     };
   auto rs_recv_trans = 
@@ -531,7 +531,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
     };
   auto ag_get_recv_buf =
     [&ag_recv] (Mat& recv_view, int& count) {
-      ag_recv.resize(count);
+      ag_recv.reserve(count);
       return ag_recv.data();
     };
   auto ag_recv_trans = 
