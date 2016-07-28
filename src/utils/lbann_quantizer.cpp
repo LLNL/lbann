@@ -290,13 +290,13 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   const Int width = mat.Width();
   const Int height = mat.Height();
   if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
-  size_t prev_pos = 0;
+  unsigned prev_pos = 0;
   const DataType* mat_buf = mat.LockedBuffer();
   DataType* qerror_buf = qerror.Buffer();
   for (int col = 0; col < width; ++col) {
     for (int row = 0; row < height; ++row) {
-      size_t pos = row + col * ldim;
-      DataType val = mat_buf[pos] + qerror_buf[pos];
+      unsigned pos = row + col * ldim;
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
         // Delta encoding.
         pos -= prev_pos;

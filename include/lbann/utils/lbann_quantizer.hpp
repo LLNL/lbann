@@ -236,16 +236,31 @@ public:
     rs_bytes_received = 0;
     ag_bytes_received = 0;
   }
+  /** Get the time spent in the reduce-scatter. */
+  double get_rs_time() const { return rs_time; }
+  /** Get the time spent in the allgather. */
+  double get_ag_time() const { return ag_time; }
   /** Get the time spent in the reduce-scatter send_trans. */
   double get_rs_send_trans_time() const { return rs_send_trans_time; }
+  /** Get the time spent in the reduce-scatter get_recv_buf. */
+  double get_rs_recv_buf_time() const { return rs_recv_buf_time; }
   /** Get the time spent in the reduce-scatter recv_trans. */
   double get_rs_recv_trans_time() const { return rs_recv_trans_time; }
+  /** Get the time spent in the allgather reduce_trans. */
+  double get_ag_reduced_trans_time() const { return ag_reduced_trans_time; }
+  /** Get the time spent in the allgather get_recv_buf. */
+  double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
   /** Get the time spent in the all-gather send_trans. */
   double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
   /** Reset recorded time counters. */
   void reset_time_counters() {
+    rs_time = 0.0;
+    ag_time = 0.0;
     rs_send_trans_time = 0.0;
+    rs_recv_buf_time = 0.0;
     rs_recv_trans_time = 0.0;
+    ag_reduced_trans_time = 0.0;
+    ag_recv_buf_time = 0.0;
     ag_recv_trans_time = 0.0;
   }
 
@@ -268,10 +283,20 @@ private:
   size_t rs_bytes_received;
   /** Bytes received in doing the all-gather. */
   size_t ag_bytes_received;
+  /** Time spent in the reduce-scatter. */
+  double rs_time;
+  /** Time spent in the all-gather. */
+  double ag_time;
   /** Time spent in the reduce-scatter send_trans. */
   double rs_send_trans_time;
+  /** Time spent in the reduce-scatter get_recv_buf. */
+  double rs_recv_buf_time;
   /** Time spent in the reduce-scatter recv_trans. */
   double rs_recv_trans_time;
+  /** Time spent in the allgather reduced_trans. */
+  double ag_reduced_trans_time;
+  /** Time spent in the allgather get_recv_buf. */
+  double ag_recv_buf_time;
   /** Time spent in the all-gather recv_trans. */
   double ag_recv_trans_time;
 
@@ -317,6 +342,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
   std::function<T*(Mat&, IR, IR, int&)> send_trans,
   std::function<T*(Mat&, int&)> get_recv_buf,
   std::function<void(T*, Mat&)> recv_trans) {
+  double rs_start = get_time();
   int rank = comm->get_model_rank();
   int nprocs = comm->get_num_models();
   // Compute the number of columns each processor sends.
@@ -350,11 +376,13 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     comm->nb_send(send_buf, send_size, dst, req);
     rs_bytes_sent += send_size * sizeof(T);
     // Get receive buffer.
+    double recv_buf_start = get_time();
     int recv_size = 0;
     if (var_recv) {
       recv_size = comm->get_count<T>(src);
     }
     T* recv_buf = get_recv_buf(accum_view, recv_size);
+    rs_recv_buf_time += get_time() - recv_buf_start;
     // Receive.
     comm->recv(recv_buf, recv_size, src);
     rs_bytes_received += recv_size * sizeof(T);
@@ -364,6 +392,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
     rs_recv_trans_time += get_time() - recv_trans_start;
     comm->wait<T>(req);
   }
+  rs_time += get_time() - rs_start;
 }
 
 template <typename T>
@@ -374,6 +403,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     std::function<T*(Mat&, int&)> get_recv_buf,
     std::function<void(T*, Mat&)> recv_trans,
     std::function<void(T*, T*)> swap_bufs) {
+  double ag_start = get_time();
   int rank = comm->get_model_rank();
   int nprocs = comm->get_num_models();
   // Compute the number of columns each processor sends.
@@ -383,11 +413,13 @@ void lbann_quantizer::intermodel_ring_allgather(
   int local_col_width = cols_per_proc;
   if (rank == nprocs - 1) local_col_width += cols_remainder;
   // Get the portion of mat that was reduced.
+  double reduced_start = get_time();
   auto reduced = mat(IR(0, mat.Height()),
                      IR(rank * cols_per_proc,
                         rank * cols_per_proc + local_col_width));
   // Transform the reduced data.
   reduced_trans(reduced);
+  ag_reduced_trans_time += get_time() - reduced_start;
   // Compute the previous/next ranks in the ring.
   int src = rank - 1;
   if (src < 0) src = nprocs - 1;
@@ -411,11 +443,13 @@ void lbann_quantizer::intermodel_ring_allgather(
                          IR(data_src * cols_per_proc,
                             data_src * cols_per_proc + recv_col_width));
     // Get receive buffer.
+    double recv_buf_start = get_time();
     int recv_size = 0;
     if (var_recv) {
       recv_size = comm->get_count<T>(src);
     }
     T* recv_buf = get_recv_buf(recv_view, recv_size);
+    ag_recv_buf_time += get_time() - recv_buf_start;
     // Receive data.
     comm->recv(recv_buf, recv_size, src);
     ag_bytes_received += recv_size * sizeof(T);
@@ -428,6 +462,7 @@ void lbann_quantizer::intermodel_ring_allgather(
     swap_bufs(send_buf, recv_buf);
     send_size = recv_size;
   }
+  ag_time += get_time() - ag_start;
 }
 
 }  // namespace lbann
