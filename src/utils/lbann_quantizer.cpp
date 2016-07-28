@@ -292,16 +292,13 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
         // Delta encoding.
         pos -= prev_pos;
         prev_pos += pos;
-        uqtype q = pos << 1;
-        q |= 1;
+        quant.emplace_back((pos << 1) | 1);
         qerror_buf[pos] = val - pos_avg;
-        quant.push_back(q);
       } else if (val <= neg_thresh) {
         pos -= prev_pos;
         prev_pos += pos;
-        uqtype q = pos << 1;
+        quant.emplace_back(pos << 1);
         qerror_buf[pos] = val - neg_avg;
-        quant.push_back(q);
       } else {
         qerror_buf[pos] = val;
       }
