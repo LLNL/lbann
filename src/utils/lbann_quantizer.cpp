@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include "lbann/utils/lbann_quantizer.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <cmath>
 
 namespace lbann {
@@ -515,6 +516,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh, Mat& im_qerror, bool compress) {
   if (qerror.Height() == 0) {
+    qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zeros(qerror, mat.Height(), mat.Width());
   }
   ThreshQuantized rs_quant;
@@ -560,6 +562,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
     [&im_qerror, &ag_send, &positions, compress, pos_thresh, neg_thresh, this]
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
+        im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
       threshold_quantize_apply(reduced, ag_send, im_qerror, pos_thresh,
@@ -610,6 +613,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
   bool compress) {
   if (qerror.Height() == 0) {
+    qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zeros(qerror, mat.Height(), mat.Width());
   }
   ThreshQuantized rs_quant;
@@ -655,6 +659,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
     [&im_qerror, &ag_send, &positions, compress, proportion, this]
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
+        im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
       adaptive_threshold_quantize_apply(reduced, ag_send, im_qerror, proportion,
@@ -883,20 +888,42 @@ void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
 
 std::tuple<DataType, DataType, DataType, DataType>
 lbann_quantizer::proportion_threshold_average(
-  const Mat& mat, const Mat& qerror, int proportion) {
+  const Mat& mat, const Mat& qerror, int proportion, bool sample) {
+  double pta_start = get_time();
   // It would be nice if there were a better way to do this...
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
   const Int height = mat.Height();
   const Int width = mat.Width();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      DataType val = mat.Get(row, col) + qerror.Get(row, col);
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  if (height * width <= NUM_PTA_SAMPLES || !sample) {
+    for (int row = 0; row < height; ++row) {
+      for (int col = 0; col < width; ++col) {
+        const unsigned pos = row + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        if (val >= 0.0f) {
+          pos_entries.emplace_back(val);
+        } else {
+          // Flip negative entries to make selection easier.
+          neg_entries.emplace_back(-1 * val);
+        }
+      }
+    }
+  } else {
+    // Randomly sample NUM_PTA_SAMPLES entries and use these to approximate
+    // everything.
+    std::uniform_int_distribution<int> row_dist(0, height - 1);
+    std::uniform_int_distribution<int> col_dist(0, width - 1);
+    rng_gen& gen = get_generator();
+    for (unsigned i = 0; i < NUM_PTA_SAMPLES; ++i) {
+      const unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= 0.0f) {
-        pos_entries.push_back(val);
+        pos_entries.emplace_back(val);
       } else {
-        // Flip negative entries to make selection easier.
-        neg_entries.push_back(-1 * val);
+        neg_entries.emplace_back(-1 * val);
       }
     }
   }
@@ -930,6 +957,7 @@ lbann_quantizer::proportion_threshold_average(
     }
     neg_avg /= neg_to_keep;
   }
+  pta_time += get_time() - pta_start;
   return std::make_tuple(pos_thresh, neg_thresh, pos_avg, neg_avg);
 }
 
@@ -937,6 +965,7 @@ std::tuple<DataType, DataType, DataType, DataType>
 lbann_quantizer::proportion_threshold_average_pos(
   const Mat& mat, const Mat& qerror, int proportion,
   const std::vector<unsigned>& positions) {
+  double pta_pos_start = get_time();
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
@@ -980,6 +1009,7 @@ lbann_quantizer::proportion_threshold_average_pos(
     }
     neg_avg /= neg_to_keep;
   }
+  pta_pos_time += get_time() - pta_pos_start;
   return std::make_tuple(pos_thresh, neg_thresh, pos_avg, neg_avg);
 }
 

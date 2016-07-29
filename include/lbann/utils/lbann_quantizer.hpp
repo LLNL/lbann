@@ -212,11 +212,12 @@ public:
    * @param mat The matrix to compute threshold values for.
    * @param qerror The accumulated quantization error in mat.
    * @param proportion Proportion of entries to keep.
+   * @param sample Whether to approximate stats with a sample.
    * @return In this order: The positive and negative threshold values, then the
    * positive and negative averages.
    */
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
-    const Mat& mat, const Mat& qerror, int proportion);
+    const Mat& mat, const Mat& qerror, int proportion, bool sample = true);
 
   /** Get the total number of bytes sent during quantization. */
   size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
@@ -255,6 +256,10 @@ public:
   double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
   /** Get the time spent in the all-gather send_trans. */
   double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
+  /** Get the time spent in proportion_threshold_average. */
+  double get_pta_time() const { return pta_time; }
+  /** Get the time spent in proportion_threshold_average_pos. */
+  double get_pta_pos_time() const { return pta_pos_time; }
   /** Reset recorded time counters. */
   void reset_time_counters() {
     rs_time = 0.0;
@@ -265,6 +270,8 @@ public:
     ag_reduced_trans_time = 0.0;
     ag_recv_buf_time = 0.0;
     ag_recv_trans_time = 0.0;
+    pta_time = 0.0;
+    pta_pos_time = 0.0;
   }
 
 private:
@@ -277,6 +284,8 @@ private:
   static const uqtype GR_M = 16;
   /** log_2(GR_M). */
   static const uqtype GR_K = 4;
+  /** Number of samples to use in proportion_threshold_average. */
+  static const int NUM_PTA_SAMPLES = 2048;
 
   /** Bytes sent in doing the reduce-scatter. */
   size_t rs_bytes_sent;
@@ -302,6 +311,10 @@ private:
   double ag_recv_buf_time;
   /** Time spent in the all-gather recv_trans. */
   double ag_recv_trans_time;
+  /** Time spent in proportion_threshold_average. */
+  double pta_time;
+  /** Time spent in proportion_threshold_average_pos. */
+  double pta_pos_time;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {
