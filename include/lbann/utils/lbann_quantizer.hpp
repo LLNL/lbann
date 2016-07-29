@@ -360,7 +360,7 @@ private:
    */
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average_pos(
     const Mat& mat, const Mat& qerror, int proportion,
-    const std::vector<unsigned>& positions);
+    const std::vector<unsigned>& positions, bool sample = true);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,

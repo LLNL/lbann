@@ -890,7 +890,6 @@ std::tuple<DataType, DataType, DataType, DataType>
 lbann_quantizer::proportion_threshold_average(
   const Mat& mat, const Mat& qerror, int proportion, bool sample) {
   double pta_start = get_time();
-  // It would be nice if there were a better way to do this...
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
   const Int height = mat.Height();
@@ -964,19 +963,35 @@ lbann_quantizer::proportion_threshold_average(
 std::tuple<DataType, DataType, DataType, DataType>
 lbann_quantizer::proportion_threshold_average_pos(
   const Mat& mat, const Mat& qerror, int proportion,
-  const std::vector<unsigned>& positions) {
+  const std::vector<unsigned>& positions, bool sample) {
   double pta_pos_start = get_time();
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
-  for (const auto& pos : positions) {
-    const DataType val = mat_buf[pos] + qerror_buf[pos];
-    if (val >= 0.0f) {
-      pos_entries.emplace_back(val);
-    } else {
-      // Flig negative entries to make selection easier.
-      neg_entries.emplace_back(-1.0f * val);
+  if (positions.size() <= NUM_PTA_SAMPLES || !sample) {
+    for (const auto& pos : positions) {
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
+      if (val >= 0.0f) {
+        pos_entries.emplace_back(val);
+      } else {
+        // Flip negative entries to make selection easier.
+        neg_entries.emplace_back(-1.0f * val);
+      }
+    }
+  } else {
+    // Randomly sample positions.
+    std::uniform_int_distribution<int> dist(0, positions.size() - 1);
+    rng_gen& gen = get_generator();
+    for (unsigned i = 0; i < NUM_PTA_SAMPLES; ++i) {
+      const unsigned pos = positions[dist(gen)];
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
+      if (val >= 0.0f) {
+        pos_entries.emplace_back(val);
+      } else {
+        // Flip negative entries to make selection easier.
+        neg_entries.emplace_back(-1.0f * val);
+      }
     }
   }
   // Determine how many positive/negative entries we need to keep.
