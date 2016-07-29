@@ -75,14 +75,35 @@ void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
   summarizer->reduce_scalar("ag_bytes_received",
                             quantizer.get_ag_bytes_received(),
                             trial);
+  summarizer->reduce_scalar("rs_time",
+                            quantizer.get_rs_time(),
+                            trial);
+  summarizer->reduce_scalar("ag_time",
+                            quantizer.get_ag_time(),
+                            trial);
   summarizer->reduce_scalar("rs_send_trans_time",
                             quantizer.get_rs_send_trans_time(),
+                            trial);
+  summarizer->reduce_scalar("rs_recv_buf_time",
+                            quantizer.get_rs_recv_buf_time(),
                             trial);
   summarizer->reduce_scalar("rs_recv_trans_time",
                             quantizer.get_rs_recv_trans_time(),
                             trial);
+  summarizer->reduce_scalar("ag_reduced_trans_time",
+                            quantizer.get_ag_reduced_trans_time(),
+                            trial);
+  summarizer->reduce_scalar("ag_recv_buf_time",
+                            quantizer.get_ag_recv_buf_time(),
+                            trial);
   summarizer->reduce_scalar("ag_recv_trans_time",
                             quantizer.get_ag_recv_trans_time(),
+                            trial);
+  summarizer->reduce_scalar("pta_time",
+                            quantizer.get_pta_time(),
+                            trial);
+  summarizer->reduce_scalar("pta_pos_time",
+                            quantizer.get_pta_pos_time(),
                             trial);
   quantizer.reset_bytes_counters();
   quantizer.reset_time_counters();
@@ -111,6 +132,8 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
+  // Allocate here, prevents messing with timing.
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -147,6 +170,7 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -209,35 +233,32 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
     print_stats(onebit_times);
   }
   DistMat thresh_copy(mat);
-  auto thresh_times = test_thresh(comm, thresh_copy, 1.0f);
+  auto thresh_times = test_thresh(comm, thresh_copy, 3.875f);
   if (comm->am_world_master()) {
     std::cout << "Thresh (" << mat.Height() << "x" << mat.Width() << "):" <<
       std::endl;
     print_stats(thresh_times);
   }
   DistMat comp_thresh_copy(mat);
-  auto comp_thresh_times = test_comp_thresh(comm, thresh_copy, 1.0f);
+  auto comp_thresh_times = test_comp_thresh(comm, comp_thresh_copy, 3.875f);
   if (comm->am_world_master()) {
     std::cout << "Compressed thresh (" << mat.Height() << "x" << mat.Width() <<
       "):" << std::endl;
     print_stats(comp_thresh_times);
   }
-  for (int proportion = 5; proportion < 50; proportion *= 2) {
-    DistMat adaptive_copy(mat);
-    auto adaptive_times = test_adaptive(comm, adaptive_copy, proportion);
-    if (comm->am_world_master()) {
-      std::cout << "Adaptive " << proportion << "(" << mat.Height() << "x" <<
-        mat.Width() << "):" << std::endl;
-      print_stats(adaptive_times);
-    }
-    DistMat comp_adaptive_copy(mat);
-    auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy,
-                                                  proportion);
-    if (comm->am_world_master()) {
-      std::cout << "Compressed adaptive " << proportion << "(" << mat.Height() <<
-        "x" << mat.Width() << "):" << std::endl;
-      print_stats(comp_adaptive_times);
-    }
+  DistMat adaptive_copy(mat);
+  auto adaptive_times = test_adaptive(comm, adaptive_copy, 45);
+  if (comm->am_world_master()) {
+    std::cout << "Adaptive 45 " << "(" << mat.Height() << "x" <<
+      mat.Width() << "):" << std::endl;
+    print_stats(adaptive_times);
+  }
+  DistMat comp_adaptive_copy(mat);
+  auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 45);
+  if (comm->am_world_master()) {
+    std::cout << "Compressed adaptive 45 " << "(" << mat.Height() <<
+      "x" << mat.Width() << "):" << std::endl;
+    print_stats(comp_adaptive_times);
   }
 }
 

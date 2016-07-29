@@ -143,13 +143,13 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
     case ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 20,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 20,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], true);
       break;
     }

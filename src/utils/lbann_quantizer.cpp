@@ -545,7 +545,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
       auto to_send_qerr = qerror(h, w);
       rs_quant.clear();
       threshold_quantize(to_send, rs_quant, to_send_qerr, pos_thresh,
-                         neg_thresh);
+                         neg_thresh, compress);
       if (compress) {
         ThreshQuantized comp;
         compress_thresholds(rs_quant, comp);
@@ -568,7 +568,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
         std::swap(rs_recv, uncomp);
       }
       threshold_unquantize_apply(rs_recv, rs_recv.begin(), accum, pos_thresh,
-                                 neg_thresh, positions);
+                                 neg_thresh, positions, compress);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
                                          rs_get_recv_buf, rs_recv_trans);
@@ -582,7 +582,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
       threshold_quantize_apply(reduced, ag_send, im_qerror, pos_thresh,
-                               neg_thresh, positions);
+                               neg_thresh, positions, compress);
       if (compress) {
         ThreshQuantized comp;
         compress_thresholds(ag_send, comp);
@@ -604,7 +604,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
       if (compress) {
         ThreshQuantized uncomp;
         uncompress_thresholds(ag_recv, uncomp);
-        threshold_unquantize(uncomp, accum, pos_thresh, neg_thresh);
+        threshold_unquantize(uncomp, accum, pos_thresh, neg_thresh, compress);
       } else {
         threshold_unquantize(ag_recv, accum, pos_thresh, neg_thresh);
       }
@@ -643,7 +643,8 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       auto to_send = mat(h, w);
       auto to_send_qerr = qerror(h, w);
       rs_quant.clear();
-      adaptive_threshold_quantize(to_send, rs_quant, to_send_qerr, proportion);
+      adaptive_threshold_quantize(to_send, rs_quant, to_send_qerr, proportion,
+                                  compress);
       if (compress) {
         ThreshQuantized comp;
         compress_adaptive_thresholds(rs_quant, comp);
@@ -665,7 +666,8 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
         uncompress_adaptive_thresholds(rs_recv, uncomp);
         std::swap(rs_recv, uncomp);
       }
-      adaptive_threshold_unquantize_apply(rs_recv, accum, positions);
+      adaptive_threshold_unquantize_apply(rs_recv, accum, positions,
+                                          compress);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
                                          rs_get_recv_buf, rs_recv_trans);
@@ -679,7 +681,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
       adaptive_threshold_quantize_apply(reduced, ag_send, im_qerror, proportion,
-                                        positions);
+                                        positions, compress);
       if (compress) {
         ThreshQuantized comp;
         compress_adaptive_thresholds(ag_send, comp);
@@ -701,7 +703,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       if (compress) {
         ThreshQuantized uncomp;
         uncompress_adaptive_thresholds(ag_recv, uncomp);
-        adaptive_threshold_unquantize(uncomp, accum);
+        adaptive_threshold_unquantize(uncomp, accum, compress);
       } else {
         adaptive_threshold_unquantize(ag_recv, accum);
       }
