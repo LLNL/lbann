@@ -290,8 +290,8 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   const Int width = mat.Width();
   const Int height = mat.Height();
   if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
-  const DataType* mat_buf = mat.LockedBuffer();
-  DataType* qerror_buf = qerror.Buffer();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ qerror_buf = qerror.Buffer();
   if (delta) {
     unsigned prev_pos = 0;
     for (int col = 0; col < width; ++col) {
@@ -348,7 +348,7 @@ void lbann_quantizer::threshold_unquantize(
   const ThreshQuantized& quant, ThreshQuantized::const_iterator quant_start,
   Mat& mat, DataType pos_avg, DataType neg_avg, bool delta) {
   if (std::distance(quant_start, quant.end()) == 0) return;
-  DataType* buf = mat.Buffer();
+  DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
     unsigned prev_pos = 0;
     for (auto iter = quant_start; iter != quant.end(); ++iter) {
@@ -379,7 +379,7 @@ void lbann_quantizer::threshold_unquantize_apply(
   Mat& mat, DataType pos_avg, DataType neg_avg,
   std::vector<unsigned>& positions, bool delta) {
   if (std::distance(quant_start, quant.end()) == 0) return;
-  DataType* buf = mat.Buffer();
+  DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
     unsigned prev_pos = 0;
     for (auto iter = quant_start; iter != quant.end(); ++iter) {
@@ -411,8 +411,8 @@ void lbann_quantizer::threshold_quantize_apply(
   if (neg_avg == 0.0f) {
     neg_avg = neg_thresh;
   }
-  const DataType* mat_buf = mat.LockedBuffer();
-  DataType* qerror_buf = qerror.Buffer();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ qerror_buf = qerror.Buffer();
   if (delta) {
     // Need to sort so positions are in order, otherwise our delta encoding
     // doesn't work. (Could be solved by adding stops, but maybe not worth it.)
@@ -541,8 +541,6 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
       }
       threshold_quantize_apply(reduced, ag_send, im_qerror, pos_thresh,
                                neg_thresh, positions);
-      /*threshold_quantize(reduced, ag_send, im_qerror, pos_thresh,
-        neg_thresh);*/
       if (compress) {
         ThreshQuantized comp;
         compress_thresholds(ag_send, comp);
