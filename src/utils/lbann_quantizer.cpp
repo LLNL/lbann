@@ -446,8 +446,8 @@ void lbann_quantizer::threshold_quantize_apply(
   }
 }
 
-void lbann_quantizer::adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q,
-                                                  Mat& qerror, int proportion) {
+void lbann_quantizer::adaptive_threshold_quantize(
+  const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion, bool delta) {
   DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
   std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
     proportion_threshold_average(mat, qerror, proportion);
@@ -458,34 +458,57 @@ void lbann_quantizer::adaptive_threshold_quantize(const Mat& mat, ThreshQuantize
   memcpy(&tmp, &neg_avg, sizeof(neg_avg));
   q.push_back(tmp);
   // Do regular thresholded quantization with the computed values.
-  threshold_quantize(mat, q, qerror, pos_thresh, neg_thresh, pos_avg, neg_avg);
+  threshold_quantize(mat, q, qerror, pos_thresh, neg_thresh, delta, pos_avg,
+                     neg_avg);
 }
 
-void lbann_quantizer::adaptive_threshold_quantize(const DistMat& mat,
-                                                  ThreshQuantized& q,
-                                                  Mat& qerror, int proportion) {
-  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion);
+void lbann_quantizer::adaptive_threshold_quantize(
+  const DistMat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
+  bool delta) {
+  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion, delta);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, Mat& mat, bool apply) {
+  const ThreshQuantized& q, Mat& mat, bool delta) {
   // Get the averages out.
   DataType pos_avg;
   memcpy(&pos_avg, &(q[0]), sizeof(pos_avg));
   DataType neg_avg;
   memcpy(&neg_avg, &(q[1]), sizeof(neg_avg));
-  if (apply) {
-    std::vector<unsigned> unused;
-    threshold_unquantize_apply(q, std::next(q.begin(), 2), mat, pos_avg, neg_avg,
-                               unused);
-  } else {
-    threshold_unquantize(q, std::next(q.begin(), 2), mat, pos_avg, neg_avg);
-  }
+  threshold_unquantize(q, std::next(q.begin(), 2), mat, pos_avg, neg_avg,
+                       delta);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, DistMat& mat, bool apply) {
-  adaptive_threshold_unquantize(q, mat.Matrix(), apply);
+  const ThreshQuantized& q, DistMat& mat, bool delta) {
+  adaptive_threshold_unquantize(q, mat.Matrix(), delta);
+}
+
+void lbann_quantizer::adaptive_threshold_unquantize_apply(
+  const ThreshQuantized& q, Mat& mat, std::vector<unsigned>& positions, bool delta) {
+  // Get the averages out.
+  DataType pos_avg;
+  memcpy(&pos_avg, &(q[0]), sizeof(pos_avg));
+  DataType neg_avg;
+  memcpy(&neg_avg, &(q[1]), sizeof(neg_avg));
+  threshold_unquantize_apply(q, std::next(q.begin(), 2), mat, pos_avg, neg_avg,
+                             positions, delta);
+}
+
+void lbann_quantizer::adaptive_threshold_quantize_apply(
+  const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
+  std::vector<unsigned>& positions, bool delta) {
+  DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+  std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+    proportion_threshold_average_pos(mat, qerror, proportion, positions);
+  // Store the averages for reconstruction.
+  uqtype tmp;
+  memcpy(&tmp, &pos_avg, sizeof(pos_avg));
+  q.push_back(tmp);
+  memcpy(&tmp, &neg_avg, sizeof(neg_avg));
+  q.push_back(tmp);
+  threshold_quantize_apply(mat, q, qerror, pos_thresh, neg_thresh, positions,
+                           delta, pos_avg, neg_avg);
 }
 
 void lbann_quantizer::intermodel_sum_threshold_quantized(
@@ -593,6 +616,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   ThreshQuantized rs_recv;
   ThreshQuantized comp_buf;
   ThreshQuantized uncomp_buf;
+  std::vector<unsigned> positions;
   auto rs_send_trans = 
     [&qerror, &rs_quant, compress, proportion, this]
     (Mat& mat, IR h, IR w, int& count) {
@@ -614,26 +638,27 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       return rs_recv.data();
     };
   auto rs_recv_trans = 
-    [&rs_recv, compress, this]
+    [&rs_recv, &positions, compress, this]
     (uqtype* buf, Mat& accum) {
       if (compress) {
         ThreshQuantized uncomp;
         uncompress_adaptive_thresholds(rs_recv, uncomp);
         std::swap(rs_recv, uncomp);
       }
-      adaptive_threshold_unquantize(rs_recv, accum, true);
+      adaptive_threshold_unquantize_apply(rs_recv, accum, positions);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
                                          rs_get_recv_buf, rs_recv_trans);
   ThreshQuantized ag_send;
   ThreshQuantized ag_recv;
   auto ag_reduced_trans =
-    [&im_qerror, &ag_send, compress, proportion, this]
+    [&im_qerror, &ag_send, &positions, compress, proportion, this]
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
-      adaptive_threshold_quantize(reduced, ag_send, im_qerror, proportion);
+      adaptive_threshold_quantize_apply(reduced, ag_send, im_qerror, proportion,
+                                        positions);
       if (compress) {
         ThreshQuantized comp;
         compress_adaptive_thresholds(ag_send, comp);
@@ -873,6 +898,56 @@ lbann_quantizer::proportion_threshold_average(
         // Flip negative entries to make selection easier.
         neg_entries.push_back(-1 * val);
       }
+    }
+  }
+  // Determine how many positive/negative entries we need to keep.
+  int pos_to_keep = pos_entries.size() / proportion;
+  int neg_to_keep = neg_entries.size() / proportion;
+  // Determine the threshold value with a selection algorithm to keep only the
+  // largest pos/neg_to_keep elements.
+  // Set to 0 if there's none.
+  // The partitioning also guarantees everything after the i'th element is
+  // greater than or equal to it.
+  DataType pos_thresh = 0.0f;
+  DataType neg_thresh = 0.0f;
+  DataType pos_avg = 0.0f;
+  DataType neg_avg = 0.0f;
+  if (pos_to_keep > 0 && pos_entries.size() > 0) {
+    auto i = pos_entries.begin() + (pos_entries.size() - pos_to_keep);
+    std::nth_element(pos_entries.begin(), i, pos_entries.end());
+    pos_thresh = *i;
+    for (; i != pos_entries.end(); ++i) {
+      pos_avg += *i;
+    }
+    pos_avg /= pos_to_keep;
+  }
+  if (neg_to_keep > 0 && neg_entries.size() > 0) {
+    auto i = neg_entries.begin() + (neg_entries.size() - neg_to_keep);
+    std::nth_element(neg_entries.begin(), i, neg_entries.end());
+    neg_thresh = -1 * (*i);
+    for (; i != neg_entries.end(); ++i) {
+      neg_avg -= *i;
+    }
+    neg_avg /= neg_to_keep;
+  }
+  return std::make_tuple(pos_thresh, neg_thresh, pos_avg, neg_avg);
+}
+
+std::tuple<DataType, DataType, DataType, DataType>
+lbann_quantizer::proportion_threshold_average_pos(
+  const Mat& mat, const Mat& qerror, int proportion,
+  const std::vector<unsigned>& positions) {
+  std::vector<DataType> pos_entries;
+  std::vector<DataType> neg_entries;
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  for (const auto& pos : positions) {
+    const DataType val = mat_buf[pos] + qerror_buf[pos];
+    if (val >= 0.0f) {
+      pos_entries.emplace_back(val);
+    } else {
+      // Flig negative entries to make selection easier.
+      neg_entries.emplace_back(-1.0f * val);
     }
   }
   // Determine how many positive/negative entries we need to keep.

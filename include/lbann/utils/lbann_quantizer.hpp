@@ -116,6 +116,7 @@ public:
    * @param qerror Running quantization error.
    * @param pos_thresh The positive threshold level.
    * @param neg_thresh The negative threshold level.
+   * @param delta Whether to do delta encoding (default false).
    * @param pos_avg The positive quantization value (0 for default).
    * @param neg_avg The negative quantization value (0 for default).
    */
@@ -133,6 +134,7 @@ public:
    * @param mat The output unquantized matrix.
    * @param pos_avg The positive quantization value.
    * @param neg_avg The negative quantization value.
+   * @param delta Whether q was quantized with delta encoding (default false).
    */
   void threshold_unquantize(const ThreshQuantized& q, Mat& mat,
                             DataType pos_avg, DataType neg_avg,
@@ -148,22 +150,23 @@ public:
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
+   * @param delta Whether to do delta encoding (default false).
    */
   void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
-                                   int proportion);
+                                   int proportion, bool delta = false);
   void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
-                                   Mat& qerror, int proportion);
+                                   Mat& qerror, int proportion,
+                                   bool delta = false);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
-   * @param apply Whether to add unquantized data to existing entries or replace
-   * existing entries.
+   * @param delta Whether delta encoding was used (default false).
    */
   void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                                     bool apply = false);
+                                     bool delta = false);
   void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                                     bool apply = false);
+                                     bool delta = false);
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
    */
@@ -329,6 +332,23 @@ private:
                                 std::vector<unsigned>& positions,
                                 bool delta = false, DataType pos_avg = 0.0f,
                                 DataType neg_avg = 0.0f);
+
+  /** As with threshold_unquantize_apply, but adaptively. */
+  void adaptive_threshold_unquantize_apply(
+    const ThreshQuantized& q, Mat& mat, std::vector<unsigned>& positions,
+    bool delta = false);
+  /** As with threshold_quantize_apply, but adaptively. */
+  void adaptive_threshold_quantize_apply(
+    const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
+    std::vector<unsigned>& positions, bool delta = false);
+  /**
+   * Internal version of proportion_threshold_average that only
+   * examines the positions in positions.
+   */
+  std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average_pos(
+    const Mat& mat, const Mat& qerror, int proportion,
+    const std::vector<unsigned>& positions);
+
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized::const_iterator qstart,
