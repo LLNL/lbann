@@ -121,25 +121,25 @@ public:
    */
   void threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
-                          DataType pos_avg = 0.0f, DataType neg_avg = 0.0f);
+                          bool delta = false, DataType pos_avg = 0.0f,
+                          DataType neg_avg = 0.0f);
   void threshold_quantize(const DistMat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
-                          DataType pos_avg = 0.0f, DataType neg_avg = 0.0f);
+                          bool delta = false, DataType pos_avg = 0.0f,
+                          DataType neg_avg = 0.0f);
   /**
    * Unquantize a thresholded-and-quantized matrix.
    * @param q The quantized matrix.
    * @param mat The output unquantized matrix.
    * @param pos_avg The positive quantization value.
    * @param neg_avg The negative quantization value.
-   * @param apply Whether to add unquantized data to existing entries or replace
-   * existing entries.
    */
   void threshold_unquantize(const ThreshQuantized& q, Mat& mat,
                             DataType pos_avg, DataType neg_avg,
-                            bool apply = false);
+                            bool delta = false);
   void threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
                             DataType pos_avg, DataType neg_avg,
-                            bool apply = false);
+                            bool delta = false);
   /**
    * Threshold and quantize a matrix, dynamically choosing the threshold and
    * quantization values. qerror needs to be initialized with:
@@ -309,7 +309,26 @@ private:
   void threshold_unquantize(const ThreshQuantized& q,
                             ThreshQuantized::const_iterator qstart, Mat& mat,
                             DataType pos_avg, DataType neg_avg,
-                            bool apply = false);
+                            bool delta = false);
+  /**
+   * Do threshold unquantization from arbitrary locations, adding the
+   * unquantized values to existing ones instead of replacing them, and storing
+   * the locations applied.
+   */
+  void threshold_unquantize_apply(const ThreshQuantized& q,
+                                  ThreshQuantized::const_iterator qstart,
+                                  Mat& mat, DataType pos_avg, DataType neg_avg,
+                                  std::vector<unsigned>& positions,
+                                  bool delta = false);
+  /**
+   * Quantize only the locations in mat in positions; the companion of
+   * threshold_unquantize_apply.
+   */
+  void threshold_quantize_apply(const Mat& mat, ThreshQuantized& q, Mat& qerror,
+                                DataType pos_thresh, DataType neg_thresh,
+                                std::vector<unsigned>& positions,
+                                bool delta = false, DataType pos_avg = 0.0f,
+                                DataType neg_avg = 0.0f);
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized::const_iterator qstart,
