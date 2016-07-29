@@ -379,6 +379,15 @@ void lbann_quantizer::threshold_unquantize_apply(
   const ThreshQuantized& quant, ThreshQuantized::const_iterator quant_start,
   Mat& mat, DataType pos_avg, DataType neg_avg,
   std::vector<unsigned>& positions, bool delta) {
+  // A general note on positions that I'm putting here because I'm not sure
+  // where else to: Using a vector admits the possibility that we have
+  // duplicate entries. This could be fixed by using an unordered_set, but when
+  // I benchmarked this, it increased our runtime by ~5 times. Having duplicate
+  // entries should not change the final result: it means that
+  // threshold_quantize_apply may quantize the same entry multiple times, but
+  // the final unquantize is not an _apply, and so will just set that entry to
+  // the same value multiple times. We send some extra data, but the overhead
+  // is small.
   if (std::distance(quant_start, quant.end()) == 0) return;
   DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
