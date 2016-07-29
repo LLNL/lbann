@@ -44,18 +44,26 @@ lbann_quantizer::~lbann_quantizer() {
 
 void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror) {
   // Set up the quantized matrix. (+2 for the averages.)
-  size_t qheight = get_quantized_matrix_height(mat);
-  size_t qwidth = mat.Width();
+  const int qheight = get_quantized_matrix_height(mat);
+  const int qwidth = mat.Width();
   qmat.Resize(qheight, qwidth);
 
-  for (int col = 0; col < mat.Width(); ++col) {
+  const Int width = mat.Width();
+  const Int height = mat.Height();
+  const Int ldim = mat.LDim();
+  const Int qmat_ldim = qmat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ qerror_buf = qerror.Buffer();
+  qtype* __restrict__ qmat_buf = qmat.Buffer();
+  for (int col = 0; col < width; ++col) {
     // First compute the positive and negative column averages.
     DataType pos_sum = 0.0f;
     DataType neg_sum = 0.0f;
     size_t num_pos = 0;
     size_t num_neg = 0;
-    for (int row = 0; row < mat.Height(); ++row) {
-      DataType val = mat.Get(row, col) + qerror.Get(row, col);
+    for (int row = 0; row < height; ++row) {
+      const int pos = row + col * ldim;
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= 0.0f) {
         pos_sum += val;
         ++num_pos;
@@ -82,24 +90,24 @@ void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerro
     qmat.Set(1, col, tmp);
 
     // Now quantize the column, NUM_BITS entries at a time.
-    int row_chunk = 0;
     int qrow = 2;
-    for (; row_chunk < mat.Height(); row_chunk += NUM_BITS) {
+    for (int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
       uqtype q = 0;
-      for (size_t bit = 0; bit < NUM_BITS; ++bit) {
+      for (unsigned bit = 0; bit < NUM_BITS; ++bit) {
         int row = row_chunk + bit;
-        if (row >= mat.Height()) {
+        if (row >= height) {
           break;
         }
-        DataType val = mat.Get(row, col) + qerror.Get(row, col);
+        const int pos = row + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           q |= 1 << bit;
-          qerror.Set(row, col, val - avg_pos);
+          qerror_buf[pos] = val - avg_pos;
         } else {
-          qerror.Set(row, col, val - avg_neg);
+          qerror_buf[pos] = val - avg_neg;
         }
       }
-      qmat.Set(qrow, col, (qtype) q);
+      qmat_buf[qrow + col * qmat_ldim] = (qtype) q;
       ++qrow;
     }
   }
@@ -111,8 +119,13 @@ void lbann_quantizer::quantize(const DistMat& mat, QuantizedMatrix& qmat,
 }
 
 void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply) {
-  for (int col = 0; col < mat.Width(); ++col) {
-    int row_chunk = 0;
+  const Int width = mat.Width();
+  const Int height = mat.Height();
+  const Int ldim = mat.LDim();
+  const Int qmat_ldim = qmat.LDim();
+  const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
+  DataType* __restrict__ mat_buf = mat.Buffer();
+  for (int col = 0; col < width; ++col) {
     int qrow = 2;
     // Extract the averages.
     qtype tmp = qmat.Get(0, col);
@@ -122,17 +135,17 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool app
     DataType avg_neg;
     memcpy(&avg_neg, &tmp, sizeof(avg_neg));
     // Unquantize this column.
-    for (; row_chunk < mat.Height(); row_chunk += NUM_BITS) {
-      uqtype q = (uqtype) qmat.Get(qrow, col);
+    for (int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
+      uqtype q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
       for (size_t bit = 0; bit < NUM_BITS; ++bit) {
         int row = row_chunk + bit;
-        if (row >= mat.Height()) {
+        if (row >= height) {
           break;
         }
         if (apply) {
-          mat.Update(row, col, (q >> bit) & 0x1 ? avg_pos : avg_neg);
+          mat_buf[row + col * ldim] += (q >> bit) & 0x1 ? avg_pos : avg_neg;
         } else {
-          mat.Set(row, col, (q >> bit) & 0x1 ? avg_pos : avg_neg);
+          mat_buf[row + col * ldim] = (q >> bit) & 0x1 ? avg_pos : avg_neg;
         }
       }
       ++qrow;
@@ -146,17 +159,13 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, DistMat& mat,
 }
 
 void lbann_quantizer::intermodel_sum_quantized(
-  lbann_comm* comm, Mat& mat_, Mat& qerror_, Mat& im_qerror,
+  lbann_comm* comm, Mat& mat, Mat& qerror, Mat& im_qerror,
   bool do_adagrad, Mat* gradhist) {
   // Initialize qerror.
-  if (qerror_.Height() == 0) {
-    Zeros(qerror_, mat_.Height(), mat_.Width());
+  if (qerror.Height() == 0) {
+    qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
+    Zeros(qerror, mat.Height(), mat.Width());
   }
-  // Local transpose so that we quantize each neuron instead of each feature.
-  Mat mat;
-  Transpose(mat_, mat);
-  Mat qerror;
-  Transpose(qerror_, qerror);
   QuantizedMatrix to_send_quant;
   QuantizedMatrix rs_recv;
   auto rs_send_trans =
@@ -229,8 +238,6 @@ void lbann_quantizer::intermodel_sum_quantized(
   intermodel_ring_allgather<qtype>(comm, mat, false, ag_reduced_trans,
                                    ag_get_send_buf, ag_get_recv_buf,
                                    ag_recv_trans, ag_swap_bufs);
-  Transpose(mat, mat_);
-  Transpose(qerror, qerror_);
 }
 
 void lbann_quantizer::intermodel_sum_quantized(
