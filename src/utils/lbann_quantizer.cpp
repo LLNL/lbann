@@ -182,7 +182,7 @@ void lbann_quantizer::intermodel_sum_quantized(
   // Initialize qerror.
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
-    Zeros(qerror, mat.Height(), mat.Width());
+    Zero(qerror);
   }
   QuantizedMatrix to_send_quant;
   QuantizedMatrix rs_recv;
@@ -232,7 +232,7 @@ void lbann_quantizer::intermodel_sum_quantized(
       }
       if (im_qerror.Height() == 0) {
         im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
-        Zeros(im_qerror, reduced.Height(), reduced.Width());
+        Zero(im_qerror);
       }
       quantize(reduced, ag_send, im_qerror);
     };
@@ -552,7 +552,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
   DataType neg_thresh, Mat& im_qerror, bool compress) {
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
-    Zeros(qerror, mat.Height(), mat.Width());
+    Zero(qerror);
   }
   ThreshQuantized rs_quant;
   ThreshQuantized rs_recv;
@@ -598,7 +598,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
         im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
-        Zeros(im_qerror, reduced.Height(), reduced.Width());
+        Zero(im_qerror);
       }
       threshold_quantize_apply(reduced, ag_send, im_qerror, pos_thresh,
                                neg_thresh, positions, compress);
@@ -649,7 +649,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   bool compress) {
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
-    Zeros(qerror, mat.Height(), mat.Width());
+    Zero(qerror);
   }
   ThreshQuantized rs_quant;
   ThreshQuantized rs_recv;
@@ -697,7 +697,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
         im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
-        Zeros(im_qerror, reduced.Height(), reduced.Width());
+        Zero(im_qerror);
       }
       adaptive_threshold_quantize_apply(reduced, ag_send, im_qerror, proportion,
                                         positions, compress);
