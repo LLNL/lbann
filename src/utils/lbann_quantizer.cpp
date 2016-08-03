@@ -213,6 +213,7 @@ void lbann_quantizer::intermodel_sum_quantized(
         Hadamard(tmp, reduced_copy, reduced);
       }
       if (im_qerror.Height() == 0) {
+        im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
         Zeros(im_qerror, reduced.Height(), reduced.Width());
       }
       quantize(reduced, ag_send, im_qerror);
