@@ -42,7 +42,8 @@ lbann_quantizer::~lbann_quantizer() {
 
 }
 
-void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror) {
+void lbann_quantizer::quantize(
+  const Mat& mat, QuantizedMatrix& qmat, Mat& qerror, bool sample) {
   // Set up the quantized matrix. (+2 for the averages.)
   const int qheight = get_quantized_matrix_height(mat);
   const int qwidth = mat.Width();
@@ -61,15 +62,32 @@ void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerro
     DataType neg_sum = 0.0f;
     size_t num_pos = 0;
     size_t num_neg = 0;
-    for (int row = 0; row < height; ++row) {
-      const int pos = row + col * ldim;
-      const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= 0.0f) {
-        pos_sum += val;
-        ++num_pos;
-      } else {
-        neg_sum += val;
-        ++num_neg;
+    if (height <= NUM_ONEBIT_SAMPLES || !sample) {
+      for (int row = 0; row < height; ++row) {
+        const int pos = row + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        if (val >= 0.0f) {
+          pos_sum += val;
+          ++num_pos;
+        } else {
+          neg_sum += val;
+          ++num_neg;
+        }
+      }
+    } else {
+      // Randomly sample NUM_ONEBIT_SAMPLES to approximate.
+      std::uniform_int_distribution<int> row_dist(0, height - 1);
+      rng_gen& gen = get_generator();
+      for (unsigned i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
+        const unsigned pos = row_dist(gen) + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        if (val >= 0.0f) {
+          pos_sum += val;
+          ++num_pos;
+        } else {
+          neg_sum += val;
+          ++num_neg;
+        }
       }
     }
     DataType avg_pos = 0.0f;
@@ -114,8 +132,8 @@ void lbann_quantizer::quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerro
 }
 
 void lbann_quantizer::quantize(const DistMat& mat, QuantizedMatrix& qmat,
-                               Mat& qerror) {
-  quantize(mat.LockedMatrix(), qmat, qerror);
+                               Mat& qerror, bool sample) {
+  quantize(mat.LockedMatrix(), qmat, qerror, sample);
 }
 
 void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply) {

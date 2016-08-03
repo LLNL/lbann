@@ -114,13 +114,12 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
   lbann_quantizer quantizer;
   Mat qerror;
   Mat im_qerror;
-  Mat gradhist;
   // Allocate here, prevents messing with timing.
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_quantized(comm, mat, qerror, im_qerror,
-                                       true, &gradhist);
+                                       false);
     double tot = get_time() - start;
     times.push_back(tot);
     onebit_summarizer->reduce_scalar("time", tot, trial);
