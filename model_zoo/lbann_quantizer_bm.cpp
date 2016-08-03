@@ -115,6 +115,8 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
   Mat qerror;
   Mat im_qerror;
   Mat gradhist;
+  // Allocate here, prevents messing with timing.
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_quantized(comm, mat, qerror, im_qerror,
@@ -153,6 +155,8 @@ std::vector<double> test_comp_thresh(lbann_comm* comm, DistMat& mat,
   lbann_quantizer quantizer;
   Mat qerror;
   Mat im_qerror;
+  // Allocate here, prevents messing with timing.
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_threshold_quantized(
@@ -190,6 +194,8 @@ std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
   lbann_quantizer quantizer;
   Mat qerror;
   Mat im_qerror;
+  // Allocate here, prevents messing with timing.
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_adaptive_threshold_quantized(
