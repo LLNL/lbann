@@ -71,15 +71,11 @@ pooling_layer::pooling_layer(const uint index,
     NumNeurons *= m_output_dims[i];
   }
   
-  // Matrices should be in Star,Star and Star,VC distributions
-  delete WB;
-  delete WB_D;
+  // Matrices should be in Star,VC distributions
   delete Zs;
   delete Ds;
   delete Ds_Temp;
   delete Acts;
-  WB = NULL;
-  WB_D = NULL;
   Zs = new StarVCMat(comm->get_model_grid());
   Ds = new StarVCMat(comm->get_model_grid());
   Ds_Temp = new StarVCMat(comm->get_model_grid());
