@@ -40,9 +40,9 @@ using namespace El;
 lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
-  : optimizer(optimizer), comm(comm), regularizers(regs),
-    m_mini_batch_size(mbsize), m_effective_mbsize(mbsize),
-    m_activation_type(activation),
+  : m_activation_type(activation), optimizer(optimizer), comm(comm),
+    regularizers(regs), m_mini_batch_size(mbsize),
+    m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0)
 {
     Index = index;

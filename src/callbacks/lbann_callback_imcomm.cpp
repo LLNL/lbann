@@ -59,7 +59,6 @@ void lbann_callback_imcomm::setup(Model* m) {
         // TODO: handle case where WB_D is in other matrix distribution
         DistMat& WB_D = (DistMat&) layer->get_weights_biases_gradient();
         quantization_errors.emplace(idx, Mat{});
-        Zeros(quantization_errors[idx], WB_D.LocalHeight(), WB_D.LocalWidth());
         im_quantization_errors.emplace(idx, Mat{});
         if (ct == ONEBIT_QUANTIZATION) {
           // Set up gradient history and SGD optimizer for one-bit quantization.
@@ -100,8 +99,7 @@ void lbann_callback_imcomm::on_epoch_end(Model* m) {
       local_mat = quantization_errors[l];
       // Apply optimizer update again.
       layers[l]->update();
-      Zeros(quantization_errors[l], quantization_errors[l].Height(),
-            quantization_errors[l].Width());
+      quantization_errors[l].Empty();
     }
   }
 }
@@ -145,13 +143,13 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
     case ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 5,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 5,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], true);
       break;
     }
