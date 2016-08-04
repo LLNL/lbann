@@ -146,6 +146,9 @@ private:
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
   void gather_scalar_summary(const std::string tag, DataType s, int64_t step);
+  /** Gather and write out a scalar summary for each entry in a vector. */
+  void gather_scalar_summary(const std::vector<pending_op>& ops,
+                             std::vector<DataType>& scalars);
 };
 
 #else

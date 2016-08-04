@@ -148,6 +148,18 @@ using lbann_mpi_req = mpi::Request;
                   intermodel_comm);
       bytes_received += sizeof(T) * (get_num_models() - 1);
     }
+    /** Inter-model scalar-array gather (for non-root processes). */
+    template <typename T>
+    void intermodel_gather(T* send, int count, int root) {
+      bytes_sent += sizeof(T) * count;
+      mpi::Gather(send, count, (T*) NULL, 0, root, intermodel_comm);
+    }
+    /** Inter-model scalar-array gather (for root processes). */
+    template <typename T>
+    void intermodel_gather(T* send, int count, T* recv) {
+      mpi::Gather(send, count, recv, count, get_model_rank(), intermodel_comm);
+      bytes_received += sizeof(T) * count * (get_num_models() - 1);
+    }
     /** Inter-model reduce (for non-root processes). */
     template <typename T>
     void intermodel_reduce(T send, int root, mpi::Op op = mpi::SUM) {

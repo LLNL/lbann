@@ -55,10 +55,11 @@ void lbann_summary::reduce_mean(const std::string tag, const ElMat& mat,
 
   // Check distributed matrix format
   El::DistData mat_format(mat);
-  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+  if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sum on master process if matrix is Star,Star
-    if(comm->am_model_master())
+    if(comm->am_model_master()) {
       sum = local_sum(mat.LockedMatrix());
+    }
   }
   else {
     // Compute local sum on all processes if matrix is in MC,MR;
@@ -92,7 +93,7 @@ void lbann_summary::reduce_stdev(const std::string tag, const ElMat& mat,
 
   // Check distributed matrix format
   El::DistData mat_format(mat);
-  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+  if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
     if(comm->am_model_master()) {
       sum = local_sum(mat.LockedMatrix());
@@ -142,81 +143,120 @@ void lbann_summary::flush() {
 }
 
 void lbann_summary::flush_means() {
+  std::vector<DataType> local_sums;
   for (const auto& op : pending_means) {
-    if (comm->am_model_master()) {
-      DataType model_sum = comm->model_reduce(op.local);
-      DataType model_mean = model_sum / op.num;
-      gather_scalar_summary(op.tag, model_mean, op.step);
-    } else {
-      comm->model_reduce(op.local, comm->get_model_master());
+    local_sums.push_back(op.local);
+  }
+  if (comm->am_model_master()) {
+    std::vector<DataType> global_sums(pending_means.size());
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       global_sums.data());
+    // Compute the means in-place.
+    for (unsigned i = 0; i < global_sums.size(); ++i) {
+      global_sums[i] /= pending_means[i].num;
     }
+    gather_scalar_summary(pending_means, global_sums);
+  } else {
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       comm->get_model_master());
   }
   pending_means.clear();
 }
 
 void lbann_summary::flush_mins() {
+  std::vector<DataType> local_mins;
   for (const auto& op : pending_mins) {
-    if (comm->am_model_master()) {
-      DataType model_min = comm->model_reduce(op.local, El::mpi::MIN);
-      gather_scalar_summary(op.tag, model_min, op.step);
-    } else {
-      comm->model_reduce(op.local, comm->get_model_master(), El::mpi::MIN);
-    }
+    local_mins.push_back(op.local);
+  }
+  if (comm->am_model_master()) {
+    std::vector<DataType> global_mins(pending_mins.size());
+    comm->model_reduce(local_mins.data(), local_mins.size(),
+                       global_mins.data(), El::mpi::MIN);
+    gather_scalar_summary(pending_mins, global_mins);
+  } else {
+    comm->model_reduce(local_mins.data(), local_mins.size(),
+                       comm->get_model_master(), El::mpi::MIN);
   }
   pending_mins.clear();
 }
 
 void lbann_summary::flush_maxes() {
+  std::vector<DataType> local_maxes;
   for (const auto& op : pending_maxes) {
-    if (comm->am_model_master()) {
-      DataType model_max = comm->model_reduce(op.local, El::mpi::MAX);
-      gather_scalar_summary(op.tag, model_max, op.step);
-    } else {
-      comm->model_reduce(op.local, comm->get_model_master(), El::mpi::MAX);
-    }
+    local_maxes.push_back(op.local);
+  }
+  if (comm->am_model_master()) {
+    std::vector<DataType> global_maxes(pending_maxes.size());
+    comm->model_reduce(local_maxes.data(), local_maxes.size(),
+                       global_maxes.data(), El::mpi::MAX);
+    gather_scalar_summary(pending_maxes, global_maxes);
+  } else {
+    comm->model_reduce(local_maxes.data(), local_maxes.size(),
+                       comm->get_model_master(), El::mpi::MAX);
   }
   pending_maxes.clear();
 }
 
 void lbann_summary::flush_stdevs() {
+  std::vector<DataType> local_sums;
+  std::vector<DataType> local_sqsums;
   for (const auto& op : pending_stdevs) {
+    local_sums.push_back(op.local);
+    local_sqsums.push_back(op.local2);
+  }
+  if (comm->am_model_master()) {
     // Compute the model sample standard deviation as:
     // sqrt[1/(n-1) (sqsum - (1/n)*sum^2)]
     // The n-1 is to use an unbiased variance estimate.
     // This unrolls the usual formulation of standard deviation some, to avoid
     // global operations when pushing the operation.
-    if (comm->am_model_master()) {
-      DataType model_sum = comm->model_reduce(op.local);
-      DataType model_sqsum = comm->model_reduce(op.local2);
-      DataType model_stdev = std::sqrt((model_sqsum -
-                                        model_sum * model_sum / op.num) /
-                                       (op.num - 1));
-      gather_scalar_summary(op.tag, model_stdev, op.step);
-    } else {
-      comm->model_reduce(op.local, comm->get_model_master());
-      comm->model_reduce(op.local2, comm->get_model_master());
+    std::vector<DataType> global_sums(pending_stdevs.size());
+    std::vector<DataType> global_sqsums(pending_stdevs.size());
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       global_sums.data());
+    comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
+                       global_sqsums.data());
+    // Re-use the global_sums vector for the standard deviation.
+    for (unsigned i = 0; i < global_sums.size(); ++i) {
+      global_sums[i] = std::sqrt(
+        (global_sqsums[i] -
+         global_sums[i] * global_sums[i] / pending_stdevs[i].num) /
+        (pending_stdevs[i].num - 1));
     }
+    gather_scalar_summary(pending_stdevs, global_sums);
+  } else {
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       comm->get_model_master());
+    comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
+                       comm->get_model_master());
   }
   pending_stdevs.clear();
 }
 
 void lbann_summary::flush_scalars() {
   if (comm->am_model_master()) {
+    std::vector<DataType> local_scalars;
     for (const auto& op : pending_scalars) {
-      gather_scalar_summary(op.tag, op.local, op.step);
+      local_scalars.push_back(op.local);
     }
-    pending_scalars.clear();
+    gather_scalar_summary(pending_scalars, local_scalars);
   }
+  pending_scalars.clear();
 }
 
 void lbann_summary::flush_sum_scalars() {
+  std::vector<DataType> local_sums;
   for (const auto& op : pending_sum_scalars) {
-    if (comm->am_model_master()) {
-      DataType model_sum = comm->model_reduce(op.local);
-      gather_scalar_summary(op.tag, model_sum, op.step);
-    } else {
-      comm->model_reduce(op.local, comm->get_model_master());
-    }
+    local_sums.push_back(op.local);
+  }
+  if (comm->am_model_master()) {
+    std::vector<DataType> global_sums(pending_sum_scalars.size());
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       global_sums.data());
+    gather_scalar_summary(pending_sum_scalars, global_sums);
+  } else {
+    comm->model_reduce(local_sums.data(), local_sums.size(),
+                       comm->get_model_master());
   }
   pending_sum_scalars.clear();
 }
@@ -224,9 +264,13 @@ void lbann_summary::flush_sum_scalars() {
 DataType lbann_summary::local_sum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
   DataType sum = 0.0;
-  for (int row = 0; row < mat.Height(); ++row) {
-    for (int col = 0; col < mat.Width(); ++col) {
-      sum += mat.Get(row, col);
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
+      sum += mat_buf[row + col * ldim];
     }
   }
   return sum;
@@ -235,10 +279,14 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
 DataType lbann_summary::local_sqsum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
   DataType sqsum = 0.0;
-  for (int row = 0; row < mat.Height(); ++row) {
-    for (int col = 0; col < mat.Width(); ++col) {
-      DataType v = mat.Get(row, col);
-      sqsum += v * v;
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
+      const int pos = row + col * ldim;
+      sqsum += mat_buf[pos] * mat_buf[pos];
     }
   }
   return sqsum;
@@ -247,6 +295,23 @@ DataType lbann_summary::local_sqsum(const Mat& mat) const {
 std::string lbann_summary::prepend_model(const std::string tag,
                                          int model) const {
   return "model" + std::to_string(model) + "/" + tag;
+}
+
+void lbann_summary::gather_scalar_summary(
+  const std::vector<pending_op>& ops, std::vector<DataType>& scalars) {
+  if (comm->am_world_master()) {
+    std::vector<DataType> data(comm->get_num_models() * scalars.size());
+    comm->intermodel_gather(scalars.data(), scalars.size(), data.data());
+    for (unsigned i = 0; i < data.size(); ++i) {
+      int model = i / ops.size();
+      unsigned ops_pos = i % ops.size();
+      sw->add_scalar(prepend_model(ops[ops_pos].tag, model),
+                     data[i], ops[ops_pos].step);
+    }
+  } else {
+    comm->intermodel_gather(scalars.data(), scalars.size(),
+                            comm->get_intermodel_master());
+  }
 }
 
 void lbann_summary::gather_scalar_summary(const std::string tag, DataType s,
