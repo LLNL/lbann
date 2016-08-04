@@ -49,18 +49,9 @@ lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_training_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
-    }
-  }
-
-  if(m_testing_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_testing_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_testing * Layer::m_mini_batch_size);
-    }
+  if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
+    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
   /// @todo put in warning about bad target size

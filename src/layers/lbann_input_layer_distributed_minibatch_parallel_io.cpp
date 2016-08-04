@@ -42,15 +42,8 @@ lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_mi
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    m_training_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
-  }
-
-  if(m_testing_data_reader != NULL) {
-    m_testing_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_testing * Layer::m_mini_batch_size);
-  }
+  io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                               m_num_parallel_readers_training * Layer::m_mini_batch_size);
 
   Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, Layer::m_mini_batch_size);

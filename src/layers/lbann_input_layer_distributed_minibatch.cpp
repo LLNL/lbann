@@ -42,13 +42,7 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lban
 }
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    m_training_data_reader->setup(0, m_mini_batch_size);
-  }
-
-  if(m_testing_data_reader != NULL) {
-    m_testing_data_reader->setup(0, m_mini_batch_size);
-  }
+  io_layer::setup_data_readers(0, m_mini_batch_size);
 
   Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, m_mini_batch_size);

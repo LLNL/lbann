@@ -125,7 +125,7 @@ namespace lbann
     int             m_base_offset;  /// If there are multiple instances of the reader, 
                                     /// then it may not reset to zero
 		std::vector<int> 			ShuffledIndices;
-
+		std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
 	};
 
 }
