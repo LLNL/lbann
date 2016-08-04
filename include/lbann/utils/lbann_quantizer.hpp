@@ -74,9 +74,12 @@ public:
    * @param mat The matrix to quantize.
    * @param qmat The output quantized matrix (will be resized).
    * @param qerror Running quantization error.
+   * @param sample Whether to use samples to approximate averages.
    */
-  void quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror);
-  void quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror);
+  void quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror,
+                bool sample = true);
+  void quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror,
+                bool sample = true);
   /**
    * Unquantize a matrix.
    * @param qmat The matrix to unquantize.
@@ -286,6 +289,8 @@ private:
   static const uqtype GR_K = 4;
   /** Number of samples to use in proportion_threshold_average. */
   static const int NUM_PTA_SAMPLES = 2048;
+  /** Samples to use to approximate column averages in onebit quantization. */
+  static const int NUM_ONEBIT_SAMPLES = 128;
 
   /** Bytes sent in doing the reduce-scatter. */
   size_t rs_bytes_sent;
