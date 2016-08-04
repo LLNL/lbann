@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    lbann_comm* comm = NULL;
 
     try {
 
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
         SetBlocksize(perfParams.BlockSize);
 
         // Set up the communicator and get the grid.
-        lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+        comm = new lbann_comm(trainParams.ProcsPerModel);
         Grid& grid = comm->get_model_grid();
         if (comm->am_world_master()) {
           cout << "Number of models: " << comm->get_num_models() << endl;
@@ -229,7 +230,8 @@ int main(int argc, char* argv[])
         delete comm;
 
     }
-    catch (exception& e) { ReportException(e); }
+    catch (lbann_exception& e) { lbann_report_exception(e, comm); }
+    catch (exception& e) { ReportException(e); } /// Elemental exceptions
 
     // free all resources by El and MPI
     Finalize();
