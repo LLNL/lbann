@@ -110,6 +110,7 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
     do_epoch_begin_cbs();
     /// Set the correct execution mode so that the proper data reader
     /// is used
+    m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < Layers.size(); l++) {
       Layers[l]->m_execution_mode = execution_mode::training;
     }
@@ -198,6 +199,7 @@ DataType lbann::Dnn::evaluate()
   do_test_begin_cbs();
 
   /// Set the mode for each layer so that validation data is used
+  m_execution_mode = execution_mode::testing;
   for (size_t l = 0; l < Layers.size(); l++) {
     Layers[l]->m_execution_mode = execution_mode::testing;
   }

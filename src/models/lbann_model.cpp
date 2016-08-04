@@ -34,7 +34,8 @@ using namespace std;
 using namespace El;
 
 lbann::Model::Model(lbann_comm* comm) :
-  comm(comm), cur_epoch(0), cur_step(0), terminate_training(false) {
+  comm(comm), cur_epoch(0), cur_step(0), terminate_training(false),
+  m_execution_mode(execution_mode::invalid) {
   
 }
 

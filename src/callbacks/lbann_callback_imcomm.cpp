@@ -83,7 +83,8 @@ void lbann_callback_imcomm::setup(Model* m) {
 
 void lbann_callback_imcomm::on_epoch_end(Model* m) {
   lbann_comm* comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_models() == 1 ||
+      m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
   if (ct_does_quantization()) {
@@ -106,7 +107,8 @@ void lbann_callback_imcomm::on_epoch_end(Model* m) {
 
 void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
   lbann_comm* comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_models() == 1 ||
+      m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
   std::vector<Layer*>& layers = m->get_layers();
