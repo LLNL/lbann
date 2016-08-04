@@ -55,10 +55,11 @@ void lbann_summary::reduce_mean(const std::string tag, const ElMat& mat,
 
   // Check distributed matrix format
   El::DistData mat_format(mat);
-  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+  if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sum on master process if matrix is Star,Star
-    if(comm->am_model_master())
+    if(comm->am_model_master()) {
       sum = local_sum(mat.LockedMatrix());
+    }
   }
   else {
     // Compute local sum on all processes if matrix is in MC,MR;
@@ -92,7 +93,7 @@ void lbann_summary::reduce_stdev(const std::string tag, const ElMat& mat,
 
   // Check distributed matrix format
   El::DistData mat_format(mat);
-  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+  if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
     if(comm->am_model_master()) {
       sum = local_sum(mat.LockedMatrix());
@@ -263,9 +264,13 @@ void lbann_summary::flush_sum_scalars() {
 DataType lbann_summary::local_sum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
   DataType sum = 0.0;
-  for (int row = 0; row < mat.Height(); ++row) {
-    for (int col = 0; col < mat.Width(); ++col) {
-      sum += mat.Get(row, col);
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
+      sum += mat_buf[row + col * ldim];
     }
   }
   return sum;
@@ -274,10 +279,14 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
 DataType lbann_summary::local_sqsum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
   DataType sqsum = 0.0;
-  for (int row = 0; row < mat.Height(); ++row) {
-    for (int col = 0; col < mat.Width(); ++col) {
-      DataType v = mat.Get(row, col);
-      sqsum += v * v;
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
+      const int pos = row + col * ldim;
+      sqsum += mat_buf[pos] * mat_buf[pos];
     }
   }
   return sqsum;
