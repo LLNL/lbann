@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
         trainParams.LearnRate = 0.005;
         trainParams.ActivationType = activation_type::RELU;
         trainParams.DropOut = 0.5;
+        trainParams.SummaryDir = "./out";
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -219,10 +220,17 @@ int main(int argc, char* argv[])
         // target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
         dnn.add(target_layer);
 
+        lbann_summary summarizer(trainParams.SummaryDir, comm);
         lbann_callback_print print_cb;
         dnn.add_callback(&print_cb);
-        // lbann_callback_io io_cb({0,3});
-        // dnn.add_callback(&io_cb);
+
+        // Record training time information
+        // lbann_callback_timer timer_cb(&summarizer);
+        // dnn.add_callback(&timer_cb);
+
+        // Summarize information to Tensorboard
+        lbann_callback_summary summary_cb(&summarizer, 25);
+        dnn.add_callback(&summary_cb);
 
         // setup network/layers
         dnn.setup();

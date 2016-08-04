@@ -70,19 +70,19 @@ public:
   ~lbann_summary();
 
   /** Report the mean of mat. */
-  void reduce_mean(const std::string tag, const DistMat& mat, int64_t step);
+  void reduce_mean(const std::string tag, const ElMat& mat, int64_t step);
   /** Report the minimum value of mat. */
-  void reduce_min(const std::string tag, const DistMat& mat, int64_t step);
+  void reduce_min(const std::string tag, const ElMat& mat, int64_t step);
   /** Report the maximum value of mat. */
-  void reduce_max(const std::string tag, const DistMat& mat, int64_t step);
+  void reduce_max(const std::string tag, const ElMat& mat, int64_t step);
   /** Report the standard deviation of mat. */
-  void reduce_stdev(const std::string tag, const DistMat& mat, int64_t step);
+  void reduce_stdev(const std::string tag, const ElMat& mat, int64_t step);
   /** Report a scalar from each model (only meaningful on model masters). */
   void reduce_scalar(const std::string tag, DataType s, int64_t step);
   /** Do a model_reduce (sum) on a scalar, then report that sum. */
   void sum_reduce_scalar(const std::string tag, DataType s, int64_t step);
   /** Report a histogram of the values in mat. */
-  void reduce_histogram(const std::string tag, const DistMat& mat, int64_t step);
+  void reduce_histogram(const std::string tag, const ElMat& mat, int64_t step);
 
   /**
    * Write all summaries out.
@@ -138,8 +138,10 @@ private:
   /** Execute all pending sum-scalar operations. */
   void flush_sum_scalars();
 
-  /** Compute the sum of local elements in mat. */
-  DataType local_sum(const DistMat& mat) const;
+  /** Compute the sum of elements in mat. */
+  DataType local_sum(const Mat& mat) const;
+  /** Compute the sum of square of elements in mat. */
+  DataType local_sqsum(const Mat& mat) const;
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
@@ -153,13 +155,13 @@ class lbann_summary {
 public:
   lbann_summary(std::string logdir, lbann_comm* comm) {}
 
-  void reduce_mean(const std::string tag, const DistMat& mat, int64_t step) {}
-  void reduce_min(const std::string tag, const DistMat& mat, int64_t step) {}
-  void reduce_max(const std::string tag, const DistMat& mat, int64_t step) {}
-  void reduce_stdev(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_mean(const std::string tag, const ElMat& mat, int64_t step) {}
+  void reduce_min(const std::string tag, const ElMat& mat, int64_t step) {}
+  void reduce_max(const std::string tag, const ElMat& mat, int64_t step) {}
+  void reduce_stdev(const std::string tag, const ElMat& mat, int64_t step) {}
   void reduce_scalar(const std::string tag, DataType s, int64_t step) {}
   void sum_reduce_scalar(const std::string tag, DataType s, int64_t step) {}
-  void reduce_histogram(const std::string tag, const DistMat& mat, int64_t step) {}
+  void reduce_histogram(const std::string tag, const ElMat& mat, int64_t step) {}
   void flush() {}
 };
 

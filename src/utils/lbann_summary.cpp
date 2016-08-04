@@ -48,37 +48,67 @@ lbann_summary::~lbann_summary() {
   }
 }
 
-void lbann_summary::reduce_mean(const std::string tag, const DistMat& mat,
+void lbann_summary::reduce_mean(const std::string tag, const ElMat& mat,
                                 int64_t step) {
-  DataType sum = local_sum(mat);
+  // Local sum
+  DataType sum = 0.0;
+
+  // Check distributed matrix format
+  El::DistData mat_format(mat);
+  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+    // Compute local sum on master process if matrix is Star,Star
+    if(comm->am_model_master())
+      sum = local_sum(mat.LockedMatrix());
+  }
+  else {
+    // Compute local sum on all processes if matrix is in MC,MR;
+    // Star,VC; or similar format
+    // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
+    // formats
+    sum = local_sum(mat.LockedMatrix());
+  }
+
+  // Add local sum to list of pending means
   pending_means.emplace_back(tag, step, sum, 0.0f, mat.Height() * mat.Width());
 }
 
-void lbann_summary::reduce_min(const std::string tag, const DistMat& mat,
+void lbann_summary::reduce_min(const std::string tag, const ElMat& mat,
                                int64_t step) {
   DataType local_min = El::Min(mat.LockedMatrix());
   pending_mins.emplace_back(tag, step, local_min);
 }
 
-void lbann_summary::reduce_max(const std::string tag, const DistMat& mat,
+void lbann_summary::reduce_max(const std::string tag, const ElMat& mat,
                                       int64_t step) {
   DataType local_max = El::Max(mat.LockedMatrix());
   pending_maxes.emplace_back(tag, step, local_max);
 }
 
-void lbann_summary::reduce_stdev(const std::string tag, const DistMat& mat,
+void lbann_summary::reduce_stdev(const std::string tag, const ElMat& mat,
                                  int64_t step) {
-  // Compute the local sum and squared sum.
-  DataType sum = 0.0f;
-  DataType sqsum = 0.0f;
-  const Mat& local_mat = mat.LockedMatrix();
-  for (int row = 0; row < local_mat.Height(); ++row) {
-    for (int col = 0; col < local_mat.Width(); ++col) {
-      DataType v = local_mat.Get(row, col);
-      sum += v;
-      sqsum += v * v;
+  // Local sum and squared sum
+  DataType sum = 0.0;
+  DataType sqsum = 0.0;
+
+  // Check distributed matrix format
+  El::DistData mat_format(mat);
+  if(mat_format.colDist==El::STAR && mat_format.rowDist==El::STAR) {
+    // Compute local sums on master process if matrix is Star,Star
+    if(comm->am_model_master()) {
+      sum = local_sum(mat.LockedMatrix());
+      sqsum = local_sqsum(mat.LockedMatrix());
     }
   }
+  else {
+    // Compute local sums on all processes if matrix is in MC,MR;
+    // Star,VC; or similar format
+    // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
+    // formats
+    sum = local_sum(mat.LockedMatrix());
+    sqsum = local_sqsum(mat.LockedMatrix());
+  }
+
+  // Add local sums to list of pending means
   pending_stdevs.emplace_back(tag, step, sum, sqsum, mat.Height() * mat.Width());
 }
 
@@ -94,7 +124,7 @@ void lbann_summary::sum_reduce_scalar(const std::string tag, DataType s,
   pending_sum_scalars.emplace_back(tag, step, s);
 }
 
-void lbann_summary::reduce_histogram(const std::string tag, const DistMat& mat,
+void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
                                      int64_t step) {
   
 }
@@ -191,8 +221,7 @@ void lbann_summary::flush_sum_scalars() {
   pending_sum_scalars.clear();
 }
 
-DataType lbann_summary::local_sum(const DistMat& _mat) const {
-  const Mat& mat = _mat.LockedMatrix();
+DataType lbann_summary::local_sum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
   DataType sum = 0.0;
   for (int row = 0; row < mat.Height(); ++row) {
@@ -201,6 +230,18 @@ DataType lbann_summary::local_sum(const DistMat& _mat) const {
     }
   }
   return sum;
+}
+
+DataType lbann_summary::local_sqsum(const Mat& mat) const {
+  // Note there are more numerically stable ways to compute a sum.
+  DataType sqsum = 0.0;
+  for (int row = 0; row < mat.Height(); ++row) {
+    for (int col = 0; col < mat.Width(); ++col) {
+      DataType v = mat.Get(row, col);
+      sqsum += v * v;
+    }
+  }
+  return sqsum;
 }
 
 std::string lbann_summary::prepend_model(const std::string tag,
