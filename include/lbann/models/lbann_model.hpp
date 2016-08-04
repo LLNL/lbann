@@ -62,6 +62,8 @@ public:
   inline int64_t get_cur_epoch() const { return cur_epoch; }
   /** Get the current step for the model. */
   inline int64_t get_cur_step() const { return cur_step; }
+  /** Get the model's execution mode. */
+  inline execution_mode get_execution_mode() const { return m_execution_mode; }
 
   /** Produce summary information (if any). */
   virtual void summarize(lbann_summary& summarizer) {}
@@ -82,6 +84,8 @@ protected:
   std::vector<lbann_callback*> callbacks;
   /** Flag telling the model to terminate training. */
   bool terminate_training;
+  /** The model's current execution mode. */
+  execution_mode m_execution_mode;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();
