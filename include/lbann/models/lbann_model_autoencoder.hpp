@@ -55,15 +55,15 @@ namespace lbann
     void train(CircMat& X, const float LearnRate);
     void test(CircMat& X, CircMat& XP);
     void test(CircMat& X, CircMat& YP, CircMat& XP);
-        void global_update();
-	void train(DataReader* Dataset, int NumEpoch);
+    void global_update();
+    void train(DataReader* Dataset, int NumEpoch);
     void trainBatch(DataReader* Dataset);
 
     DataType evaluate(DataReader* Dataset, int ErrorType);
     DataType evaluateBatch(DataReader* Dataset, int ErrorType);
 
   public:
-	std::vector<Layer*>    DecoderLayers;
+    std::vector<Layer*>    DecoderLayers;
 
   };
 }

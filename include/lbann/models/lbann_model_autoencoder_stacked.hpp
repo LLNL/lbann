@@ -42,12 +42,12 @@ namespace lbann
   class StackedAutoencoder : public AutoEncoder
   {
   public:
-	StackedAutoencoder(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm);
-	~StackedAutoencoder();
+    StackedAutoencoder(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm);
+   ~StackedAutoencoder();
 
-	void beginStack(int LayerNeurons, lbann_comm* comm);
-	void trainStack(CircMat& X, const float LearnRate, const int LearnRateMethod=0, const DataType DecayRate=0);
-	void endStack();
+    void beginStack(int LayerNeurons, lbann_comm* comm);
+    void trainStack(CircMat& X, const float LearnRate, const int LearnRateMethod=0, const DataType DecayRate=0);
+    void endStack();
     void global_update();
 
   public:
