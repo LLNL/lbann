@@ -40,10 +40,17 @@ rng_gen& get_generator() {
 void init_random(int seed) {
   if (seed != -1) {
     get_generator().seed(seed);
+#ifdef LBANN_SET_EL_RNG
+    El::Generator().seed(seed);
+#endif
   } else {
     // Seed with a random value.
     std::random_device rd;
-    get_generator().seed(rd());
+    unsigned rand_val = rd();
+    get_generator().seed(rand_val);
+#ifdef LBANN_SET_EL_RNG
+    El::Generator().seed(rand_val);
+#endif
   }
 }
 

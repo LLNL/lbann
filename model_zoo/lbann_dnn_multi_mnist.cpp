@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
 {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
+  init_random(1);  // Deterministic initialization across every model.
 
   try {
     // Get data files.
@@ -206,6 +207,9 @@ int main(int argc, char* argv[])
 
     // Initialize the model's data structures
     dnn.setup();
+
+    // Reinitialize the RNG differently for each rank.
+    init_random(comm->get_rank_in_world() + 1);
 
     comm->global_barrier();
 
