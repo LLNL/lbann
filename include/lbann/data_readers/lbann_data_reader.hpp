@@ -45,12 +45,18 @@ namespace lbann
 	class DataReader
 	{
 	public:
-          DataReader(int batchSize, bool shuffle) :
-            BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-            m_stride(batchSize), m_base_offset(0) {}
-          DataReader(int batchSize) :
-            DataReader(batchSize, true) {}
-          virtual ~DataReader() {}
+    DataReader(int batchSize, bool shuffle) :
+      BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
+      m_stride(batchSize), m_base_offset(0) {}
+    DataReader(int batchSize) :
+      DataReader(batchSize, true) {}
+    
+    DataReader(const DataReader& source) :
+      BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
+      m_stride(source.m_stride), m_base_offset(source.m_base_offset), 
+      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices) {}
+
+    virtual ~DataReader() {}
 
     /**
      * Prepare to start processing an epoch of data.
@@ -154,6 +160,18 @@ namespace lbann
       ShuffledIndices = m_unused_indices;
       m_unused_indices = tmp_indices;
       return true;
+    }
+
+    DataReader& operator=(const DataReader& source) {
+      this->BatchSize = source.BatchSize;
+      this->CurrentPos = source.CurrentPos;
+      this->m_shuffle = source.m_shuffle;
+      this->m_stride = source.m_stride;
+      this->m_base_offset = source.m_base_offset;
+      // Vectors implement a deep copy
+      this->ShuffledIndices = source.ShuffledIndices;
+      this->m_unused_indices = source.m_unused_indices;
+      return *this;
     }
 
   protected:

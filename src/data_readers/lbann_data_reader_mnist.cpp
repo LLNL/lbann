@@ -50,6 +50,16 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
   : DataReader_MNIST(batchSize, true) {}
 
+lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
+  : DataReader((const DataReader&) source), 
+  ImageWidth(source.ImageWidth), ImageHeight(source.ImageHeight),
+  NumLabels(source.NumLabels)
+{
+  // No need to deallocate data on a copy constuctor
+
+  clone_image_data(source);
+}
+
 lbann::DataReader_MNIST::~DataReader_MNIST()
 {
 	this->free();
@@ -202,4 +212,43 @@ void lbann::DataReader_MNIST::free()
     delete [] data;
   }
   ImageData.clear();
+}
+
+// Assignment operator
+lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNIST& source)
+{
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+  // first we need to deallocate any data that this data reader is holding!
+  for (size_t n = 0; n < ImageData.size(); n++) {
+    unsigned char* data = ImageData[n];
+    delete [] data;
+  }
+  ImageData.clear();
+
+  this->ImageWidth = source.ImageWidth;
+  this->ImageHeight = source.ImageHeight;
+  this->NumLabels = source.NumLabels;
+
+  clone_image_data(source);
+  return *this;
+}
+
+void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source) {
+  // ImageData has pointers, so we need to deep copy them
+  for (size_t n = 0; n < source.ImageData.size(); n++) {
+    unsigned char* data = new unsigned char[1 + ImageWidth * ImageHeight];
+    unsigned char* src_data = source.ImageData[n];
+
+    for (size_t i = 0; i < 1 + ImageWidth * ImageHeight; i++) {
+      data[i] = src_data[i];
+    }
+    ImageData.push_back(data);
+  }
+  return;
 }
