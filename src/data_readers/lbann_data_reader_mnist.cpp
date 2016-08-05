@@ -104,7 +104,7 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 	return (n - CurrentPos);
 }
 
-bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, size_t max_sample_count, bool firstN)
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile)
 {
 	this->free();
 
@@ -163,20 +163,37 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
     ShuffledIndices[n] = n;
   }
 
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-	if (max_sample_count != 0) {
-		max_sample_count = __MIN(max_sample_count, ImageData.size());
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-    }
-    ShuffledIndices.resize(max_sample_count);
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-    }
-  }
-
 	return true;
+}
+
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, size_t max_sample_count, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(FileDir, ImageFile, LabelFile);
+
+  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, double use_percentage, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(FileDir, ImageFile, LabelFile);
+
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+
+  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
 }
 
 void lbann::DataReader_MNIST::free()

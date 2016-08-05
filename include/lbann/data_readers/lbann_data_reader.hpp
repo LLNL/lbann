@@ -116,6 +116,37 @@ namespace lbann
     int get_next_position() { return CurrentPos + m_stride; }
 		int* getIndices()       { return &ShuffledIndices[0]; }
 		int getNumData()        { return (int)ShuffledIndices.size(); }
+		int get_num_unused_data() { return (int)m_unused_indices.size(); }
+		int* get_unused_data()    { return &m_unused_indices[0]; }
+
+    void select_subset_of_data(size_t max_sample_count, bool firstN) {
+      size_t num_data_samples = getNumData();
+      
+      /// If the user requested fewer than the total data set size, select
+      /// a random set from the entire data set.
+      if (max_sample_count != 0) {
+        max_sample_count = __MIN(max_sample_count, num_data_samples);
+        if(!firstN) {
+          std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
+        }
+        m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
+        ShuffledIndices.resize(max_sample_count);
+
+        std::cout << "shuffled indices ";
+        for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
+          std::cout << *i << ' ';
+        std::cout << std::endl;
+
+        std::cout << "unused indices ";
+        for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
+          std::cout << *i << ' ';
+        std::cout << std::endl;
+
+        if(!firstN) {
+          std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
+        }
+      }
+    }
 
 	protected:
 		int							BatchSize;

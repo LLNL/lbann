@@ -47,8 +47,10 @@ namespace lbann
 		int getNumLabels() { return NumLabels; }
 
 		// MNIST-specific functions
-		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count=0, bool firstN=false);
-		void free();
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
+    void free();
 
 		int getImageWidth() { return ImageWidth; }
 		int getImageHeight() { return ImageHeight; }

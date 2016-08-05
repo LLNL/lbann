@@ -46,7 +46,9 @@ namespace lbann
 
 		// ImageNet specific functions
     //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count=0, bool firstN=false);
+    bool load(std::string imageDir, std::string imageListFile);
+    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count, bool firstN=false);
+    bool load(std::string imageDir, std::string imageListFile, double validation_percent, bool firstN=false);
 
 		int get_image_width() { return m_image_width; }
 		int get_image_height() { return m_image_height; }

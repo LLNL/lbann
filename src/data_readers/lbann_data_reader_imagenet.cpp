@@ -106,7 +106,7 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
 	return (n - CurrentPos);
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, size_t max_sample_count, bool firstN)
+bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile)
 {
 	m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
 	ImageList.clear();
@@ -131,18 +131,35 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, siz
 		ShuffledIndices[n] = n;
 	}
 
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-	if (max_sample_count != 0) {
-		max_sample_count = __MIN(max_sample_count, ImageList.size());
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-    }
-    ShuffledIndices.resize(max_sample_count);
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-    }
-  }
-
 	return true;
+}
+
+bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, size_t max_sample_count, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(imageDir, imageListFile);
+
+  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, double use_percentage, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(imageDir, imageListFile);
+
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+
+  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
 }
