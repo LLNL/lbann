@@ -158,7 +158,6 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   // reset indices
   ShuffledIndices.clear();
   ShuffledIndices.resize(ImageData.size());
-  //  ShuffledIndices.resize(80);
   for (size_t n = 0; n < ShuffledIndices.size(); n++) {
     ShuffledIndices[n] = n;
   }

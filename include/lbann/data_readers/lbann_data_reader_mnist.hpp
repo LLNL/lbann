@@ -50,6 +50,7 @@ namespace lbann
     bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
     bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
     bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
     void free();
 
 		int getImageWidth() { return ImageWidth; }

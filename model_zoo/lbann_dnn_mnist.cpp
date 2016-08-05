@@ -113,9 +113,20 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         if (!mnist_trainset.load(trainParams.DatasetRootDir,
                                  g_MNIST_TrainImageFile,
-                                 g_MNIST_TrainLabelFile)) {
+                                 g_MNIST_TrainLabelFile, 0.90)) {
           if (comm->am_world_master()) {
             cout << "MNIST train data error" << endl;
+          }
+          return -1;
+        }
+
+        ///////////////////////////////////////////////////////////////////
+        // create a validation set from the unused training data (MNIST)
+        ///////////////////////////////////////////////////////////////////
+        DataReader_MNIST mnist_validation_set = mnist_trainset; // Clone the training set object
+        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
+          if (comm->am_world_master()) {
+            cout << "MNIST validation data error" << endl;
           }
           return -1;
         }

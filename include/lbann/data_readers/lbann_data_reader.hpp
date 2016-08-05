@@ -132,31 +132,39 @@ namespace lbann
         m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
         ShuffledIndices.resize(max_sample_count);
 
-        std::cout << "shuffled indices ";
-        for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
-          std::cout << *i << ' ';
-        std::cout << std::endl;
-
-        std::cout << "unused indices ";
-        for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
-          std::cout << *i << ' ';
-        std::cout << std::endl;
-
         if(!firstN) {
           std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
+          std::sort(m_unused_indices.begin(), m_unused_indices.end());
         }
+
+        // std::cout << "shuffled indices ";
+        // for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
+        //   std::cout << *i << ' ';
+        // std::cout << std::endl;
+
+        // std::cout << "unused indices ";
+        // for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
+        //   std::cout << *i << ' ';
+        // std::cout << std::endl;
       }
     }
 
-	protected:
-		int							BatchSize;
-		int 						CurrentPos;
+    bool swap_used_and_unused_index_sets() {
+      std::vector<int> tmp_indices = ShuffledIndices;
+      ShuffledIndices = m_unused_indices;
+      m_unused_indices = tmp_indices;
+      return true;
+    }
+
+  protected:
+    int							BatchSize;
+    int 						CurrentPos;
     int             m_shuffle;
     int             m_stride;       /// Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
     int             m_base_offset;  /// If there are multiple instances of the reader, 
                                     /// then it may not reset to zero
-		std::vector<int> 			ShuffledIndices;
-		std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
+    std::vector<int> 			ShuffledIndices;
+    std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
 	};
 
 }
