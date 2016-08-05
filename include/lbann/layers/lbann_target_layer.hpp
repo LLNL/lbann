@@ -33,8 +33,7 @@ namespace lbann
 {
   class target_layer : public io_layer {
   public:
-    target_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, DataReader* testing_data_reader, bool shared_data_reader);
-    target_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, bool shared_data_reader);
+    target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
     DistMat *fp_output();
     DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
     DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);

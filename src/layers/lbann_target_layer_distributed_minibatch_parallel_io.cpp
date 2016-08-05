@@ -35,17 +35,12 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, shared_data_reader), 
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader->getNumData(), testing_data_reader->getNumData()),
+lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
+  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader), 
+    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers[training]->getNumData(), data_readers[testing]->getNumData()),
     Ys(comm->get_model_grid()), YsColMax(comm->get_model_grid()), YsColMaxStar(comm->get_model_grid())
 {
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
-}
-
-lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, bool shared_data_reader)
-  : target_layer_distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader, NULL, shared_data_reader)
-{
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {

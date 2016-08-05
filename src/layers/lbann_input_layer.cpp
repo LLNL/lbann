@@ -34,14 +34,11 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer::input_layer(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : io_layer(comm, mini_batch_size, training_data_reader, testing_data_reader)
+lbann::input_layer::input_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : io_layer(comm, mini_batch_size, data_readers)
 {
   NumNeurons = io_layer::get_linearized_data_size();
 }
-
-lbann::input_layer::input_layer(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader)
-  : input_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}
 
 /**
  * Input layers are not able to return output matrices for backward propagation

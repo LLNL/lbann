@@ -33,9 +33,7 @@ namespace lbann
 {
   class input_layer : public io_layer {
   public:
-    input_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, DataReader* testing_data_reader,
-                std::vector<regularizer*> regs={});
-    input_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader);
+    input_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
     DistMat *bp_output();
 
   public:

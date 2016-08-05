@@ -33,8 +33,7 @@ namespace lbann
 {
   class target_layer_distributed_minibatch : public target_layer {
   public:
-    target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, DataReader *testing_data_reader, bool shared_data_reader);
-    target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, bool shared_data_reader);
+    target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
 
     void setup(int num_prev_neurons);
     // Overrides regular forward prop; target layer doesn't involve sparsity, etc.

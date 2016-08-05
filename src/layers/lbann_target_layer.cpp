@@ -34,18 +34,12 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, DataReader* testing_data_reader, bool shared_data_reader)
-  : io_layer(comm, mini_batch_size, training_data_reader, testing_data_reader)
+lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
+  : io_layer(comm, mini_batch_size, data_readers)
 {
   NumNeurons = io_layer::get_linearized_label_size();
   m_shared_data_reader = shared_data_reader;
 }
-
-lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size,
-                                  DataReader *training_data_reader,
-                                  bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, training_data_reader, NULL,
-                 shared_data_reader) {}
 
 /**
  * Target layers are not able to return target matrices for forward propagation

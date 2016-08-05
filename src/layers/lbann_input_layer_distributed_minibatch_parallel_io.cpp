@@ -34,9 +34,9 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : input_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, regs), 
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader->getNumData(), testing_data_reader->getNumData()),
+lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : input_layer(comm, mini_batch_size, data_readers, regs), 
+    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers[training]->getNumData(), data_readers[testing]->getNumData()),
     Xs(comm->get_model_grid())
 {
 }

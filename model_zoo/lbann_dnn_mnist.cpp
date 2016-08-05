@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
-        DataReader_MNIST mnist_validation_set = mnist_trainset; // Clone the training set object
+        DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
+        //DataReader_MNIST mnist_validation_set = mnist_trainset; // Clone the training set object
         if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
           if (comm->am_world_master()) {
             cout << "MNIST validation data error" << endl;
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
                 trainParams.Lambda,
                 optimizer, comm, lfac);
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&mnist_trainset), std::make_pair(validation, &mnist_validation_set), std::make_pair(testing, &mnist_testset)});
         dnn.add(input_layer);
         // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
         dnn.add("FullyConnected", 100, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
@@ -172,7 +173,7 @@ int main(int argc, char* argv[])
         dnn.add("SoftMax", 10);
 
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&mnist_trainset), std::make_pair(validation, &mnist_validation_set), std::make_pair(testing, &mnist_testset)}, true);
         dnn.add(target_layer);
 
         lbann_callback_print print_cb;
