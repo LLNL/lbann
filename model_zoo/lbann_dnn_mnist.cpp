@@ -73,6 +73,8 @@ int main(int argc, char* argv[])
         trainParams.LearnRate = 0.0001;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
+        trainParams.PercentageTrainingSamples = 0.90;
+        trainParams.PercentageValidationSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -113,7 +115,7 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         if (!mnist_trainset.load(trainParams.DatasetRootDir,
                                  g_MNIST_TrainImageFile,
-                                 g_MNIST_TrainLabelFile, 0.90)) {
+                                 g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
           if (comm->am_world_master()) {
             cout << "MNIST train data error" << endl;
           }
@@ -124,7 +126,6 @@ int main(int argc, char* argv[])
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        //DataReader_MNIST mnist_validation_set = mnist_trainset; // Clone the training set object
         if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
           if (comm->am_world_master()) {
             cout << "MNIST validation data error" << endl;
@@ -132,9 +133,13 @@ int main(int argc, char* argv[])
           return -1;
         }
 
-        size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-        size_t final_validation_set_size = mnist_validation_set.trim_data_set(1.00);
-        cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+        if(trainParams.PercentageValidationSamples == 1.00) {
+          cout << "Validating training using " << (1.00 - trainParams.PercentageTrainingSamples) << " of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+        }else {
+          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
+          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
+          cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+        }
 
         ///////////////////////////////////////////////////////////////////
         // load testing data (MNIST)

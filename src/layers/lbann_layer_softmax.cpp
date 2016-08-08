@@ -118,7 +118,7 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
                     (std::function<DataType(Int,Int,DataType)>)([this /*ZsNormExpSum*/](Int r, Int c, DataType z)->
                                                                 DataType{Int rL = this->ZsNormExpSumStar.LocalRow(c); return z/this->ZsNormExpSumStar.GetLocal(rL,0);}));
 
-#if 1
+#if 0
   ColSumMat Ycheck(_Y.Grid());
   Zeros(Ycheck, m_mini_batch_size, 1);
   ColumnSum((DistMat&) _Y /*ZsNormExp*/, Ycheck);
