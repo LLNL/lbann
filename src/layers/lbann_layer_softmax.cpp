@@ -98,13 +98,16 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);
 
-  // Subtract the max from each column to avoid numerical issues
-  IndexDependentMap(_Z,
-                    (std::function<DataType(int,int,DataType)>)([this](int r, int c, DataType z)->
-                                                                DataType{Int rL = this->ZsColMaxStar.LocalRow(c); return z - this->ZsColMaxStar.GetLocal(rL,0);}));
-
-  // Exponentiation
-  EntrywiseMap(_Z, (std::function<DataType(DataType)>)([](DataType z)->DataType{return exp(z);}));
+  // Compute exp(z) of each entry. Subtract the max of each column from its
+  // entries to prevent the exp from blowing up. Large negative values are
+  // expected to underflow to 0.
+  IndexDependentMap(
+    _Z,
+    (std::function<DataType(int,int,DataType)>)
+    ([this](int r, int c, DataType z)->DataType {
+      Int rL = this->ZsColMaxStar.LocalRow(c);
+      return std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0));
+    }));
 
   // For each minibatch (column) sum up the exponentiated values
   Zeros(ZsNormExpSum, m_mini_batch_size, 1);

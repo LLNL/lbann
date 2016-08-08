@@ -48,17 +48,15 @@ lbann::RMSprop_factory::~RMSprop_factory()
 {
 }
 
-lbann::Optimizer *lbann::RMSprop_factory::create_optimizer(matrix_distribution m_matrix_distribution) {
-  switch(m_matrix_distribution) {
-  case McMr:
+lbann::Optimizer *lbann::RMSprop_factory::create_optimizer(matrix_format format) {
+  switch(format) {
+  case matrix_format::MC_MR:
     return new RMSprop<DistMat>(this->comm, this->lr, this->rho, this->epsilon);
-  case CircCirc:
+  case matrix_format::CIRC_CIRC:
     return new RMSprop<CircMat>(this->comm, this->lr, this->rho, this->epsilon);
-  case StarStar:
+  case matrix_format::STAR_STAR:
     return new RMSprop<StarMat>(this->comm, this->lr, this->rho, this->epsilon);
-  case MrStar:
-    return new RMSprop<ColSumMat>(this->comm, this->lr, this->rho, this->epsilon);
-  case StarVc:
+  case matrix_format::STAR_VC:
     return new RMSprop<StarVCMat>(this->comm, this->lr, this->rho, this->epsilon);
   default:
     // TODO: throw an exception

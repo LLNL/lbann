@@ -761,8 +761,11 @@ int main(int argc, char* argv[])
         layer_factory* lfac = new layer_factory();
         Dnn *dnn = NULL;
         dnn = new Dnn(optimizer, trainParams.MBSize, comm, lfac);
+        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
+                                                              std::make_pair(execution_mode::validation, &imagenet_validation_set), 
+                                                              std::make_pair(execution_mode::testing, &imagenet_testset)};
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&imagenet_trainset), std::make_pair(validation, &imagenet_validation_set), std::make_pair(testing, &imagenet_testset)});
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn->add(input_layer);
         int NumLayers = netParams.Network.size();
         // initalize neural network (layers)
@@ -777,7 +780,7 @@ int main(int argc, char* argv[])
           dnn->add(networkType, netParams.Network[l], trainParams.ActivationType, {new dropout(trainParams.DropOut)});
         }
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&imagenet_trainset), std::make_pair(validation, &imagenet_validation_set), std::make_pair(testing, &imagenet_testset)}, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
         lbann_summary summarizer("/p/lscratchf/vanessen", comm);

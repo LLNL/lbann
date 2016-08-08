@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
 {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
+  init_random(1);  // Deterministic initialization across every model.
 
   try {
     // Get data files.
@@ -150,10 +151,13 @@ int main(int argc, char* argv[])
     //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
-      "FullyConnected", 100, trainParams.ActivationType,
+      "FullyConnected", 1024, trainParams.ActivationType,
       {new dropout(trainParams.DropOut)});
     uint fcidx2 = dnn.add(
-      "FullyConnected", 30, trainParams.ActivationType,
+      "FullyConnected", 1024, trainParams.ActivationType,
+      {new dropout(trainParams.DropOut)});
+    uint fcidx3 = dnn.add(
+      "FullyConnected", 1024, trainParams.ActivationType,
       {new dropout(trainParams.DropOut)});
     uint smidx = dnn.add("SoftMax", 10);
     target_layer *target_layer = new target_layer_distributed_minibatch(
@@ -175,8 +179,10 @@ int main(int argc, char* argv[])
     lbann_callback_imcomm imcomm_cb(
       static_cast<lbann_callback_imcomm::comm_type>(
         trainParams.IntermodelCommMethod),
-      {fcidx1, fcidx2, smidx}, &summarizer);
+      {fcidx1, fcidx2, fcidx3, smidx}, &summarizer);
     dnn.add_callback(&imcomm_cb);
+    lbann_callback_acc_learning_rate lrsched(4, 0.1f);
+    dnn.add_callback(&lrsched);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
@@ -201,6 +207,9 @@ int main(int argc, char* argv[])
 
     // Initialize the model's data structures
     dnn.setup();
+
+    // Reinitialize the RNG differently for each rank.
+    init_random(comm->get_rank_in_world() + 1);
 
     comm->global_barrier();
 

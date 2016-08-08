@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
 
@@ -58,12 +59,16 @@ void lbann_callback_imcomm::setup(Model* m) {
         // TODO: handle case where WB_D is in other matrix distribution
         DistMat& WB_D = (DistMat&) layer->get_weights_biases_gradient();
         quantization_errors.emplace(idx, Mat{});
-        Zeros(quantization_errors[idx], WB_D.LocalHeight(), WB_D.LocalWidth());
         im_quantization_errors.emplace(idx, Mat{});
         if (ct == ONEBIT_QUANTIZATION) {
           // Set up gradient history and SGD optimizer for one-bit quantization.
           gradhistories.emplace(idx, Mat{});
           if (layer->optimizer != nullptr) {
+            if (typeid(*(layer->optimizer)) != typeid(Adagrad<DistMat>)) {
+              throw lbann_exception(
+                "lbann_callback_imcomm: Cannot do one-bit quantization for "
+                "layer that does not use Adagrad");
+            }
             // TODO: This leaks the old optimizer.
             layer->optimizer = new SGD<DistMat>(
               layer->comm, layer->optimizer->get_learning_rate(),
@@ -78,7 +83,8 @@ void lbann_callback_imcomm::setup(Model* m) {
 
 void lbann_callback_imcomm::on_epoch_end(Model* m) {
   lbann_comm* comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_models() == 1 ||
+      m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
   if (ct_does_quantization()) {
@@ -94,15 +100,15 @@ void lbann_callback_imcomm::on_epoch_end(Model* m) {
       local_mat = quantization_errors[l];
       // Apply optimizer update again.
       layers[l]->update();
-      Zeros(quantization_errors[l], quantization_errors[l].Height(),
-            quantization_errors[l].Width());
+      quantization_errors[l].Empty();
     }
   }
 }
 
 void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
   lbann_comm* comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_models() == 1 ||
+      m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
   std::vector<Layer*>& layers = m->get_layers();
@@ -127,35 +133,73 @@ void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
     case THRESH_QUANTIZATION:
       // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 1.0f, -1.0f,
+        comm, WB_D, quantization_errors[l], 0.9f, -0.9f,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_THRESH_QUANTIZATION:
       // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 1.0f, -1.0f,
+        comm, WB_D, quantization_errors[l], 0.9f, -0.9f,
         im_quantization_errors[l], true);
       break;
     case ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 5,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 5,
+        comm, WB_D, quantization_errors[l], 45,
         im_quantization_errors[l], true);
       break;
     }
     double im_time = get_time() - start_time;
     if (summarizer != nullptr && ct != NONE) {
-      summarizer->reduce_scalar(
-        "layer" + std::to_string(
-          static_cast<long long>(layers[l]->get_index())) +
-        "/imcomm_time",
-        im_time, m->get_cur_step());
+      std::string prefix = "layer" + std::to_string(
+        static_cast<long long>(layers[l]->get_index())) + "/imcomm_";
+      summarizer->reduce_scalar(prefix + "time",
+                                im_time, m->get_cur_step());
+      size_t bytes_sent = 0;
+      size_t bytes_received = 0;
+      if (ct_does_quantization()) {
+        bytes_sent = quantizer.get_bytes_sent();
+        bytes_received = quantizer.get_bytes_received();
+      } else {
+        // Use the same approximation the comm layer does.
+        bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+        bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+      }
+      summarizer->reduce_scalar(prefix + "bytes_sent",
+                                bytes_sent, m->get_cur_step());
+      summarizer->reduce_scalar(prefix + "bytes_received",
+                                bytes_received, m->get_cur_step());
+      if (ct_does_quantization()) {
+        summarizer->reduce_scalar(prefix + "rs_bytes_sent",
+                                  quantizer.get_rs_bytes_sent(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_bytes_sent",
+                                  quantizer.get_ag_bytes_sent(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_bytes_received",
+                                  quantizer.get_rs_bytes_received(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_bytes_received",
+                                  quantizer.get_ag_bytes_received(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_send_trans_time",
+                                  quantizer.get_rs_send_trans_time(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "rs_recv_trans_time",
+                                  quantizer.get_rs_recv_trans_time(),
+                                  m->get_cur_step());
+        summarizer->reduce_scalar(prefix + "ag_recv_trans_time",
+                                  quantizer.get_ag_recv_trans_time(),
+                                  m->get_cur_step());
+        quantizer.reset_bytes_counters();
+        quantizer.reset_time_counters();
+      }
     }
   }
 }

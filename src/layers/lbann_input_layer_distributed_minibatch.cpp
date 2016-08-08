@@ -57,7 +57,7 @@ void lbann::input_layer_distributed_minibatch::fp_linearity(
     data_reader->fetch_data(X_local);
     /// Set the bias term in the last row of the input matrix
     int linear_data_size = data_reader->get_linearized_data_size();
-    for(int n = 0; n < m_mini_batch_size; n++) {
+    for(size_t n = 0; n < m_mini_batch_size; n++) {
       X_local.Set(linear_data_size, n, 1);
     }
   }

@@ -40,16 +40,16 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   int validation_data_set_size = 0;
   int testing_data_set_size = 0;
 
-  if(data_readers[training] != NULL) {
-    training_data_set_size = data_readers[training]->getNumData();
+  if(data_readers[execution_mode::training] != NULL) {
+    training_data_set_size = data_readers[execution_mode::training]->getNumData();
   }
 
-  if(data_readers[validation] != NULL) {
-    validation_data_set_size = data_readers[validation]->getNumData();
+  if(data_readers[execution_mode::validation] != NULL) {
+    validation_data_set_size = data_readers[execution_mode::validation]->getNumData();
   }
 
-  if(data_readers[testing] != NULL) {
-    testing_data_set_size = data_readers[testing]->getNumData();
+  if(data_readers[execution_mode::testing] != NULL) {
+    testing_data_set_size = data_readers[execution_mode::testing]->getNumData();
   }
 
   if(comm->get_model_grid().Size() < num_parallel_readers) {
@@ -191,13 +191,13 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
 int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
   int num_parallel_readers = 0;
   switch(get_execution_mode()) {
-  case training:
+  case execution_mode::training:
     num_parallel_readers = m_num_parallel_readers_training;
     break;
-  case validation:
+  case execution_mode::validation:
     num_parallel_readers = m_num_parallel_readers_validating;
     break;
-  case testing:
+  case execution_mode::testing:
     num_parallel_readers = m_num_parallel_readers_testing;
     break;
   default:

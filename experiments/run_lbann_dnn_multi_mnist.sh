@@ -42,9 +42,19 @@ TASKS_PER_NODE=12
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
+DATASET_DIR="datasets/MNIST"
+TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
+TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
+TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
+TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=--enable-hyperthread
 else
+DATASET_DIR="datasets/mnist-bin"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
+TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
+TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
+TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
+TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
 fi
 
@@ -182,7 +192,7 @@ shift $((OPTIND-1))
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_openmpi -v 0.86
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 
-TASKS=$((${SLURM_NNODES} * ${SLURM_CPUS_ON_NODE}))
+TASKS=$((${SLURM_JOB_NUM_NODES} * ${SLURM_CPUS_ON_NODE}))
 if [ ${TASKS} -gt 384 ]; then
 TASKS=384
 fi
@@ -248,7 +258,7 @@ fi
 
 fi
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE}  ${BINDIR}/lbann_dnn_multi_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL}"
+CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_dnn_multi_mnist --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL}"
 #CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${DIRNAME}/lbann_dnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}

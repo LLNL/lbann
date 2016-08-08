@@ -45,10 +45,6 @@ int main(int argc, char* argv[])
     Initialize(argc, argv);
 
     try {
-#ifdef __LIB_CUDNN
-        // initalize cuda
-        cudaSetDevice(0);
-#endif
 
         // Get data files
         const string g_MNIST_TrainLabelFile = Input("--train-label-file",
@@ -72,7 +68,8 @@ int main(int argc, char* argv[])
         trainParams.LearnRateMethod = 2;
         trainParams.LearnRate = 0.005;
         trainParams.ActivationType = activation_type::RELU;
-        trainParams.DropOut = -1.0f;
+        trainParams.DropOut = 0.5;
+        trainParams.SummaryDir = "./out";
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -145,6 +142,7 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager();
         Dnn dnn(trainParams.MBSize,
                 trainParams.Lambda,
                 optimizer, comm, lfac);
@@ -154,82 +152,85 @@ int main(int argc, char* argv[])
 
         // First convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(StarStar);
-          int convDim = 2;
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          int numDims = 2;
           int inputChannels = 1;
           int inputDims[] = {28, 28};
           int outputChannels = 32;
           int filterDims[] = {3, 3};
-          ConvolutionalLayer* convolution_layer
-            = new ConvolutionalLayer(1, convDim, inputChannels, inputDims,
-                                     outputChannels, filterDims,
-                                     trainParams.MBSize, comm,
-                                     convolution_layer_optimizer);
-          dnn.add(convolution_layer);
-        }
-
-        // First pooling layer
-        {
-          int poolDim = 2;
-          int channels = 32;
-          int inputDim[] = {26, 26};
-          int poolWindowDims[] = {2, 2};
-          int poolPads[] = {0, 0};
-          int poolStrides[] = {2, 2};
-          int poolMode = 0;
-          PoolingLayer* pooling_layer
-            = new PoolingLayer(2, poolDim, channels, inputDim,
-                               poolWindowDims, poolPads, poolStrides, poolMode,
-                               trainParams.MBSize, comm, NULL);
-          dnn.add(pooling_layer);
+          int convPads[] = {2, 2};
+          int convStrides[] = {1, 1};
+          convolutional_layer* layer
+            = new convolutional_layer(1, numDims, inputChannels, inputDims,
+                                      outputChannels, filterDims,
+                                      convPads, convStrides,
+                                      trainParams.MBSize,
+                                      activation_type::RELU, 
+                                      comm, convolution_layer_optimizer, 
+                                      {}, cudnn);
+          dnn.add(layer);
         }
 
         // Second convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(StarStar);
-          int convDim = 2;
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          int numDims = 2;
           int inputChannels = 32;
-          int inputDims[] = {13, 13};
-          int outputChannels = 64;
-          int filterDims[] = {5, 5};
-
-          ConvolutionalLayer* convolution_layer
-            = new ConvolutionalLayer(1, convDim, inputChannels, inputDims,
-                                     outputChannels, filterDims,
-                                     trainParams.MBSize, comm,
-                                     convolution_layer_optimizer);
-          dnn.add(convolution_layer);
+          int inputDims[] = {30, 30};
+          int outputChannels = 32;
+          int filterDims[] = {3, 3};
+          int convPads[] = {0, 0};
+          int convStrides[] = {1, 1};
+          convolutional_layer* layer
+            = new convolutional_layer(2, numDims, inputChannels, inputDims,
+                                      outputChannels, filterDims,
+                                      convPads, convStrides,
+                                      trainParams.MBSize,
+                                      activation_type::RELU,
+                                      comm, convolution_layer_optimizer,
+                                      {},
+                                      cudnn);
+          dnn.add(layer);
         }
 
-        // Second pooling layer
+        // Pooling layer
         {
-          int poolDim = 2;
-          int channels = 64;
-          int inputDim[] = {9, 9};
+          int numDims = 2;
+          int channels = 32;
+          int inputDim[] = {28, 28};
           int poolWindowDims[] = {2, 2};
           int poolPads[] = {0, 0};
           int poolStrides[] = {2, 2};
           int poolMode = 0;
-          PoolingLayer* pooling_layer
-            = new PoolingLayer(2, poolDim, channels, inputDim,
-                               poolWindowDims, poolPads, poolStrides, poolMode,
-                               trainParams.MBSize, comm, NULL);
-          dnn.add(pooling_layer);
+          pooling_layer* layer
+            = new pooling_layer(3, numDims, channels, inputDim,
+                                poolWindowDims, poolPads, poolStrides, poolMode,
+                                trainParams.MBSize, activation_type::ID,
+                                comm,
+                                {new dropout(0.75)},
+                                cudnn);
+          dnn.add(layer);
         }
 
-        // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
+        // This is replaced by the input layer
+        dnn.add("FullyConnected", 128, trainParams.ActivationType, {new dropout(0.5)});
         dnn.add("SoftMax", 10);
 
         target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
         // target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
         dnn.add(target_layer);
 
+        lbann_summary summarizer(trainParams.SummaryDir, comm);
         lbann_callback_print print_cb;
         dnn.add_callback(&print_cb);
-        // lbann_callback_io io_cb({0,3});
-        // dnn.add_callback(&io_cb);
+
+        // Record training time information
+        // lbann_callback_timer timer_cb(&summarizer);
+        // dnn.add_callback(&timer_cb);
+
+        // Summarize information to Tensorboard
+        lbann_callback_summary summary_cb(&summarizer, 25);
+        dnn.add_callback(&summary_cb);
 
         // setup network/layers
         dnn.setup();
@@ -257,17 +258,13 @@ int main(int argc, char* argv[])
         // delete lfac;  // Causes segfault
         delete optimizer;
         delete comm;
+        delete cudnn;
 
     }
     catch (exception& e) { ReportException(e); }
 
     // free all resources by El and MPI
     Finalize();
-
-#ifdef __LIB_CUDNN
-    // free cuda
-    cudaDeviceReset();
-#endif
 
     return 0;
 }

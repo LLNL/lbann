@@ -184,8 +184,11 @@ int main(int argc, char* argv[])
         Dnn dnn(trainParams.MBSize,
                 trainParams.Lambda,
                 optimizer, comm, lfac);
+        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
+                                                               std::make_pair(execution_mode::validation, &mnist_validation_set), 
+                                                               std::make_pair(execution_mode::testing, &mnist_testset)};
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&mnist_trainset), std::make_pair(validation, &mnist_validation_set), std::make_pair(testing, &mnist_testset)});
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
         // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
         dnn.add("FullyConnected", 100, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
@@ -193,7 +196,7 @@ int main(int argc, char* argv[])
         dnn.add("SoftMax", 10);
 
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, {std::make_pair(training,&mnist_trainset), std::make_pair(validation, &mnist_validation_set), std::make_pair(testing, &mnist_testset)}, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
         lbann_callback_print print_cb;
@@ -251,7 +254,7 @@ int main(int argc, char* argv[])
             // testing
             int numerrors = 0;
 
-            DataType accuracy = dnn.evaluate(testing);
+            DataType accuracy = dnn.evaluate(execution_mode::testing);
         }
 
         // Free dynamically allocated memory

@@ -490,19 +490,6 @@ void lbann::Sequential::setup()
     prevLayerDim = Layers[l]->NumNeurons;
   }
 
-#ifdef __LIB_CUDNN
-  for (size_t l = 0; l < Layers.size(); l++) {
-    if (dynamic_cast<ConvolutionalLayer*>(Layers[l])) {
-      ConvolutionalLayer* convlayer = (ConvolutionalLayer*)Layers[l];
-      convlayer->setup(&cudnnNet);
-    }
-    else if (dynamic_cast<PoolingLayer*>(Layers[l])) {
-      PoolingLayer* poollayer = (PoolingLayer*)Layers[l];
-      poollayer->setup(&cudnnNet);
-    }
-  }
-#endif
-
   /// Establish the forward pass input pointers
   /// The 0'th layer cannot require any input
   for (size_t l = 1; l < Layers.size(); l++) {

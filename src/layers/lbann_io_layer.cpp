@@ -35,7 +35,8 @@ using namespace std;
 using namespace El;
 
 lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
-  : Layer(0, comm, NULL, mini_batch_size, regs), m_training_dataset(data_readers[training]),  m_testing_dataset(data_readers[testing]), m_validation_dataset(data_readers[validation])
+  : Layer(0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
+    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation])
 {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
@@ -85,13 +86,13 @@ lbann::DataReader *lbann::io_layer::set_testing_data_reader(DataReader *data_rea
 
 lbann::DataReader *lbann::io_layer::select_data_reader() {
   switch(m_execution_mode) {
-  case training:
+  case execution_mode::training:
     return m_training_dataset.data_reader;
     break;
-  case validation:
+  case execution_mode::validation:
     return m_validation_dataset.data_reader;
     break;
-  case testing:
+  case execution_mode::testing:
     return m_testing_dataset.data_reader;
     break;
   // case prediction:
@@ -104,15 +105,15 @@ lbann::DataReader *lbann::io_layer::select_data_reader() {
 
 long lbann::io_layer::update_num_samples_processed(long num_samples) {
   switch(m_execution_mode) {
-  case training:
+  case execution_mode::training:
     m_training_dataset.num_samples_processed += num_samples;
     return m_training_dataset.num_samples_processed;
     break;
-  case validation:
+  case execution_mode::validation:
     m_validation_dataset.num_samples_processed += num_samples;
     return m_validation_dataset.num_samples_processed;
     break;
-  case testing:
+  case execution_mode::testing:
     m_testing_dataset.num_samples_processed += num_samples;
     return m_testing_dataset.num_samples_processed;
     break;

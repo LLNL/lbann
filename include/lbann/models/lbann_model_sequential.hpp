@@ -37,12 +37,6 @@
 #include <vector>
 #include <string>
 
-#ifdef __LIB_CUDNN
-#include "lbann/utils/cudnn_wrapper.hpp"
-#endif
-
-
-
 namespace lbann
 {
 class Sequential : public Model
@@ -85,11 +79,6 @@ class Sequential : public Model
     Optimizer_factory*  optimizer_factory;
     int                 MiniBatchSize;
     layer_factory* lfac;
-
-
-#ifdef __LIB_CUDNN
-    CudnnNet<DataType>  cudnnNet;
-#endif
 
   };
 }

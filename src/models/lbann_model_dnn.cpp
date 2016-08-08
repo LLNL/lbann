@@ -110,8 +110,9 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
     do_epoch_begin_cbs();
     /// Set the correct execution mode so that the proper data reader
     /// is used
+    m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < Layers.size(); l++) {
-      Layers[l]->m_execution_mode = training;
+      Layers[l]->m_execution_mode = execution_mode::training;
     }
 
     long num_samples = 0;
@@ -128,7 +129,7 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
 
     if(EvaluateEveryEpoch) {
       do_validation_begin_cbs();
-      validation_accuracy = evaluate(validation);
+      validation_accuracy = evaluate(execution_mode::validation);
       do_validation_end_cbs();
     }
 
@@ -195,9 +196,9 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
   long num_samples = 0;
   long num_errors = 0;
 
-  if(mode == validation) {
+  if(mode == execution_mode::validation) {
     do_validation_begin_cbs();
-  }else if(mode == testing) {
+  }else if(mode == execution_mode::testing) {
     do_test_begin_cbs();
   }else {
     throw lbann_exception("Illegal execution mode in evaluate function");
@@ -205,6 +206,7 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
 
 
   /// Set the mode for each layer so that validation data is used
+  m_execution_mode = mode;
   for (size_t l = 0; l < Layers.size(); l++) {
     Layers[l]->m_execution_mode = mode;
   }
@@ -218,9 +220,9 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
 
   test_accuracy = (DataType)(num_samples - num_errors) / num_samples * 100.0f;
 
-  if(mode == validation) {
+  if(mode == execution_mode::validation) {
     do_validation_end_cbs();
-  }else if(mode == testing) {
+  }else if(mode == execution_mode::testing) {
     do_test_end_cbs();
   }else {
     throw lbann_exception("Illegal execution mode in evaluate function");

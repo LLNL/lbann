@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -39,6 +39,7 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   : DataReader(batchSize, shuffle)
 {
   m_num_samples = 0;
+  //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
 }
@@ -68,6 +69,10 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     return 0;
   }
 
+  ifstream ifs(m_infile.c_str());
+  if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
+
+  string line;
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + BatchSize; ++n) {
     if (n >= (int)ShuffledIndices.size())
@@ -76,14 +81,8 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
 
-    ifstream ifs(m_infile.c_str());
-    if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
-
-
-    string line;
-    std::getline(ifs, line); //skip header*/
-    for(int i =0; i <= index; i++) std::getline(ifs, line);
-
+    if(index == 0) continue; //skip header
+    else std::getline(ifs.seekg(m_index_map[index-1]+index),line); 
     istringstream lstream(line);
     string field;
     int col = 0, f=0;
@@ -97,8 +96,8 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
         f++;
       }//end if col > 5
     }// end while loop
-    ifs.close();
   } // end for loop (batch)
+  ifs.close(); 
   return (n - CurrentPos);
 }
 
@@ -114,7 +113,9 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    int sample_label = m_labels[index];
+    int sample_label = 0;
+    if(index == 0) continue; //skip header
+    else sample_label = m_labels[index];
 
     Y.Set(sample_label, k, 1);
   }
@@ -137,19 +138,20 @@ bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size
   m_has_header = has_header;
   string line;
   int i;
-  std::getline(ifs, line); //skip header
+  double offset =0;
   while(std::getline (ifs, line) ) {
     string field;
+    offset = offset + line.length();
     istringstream lstream(line);
     i=0;
     m_num_features = 0;
-    //int label;
     while(getline(lstream, field, ' ')) {
       i++;
       if (i > 5) {
         m_num_features++;
       }
      }
+     m_index_map[m_num_samples] = offset;
      m_num_samples++;
   }
   ifs.close();
@@ -175,3 +177,4 @@ bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size
   }
   return true;
 }
+
