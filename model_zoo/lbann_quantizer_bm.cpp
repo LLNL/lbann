@@ -133,9 +133,9 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
+  Mat im_qerror;
   // Allocate here, prevents messing with timing.
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_threshold_quantized(
@@ -173,8 +173,9 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   Mat im_qerror;
+  // Allocate here, prevents messing with timing.
+  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_adaptive_threshold_quantized(
@@ -220,6 +221,11 @@ void print_stats(const std::vector<double>& times) {
   std::cout << "\tMin: " << *(minmax.first) << std::endl;
   std::cout << "\tMax: " << *(minmax.second) << std::endl;
   std::cout << "\tStdev: " << stdev << std::endl;
+  std::cout << "\tRaw: ";
+  for (const auto& t : times) {
+    std::cout << t << " ";
+  }
+  std::cout << std::endl;
 }
 
 void test_mat(lbann_comm* comm, DistMat& mat) {
@@ -230,6 +236,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       std::endl;
     print_stats(normal_times);
   }
+  normal_copy.Empty();
   DistMat onebit_copy(mat);
   auto onebit_times = test_onebit(comm, onebit_copy);
   if (comm->am_world_master()) {
@@ -237,6 +244,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       std::endl;
     print_stats(onebit_times);
   }
+  onebit_copy.Empty();
   DistMat thresh_copy(mat);
   auto thresh_times = test_thresh(comm, thresh_copy, 3.875f);
   if (comm->am_world_master()) {
@@ -244,6 +252,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       std::endl;
     print_stats(thresh_times);
   }
+  thresh_copy.Empty();
   DistMat comp_thresh_copy(mat);
   auto comp_thresh_times = test_comp_thresh(comm, comp_thresh_copy, 3.875f);
   if (comm->am_world_master()) {
@@ -251,6 +260,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       "):" << std::endl;
     print_stats(comp_thresh_times);
   }
+  comp_thresh_copy.Empty();
   DistMat adaptive_copy(mat);
   auto adaptive_times = test_adaptive(comm, adaptive_copy, 45);
   if (comm->am_world_master()) {
@@ -258,6 +268,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       mat.Width() << "):" << std::endl;
     print_stats(adaptive_times);
   }
+  adaptive_copy.Empty();
   DistMat comp_adaptive_copy(mat);
   auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 45);
   if (comm->am_world_master()) {
@@ -265,6 +276,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
       "x" << mat.Width() << "):" << std::endl;
     print_stats(comp_adaptive_times);
   }
+  comp_adaptive_copy.Empty();
 }
 
 int main(int argc, char** argv) {
@@ -281,7 +293,7 @@ int main(int argc, char** argv) {
     std::cout << "Models: " << comm->get_num_models() << std::endl;
     std::cout << "Procs per model: " << comm->get_procs_per_model() << std::endl;
   }
-  for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
+  for (int mat_size = 64; mat_size <= 32768; mat_size *= 2) {
     DistMat mat(comm->get_model_grid());
     El::Uniform(mat, mat_size, mat_size, 0.0f, 4.0f);
     test_mat(comm, mat);
