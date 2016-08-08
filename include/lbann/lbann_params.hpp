@@ -56,7 +56,7 @@ namespace lbann
     /// Maximum number of samples for validation
     double PercentageValidationSamples;
     /// Maximum number of samples for testing
-    double PercentageTestSamples;
+    double PercentageTestingSamples;
     /// Test with training data
     int TestWithTrainData;
 

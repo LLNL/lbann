@@ -147,7 +147,6 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, siz
 
   load_successful = load(imageDir, imageListFile);
 
-  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
   }
@@ -163,7 +162,6 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
 
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
-  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
   }

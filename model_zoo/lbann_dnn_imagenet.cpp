@@ -701,6 +701,9 @@ int main(int argc, char* argv[])
           }
           return -1;
         }
+        if (comm->am_world_master()) {
+          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl;
+        }
 
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (ImageNet)
@@ -714,11 +717,15 @@ int main(int argc, char* argv[])
         }
 
         if(trainParams.PercentageValidationSamples == 1.00) {
-          cout << "Validating training using " << (1.00 - trainParams.PercentageTrainingSamples) << " of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+          if (comm->am_world_master()) {
+            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+          }
         }else {
           size_t preliminary_validation_set_size = imagenet_validation_set.getNumData();
           size_t final_validation_set_size = imagenet_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+          if (comm->am_world_master()) {
+            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+          }
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -728,12 +735,15 @@ int main(int argc, char* argv[])
         bool testing_set_loaded = false;
         testing_set_loaded = imagenet_testset.load(trainParams.DatasetRootDir + g_ImageNet_TestDir,  
                                                    trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile, 
-                                                   trainParams.PercentageValidationSamples);
+                                                   trainParams.PercentageTestingSamples);
         if (!testing_set_loaded) {
           if (comm->am_world_master()) {
             cout << "ImageNet Test data error" << endl;
           }
           return -1;
+        }
+        if (comm->am_world_master()) {
+          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -901,7 +911,7 @@ int main(int argc, char* argv[])
             // training epoch loop
             //************************************************************************
 
-            dnn->train(1);
+            dnn->train(1, true);
 
             dnn->evaluate();
         }

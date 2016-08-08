@@ -180,7 +180,6 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
 
   load_successful = load(FileDir, ImageFile, LabelFile);
 
-  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
   }
@@ -196,7 +195,6 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
 
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
-  cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
   }
