@@ -82,7 +82,7 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
   // Apply activation function/nonlinearity.
-  fp_nonlinearity(*Acts);
+  fp_nonlinearity();
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
   fp_time += get_time() - fp_start;
@@ -97,7 +97,7 @@ void lbann::Layer::backProp() {
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
-  bp_nonlinearity(*Zs, *Ds);
+  bp_nonlinearity();
   // Backprop weight regularization.
   for (regularizer* reg : regularizers) reg->bp_weights();
   // Backprop the layer's linearity.
@@ -607,14 +607,14 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
     return true;
 }
 
-void lbann::Layer::fp_nonlinearity(ElMat& _Z)
+void lbann::Layer::fp_nonlinearity()
 {
-    m_activation_fn->forwardProp(_Z);
+    m_activation_fn->forwardProp(*Acts);
 }
 
-void lbann::Layer::bp_nonlinearity(ElMat& _Zs, ElMat& _Ds)
+void lbann::Layer::bp_nonlinearity()
 {
-    m_activation_fn->backwardProp(_Zs);
+    m_activation_fn->backwardProp(*Zs);
     if(m_activation_type != activation_type::ID)
-      Hadamard(_Ds, _Zs, _Ds);
+      Hadamard(*Ds, *Zs, *Ds);
 }

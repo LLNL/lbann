@@ -244,15 +244,15 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
             // J(theta)
             this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
-            this->fp_nonlinearity(*Acts);
+            //this->fp_nonlinearity(*Acts);
 
             // J(thetaPlus(i))
             this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
-            this->fp_nonlinearity(Acts_E1);
+            //this->fp_nonlinearity(Acts_E1);
 
             // J(thetaMinus(i))
             this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
-            this->fp_nonlinearity(Acts_E2);
+            //this->fp_nonlinearity(Acts_E2);
 
             //            this->getCost();
 
