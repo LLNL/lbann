@@ -73,7 +73,7 @@ class Sequential : public Model
     virtual void train(int NumEpoch, bool EvaluateEveryEpoch=false) = 0;
     virtual bool trainBatch(long *num_samples, long *num_errors) = 0;
 
-    virtual DataType evaluate() = 0;
+    virtual DataType evaluate(execution_mode mode) = 0;
     virtual bool evaluateBatch(long *num_samples, long *num_errors) = 0;
 #if 0
     virtual DistMat* predictBatch(DistMat* X);

@@ -31,16 +31,33 @@
 
 using namespace std;
 
-lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, int training_data_set_size, int testing_data_set_size)
-  : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_mini_batch_size(mini_batch_size)
+lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers)
+  : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_mini_batch_size(mini_batch_size)
 {
   m_root = 0;
-  
+
+  int training_data_set_size = 0;
+  int validation_data_set_size = 0;
+  int testing_data_set_size = 0;
+
+  if(data_readers[training] != NULL) {
+    training_data_set_size = data_readers[training]->getNumData();
+  }
+
+  if(data_readers[validation] != NULL) {
+    validation_data_set_size = data_readers[validation]->getNumData();
+  }
+
+  if(data_readers[testing] != NULL) {
+    testing_data_set_size = data_readers[testing]->getNumData();
+  }
+
   if(comm->get_model_grid().Size() < num_parallel_readers) {
     cout << "Warning the grid size "<<comm->get_model_grid().Size()
          <<"is smaller than the number of requested parallel readers "
          <<num_parallel_readers<<"." << endl;
     m_num_parallel_readers_training = comm->get_model_grid().Size();
+    m_num_parallel_readers_validating = comm->get_model_grid().Size();
     m_num_parallel_readers_testing = comm->get_model_grid().Size();
   }
 
@@ -56,6 +73,24 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
            <<m_num_parallel_readers_training<<", using "<< max_num_parallel_readers<<"." << endl;
       m_num_parallel_readers_training = max_num_parallel_readers;
     }
+  }else {
+    m_num_parallel_readers_training = 0;
+  }
+
+  /// Check to make sure that there is enough training data for all of the parallel readers
+  if(validation_data_set_size != 0) {
+    int max_num_parallel_readers = m_num_parallel_readers_validating;
+    while(ceil((float)validation_data_set_size/(float)mini_batch_size) < max_num_parallel_readers) {
+      max_num_parallel_readers--;
+    }
+    if(max_num_parallel_readers != m_num_parallel_readers_validating) {
+      cout << "Warning the validation data set size "<<validation_data_set_size
+           <<" is too small for the number of requested parallel readers "
+           <<m_num_parallel_readers_validating<<", using "<< max_num_parallel_readers<<"." << endl;
+      m_num_parallel_readers_validating = max_num_parallel_readers;
+    }
+  }else {
+    m_num_parallel_readers_validating = 0;
   }
 
   /// Check to make sure that there is enough testing data for all of the parallel readers
@@ -70,6 +105,8 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
            <<m_num_parallel_readers_testing<<", using "<< max_num_parallel_readers<<"." << endl;
       m_num_parallel_readers_testing = max_num_parallel_readers;
     }
+  }else {
+    m_num_parallel_readers_testing = 0;
   }
 }
 
@@ -156,6 +193,9 @@ int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
   switch(get_execution_mode()) {
   case training:
     num_parallel_readers = m_num_parallel_readers_training;
+    break;
+  case validation:
+    num_parallel_readers = m_num_parallel_readers_validating;
     break;
   case testing:
     num_parallel_readers = m_num_parallel_readers_testing;

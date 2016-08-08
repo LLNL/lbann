@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
             }
 #endif
 
-            dnn.train(1);
+            dnn.train(1, true);
 
             // Update the learning rate on each epoch
             // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
             // testing
             int numerrors = 0;
 
-            DataType accuracy = dnn.evaluate();
+            DataType accuracy = dnn.evaluate(testing);
         }
 
         // Free dynamically allocated memory
