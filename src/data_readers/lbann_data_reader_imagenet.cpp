@@ -46,6 +46,15 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize)
   : DataReader_ImageNet(batchSize, true) {}
 
+lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
+  : DataReader((const DataReader&) source),
+    m_image_dir(source.m_image_dir), ImageList(source.ImageList),
+    m_image_width(source.m_image_width), m_image_height(source.m_image_height), m_num_labels(source.m_num_labels)
+{
+  m_pixels = new unsigned char[m_image_width * m_image_height * 3];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * 3);
+}
+
 lbann::DataReader_ImageNet::~DataReader_ImageNet()
 {
   delete m_pixels;
@@ -161,4 +170,34 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
   select_subset_of_data(max_sample_count, firstN);
 
   return load_successful;
+}
+
+void lbann::DataReader_ImageNet::free()
+{
+  delete m_pixels;
+}
+
+// Assignment operator
+lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataReader_ImageNet& source)
+{
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+  // first we need to deallocate any data that this data reader is holding!
+  delete m_pixels;
+
+  this->m_image_dir = source.m_image_dir;
+  this->ImageList = source.ImageList;
+  this->m_image_width = source.m_image_width;
+  this->m_image_height = source.m_image_height;
+  this->m_num_labels = source.m_num_labels;
+
+  m_pixels = new unsigned char[m_image_width * m_image_height * 3];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * 3);
+
+  return *this;
 }
