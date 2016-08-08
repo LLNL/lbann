@@ -132,6 +132,10 @@ int main(int argc, char* argv[])
           return -1;
         }
 
+        size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
+        size_t final_validation_set_size = mnist_validation_set.trim_data_set(1.00);
+        cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+
         ///////////////////////////////////////////////////////////////////
         // load testing data (MNIST)
         ///////////////////////////////////////////////////////////////////

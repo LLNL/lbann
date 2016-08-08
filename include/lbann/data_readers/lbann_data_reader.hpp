@@ -31,6 +31,7 @@
 
 #include "lbann_base.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
@@ -173,6 +174,18 @@ namespace lbann
       this->m_unused_indices = source.m_unused_indices;
       return *this;
     }
+
+    size_t trim_data_set(double use_percentage, bool firstN=false) {
+      size_t max_sample_count = rint(getNumData()*use_percentage);
+      
+      if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+        throw lbann_exception("data reader trim error: invalid number of samples selected");
+      }
+      select_subset_of_data(max_sample_count, firstN);
+
+      return getNumData();
+    }
+
 
   protected:
     int							BatchSize;
