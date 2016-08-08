@@ -200,7 +200,7 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
   }else if(mode == testing) {
     do_test_begin_cbs();
   }else {
-    throw("Illegal execution mode in evaluate function");
+    throw lbann_exception("Illegal execution mode in evaluate function");
   }
 
 
@@ -223,7 +223,7 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
   }else if(mode == testing) {
     do_test_end_cbs();
   }else {
-    throw("Illegal execution mode in evaluate function");
+    throw lbann_exception("Illegal execution mode in evaluate function");
   }
   return test_accuracy;
 }

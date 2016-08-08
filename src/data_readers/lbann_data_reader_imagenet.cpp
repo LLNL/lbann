@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
-#include "lbann/utils/lbann_exception.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
 using namespace std;
@@ -141,7 +140,7 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, siz
 
   cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw("MNIST data reader load error: invalid number of samples selected");
+    throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
   }
   select_subset_of_data(max_sample_count, firstN);
 
@@ -157,7 +156,7 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
 
   cout << "Using " << max_sample_count << " of " << getNumData() << " samples" << endl;
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw("MNIST data reader load error: invalid number of samples selected");
+    throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
   }
   select_subset_of_data(max_sample_count, firstN);
 
