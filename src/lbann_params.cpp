@@ -31,8 +31,8 @@ using namespace El;
 
 lbann::TrainingParams::TrainingParams(void)
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
-    MaxTrainingSamples(-1), MaxValidationSamples(-1),
-    MaxTestSamples(-1), TestWithTrainData(0),
+    PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
+    PercentageTestingSamples(1.00), TestWithTrainData(0),
     EpochCount(2), MBSize(192),
     LearnRate(0.3), LearnRateMethod(2),
     LrDecayRate(0.5), LrDecayCycles(5000),
@@ -40,8 +40,6 @@ lbann::TrainingParams::TrainingParams(void)
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
     SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "),
     TestFile(" "), SummaryDir("."), IntermodelCommMethod(0), ProcsPerModel(0) {
-
-  MaxMBCount = MaxTrainingSamples > 0 ? ceil((double)MaxTrainingSamples / (double)MBSize) : 0;
 }
 
 void lbann::TrainingParams::parse_params(void) {
@@ -51,14 +49,13 @@ void lbann::TrainingParams::parse_params(void) {
   RandomSeed = Input("--seed", "Random seed", RandomSeed);
   ShuffleTrainingData = Input("--random-training-samples", "0 - Pick first N training samples, 1 - Select N random training samples", ShuffleTrainingData);
 
-  MaxTrainingSamples = Input("--max-training-samples", "Max # of samples used for training", MaxTrainingSamples);
-  MaxValidationSamples = Input("--max-validation-samples", "Max # of samples used for validation", MaxValidationSamples);
-  MaxTestSamples = Input("--max-test-samples", "Max # of samples used for testing", MaxTestSamples);
+  PercentageTrainingSamples = Input("--percentage-training-samples", "Percentage of training set sampled during training [0.00 to 1.00]", PercentageTrainingSamples);
+  PercentageValidationSamples = Input("--percentage-validation-samples", "Percentage of the unused training set sampled during validation [0.00 to 1.00]", PercentageValidationSamples);
+  PercentageTestingSamples = Input("--percentage-testing-samples", "Percentage of testing set sampled during testing", PercentageTestingSamples);
   TestWithTrainData = Input("--test-with-train-data", "Use the training data for validation", TestWithTrainData);
 
   EpochCount = Input("--num-epochs", "# of training epochs", EpochCount);
   MBSize = Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
-  MaxMBCount = MaxTrainingSamples > 0 ? ceil((double)MaxTrainingSamples / (double)MBSize) : 0;
 
   LearnRate = Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
   LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop", LearnRateMethod);

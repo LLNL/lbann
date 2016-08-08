@@ -35,10 +35,10 @@ lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
 
 void lbann_callback_early_stopping::on_test_end(Model* m) {
   /// @todo: Base this on validation accuracy once we have validation sets.
-  //DataType acc = m->get_validation_accuracy();
+  DataType acc = m->get_validate_accuracy();
   // May need to change this callback to on_train_end or something that runs
   // after validation.
-  DataType acc = m->get_test_accuracy();
+  //DataType acc = m->get_test_accuracy();
   if (acc > last_acc) {
     last_acc = acc;
     wait = 0;

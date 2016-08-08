@@ -129,7 +129,7 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
 
     if(EvaluateEveryEpoch) {
       do_validation_begin_cbs();
-      validation_accuracy = evaluate();
+      validation_accuracy = evaluate(execution_mode::validation);
       do_validation_end_cbs();
     }
 
@@ -188,7 +188,7 @@ bool lbann::Dnn::trainBatch(long *num_samples, long *num_errors)
   return data_set_processed;
 }
 
-DataType lbann::Dnn::evaluate()
+DataType lbann::Dnn::evaluate(execution_mode mode)
 {
   // test
 
@@ -196,12 +196,19 @@ DataType lbann::Dnn::evaluate()
   long num_samples = 0;
   long num_errors = 0;
 
-  do_test_begin_cbs();
+  if(mode == execution_mode::validation) {
+    do_validation_begin_cbs();
+  }else if(mode == execution_mode::testing) {
+    do_test_begin_cbs();
+  }else {
+    throw lbann_exception("Illegal execution mode in evaluate function");
+  }
+
 
   /// Set the mode for each layer so that validation data is used
-  m_execution_mode = execution_mode::testing;
+  m_execution_mode = mode;
   for (size_t l = 0; l < Layers.size(); l++) {
-    Layers[l]->m_execution_mode = execution_mode::testing;
+    Layers[l]->m_execution_mode = mode;
   }
 
   // Trigger a shuffle of the input data
@@ -213,7 +220,13 @@ DataType lbann::Dnn::evaluate()
 
   test_accuracy = (DataType)(num_samples - num_errors) / num_samples * 100.0f;
 
-  do_test_end_cbs();
+  if(mode == execution_mode::validation) {
+    do_validation_end_cbs();
+  }else if(mode == execution_mode::testing) {
+    do_test_end_cbs();
+  }else {
+    throw lbann_exception("Illegal execution mode in evaluate function");
+  }
   return test_accuracy;
 }
 

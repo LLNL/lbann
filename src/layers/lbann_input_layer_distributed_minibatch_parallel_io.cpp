@@ -34,24 +34,16 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : input_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, regs), 
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader->getNumData(), testing_data_reader->getNumData()),
+lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : input_layer(comm, mini_batch_size, data_readers, regs), 
+    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Xs(comm->get_model_grid())
 {
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
-  Layer::setup(num_prev_neurons);
-  if(m_training_data_reader != NULL) {
-    m_training_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
-  }
-
-  if(m_testing_data_reader != NULL) {
-    m_testing_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_testing * Layer::m_mini_batch_size);
-  }
+  io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                               m_num_parallel_readers_training * Layer::m_mini_batch_size);
 
   Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, Layer::m_mini_batch_size);

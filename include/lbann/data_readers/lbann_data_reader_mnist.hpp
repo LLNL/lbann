@@ -40,6 +40,7 @@ namespace lbann
 	public:
     DataReader_MNIST(int batchSize, bool shuffle);
     DataReader_MNIST(int batchSize);
+    DataReader_MNIST(const DataReader_MNIST& source);
 		~DataReader_MNIST();
 
     int fetch_data(Mat& X);
@@ -47,13 +48,21 @@ namespace lbann
 		int getNumLabels() { return NumLabels; }
 
 		// MNIST-specific functions
-		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count=0, bool firstN=false);
-		void free();
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
+    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
+    void free();
 
 		int getImageWidth() { return ImageWidth; }
 		int getImageHeight() { return ImageHeight; }
     int get_linearized_data_size() { return ImageWidth * ImageHeight; }
     int get_linearized_label_size() { return NumLabels; }
+
+    DataReader_MNIST& operator=(const DataReader_MNIST& source);
+
+  private:
+    void clone_image_data(const DataReader_MNIST& source);
 
 	private:
 		std::vector<unsigned char*> 	ImageData;

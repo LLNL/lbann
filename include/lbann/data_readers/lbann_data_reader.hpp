@@ -31,6 +31,7 @@
 
 #include "lbann_base.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
@@ -45,12 +46,18 @@ namespace lbann
 	class DataReader
 	{
 	public:
-          DataReader(int batchSize, bool shuffle) :
-            BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-            m_stride(batchSize), m_base_offset(0) {}
-          DataReader(int batchSize) :
-            DataReader(batchSize, true) {}
-          virtual ~DataReader() {}
+    DataReader(int batchSize, bool shuffle) :
+      BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
+      m_stride(batchSize), m_base_offset(0) {}
+    DataReader(int batchSize) :
+      DataReader(batchSize, true) {}
+    
+    DataReader(const DataReader& source) :
+      BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
+      m_stride(source.m_stride), m_base_offset(source.m_base_offset), 
+      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices) {}
+
+    virtual ~DataReader() {}
 
     /**
      * Prepare to start processing an epoch of data.
@@ -116,16 +123,79 @@ namespace lbann
     int get_next_position() { return CurrentPos + m_stride; }
 		int* getIndices()       { return &ShuffledIndices[0]; }
 		int getNumData()        { return (int)ShuffledIndices.size(); }
+		int get_num_unused_data() { return (int)m_unused_indices.size(); }
+		int* get_unused_data()    { return &m_unused_indices[0]; }
 
-	protected:
-		int							BatchSize;
-		int 						CurrentPos;
+    void select_subset_of_data(size_t max_sample_count, bool firstN) {
+      size_t num_data_samples = getNumData();
+      
+      /// If the user requested fewer than the total data set size, select
+      /// a random set from the entire data set.
+      if (max_sample_count != 0) {
+        max_sample_count = __MIN(max_sample_count, num_data_samples);
+        if(!firstN) {
+          std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
+        }
+        m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
+        ShuffledIndices.resize(max_sample_count);
+
+        if(!firstN) {
+          std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
+          std::sort(m_unused_indices.begin(), m_unused_indices.end());
+        }
+
+        // std::cout << "shuffled indices ";
+        // for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
+        //   std::cout << *i << ' ';
+        // std::cout << std::endl;
+
+        // std::cout << "unused indices ";
+        // for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
+        //   std::cout << *i << ' ';
+        // std::cout << std::endl;
+      }
+    }
+
+    bool swap_used_and_unused_index_sets() {
+      std::vector<int> tmp_indices = ShuffledIndices;
+      ShuffledIndices = m_unused_indices;
+      m_unused_indices = tmp_indices;
+      return true;
+    }
+
+    DataReader& operator=(const DataReader& source) {
+      this->BatchSize = source.BatchSize;
+      this->CurrentPos = source.CurrentPos;
+      this->m_shuffle = source.m_shuffle;
+      this->m_stride = source.m_stride;
+      this->m_base_offset = source.m_base_offset;
+      // Vectors implement a deep copy
+      this->ShuffledIndices = source.ShuffledIndices;
+      this->m_unused_indices = source.m_unused_indices;
+      return *this;
+    }
+
+    size_t trim_data_set(double use_percentage, bool firstN=false) {
+      size_t max_sample_count = rint(getNumData()*use_percentage);
+      
+      if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+        throw lbann_exception("data reader trim error: invalid number of samples selected");
+      }
+      select_subset_of_data(max_sample_count, firstN);
+
+      return getNumData();
+    }
+
+
+  protected:
+    int							BatchSize;
+    int 						CurrentPos;
     int             m_shuffle;
     int             m_stride;       /// Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
     int             m_base_offset;  /// If there are multiple instances of the reader, 
                                     /// then it may not reset to zero
-		std::vector<int> 			ShuffledIndices;
-
+    std::vector<int> 			ShuffledIndices;
+    std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
 	};
 
 }

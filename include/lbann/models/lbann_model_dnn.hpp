@@ -52,7 +52,7 @@ namespace lbann
     void train(int NumEpoch, bool EvaluateEveryEpoch=false);
     bool trainBatch(long *num_samples, long *num_errors);
 
-    DataType evaluate();
+    DataType evaluate(execution_mode mode=execution_mode::testing);
     bool evaluateBatch(long *num_samples, long *num_errors);
 
     DataType get_train_accuracy() const { return training_accuracy; }

@@ -621,6 +621,8 @@ int main(int argc, char* argv[])
         trainParams.DropOut = 0.1;
         trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
+        trainParams.PercentageTrainingSamples = 0.80;
+        trainParams.PercentageValidationSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.parse_params();
         // Read in the user specified network topology
@@ -690,19 +692,40 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true);
         bool training_set_loaded = false;
-        if(trainParams.MaxTrainingSamples != 0) {
-          training_set_loaded = imagenet_trainset.load(trainParams.DatasetRootDir + g_ImageNet_TrainDir, 
-                                                       trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile,
-                                                       trainParams.MaxTrainingSamples);
-        }else {
-          training_set_loaded = imagenet_trainset.load(trainParams.DatasetRootDir + g_ImageNet_TrainDir, 
-                                                       trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
-        }
+        training_set_loaded = imagenet_trainset.load(trainParams.DatasetRootDir + g_ImageNet_TrainDir, 
+                                                     trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile,
+                                                     trainParams.PercentageTrainingSamples);
         if (!training_set_loaded) {
           if (comm->am_world_master()) {
             cout << "ImageNet train data error" << endl;
           }
           return -1;
+        }
+        if (comm->am_world_master()) {
+          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl;
+        }
+
+        ///////////////////////////////////////////////////////////////////
+        // create a validation set from the unused training data (ImageNet)
+        ///////////////////////////////////////////////////////////////////
+        DataReader_ImageNet imagenet_validation_set(imagenet_trainset); // Clone the training set object
+        if (!imagenet_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
+          if (comm->am_world_master()) {
+            cout << "ImageNet validation data error" << endl;
+          }
+          return -1;
+        }
+
+        if(trainParams.PercentageValidationSamples == 1.00) {
+          if (comm->am_world_master()) {
+            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+          }
+        }else {
+          size_t preliminary_validation_set_size = imagenet_validation_set.getNumData();
+          size_t final_validation_set_size = imagenet_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
+          if (comm->am_world_master()) {
+            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+          }
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -710,19 +733,17 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_testset(trainParams.MBSize, true);
         bool testing_set_loaded = false;
-        if(trainParams.MaxValidationSamples != 0) {
-          testing_set_loaded = imagenet_testset.load(trainParams.DatasetRootDir + g_ImageNet_TestDir,  
-                                                     trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile, 
-                                                     trainParams.MaxValidationSamples);
-        }else {
-          testing_set_loaded = imagenet_testset.load(trainParams.DatasetRootDir + g_ImageNet_TestDir,  
-                                                     trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
-        }
+        testing_set_loaded = imagenet_testset.load(trainParams.DatasetRootDir + g_ImageNet_TestDir,  
+                                                   trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile, 
+                                                   trainParams.PercentageTestingSamples);
         if (!testing_set_loaded) {
           if (comm->am_world_master()) {
             cout << "ImageNet Test data error" << endl;
           }
           return -1;
+        }
+        if (comm->am_world_master()) {
+          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -740,8 +761,11 @@ int main(int argc, char* argv[])
         layer_factory* lfac = new layer_factory();
         Dnn *dnn = NULL;
         dnn = new Dnn(optimizer, trainParams.MBSize, comm, lfac);
+        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
+                                                              std::make_pair(execution_mode::validation, &imagenet_validation_set), 
+                                                              std::make_pair(execution_mode::testing, &imagenet_testset)};
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn->add(input_layer);
         int NumLayers = netParams.Network.size();
         // initalize neural network (layers)
@@ -756,7 +780,7 @@ int main(int argc, char* argv[])
           dnn->add(networkType, netParams.Network[l], trainParams.ActivationType, {new dropout(trainParams.DropOut)});
         }
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
         lbann_summary summarizer("/p/lscratchf/vanessen", comm);
@@ -786,11 +810,11 @@ int main(int argc, char* argv[])
             cout << "\tBlock size: " << perfParams.BlockSize << endl;
             cout << "\tEpochs: " << trainParams.EpochCount << endl;
             cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-            if(trainParams.MaxMBCount == 0) {
-              cout << "\tMini-batch count (max): " << "unlimited" << endl;
-            }else {
-              cout << "\tMini-batch count (max): " << trainParams.MaxMBCount << endl;
-            }
+            // if(trainParams.MaxMBCount == 0) {
+            //   cout << "\tMini-batch count (max): " << "unlimited" << endl;
+            // }else {
+            //   cout << "\tMini-batch count (max): " << trainParams.MaxMBCount << endl;
+            // }
             cout << "\tLearning rate: " << trainParams.LearnRate << endl;
             cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
             if(perfParams.MaxParIOSize == 0) {
@@ -890,7 +914,7 @@ int main(int argc, char* argv[])
             // training epoch loop
             //************************************************************************
 
-            dnn->train(1);
+            dnn->train(1, true);
 
             dnn->evaluate();
         }
