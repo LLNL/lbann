@@ -69,6 +69,8 @@ int main(int argc, char* argv[])
     trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
     trainParams.IntermodelCommMethod = static_cast<int>(
       lbann_callback_imcomm::COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
+    trainParams.PercentageTrainingSamples = 0.90;
+    trainParams.PercentageValidationSamples = 1.00;
     PerformanceParams perfParams;
     perfParams.BlockSize = 256;
 
@@ -111,11 +113,37 @@ int main(int argc, char* argv[])
     DataReader_MNIST mnist_trainset(trainParams.MBSize);
     if (!mnist_trainset.load(trainParams.DatasetRootDir,
                              g_MNIST_TrainImageFile,
-                             g_MNIST_TrainLabelFile)) {
+                             g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
       if (comm->am_world_master()) {
         cout << "MNIST train data error" << endl;
       }
       return -1;
+    }
+    if (comm->am_world_master()) {
+      cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // create a validation set from the unused training data (MNIST)
+    ///////////////////////////////////////////////////////////////////
+    DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
+    if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
+      if (comm->am_world_master()) {
+        cout << "MNIST validation data error" << endl;
+      }
+      return -1;
+    }
+
+    if(trainParams.PercentageValidationSamples == 1.00) {
+      if (comm->am_world_master()) {
+        cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+      }
+    }else {
+      size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
+      size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
+      if (comm->am_world_master()) {
+        cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+      }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -146,9 +174,12 @@ int main(int argc, char* argv[])
 
     layer_factory* lfac = new layer_factory();
     Dnn dnn(trainParams.MBSize, trainParams.Lambda, optimizer, comm, lfac);
-    input_layer *input_layer = new input_layer_distributed_minibatch(
-      comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
-    //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
+    std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
+                                                          std::make_pair(execution_mode::validation, &mnist_validation_set), 
+                                                          std::make_pair(execution_mode::testing, &mnist_testset)};
+    // input_layer *input_layer = new input_layer_distributed_minibatch(
+    //   comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024, trainParams.ActivationType,
@@ -160,9 +191,9 @@ int main(int argc, char* argv[])
       "FullyConnected", 1024, trainParams.ActivationType,
       {new dropout(trainParams.DropOut)});
     uint smidx = dnn.add("SoftMax", 10);
-    target_layer *target_layer = new target_layer_distributed_minibatch(
-      comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
-    //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
+    // target_layer *target_layer = new target_layer_distributed_minibatch(
+    //   comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
