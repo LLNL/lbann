@@ -143,9 +143,9 @@ class regularizer;
     /** Handle the layer's linearity in backward propagation. */
     virtual void bp_linearity() {}
     /** Apply the layer's nonlinearity in forward propagation. */
-    virtual void fp_nonlinearity();
+    virtual void fp_nonlinearity() {}
     /** Handle the layer's nonlinearity in backward propagation. */
-    virtual void bp_nonlinearity();
+    virtual void bp_nonlinearity() {}
 
     /** Activation function */
     Activation* m_activation_fn;

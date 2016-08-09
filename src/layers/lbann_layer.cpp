@@ -93,7 +93,7 @@ void lbann::Layer::backProp() {
   double bp_start = get_time();
 
   // Get incoming loss and convert matrix distribution if necessary
-  *Ds = *bp_input;
+  //*Ds = *bp_input;
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
@@ -605,16 +605,4 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 
     optimizer->loadFromCheckpointShared(dir, Index, bytes);
     return true;
-}
-
-void lbann::Layer::fp_nonlinearity()
-{
-    m_activation_fn->forwardProp(*Acts);
-}
-
-void lbann::Layer::bp_nonlinearity()
-{
-    m_activation_fn->backwardProp(*Zs);
-    if(m_activation_type != activation_type::ID)
-      Hadamard(*Ds, *Zs, *Ds);
 }
