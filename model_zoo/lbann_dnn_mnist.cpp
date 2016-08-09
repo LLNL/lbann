@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    init_random(42);
     lbann_comm* comm = NULL;
 
     try {
@@ -187,7 +188,7 @@ int main(int argc, char* argv[])
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
-        //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
+        //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
         // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
@@ -195,7 +196,7 @@ int main(int argc, char* argv[])
         dnn.add("FullyConnected", 30, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
         dnn.add("SoftMax", 10);
 
-        //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
+        //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
