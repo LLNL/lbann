@@ -48,13 +48,13 @@ namespace lbann
 	public:
     DataReader(int batchSize, bool shuffle) :
       BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-      m_stride(batchSize), m_base_offset(0) {}
+      m_stride(batchSize), m_base_offset(0), m_model_offset(0) {}
     DataReader(int batchSize) :
       DataReader(batchSize, true) {}
     
     DataReader(const DataReader& source) :
       BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
-      m_stride(source.m_stride), m_base_offset(source.m_base_offset), 
+      m_stride(source.m_stride), m_base_offset(source.m_base_offset), m_model_offset(source.m_model_offset),
       ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices) {}
 
     virtual ~DataReader() {}
@@ -65,11 +65,12 @@ namespace lbann
      * If the base offset is not specified set it to 0
      * If the stride is not specified set it to batch size
      */
-    void setup(int base_offset, int stride) {
+    void setup(int base_offset, int stride, int model_offset = 0) {
+      m_model_offset = model_offset;
       m_base_offset = base_offset;
       m_stride = stride;
 
-      CurrentPos = m_base_offset;
+      CurrentPos = m_base_offset + m_model_offset;
       if (m_shuffle) {
         std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                      get_generator());
@@ -108,7 +109,7 @@ namespace lbann
           std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                        get_generator());
         }
-        CurrentPos = m_base_offset;
+        CurrentPos = m_base_offset + m_model_offset;
         return false;
       }
     }
@@ -169,6 +170,7 @@ namespace lbann
       this->m_shuffle = source.m_shuffle;
       this->m_stride = source.m_stride;
       this->m_base_offset = source.m_base_offset;
+      this->m_model_offset = source.m_model_offset;
       // Vectors implement a deep copy
       this->ShuffledIndices = source.ShuffledIndices;
       this->m_unused_indices = source.m_unused_indices;
@@ -194,6 +196,8 @@ namespace lbann
     int             m_stride;       /// Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
     int             m_base_offset;  /// If there are multiple instances of the reader, 
                                     /// then it may not reset to zero
+    int             m_model_offset;  /// If there are multiple models with multiple instances of the reader, 
+                                     /// each model's set of readers may not reset to zero
     std::vector<int> 			ShuffledIndices;
     std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
 	};

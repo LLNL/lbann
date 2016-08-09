@@ -64,7 +64,7 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   /// Check to make sure that there is enough training data for all of the parallel readers
   if(training_data_set_size != 0) {
     int max_num_parallel_readers = m_num_parallel_readers_training;
-    while(ceil((float)training_data_set_size/(float)mini_batch_size) < max_num_parallel_readers) {
+    while(ceil((float)training_data_set_size/(float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
       max_num_parallel_readers--;
     }
     if(max_num_parallel_readers != m_num_parallel_readers_training) {
@@ -80,7 +80,7 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   /// Check to make sure that there is enough training data for all of the parallel readers
   if(validation_data_set_size != 0) {
     int max_num_parallel_readers = m_num_parallel_readers_validating;
-    while(ceil((float)validation_data_set_size/(float)mini_batch_size) < max_num_parallel_readers) {
+    while(ceil((float)validation_data_set_size/(float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
       max_num_parallel_readers--;
     }
     if(max_num_parallel_readers != m_num_parallel_readers_validating) {
@@ -96,7 +96,7 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   /// Check to make sure that there is enough testing data for all of the parallel readers
   if(testing_data_set_size != 0) {
     int max_num_parallel_readers = m_num_parallel_readers_testing;
-    while(ceil((float)testing_data_set_size/(float)mini_batch_size) < max_num_parallel_readers) {
+    while(ceil((float)testing_data_set_size/(float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
       max_num_parallel_readers--;
     }
     if(max_num_parallel_readers != m_num_parallel_readers_testing) {

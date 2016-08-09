@@ -45,8 +45,16 @@ lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_
 
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
   if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
+    if(io_layer::m_data_sets_span_models) {
+      int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+      cout << "Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
+      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                   stride,
+                                   Layer::comm->get_model_rank() * stride);
+    }else {
+      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                   m_num_parallel_readers_training * Layer::m_mini_batch_size);
+    }
   }
 
   /// @todo put in warning about bad target size
@@ -67,6 +75,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   m_num_data_per_epoch = 0;
 }
 
+///@todo update this to use the new fp_linearity framework
 DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(DataType prev_WBL2NormSum) {
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
   target_layer::update_num_samples_processed(num_samples_in_batch);

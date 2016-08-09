@@ -34,9 +34,9 @@
 using namespace std;
 using namespace El;
 
-lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models)
   : Layer(0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
-    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation])
+    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation]), m_data_sets_span_models(data_sets_span_models)
 {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
@@ -190,17 +190,17 @@ long lbann::io_layer::get_linearized_label_size() {
   return linearized_label_size;
 }
 
-void lbann::io_layer::setup_data_readers(int base_offset, int stride) {
+void lbann::io_layer::setup_data_readers(int base_offset, int stride, int model_offset) {
   if(m_training_dataset.data_reader != NULL) {
-    m_training_dataset.data_reader->setup(base_offset, stride);
+    m_training_dataset.data_reader->setup(base_offset, stride, model_offset);
   }
 
   if(m_validation_dataset.data_reader != NULL) {
-    m_validation_dataset.data_reader->setup(base_offset, stride);
+    m_validation_dataset.data_reader->setup(base_offset, stride, model_offset);
   }
 
   if(m_testing_dataset.data_reader != NULL) {
-    m_testing_dataset.data_reader->setup(base_offset, stride);
+    m_testing_dataset.data_reader->setup(base_offset, stride, model_offset);
   }
   return;
 }
