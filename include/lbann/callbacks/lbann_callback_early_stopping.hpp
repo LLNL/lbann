@@ -48,8 +48,8 @@ public:
    * Continue training until accuracy has not improved for patience epochs.
    */
   lbann_callback_early_stopping(int64_t patience);
-  /** Update test accuracy and check for early stopping. */
-  void on_test_end(Model* m);
+  /** Update validation accuracy and check for early stopping. */
+  void on_validation_end(Model* m);
 private:
   /** Number of epochs to wait for improvements. */
   int64_t patience;
