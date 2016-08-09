@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
   init_random(1);  // Deterministic initialization across every model.
+  lbann_comm* comm = NULL;
 
   try {
     // Get data files.
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     SetBlocksize(perfParams.BlockSize);
 
     // Set up the communicator and get the grid.
-    lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm = new lbann_comm(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << 
@@ -177,9 +178,8 @@ int main(int argc, char* argv[])
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
-    // input_layer *input_layer = new input_layer_distributed_minibatch(
-    //   comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+    //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024, trainParams.ActivationType,
@@ -191,9 +191,8 @@ int main(int argc, char* argv[])
       "FullyConnected", 1024, trainParams.ActivationType,
       {new dropout(trainParams.DropOut)});
     uint smidx = dnn.add("SoftMax", 10);
-    // target_layer *target_layer = new target_layer_distributed_minibatch(
-    //   comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+    //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -214,6 +213,8 @@ int main(int argc, char* argv[])
     dnn.add_callback(&imcomm_cb);
     lbann_callback_acc_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);
+    // lbann_callback_io io_cb({0,4}); // Monitor layers 0 and 4
+    // dnn.add_callback(&io_cb);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
@@ -246,10 +247,11 @@ int main(int argc, char* argv[])
 
     // train/test
     for (int t = 0; t < trainParams.EpochCount; t++) {
-      dnn.train(1);
+      dnn.train(1, true);
       DataType accuracy = dnn.evaluate();
     }
   }
+  catch (lbann_exception& e) { lbann_report_exception(e, comm); }
   catch (exception& e) { ReportException(e); }
 
   // free all resources by El and MPI
