@@ -153,19 +153,6 @@ void lbann::FullyConnectedLayer::bp_linearity()
          X, (DataType) 0., *WB_D);
 }
 
-void lbann::FullyConnectedLayer::fp_nonlinearity() {
-  m_activation_fn->forwardProp(*Acts);
-}
-
-void lbann::FullyConnectedLayer::bp_nonlinearity() {
-  m_activation_fn->backwardProp(*Zs);
-  if (m_activation_type != activation_type::ID) {
-    DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*bp_input);
-    DistMat& DsNext = DsNextProxy.Get();
-    Hadamard(DsNext, *Zs, *Ds);
-  }
-}
-
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
     DataType avg_error = 0.0, total_error = 0.0;
     // Compute the L2 norm on the deltas (activation - y)

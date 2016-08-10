@@ -70,8 +70,8 @@ int main(int argc, char* argv[])
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
         trainParams.EpochCount = 20;
-        trainParams.MBSize = 10;
-        trainParams.LearnRate = 0.0001;
+        trainParams.MBSize = 128;
+        trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
         trainParams.PercentageTrainingSamples = 0.90;
