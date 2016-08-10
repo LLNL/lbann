@@ -54,5 +54,65 @@ void init_random(int seed) {
   }
 }
 
+void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
+                   DataType stddev) {
+#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+  El::Gaussian(mat, m, n, mean, stddev);
+#else
+  mat.Resize(m, n);
+  if (mat.Grid().Rank() == 0) {
+    mat.Reserve(n * m);
+    auto& gen = get_generator();
+    std::normal_distribution<DataType> dist(mean, stddev);
+    for (int row = 0; row < m; ++row) {
+      for (int col = 0; col < n; ++col) {
+        mat.QueueUpdate(row, col, dist(gen));
+      }
+    }
+  }
+  mat.ProcessQueues();
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+}
+
+void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, DataType p) {
+#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+  El::Bernoulli(mat, m, n, p);
+#else
+  mat.Resize(m, n);
+  if (mat.Grid().Rank() == 0) {
+    mat.Reserve(m * n);
+    auto& gen = get_generator();
+    std::bernoulli_distribution dist(p);
+    for (int row = 0; row < m; ++row) {
+      for (int col = 0; col = n; ++col) {
+        mat.QueueUpdate(row, col, dist(gen) ? 1.0f : 0.0f);
+      }
+    }
+  }
+  mat.ProcessQueues();
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES  
+}
+
+void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
+                   DataType radius) {
+#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+  El::Uniform(mat, m, n, mean, stddev);
+#else
+  mat.Resize(m, n);
+  if (mat.Grid().Rank() == 0) {
+    mat.Reserve(n * m);
+    auto& gen = get_generator();
+    std::uniform_real_distribution<DataType> dist(center - radius,
+                                                  center + radius);
+    for (int row = 0; row < m; ++row) {
+      for (int col = 0; col < n; ++col) {
+        mat.QueueUpdate(row, col, dist(gen));
+      }
+    }
+  }
+  mat.ProcessQueues();
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+}
+
 }  // namespace lbann
 

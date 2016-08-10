@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -82,7 +83,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     DataType var_scale = sqrt(3.0 / (numPrevNeurons + 1));
 
     if (numPrevNeurons != -1) {
-        Gaussian(*WB, NumNeurons + 1, numPrevNeurons + 1, (DataType) 0.0, var_scale); // use var_scale, instead of 0.1
+      gaussian_fill(*WB, NumNeurons + 1, numPrevNeurons + 1, 0.0f, var_scale);
         if (comm->am_model_master()) {
           cout << "Fully Connected Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
         }

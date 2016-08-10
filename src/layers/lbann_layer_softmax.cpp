@@ -27,6 +27,7 @@
 #include "lbann/layers/lbann_layer_softmax.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <unistd.h>
 
 using namespace std;
@@ -58,7 +59,7 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
 
     if (numPrevNeurons != -1) {
       // For the softmax layer we do not want to have an extra row propagating the bias term to the output
-        Gaussian(*WB, NumNeurons, numPrevNeurons + 1, (DataType) 0.0, var_scale);
+      gaussian_fill(*WB, NumNeurons, numPrevNeurons + 1, 0.0f, var_scale);
         if (comm->am_model_master()) {
           cout << "Softmax Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
         }
