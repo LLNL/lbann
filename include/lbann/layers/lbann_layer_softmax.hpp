@@ -50,7 +50,7 @@ namespace lbann
       void epoch_reset();
         DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
         //        void updateMB(const float LearnRate);
-        DataType computeCost(DistMat& Y);
+        DataType computeCost(const DistMat& Y);
         //        DataType computeCost(CircMat& Output);
         DataType WBL2norm();
 
@@ -79,6 +79,8 @@ namespace lbann
         StarMat ZsColMaxStar;
         StarMat ZsNormExpSumStar;
         DistMat Acts_Cost;
+      /** Colume-wise sum of the costs of a minibatch. */
+      ColSumMat m_minibatch_cost;
     };
 }
 
