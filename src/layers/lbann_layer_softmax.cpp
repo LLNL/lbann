@@ -32,12 +32,21 @@
 using namespace std;
 using namespace El;
 
-lbann::SoftmaxLayer::SoftmaxLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                                  uint miniBatchSize, lbann_comm* comm, Optimizer *optimizer)
-  :  Layer(index, comm, optimizer, miniBatchSize)
-   , ZsColMax(comm->get_model_grid()), ZsNormExpSum(comm->get_model_grid()),
-     norms(comm->get_model_grid()), ZsColMaxStar(comm->get_model_grid()),
-     ZsNormExpSumStar(comm->get_model_grid()), Acts_Cost(comm->get_model_grid()),
+lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
+                                  const int numPrevNeurons,
+                                  const uint numNeurons,
+                                  const uint miniBatchSize,
+                                  const weight_initialization init,
+                                  lbann_comm* comm,
+                                  Optimizer *optimizer)
+  :  Layer(index, comm, optimizer, miniBatchSize),
+     m_weight_initialization(init),
+     ZsColMax(comm->get_model_grid()),
+     ZsNormExpSum(comm->get_model_grid()),
+     norms(comm->get_model_grid()),
+     ZsColMaxStar(comm->get_model_grid()),
+     ZsNormExpSumStar(comm->get_model_grid()),
+     Acts_Cost(comm->get_model_grid()),
      m_minibatch_cost(comm->get_model_grid())
 {
     Index = index;
@@ -53,20 +62,50 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }
 
-    // Xavier random initialization - Derived from Caffe implementation
-    DataType var_scale = sqrt(3.0 / (numPrevNeurons + 1));
+    // Initialize weight-bias matrix
+    Zeros(*WB, NumNeurons, numPrevNeurons+1);
 
-    if (numPrevNeurons != -1) {
-      // For the softmax layer we do not want to have an extra row propagating the bias term to the output
-        Gaussian(*WB, NumNeurons, numPrevNeurons + 1, (DataType) 0.0, var_scale);
-        if (comm->am_model_master()) {
-          cout << "Softmax Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
-        }
-        Zeros(*WB_D, NumNeurons, numPrevNeurons + 1);
-        Zeros(*Ds, NumNeurons, m_mini_batch_size);
-        Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-        Zeros(*Zs, NumNeurons, m_mini_batch_size);
+    // Initialize weights
+    DistMat weights;
+    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    switch(m_weight_initialization) {
+    case weight_initialization::uniform:
+      MakeUniform(weights);
+      break;
+    case weight_initialization::normal:
+      MakeGaussian(weights);
+      break;
+    case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      MakeGaussian(weights, DataType(0), sqrt(var));
+      break;
     }
+    case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      MakeUniform(weights, DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::he_normal: {
+      const DataType var = 1.0 / numPrevNeurons;
+      MakeGaussian(weights, DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / numPrevNeurons;
+      MakeUniform(weights, DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(weights);
+      break;
+    }
+
+    // Initialize other matrices
+    Zeros(*WB_D, NumNeurons, numPrevNeurons + 1);
+    Zeros(*Ds, NumNeurons, m_mini_batch_size);
+    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
+    Zeros(*Zs, NumNeurons, m_mini_batch_size);
     Zeros(*Acts, NumNeurons, m_mini_batch_size);
     Zeros(Acts_Cost, NumNeurons, m_mini_batch_size);
     Zeros(m_minibatch_cost, m_mini_batch_size, 1);

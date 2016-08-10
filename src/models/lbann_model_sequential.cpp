@@ -423,9 +423,10 @@ uint lbann::Sequential::add(std::string layerName, int LayerDim,
 
     if(layerName.compare("FullyConnected") == 0) {
       // initalize neural network (layers)
-      Layers.push_back(lfac->create_layer<FullyConnectedLayer>("FullyConnected", layerIndex, prevLayerDim, LayerDim, MiniBatchSize, ActivationType, comm, optimizer, regs));
+      // TODO: user-selected weight initialization
+      Layers.push_back(lfac->create_layer<FullyConnectedLayer>("FullyConnected", layerIndex, prevLayerDim, LayerDim, MiniBatchSize, ActivationType, weight_initialization::glorot_uniform, comm, optimizer, regs));
     }else if(layerName.compare("SoftMax") == 0) {
-      Layers.push_back(lfac->create_layer<SoftmaxLayer>("SoftMax",layerIndex, prevLayerDim, LayerDim, MiniBatchSize, comm, optimizer));
+      Layers.push_back(lfac->create_layer<SoftmaxLayer>("SoftMax",layerIndex, prevLayerDim, LayerDim, MiniBatchSize, weight_initialization::glorot_uniform, comm, optimizer));
     }else {
       std::cout << "Unknown layer type " << layerName << std::endl;
     }

@@ -41,8 +41,13 @@ namespace lbann
     class SoftmaxLayer: public Layer
     {
     public:
-      SoftmaxLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                   uint miniBatchSize, lbann_comm* comm, Optimizer *optimizer);
+      SoftmaxLayer(uint index,
+                   int numPrevNeurons,
+                   uint numNeurons,
+                   uint miniBatchSize,
+                   weight_initialization init,
+                   lbann_comm* comm,
+                   Optimizer *optimizer);
         void setup(int numPrevNeurons);
         bool update();
       void summarize(lbann_summary& summarizer, int64_t step);
@@ -73,6 +78,7 @@ namespace lbann
     private:
         DataType aggregate_cost;   // if this type is changed, update checkpoint code
         long num_backprop_steps; // if this type is changed, update checkpoint code
+        weight_initialization m_weight_initialization;
         ColSumMat ZsColMax;
         ColSumMat ZsNormExpSum;
         ColSumMat norms;

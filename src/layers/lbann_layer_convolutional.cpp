@@ -42,12 +42,15 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const int* conv_strides,
                                          const uint mini_batch_size,
                                          const activation_type activation,
+                                         const weight_initialization init,
                                          lbann_comm* comm,
                                          Optimizer* optimizer,
                                          std::vector<regularizer*> regs,
                                          cudnn::cudnn_manager* cudnn)
   : Layer(index, comm, optimizer, mini_batch_size, activation, regs),
-    m_num_dims(num_dims), m_num_input_channels(num_input_channels),
+    m_weight_initialization(init),
+    m_num_dims(num_dims),
+    m_num_input_channels(num_input_channels),
     m_num_output_channels(num_output_channels)
 {
 
@@ -141,9 +144,46 @@ void convolutional_layer::setup(const int num_prev_neurons)
   if(optimizer)
     optimizer->setup(1, m_filter_size+NumNeurons);
 
-  // Initialize filter with Xavier initialization
-  DataType var_scale = sqrt(3.0 / m_filter_size);
-  Gaussian(*WB, m_filter_size+NumNeurons, 1, (DataType)0.0, var_scale);
+  // Initialize weight-bias matrix
+  Zeros(*WB, m_filter_size+NumNeurons, 1);
+
+  // Initialize filters
+  DistMat filters;
+  View(filters, *WB, IR(0,m_filter_size), ALL);
+  Int fan_in = m_filter_size / m_num_output_channels;
+  Int fan_out = m_filter_size / m_num_input_channels;
+  switch(m_weight_initialization) {
+  case weight_initialization::uniform:
+    MakeUniform(filters);
+    break;
+  case weight_initialization::normal:
+    MakeGaussian(filters);
+    break;
+  case weight_initialization::glorot_normal: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    MakeGaussian(filters, DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::glorot_uniform: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    MakeUniform(filters, DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::he_normal: {
+    const DataType var = 1.0 / fan_in;
+    MakeGaussian(filters, DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::he_uniform: {
+    const DataType var = 1.0 / fan_in;
+    MakeUniform(filters, DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::zero: // Zero initialization is default
+  default:
+    Zero(filters);
+    break;
+  }
   
   // Initialize matrices
   Zeros(*WB_D, m_filter_size+NumNeurons, 1);

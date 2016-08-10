@@ -56,13 +56,20 @@ using namespace El;
 // [Acts     ]
 // [1 ... 1 1]
 
-lbann::FullyConnectedLayer::FullyConnectedLayer(
-  const uint index, const int numPrevNeurons, const uint numNeurons,
-  uint miniBatchSize, activation_type activationType,
-  lbann_comm* comm, Optimizer *optimizer,
-  std::vector<regularizer*> regs)
+lbann::FullyConnectedLayer::
+FullyConnectedLayer(const uint index,
+                    const int numPrevNeurons,
+                    const uint numNeurons,
+                    const uint miniBatchSize,
+                    const activation_type activationType,
+                    const weight_initialization init,
+                    lbann_comm* comm,
+                    Optimizer *optimizer,
+                    std::vector<regularizer*> regs)
   : Layer(index, comm, optimizer, miniBatchSize, activationType, regs),
-    WB_view(comm->get_model_grid()), WB_D_view(comm->get_model_grid()),
+    m_weight_initialization(init),
+    WB_view(comm->get_model_grid()),
+    WB_D_view(comm->get_model_grid()),
     Acts_view(comm->get_model_grid())
 {
     Index = index;
@@ -78,49 +85,58 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons+1);
     }
 
-    // Xavier random initialization - Derived from Caffe implementation
-    DataType var_scale = sqrt(3.0 / (numPrevNeurons + 1));
-
-    if (numPrevNeurons != -1) {
-        Gaussian(*WB, NumNeurons + 1, numPrevNeurons + 1, (DataType) 0.0, var_scale); // use var_scale, instead of 0.1
-        if (comm->am_model_master()) {
-          cout << "Fully Connected Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
-        }
-        // Set the last row to all zeros and a 1 in the last column to set the bias term for
-        // activation layer: 0 0 0 0 ... 0 1
-        Int ngrows = WB->Height();
-        Int ngcols = WB->Width();
-        Int nrows = WB->LocalHeight();
-        Int ncols = WB->LocalWidth();
-        Int r = nrows-1;
-        Int gr = WB->GlobalRow(r);
-        Int gc = WB->GlobalCol(ncols-1);
-        if(gr == ngrows - 1) { // Bias initialization row
-          for (int c = 0; c < ncols; c++) {
-            WB->SetLocal(r, c, 0.0); // Set the bias row back to 0.0
-          }
-          if(gc == ngcols-1) {
-            WB->SetLocal(r, ncols-1, 1.0); // and 1.0
-          }
-        }
-        Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
-        Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
-        Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-        Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
-        View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
-        View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
+    // Initialize weight-bias matrix
+    Zeros(*WB, NumNeurons+1, numPrevNeurons+1);
+    if(WB->IsLocal(NumNeurons,numPrevNeurons)) {
+      WB->SetLocal(WB->LocalHeight()-1, WB->LocalWidth()-1, DataType(1));
     }
+
+    // Initialize weights
+    DistMat weights;
+    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    switch(m_weight_initialization) {
+    case weight_initialization::uniform:
+      MakeUniform(weights);
+      break;
+    case weight_initialization::normal:
+      MakeGaussian(weights);
+      break;
+    case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      MakeGaussian(weights, DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      MakeUniform(weights, DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::he_normal: {
+      const DataType var = 1.0 / numPrevNeurons;
+      MakeGaussian(weights, DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / numPrevNeurons;
+      MakeUniform(weights, DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(weights);
+      break;
+    }
+
+    // Initialize other matrices
+    Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
+    Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
+    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
+    Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
+    View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
+    View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
     Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
     View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
 
-#if 0
-    printf("Layer[%d] has %d neurons and %d inputs\n", Index, NumNeurons + 1, numPrevNeurons + 1);
-    printf("trainMB have allocated Layers[%d]->Acts %d entries (%d x %d)\n", Index, Acts->AllocatedMemory(), Acts->Height(), Acts->Width());
-    printf("trainMB have allocated Layers[%d]->WB %d entries (%d x %d)\n", Index, WB->AllocatedMemory(), WB->Height(), WB->Width());
-    printf("trainMB have allocated Layers[%d]->WB_D %d entries (%d x %d)\n", Index, WB_D->AllocatedMemory(), WB_D->Height(), WB_D->Width());
-    printf("trainMB have allocated Layers[%d]->Ds %d entries (%d x %d)\n", Index, Ds->AllocatedMemory(), Ds->Height(), Ds->Width());
-    printf("trainMB have allocated Layers[%d]->Ds_Temp %d entries (%d x %d)\n", Index, Ds_Temp.AllocatedMemory(), Ds_Temp.Height(), Ds_Temp.Width());
-#endif
 }
 
 void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y)
