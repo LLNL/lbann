@@ -134,6 +134,9 @@ void lbann::Dnn::train(int NumEpoch, bool EvaluateEveryEpoch)
     }
 
     do_epoch_end_cbs();
+    for (Layer* layer : Layers) {
+      layer->epoch_reset();
+    }
   }
   do_train_end_cbs();
 }
@@ -204,7 +207,6 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
     throw lbann_exception("Illegal execution mode in evaluate function");
   }
 
-
   /// Set the mode for each layer so that validation data is used
   m_execution_mode = mode;
   for (size_t l = 0; l < Layers.size(); l++) {
@@ -224,6 +226,10 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
     do_validation_end_cbs();
   }else if(mode == execution_mode::testing) {
     do_test_end_cbs();
+    // Only reset after testing.
+    for (Layer* layer : Layers) {
+      layer->epoch_reset();
+    }
   }else {
     throw lbann_exception("Illegal execution mode in evaluate function");
   }

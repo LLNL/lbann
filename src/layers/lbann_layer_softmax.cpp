@@ -37,7 +37,8 @@ lbann::SoftmaxLayer::SoftmaxLayer(const uint index, const int numPrevNeurons, co
   :  Layer(index, comm, optimizer, miniBatchSize)
    , ZsColMax(comm->get_model_grid()), ZsNormExpSum(comm->get_model_grid()),
      norms(comm->get_model_grid()), ZsColMaxStar(comm->get_model_grid()),
-     ZsNormExpSumStar(comm->get_model_grid()), Acts_Cost(comm->get_model_grid())
+     ZsNormExpSumStar(comm->get_model_grid()), Acts_Cost(comm->get_model_grid()),
+     m_minibatch_cost(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
@@ -68,6 +69,7 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     }
     Zeros(*Acts, NumNeurons, m_mini_batch_size);
     Zeros(Acts_Cost, NumNeurons, m_mini_batch_size);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
 }
 
 // template <typename Dtype>
@@ -161,43 +163,33 @@ void lbann::SoftmaxLayer::bp_linearity()
     // Compute the partial delta update for the next lower layer
     Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
 
-    // Compute and display the cost function
-    DistMat Y(Acts->Grid());
-    Copy(DsNext, Y);
-
-    DataType avg_error = this->computeCost(Y);// + Lambda/2 * WBL2NormSum;
-    // DataType cost = (aggregate_cost / num_backprop_steps);
-    // DataType delta = 0.01 * cost;
-    // if(Output.Grid().Rank() == 0 && (1 || avg_error <= (cost-delta) || avg_error > (cost+delta))) {
-    //   cout << "Average of the softmax cost function across the mini-batch " << avg_error << endl;
-    // }
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
+    if (m_execution_mode == execution_mode::training) {
+      DataType avg_error = this->computeCost(DsNext);
+      aggregate_cost += avg_error;
+      num_backprop_steps++;
+    }
 
     // by divide mini-batch size
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);
 }
 
-DataType lbann::SoftmaxLayer::computeCost(DistMat& Y) {
+DataType lbann::SoftmaxLayer::computeCost(const DistMat& Y) {
     // Compute the cost function
     // cost=-1/m*(sum(sum(groundTruth.*log(a3))))
     DataType avg_error = 0.0, total_error = 0.0;
     EntrywiseMap(*Acts, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);}));
 
-    // DistMat Y(Acts.Grid());
-    // Copy(Output, Y);
     Hadamard(Y, *Acts, Acts_Cost);
-    ColSumMat MBCost(m_mini_batch_size, 1, Acts->Grid());
-    Zeros(MBCost, m_mini_batch_size, 1);
-    ColumnSum(Acts_Cost, MBCost);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
+    ColumnSum(Acts_Cost, m_minibatch_cost);
 
-    int c = 0;
     // Sum the local, total error
-    for(int r = 0; r < MBCost.LocalHeight(); r++) {
-      total_error += MBCost.GetLocal(r,c);
+    const Int local_height = m_minibatch_cost.LocalHeight();
+    for(int r = 0; r < local_height; r++) {
+      total_error += m_minibatch_cost.GetLocal(r, 0);
     }
-    total_error = mpi::AllReduce(total_error, MBCost.DistComm());
+    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
 
     avg_error = -1.0 * total_error / m_mini_batch_size;
     return avg_error;
@@ -237,6 +229,11 @@ void lbann::SoftmaxLayer::epoch_print() const {
   } else {
     comm->intermodel_gather(avg_cost, comm->get_world_master());
   }
+}
+
+void lbann::SoftmaxLayer::epoch_reset() {
+  Layer::epoch_reset();
+  resetCost();
 }
 
 DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
