@@ -47,6 +47,7 @@ namespace lbann
         bool update();
       void summarize(lbann_summary& summarizer, int64_t step);
       void epoch_print() const;
+      void epoch_reset();
         DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
         //        void updateMB(const float LearnRate);
         DataType computeCost(DistMat& Y);

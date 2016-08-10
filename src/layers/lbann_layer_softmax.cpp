@@ -165,14 +165,11 @@ void lbann::SoftmaxLayer::bp_linearity()
     DistMat Y(Acts->Grid());
     Copy(DsNext, Y);
 
-    DataType avg_error = this->computeCost(Y);// + Lambda/2 * WBL2NormSum;
-    // DataType cost = (aggregate_cost / num_backprop_steps);
-    // DataType delta = 0.01 * cost;
-    // if(Output.Grid().Rank() == 0 && (1 || avg_error <= (cost-delta) || avg_error > (cost+delta))) {
-    //   cout << "Average of the softmax cost function across the mini-batch " << avg_error << endl;
-    // }
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
+    if (m_execution_mode == execution_mode::training) {
+      DataType avg_error = this->computeCost(Y);
+      aggregate_cost += avg_error;
+      num_backprop_steps++;
+    }
 
     // by divide mini-batch size
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
@@ -237,6 +234,11 @@ void lbann::SoftmaxLayer::epoch_print() const {
   } else {
     comm->intermodel_gather(avg_cost, comm->get_world_master());
   }
+}
+
+void lbann::SoftmaxLayer::epoch_reset() {
+  Layer::epoch_reset();
+  resetCost();
 }
 
 DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
