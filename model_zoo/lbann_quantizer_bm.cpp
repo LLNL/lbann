@@ -31,7 +31,7 @@
 #include "lbann/utils/lbann_timer.hpp"
 
 /** Number of times to run the quantization. */
-const int num_trials = 10;
+const int num_trials = 20;
 
 using namespace lbann;
 
@@ -51,6 +51,7 @@ std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
     double tot = get_time() - start;
     times.push_back(tot);
     normal_summarizer->reduce_scalar("time", tot, trial);
+    comm->global_barrier();
   }
   return times;
 }
@@ -124,6 +125,7 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
     times.push_back(tot);
     onebit_summarizer->reduce_scalar("time", tot, trial);
     quantize_summary(onebit_summarizer, quantizer, trial);
+    comm->global_barrier();
   }
   return times;
 }
@@ -144,6 +146,7 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
     times.push_back(tot);
     thresh_summarizer->reduce_scalar("time", tot, trial);
     quantize_summary(thresh_summarizer, quantizer, trial);
+    comm->global_barrier();
   }
   return times;
 }
@@ -164,6 +167,7 @@ std::vector<double> test_comp_thresh(lbann_comm* comm, DistMat& mat,
     times.push_back(tot);
     comp_thresh_summarizer->reduce_scalar("time", tot, trial);
     quantize_summary(comp_thresh_summarizer, quantizer, trial);
+    comm->global_barrier();
   }
   return times;
 }
@@ -184,6 +188,7 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
     times.push_back(tot);
     adaptive_summarizer->reduce_scalar("time", tot, trial);
     quantize_summary(adaptive_summarizer, quantizer, trial);
+    comm->global_barrier();
   }
   return times;
 }
@@ -204,6 +209,7 @@ std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
     times.push_back(tot);
     comp_adaptive_summarizer->reduce_scalar("time", tot, trial);
     quantize_summary(comp_adaptive_summarizer, quantizer, trial);
+    comm->global_barrier();
   }
   return times;
 }
