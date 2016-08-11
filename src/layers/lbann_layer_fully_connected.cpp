@@ -199,10 +199,11 @@ DataType lbann::FullyConnectedLayer::WBL2norm() {
 inline DataType _sq(DataType x) { return (x * x); }
 inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
-bool lbann::FullyConnectedLayer::update(/*const float LearnRate, const int LearnRateMethod, const DataType DecayRate*/)
+bool lbann::FullyConnectedLayer::update()
 {
-  optimizer->update_weight_bias_matrix(*WB_D, *WB);
-  WBL2NormSum = 0.0;
+  if(m_execution_mode == execution_mode::training) {
+    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+  }
   return true;
 }
 

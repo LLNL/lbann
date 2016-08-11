@@ -209,6 +209,5 @@ void lbann::pooling_layer::bp_linearity() {
 
 bool pooling_layer::update()
 {
-  // Nothing to update in pooling layer
   return true;
 }

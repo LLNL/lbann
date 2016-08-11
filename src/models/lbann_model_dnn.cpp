@@ -193,9 +193,7 @@ bool lbann::Dnn::trainBatch(long *num_samples, long *num_errors)
 
 DataType lbann::Dnn::evaluate(execution_mode mode)
 {
-  // test
 
-  //  DataType error = 0;
   long num_samples = 0;
   long num_errors = 0;
 
@@ -238,8 +236,6 @@ DataType lbann::Dnn::evaluate(execution_mode mode)
 
 bool lbann::Dnn::evaluateBatch(long *num_samples, long *num_errors)
 {
-  bool data_set_processed = false;
-
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;
   for (size_t l = 0; l < Layers.size(); l++) {
@@ -248,9 +244,11 @@ bool lbann::Dnn::evaluateBatch(long *num_samples, long *num_errors)
   *num_errors += (long) L2NormSum;
   *num_samples += MiniBatchSize;
 
-  /// @todo change this so that every layer is called to update, but
-  /// FC and other will not apply gradients in testing mode
-  Layers[Layers.size()-1]->update();
-  data_set_processed = Layers[0]->update();
+  /// update weights, biases
+  // Note: should only affect the input and target layers
+  for (size_t l = Layers.size() - 1; l > 0; --l) {
+    Layers[l]->update();
+  }
+  bool data_set_processed = Layers[0]->update();
   return data_set_processed;
 }

@@ -287,7 +287,9 @@ void lbann::convolutional_layer::bp_linearity() {
 
 bool convolutional_layer::update()
 {
-  optimizer->update_weight_bias_matrix(*WB_D, *WB);
+  if(m_execution_mode == execution_mode::training) {
+    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+  }
   return true;
 }
 
