@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -96,29 +97,35 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
     switch(m_weight_initialization) {
     case weight_initialization::uniform:
-      MakeUniform(weights);
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), DataType(1));
       break;
     case weight_initialization::normal:
-      MakeGaussian(weights);
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), DataType(1));
       break;
     case weight_initialization::glorot_normal: {
       const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      MakeGaussian(weights, DataType(0), sqrt(var));
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
       break;
     }
     case weight_initialization::glorot_uniform: {
       const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      MakeUniform(weights, DataType(0), sqrt(3*var));
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
       break;
     }
     case weight_initialization::he_normal: {
       const DataType var = 1.0 / numPrevNeurons;
-      MakeGaussian(weights, DataType(0), sqrt(var));
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
       break;
     }
     case weight_initialization::he_uniform: {
       const DataType var = 1.0 / numPrevNeurons;
-      MakeUniform(weights, DataType(0), sqrt(3*var));
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
       break;
     }
     case weight_initialization::zero: // Zero initialization is default

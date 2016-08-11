@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_convolutional.hpp"
+#include "lbann/utils/lbann_random.hpp"
 
 using namespace std;
 using namespace El;
@@ -154,29 +155,35 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Int fan_out = m_filter_size / m_num_input_channels;
   switch(m_weight_initialization) {
   case weight_initialization::uniform:
-    MakeUniform(filters);
+    uniform_fill(filters, filters.Height(), filters.Width(),
+                 DataType(0), DataType(1));
     break;
   case weight_initialization::normal:
-    MakeGaussian(filters);
+    gaussian_fill(filters, filters.Height(), filters.Width(),
+                  DataType(0), DataType(1));
     break;
   case weight_initialization::glorot_normal: {
     const DataType var = 2.0 / (fan_in + fan_out);
-    MakeGaussian(filters, DataType(0), sqrt(var));
+    gaussian_fill(filters, filters.Height(), filters.Width(),
+                  DataType(0), sqrt(var));
     break;
   }
   case weight_initialization::glorot_uniform: {
     const DataType var = 2.0 / (fan_in + fan_out);
-    MakeUniform(filters, DataType(0), sqrt(3*var));
+    uniform_fill(filters, filters.Height(), filters.Width(),
+                 DataType(0), sqrt(3*var));
     break;
   }
   case weight_initialization::he_normal: {
     const DataType var = 1.0 / fan_in;
-    MakeGaussian(filters, DataType(0), sqrt(var));
+    gaussian_fill(filters, filters.Height(), filters.Width(),
+                  DataType(0), sqrt(var));
     break;
   }
   case weight_initialization::he_uniform: {
     const DataType var = 1.0 / fan_in;
-    MakeUniform(filters, DataType(0), sqrt(3*var));
+    uniform_fill(filters, filters.Height(), filters.Width(),
+                 DataType(0), sqrt(3*var));
     break;
   }
   case weight_initialization::zero: // Zero initialization is default

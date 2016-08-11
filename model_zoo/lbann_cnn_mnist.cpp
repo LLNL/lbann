@@ -210,7 +210,8 @@ int main(int argc, char* argv[])
                                       outputChannels, filterDims,
                                       convPads, convStrides,
                                       trainParams.MBSize,
-                                      activation_type::RELU, 
+                                      activation_type::RELU,
+                                      weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer, 
                                       {}, cudnn);
           dnn.add(layer);
@@ -232,6 +233,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
+                                      weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer,
                                       {},
                                       cudnn);
