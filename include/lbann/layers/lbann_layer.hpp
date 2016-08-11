@@ -89,6 +89,10 @@ class regularizer;
       bp_time = 0.0;
     }
 
+    /** Return the size of mini-batch this layer uses. */
+    virtual uint get_minibatch_size() const {
+      return m_mini_batch_size;
+    }
     /**
      * Get the "effective" size of a mini-batch.
      * This is for backward propagation, etc. when there are more updates being

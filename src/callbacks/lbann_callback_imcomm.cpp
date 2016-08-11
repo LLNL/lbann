@@ -54,6 +54,9 @@ void lbann_callback_imcomm::setup(Model* m) {
       if (add || layer_indices.find(idx) != layer_indices.end()) {
         // Ensure index is present (overwrites if already there).
         layer_indices.insert(idx);
+        // Update the layer's effective mini-batch size so it averages properly.
+        layer->set_effective_minibatch_size(
+          layer->get_minibatch_size() * m->get_comm()->get_num_models());
         // Skip adding matrices when we don't need to.
         if (!ct_does_quantization()) continue;
         // TODO: handle case where WB_D is in other matrix distribution
