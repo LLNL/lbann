@@ -403,8 +403,11 @@ bool lbann::Sequential::loadFromCheckpointShared(const char* dir, uint64_t* byte
     return true;
 }
 
-uint lbann::Sequential::add(std::string layerName, int LayerDim,
-                            activation_type ActivationType, std::vector<regularizer*> regs)
+uint lbann::Sequential::add(std::string layerName,
+                            int LayerDim,
+                            activation_type ActivationType,
+                            weight_initialization init,
+                            std::vector<regularizer*> regs)
 {
     int prevLayerDim = -1;
     int layerIndex = Layers.size();
@@ -424,9 +427,9 @@ uint lbann::Sequential::add(std::string layerName, int LayerDim,
     if(layerName.compare("FullyConnected") == 0) {
       // initalize neural network (layers)
       // TODO: user-selected weight initialization
-      Layers.push_back(lfac->create_layer<FullyConnectedLayer>("FullyConnected", layerIndex, prevLayerDim, LayerDim, MiniBatchSize, ActivationType, weight_initialization::glorot_uniform, comm, optimizer, regs));
+      Layers.push_back(lfac->create_layer<FullyConnectedLayer>("FullyConnected", layerIndex, prevLayerDim, LayerDim, MiniBatchSize, ActivationType, init, comm, optimizer, regs));
     }else if(layerName.compare("SoftMax") == 0) {
-      Layers.push_back(lfac->create_layer<SoftmaxLayer>("SoftMax",layerIndex, prevLayerDim, LayerDim, MiniBatchSize, weight_initialization::glorot_uniform, comm, optimizer));
+      Layers.push_back(lfac->create_layer<SoftmaxLayer>("SoftMax",layerIndex, prevLayerDim, LayerDim, MiniBatchSize, init, comm, optimizer));
     }else {
       std::cout << "Unknown layer type " << layerName << std::endl;
     }

@@ -56,7 +56,11 @@ class Sequential : public Model
 
     // add layer, setup layers for forward/backward pass
     std::vector<Layer*>& get_layers() { return Layers; }
-    virtual uint add(std::string layerName, int LayerDim, activation_type ActivationType=activation_type::RELU, std::vector<regularizer*> regs={});
+    virtual uint add(std::string layerName,
+                     int LayerDim,
+                     activation_type ActivationType=activation_type::RELU,
+                     weight_initialization init=weight_initialization::glorot_uniform,
+                     std::vector<regularizer*> regs={});
     virtual uint add(Layer *new_layer);
     virtual Layer* remove(int index);
     virtual void insert(int index, Layer *new_layer);

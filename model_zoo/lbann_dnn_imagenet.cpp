@@ -772,12 +772,17 @@ int main(int argc, char* argv[])
         for (int l = 0; l < (int)NumLayers; l++) {
           string networkType;
           if(l < (int)NumLayers-1) {
-            networkType = "FullyConnected";
+            dnn->add("FullyConnected", netParams.Network[l],
+                     trainParams.ActivationType,
+                     weight_initialization::glorot_uniform,
+                     {new dropout(trainParams.DropOut)});
           }else {
             // Add a softmax layer to the end
-            networkType = "SoftMax";
+            dnn->add("SoftMax", netParams.Network[l],
+                     activation_type::ID,
+                     weight_initialization::glorot_uniform,
+                     {});
           }
-          dnn->add(networkType, netParams.Network[l], trainParams.ActivationType, {new dropout(trainParams.DropOut)});
         }
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);

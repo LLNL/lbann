@@ -260,8 +260,10 @@ int main(int argc, char* argv[])
         }
 
         // Fully connected and output layers
-        dnn.add("FullyConnected", 128, trainParams.ActivationType, {new dropout(0.5)});
-        dnn.add("SoftMax", 10);
+        dnn.add("FullyConnected", 128, trainParams.ActivationType,
+                weight_initialization::glorot_uniform, {new dropout(0.5)});
+        dnn.add("SoftMax", 10, activation_type::ID,
+                weight_initialization::glorot_uniform, {});
 
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
