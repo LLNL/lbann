@@ -153,11 +153,17 @@ int main(int argc, char* argv[])
     DataReader_MNIST mnist_testset(trainParams.MBSize);
     if (!mnist_testset.load(trainParams.DatasetRootDir,
                             g_MNIST_TestImageFile,
-                            g_MNIST_TestLabelFile)) {
+                            g_MNIST_TestLabelFile,
+                            trainParams.PercentageTestingSamples)) {
       if (comm->am_world_master()) {
         cout << "MNIST Test data error" << endl;
       }
       return -1;
+    }
+    if (comm->am_world_master()) {
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
+        "% of the testing data set, which is " << mnist_testset.getNumData() <<
+        " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
