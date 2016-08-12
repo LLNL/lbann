@@ -46,23 +46,27 @@
 using namespace std;
 using namespace El;
 
-lbann::Sequential::Sequential(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm,layer_factory* layer_fac)
-  : Model(comm), optimizer_factory(optimizer_factory), MiniBatchSize(MiniBatchSize), lfac(layer_fac)
+lbann::sequential_model::sequential_model(const uint mini_batch_size,
+                                          lbann_comm* comm,
+                                          layer_factory* _layer_fac,
+                                          Optimizer_factory* _optimizer_fac)
+  : model(comm),
+    m_mini_batch_size(mini_batch_size),
+    layer_fac(_layer_fac),
+    optimizer_fac(_optimizer_fac) {}
+
+lbann::sequential_model::~sequential_model()
 {
+  // Free layers
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    delete m_layers[l];
+  }
 }
 
-lbann::Sequential::~Sequential()
-{
-    // free neural network (layers)
-    for (size_t l = 0; l < Layers.size(); l++) {
-        delete Layers[l];
-    }
-}
-
-bool lbann::Sequential::saveToFile(string FileDir)
+bool lbann::sequential_model::save_to_file(const string file_dir)
 {
     // get our directory name
-    const char* dir = FileDir.c_str();
+    const char* dir = file_dir.c_str();
 
     // get our rank and the number of ranks
     int rank, ranks;
@@ -88,8 +92,8 @@ bool lbann::Sequential::saveToFile(string FileDir)
     }
 
     // write out details for each layer
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->saveToFile(-1, dir))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->saveToFile(-1, dir))
             return false;
 
 #if 0
@@ -127,7 +131,7 @@ bool lbann::Sequential::saveToFile(string FileDir)
     }
 
     // write number of layers (we'll check this on read)
-    int layers = Layers.size();
+    int layers = m_layers.size();
     write_rc = write(fd, &layers, sizeof(int));
     if (write_rc != sizeof(int)) {
         fprintf(stderr, "ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\n",
@@ -137,8 +141,8 @@ bool lbann::Sequential::saveToFile(string FileDir)
     }
 
     // write out details for each layer
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->saveToFile(fd, filename))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->saveToFile(fd, filename))
             return false;
 
     // fsync file
@@ -171,10 +175,10 @@ bool lbann::Sequential::saveToFile(string FileDir)
     return true;
 }
 
-bool lbann::Sequential::loadFromFile(string FileDir)
+bool lbann::sequential_model::load_from_file(const string file_dir)
 {
     // get our directory name
-    const char* dir = FileDir.c_str();
+    const char* dir = file_dir.c_str();
 
     // get our rank and the number of ranks
     int rank, ranks;
@@ -192,8 +196,8 @@ bool lbann::Sequential::loadFromFile(string FileDir)
         fflush(stdout);
     }
 
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->loadFromFile(-1, dir))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->loadFromFile(-1, dir))
             return false;
 
 #if 0
@@ -247,11 +251,11 @@ bool lbann::Sequential::loadFromFile(string FileDir)
         fflush(stderr);
     }
 
-    if (file_layers != Layers.size()) {
+    if (file_layers != m_layers.size()) {
     }
 
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->loadFromFile(fd, filename))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->loadFromFile(fd, filename))
             return false;
 
     // close our file
@@ -275,10 +279,10 @@ bool lbann::Sequential::loadFromFile(string FileDir)
     return true;
 }
 
-bool lbann::Sequential::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
+bool lbann::sequential_model::save_to_checkpoint(int fd, const char* filename, uint64_t* bytes)
 {
     // write number of layers (we'll check this on read)
-    int layers = Layers.size();
+    int layers = m_layers.size();
     int write_rc = write(fd, &layers, sizeof(int));
     if (write_rc != sizeof(int)) {
         fprintf(stderr, "ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\n",
@@ -289,14 +293,14 @@ bool lbann::Sequential::saveToCheckpoint(int fd, const char* filename, uint64_t*
     *bytes += write_rc;
 
     // write out details for each layer
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->saveToCheckpoint(fd, filename, bytes))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->saveToCheckpoint(fd, filename, bytes))
             return false;
 
     return true;
 }
 
-bool lbann::Sequential::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
+bool lbann::sequential_model::load_from_checkpoint(int fd, const char* filename, uint64_t* bytes)
 {
     // read number of layers
     int file_layers;
@@ -309,18 +313,18 @@ bool lbann::Sequential::loadFromCheckpoint(int fd, const char* filename, uint64_
     }
     *bytes += read_rc;
 
-    if (file_layers != Layers.size()) {
+    if (file_layers != m_layers.size()) {
         // error!
     }
 
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->loadFromCheckpoint(fd, filename, bytes))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->loadFromCheckpoint(fd, filename, bytes))
             return false;
 
     return true;
 }
 
-bool lbann::Sequential::saveToCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::sequential_model::save_to_checkpoint_shared(const char* dir, uint64_t* bytes)
 {
     // write a single header describing layers and sizes?
 
@@ -338,7 +342,7 @@ bool lbann::Sequential::saveToCheckpointShared(const char* dir, uint64_t* bytes)
         int fd = lbann::openwrite(filename);
 
         // write number of layers (we'll check this on read)
-        int layers = Layers.size();
+        int layers = m_layers.size();
         int write_rc = write(fd, &layers, sizeof(int));
         if (write_rc != sizeof(int)) {
             fprintf(stderr, "ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\n",
@@ -353,14 +357,14 @@ bool lbann::Sequential::saveToCheckpointShared(const char* dir, uint64_t* bytes)
     }
 
     // write out details for each layer
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->saveToCheckpointShared(dir, bytes))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->saveToCheckpointShared(dir, bytes))
             return false;
 
     return true;
 }
 
-bool lbann::Sequential::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::sequential_model::load_from_checkpoint_shared(const char* dir, uint64_t* bytes)
 {
     // get our rank
     int rank;
@@ -392,136 +396,135 @@ bool lbann::Sequential::loadFromCheckpointShared(const char* dir, uint64_t* byte
     }
     MPI_Bcast(&file_layers, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (file_layers != Layers.size()) {
+    if (file_layers != m_layers.size()) {
         // error!
     }
 
-    for (size_t l = 1; l < Layers.size(); l++)
-        if (!Layers[l]->loadFromCheckpointShared(dir, bytes))
+    for (size_t l = 1; l < m_layers.size(); l++)
+        if (!m_layers[l]->loadFromCheckpointShared(dir, bytes))
             return false;
 
     return true;
 }
 
-uint lbann::Sequential::add(std::string layerName,
-                            int LayerDim,
-                            activation_type ActivationType,
-                            weight_initialization init,
-                            std::vector<regularizer*> regs)
+uint lbann::sequential_model::add(const std::string layer_name,
+                                  const int layer_dim,
+                                  const activation_type activation,
+                                  const weight_initialization init,
+                                  std::vector<regularizer*> regularizers)
 {
-    int prevLayerDim = -1;
-    int layerIndex = Layers.size();
-    int prevLayerIndex = -1;
-    Optimizer *optimizer = optimizer_factory->create_optimizer();
+    const int layer_index = m_layers.size();
+    Optimizer *optimizer = optimizer_fac->create_optimizer();
 
-    if(Layers.size() != 0) {
-      Layer *prev = Layers.back();
-      prevLayerDim = prev->NumNeurons;
-      prevLayerIndex = prev->Index;
+    // Get properties of previous layer
+    int prev_layer_dim = -1;
+    int prev_layer_index = -1;
+    if(m_layers.size() != 0) {
+      Layer* prev_layer = m_layers.back();
+      prev_layer_dim = prev_layer->NumNeurons;
+      prev_layer_index = prev_layer->Index;
     }
 
     if (comm->am_model_master()) {
-      cout << "Adding a layer with input " << prevLayerDim << " and index " << layerIndex << " prev layer index " << prevLayerIndex << endl;
+      std::cout << "Adding a layer with input " << prev_layer_dim
+                << " and index " << layer_index
+                << " prev layer index " << prev_layer_index << std::endl;
     }
 
-    if(layerName.compare("FullyConnected") == 0) {
-      // initalize neural network (layers)
-      // TODO: user-selected weight initialization
-      Layers.push_back(lfac->create_layer<FullyConnectedLayer>("FullyConnected", layerIndex, prevLayerDim, LayerDim, MiniBatchSize, ActivationType, init, comm, optimizer, regs));
-    }else if(layerName.compare("SoftMax") == 0) {
-      Layers.push_back(lfac->create_layer<SoftmaxLayer>("SoftMax",layerIndex, prevLayerDim, LayerDim, MiniBatchSize, init, comm, optimizer));
-    }else {
-      std::cout << "Unknown layer type " << layerName << std::endl;
+    if(layer_name.compare("FullyConnected") == 0) {
+      Layer* new_layer
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",
+                                                       layer_index,
+                                                       prev_layer_dim,
+                                                       layer_dim,
+                                                       m_mini_batch_size,
+                                                       activation, init,
+                                                       comm,
+                                                       optimizer,
+                                                       regularizers);
+      m_layers.push_back(new_layer);
+    } else if(layer_name.compare("Softmax") == 0) {
+      Layer* new_layer
+        = layer_fac->create_layer<SoftmaxLayer>("Softmax",
+                                                layer_index,
+                                                prev_layer_dim,
+                                                layer_dim,
+                                                m_mini_batch_size,
+                                                init,
+                                                comm,
+                                                optimizer);
+      m_layers.push_back(new_layer);
+    } else {
+      std::cout << "Unknown layer type " << layer_name << std::endl;
     }
 
-    return layerIndex;
+    return layer_index;
 }
 
-uint lbann::Sequential::add(Layer *new_layer)
+uint lbann::sequential_model::add(Layer *new_layer)
 {
-  uint layer_index = Layers.size();
-  Layers.push_back(new_layer);
+  const uint layer_index = m_layers.size();
+  m_layers.push_back(new_layer);
   return layer_index;
 }
 
-lbann::Layer* lbann::Sequential::remove(int index)
+void lbann::sequential_model::remove(int index)
 {
-  Layer *tmp = Layers[index];
-  Layers.erase(Layers.begin()+index);
+  delete m_layers[index];
+  m_layers.erase(m_layers.begin()+index);
+}
+
+void lbann::sequential_model::insert(int index, Layer *new_layer)
+{
+  m_layers.insert(m_layers.begin()+index, new_layer);
+}
+
+lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
+  Layer* tmp = m_layers[index];
+  m_layers[index] = new_layer;
   return tmp;
 }
 
-void lbann::Sequential::insert(int index, Layer *new_layer)
-{
-  it = Layers.begin();
-  it = Layers.insert(it+index, new_layer);
-  return;
-}
-
-lbann::Layer* lbann::Sequential::swap(int index, Layer *new_layer) {
-  Layer *tmp = Layers[index];
-  Layers.at(index) = new_layer;
-  // Layer *tmp = remove(index);
-  // insert(index, new_layer);
-  return tmp;
-}
-
-#if 0
-void lbann::Sequential::add(vector<Layer *> new_layers)
-{
-  for_each in new_layers {
-    Layers.push_back(new_layer);
-  }
-    return;
-}
-#endif
-
-/**
- * Initialize the all of the model's layers.  This includes:
- *   - setting up the input dimensions for each layer
- *   - allocating and initializing memory
- *   - passing pointers for input data structures for both forward and backwards propagation passes
- */
-void lbann::Sequential::setup()
+void lbann::sequential_model::setup()
 {
   // Setup each layer
-  int prevLayerDim = -1;
-  for (size_t l = 0; l < Layers.size(); l++) {
+  int prev_layer_dim = -1;
+  for (size_t l = 0; l < m_layers.size(); ++l) {
     if (comm->am_model_master()) {
-      cout << "Setting up a layer with input " << prevLayerDim << " and index " << l << endl;
+      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
     }
-    Layers[l]->setup(prevLayerDim);
-    prevLayerDim = Layers[l]->NumNeurons;
+    m_layers[l]->setup(prev_layer_dim);
+    prev_layer_dim = m_layers[l]->NumNeurons;
   }
 
-  /// Establish the forward pass input pointers
-  /// The 0'th layer cannot require any input
-  for (size_t l = 1; l < Layers.size(); l++) {
-    Layers[l]->setup_fp_input(Layers[l-1]->fp_output());
+  // Establish the forward pass input pointers
+  // Note: the first layer doesn't require input
+  for (size_t l = 1; l < m_layers.size(); ++l) {
+    m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
   }
 
-  /// Establish the backwards pass input pointers
-  /// The n'th layer cannot require any input
-  for (int l = Layers.size()-2; l >= 0; l--) {
-    Layers[l]->setup_bp_input(Layers[l+1]->bp_output());
+  // Establish the backward pass input pointers
+  // Note: the last layer doens't require input
+  for (int l = m_layers.size()-2; l >= 0; --l) {
+    m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
   }
 
-  // Set up callbacks.
+  // Set up callbacks
   setup_callbacks();
 }
 
 #if 0
-DistMat* lbann::Sequential::predictBatch(DistMat* X)
+DistMat* lbann::sequential_model::predict_mini_batch(DistMat* X)
 {
     // setup input for forward, backward pass (last/additional row should always be 1)
   //    this->setup(X, NULL);
 
     // forward propagation (mini-batch)
     DataType L2NormSum = 0;
-    for (size_t l = 1; l < Layers.size(); l++) {
-        L2NormSum = Layers[l]->forwardProp(L2NormSum);
+    for (size_t l = 1; l < m_layers.size(); l++) {
+        L2NormSum = m_layers[l]->forwardProp(L2NormSum);
     }
 
-    return Layers[Layers.size()-1]->fp_output();
+    return m_layers[m_layers.size()-1]->fp_output();
 }
 #endif

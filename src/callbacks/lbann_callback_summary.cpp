@@ -36,7 +36,7 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary* _summarizer,
   
 }
 
-void lbann_callback_summary::on_batch_end(Model* m) {
+void lbann_callback_summary::on_batch_end(model* m) {
   m->summarize(*summarizer);
   // Note that these comm stats are a running sum, so they count from the last
   // time we reset and thus are over the whole batch_interval period.
@@ -60,14 +60,14 @@ void lbann_callback_summary::on_batch_end(Model* m) {
                             m->get_cur_step());
 }
 
-void lbann_callback_summary::on_epoch_end(Model* m) {
+void lbann_callback_summary::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   summarizer->reduce_scalar("train_accuracy", m->get_train_accuracy(),
                             m->get_cur_step());
   summarizer->flush();
 }
 
-void lbann_callback_summary::on_test_end(Model* m) {
+void lbann_callback_summary::on_test_end(model* m) {
   lbann_comm* comm = m->get_comm();
   summarizer->reduce_scalar("test_accuracy", m->get_test_accuracy(),
                             m->get_cur_step());

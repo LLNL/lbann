@@ -37,7 +37,7 @@ lbann_callback_io::lbann_callback_io() {}
 lbann_callback_io::lbann_callback_io(
   std::unordered_set<uint> _layers) : layer_indices(_layers) {}
 
-// void lbann_callback_io::on_train_begin(Model* m) {
+// void lbann_callback_io::on_train_begin(model* m) {
 //   std::vector<Layer*>& layers = m->get_layers();
 //   for (size_t l = 0; l < layers.size(); ++l) {
 //     Layer* layer = layers[l];
@@ -51,7 +51,7 @@ lbann_callback_io::lbann_callback_io(
 //   }
 // }
 
-// void lbann_callback_io::on_epoch_begin(Model* m) {
+// void lbann_callback_io::on_epoch_begin(model* m) {
 //   std::vector<Layer*>& layers = m->get_layers();
 //   for (size_t l = 0; l < layers.size(); ++l) {
 //     Layer* layer = layers[l];
@@ -59,7 +59,7 @@ lbann_callback_io::lbann_callback_io(
 //   }
 // }
 
-void lbann_callback_io::on_epoch_end(Model* m) {
+void lbann_callback_io::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   std::vector<Layer*>& layers = m->get_layers();
   for (size_t l = 0; l < layers.size(); ++l) {
@@ -86,7 +86,7 @@ void lbann_callback_io::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_io::on_test_end(Model* m) {
+void lbann_callback_io::on_test_end(model* m) {
   lbann_comm* comm = m->get_comm();
   std::vector<Layer*>& layers = m->get_layers();
   for (size_t l = 0; l < layers.size(); ++l) {
