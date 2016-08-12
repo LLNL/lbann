@@ -49,7 +49,7 @@ public:
    */
   lbann_callback_early_stopping(int64_t patience);
   /** Update validation accuracy and check for early stopping. */
-  void on_validation_end(Model* m);
+  void on_validation_end(model* m);
 private:
   /** Number of epochs to wait for improvements. */
   int64_t patience;

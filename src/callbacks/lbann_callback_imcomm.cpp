@@ -45,7 +45,7 @@ lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct
 
 }
 
-void lbann_callback_imcomm::setup(Model* m) {
+void lbann_callback_imcomm::setup(model* m) {
   if (ct != NONE) {
     bool add = layer_indices.size() == 0;
     std::vector<Layer*>& layers = m->get_layers();
@@ -81,7 +81,7 @@ void lbann_callback_imcomm::setup(Model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_epoch_end(Model* m) {
+void lbann_callback_imcomm::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
@@ -105,7 +105,7 @@ void lbann_callback_imcomm::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
+void lbann_callback_imcomm::on_backward_prop_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
