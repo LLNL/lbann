@@ -12,7 +12,7 @@ BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov/model_zoo"
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=1
+EPOCHS=
 
 NETWORK="1000"
 
@@ -112,7 +112,7 @@ while getopts ":a:b:cde:f:hi:j:k:l:m:n:o:p:q:r:s:t:uv:w:x:z:" opt; do
       RUN="totalview srun -a"
       ;;
     e)
-      EPOCHS=$OPTARG
+      EPOCHS="--num-epochs $OPTARG"
       ;;
     f)
       ROOT_DATASET_DIR=$OPTARG
@@ -258,7 +258,7 @@ fi
 
 fi
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_dnn_multi_mnist --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL}"
+CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_dnn_multi_mnist --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL} ${EPOCHS}"
 #CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${DIRNAME}/lbann_dnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}
