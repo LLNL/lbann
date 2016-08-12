@@ -32,11 +32,11 @@
 
 namespace lbann {
 
-void lbann_callback_timer::on_epoch_begin(Model* m) {
+void lbann_callback_timer::on_epoch_begin(model* m) {
   epoch_start = get_time();
 }
 
-void lbann_callback_timer::on_epoch_end(Model* m) {
+void lbann_callback_timer::on_epoch_end(model* m) {
   double end = get_time();
   double epoch_time = end - epoch_start;
   // Compute minibatch stats.
@@ -81,11 +81,11 @@ void lbann_callback_timer::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_timer::on_batch_begin(Model* m) {
+void lbann_callback_timer::on_batch_begin(model* m) {
   batch_start = get_time();
 }
 
-void lbann_callback_timer::on_batch_end(Model* m) {
+void lbann_callback_timer::on_batch_end(model* m) {
   double end = get_time();
   double mb_time = end - batch_start;
   batch_times.push_back(mb_time);

@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
     }
 
     layer_factory* lfac = new layer_factory();
-    Dnn dnn(trainParams.MBSize, trainParams.Lambda, optimizer, comm, lfac);
+    deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
       trainParams.ActivationType, weight_initialization::glorot_uniform,
       {new dropout(trainParams.DropOut)});
     uint smidx = dnn.add(
-      "SoftMax", 10,
+      "Softmax", 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
     target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
     //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);

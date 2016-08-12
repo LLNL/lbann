@@ -36,37 +36,56 @@
 
 namespace lbann
 {
-  class Dnn : public Sequential
+  class deep_neural_network : public sequential_model
   {
   public:
-    Dnn(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm, layer_factory* layer_fac);
-    Dnn(const uint MiniBatchSize,
-        const double Lambda, Optimizer_factory *optimizer_factory,
-        lbann_comm* comm,layer_factory* layer_fac);
-    ~Dnn();
+    /// Constructor
+    deep_neural_network(uint mini_batch_size,
+                        lbann_comm* comm, 
+                        layer_factory* _layer_fac,
+                        Optimizer_factory* _optimizer_fac);
+    
+    /// Destructor
+    ~deep_neural_network();
 
-    void checkGradient(CircMat& X, CircMat& Y, double* GradientErrors);
+    /// Check error in gradients
+    /** @todo This is very old and probably broken
+     */
+    void check_gradient(CircMat& X, CircMat& Y, double* gradient_errors);
 
+    /// Compute layer summaries
     void summarize(lbann_summary& summarizer);
 
-    void train(int NumEpoch, bool EvaluateEveryEpoch=false);
-    bool trainBatch(long *num_samples, long *num_errors);
+    /// Train neural network
+    /** @param num_epochs Number of epochs to train
+     *  @param evaluation_frequency How often to evaluate model on
+     *  validation set. A value less than 1 will disable evaluation.
+     */
+    void train(int num_epochs, int evaluation_frequency=0);
+    /// Training step on one mini-batch
+    bool train_mini_batch(long *num_samples, long *num_errors);
 
+    /// Evaluate neural network
     DataType evaluate(execution_mode mode=execution_mode::testing);
-    bool evaluateBatch(long *num_samples, long *num_errors);
+    /// Evaluation step on one mini-batch
+    bool evaluate_mini_batch(long *num_samples, long *num_errors);
 
-    DataType get_train_accuracy() const { return training_accuracy; }
-    DataType get_validate_accuracy() const { return validation_accuracy; }
-    DataType get_test_accuracy() const { return test_accuracy; }
-
-  public:
-    //int MiniBatchSize;
-    //Optimizer_factory *optimizer_factory;
+    /// Get train accuracy
+    /** Classification accuracy over the last training epoch
+     */
+    DataType get_train_accuracy() const { return m_train_accuracy; }
+    /// Get validation accuracy
+    DataType get_validate_accuracy() const { return m_validation_accuracy; }
+    /// Get test accuracy
+    DataType get_test_accuracy() const { return m_test_accuracy; }
 
   protected:
-    DataType training_accuracy;
-    DataType validation_accuracy;
-    DataType test_accuracy;
+    /// Train accuracy over last training epoch
+    DataType m_train_accuracy;
+    /// Validation accuracy
+    DataType m_validation_accuracy;
+    /// Test accuracy
+    DataType m_test_accuracy;
   };
 }
 

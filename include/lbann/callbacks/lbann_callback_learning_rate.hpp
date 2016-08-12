@@ -47,9 +47,9 @@ public:
   /** Only apply to specific layers. */
   lbann_callback_learning_rate(std::unordered_set<uint> _layers);
   /** Do some initialization. */
-  void setup(Model* m);
+  void setup(model* m);
   /** Apply the learning rate schedule. */
-  void on_epoch_begin(Model* m);
+  void on_epoch_begin(model* m);
 protected:
   /**
    * This is called every epoch to potentially update the learning rate.
@@ -57,7 +57,7 @@ protected:
    * @param l The layer in the model currently being potentially updated.
    * @return A new learning rate.
    */
-  virtual float schedule(Model* m, Layer* l) = 0;
+  virtual float schedule(model* m, Layer* l) = 0;
   /** Return true if l is the last layer to update this epoch. */
   bool is_last_layer(const Layer* l) const {
     return l->get_index() == last_idx;
@@ -81,7 +81,7 @@ public:
   lbann_callback_step_learning_rate(int step, float amt,
                                     std::unordered_set<uint> _layers);
 protected:
-  float schedule(Model* m, Layer* l);
+  float schedule(model* m, Layer* l);
 private:
   /** Number of epochs between each learning rate decrease. */
   int step;
@@ -103,7 +103,7 @@ public:
   lbann_callback_acc_learning_rate(int64_t patience, float amt,
                                    std::unordered_set<uint> _layers);
 protected:
-  float schedule(Model* m, Layer* l);
+  float schedule(model* m, Layer* l);
 private:
   /** Number of epochs to wait for improvements. */
   int64_t patience;
@@ -122,15 +122,15 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
 public:
   /** Use custom_schedule to change the learning rate. */
   lbann_callback_custom_learning_rate(
-    std::function<float(Model*, Layer*)> custom_schedule);
+    std::function<float(model*, Layer*)> custom_schedule);
   lbann_callback_custom_learning_rate(
-    std::function<float(Model*, Layer*)> custom_schedule,
+    std::function<float(model*, Layer*)> custom_schedule,
     std::unordered_set<uint> _layers);
 protected:
-  float schedule(Model* m, Layer* l);
+  float schedule(model* m, Layer* l);
 private:
   /** Custom update schedule. */
-  std::function<float(Model*, Layer*)> custom_schedule;
+  std::function<float(model*, Layer*)> custom_schedule;
 };
 
 }  // namespace lbann

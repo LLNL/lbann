@@ -63,11 +63,11 @@ public:
   lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> _layers,
                         lbann_summary* _summarizer = nullptr);
   /** Do initialization for this model. */
-  void setup(Model* m);
+  void setup(model* m);
   /** Clear out remaining error if needed. */
-  void on_epoch_end(Model* m);
+  void on_epoch_end(model* m);
   /** Do inter-model gradient updates. */
-  void on_backward_prop_end(Model* m);
+  void on_backward_prop_end(model* m);
 private:
   /** Communication type. */
   comm_type ct;
