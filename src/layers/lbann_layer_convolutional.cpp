@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_convolutional.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_random.hpp"
 
 using namespace std;
@@ -230,14 +231,12 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
                            WBLocal(IR(m_filter_size,END),ALL),
                            ZLocal);
 #else
-    std::cerr << "Error: cuDNN not detected\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
   }
   else {
     // TODO: implement convolution on CPU
-    std::cerr << "Error: convolution forward pass not implemented on CPU\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_convolutional: convolution forward pass not yet implemented on CPU");
   }
 
   // Z and Y are identical after fp linearity step
@@ -269,14 +268,12 @@ void lbann::convolutional_layer::bp_linearity() {
                             BiasDeltaLocal,
                             InputDeltaLocal);
 #else
-    std::cerr << "Error: cuDNN not detected\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
   }
   else {
     // TODO: implement backward pass on CPU
-    std::cerr << "Error: convolution backward pass not implemented on CPU\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_convolutional: convolution backward pass not yet implemented on CPU");
   }
 
   // Obtain filter gradient with reduction and scaling
