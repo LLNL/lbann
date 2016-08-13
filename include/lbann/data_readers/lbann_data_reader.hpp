@@ -243,9 +243,13 @@ namespace lbann
 
       /// Note that comm->get_model_rank() + comm->get_rank_in_model() is not equivalent to comm->get_world_rank() from a parallel I/O perspective
       /// Given the data readers rank, how many readers have a higher rank
-      int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model - comm->get_rank_in_model();
+      int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model;
       /// Given the data readers rank, how many readers have a lower rank
-      int num_readers_at_last_stride = comm->get_model_rank() * num_parallel_readers_per_model + comm->get_rank_in_model();
+      int num_readers_at_last_stride = comm->get_model_rank() * num_parallel_readers_per_model;
+      if(comm->get_rank_in_model() < num_parallel_readers_per_model) { /// If this rank is one of the readers, adjust the number of readers to account for that
+        num_readers_at_full_stride -= comm->get_rank_in_model();
+        num_readers_at_last_stride += comm->get_rank_in_model();
+      }
       /// Compute how big the stride should be assuming that each higher ranked parallel reader has completed a full mini-batch
       /// and each lower ranked parallel reader has completed a partial mini-batch
       m_last_mini_batch_stride = max_mini_batch_size * num_readers_at_full_stride
