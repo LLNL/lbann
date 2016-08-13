@@ -29,9 +29,10 @@
 #ifndef LBANN_DATA_READER_HPP
 #define LBANN_DATA_READER_HPP
 
-#include "lbann_base.hpp"
+#include "lbann/lbann_base.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/lbann_comm.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
@@ -48,14 +49,20 @@ namespace lbann
 	public:
     DataReader(int batchSize, bool shuffle) :
       BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-      m_stride(batchSize), m_base_offset(0), m_model_offset(0) {}
+      m_stride(batchSize), m_base_offset(0), m_model_offset(0), 
+      m_use_alt_last_mini_batch_size(false),
+      m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize), m_last_mini_batch_stride(0) 
+    {}
     DataReader(int batchSize) :
       DataReader(batchSize, true) {}
     
     DataReader(const DataReader& source) :
       BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
       m_stride(source.m_stride), m_base_offset(source.m_base_offset), m_model_offset(source.m_model_offset),
-      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices) {}
+      m_use_alt_last_mini_batch_size(source.m_use_alt_last_mini_batch_size),
+      m_last_mini_batch_threshold(source.m_last_mini_batch_threshold), m_last_mini_batch_size(source.m_last_mini_batch_size), m_last_mini_batch_stride(source.m_last_mini_batch_stride),
+      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices)
+    {}
 
     virtual ~DataReader() {}
 
@@ -65,10 +72,15 @@ namespace lbann
      * If the base offset is not specified set it to 0
      * If the stride is not specified set it to batch size
      */
-    void setup(int base_offset, int stride, int model_offset = 0) {
+    void setup(int base_offset, int stride, int model_offset = 0, lbann_comm *comm = NULL) {
       m_model_offset = model_offset;
       m_base_offset = base_offset;
       m_stride = stride;
+
+      if(comm != NULL) {
+        calculate_multi_model_data_distribution(comm);
+        m_use_alt_last_mini_batch_size = true;
+      }
 
       CurrentPos = m_base_offset + m_model_offset;
       if (m_shuffle) {
@@ -101,7 +113,11 @@ namespace lbann
      * around, then reshuffle the data indicies.
      */
     virtual bool update() {
-      CurrentPos += m_stride;
+      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
+        CurrentPos += m_last_mini_batch_stride;
+      }else {
+        CurrentPos += m_stride;
+      }
       if (CurrentPos < (int)ShuffledIndices.size()) {
         return true;
       } else {
@@ -119,9 +135,21 @@ namespace lbann
     virtual int get_linearized_label_size() { return 0; }
 
     bool position_valid()   { return (CurrentPos < (int)ShuffledIndices.size()); }
-		int getBatchSize()      { return BatchSize; }
+    int getBatchSize()      { 
+      if(m_use_alt_last_mini_batch_size && CurrentPos >= m_last_mini_batch_threshold) {
+        return m_last_mini_batch_size;
+      }else {
+        return BatchSize; 
+      }
+    }
 		int getPosition()       { return CurrentPos; }
-    int get_next_position() { return CurrentPos + m_stride; }
+    int get_next_position() { 
+      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
+        return CurrentPos + m_last_mini_batch_stride;
+      }else {
+        return CurrentPos + m_stride;
+      }
+    }
 		int* getIndices()       { return &ShuffledIndices[0]; }
 		int getNumData()        { return (int)ShuffledIndices.size(); }
 		int get_num_unused_data() { return (int)m_unused_indices.size(); }
@@ -171,6 +199,11 @@ namespace lbann
       this->m_stride = source.m_stride;
       this->m_base_offset = source.m_base_offset;
       this->m_model_offset = source.m_model_offset;
+      this->m_use_alt_last_mini_batch_size = source.m_use_alt_last_mini_batch_size;
+      this->m_last_mini_batch_threshold = source.m_last_mini_batch_threshold;
+      this->m_last_mini_batch_size = source.m_last_mini_batch_size;
+      this->m_last_mini_batch_stride = source.m_last_mini_batch_stride;
+
       // Vectors implement a deep copy
       this->ShuffledIndices = source.ShuffledIndices;
       this->m_unused_indices = source.m_unused_indices;
@@ -188,6 +221,40 @@ namespace lbann
       return getNumData();
     }
 
+    void calculate_multi_model_data_distribution(lbann_comm *comm) {
+      int max_mini_batch_size = BatchSize;
+      int num_parallel_readers_per_model = (m_stride / comm->get_num_models()) / max_mini_batch_size;
+
+      int num_whole_mini_batches = rint(getNumData() / m_stride);
+      int partial_mini_batch_size = (getNumData() - (num_whole_mini_batches*m_stride))/(comm->get_num_models() * num_parallel_readers_per_model);
+      int world_master_remainder_data = 0;
+
+      int world_master_remainder_adjustment = getNumData() 
+        - (num_whole_mini_batches * m_stride) 
+        - (partial_mini_batch_size * comm->get_num_models() * num_parallel_readers_per_model);
+      if(comm->am_world_master()) {
+        world_master_remainder_data = world_master_remainder_adjustment;
+        world_master_remainder_adjustment = 0;
+      }
+      partial_mini_batch_size += world_master_remainder_data;
+
+      m_last_mini_batch_threshold = m_stride * num_whole_mini_batches;
+      m_last_mini_batch_size = partial_mini_batch_size;
+
+      /// Note that comm->get_model_rank() + comm->get_rank_in_model() is not equivalent to comm->get_world_rank() from a parallel I/O perspective
+      /// Given the data readers rank, how many readers have a higher rank
+      int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model - comm->get_rank_in_model();
+      /// Given the data readers rank, how many readers have a lower rank
+      int num_readers_at_last_stride = comm->get_model_rank() * num_parallel_readers_per_model + comm->get_rank_in_model();
+      /// Compute how big the stride should be assuming that each higher ranked parallel reader has completed a full mini-batch
+      /// and each lower ranked parallel reader has completed a partial mini-batch
+      m_last_mini_batch_stride = max_mini_batch_size * num_readers_at_full_stride
+        + (partial_mini_batch_size * (num_readers_at_last_stride)) + world_master_remainder_adjustment;
+
+      //      cout << "[" << comm->get_rank_in_world() << "] " << comm->get_model_rank() << " model rank, num_whole_mini_batches=" << num_whole_mini_batches << " partial_mini_batch_size=" << partial_mini_batch_size << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << m_last_mini_batch_threshold << " with a last stride of " << m_last_mini_batch_stride << " and stride of " << m_stride << " and there are " << num_parallel_readers_per_model << " parallel readers per model " <<endl;
+
+      return;
+    }
 
   protected:
     int							BatchSize;
@@ -198,6 +265,12 @@ namespace lbann
                                     /// then it may not reset to zero
     int             m_model_offset;  /// If there are multiple models with multiple instances of the reader, 
                                      /// each model's set of readers may not reset to zero
+    /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
+    bool            m_use_alt_last_mini_batch_size;
+    int             m_last_mini_batch_threshold;
+    int             m_last_mini_batch_size;
+    int             m_last_mini_batch_stride;
+
     std::vector<int> 			ShuffledIndices;
     std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
 	};

@@ -69,12 +69,13 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     return 0;
   }
 
+  int current_batch_size = getBatchSize();
   ifstream ifs(m_infile.c_str());
   if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
 
   string line;
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; ++n) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
     if (n >= (int)ShuffledIndices.size())
       break;
 
@@ -106,8 +107,9 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
   if(!DataReader::position_valid()) {
     return 0;
   }
+  int current_batch_size = getBatchSize();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; ++n) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
     if (n >= (int)ShuffledIndices.size())
       break;
 

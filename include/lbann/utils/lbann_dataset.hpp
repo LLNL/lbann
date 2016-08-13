@@ -39,7 +39,6 @@ namespace lbann
     DataReader *data_reader;
     long num_samples_processed;
     long total_samples;
-    
   };
 }
 

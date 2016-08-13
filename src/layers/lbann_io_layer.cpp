@@ -192,15 +192,15 @@ long lbann::io_layer::get_linearized_label_size() {
 
 void lbann::io_layer::setup_data_readers(int base_offset, int stride, int model_offset) {
   if(m_training_dataset.data_reader != NULL) {
-    m_training_dataset.data_reader->setup(base_offset, stride, model_offset);
+    m_training_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
   }
 
   if(m_validation_dataset.data_reader != NULL) {
-    m_validation_dataset.data_reader->setup(base_offset, stride, model_offset);
+    m_validation_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
   }
 
   if(m_testing_dataset.data_reader != NULL) {
-    m_testing_dataset.data_reader->setup(base_offset, stride, model_offset);
+    m_testing_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
   }
   return;
 }

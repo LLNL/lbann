@@ -152,7 +152,9 @@ bool lbann::target_layer_distributed_minibatch_parallel_io::update_data_reader()
   DataReader *data_reader = target_layer::select_data_reader();
   if(m_shared_data_reader) { 
     /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
-    /// or will be done on the next update of the input layer (which includes adding the stride)
+    /// or will be done on the next update of the input layer (which includes adding the stride).
+    /// Note that target layers are always update before input layers, which is why the position
+    /// is not up to date yet.
     return (data_reader->get_next_position() < data_reader->getNumData());
   }else {
     return data_reader->update();
