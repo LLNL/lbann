@@ -35,10 +35,10 @@ class lbann_callback;
 /**
  * Base class for LBANN models.
  */
-class Model {
+class model {
 public:
-  Model(lbann_comm* comm);
-  virtual ~Model() {}
+  model(lbann_comm* comm);
+  virtual ~model() {}
 
   /** Initialize the model. */
   virtual void setup() {}
@@ -46,7 +46,7 @@ public:
   /** Register a new callback for the model. */
   virtual void add_callback(lbann_callback* cb);
 
-  /** Return the layers this model has. */
+  /** Return the model's layers. */
   virtual std::vector<Layer*>& get_layers() = 0;
 
   /** Get the most recent training accuracy. */
@@ -59,29 +59,33 @@ public:
   /** Get the model's comm. */
   inline lbann_comm* get_comm() const { return comm; }
   /** Get the current epoch for the model. */
-  inline int64_t get_cur_epoch() const { return cur_epoch; }
+  inline int64_t get_cur_epoch() const { return m_current_epoch; }
   /** Get the current step for the model. */
-  inline int64_t get_cur_step() const { return cur_step; }
+  inline int64_t get_cur_step() const { return m_current_step; }
+  /** Get the model's execution mode. */
+  inline execution_mode get_execution_mode() const { return m_execution_mode; }
 
   /** Produce summary information (if any). */
   virtual void summarize(lbann_summary& summarizer) {}
 
   /** Return true if the flag to stop training is set. */
-  bool get_terminate_training() const { return terminate_training; }
+  bool get_terminate_training() const { return m_terminate_training; }
   /** Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) { terminate_training = f; }
+  void set_terminate_training(bool f) { m_terminate_training = f; }
     
 protected:
+  /** The model's current execution mode. */
+  execution_mode m_execution_mode;
+  /** Flag telling the model to terminate training. */
+  bool m_terminate_training;
+  /** Most recent/current epoch for the model. */
+  int64_t m_current_epoch;
+  /** Most recent/current training step for the model. */
+  int64_t m_current_step;
   /** Communicator for the model. */
   lbann_comm* comm;
-  /** Most recent/current epoch for the model. */
-  int64_t cur_epoch;
-  /** Most recent/current training step for the model. */
-  int64_t cur_step;
   /** Current callbacks to process. */
   std::vector<lbann_callback*> callbacks;
-  /** Flag telling the model to terminate training. */
-  bool terminate_training;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

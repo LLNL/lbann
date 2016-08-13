@@ -10,17 +10,17 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=10
+EPOCHS=12
 
 NETWORK="1000"
 
 PARIO=0
-BLOCK_SIZE=256
+BLOCK_SIZE=128
 MODE="false"
-MB_SIZE=256
-LR=0.005
+MB_SIZE=128
+LR=0.01
 ACT=3
-LRM=2
+LRM=1
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
 

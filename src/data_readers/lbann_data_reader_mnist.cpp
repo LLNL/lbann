@@ -50,6 +50,16 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
   : DataReader_MNIST(batchSize, true) {}
 
+lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
+  : DataReader((const DataReader&) source), 
+  ImageWidth(source.ImageWidth), ImageHeight(source.ImageHeight),
+  NumLabels(source.NumLabels)
+{
+  // No need to deallocate data on a copy constuctor
+
+  clone_image_data(source);
+}
+
 lbann::DataReader_MNIST::~DataReader_MNIST()
 {
 	this->free();
@@ -104,7 +114,7 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 	return (n - CurrentPos);
 }
 
-bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, size_t max_sample_count, bool firstN)
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile)
 {
 	this->free();
 
@@ -158,25 +168,39 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   // reset indices
   ShuffledIndices.clear();
   ShuffledIndices.resize(ImageData.size());
-  //  ShuffledIndices.resize(80);
   for (size_t n = 0; n < ShuffledIndices.size(); n++) {
     ShuffledIndices[n] = n;
   }
 
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-	if (max_sample_count != 0) {
-		max_sample_count = __MIN(max_sample_count, ImageData.size());
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-    }
-    ShuffledIndices.resize(max_sample_count);
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-    }
-  }
-
 	return true;
+}
+
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, size_t max_sample_count, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(FileDir, ImageFile, LabelFile);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, double use_percentage, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(FileDir, ImageFile, LabelFile);
+
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
 }
 
 void lbann::DataReader_MNIST::free()
@@ -186,4 +210,43 @@ void lbann::DataReader_MNIST::free()
     delete [] data;
   }
   ImageData.clear();
+}
+
+// Assignment operator
+lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNIST& source)
+{
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+  // first we need to deallocate any data that this data reader is holding!
+  for (size_t n = 0; n < ImageData.size(); n++) {
+    unsigned char* data = ImageData[n];
+    delete [] data;
+  }
+  ImageData.clear();
+
+  this->ImageWidth = source.ImageWidth;
+  this->ImageHeight = source.ImageHeight;
+  this->NumLabels = source.NumLabels;
+
+  clone_image_data(source);
+  return *this;
+}
+
+void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source) {
+  // ImageData has pointers, so we need to deep copy them
+  for (size_t n = 0; n < source.ImageData.size(); n++) {
+    unsigned char* data = new unsigned char[1 + ImageWidth * ImageHeight];
+    unsigned char* src_data = source.ImageData[n];
+
+    for (size_t i = 0; i < 1 + ImageWidth * ImageHeight; i++) {
+      data[i] = src_data[i];
+    }
+    ImageData.push_back(data);
+  }
+  return;
 }

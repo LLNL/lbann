@@ -41,17 +41,20 @@ namespace lbann
     class FullyConnectedLayer : public Layer
     {
     public:
-      FullyConnectedLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                          uint miniBatchSize, activation_type activationType,
-                          lbann_comm* comm, Optimizer *optimizer);
-      FullyConnectedLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                          uint miniBatchSize, activation_type activationType,
-                          lbann_comm* comm, Optimizer *optimizer,
-                          std::vector<regularizer*> regs);
+      FullyConnectedLayer(uint index,
+                          int numPrevNeurons,
+                          uint numNeurons,
+                          uint miniBatchSize,
+                          activation_type activationType,
+                          weight_initialization init,
+                          lbann_comm* comm,
+                          Optimizer *optimizer,
+                          std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void setup(int numPrevNeurons);
       DistMat& get_weights_biases() { return WB_view; }
       DistMat& get_weights_biases_gradient() { return WB_D_view; }
+      DistMat& get_activations() { return Acts_view; }
       bool update();
       DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
       DataType computeCost(DistMat &deltas);
@@ -61,23 +64,24 @@ namespace lbann
         // bool loadFromFile(std::string FileDir);
 
     private:
+
+      const weight_initialization m_weight_initialization;
+
       /** View of the WB matrix, except for the bottom row. */
       DistMat WB_view;
       /** View of the WB_D matrix, except for the bottom row. */
       DistMat WB_D_view;
+      /** View of the Acts matrix, except for the bottom row. */
+      DistMat Acts_view;
 
     public:
-      activation_type ActivationType;
-        //Probability of dropping neuron/input used in dropout_layer
-        //Range 0 to 1; default is -1 => no dropout
-        DataType  WBL2NormSum;
+      //Probability of dropping neuron/input used in dropout_layer
+      //Range 0 to 1; default is -1 => no dropout
+      DataType  WBL2NormSum;
 
-        Activation *activation_fn;  // Pointer to the layers activation function
     protected:
       void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
       void bp_linearity();
-      void fp_nonlinearity() { activation_fn->forwardProp(*Acts); }
-      void bp_nonlinearity() { activation_fn->backwardProp(*Zs); }
     };
 
 }

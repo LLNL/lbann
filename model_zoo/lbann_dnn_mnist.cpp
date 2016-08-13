@@ -43,6 +43,8 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    init_random(42);
+    lbann_comm* comm = NULL;
 
     try {
 
@@ -68,10 +70,12 @@ int main(int argc, char* argv[])
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
         trainParams.EpochCount = 20;
-        trainParams.MBSize = 10;
-        trainParams.LearnRate = 0.0001;
+        trainParams.MBSize = 128;
+        trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
+        trainParams.PercentageTrainingSamples = 0.90;
+        trainParams.PercentageValidationSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -85,7 +89,7 @@ int main(int argc, char* argv[])
         SetBlocksize(perfParams.BlockSize);
 
         // Set up the communicator and get the grid.
-        lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+        comm = new lbann_comm(trainParams.ProcsPerModel);
         Grid& grid = comm->get_model_grid();
         if (comm->am_world_master()) {
           cout << "Number of models: " << comm->get_num_models() << endl;
@@ -112,11 +116,37 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         if (!mnist_trainset.load(trainParams.DatasetRootDir,
                                  g_MNIST_TrainImageFile,
-                                 g_MNIST_TrainLabelFile)) {
+                                 g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
           if (comm->am_world_master()) {
             cout << "MNIST train data error" << endl;
           }
           return -1;
+        }
+        if (comm->am_world_master()) {
+          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
+        }
+
+        ///////////////////////////////////////////////////////////////////
+        // create a validation set from the unused training data (MNIST)
+        ///////////////////////////////////////////////////////////////////
+        DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
+        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
+          if (comm->am_world_master()) {
+            cout << "MNIST validation data error" << endl;
+          }
+          return -1;
+        }
+
+        if(trainParams.PercentageValidationSamples == 1.00) {
+          if (comm->am_world_master()) {
+            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+          }
+        }else {
+          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
+          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
+          if (comm->am_world_master()) {
+            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+          }
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -125,11 +155,15 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_testset(trainParams.MBSize, true);
         if (!mnist_testset.load(trainParams.DatasetRootDir,
                                 g_MNIST_TestImageFile,
-                                g_MNIST_TestLabelFile)) {
+                                g_MNIST_TestLabelFile,
+                                trainParams.PercentageTestingSamples)) {
           if (comm->am_world_master()) {
             cout << "MNIST Test data error" << endl;
           }
           return -1;
+        }
+        if (comm->am_world_master()) {
+          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
         }
 
         ///////////////////////////////////////////////////////////////////
@@ -148,19 +182,20 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        Dnn dnn(trainParams.MBSize,
-                trainParams.Lambda,
-                optimizer, comm, lfac);
-        //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset);
+        deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
+        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
+                                                               std::make_pair(execution_mode::validation, &mnist_validation_set), 
+                                                               std::make_pair(execution_mode::testing, &mnist_testset)};
+        //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
         // This is replaced by the input layer        dnn.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-        dnn.add("SoftMax", 10);
+        dnn.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
+        dnn.add("FullyConnected", 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
+        dnn.add("Softmax", 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
-        //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, &mnist_trainset, &mnist_testset, true);
+        //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
         lbann_callback_print print_cb;
@@ -206,7 +241,7 @@ int main(int argc, char* argv[])
             }
 #endif
 
-            dnn.train(1);
+            dnn.train(1, true);
 
             // Update the learning rate on each epoch
             // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
@@ -218,7 +253,7 @@ int main(int argc, char* argv[])
             // testing
             int numerrors = 0;
 
-            DataType accuracy = dnn.evaluate();
+            DataType accuracy = dnn.evaluate(execution_mode::testing);
         }
 
         // Free dynamically allocated memory
@@ -229,7 +264,8 @@ int main(int argc, char* argv[])
         delete comm;
 
     }
-    catch (exception& e) { ReportException(e); }
+    catch (lbann_exception& e) { lbann_report_exception(e, comm); }
+    catch (exception& e) { ReportException(e); } /// Elemental exceptions
 
     // free all resources by El and MPI
     Finalize();

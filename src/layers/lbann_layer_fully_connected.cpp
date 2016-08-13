@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -56,32 +57,28 @@ using namespace El;
 // [Acts     ]
 // [1 ... 1 1]
 
-lbann::FullyConnectedLayer::FullyConnectedLayer(
-  const uint index, const int numPrevNeurons, const uint numNeurons,
-  uint miniBatchSize, activation_type activationType,
-  lbann_comm* comm, Optimizer *optimizer,
-  std::vector<regularizer*> regs)
-  : Layer(index, comm, optimizer, miniBatchSize, regs),
-    WB_view(comm->get_model_grid()), WB_D_view(comm->get_model_grid())
+lbann::FullyConnectedLayer::
+FullyConnectedLayer(const uint index,
+                    const int numPrevNeurons,
+                    const uint numNeurons,
+                    const uint miniBatchSize,
+                    const activation_type activationType,
+                    const weight_initialization init,
+                    lbann_comm* comm,
+                    Optimizer *optimizer,
+                    std::vector<regularizer*> regs)
+  : Layer(index, comm, optimizer, miniBatchSize, activationType, regs),
+    m_weight_initialization(init),
+    WB_view(comm->get_model_grid()),
+    WB_D_view(comm->get_model_grid()),
+    Acts_view(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
-    ActivationType = activationType;
     WBL2NormSum = 0.0;
-
-    activation_fn = new_activation(activationType);
 }
 
-lbann::FullyConnectedLayer::FullyConnectedLayer(
-  const uint index, const int numPrevNeurons, const uint numNeurons,
-  uint miniBatchSize, activation_type activationType,
-  lbann_comm* comm, Optimizer *optimizer) :
-  FullyConnectedLayer(index, numPrevNeurons, numNeurons, miniBatchSize, activationType,
-                      comm, optimizer, {}) {}
-
-lbann::FullyConnectedLayer::~FullyConnectedLayer() {
-  delete activation_fn;
-}
+lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
   Layer::setup(numPrevNeurons);
@@ -89,48 +86,64 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons+1);
     }
 
-    // Xavier random initialization - Derived from Caffe implementation
-    DataType var_scale = sqrt(3.0 / (numPrevNeurons + 1));
-
-    if (numPrevNeurons != -1) {
-        Gaussian(*WB, NumNeurons + 1, numPrevNeurons + 1, (DataType) 0.0, var_scale); // use var_scale, instead of 0.1
-        if (comm->am_model_master()) {
-          cout << "Fully Connected Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
-        }
-        // Set the last row to all zeros and a 1 in the last column to set the bias term for
-        // activation layer: 0 0 0 0 ... 0 1
-        Int ngrows = WB->Height();
-        Int ngcols = WB->Width();
-        Int nrows = WB->LocalHeight();
-        Int ncols = WB->LocalWidth();
-        Int r = nrows-1;
-        Int gr = WB->GlobalRow(r);
-        Int gc = WB->GlobalCol(ncols-1);
-        if(gr == ngrows - 1) { // Bias initialization row
-          for (int c = 0; c < ncols; c++) {
-            WB->SetLocal(r, c, 0.0); // Set the bias row back to 0.0
-          }
-          if(gc == ngcols-1) {
-            WB->SetLocal(r, ncols-1, 1.0); // and 1.0
-          }
-        }
-        Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
-        Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
-        Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-        Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
-        View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
-        View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
+    // Initialize weight-bias matrix
+    Zeros(*WB, NumNeurons+1, numPrevNeurons+1);
+    if(WB->IsLocal(NumNeurons,numPrevNeurons)) {
+      WB->SetLocal(WB->LocalHeight()-1, WB->LocalWidth()-1, DataType(1));
     }
-    Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
 
-#if 0
-    printf("Layer[%d] has %d neurons and %d inputs\n", Index, NumNeurons + 1, numPrevNeurons + 1);
-    printf("trainMB have allocated Layers[%d]->Acts %d entries (%d x %d)\n", Index, Acts->AllocatedMemory(), Acts->Height(), Acts->Width());
-    printf("trainMB have allocated Layers[%d]->WB %d entries (%d x %d)\n", Index, WB->AllocatedMemory(), WB->Height(), WB->Width());
-    printf("trainMB have allocated Layers[%d]->WB_D %d entries (%d x %d)\n", Index, WB_D->AllocatedMemory(), WB_D->Height(), WB_D->Width());
-    printf("trainMB have allocated Layers[%d]->Ds %d entries (%d x %d)\n", Index, Ds->AllocatedMemory(), Ds->Height(), Ds->Width());
-    printf("trainMB have allocated Layers[%d]->Ds_Temp %d entries (%d x %d)\n", Index, Ds_Temp.AllocatedMemory(), Ds_Temp.Height(), Ds_Temp.Width());
-#endif
+    // Initialize weights
+    DistMat weights;
+    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    switch(m_weight_initialization) {
+    case weight_initialization::uniform:
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), DataType(1));
+      break;
+    case weight_initialization::normal:
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), DataType(1));
+      break;
+    case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::he_normal: {
+      const DataType var = 1.0 / numPrevNeurons;
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / numPrevNeurons;
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(weights);
+      break;
+    }
+
+    // Initialize other matrices
+    Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
+    Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
+    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
+    Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
+    View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
+    View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
+    Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
+    View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
+
 }
 
 void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y)
@@ -153,16 +166,12 @@ void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
     // Convert forward and backward prop matrices to MC,MR format
-    DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*bp_input);
     DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: store from fp step
-    DistMat& DsNext = DsNextProxy.Get();
     DistMat& X = XProxy.Get();
-    
-    // Compute the delta using the results from "next" deeper layer
-    Hadamard(DsNext, *Zs, *Ds);
+
     // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, DsNext, (DataType) 0., *Ds_Temp);
-    // BVE - an alternative approach is to compute the mean 
+    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
+    // Compute update for weights
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);
 }
@@ -190,10 +199,11 @@ DataType lbann::FullyConnectedLayer::WBL2norm() {
 inline DataType _sq(DataType x) { return (x * x); }
 inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
-bool lbann::FullyConnectedLayer::update(/*const float LearnRate, const int LearnRateMethod, const DataType DecayRate*/)
+bool lbann::FullyConnectedLayer::update()
 {
-  optimizer->update_weight_bias_matrix(*WB_D, *WB);
-  WBL2NormSum = 0.0;
+  if(m_execution_mode == execution_mode::training) {
+    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+  }
   return true;
 }
 
@@ -258,15 +268,15 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
             // J(theta)
             this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
-            this->fp_nonlinearity();
+            //this->fp_nonlinearity(*Acts);
 
             // J(thetaPlus(i))
             this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
-            this->fp_nonlinearity();
+            //this->fp_nonlinearity(Acts_E1);
 
             // J(thetaMinus(i))
             this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
-            this->fp_nonlinearity();
+            //this->fp_nonlinearity(Acts_E2);
 
             //            this->getCost();
 

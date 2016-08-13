@@ -31,6 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
@@ -48,9 +49,8 @@ class regularizer;
   class Layer {
   public:
     Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-          uint mbsize);
-    Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-          uint mbsize, std::vector<regularizer*> regs);
+          uint mbsize, activation_type activation=activation_type::ID,
+          std::vector<regularizer*> regs={});
     virtual ~Layer();
     virtual DataType forwardProp(DataType prev_WBL2NormSum);
     virtual void backProp();
@@ -62,6 +62,11 @@ class regularizer;
      * printing if needed.
      */
     virtual void epoch_print() const {}
+    /**
+     * Called on every layer at the end of each epoch to give it the chance to
+     * reset/clean up.
+     */
+    virtual void epoch_reset() {}
     virtual DataType checkGradientMB(Layer& PrevLayer, const DataType Epsilon=1e-4) {
       return 0.0;
     };
@@ -74,9 +79,20 @@ class regularizer;
     virtual ElMat& get_weights_biases() { return *WB; }
     /** Return (a view of) the weights/biases gradient matrix for this layer. */
     virtual ElMat& get_weights_biases_gradient() { return *WB_D; }
+    /** Return (a view of) the activations matrix for this layer. */
+    virtual ElMat& get_activations() { return *Acts; }
     /** Return the layer's optimizer. */
     virtual Optimizer* get_optimizer() const { return optimizer; }
+    /** Reset layer stat counters. */
+    virtual void reset_counters() {
+      fp_time = 0.0;
+      bp_time = 0.0;
+    }
 
+    /** Return the size of mini-batch this layer uses. */
+    virtual uint get_minibatch_size() const {
+      return m_mini_batch_size;
+    }
     /**
      * Get the "effective" size of a mini-batch.
      * This is for backward propagation, etc. when there are more updates being
@@ -113,6 +129,7 @@ class regularizer;
     uint               Index;                  // Layer index (start with 0)
     uint 		NumNeurons; 	// # neurons
     execution_mode  m_execution_mode;
+    activation_type m_activation_type;
 
     // TODO: move to lbann_layer_fully_connected.hpp
     ElMat *WB;             // Weight and Bias Set ((# neurons + 1) x (# previous layer's neurons + 1))
@@ -135,16 +152,23 @@ class regularizer;
     /** Handle the layer's linearity in backward propagation. */
     virtual void bp_linearity() {}
     /** Apply the layer's nonlinearity in forward propagation. */
-    virtual void fp_nonlinearity() {}
+    virtual void fp_nonlinearity();
     /** Handle the layer's nonlinearity in backward propagation. */
-    virtual void bp_nonlinearity() {}
+    virtual void bp_nonlinearity();
 
+    /** Activation function */
+    Activation* m_activation_fn;
     /** Regularizers being applied to the layer. */
     std::vector<regularizer*> regularizers;
     /** Size of the local mini-batch. */
     uint m_mini_batch_size;
     /** "Effective" mini-batch size for backward propagation, etc.. */
     uint m_effective_mbsize;
+
+    /** Time spent in forward propagation. */
+    double fp_time;
+    /** Time spent in backward propagation. */
+    double bp_time;
   };
 }
 

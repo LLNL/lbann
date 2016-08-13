@@ -99,6 +99,17 @@ void test_threshold_quantize() {
   ASSERT_MAT_EQ(mat, with_qerror);
 }
 
+/** Test compression with manual inputs. */
+void test_compression() {
+  lbann_quantizer::ThreshQuantized in = {1000, 0, 1, 2, 1000, 137};
+  lbann_quantizer::ThreshQuantized comp;
+  lbann_quantizer::ThreshQuantized out;
+  lbann_quantizer quantizer;
+  quantizer.compress_thresholds(in, comp);
+  quantizer.uncompress_thresholds(comp, out);
+  ASSERT_VECTOR_EQ(in, out);
+}
+
 /** Test threshold compression/uncompression. */
 void test_threshold_compression() {
   Mat mat;
@@ -393,6 +404,7 @@ int main(int argc, char** argv) {
   test_quantize();
   test_2value_quantize();
   test_threshold_quantize();
+  test_compression();
   test_threshold_compression();
   test_adaptive_threshold_quantize();
   test_adaptive_threshold_compression();

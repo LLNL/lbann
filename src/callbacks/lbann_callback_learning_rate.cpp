@@ -36,7 +36,7 @@ lbann_callback_learning_rate::lbann_callback_learning_rate() {}
 lbann_callback_learning_rate::lbann_callback_learning_rate(
   std::unordered_set<uint> _layers) : layer_indices(_layers) {}
 
-void lbann_callback_learning_rate::setup(Model* m) {
+void lbann_callback_learning_rate::setup(model* m) {
   std::vector<Layer*>& layers = m->get_layers();
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer* layer = layers[l];
@@ -51,7 +51,7 @@ void lbann_callback_learning_rate::setup(Model* m) {
   }
 }
 
-void lbann_callback_learning_rate::on_epoch_begin(Model* m) {
+void lbann_callback_learning_rate::on_epoch_begin(model* m) {
   std::vector<Layer*>& layers = m->get_layers();
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer* layer = layers[l];
@@ -79,7 +79,7 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
   int step, float amt, std::unordered_set<uint> _layers) :
   lbann_callback_learning_rate(_layers), step(step), amt(amt) {}
 
-float lbann_callback_step_learning_rate::schedule(Model* m, Layer* l) {
+float lbann_callback_step_learning_rate::schedule(model* m, Layer* l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
   if (m->get_cur_epoch() % step == 0) {
     return cur_lr * amt;
@@ -97,7 +97,7 @@ lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
   lbann_callback_learning_rate(_layers), patience(patience), amt(amt),
   last_acc(std::numeric_limits<DataType>::lowest()), wait(0) {}
 
-float lbann_callback_acc_learning_rate::schedule(Model* m, Layer* l) {
+float lbann_callback_acc_learning_rate::schedule(model* m, Layer* l) {
   DataType cur_acc = m->get_test_accuracy();
   float cur_lr = l->get_optimizer()->get_learning_rate();
   if (cur_acc > last_acc) {
@@ -120,15 +120,15 @@ float lbann_callback_acc_learning_rate::schedule(Model* m, Layer* l) {
 }
 
 lbann_callback_custom_learning_rate::lbann_callback_custom_learning_rate(
-  std::function<float(Model*, Layer*)> custom_schedule) :
+  std::function<float(model*, Layer*)> custom_schedule) :
   lbann_callback_learning_rate(), custom_schedule(custom_schedule) {}
 
 lbann_callback_custom_learning_rate::lbann_callback_custom_learning_rate(
-  std::function<float(Model*, Layer*)> custom_schedule,
+  std::function<float(model*, Layer*)> custom_schedule,
   std::unordered_set<uint> _layers) :
   lbann_callback_learning_rate(_layers), custom_schedule(custom_schedule) {}
 
-float lbann_callback_custom_learning_rate::schedule(Model* m, Layer* l) {
+float lbann_callback_custom_learning_rate::schedule(model* m, Layer* l) {
   return custom_schedule(m, l);
 }
 

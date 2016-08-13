@@ -24,23 +24,23 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
+#ifndef LBANN_DATASET_HPP_INCLUDED
+#define LBANN_DATASET_HPP_INCLUDED
 
-#include "lbann/layers/lbann_io_layer.hpp"
+#include "lbann/data_readers/lbann_data_reader.hpp"
 
 namespace lbann
 {
-  class target_layer : public io_layer {
+  class dataset {
   public:
-    target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
-    DistMat *fp_output();
-    DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
-    DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
+    dataset(DataReader *data_reader) : data_reader(data_reader), num_samples_processed(0), total_samples(0) {};
 
   public:
-    bool m_shared_data_reader;
+    DataReader *data_reader;
+    long num_samples_processed;
+    long total_samples;
+    
   };
 }
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
+#endif  // LBANN_DATASET_HPP_INCLUDED

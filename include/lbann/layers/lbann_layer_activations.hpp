@@ -24,13 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_ACTIVATION_HPP_INCLUDED
-#define LBANN_LAYER_ACTIVATION_HPP_INCLUDED
+#ifndef LBANN_LAYER_ACTIVATIONS_HPP_INCLUDED
+#define LBANN_LAYER_ACTIVATIONS_HPP_INCLUDED
 
 #include "lbann/lbann_base.hpp"
-#include <string>
-
-
 
 namespace lbann {
 
@@ -92,4 +89,4 @@ Activation* new_activation(activation_type act_fn);
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_ACTIVATION_HPP_INCLUDED
+#endif  // LBANN_LAYER_ACTIVATIONS_HPP_INCLUDED

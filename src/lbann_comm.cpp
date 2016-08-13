@@ -31,30 +31,42 @@
 #include "mpi.h"
 
 using namespace std;
-#ifdef __LIB_ELEMENTAL
 using namespace El;
-#endif
 
 lbann::lbann_comm::lbann_comm(int _procs_per_model) :
   procs_per_model(_procs_per_model), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
+
+  // Initialize parameters
   int world_size = mpi::Size(mpi::COMM_WORLD);
   if (procs_per_model == 0) {
     procs_per_model = world_size;
   }
+  num_models = world_size / procs_per_model;
+  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
+  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
+
+  // Check if parameters are valid
   if (procs_per_model > world_size) {
     throw lbann_exception("lbann_comm: Not enough processes to create one model");
   }
   if (world_size % procs_per_model != 0) {
     throw lbann_exception("lbann_comm: Procs per model does not divide total number of procs");
   }
-  num_models = world_size / procs_per_model;
-  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
+
+  // Initialize model and intermodel communicators
   mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
   mpi::Split(mpi::COMM_WORLD, rank_in_model, model_rank, intermodel_comm);
+
+  // Initialize Elemental grid
   grid = new Grid(model_comm);
+
+  // Initialize node communicators
+  setup_node_comm();
+  procs_per_node = mpi::Size(node_comm);
+  rank_in_node = mpi::Rank(node_comm);
+  
 }
 
 lbann::lbann_comm::~lbann_comm() {
@@ -186,4 +198,31 @@ void lbann::lbann_comm::broadcast(Mat& mat,
 void lbann::lbann_comm::broadcast(DistMat& mat,
                                   std::vector<int>& dests, int root) {
   broadcast(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), dests, root);
+}
+
+void lbann::lbann_comm::setup_node_comm() {
+ 
+  // Get string specifying compute node
+  char node_name[MPI_MAX_PROCESSOR_NAME];
+  int node_name_len;
+  int status = MPI_Get_processor_name(node_name, &node_name_len);
+  if(status != MPI_SUCCESS) {
+    throw lbann_exception("lbann_comm: error in MPI_Get_processor_name");
+  }
+
+  // Hash the node names and split MPI processes
+  // TODO: Generate random salt. The salt must be shared across all ranks.
+  std::string node_string = "hXFgQFNrqyL1mIsq";
+  node_string += node_name;
+  int hash = std::hash<std::string>()(node_string);
+  mpi::Comm hash_comm;
+  mpi::Split(mpi::COMM_WORLD, hash, mpi::Rank(mpi::COMM_WORLD), hash_comm);
+
+  // Hash the node names again and split MPI processes
+  // TODO: Generate random salt. The salt must be shared across all ranks.
+  node_string = "BGqXbNZqxuXBV5lm";
+  node_string += node_name;
+  hash = std::hash<std::string>()(node_string);
+  mpi::Split(hash_comm, hash, mpi::Rank(mpi::COMM_WORLD), node_comm);
+
 }

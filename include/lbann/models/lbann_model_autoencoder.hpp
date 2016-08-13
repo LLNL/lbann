@@ -42,7 +42,7 @@
 namespace lbann
 {
     // stacked_autoenocer : auto encoder class with greedy layer-wise training
-  class AutoEncoder : public Sequential
+  class AutoEncoder : public sequential_model
   {
   public:
     AutoEncoder(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm);
@@ -55,15 +55,15 @@ namespace lbann
     void train(CircMat& X, const float LearnRate);
     void test(CircMat& X, CircMat& XP);
     void test(CircMat& X, CircMat& YP, CircMat& XP);
-        void global_update();
-	void train(DataReader* Dataset, int NumEpoch);
-    void trainBatch(DataReader* Dataset);
+    void global_update();
+    void train(DataReader* Dataset, int NumEpoch);
+    void train_mini_batch(DataReader* Dataset);
 
     DataType evaluate(DataReader* Dataset, int ErrorType);
-    DataType evaluateBatch(DataReader* Dataset, int ErrorType);
+    DataType evaluate_mini_batch(DataReader* Dataset, int ErrorType);
 
   public:
-	std::vector<Layer*>    DecoderLayers;
+    std::vector<Layer*>    DecoderLayers;
 
   };
 }

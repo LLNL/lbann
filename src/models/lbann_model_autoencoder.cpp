@@ -50,28 +50,28 @@ lbann::AutoEncoder::AutoEncoder(Optimizer_factory *optimizer_factory, const uint
 }
 
 lbann::AutoEncoder::AutoEncoder(Optimizer_factory *optimizer_factory, const uint MiniBatchSize, lbann_comm* comm,
-								const std::vector<int>& EncoderLayerDim, const std::vector<int>& DecoderLayerDim,
-								const bool LayerMirror, const uint ActivationType,
-								const float DropOut, const double lambda)
+				const std::vector<int>& EncoderLayerDim, const std::vector<int>& DecoderLayerDim,
+				const bool LayerMirror, const uint ActivationType,
+				const float DropOut, const double lambda)
   : Sequential(optimizer_factory, MiniBatchSize, comm)
 {
   // initalize layers
   for (int l = 0; l < (int)EncoderLayerDim.size(); l++) {
     Layers.push_back(new FullyConnectedLayer(Layers.size(), ((l == 0) ? -1 : EncoderLayerDim[l-1]),
-                                             EncoderLayerDim[l], MiniBatchSize, ActivationType, DropOut, lambda, NULL, comm));
+                     EncoderLayerDim[l], MiniBatchSize, ActivationType, DropOut, lambda, NULL, comm));
   }
 
   if (LayerMirror) {
     for (int l = (int)EncoderLayerDim.size() - 2; l >= 0; l--) {
       DecoderLayers.push_back(new FullyConnectedLayer(DecoderLayers.size(), EncoderLayerDim[l+1], EncoderLayerDim[l],
-                                                      MiniBatchSize, ActivationType, DropOut, lambda, NULL, comm));
+                              MiniBatchSize, ActivationType, DropOut, lambda, NULL, comm));
     }
   }
   else {
     for (int l = 0; l < (int)DecoderLayerDim.size(); l++) {
       DecoderLayers.push_back(new FullyConnectedLayer(DecoderLayers.size(), ((l == 0) ? -1 : DecoderLayerDim[l-1]),
-                                                      DecoderLayerDim[l], MiniBatchSize, ActivationType, DropOut,
-                                                      lambda, NULL, comm));
+                              DecoderLayerDim[l], MiniBatchSize, ActivationType, DropOut,
+                              lambda, NULL, comm));
     }
   }
 }

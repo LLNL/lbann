@@ -48,17 +48,15 @@ lbann::Adagrad_factory::~Adagrad_factory()
 {
 }
 
-lbann::Optimizer *lbann::Adagrad_factory::create_optimizer(matrix_distribution m_matrix_distribution) {
-  switch(m_matrix_distribution) {
-  case McMr:
+lbann::Optimizer *lbann::Adagrad_factory::create_optimizer(matrix_format format) {
+  switch(format) {
+  case matrix_format::MC_MR:
     return new Adagrad<DistMat>(this->comm, this->lr, this->epsilon);
-  case CircCirc:
+  case matrix_format::CIRC_CIRC:
     return new Adagrad<CircMat>(this->comm, this->lr, this->epsilon);
-  case StarStar:
+  case matrix_format::STAR_STAR:
     return new Adagrad<StarMat>(this->comm, this->lr, this->epsilon);
-  case MrStar:
-    return new Adagrad<ColSumMat>(this->comm, this->lr, this->epsilon);
-  case StarVc:
+  case matrix_format::STAR_VC:
     return new Adagrad<StarVCMat>(this->comm, this->lr, this->epsilon);
   default:
     // TODO: throw an exception

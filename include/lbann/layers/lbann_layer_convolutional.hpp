@@ -30,47 +30,74 @@
 #ifndef LBANN_LAYER_CONVOLUTIONAL_HPP_INCLUDED
 #define LBANN_LAYER_CONVOLUTIONAL_HPP_INCLUDED
 
+#include <vector>
+#include "lbann/lbann_base.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include <string>
 
 namespace lbann
 {
 
-    // ConvolutionalLayer: convolutional/pool layer class
-    class ConvolutionalLayer: public Layer
-    {
-    public:
-      ConvolutionalLayer(uint index, int _ConvDim,
-                         int _InputChannels, const int* _InputDims,
-                         int _OutputChannels, const int* _FilterDims,
-                         uint miniBatchSize,
-                         lbann_comm* comm, Optimizer *optimizer);
-        ~ConvolutionalLayer();
+  /// Convolutional layer
+  class convolutional_layer : public Layer
+  {
+  public:
 
-        void setup(CudnnNet<DataType> *cudnnNet);
+    /// Constructor
+    convolutional_layer(uint index, int num_dims,
+                        int num_input_channels,
+                        const int* input_dims,
+                        int num_output_channels,
+                        const int* filter_dims,
+                        const int* conv_pads,
+                        const int* conv_strides,
+                        uint mini_batch_size,
+                        activation_type activation,
+                        weight_initialization init,
+                        lbann_comm* comm, Optimizer* optimizer,
+                        std::vector<regularizer*> regs,
+                        cudnn::cudnn_manager* cudnn=NULL);
 
-        bool update();
+    /// Destructor
+    ~convolutional_layer();
 
-    public:
-        int ConvDim;
-        int InputChannels;
-        int InputDims[3];    // 1D (W), 2D (HW), or 3D (DHW)
-        int OutputChannels;
-        int OutputDims[3];   // 1D (W), 2D (HW), or 3D (DHW)
-        int FilterDims[3];   // 1D (W), 2D (HW), or 3D (DHW)
+    void setup(int num_prev_neurons);
 
-#ifdef __LIB_CUDNN
-        CudnnLayer<DataType>* cudnnLayer;
-#endif
+    bool update();
 
-    protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
-      void bp_linearity();
+  protected:
+    
+    void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
+    void bp_linearity();
 
-    };
+  private:
+    /// Weight initialization scheme
+    const weight_initialization m_weight_initialization;
+    /// Number of data dimensions
+    const int m_num_dims;
+    /// Number of input channels
+    const int m_num_input_channels;
+    /// Input dimensions
+    /** In HW or DHW format */
+    std::vector<int> m_input_dims;
+    /// Number of output channels
+    const int m_num_output_channels;
+    /// Output dimensions
+    std::vector<int> m_output_dims;
+    /// Filter dimensions
+    std::vector<int> m_filter_dims;
+    /// Number of filter weights
+    int m_filter_size;
+    /// Convolution padding
+    std::vector<int> m_conv_pads;
+    /// Convolution strides
+    std::vector<int> m_conv_strides;
+
+    /// cuDNN convolutional layer
+    cudnn::cudnn_convolutional_layer* m_cudnn_layer;
+  
+  };
+
 }
-
 
 #endif // LBANN_LAYER_CONVOLUTIONAL_HPP_INCLUDED

@@ -41,15 +41,21 @@ namespace lbann
     class SoftmaxLayer: public Layer
     {
     public:
-      SoftmaxLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                   uint miniBatchSize, lbann_comm* comm, Optimizer *optimizer);
+      SoftmaxLayer(uint index,
+                   int numPrevNeurons,
+                   uint numNeurons,
+                   uint miniBatchSize,
+                   weight_initialization init,
+                   lbann_comm* comm,
+                   Optimizer *optimizer);
         void setup(int numPrevNeurons);
         bool update();
       void summarize(lbann_summary& summarizer, int64_t step);
       void epoch_print() const;
+      void epoch_reset();
         DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
         //        void updateMB(const float LearnRate);
-        DataType computeCost(DistMat& Y);
+        DataType computeCost(const DistMat& Y);
         //        DataType computeCost(CircMat& Output);
         DataType WBL2norm();
 
@@ -72,12 +78,15 @@ namespace lbann
     private:
         DataType aggregate_cost;   // if this type is changed, update checkpoint code
         long num_backprop_steps; // if this type is changed, update checkpoint code
+        weight_initialization m_weight_initialization;
         ColSumMat ZsColMax;
         ColSumMat ZsNormExpSum;
         ColSumMat norms;
         StarMat ZsColMaxStar;
         StarMat ZsNormExpSumStar;
         DistMat Acts_Cost;
+      /** Colume-wise sum of the costs of a minibatch. */
+      ColSumMat m_minibatch_cost;
     };
 }
 

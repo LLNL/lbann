@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////xecu
 // Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
 // Produced at the Lawrence Livermore National Laboratory. 
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
@@ -47,9 +47,11 @@ typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 
-enum matrix_distribution {McMr, CircCirc, StarStar, MrStar, StarVc};
+enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC};
 
-enum execution_mode {training, validation, testing, prediction, invalid};
+enum class execution_mode {training, validation, testing, prediction, invalid};
+
+enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
 
 namespace lbann
 {

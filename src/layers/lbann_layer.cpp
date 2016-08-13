@@ -28,6 +28,7 @@
 
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/regularization/lbann_regularizer.hpp"
+#include "lbann/utils/lbann_timer.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,12 +38,15 @@ using namespace std;
 using namespace El;
 
 lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-                    uint mbsize, std::vector<regularizer*> regs)
-  : optimizer(optimizer), comm(comm), regularizers(regs),
-    m_mini_batch_size(mbsize), m_effective_mbsize(mbsize)
+                    uint mbsize, activation_type activation,
+                    std::vector<regularizer*> regs)
+  : m_activation_type(activation), optimizer(optimizer), comm(comm),
+    regularizers(regs), m_mini_batch_size(mbsize),
+    m_effective_mbsize(mbsize),
+    fp_time(0.0), bp_time(0.0)
 {
     Index = index;
-    m_execution_mode = training;
+    m_execution_mode = execution_mode::training;
     fp_input = NULL;
     bp_input = NULL;
 
@@ -54,9 +58,13 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     Ds_Temp = new DistMat(comm->get_model_grid());
     Acts = new DistMat(comm->get_model_grid());
 
+    // Initialize activation function
+    m_activation_fn = new_activation(activation);
+
 }
 
 lbann::Layer::~Layer() {
+  delete m_activation_fn;
   delete WB;
   delete WB_D;
   delete Zs;
@@ -65,11 +73,8 @@ lbann::Layer::~Layer() {
   delete Acts;
 }
 
-lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
-                    uint mbsize) :
-  Layer(index, comm, optimizer, mbsize, {}) {}
-
 DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
+  double fp_start = get_time();
   // Apply connection regularization. (e.g. DropConnect).
   for (regularizer* reg : regularizers) reg->fp_connections();
   // Layer layer's linearity.
@@ -80,10 +85,15 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   fp_nonlinearity();
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
+  fp_time += get_time() - fp_start;
   return prev_WBL2NormSum;
 }
 
 void lbann::Layer::backProp() {
+  double bp_start = get_time();
+
+  // Get incoming loss and convert matrix distribution if necessary
+  *Ds = *bp_input;
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
@@ -94,20 +104,33 @@ void lbann::Layer::backProp() {
   bp_linearity();
   // Backprop connection regularization.
   for (regularizer* reg : regularizers) reg->bp_connections();
+  bp_time += get_time() - bp_start;
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB/";
   // TODO: implement summarizer functions for other matrix distributions
-  summarizer.reduce_mean(prefix + "mean", (DistMat&) *WB, step);
-  summarizer.reduce_min(prefix + "min", (DistMat&) *WB, step);
-  summarizer.reduce_max(prefix + "max", (DistMat&) *WB, step);
-  summarizer.reduce_stdev(prefix + "stdev", (DistMat&) *WB, step);
+  const ElMat& wb = get_weights_biases();
+  summarizer.reduce_mean(prefix + "mean", wb, step);
+  summarizer.reduce_min(prefix + "min", wb, step);
+  summarizer.reduce_max(prefix + "max", wb, step);
+  summarizer.reduce_stdev(prefix + "stdev", wb, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB_D/";
-  summarizer.reduce_mean(prefix + "mean", (DistMat&) *WB_D, step);
-  summarizer.reduce_min(prefix + "min", (DistMat&) *WB_D, step);
-  summarizer.reduce_max(prefix + "max", (DistMat&) *WB_D, step);
-  summarizer.reduce_stdev(prefix + "stdev", (DistMat&) *WB_D, step);
+  const ElMat& wb_d = get_weights_biases_gradient();
+  summarizer.reduce_mean(prefix + "mean", wb_d, step);
+  summarizer.reduce_min(prefix + "min", wb_d, step);
+  summarizer.reduce_max(prefix + "max", wb_d, step);
+  summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/Acts/";
+  const ElMat& acts = get_activations();
+  summarizer.reduce_mean(prefix + "mean", acts, step);
+  summarizer.reduce_min(prefix + "min", acts, step);
+  summarizer.reduce_max(prefix + "max", acts, step);
+  summarizer.reduce_stdev(prefix + "stdev", acts, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
+  summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
+  reset_counters();
 }
 
 void lbann::Layer::setup(int) {
@@ -582,4 +605,15 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 
     optimizer->loadFromCheckpointShared(dir, Index, bytes);
     return true;
+}
+
+void lbann::Layer::fp_nonlinearity() {
+  m_activation_fn->forwardProp(*Acts);
+}
+
+void lbann::Layer::bp_nonlinearity() {
+  m_activation_fn->backwardProp(*Zs);
+  if (m_activation_type != activation_type::ID) {
+    Hadamard(*Ds, *Zs, *Ds);
+  }
 }
