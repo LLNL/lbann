@@ -18,7 +18,7 @@ PARIO=0
 BLOCK_SIZE=256
 MODE="false"
 MB_SIZE=192
-LR=0.1
+LR=0.01
 ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
@@ -184,7 +184,7 @@ if [ ${TASKS} -gt 384 ]; then
 TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
-LBANN_TASKS=1 #4
+LBANN_TASKS=4
 
 export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
 

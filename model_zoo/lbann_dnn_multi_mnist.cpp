@@ -153,11 +153,17 @@ int main(int argc, char* argv[])
     DataReader_MNIST mnist_testset(trainParams.MBSize);
     if (!mnist_testset.load(trainParams.DatasetRootDir,
                             g_MNIST_TestImageFile,
-                            g_MNIST_TestLabelFile)) {
+                            g_MNIST_TestLabelFile,
+                            trainParams.PercentageTestingSamples)) {
       if (comm->am_world_master()) {
         cout << "MNIST Test data error" << endl;
       }
       return -1;
+    }
+    if (comm->am_world_master()) {
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
+        "% of the testing data set, which is " << mnist_testset.getNumData() <<
+        " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -174,7 +180,7 @@ int main(int argc, char* argv[])
     }
 
     layer_factory* lfac = new layer_factory();
-    Dnn dnn(trainParams.MBSize, trainParams.Lambda, optimizer, comm, lfac);
+    deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
@@ -182,15 +188,20 @@ int main(int argc, char* argv[])
     //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
-      "FullyConnected", 1024, trainParams.ActivationType,
+      "FullyConnected", 1024,
+      trainParams.ActivationType, weight_initialization::glorot_uniform,
       {new dropout(trainParams.DropOut)});
     uint fcidx2 = dnn.add(
-      "FullyConnected", 1024, trainParams.ActivationType,
+      "FullyConnected", 1024,
+      trainParams.ActivationType, weight_initialization::glorot_uniform,
       {new dropout(trainParams.DropOut)});
     uint fcidx3 = dnn.add(
-      "FullyConnected", 1024, trainParams.ActivationType,
+      "FullyConnected", 1024,
+      trainParams.ActivationType, weight_initialization::glorot_uniform,
       {new dropout(trainParams.DropOut)});
-    uint smidx = dnn.add("SoftMax", 10);
+    uint smidx = dnn.add(
+      "Softmax", 10,
+      activation_type::ID, weight_initialization::glorot_uniform, {});
     target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
     //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);

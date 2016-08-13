@@ -136,9 +136,7 @@ int main(int argc, char* argv[])
         optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
       }
       layer_factory* lfac = new layer_factory();
-      Dnn dnn(trainParams.MBSize,
-              trainParams.Lambda,
-              optimizer, comm, lfac);
+      deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
 
       input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io,
                                 (int) trainParams.MBSize, &nci_dataset, &nci_testset);
@@ -146,7 +144,7 @@ int main(int argc, char* argv[])
 
       dnn.add("FullyConnected", 500, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
       dnn.add("FullyConnected", 300, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-      dnn.add("SoftMax", 2);
+      dnn.add("Softmax", 2);
 
 
       target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io,

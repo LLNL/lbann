@@ -51,6 +51,8 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC};
 
 enum class execution_mode {training, validation, testing, prediction, invalid};
 
+enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+
 namespace lbann
 {
     class CUtility

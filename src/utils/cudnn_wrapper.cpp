@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 #include <iostream>
 
@@ -42,7 +43,7 @@ using namespace cudnn;
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(-1);                                                         \
+      exit(EXIT_FAILURE);                                               \
     }                                                                   \
   }
 #define checkCUDNN(status) {                                            \
@@ -50,17 +51,20 @@ using namespace cudnn;
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n"; /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(-1);                                                         \
+      exit(EXIT_FAILURE);                                               \
     }                                                                   \
   }
 
-/// Determine number of GPUs
-/** If num_gpus<0, then report total number of availabel GPUs */
-int get_num_gpus(int num_gpus)
+/// Determine number of GPUs to use
+/** If num_gpus<0, then report total number of available GPUs */
+int get_num_gpus(const int num_gpus)
 {
-  if(num_gpus < 0)
-    checkCUDA(cudaGetDeviceCount(&num_gpus));
-  return num_gpus;
+  int total_num_gpus;
+  checkCUDA(cudaGetDeviceCount(&total_num_gpus));
+  if(num_gpus < 0 || num_gpus > total_num_gpus)
+    return total_num_gpus;
+  else
+    return num_gpus;
 }
 
 /// Get cuDNN data type associated with C++ data type
@@ -72,9 +76,7 @@ cudnnDataType_t get_cudnn_data_type()
   case 2: return CUDNN_DATA_HALF;
   case 4: return CUDNN_DATA_FLOAT;
   case 8: return CUDNN_DATA_DOUBLE;
-  default:
-    std::cerr << "Error: invalid data type for cuDNN\n";
-    exit(EXIT_FAILURE);
+  default: throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
   }
 }
 
@@ -86,9 +88,7 @@ cudnnPoolingMode_t get_cudnn_pool_mode(const int pool_mode)
   case 0: return CUDNN_POOLING_MAX;
   case 1: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
   case 2: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-  default:
-    std::cerr << "Warning: pooling mode " << pool_mode << " is unknown. Using max pooling instead.\n";
-    return CUDNN_POOLING_MAX;
+  default: throw lbann::lbann_exception("cudnn_wrapper: invalid pooling mode");
   }
 }
 
@@ -97,11 +97,8 @@ cudnn_manager::cudnn_manager(const int num_gpus)
 {
 
   // Check that at least one GPU is allocated
-  if(m_num_gpus < 1) {
-    // TODO: consider throwing an exception instead
-    std::cerr << "Error: no GPUs allocated or found for cuDNN\n";
-    exit(EXIT_FAILURE);
-  }
+  if(m_num_gpus < 1)
+    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
 
   // Initialize cuDNN on each GPU
   m_handles.resize(m_num_gpus, NULL);

@@ -41,9 +41,14 @@ namespace lbann
     class FullyConnectedLayer : public Layer
     {
     public:
-      FullyConnectedLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                          uint miniBatchSize, activation_type activationType,
-                          lbann_comm* comm, Optimizer *optimizer,
+      FullyConnectedLayer(uint index,
+                          int numPrevNeurons,
+                          uint numNeurons,
+                          uint miniBatchSize,
+                          activation_type activationType,
+                          weight_initialization init,
+                          lbann_comm* comm,
+                          Optimizer *optimizer,
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void setup(int numPrevNeurons);
@@ -59,6 +64,9 @@ namespace lbann
         // bool loadFromFile(std::string FileDir);
 
     private:
+
+      const weight_initialization m_weight_initialization;
+
       /** View of the WB matrix, except for the bottom row. */
       DistMat WB_view;
       /** View of the WB_D matrix, except for the bottom row. */
@@ -74,8 +82,6 @@ namespace lbann
     protected:
       void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
       void bp_linearity();
-      void fp_nonlinearity();
-      void bp_nonlinearity();
     };
 
 }

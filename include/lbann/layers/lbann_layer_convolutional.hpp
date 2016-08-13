@@ -45,11 +45,15 @@ namespace lbann
 
     /// Constructor
     convolutional_layer(uint index, int num_dims,
-                        int num_input_channels, const int* input_dims,
-                        int num_output_channels, const int* filter_dims,
-                        const int* conv_pads, const int* conv_strides,
+                        int num_input_channels,
+                        const int* input_dims,
+                        int num_output_channels,
+                        const int* filter_dims,
+                        const int* conv_pads,
+                        const int* conv_strides,
                         uint mini_batch_size,
                         activation_type activation,
+                        weight_initialization init,
                         lbann_comm* comm, Optimizer* optimizer,
                         std::vector<regularizer*> regs,
                         cudnn::cudnn_manager* cudnn=NULL);
@@ -66,7 +70,9 @@ namespace lbann
     void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
     void bp_linearity();
 
-  public:
+  private:
+    /// Weight initialization scheme
+    const weight_initialization m_weight_initialization;
     /// Number of data dimensions
     const int m_num_dims;
     /// Number of input channels
@@ -87,7 +93,6 @@ namespace lbann
     /// Convolution strides
     std::vector<int> m_conv_strides;
 
-  private:
     /// cuDNN convolutional layer
     cudnn::cudnn_convolutional_layer* m_cudnn_layer;
   

@@ -47,12 +47,12 @@ public:
   /** Only apply to specific layers. */
   lbann_callback_io(std::unordered_set<uint> _layers);
   // /** Do some initialization. */
-  // void on_train_begin(Model* m);
+  // void on_train_begin(model* m);
   // /** Apply the learning rate schedule. */
-  // void on_epoch_begin(Model* m);
+  // void on_epoch_begin(model* m);
   /** Report how much I/O has occured per data reader */
-  void on_epoch_end(Model* m);
-  void on_test_end(Model* m);
+  void on_epoch_end(model* m);
+  void on_test_end(model* m);
 private:
   /** Indicies of layers to monitor. */
   std::unordered_set<uint> layer_indices;

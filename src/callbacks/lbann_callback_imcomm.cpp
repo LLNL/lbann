@@ -45,7 +45,7 @@ lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct
 
 }
 
-void lbann_callback_imcomm::setup(Model* m) {
+void lbann_callback_imcomm::setup(model* m) {
   if (ct != NONE) {
     bool add = layer_indices.size() == 0;
     std::vector<Layer*>& layers = m->get_layers();
@@ -54,6 +54,9 @@ void lbann_callback_imcomm::setup(Model* m) {
       if (add || layer_indices.find(idx) != layer_indices.end()) {
         // Ensure index is present (overwrites if already there).
         layer_indices.insert(idx);
+        // Update the layer's effective mini-batch size so it averages properly.
+        layer->set_effective_minibatch_size(
+          layer->get_minibatch_size() * m->get_comm()->get_num_models());
         // Skip adding matrices when we don't need to.
         if (!ct_does_quantization()) continue;
         // TODO: handle case where WB_D is in other matrix distribution
@@ -81,7 +84,7 @@ void lbann_callback_imcomm::setup(Model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_epoch_end(Model* m) {
+void lbann_callback_imcomm::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
@@ -105,7 +108,7 @@ void lbann_callback_imcomm::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_backward_prop_end(Model* m) {
+void lbann_callback_imcomm::on_backward_prop_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {

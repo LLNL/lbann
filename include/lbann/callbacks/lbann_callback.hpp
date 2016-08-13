@@ -51,43 +51,43 @@ public:
     batch_interval(_batch_interval), summarizer(_summarizer) {}
   void set_summarizer(lbann_summary* _summarizer) { summarizer = _summarizer; }
   /** Called once to set up the callback (after all layers are set up). */
-  virtual void setup(Model* m) {}
+  virtual void setup(model* m) {}
   /** Called at the beginning of training. */
-  virtual void on_train_begin(Model* m) {}
+  virtual void on_train_begin(model* m) {}
   /** Called at the end of training. */
-  virtual void on_train_end(Model* m) {}
+  virtual void on_train_end(model* m) {}
   /** Called at the beginning of each epoch. */
-  virtual void on_epoch_begin(Model* m) {}
+  virtual void on_epoch_begin(model* m) {}
   /** Called at the end of each epoch. */
-  virtual void on_epoch_end(Model* m) {}
+  virtual void on_epoch_end(model* m) {}
   /** Called at the beginning of a (mini-)batch. */
-  virtual void on_batch_begin(Model* m) {}
+  virtual void on_batch_begin(model* m) {}
   /** Called at the end of a (mini-)batch. */
-  virtual void on_batch_end(Model* m) {}
+  virtual void on_batch_end(model* m) {}
   /** Called at the beginning of testing. */
-  virtual void on_test_begin(Model* m) {}
+  virtual void on_test_begin(model* m) {}
   /** Called at the end of testing. */
-  virtual void on_test_end(Model* m) {}
+  virtual void on_test_end(model* m) {}
   /** Called at the beginning of validation. */
-  virtual void on_validation_begin(Model* m) {}
+  virtual void on_validation_begin(model* m) {}
   /** Called at the end of validation. */
-  virtual void on_validation_end(Model* m) {}
+  virtual void on_validation_end(model* m) {}
   /** Called when a model begins forward propagation. */
-  virtual void on_forward_prop_begin(Model* m) {}
+  virtual void on_forward_prop_begin(model* m) {}
   /** Called when a layer begins forward propagation. */
-  virtual void on_forward_prop_begin(Model* m, Layer* l) {}
+  virtual void on_forward_prop_begin(model* m, Layer* l) {}
   /** Called when a model ends forward propagation. */
-  virtual void on_forward_prop_end(Model* m) {}
+  virtual void on_forward_prop_end(model* m) {}
   /** Called when a layer ends forward propagation. */
-  virtual void on_forward_prop_end(Model* m, Layer* l) {}
+  virtual void on_forward_prop_end(model* m, Layer* l) {}
   /** Called when a model begins backward propagation. */
-  virtual void on_backward_prop_begin(Model* m) {}
+  virtual void on_backward_prop_begin(model* m) {}
   /** Called when a layer begins backward propagation. */
-  virtual void on_backward_prop_begin(Model* m, Layer* l) {}
+  virtual void on_backward_prop_begin(model* m, Layer* l) {}
   /** Called when a model ends backward propagation. */
-  virtual void on_backward_prop_end(Model* m) {}
+  virtual void on_backward_prop_end(model* m) {}
   /** Called when a layer ends backward propagation. */
-  virtual void on_backward_prop_end(Model* m, Layer* l) {}
+  virtual void on_backward_prop_end(model* m, Layer* l) {}
 
   /** Batch methods should once every this many steps. */
   const int batch_interval;

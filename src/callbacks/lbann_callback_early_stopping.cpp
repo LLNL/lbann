@@ -33,7 +33,7 @@ namespace lbann {
 lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
   patience(patience), last_acc(0.0f), wait(0) {}
 
-void lbann_callback_early_stopping::on_validation_end(Model* m) {
+void lbann_callback_early_stopping::on_validation_end(model* m) {
   DataType acc = m->get_validate_accuracy();
   if (acc > last_acc) {
     last_acc = acc;

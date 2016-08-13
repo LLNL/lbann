@@ -62,6 +62,11 @@ class regularizer;
      * printing if needed.
      */
     virtual void epoch_print() const {}
+    /**
+     * Called on every layer at the end of each epoch to give it the chance to
+     * reset/clean up.
+     */
+    virtual void epoch_reset() {}
     virtual DataType checkGradientMB(Layer& PrevLayer, const DataType Epsilon=1e-4) {
       return 0.0;
     };
@@ -84,6 +89,10 @@ class regularizer;
       bp_time = 0.0;
     }
 
+    /** Return the size of mini-batch this layer uses. */
+    virtual uint get_minibatch_size() const {
+      return m_mini_batch_size;
+    }
     /**
      * Get the "effective" size of a mini-batch.
      * This is for backward propagation, etc. when there are more updates being
@@ -143,9 +152,9 @@ class regularizer;
     /** Handle the layer's linearity in backward propagation. */
     virtual void bp_linearity() {}
     /** Apply the layer's nonlinearity in forward propagation. */
-    virtual void fp_nonlinearity() {}
+    virtual void fp_nonlinearity();
     /** Handle the layer's nonlinearity in backward propagation. */
-    virtual void bp_nonlinearity() {}
+    virtual void bp_nonlinearity();
 
     /** Activation function */
     Activation* m_activation_fn;
