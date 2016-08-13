@@ -39,6 +39,8 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lban
 {
   //  Index = index;
   m_root = 0;
+  m_num_data_per_epoch = 0;
+
 }
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
@@ -56,10 +58,16 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
 void lbann::input_layer_distributed_minibatch::fp_linearity(
   ElMat&, ElMat&, ElMat&, ElMat&) {
   DataReader *data_reader = input_layer::select_data_reader();
+  int num_samples_in_batch = 0;
 
   if (comm->get_rank_in_model() == m_root) {
     Zero(X_local);
-    data_reader->fetch_data(X_local);
+    num_samples_in_batch = data_reader->fetch_data(X_local);
+    bool data_valid = (num_samples_in_batch > 0);
+    if(data_valid) {
+      m_num_data_per_epoch+=num_samples_in_batch;
+    }
+
     /// Set the bias term in the last row of the input matrix
     int linear_data_size = data_reader->get_linearized_data_size();
     for(size_t n = 0; n < m_mini_batch_size; n++) {

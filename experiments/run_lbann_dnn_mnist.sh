@@ -23,7 +23,7 @@ ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
-DROPOUT=0.5
+DROPOUT=-1
 
 RUN="srun"
 
@@ -184,7 +184,6 @@ if [ ${TASKS} -gt 384 ]; then
 TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
-LBANN_TASKS=4
 
 export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
 
