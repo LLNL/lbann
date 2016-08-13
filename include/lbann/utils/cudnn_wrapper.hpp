@@ -240,9 +240,7 @@ namespace cudnn
 namespace cudnn
 {
   class cudnn_manager {};
-
   class cudnn_convolutional_layer {};
-
   class cudnn_pooling_layer {};
 }
 
