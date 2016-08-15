@@ -965,7 +965,13 @@ lbann_quantizer::proportion_threshold_average(
   }
   // Determine how many positive/negative entries we need to keep.
   int pos_to_keep = pos_entries.size() / proportion;
+  if (pos_to_keep == 0) {
+    pos_to_keep = 1;
+  }
   int neg_to_keep = neg_entries.size() / proportion;
+  if (neg_to_keep == 0) {
+    neg_to_keep = 1;
+  }
   // Determine the threshold value with a selection algorithm to keep only the
   // largest pos/neg_to_keep elements.
   // Set to 0 if there's none.
@@ -1033,7 +1039,13 @@ lbann_quantizer::proportion_threshold_average_pos(
   }
   // Determine how many positive/negative entries we need to keep.
   int pos_to_keep = pos_entries.size() / proportion;
-  int neg_to_keep = neg_entries.size() / proportion;
+  if (pos_to_keep == 0) {
+    pos_to_keep = 1;
+  }
+  int neg_to_keep = neg_entries.size()/ proportion;
+  if (neg_to_keep == 0) {
+    neg_to_keep = 1;
+  }
   // Determine the threshold value with a selection algorithm to keep only the
   // largest pos/neg_to_keep elements.
   // Set to 0 if there's none.
