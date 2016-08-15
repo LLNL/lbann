@@ -4,11 +4,9 @@
 You can clone LBANN from the <a href="https://lc.llnl.gov/bitbucket/projects/DL/repos/lbann/">CZ Bitbucket repository</a>:
   
 \code{.sh}
- $ git clone ssh://git@cz-bitbucket.llnl.gov:7999/dl/lbann.git
+ $ git clone git@github.com:LLNL/lbann.git lbann.git
 or 
- $ git clone https://<username>@lc.llnl.gov/bitbucket/scm/dl/lbann.git
- $ git submodule init  # Initialize the Elemental library submodule
- $ git submodule update
+ $ git clone https://github.com/LLNL/lbann.git
 \endcode
 
 \section getting_started_dependencies Dependencies

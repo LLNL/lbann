@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
     TrainingParams trainParams;
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 20;
-    trainParams.MBSize = 10;
+    trainParams.MBSize = 200;
     trainParams.LearnRate = 0.0001;
     trainParams.DropOut = -1.0f;
-    trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
+    trainParams.ProcsPerModel = 2;  // Use one Catalyst node.
     trainParams.IntermodelCommMethod = static_cast<int>(
       lbann_callback_imcomm::COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
-    trainParams.PercentageTrainingSamples = 0.90;
+    trainParams.PercentageTrainingSamples = 0.9001;
     trainParams.PercentageValidationSamples = 1.00;
     PerformanceParams perfParams;
     perfParams.BlockSize = 256;
@@ -184,8 +184,8 @@ int main(int argc, char* argv[])
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
-    input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
-    //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024,
@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
     uint smidx = dnn.add(
       "Softmax", 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
-    target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-    //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);

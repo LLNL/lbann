@@ -72,9 +72,10 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
   }
 
   int pixelcount = ImageWidth * ImageHeight;
+  int current_batch_size = getBatchSize();
 
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; n++) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
     if (n >= (int)ShuffledIndices.size())
       break;
 
@@ -98,8 +99,9 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
     return 0;
   }
 
+  int current_batch_size = getBatchSize();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; n++) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
     if (n >= (int)ShuffledIndices.size())
       break;
 
