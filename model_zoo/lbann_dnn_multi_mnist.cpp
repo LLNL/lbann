@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
     TrainingParams trainParams;
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 20;
-    trainParams.MBSize = 200;
+    trainParams.MBSize = 10;
     trainParams.LearnRate = 0.0001;
     trainParams.DropOut = -1.0f;
-    trainParams.ProcsPerModel = 2;  // Use one Catalyst node.
+    trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
     trainParams.IntermodelCommMethod = static_cast<int>(
-      lbann_callback_imcomm::COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
-    trainParams.PercentageTrainingSamples = 0.9001;
+      lbann_callback_imcomm::ADAPTIVE_THRESH_QUANTIZATION);
+    trainParams.PercentageTrainingSamples = 0.90;
     trainParams.PercentageValidationSamples = 1.00;
     PerformanceParams perfParams;
     perfParams.BlockSize = 256;

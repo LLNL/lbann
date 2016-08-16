@@ -270,7 +270,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
   DistMat adaptive_copy(mat);
   auto adaptive_times = test_adaptive(comm, adaptive_copy, 64);
   if (comm->am_world_master()) {
-    std::cout << "Adaptive 45 " << "(" << mat.Height() << "x" <<
+    std::cout << "Adaptive 64 " << "(" << mat.Height() << "x" <<
       mat.Width() << "):" << std::endl;
     print_stats(adaptive_times);
   }
@@ -278,7 +278,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
   DistMat comp_adaptive_copy(mat);
   auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 64);
   if (comm->am_world_master()) {
-    std::cout << "Compressed adaptive 45 " << "(" << mat.Height() <<
+    std::cout << "Compressed adaptive 64 " << "(" << mat.Height() <<
       "x" << mat.Width() << "):" << std::endl;
     print_stats(comp_adaptive_times);
   }
