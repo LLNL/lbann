@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager();
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
         deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 

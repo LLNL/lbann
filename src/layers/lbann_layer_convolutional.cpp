@@ -105,6 +105,7 @@ convolutional_layer::convolutional_layer(const uint index,
                                              filter_dims,
                                              conv_pads,
                                              conv_strides,
+                                             m_mini_batch_size,
                                              cudnn);
 #endif // __LIB_CUDNN
 
