@@ -128,6 +128,8 @@ void convolutional_layer::setup(const int num_prev_neurons)
     m_cudnn_layer->setup();
 
     // Get output dimensions
+    if(NumNeurons != m_cudnn_layer->m_dst_size)
+      throw lbann_exception("lbann_layer_convolutional: unexpected number of neurons");
     NumNeurons = m_cudnn_layer->m_dst_size;
     for(int i=0; i<m_num_dims; ++i)
       m_output_dims[i] = m_cudnn_layer->m_dst_dims[i+2];

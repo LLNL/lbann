@@ -43,7 +43,7 @@ using namespace cudnn;
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(EXIT_FAILURE);                                               \
+      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
     }                                                                   \
   }
 #define checkCUDNN(status) {                                            \
@@ -51,7 +51,7 @@ using namespace cudnn;
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n"; /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(EXIT_FAILURE);                                               \
+      throw lbann::lbann_exception("cudnn_wrapper: cuDNN error");       \
     }                                                                   \
   }
 
@@ -139,7 +139,7 @@ cudnn_manager::~cudnn_manager()
 }
 
 void cudnn_manager::print_version() const {
-  std::cout << "cudnnGetVersion() :" << (int)cudnnGetVersion() << " , "
+  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
             << std::endl;
 }
@@ -319,7 +319,7 @@ void cudnn_convolutional_layer::setup()
                                                           m_src_desc,
                                                           m_backward_data_algo,
                                                           &m_backward_data_work_space_size));
-                                                 
+
 }
 
 void cudnn_convolutional_layer::forward(const Mat& src,
@@ -444,10 +444,10 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 
 void cudnn_convolutional_layer::backward(const Mat& src,
                                          const Mat& filter,
-                                         const Mat& grad_dst,
-                                         Mat& grad_filter,
-                                         Mat& grad_bias,
-                                         Mat& grad_src)
+                                         const Mat& prev_error_signal,
+                                         Mat& filter_gradient,
+                                         Mat& bias_gradient,
+                                         Mat& error_signal)
 {
 
   // Useful constants
@@ -458,6 +458,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   const int num_gpus = m_cudnn->m_num_gpus;
   const int mini_batch_size = src.Width();
   const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
+  const DataType samples_per_gpu_float = samples_per_gpu;
   m_src_dims[0] = samples_per_gpu;
   m_dst_dims[0] = samples_per_gpu;
   checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
@@ -473,16 +474,16 @@ void cudnn_convolutional_layer::backward(const Mat& src,
 
   // Compute bias gradient
   Mat ones;
-  El::Ones(ones, grad_dst.Width(), El::Int(1));
-  El::Gemv(El::NORMAL, DataType(1.0), grad_dst, ones,
-           DataType(0.0), grad_bias);
+  El::Ones(ones, prev_error_signal.Width(), El::Int(1));
+  El::Gemv(El::NORMAL, DataType(1.0), prev_error_signal, ones,
+           DataType(0.0), bias_gradient);
 
   // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_filter(num_gpus, NULL);
-  std::vector<DataType*> d_grad_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_filter(num_gpus, NULL);
-  std::vector<DataType*> d_grad_src(num_gpus, NULL);
+  std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
+  std::vector<DataType*> d_filter_gradient(num_gpus, NULL);
+  std::vector<DataType*> d_error_signal(num_gpus, NULL);
   std::vector<DataType*> d_filter_work_space(num_gpus, NULL);
   std::vector<DataType*> d_data_work_space(num_gpus, NULL);
 
@@ -499,11 +500,11 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                          m_src_size*samples_per_gpu*sizeof(DataType)));
     checkCUDA(cudaMalloc(&d_filter[i],
                          m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_dst[i],
+    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
                          m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_filter[i],
+    checkCUDA(cudaMalloc(&d_filter_gradient[i],
                          m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_src[i],
+    checkCUDA(cudaMalloc(&d_error_signal[i],
                          m_src_size*samples_per_gpu*sizeof(DataType)));
     if(m_backward_filter_work_space_size > 0) {
       checkCUDA(cudaMalloc(&d_filter_work_space[i],
@@ -521,35 +522,36 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                               cudaMemcpyHostToDevice));
 
     // Transfer inputs and error signal to GPU
-    checkCUDA(cudaMemsetAsync(d_grad_dst[i],
-                              0,
-                              m_dst_size*samples_per_gpu*sizeof(DataType)));
     for(int pos=first_pos; pos<last_pos; ++pos) {
       checkCUDA(cudaMemcpyAsync(d_src[i] + (pos-first_pos)*m_src_size,
                                 src.LockedBuffer(0,pos),
                                 m_src_size*sizeof(DataType),
                                 cudaMemcpyHostToDevice));
-      checkCUDA(cudaMemcpyAsync(d_grad_dst[i] + (pos-first_pos)*m_dst_size,
-                                grad_dst.LockedBuffer(0,pos),
+      checkCUDA(cudaMemcpyAsync(d_prev_error_signal[i] + (pos-first_pos)*m_dst_size,
+                                prev_error_signal.LockedBuffer(0,pos),
                                 m_dst_size*sizeof(DataType),
                                 cudaMemcpyHostToDevice));
+    }
+    if(last_pos - first_pos < samples_per_gpu) {
+      checkCUDA(cudaMemsetAsync(d_prev_error_signal[i] + (last_pos-first_pos)*m_dst_size,
+                                0,
+                                m_dst_size*(samples_per_gpu-(last_pos-first_pos))*sizeof(DataType)));
     }
 
     // Compute filter gradient
     checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->m_handles[i],
-                                              &one,
+                                              &samples_per_gpu_float,
                                               m_src_desc,
                                               d_src[i],
                                               m_dst_desc,
-                                              d_grad_dst[i],
-
+                                              d_prev_error_signal[i],
                                               m_conv_desc,
                                               m_backward_filter_algo,
                                               d_filter_work_space[i],
                                               m_backward_filter_work_space_size,
                                               &zero,
                                               m_filter_desc,
-                                              d_grad_filter[i]));
+                                              d_filter_gradient[i]));
 
     // Compute error signal to "next" layer
     checkCUDNN(cudnnConvolutionBackwardData(m_cudnn->m_handles[i],
@@ -557,19 +559,19 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                             m_filter_desc,
                                             d_filter[i],
                                             m_dst_desc,
-                                            d_grad_dst[i],
+                                            d_prev_error_signal[i],
                                             m_conv_desc,
                                             m_backward_data_algo,
                                             d_data_work_space[i],
                                             m_backward_data_work_space_size,
                                             &zero,
                                             m_src_desc,
-                                            d_grad_src[i]));
+                                            d_error_signal[i]));
     
     // Transfer data from GPU
     for(int pos=first_pos; pos<last_pos; ++pos) {
-      checkCUDA(cudaMemcpyAsync(grad_src.Buffer(0,pos),
-                                d_grad_src[i] + (pos-first_pos)*m_src_size,
+      checkCUDA(cudaMemcpyAsync(error_signal.Buffer(0,pos),
+                                d_error_signal[i] + (pos-first_pos)*m_src_size,
                                 m_src_size*sizeof(DataType),
                                 cudaMemcpyDeviceToHost));
     }
@@ -577,16 +579,16 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   }
   
   // Transfer and accumulate filter gradients from GPUs
-  Mat temp(grad_filter.Height(), grad_filter.Width());
-  El::Zero(grad_filter);
+  Mat temp(filter_gradient.Height(), filter_gradient.Width());
+  El::Zero(filter_gradient);
   El::Zero(temp);
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMemcpy(temp.Buffer(),
-                         d_grad_filter[i],
+                         d_filter_gradient[i],
                          m_filter_size*sizeof(DataType),
                          cudaMemcpyDeviceToHost));
-    grad_filter += temp;
+    filter_gradient += temp;
   }
 
   // Free memory on GPU
@@ -595,9 +597,9 @@ void cudnn_convolutional_layer::backward(const Mat& src,
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
     checkCUDA(cudaFree(d_filter[i]));
-    checkCUDA(cudaFree(d_grad_dst[i]));
-    checkCUDA(cudaFree(d_grad_filter[i]));
-    checkCUDA(cudaFree(d_grad_src[i]));
+    checkCUDA(cudaFree(d_prev_error_signal[i]));
+    checkCUDA(cudaFree(d_filter_gradient[i]));
+    checkCUDA(cudaFree(d_error_signal[i]));
     checkCUDA(cudaFree(d_filter_work_space[i]));
     checkCUDA(cudaFree(d_data_work_space[i]));
   }
@@ -780,8 +782,8 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
 
 void cudnn_pooling_layer::backward(const Mat& src,
                                    const Mat& dst,
-                                   const Mat& grad_dst,
-                                   Mat& grad_src)
+                                   const Mat& prev_error_signal,
+                                   Mat& error_signal)
 {
 
   // Useful constants
@@ -808,8 +810,8 @@ void cudnn_pooling_layer::backward(const Mat& src,
   // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_src(num_gpus, NULL);
+  std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
+  std::vector<DataType*> d_error_signal(num_gpus, NULL);
 
   // Iterate through GPUs
   for(int i=0; i<num_gpus; ++i) {
@@ -824,9 +826,9 @@ void cudnn_pooling_layer::backward(const Mat& src,
                          m_src_size*samples_per_gpu*sizeof(DataType)));
     checkCUDA(cudaMalloc(&d_dst[i],
                          m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_dst[i],
+    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
                          m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_src[i],
+    checkCUDA(cudaMalloc(&d_error_signal[i],
                          m_src_size*samples_per_gpu*sizeof(DataType)));
 
     // Transfer data to GPU
@@ -839,8 +841,8 @@ void cudnn_pooling_layer::backward(const Mat& src,
                                 dst.LockedBuffer(0,pos),
                                 m_dst_size*sizeof(DataType),
                                 cudaMemcpyHostToDevice));
-      checkCUDA(cudaMemcpyAsync(d_grad_dst[i] + (pos-first_pos)*m_dst_size,
-                                grad_dst.LockedBuffer(0,pos),
+      checkCUDA(cudaMemcpyAsync(d_prev_error_signal[i] + (pos-first_pos)*m_dst_size,
+                                prev_error_signal.LockedBuffer(0,pos),
                                 m_dst_size*sizeof(DataType),
                                 cudaMemcpyHostToDevice));
     }
@@ -852,17 +854,17 @@ void cudnn_pooling_layer::backward(const Mat& src,
                                     m_dst_desc,
                                     d_dst[i],
                                     m_dst_desc,
-                                    d_grad_dst[i],
+                                    d_prev_error_signal[i],
                                     m_src_desc,
                                     d_src[i],
                                     &zero,
                                     m_src_desc,
-                                    d_grad_src[i]));
+                                    d_error_signal[i]));
 
     // Transfer data from GPU
     for(int pos=first_pos; pos<last_pos; ++pos) {
-      checkCUDA(cudaMemcpyAsync(grad_src.Buffer(0,pos),
-                                d_grad_src[i] + (pos-first_pos)*m_src_size,
+      checkCUDA(cudaMemcpyAsync(error_signal.Buffer(0,pos),
+                                d_error_signal[i] + (pos-first_pos)*m_src_size,
                                 m_src_size*sizeof(DataType),
                                 cudaMemcpyDeviceToHost));
     }
@@ -875,8 +877,8 @@ void cudnn_pooling_layer::backward(const Mat& src,
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
     checkCUDA(cudaFree(d_dst[i]));
-    checkCUDA(cudaFree(d_grad_dst[i]));
-    checkCUDA(cudaFree(d_grad_src[i]));
+    checkCUDA(cudaFree(d_prev_error_signal[i]));
+    checkCUDA(cudaFree(d_error_signal[i]));
   }
 
 }

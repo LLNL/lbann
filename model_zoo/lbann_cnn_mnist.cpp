@@ -330,11 +330,9 @@ int main(int argc, char* argv[])
         }
 
         // Free dynamically allocated memory
-        // delete target_layer;  // Causes segfault
-        // delete input_layer;  // Causes segfault
         // delete lfac;  // Causes segfault
         delete optimizer;
-        delete comm;
+        // delete comm;  // Causes error
 
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }
