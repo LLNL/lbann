@@ -44,6 +44,7 @@ namespace lbann
     int m_root; /* Which rank is the root of the CircMat */
     Mat X_local;
     CircMat Xs;
+    long m_num_data_per_epoch;
   protected:
     /** Handle forward propagation (arguments are unused.) */
     void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&);

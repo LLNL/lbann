@@ -229,7 +229,7 @@ void print_stats(const std::vector<double>& times) {
   std::cout << "\tStdev: " << stdev << std::endl;
   std::cout << "\tRaw: ";
   for (const auto& t : times) {
-    std::cout << t << " ";
+    std::cout << t << ", ";
   }
   std::cout << std::endl;
 }
@@ -268,17 +268,17 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
   }
   comp_thresh_copy.Empty();
   DistMat adaptive_copy(mat);
-  auto adaptive_times = test_adaptive(comm, adaptive_copy, 45);
+  auto adaptive_times = test_adaptive(comm, adaptive_copy, 64);
   if (comm->am_world_master()) {
-    std::cout << "Adaptive 45 " << "(" << mat.Height() << "x" <<
+    std::cout << "Adaptive 64 " << "(" << mat.Height() << "x" <<
       mat.Width() << "):" << std::endl;
     print_stats(adaptive_times);
   }
   adaptive_copy.Empty();
   DistMat comp_adaptive_copy(mat);
-  auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 45);
+  auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 64);
   if (comm->am_world_master()) {
-    std::cout << "Compressed adaptive 45 " << "(" << mat.Height() <<
+    std::cout << "Compressed adaptive 64 " << "(" << mat.Height() <<
       "x" << mat.Width() << "):" << std::endl;
     print_stats(comp_adaptive_times);
   }

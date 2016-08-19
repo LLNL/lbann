@@ -96,7 +96,7 @@ void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, DataType p) {
 void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
                    DataType radius) {
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
-  El::Uniform(mat, m, n, mean, stddev);
+  El::Uniform(mat, m, n, center, radius);
 #else
   mat.Resize(m, n);
   if (mat.Grid().Rank() == 0) {
