@@ -231,18 +231,22 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
+    // cuDNN convolutional layer forward pass
     m_cudnn_layer->forward(XLocal, filters, bias, ZLocal);
 #else
     throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
   }
   else {
-    // @todo CPU implementation is extremely inefficient
+    // CPU implementation of convolutional layer forward pass
+    // Note: explicitly constructs a dense convolution matrix
+    /// @todo Write a more efficient implementation
 
-    // Apply bias
-    for(int col = 0; col < XLocal.Width(); ++col) {
-      Mat current_output = ZLocal(IR(0,NumNeurons), IR(col));
-      Copy(bias, current_output);
+    // Apply bias to each sample in mini-batch
+    for(int sample = 0; sample < XLocal.Width(); ++sample) {
+      Mat output = ZLocal(IR(0,NumNeurons), IR(sample));
+      Copy(bias, output);
+      output.Set(NumNeurons, 0, DataType(0));
     }
 
     // Initialize convolution matrix
@@ -262,13 +266,13 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
                                     (output_channel+1)*current_filter_size),
                                  ALL);
 
-      // Apply filter to positions in input tensor
-      // Note: each position corresponds to a row of the convolution matrix
-      std::vector<int> pos(m_num_dims);
+      // Iterate through filter offsets
+      // Note: each offset corresponds to a row of the convolution matrix
+      std::vector<int> filter_offset(m_num_dims);
       for(int d = 0; d < m_num_dims; ++d) {
-        pos[d] = -m_conv_pads[d];
+        filter_offset[d] = -m_conv_pads[d];
       }
-      while(pos[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
 
         // Iterate through filter entries
         // Note: each filter entry corresponds to entry of convolution matrix
@@ -277,18 +281,18 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
 
           // Get convolution matrix entry corresponding to filter entry
           int col = 0;
-          int filter_flattened_pos = 0;
+          int filter_flat_pos = 0;
           bool valid_pos = true;
           for(int d = 0; d < m_num_dims; ++d) {
-            if(pos[d] + filter_pos[d] < 0
-               || pos[d] + filter_pos[d] >= m_input_dims[d]) {
+            if(filter_offset[d] + filter_pos[d] < 0
+               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
               valid_pos = false;
               break;
             }
             col *= m_input_dims[d];
-            col += pos[d] + filter_pos[d];
-            filter_flattened_pos *= m_filter_dims[d];
-            filter_flattened_pos += filter_pos[d];
+            col += filter_offset[d] + filter_pos[d];
+            filter_flat_pos *= m_filter_dims[d];
+            filter_flat_pos += filter_pos[d];
           }
 
           if(valid_pos) {
@@ -299,11 +303,11 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
                 ++input_channel) {
 
               // Set convolution matrix entry
-              conv.Set(row, col, filter.Get(filter_flattened_pos, 0));
+              conv.Set(row, col, filter.Get(filter_flat_pos, 0));
 
               // Move to next convolution matrix entry
               col += (XLocal.Height() - 1) / m_num_input_channels;
-              filter_flattened_pos += current_filter_size / m_num_input_channels;
+              filter_flat_pos += current_filter_size / m_num_input_channels;
 
             }
 
@@ -321,11 +325,11 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
         }
 
         // Move filter to next position
-        pos[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
         for(int d = m_num_dims - 1; d > 0; --d) {
-          if(pos[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            pos[d] = -m_conv_pads[d];
-            pos[d-1] += m_conv_strides[d-1];
+          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+            filter_offset[d] = -m_conv_pads[d];
+            filter_offset[d-1] += m_conv_strides[d-1];
           }
         }
 
@@ -374,8 +378,212 @@ void lbann::convolutional_layer::bp_linearity() {
 #endif
   }
   else {
-    // TODO: implement backward pass on CPU
-    throw lbann_exception("lbann_layer_convolutional: convolution backward pass not yet implemented on CPU");
+    // CPU implementation of convolutional layer backward pass
+    // Note: explicitly constructs a dense convolution matrix
+    /// @todo Write a more efficient implementation
+
+    //////////////////////////////////////////////
+    // Construct convolution matrix
+    //////////////////////////////////////////////
+
+    // Initialize convolution matrix
+    // Note: matrix is in form [W 0; 0 1] so that last row of output
+    // is all ones
+    Mat conv;
+    Zeros(conv, NumNeurons + 1, InputLocal.Height());
+    conv.Set(conv.Height() - 1, conv.Width() - 1, DataType(1));
+
+    // Iterate through filters
+    int row = 0;
+    for(int output_channel = 0;
+        output_channel < m_num_output_channels;
+        ++output_channel) {
+      const int current_filter_size = m_filter_size / m_num_output_channels;
+      const Mat filter = FilterLocal(IR(output_channel*current_filter_size,
+                                        (output_channel+1)*current_filter_size),
+                                     ALL);
+
+      // Iterate through filter offsets
+      // Note: each offset corresponds to a row of the convolution matrix
+      std::vector<int> filter_offset(m_num_dims);
+      for(int d = 0; d < m_num_dims; ++d) {
+        filter_offset[d] = -m_conv_pads[d];
+      }
+      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+
+        // Iterate through filter entries
+        // Note: each filter entry corresponds to entry of convolution matrix
+        std::vector<int> filter_pos(m_num_dims, 0);
+        while(filter_pos[0] < m_filter_dims[0]) {
+
+          // Get convolution matrix entry corresponding to filter entry
+          int col = 0;
+          int filter_flat_pos = 0;
+          bool valid_pos = true;
+          for(int d = 0; d < m_num_dims; ++d) {
+            if(filter_offset[d] + filter_pos[d] < 0
+               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
+              valid_pos = false;
+              break;
+            }
+            col *= m_input_dims[d];
+            col += filter_offset[d] + filter_pos[d];
+            filter_flat_pos *= m_filter_dims[d];
+            filter_flat_pos += filter_pos[d];
+          }
+
+          if(valid_pos) {
+
+            // Iterate through input channels
+            for(int input_channel = 0;
+                input_channel < m_num_input_channels;
+                ++input_channel) {
+
+              // Set convolution matrix entry
+              conv.Set(row, col, filter.Get(filter_flat_pos, 0));
+
+              // Move to next convolution matrix entry
+              col += (InputLocal.Height() - 1) / m_num_input_channels;
+              filter_flat_pos += current_filter_size / m_num_input_channels;
+
+            }
+
+          }
+          
+          // Move to next position in filter
+          ++filter_pos[m_num_dims-1];
+          for(int d = m_num_dims - 1; d > 0; --d) {
+            if(filter_pos[d] >= m_filter_dims[d]) {
+              filter_pos[d] = 0;
+              ++filter_pos[d-1];
+            }
+          }
+          
+        }
+
+        // Move filter to next position
+        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+        for(int d = m_num_dims - 1; d > 0; --d) {
+          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+            filter_offset[d] = -m_conv_pads[d];
+            filter_offset[d-1] += m_conv_strides[d-1];
+          }
+        }
+
+        // Move to next row in convolution matrix
+        ++row;
+
+      }
+      
+    }
+
+    //////////////////////////////////////////////
+    // Compute error signal
+    //////////////////////////////////////////////
+
+    // Compute error signal
+    Gemm(TRANSPOSE, NORMAL, DataType(1), conv, OutputDeltaLocal,
+         DataType(0), InputDeltaLocal);
+
+    // Compute bias gradient
+    Mat ones;
+    Ones(ones, InputLocal.Width(), Int(1));
+    Gemv(NORMAL, DataType(1.0), OutputDeltaLocal, ones,
+         DataType(0.0), BiasDeltaLocal);
+
+    // Compute error signal w.r.t. convolution matrix
+    Mat conv_error_signal(conv.Height(), conv.Width());
+    Gemm(NORMAL, TRANSPOSE, DataType(1), OutputDeltaLocal, InputLocal,
+         DataType(0), conv_error_signal);
+
+    // Initialize filter gradient
+    Zero(FilterDeltaLocal);
+
+    // Iterate through filters
+    row = 0;
+    for(int output_channel = 0;
+        output_channel < m_num_output_channels;
+        ++output_channel) {
+      const int current_filter_size = m_filter_size / m_num_output_channels;
+      Mat filter_gradient = FilterDeltaLocal(IR(output_channel*current_filter_size,
+                                                (output_channel+1)*current_filter_size),
+                                             ALL);
+
+      // Iterate through filter offsets
+      // Note: each offset corresponds to a row of the convolution matrix
+      std::vector<int> filter_offset(m_num_dims);
+      for(int d = 0; d < m_num_dims; ++d) {
+        filter_offset[d] = -m_conv_pads[d];
+      }
+      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+
+        // Iterate through filter entries
+        // Note: each filter entry corresponds to entry of convolution matrix
+        std::vector<int> filter_pos(m_num_dims, 0);
+        while(filter_pos[0] < m_filter_dims[0]) {
+
+          // Get convolution matrix entry corresponding to filter entry
+          int col = 0;
+          int filter_flat_pos = 0;
+          bool valid_pos = true;
+          for(int d = 0; d < m_num_dims; ++d) {
+            if(filter_offset[d] + filter_pos[d] < 0
+               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
+              valid_pos = false;
+              break;
+            }
+            col *= m_input_dims[d];
+            col += filter_offset[d] + filter_pos[d];
+            filter_flat_pos *= m_filter_dims[d];
+            filter_flat_pos += filter_pos[d];
+          }
+
+          if(valid_pos) {
+
+            // Iterate through input channels
+            for(int input_channel = 0;
+                input_channel < m_num_input_channels;
+                ++input_channel) {
+
+              // Get error signal for convolution matrix entry
+              filter_gradient.Update(filter_flat_pos, 0,
+                                     conv_error_signal.Get(row, col));
+
+              // Move to next convolution matrix entry
+              col += (InputLocal.Height() - 1) / m_num_input_channels;
+              filter_flat_pos += current_filter_size / m_num_input_channels;
+
+            }
+
+          }
+          
+          // Move to next position in filter
+          ++filter_pos[m_num_dims-1];
+          for(int d = m_num_dims - 1; d > 0; --d) {
+            if(filter_pos[d] >= m_filter_dims[d]) {
+              filter_pos[d] = 0;
+              ++filter_pos[d-1];
+            }
+          }
+          
+        }
+
+        // Move filter to next position
+        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+        for(int d = m_num_dims - 1; d > 0; --d) {
+          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+            filter_offset[d] = -m_conv_pads[d];
+            filter_offset[d-1] += m_conv_strides[d-1];
+          }
+        }
+
+        // Move to next row in convolution matrix
+        ++row;
+
+      }
+      
+    }
+
   }
 
   // Obtain filter gradient with reduction and scaling
