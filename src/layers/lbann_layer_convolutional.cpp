@@ -225,21 +225,120 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
   const Mat& XLocal = X.LockedMatrix();
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
+  Mat filters = WBLocal(IR(0,m_filter_size),ALL);
+  Mat bias = WBLocal(IR(m_filter_size,END),ALL);
 
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    m_cudnn_layer->forward(XLocal,
-                           WBLocal(IR(0,m_filter_size),ALL),
-                           WBLocal(IR(m_filter_size,END),ALL),
-                           ZLocal);
+    m_cudnn_layer->forward(XLocal, filters, bias, ZLocal);
 #else
     throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
   }
   else {
-    // TODO: implement convolution on CPU
-    throw lbann_exception("lbann_layer_convolutional: convolution forward pass not yet implemented on CPU");
+    // @todo CPU implementation is extremely inefficient
+
+    // Apply bias
+    for(int col = 0; col < XLocal.Width(); ++col) {
+      Mat current_output = ZLocal(IR(0,NumNeurons), IR(col));
+      Copy(bias, current_output);
+    }
+
+    // Initialize convolution matrix
+    // Note: matrix is in form [W 0; 0 1] so that last row of output
+    // is all ones
+    Mat conv;
+    Zeros(conv, NumNeurons + 1, XLocal.Height());
+    conv.Set(conv.Height() - 1, conv.Width() - 1, DataType(1));
+
+    // Iterate through filters
+    int row = 0;
+    for(int output_channel = 0;
+        output_channel < m_num_output_channels;
+        ++output_channel) {
+      const int current_filter_size = m_filter_size / m_num_output_channels;
+      const Mat filter = filters(IR(output_channel*current_filter_size,
+                                    (output_channel+1)*current_filter_size),
+                                 ALL);
+
+      // Apply filter to positions in input tensor
+      // Note: each position corresponds to a row of the convolution matrix
+      std::vector<int> pos(m_num_dims);
+      for(int d = 0; d < m_num_dims; ++d) {
+        pos[d] = -m_conv_pads[d];
+      }
+      while(pos[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+
+        // Iterate through filter entries
+        // Note: each filter entry corresponds to entry of convolution matrix
+        std::vector<int> filter_pos(m_num_dims, 0);
+        while(filter_pos[0] < m_filter_dims[0]) {
+
+          // Get convolution matrix entry corresponding to filter entry
+          int col = 0;
+          int filter_flattened_pos = 0;
+          bool valid_pos = true;
+          for(int d = 0; d < m_num_dims; ++d) {
+            if(pos[d] + filter_pos[d] < 0
+               || pos[d] + filter_pos[d] >= m_input_dims[d]) {
+              valid_pos = false;
+              break;
+            }
+            col *= m_input_dims[d];
+            col += pos[d] + filter_pos[d];
+            filter_flattened_pos *= m_filter_dims[d];
+            filter_flattened_pos += filter_pos[d];
+          }
+
+          if(valid_pos) {
+
+            // Iterate through input channels
+            for(int input_channel = 0;
+                input_channel < m_num_input_channels;
+                ++input_channel) {
+
+              // Set convolution matrix entry
+              conv.Set(row, col, filter.Get(filter_flattened_pos, 0));
+
+              // Move to next convolution matrix entry
+              col += (XLocal.Height() - 1) / m_num_input_channels;
+              filter_flattened_pos += current_filter_size / m_num_input_channels;
+
+            }
+
+          }
+          
+          // Move to next position in filter
+          ++filter_pos[m_num_dims-1];
+          for(int d = m_num_dims - 1; d > 0; --d) {
+            if(filter_pos[d] >= m_filter_dims[d]) {
+              filter_pos[d] = 0;
+              ++filter_pos[d-1];
+            }
+          }
+          
+        }
+
+        // Move filter to next position
+        pos[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+        for(int d = m_num_dims - 1; d > 0; --d) {
+          if(pos[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+            pos[d] = -m_conv_pads[d];
+            pos[d-1] += m_conv_strides[d-1];
+          }
+        }
+
+        // Move to next row in convolution matrix
+        ++row;
+
+      }
+      
+    }
+
+    // Apply convolution matrix
+    Gemm(NORMAL, NORMAL, DataType(1), conv, XLocal, DataType(1), ZLocal);
+
   }
 
   // Z and Y are identical after fp linearity step
