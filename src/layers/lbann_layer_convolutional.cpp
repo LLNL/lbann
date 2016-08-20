@@ -252,9 +252,11 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
     // Initialize convolution matrix
     // Note: matrix is in form [W 0; 0 1] so that last row of output
     // is all ones
-    Mat conv;
-    Zeros(conv, NumNeurons + 1, XLocal.Height());
-    conv.Set(conv.Height() - 1, conv.Width() - 1, DataType(1));
+    Mat convolution_matrix;
+    Zeros(convolution_matrix, NumNeurons + 1, XLocal.Height());
+    convolution_matrix.Set(convolution_matrix.Height() - 1,
+                           convolution_matrix.Width() - 1,
+                           DataType(1));
 
     // Iterate through filters
     int row = 0;
@@ -303,7 +305,8 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
                 ++input_channel) {
 
               // Set convolution matrix entry
-              conv.Set(row, col, filter.Get(filter_flat_pos, 0));
+              const DataType w = filter.Get(filter_flat_pos, 0);
+              convolution_matrix.Set(row, col, w);
 
               // Move to next convolution matrix entry
               col += (XLocal.Height() - 1) / m_num_input_channels;
@@ -341,7 +344,9 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
     }
 
     // Apply convolution matrix
-    Gemm(NORMAL, NORMAL, DataType(1), conv, XLocal, DataType(1), ZLocal);
+    Gemm(NORMAL, NORMAL,
+         DataType(1), convolution_matrix, XLocal,
+         DataType(1), ZLocal);
 
   }
 
@@ -353,26 +358,26 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
 void lbann::convolutional_layer::bp_linearity() {
 
   // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> InputProxy(*fp_input); // TODO: store from fp step
-  StarVCMat& Input = InputProxy.Get();
+  DistMatrixReadProxy<DataType,DataType,STAR,VC> inputs_proxy(*fp_input); // TODO: store from fp step
+  StarVCMat& inputs = inputs_proxy.Get();
 
   // Get local matrices
-  const Mat& InputLocal = Input.LockedMatrix();
-  const Mat& FilterLocal = WB->LockedMatrix()(IR(0,m_filter_size),ALL);
-  const Mat& OutputDeltaLocal = Ds->LockedMatrix();
-  Mat FilterDeltaLocal = WB_D->Matrix()(IR(0,m_filter_size),ALL);
-  Mat BiasDeltaLocal = WB_D->Matrix()(IR(m_filter_size,END),ALL);
-  Mat& InputDeltaLocal = Ds_Temp->Matrix();
+  const Mat& inputs_local = inputs.LockedMatrix();
+  const Mat& filters_local = WB->LockedMatrix()(IR(0,m_filter_size),ALL);
+  const Mat& prev_error_signal_local = Ds->LockedMatrix();
+  Mat filters_gradient_local = WB_D->Matrix()(IR(0,m_filter_size),ALL);
+  Mat bias_gradient_local = WB_D->Matrix()(IR(m_filter_size,END),ALL);
+  Mat& error_signal_local = Ds_Temp->Matrix();
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    m_cudnn_layer->backward(InputLocal,
-                            FilterLocal,
-                            OutputDeltaLocal,
-                            FilterDeltaLocal,
-                            BiasDeltaLocal,
-                            InputDeltaLocal);
+    m_cudnn_layer->backward(inputs_local,
+                            filters_local,
+                            prev_error_signal_local,
+                            filters_gradient_local,
+                            bias_gradient_local,
+                            error_signal_local);
 #else
     throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
@@ -389,9 +394,11 @@ void lbann::convolutional_layer::bp_linearity() {
     // Initialize convolution matrix
     // Note: matrix is in form [W 0; 0 1] so that last row of output
     // is all ones
-    Mat conv;
-    Zeros(conv, NumNeurons + 1, InputLocal.Height());
-    conv.Set(conv.Height() - 1, conv.Width() - 1, DataType(1));
+    Mat convolution_matrix;
+    Zeros(convolution_matrix, NumNeurons + 1, inputs_local.Height());
+    convolution_matrix.Set(convolution_matrix.Height() - 1,
+                           convolution_matrix.Width() - 1,
+                           DataType(1));
 
     // Iterate through filters
     int row = 0;
@@ -399,9 +406,9 @@ void lbann::convolutional_layer::bp_linearity() {
         output_channel < m_num_output_channels;
         ++output_channel) {
       const int current_filter_size = m_filter_size / m_num_output_channels;
-      const Mat filter = FilterLocal(IR(output_channel*current_filter_size,
-                                        (output_channel+1)*current_filter_size),
-                                     ALL);
+      const Mat filter = filters_local(IR(output_channel*current_filter_size,
+                                          (output_channel+1)*current_filter_size),
+                                       ALL);
 
       // Iterate through filter offsets
       // Note: each offset corresponds to a row of the convolution matrix
@@ -440,10 +447,11 @@ void lbann::convolutional_layer::bp_linearity() {
                 ++input_channel) {
 
               // Set convolution matrix entry
-              conv.Set(row, col, filter.Get(filter_flat_pos, 0));
+              const DataType w = filter.Get(filter_flat_pos, 0);
+              convolution_matrix.Set(row, col, w);
 
               // Move to next convolution matrix entry
-              col += (InputLocal.Height() - 1) / m_num_input_channels;
+              col += (inputs_local.Height() - 1) / m_num_input_channels;
               filter_flat_pos += current_filter_size / m_num_input_channels;
 
             }
@@ -482,22 +490,25 @@ void lbann::convolutional_layer::bp_linearity() {
     //////////////////////////////////////////////
 
     // Compute error signal
-    Gemm(TRANSPOSE, NORMAL, DataType(1), conv, OutputDeltaLocal,
-         DataType(0), InputDeltaLocal);
+    Gemm(TRANSPOSE, NORMAL,
+         DataType(1), convolution_matrix, prev_error_signal_local,
+         DataType(0), error_signal_local);
 
     // Compute bias gradient
     Mat ones;
-    Ones(ones, InputLocal.Width(), Int(1));
-    Gemv(NORMAL, DataType(1.0), OutputDeltaLocal, ones,
-         DataType(0.0), BiasDeltaLocal);
+    Ones(ones, inputs_local.Width(), Int(1));
+    Gemv(NORMAL, DataType(1.0), prev_error_signal_local, ones,
+         DataType(0.0), bias_gradient_local);
 
     // Compute error signal w.r.t. convolution matrix
-    Mat conv_error_signal(conv.Height(), conv.Width());
-    Gemm(NORMAL, TRANSPOSE, DataType(1), OutputDeltaLocal, InputLocal,
+    Mat conv_error_signal(convolution_matrix.Height(),
+                          convolution_matrix.Width());
+    Gemm(NORMAL, TRANSPOSE,
+         DataType(1), prev_error_signal_local, inputs_local,
          DataType(0), conv_error_signal);
 
     // Initialize filter gradient
-    Zero(FilterDeltaLocal);
+    Zero(filters_gradient_local);
 
     // Iterate through filters
     row = 0;
@@ -505,9 +516,10 @@ void lbann::convolutional_layer::bp_linearity() {
         output_channel < m_num_output_channels;
         ++output_channel) {
       const int current_filter_size = m_filter_size / m_num_output_channels;
-      Mat filter_gradient = FilterDeltaLocal(IR(output_channel*current_filter_size,
-                                                (output_channel+1)*current_filter_size),
-                                             ALL);
+      Mat filter_gradient
+        = filters_gradient_local(IR(output_channel*current_filter_size,
+                                    (output_channel+1)*current_filter_size),
+                                 ALL);
 
       // Iterate through filter offsets
       // Note: each offset corresponds to a row of the convolution matrix
@@ -550,7 +562,7 @@ void lbann::convolutional_layer::bp_linearity() {
                                      conv_error_signal.Get(row, col));
 
               // Move to next convolution matrix entry
-              col += (InputLocal.Height() - 1) / m_num_input_channels;
+              col += (inputs_local.Height() - 1) / m_num_input_channels;
               filter_flat_pos += current_filter_size / m_num_input_channels;
 
             }
