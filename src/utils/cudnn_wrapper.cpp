@@ -43,7 +43,7 @@ using namespace cudnn;
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(EXIT_FAILURE);                                               \
+      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
     }                                                                   \
   }
 #define checkCUDNN(status) {                                            \
@@ -51,21 +51,9 @@ using namespace cudnn;
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n"; /* TODO: remove */ \
       cudaDeviceReset();                                                \
-      exit(EXIT_FAILURE);                                               \
+      throw lbann::lbann_exception("cudnn_wrapper: cuDNN error");       \
     }                                                                   \
   }
-
-/// Determine number of GPUs to use
-/** If num_gpus<0, then report total number of available GPUs */
-int get_num_gpus(const int num_gpus)
-{
-  int total_num_gpus;
-  checkCUDA(cudaGetDeviceCount(&total_num_gpus));
-  if(num_gpus < 0 || num_gpus > total_num_gpus)
-    return total_num_gpus;
-  else
-    return num_gpus;
-}
 
 /// Get cuDNN data type associated with C++ data type
 /** Half-, single-, and double-precision floating point data types */
@@ -92,35 +80,66 @@ cudnnPoolingMode_t get_cudnn_pool_mode(const int pool_mode)
   }
 }
 
-cudnn_manager::cudnn_manager(const int num_gpus)
-  : m_num_gpus(get_num_gpus(num_gpus))
+cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
+  : comm(_comm)
 {
 
-  // Check that at least one GPU is allocated
-  if(m_num_gpus < 1)
-    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
-
-  // Initialize cuDNN on each GPU
-  m_handles.resize(m_num_gpus, NULL);
-  for(int dev=0; dev<m_num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDNN(cudnnCreate(&m_handles[dev]));
+  // Determine number of available GPUs
+  checkCUDA(cudaGetDeviceCount(&m_num_total_gpus));
+  if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
+    m_num_total_gpus = max_num_gpus;
   }
+  if(m_num_total_gpus < 1) {
+    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
+  }
+
+  // Determine number of MPI ranks on current compute node
+  const int rank_in_node = comm->get_rank_in_node();
+  const int procs_per_node = comm->get_procs_per_node();
+  
+  // Case where compute node has more GPUs than MPI ranks
+  // TODO: smarter way to allocate GPUs to MPI ranks
+  if(m_num_total_gpus >= procs_per_node) {
+    int gpu = rank_in_node;
+    while(gpu < m_num_total_gpus) {
+      checkCUDA(cudaSetDevice(gpu));
+      m_gpus.push_back(gpu);
+      m_handles.push_back(NULL);
+      checkCUDNN(cudnnCreate(&m_handles.back()));
+      gpu += procs_per_node;
+    }
+  }
+
+  // Case where compute node has fewers GPUs than MPI ranks
+  // TODO: smarter way to allocate GPUs to MPI ranks
+  else {
+    const int gpu = rank_in_node % m_num_total_gpus;
+    checkCUDA(cudaSetDevice(gpu));
+    m_gpus.push_back(gpu);
+    m_handles.push_back(NULL);
+    checkCUDNN(cudnnCreate(&m_handles.back()));
+  }
+
+  // Get number of GPUs for current MPI rank
+  m_num_gpus = m_gpus.size();
 
 }
 
 cudnn_manager::~cudnn_manager()
 {
-  for(int dev=0; dev<m_handles.size(); ++dev) {
-    if(m_handles[dev]) {
-      checkCUDA(cudaSetDevice(dev));
-      checkCUDNN(cudnnDestroy(m_handles[dev]));
+  // Destroy cuDNN handles
+  for(int i=0; i<m_gpus.size(); ++i) {
+    const int gpu = m_gpus[i];
+    cudnnHandle_t handle = m_handles[i];
+    if(handle) {
+      checkCUDA(cudaSetDevice(gpu));
+      checkCUDNN(cudnnDestroy(handle));
     }
   }
 }
 
 void cudnn_manager::print_version() const {
-  std::cout << "cudnnGetVersion() :" << (int)cudnnGetVersion() << " , "
+  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
             << std::endl;
 }
@@ -133,6 +152,7 @@ cudnn_convolutional_layer
                             const int* filter_dims,
                             const int* conv_pads,
                             const int* conv_strides,
+                            const int mini_batch_size,
                             cudnn_manager* cudnn)
   : m_num_dims(num_dims), m_cudnn(cudnn),
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
@@ -140,17 +160,20 @@ cudnn_convolutional_layer
     m_filter_desc(NULL), m_conv_desc(NULL)
 {
 
+  // Get number of GPUs
+  int num_gpus = m_cudnn->m_num_gpus;
+
   // Get input tensor dimensions
   m_src_dims.resize(m_num_dims+2);
-  m_src_dims[0] = 1;
+  m_src_dims[0] = (mini_batch_size + num_gpus - 1) / num_gpus;
   m_src_dims[1] = src_channels;
   for(int i=0; i<m_num_dims; ++i)
     m_src_dims[i+2] = src_dims[i];
   m_src_size = 1;
-  for(int i=0; i<m_src_dims.size(); ++i)
+  for(int i=1; i<m_src_dims.size(); ++i)
     m_src_size *= m_src_dims[i];
 
-  // Get output tensor dimensions
+  // Get filter tensor dimensions
   m_filter_dims.resize(m_num_dims+2);
   m_filter_dims[0] = dst_channels;
   m_filter_dims[1] = src_channels;
@@ -196,15 +219,15 @@ void cudnn_convolutional_layer::setup()
   checkCUDNN(cudnnCreateConvolutionDescriptor(&m_conv_desc));
 
   // Set input tensor descriptor
-  std::vector<int> src_strides(m_num_dims+2);
-  src_strides[m_num_dims + 1]  = 1;
+  m_src_strides = std::vector<int>(m_num_dims+2);
+  m_src_strides[m_num_dims + 1]  = 1;
   for(int i=m_num_dims; i>=0; --i)
-    src_strides[i] = src_strides[i+1] * m_src_dims[i+1];
+    m_src_strides[i] = m_src_strides[i+1] * m_src_dims[i+1];
   checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
                                         m_cudnn_data_type,
                                         m_num_dims+2,
                                         m_src_dims.data(),
-                                        src_strides.data()));
+                                        m_src_strides.data()));
 
   // Set filter descriptor
   checkCUDNN(cudnnSetFilterNdDescriptor(m_filter_desc,
@@ -232,22 +255,21 @@ void cudnn_convolutional_layer::setup()
                                                    m_num_dims+2,
                                                    m_dst_dims.data()));
   m_dst_size = 1;
-  for(int i=0; i<m_dst_dims.size(); ++i)
+  for(int i=1; i<m_dst_dims.size(); ++i)
     m_dst_size *= m_dst_dims[i];
                                  
   // Set output tensor descriptor
-  std::vector<int> dst_strides(m_num_dims+2);
-  dst_strides[m_num_dims + 1]  = 1;
+  m_dst_strides = std::vector<int>(m_num_dims+2);
+  m_dst_strides[m_num_dims + 1]  = 1;
   for(int i=m_num_dims; i>=0; --i)
-    dst_strides[i] = dst_strides[i+1] * m_dst_dims[i+1];
+    m_dst_strides[i] = m_dst_strides[i+1] * m_dst_dims[i+1];
   checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
                                         m_cudnn_data_type,
                                         m_num_dims+2,
                                         m_dst_dims.data(),
-                                        dst_strides.data()));
+                                        m_dst_strides.data()));
 
   // Choose forward pass algorithm
-  // Note: assume all GPUs are identical to GPU 0
   checkCUDNN(cudnnGetConvolutionForwardAlgorithm(m_cudnn->m_handles[0],
                                                  m_src_desc,
                                                  m_filter_desc,
@@ -265,7 +287,6 @@ void cudnn_convolutional_layer::setup()
                                                      &m_forward_work_space_size));
 
   // Choose filter backward pass algorithm
-  // Note: assume all GPUs are identical to GPU 0
   checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(m_cudnn->m_handles[0],
                                                         m_src_desc,
                                                         m_dst_desc,
@@ -283,7 +304,6 @@ void cudnn_convolutional_layer::setup()
                                                             &m_backward_filter_work_space_size));
 
   // Choose data backward pass algorithm
-  // Note: assume all GPUs are identical to GPU 0
   checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(m_cudnn->m_handles[0],
                                                       m_filter_desc,
                                                       m_dst_desc,
@@ -299,7 +319,7 @@ void cudnn_convolutional_layer::setup()
                                                           m_src_desc,
                                                           m_backward_data_algo,
                                                           &m_backward_data_work_space_size));
-                                                 
+
 }
 
 void cudnn_convolutional_layer::forward(const Mat& src,
@@ -311,222 +331,277 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   // Useful constants
   const DataType one = 1.0;
   const DataType zero = 0.0;
+
+  // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
-  
-  // Allocate memory on GPUs
+  const int mini_batch_size = src.Width();
+  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
+  m_src_dims[0] = samples_per_gpu;
+  m_dst_dims[0] = samples_per_gpu;
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_src_dims.data(),
+                                        m_src_strides.data()));
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_dst_dims.data(),
+                                        m_dst_strides.data()));
+
+  // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_filter(num_gpus, NULL);
   std::vector<DataType*> d_bias(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
   std::vector<DataType*> d_work_space(num_gpus, NULL);
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMalloc(&d_src[dev], m_src_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_filter[dev], m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_bias[dev], m_dst_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[dev], m_dst_size*sizeof(DataType)));
-    if(m_forward_work_space_size > 0)
-      checkCUDA(cudaMalloc(&d_work_space[dev], m_forward_work_space_size));
-  }
   
-  // Transfer filter data to GPU
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMemcpyAsync(d_filter[dev],
+  // Iterate through GPUs
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+
+    // Data samples assigned to GPU
+    const int first_pos = i * samples_per_gpu;
+    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
+    
+    // Allocate memory on GPU
+    checkCUDA(cudaMalloc(&d_src[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_filter[i],
+                         m_filter_size*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_bias[i],
+                         m_dst_size*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_dst[i],
+                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    if(m_forward_work_space_size > 0) {
+      checkCUDA(cudaMalloc(&d_work_space[i],
+                           m_forward_work_space_size));
+    }
+
+    // Transfer filters to GPU
+    checkCUDA(cudaMemcpyAsync(d_filter[i],
                               filter.LockedBuffer(),
                               m_filter_size*sizeof(DataType),
                               cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpyAsync(d_bias[dev],
+
+    // Transfer inputs to GPU
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(d_src[i] + (pos-first_pos)*m_src_size,
+                                src.LockedBuffer(0,pos),
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+    }
+
+    // Transfer biases to GPU
+    checkCUDA(cudaMemcpyAsync(d_bias[i],
                               bias.LockedBuffer(),
                               m_dst_size*sizeof(DataType),
                               cudaMemcpyHostToDevice));
-  }
-
-  // Perform convolution with each data sample
-  for(int j=0; j<src.Width(); ++j) {
-    
-    // Determine GPU
-    const int dev = j % num_gpus;
-    checkCUDA(cudaSetDevice(dev));
-
-    // Transfer input data to GPU
-    checkCUDA(cudaMemcpyAsync(d_src[dev],
-                              src.LockedBuffer(0,j),
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpyAsync(d_dst[dev],
-                              d_bias[dev],
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyDeviceToDevice));
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(d_dst[i] + (pos-first_pos)*m_dst_size,
+                                d_bias[i],
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyDeviceToDevice));
+    }
 
     // Perform convolution
-    checkCUDNN(cudnnConvolutionForward(m_cudnn->m_handles[dev],
+    checkCUDNN(cudnnConvolutionForward(m_cudnn->m_handles[i],
                                        &one,
                                        m_src_desc,
-                                       d_src[dev],
+                                       d_src[i],
                                        m_filter_desc,
-                                       d_filter[dev],
+                                       d_filter[i],
                                        m_conv_desc,
                                        m_forward_algo,
-                                       d_work_space[dev],
+                                       d_work_space[i],
                                        m_forward_work_space_size,
                                        &one,
                                        m_dst_desc,
-                                       d_dst[dev]));
+                                       d_dst[i]));
     
-    // Transfer output data from GPU
-    checkCUDA(cudaMemcpyAsync(dst.Buffer(0,j),
-                              d_dst[dev],
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyDeviceToHost));
+    // Transfer outputs from GPU
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(dst.Buffer(0,pos),
+                                d_dst[i] + (pos-first_pos)*m_dst_size,
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyDeviceToHost));
+    }
 
   }
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaFree(d_src[dev]));
-    checkCUDA(cudaFree(d_filter[dev]));
-    checkCUDA(cudaFree(d_dst[dev]));
-    checkCUDA(cudaFree(d_work_space[dev]));
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaFree(d_src[i]));
+    checkCUDA(cudaFree(d_filter[i]));
+    checkCUDA(cudaFree(d_bias[i]));
+    checkCUDA(cudaFree(d_dst[i]));
+    checkCUDA(cudaFree(d_work_space[i]));
   }
 
 }
 
 void cudnn_convolutional_layer::backward(const Mat& src,
                                          const Mat& filter,
-                                         const Mat& grad_dst,
-                                         Mat& grad_filter,
-                                         Mat& grad_bias,
-                                         Mat& grad_src)
+                                         const Mat& prev_error_signal,
+                                         Mat& filter_gradient,
+                                         Mat& bias_gradient,
+                                         Mat& error_signal)
 {
 
   // Useful constants
   const DataType one = 1.0;
   const DataType zero = 0.0;
+
+  // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
+  const int mini_batch_size = src.Width();
+  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
+  const DataType samples_per_gpu_float = samples_per_gpu;
+  m_src_dims[0] = samples_per_gpu;
+  m_dst_dims[0] = samples_per_gpu;
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_src_dims.data(),
+                                        m_src_strides.data()));
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_dst_dims.data(),
+                                        m_dst_strides.data()));
 
   // Compute bias gradient
   Mat ones;
-  El::Ones(ones, grad_dst.Width(), El::Int(1));
-  El::Gemv(El::NORMAL, DataType(1.0), grad_dst, ones,
-           DataType(0.0), grad_bias);
+  El::Ones(ones, prev_error_signal.Width(), El::Int(1));
+  El::Gemv(El::NORMAL, DataType(1.0), prev_error_signal, ones,
+           DataType(0.0), bias_gradient);
 
-  // Allocate memory on GPUs
+  // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_filter(num_gpus, NULL);
-  std::vector<DataType*> d_grad_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_filter(num_gpus, NULL);
-  std::vector<DataType*> d_grad_src(num_gpus, NULL);
+  std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
+  std::vector<DataType*> d_filter_gradient(num_gpus, NULL);
+  std::vector<DataType*> d_error_signal(num_gpus, NULL);
   std::vector<DataType*> d_filter_work_space(num_gpus, NULL);
   std::vector<DataType*> d_data_work_space(num_gpus, NULL);
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMalloc(&d_src[dev], m_src_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_filter[dev], m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_dst[dev], m_dst_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_filter[dev], m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_src[dev], m_src_size*sizeof(DataType)));
-    if(m_backward_filter_work_space_size > 0)
-      checkCUDA(cudaMalloc(&d_filter_work_space[dev],
-                           m_backward_filter_work_space_size));
-    if(m_backward_data_work_space_size > 0)
-      checkCUDA(cudaMalloc(&d_data_work_space[dev],
-                           m_backward_data_work_space_size));
-  }
 
-  // Initialize filter and filter gradient on GPU
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMemcpyAsync(d_filter[dev],
+  // Iterate through GPUs
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+
+    // Data samples assigned to GPU
+    const int first_pos = i * samples_per_gpu;
+    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
+
+    // Allocate memory on GPU
+    checkCUDA(cudaMalloc(&d_src[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_filter[i],
+                         m_filter_size*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
+                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_filter_gradient[i],
+                         m_filter_size*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_error_signal[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    if(m_backward_filter_work_space_size > 0) {
+      checkCUDA(cudaMalloc(&d_filter_work_space[i],
+                           m_backward_filter_work_space_size));
+    }
+    if(m_backward_data_work_space_size > 0) {
+      checkCUDA(cudaMalloc(&d_data_work_space[i],
+                           m_backward_data_work_space_size));
+    }
+
+    // Transfer filters to GPU
+    checkCUDA(cudaMemcpyAsync(d_filter[i],
                               filter.LockedBuffer(),
                               m_filter_size*sizeof(DataType),
                               cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemsetAsync(d_grad_filter[dev],
-                              0,
-                              m_filter_size*sizeof(DataType)));
-  }
 
-  // Compute gradients for each data sample
-  for(int j=0; j<src.Width(); ++j) {
-    
-    // Determine GPU
-    const int dev = j % num_gpus;
-    checkCUDA(cudaSetDevice(dev));
+    // Transfer inputs and error signal to GPU
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(d_src[i] + (pos-first_pos)*m_src_size,
+                                src.LockedBuffer(0,pos),
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+      checkCUDA(cudaMemcpyAsync(d_prev_error_signal[i] + (pos-first_pos)*m_dst_size,
+                                prev_error_signal.LockedBuffer(0,pos),
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+    }
+    if(last_pos - first_pos < samples_per_gpu) {
+      checkCUDA(cudaMemsetAsync(d_prev_error_signal[i] + (last_pos-first_pos)*m_dst_size,
+                                0,
+                                m_dst_size*(samples_per_gpu-(last_pos-first_pos))*sizeof(DataType)));
+    }
 
-    // Transfer data to GPU
-    checkCUDA(cudaMemcpyAsync(d_src[dev],
-                              src.LockedBuffer(0,j),
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpyAsync(d_grad_dst[dev],
-                              grad_dst.LockedBuffer(0,j),
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
-
-    // Compute gradient w.r.t. filter
-    checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->m_handles[dev],
-                                              &one,
+    // Compute filter gradient
+    checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->m_handles[i],
+                                              &samples_per_gpu_float,
                                               m_src_desc,
-                                              d_src[dev],
+                                              d_src[i],
                                               m_dst_desc,
-                                              d_grad_dst[dev],
+                                              d_prev_error_signal[i],
                                               m_conv_desc,
                                               m_backward_filter_algo,
-                                              d_filter_work_space[dev],
+                                              d_filter_work_space[i],
                                               m_backward_filter_work_space_size,
-                                              &one,
+                                              &zero,
                                               m_filter_desc,
-                                              d_grad_filter[dev]));
+                                              d_filter_gradient[i]));
 
-    // Compute gradient w.r.t. input
-    checkCUDNN(cudnnConvolutionBackwardData(m_cudnn->m_handles[dev],
+    // Compute error signal to "next" layer
+    checkCUDNN(cudnnConvolutionBackwardData(m_cudnn->m_handles[i],
                                             &one,
                                             m_filter_desc,
-                                            d_filter[dev],
+                                            d_filter[i],
                                             m_dst_desc,
-                                            d_grad_dst[dev],
+                                            d_prev_error_signal[i],
                                             m_conv_desc,
                                             m_backward_data_algo,
-                                            d_data_work_space[dev],
+                                            d_data_work_space[i],
                                             m_backward_data_work_space_size,
                                             &zero,
                                             m_src_desc,
-                                            d_grad_src[dev]));
+                                            d_error_signal[i]));
     
     // Transfer data from GPU
-    checkCUDA(cudaMemcpyAsync(grad_src.Buffer(0,j),
-                              d_grad_src[dev],
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyDeviceToHost));
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(error_signal.Buffer(0,pos),
+                                d_error_signal[i] + (pos-first_pos)*m_src_size,
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyDeviceToHost));
+    }
 
   }
   
   // Transfer and accumulate filter gradients from GPUs
-  Mat temp(grad_filter.Height(), grad_filter.Width());
-  El::Zero(grad_filter);
+  Mat temp(filter_gradient.Height(), filter_gradient.Width());
+  El::Zero(filter_gradient);
   El::Zero(temp);
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMemcpy(temp.Buffer(),
-                         d_grad_filter[dev],
+                         d_filter_gradient[i],
                          m_filter_size*sizeof(DataType),
                          cudaMemcpyDeviceToHost));
-    grad_filter += temp;
+    filter_gradient += temp;
   }
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaFree(d_src[dev]));
-    checkCUDA(cudaFree(d_filter[dev]));
-    checkCUDA(cudaFree(d_grad_dst[dev]));
-    checkCUDA(cudaFree(d_grad_filter[dev]));
-    checkCUDA(cudaFree(d_grad_src[dev]));
-    checkCUDA(cudaFree(d_filter_work_space[dev]));
-    checkCUDA(cudaFree(d_data_work_space[dev]));
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaFree(d_src[i]));
+    checkCUDA(cudaFree(d_filter[i]));
+    checkCUDA(cudaFree(d_prev_error_signal[i]));
+    checkCUDA(cudaFree(d_filter_gradient[i]));
+    checkCUDA(cudaFree(d_error_signal[i]));
+    checkCUDA(cudaFree(d_filter_work_space[i]));
+    checkCUDA(cudaFree(d_data_work_space[i]));
   }
 
 }
@@ -583,15 +658,15 @@ void cudnn_pooling_layer::setup()
   checkCUDNN(cudnnCreatePoolingDescriptor(&m_pool_desc));
 
   // Set input tensor descriptor
-  std::vector<int> src_strides(m_num_dims+2);
-  src_strides[m_num_dims + 1]  = 1;
+  m_src_strides = std::vector<int>(m_num_dims+2);
+  m_src_strides[m_num_dims + 1]  = 1;
   for(int i=m_num_dims; i>=0; --i)
-    src_strides[i] = src_strides[i+1] * m_src_dims[i+1];
+    m_src_strides[i] = m_src_strides[i+1] * m_src_dims[i+1];
   checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
                                         m_cudnn_data_type,
                                         m_num_dims+2,
                                         m_src_dims.data(),
-                                        src_strides.data()));
+                                        m_src_strides.data()));
 
   // Set pooling descriptor
   checkCUDNN(cudnnSetPoolingNdDescriptor(m_pool_desc,
@@ -613,15 +688,15 @@ void cudnn_pooling_layer::setup()
     m_dst_size *= m_dst_dims[i];
 
   // Set output tensor descriptor
-  std::vector<int> dst_strides(m_num_dims+2);
-  dst_strides[m_num_dims + 1]  = 1;
+  m_dst_strides= std::vector<int>(m_num_dims+2);
+  m_dst_strides[m_num_dims + 1]  = 1;
   for(int i=m_num_dims; i>=0; --i)
-    dst_strides[i] = dst_strides[i+1] * m_dst_dims[i+1];
+    m_dst_strides[i] = m_dst_strides[i+1] * m_dst_dims[i+1];
   checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
                                         m_cudnn_data_type,
                                         m_num_dims+2,
                                         m_dst_dims.data(),
-                                        dst_strides.data()));
+                                        m_dst_strides.data()));
 
 }
 
@@ -631,133 +706,179 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
   // Useful constants
   const DataType one = 1.0;
   const DataType zero = 0.0;
+
+  // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
-  
-  // Allocate memory on GPUs
+  const int mini_batch_size = src.Width();
+  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
+  m_src_dims[0] = samples_per_gpu;
+  m_dst_dims[0] = samples_per_gpu;
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_src_dims.data(),
+                                        m_src_strides.data()));
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_dst_dims.data(),
+                                        m_dst_strides.data()));
+
+  // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMalloc(&d_src[dev], m_src_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[dev], m_dst_size*sizeof(DataType)));
-  }
+  
+  // Iterate through GPUs
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+ 
+    // Data samples assigned to GPU
+    const int first_pos = i * samples_per_gpu;
+    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
 
-  // Perform pooling with each data sample
-  for(int j=0; j<src.Width(); ++j) {
-    
-    // Determine GPU
-    const int dev = j % num_gpus;
-    checkCUDA(cudaSetDevice(dev));
+    // Allocate memory on GPU
+    checkCUDA(cudaMalloc(&d_src[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_dst[i],
+                         m_dst_size*samples_per_gpu*sizeof(DataType)));
 
-    // Transfer input data to GPU
-    checkCUDA(cudaMemcpyAsync(d_src[dev],
-                              src.LockedBuffer(0,j),
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
+    // Transfer inputs to GPU
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(d_src[i] + (pos-first_pos)*m_src_size,
+                                src.LockedBuffer(0,pos),
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+    }
 
     // Perform pooling
-    checkCUDNN(cudnnPoolingForward(m_cudnn->m_handles[dev],
+    checkCUDNN(cudnnPoolingForward(m_cudnn->m_handles[i],
                                    m_pool_desc,
                                    &one,
                                    m_src_desc,
-                                   d_src[dev],
+                                   d_src[i],
                                    &zero,
                                    m_dst_desc,
-                                   d_dst[dev]));
-    
-    // Transfer output data from GPU
-    checkCUDA(cudaMemcpyAsync(dst.Buffer(0,j),
-                              d_dst[dev],
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyDeviceToHost));
+                                   d_dst[i]));
+
+    // Transfer outputs from GPU
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(dst.Buffer(0,pos),
+                                d_dst[i] + (pos-first_pos)*m_dst_size,
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyDeviceToHost));
+    }
 
   }
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaFree(d_src[dev]));
-    checkCUDA(cudaFree(d_dst[dev]));
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaFree(d_src[i]));
+    checkCUDA(cudaFree(d_dst[i]));
   }
 
 }
 
 void cudnn_pooling_layer::backward(const Mat& src,
                                    const Mat& dst,
-                                   const Mat& grad_dst,
-                                   Mat& grad_src)
+                                   const Mat& prev_error_signal,
+                                   Mat& error_signal)
 {
 
   // Useful constants
   const DataType one = 1.0;
   const DataType zero = 0.0;
-  const int num_gpus = m_cudnn->m_num_gpus;
 
-  // Allocate memory on GPUs
+  // Adjust input and output tensor dimensions to match input
+  const int num_gpus = m_cudnn->m_num_gpus;
+  const int mini_batch_size = src.Width();
+  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
+  m_src_dims[0] = samples_per_gpu;
+  m_dst_dims[0] = samples_per_gpu;
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_src_dims.data(),
+                                        m_src_strides.data()));
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
+                                        m_cudnn_data_type,
+                                        m_num_dims+2,
+                                        m_dst_dims.data(),
+                                        m_dst_strides.data()));
+
+  // GPU memory pointers
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_dst(num_gpus, NULL);
-  std::vector<DataType*> d_grad_src(num_gpus, NULL);
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaMalloc(&d_src[dev], m_src_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[dev], m_dst_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_dst[dev], m_dst_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_grad_src[dev], m_src_size*sizeof(DataType)));
-  }
+  std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
+  std::vector<DataType*> d_error_signal(num_gpus, NULL);
 
-  // Compute gradients for each data sample
-  for(int j=0; j<src.Width(); ++j) {
-    
-    // Determine GPU
-    const int dev = j % num_gpus;
-    checkCUDA(cudaSetDevice(dev));
+  // Iterate through GPUs
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+
+    // Data samples assigned to GPU
+    const int first_pos = i * samples_per_gpu;
+    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
+
+    // Allocate memory on GPU
+    checkCUDA(cudaMalloc(&d_src[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_dst[i],
+                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
+                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    checkCUDA(cudaMalloc(&d_error_signal[i],
+                         m_src_size*samples_per_gpu*sizeof(DataType)));
 
     // Transfer data to GPU
-    checkCUDA(cudaMemcpyAsync(d_src[dev],
-                              src.LockedBuffer(0,j),
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpyAsync(d_dst[dev],
-                              dst.LockedBuffer(0,j),
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
-    checkCUDA(cudaMemcpyAsync(d_grad_dst[dev],
-                              grad_dst.LockedBuffer(0,j),
-                              m_dst_size*sizeof(DataType),
-                              cudaMemcpyHostToDevice));
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(d_src[i] + (pos-first_pos)*m_src_size,
+                                src.LockedBuffer(0,pos),
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+      checkCUDA(cudaMemcpyAsync(d_dst[i] + (pos-first_pos)*m_dst_size,
+                                dst.LockedBuffer(0,pos),
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+      checkCUDA(cudaMemcpyAsync(d_prev_error_signal[i] + (pos-first_pos)*m_dst_size,
+                                prev_error_signal.LockedBuffer(0,pos),
+                                m_dst_size*sizeof(DataType),
+                                cudaMemcpyHostToDevice));
+    }
 
-    // Compute gradient w.r.t. input
-    checkCUDNN(cudnnPoolingBackward(m_cudnn->m_handles[dev],
+    // Compute error signal
+    checkCUDNN(cudnnPoolingBackward(m_cudnn->m_handles[i],
                                     m_pool_desc,
                                     &one,
                                     m_dst_desc,
-                                    d_dst[dev],
+                                    d_dst[i],
                                     m_dst_desc,
-                                    d_grad_dst[dev],
+                                    d_prev_error_signal[i],
                                     m_src_desc,
-                                    d_src[dev],
+                                    d_src[i],
                                     &zero,
                                     m_src_desc,
-                                    d_grad_src[dev]));
-    
+                                    d_error_signal[i]));
+
     // Transfer data from GPU
-    checkCUDA(cudaMemcpyAsync(grad_src.Buffer(0,j),
-                              d_grad_src[dev],
-                              m_src_size*sizeof(DataType),
-                              cudaMemcpyDeviceToHost));
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(error_signal.Buffer(0,pos),
+                                d_error_signal[i] + (pos-first_pos)*m_src_size,
+                                m_src_size*sizeof(DataType),
+                                cudaMemcpyDeviceToHost));
+    }
 
   }
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
-  for(int dev=0; dev<num_gpus; ++dev) {
-    checkCUDA(cudaSetDevice(dev));
-    checkCUDA(cudaFree(d_src[dev]));
-    checkCUDA(cudaFree(d_dst[dev]));
-    checkCUDA(cudaFree(d_grad_dst[dev]));
-    checkCUDA(cudaFree(d_grad_src[dev]));
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaFree(d_src[i]));
+    checkCUDA(cudaFree(d_dst[i]));
+    checkCUDA(cudaFree(d_prev_error_signal[i]));
+    checkCUDA(cudaFree(d_error_signal[i]));
   }
 
 }

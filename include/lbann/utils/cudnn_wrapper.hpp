@@ -35,30 +35,45 @@
 #include <cuda.h>
 #include "cudnn.h"
 #include "lbann/lbann_base.hpp"
+#include "lbann/lbann_comm.hpp"
 
 namespace cudnn
 {
 
-  /// cuDNN manager
+  /** cuDNN manager class */
   class cudnn_manager
   {
 
   public:
-    /// Constructor
-    /** If num_gpus<0, then use all available GPUs.  If num_gpus=0,
-     *  then exit with an error. */
-    cudnn_manager(int num_gpus = -1);
+    /** Constructor
+     *  @param _comm         Pointer to LBANN communicator
+     *  @param max_num_gpus  Maximum Number of available GPUs. If
+     *                       negative, then use all available GPUs.
+     */
+    cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus = -1);
 
-    /// Destructor
+    /** Destructor */
     ~cudnn_manager();
 
-    /// Print cuDNN version information
+    /** Print cuDNN version information to standard output */
     void print_version() const;
 
   public:
-    /// Number of GPUs
-    const int m_num_gpus;
-    /// List of cuDNN handles
+
+    /** LBANN communicator */
+    lbann::lbann_comm* comm;
+
+    /** Number of GPUs for current MPI rank */
+    int m_num_gpus;
+
+    /** Number of available GPUs */
+    int m_num_total_gpus;
+
+    /** GPUs for current MPI rank
+     *  Length is not necessarily m_num_gpus */
+    std::vector<int> m_gpus;
+    /** cuDNN handles for current MPI rank
+     *  Length is not necessarily m_num_gpus */
     std::vector<cudnnHandle_t> m_handles;
 
   };
@@ -66,7 +81,6 @@ namespace cudnn
   /// cuDNN convolutional layer
   class cudnn_convolutional_layer
   {
-
   public:
 
     /// Constructor
@@ -77,6 +91,7 @@ namespace cudnn
                               const int* filter_dims,
                               const int* conv_pads,
                               const int* conv_strides,
+                              int mini_batch_size,
                               cudnn_manager* cudnn);
     
     /// Destructor
@@ -86,9 +101,11 @@ namespace cudnn
     void setup();
 
     /// Convolutional layer forward pass
+    /** @todo Handle case where GPU can't hold entire mini-batch. */
     void forward(const Mat& src, const Mat& filter, const Mat& bias, Mat& dst);
     
     /// Convolutional layer backward pass
+    /** @todo Handle case where GPU can't hold entire mini-batch. */
     void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
                   Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
 
@@ -154,6 +171,11 @@ namespace cudnn
     /// Backward pass data algorithm work space size (in bytes)
     /** Compute gradient w.r.t. data, which is passed to previous layer. */
     size_t m_backward_data_work_space_size;
+
+    /// Input tensor strides
+    std::vector<int> m_src_strides;
+    /// Output tensor strides
+    std::vector<int> m_dst_strides;
 
   };
 
@@ -230,6 +252,11 @@ namespace cudnn
     cudnnTensorDescriptor_t m_dst_desc;
     /// Pooling descriptor
     cudnnPoolingDescriptor_t m_pool_desc;
+
+    /// Input tensor strides
+    std::vector<int> m_src_strides;
+    /// Output tensor strides
+    std::vector<int> m_dst_strides;
 
   };
 

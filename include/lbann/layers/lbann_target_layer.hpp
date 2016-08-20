@@ -38,6 +38,11 @@ namespace lbann
     DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
     DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
 
+    /** No non-linearity */
+    void fp_nonlinearity() {}
+    /** No non-linearity */
+    void bp_nonlinearity() {}
+
   public:
     bool m_shared_data_reader;
   };

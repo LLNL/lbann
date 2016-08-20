@@ -71,6 +71,8 @@ namespace lbann
     protected:
       void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
       void bp_linearity();
+      void fp_nonlinearity() {}
+      void bp_nonlinearity() {}
 
     public:
         DataType   WBL2NormSum;

@@ -165,6 +165,8 @@ void lbann::pooling_layer::fp_linearity(ElMat& _WB,
 #endif
   }
   else {
+    
+
     // TODO: implement pooling on CPU
     std::cerr << "Error: pooling forward pass not implemented on CPU\n";
     exit(EXIT_FAILURE);
