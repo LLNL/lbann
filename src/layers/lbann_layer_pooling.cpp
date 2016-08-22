@@ -27,26 +27,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer_pooling.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 using namespace std;
 using namespace El;
 using namespace lbann;
 
 pooling_layer::pooling_layer(const uint index,
-                             const int  num_dims,
-                             const int  num_channels,
+                             const int num_dims,
+                             const int num_channels,
                              const int* input_dims,
                              const int* pool_dims,
                              const int* pool_pads,
                              const int* pool_strides,
-                             const int  pool_mode,
+                             const pool_mode _pool_mode,
                              const uint mini_batch_size,
                              activation_type activation,
                              lbann_comm* comm,
                              std::vector<regularizer*> regs,
                              cudnn::cudnn_manager* cudnn)
   : Layer(index, comm, NULL, mini_batch_size, activation, regs),
-    m_pool_mode(pool_mode),
+    m_pool_mode(_pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels)
 {
 
@@ -88,7 +89,7 @@ pooling_layer::pooling_layer(const uint index,
     m_cudnn_layer = new cudnn::cudnn_pooling_layer(num_dims,
                                                    num_channels,
                                                    input_dims,
-                                                   pool_mode,
+                                                   m_pool_mode,
                                                    pool_dims,
                                                    pool_pads,
                                                    pool_strides,
@@ -114,6 +115,8 @@ void pooling_layer::setup(const int num_prev_neurons)
     m_cudnn_layer->setup();
 
     // Get output dimensions
+    if(NumNeurons != m_cudnn_layer->m_dst_size)
+      throw lbann_exception("lbann_layer_pooling: unexpected number of neurons");
     NumNeurons = m_cudnn_layer->m_dst_size;
     for(int i=0; i<m_num_dims; ++i)
       m_output_dims[i] = m_cudnn_layer->m_dst_dims[i+2];
@@ -125,8 +128,7 @@ void pooling_layer::setup(const int num_prev_neurons)
   for(int i=0; i<m_num_dims; ++i)
     num_inputs *= m_input_dims[i];
   if(num_inputs != num_prev_neurons) {
-    std::cerr << "Error: pooling layer input dimensions don't match number of input neurons\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_pooling: unexpected number of input neurons");
   }
 
   // Initialize matrices
@@ -160,13 +162,10 @@ void lbann::pooling_layer::fp_linearity(ElMat& _WB,
 #ifdef __LIB_CUDNN
     m_cudnn_layer->forward(XLocal, ZLocal);
 #else
-    std::cerr << "Error: cuDNN not detected\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
 #endif
   }
   else {
-    
-
     // TODO: implement pooling on CPU
     std::cerr << "Error: pooling forward pass not implemented on CPU\n";
     exit(EXIT_FAILURE);
@@ -197,8 +196,7 @@ void lbann::pooling_layer::bp_linearity() {
                             OutputDeltaLocal,
                             InputDeltaLocal);
 #else
-    std::cerr << "Error: cuDNN not detected\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
 #endif
   }
   else {

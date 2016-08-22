@@ -141,8 +141,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
   for(int i=0; i<m_num_dims; ++i)
     num_inputs *= m_input_dims[i];
   if(num_inputs != num_prev_neurons) {
-    std::cerr << "Error: convolutional layer input dimensions don't match number of input neurons\n";
-    exit(EXIT_FAILURE);
+    throw lbann_exception("lbann_layer_convolutional: unexpected number of input neurons");
   }
 
   // Initialize optimizer
@@ -238,9 +237,12 @@ void lbann::convolutional_layer::fp_linearity(ElMat& _WB,
 #endif
   }
   else {
+
+    ////////////////////////////////////////////////////////////
     // CPU implementation of convolutional layer forward pass
     // Note: explicitly constructs a dense convolution matrix
     /// @todo Write a more efficient implementation
+    ////////////////////////////////////////////////////////////
 
     // Apply bias to each sample in mini-batch
     for(int sample = 0; sample < XLocal.Width(); ++sample) {
@@ -383,9 +385,12 @@ void lbann::convolutional_layer::bp_linearity() {
 #endif
   }
   else {
+
+    ////////////////////////////////////////////////////////////
     // CPU implementation of convolutional layer backward pass
     // Note: explicitly constructs a dense convolution matrix
     /// @todo Write a more efficient implementation
+    ////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////
     // Construct convolution matrix

@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
           int poolWindowDims[] = {2, 2};
           int poolPads[] = {0, 0};
           int poolStrides[] = {2, 2};
-          int poolMode = 0;
+          pool_mode poolMode = pool_mode::max;
           pooling_layer* layer
             = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,

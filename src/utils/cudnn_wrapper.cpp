@@ -70,13 +70,17 @@ cudnnDataType_t get_cudnn_data_type()
 
 /// Get cuDNN pooling mode
 /** 0 = max, 1 = average (include padding), 2 = average (exclude padding)*/
-cudnnPoolingMode_t get_cudnn_pool_mode(const int pool_mode)
+cudnnPoolingMode_t get_cudnn_pool_mode(const pool_mode mode)
 {
-  switch(pool_mode) {
-  case 0: return CUDNN_POOLING_MAX;
-  case 1: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-  case 2: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-  default: throw lbann::lbann_exception("cudnn_wrapper: invalid pooling mode");
+  switch(mode) {
+  case pool_mode::max:
+    return CUDNN_POOLING_MAX;
+  case pool_mode::average:
+    return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+  case pool_mode::average_no_pad:
+    return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+  default:
+    throw lbann::lbann_exception("cudnn_wrapper: invalid pooling mode");
   }
 }
 
@@ -606,17 +610,17 @@ void cudnn_convolutional_layer::backward(const Mat& src,
 
 }
 
-cudnn_pooling_layer::cudnn_pooling_layer(const int  num_dims,
-                                         const int  channels,
+cudnn_pooling_layer::cudnn_pooling_layer(const int num_dims,
+                                         const int channels,
                                          const int* src_dims,
-                                         const int  pool_mode,
+                                         const pool_mode _pool_mode,
                                          const int* pool_dims,
                                          const int* pool_pads,
                                          const int* pool_strides,
                                          cudnn_manager* cudnn)
   : m_num_dims(num_dims), m_cudnn(cudnn),
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
-    m_pool_mode(get_cudnn_pool_mode(pool_mode)),
+    m_pool_mode(get_cudnn_pool_mode(_pool_mode)),
     m_src_desc(NULL), m_dst_desc(NULL), m_pool_desc(NULL)
 {
   

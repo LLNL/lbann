@@ -44,10 +44,14 @@ namespace lbann
   public:
 
     /// Constructor
-    pooling_layer(uint index, int num_dims,
-                  int num_channels, const int* input_dims,
-                  const int* pool_dims, const int* pool_pads,
-                  const int* pool_strides, int pool_mode,
+    pooling_layer(uint index,
+                  int num_dims,
+                  int num_channels,
+                  const int* input_dims,
+                  const int* pool_dims,
+                  const int* pool_pads,
+                  const int* pool_strides,
+                  pool_mode _pool_mode,
                   uint mini_batch_size,
                   activation_type activation,
                   lbann_comm* comm,
@@ -69,10 +73,7 @@ namespace lbann
   public:
 
     /// Pooling mode
-    /** 0 = max, 1 = average (include padding), 2 = average (exclude
-     *  padding)
-     */
-    const int m_pool_mode;
+    const pool_mode m_pool_mode;
 
     /// Number of data dimensions
     const int m_num_dims;

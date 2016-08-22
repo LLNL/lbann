@@ -189,7 +189,7 @@ namespace cudnn
     cudnn_pooling_layer(int num_dims,
                         int channels,
                         const int* src_dims,
-                        int pool_mode,
+                        pool_mode _pool_mode,
                         const int* pool_dims,
                         const int* pool_pads,
                         const int* pool_strides,
