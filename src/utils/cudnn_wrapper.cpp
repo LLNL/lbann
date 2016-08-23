@@ -116,6 +116,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
 
   // Case where compute node has fewers GPUs than MPI ranks
   // TODO: smarter way to allocate GPUs to MPI ranks
+  // TODO: we get CUDNN_STATUS_INTERNAL_ERROR when creating cuDNN handle
   else {
     const int gpu = rank_in_node % m_num_total_gpus;
     checkCUDA(cudaSetDevice(gpu));
