@@ -65,15 +65,14 @@ namespace cudnn
 
     /** Number of GPUs for current MPI rank */
     int m_num_gpus;
-
     /** Number of available GPUs */
     int m_num_total_gpus;
 
-    /** GPUs for current MPI rank
-     *  Length is not necessarily m_num_gpus */
+    /** GPUs for current MPI rank */
     std::vector<int> m_gpus;
-    /** cuDNN handles for current MPI rank
-     *  Length is not necessarily m_num_gpus */
+    /** CUDA streams for current MPI rank */
+    std::vector<cudaStream_t> m_streams;
+    /** cuDNN handles for current MPI rank */
     std::vector<cudnnHandle_t> m_handles;
 
   };
