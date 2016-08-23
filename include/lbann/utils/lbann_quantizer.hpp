@@ -156,10 +156,12 @@ public:
    * @param delta Whether to do delta encoding (default false).
    */
   void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
-                                   int proportion, bool delta = false);
+                                   int proportion, bool delta = false,
+                                   bool colwise = true);
   void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
                                    Mat& qerror, int proportion,
-                                   bool delta = false);
+                                   bool delta = false,
+                                   bool colwise = true);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
@@ -167,9 +169,9 @@ public:
    * @param delta Whether delta encoding was used (default false).
    */
   void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                                     bool delta = false);
+                                     bool delta = false, bool colwise = true);
   void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                                     bool delta = false);
+                                     bool delta = false, bool colwise = true);
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
    */
@@ -288,7 +290,7 @@ private:
   /** log_2(GR_M). */
   static const uqtype GR_K = 4;
   /** Number of samples to use in proportion_threshold_average. */
-  static const int NUM_PTA_SAMPLES = 2048;
+  static const int NUM_PTA_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
   static const int NUM_ONEBIT_SAMPLES = 128;
 
@@ -354,11 +356,11 @@ private:
   /** As with threshold_unquantize_apply, but adaptively. */
   void adaptive_threshold_unquantize_apply(
     const ThreshQuantized& q, Mat& mat, std::vector<unsigned>& positions,
-    bool delta = false);
+    bool delta = false, bool colwise = true);
   /** As with threshold_quantize_apply, but adaptively. */
   void adaptive_threshold_quantize_apply(
     const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
-    std::vector<unsigned>& positions, bool delta = false);
+    std::vector<unsigned>& positions, bool delta = false, bool colwise = true);
   /**
    * Internal version of proportion_threshold_average that only
    * examines the positions in positions.
