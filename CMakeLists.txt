@@ -47,6 +47,14 @@ include_directories("${PROJECT_SOURCE_DIR}")
 include(CheckSymbolExists)
 
 #
+# Link in OpenMP
+#
+find_package(OpenMP QUIET)
+if (OPENMP_FOUND)
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+#
 # Link in CUDA,cuDNN
 #
 find_package(CUDA QUIET)

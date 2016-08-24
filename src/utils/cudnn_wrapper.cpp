@@ -371,6 +371,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   std::vector<DataType*> d_bias(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
   std::vector<DataType*> d_work_space(num_gpus, NULL);
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMalloc(&d_src[i],
@@ -388,6 +389,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   }
 
   // Iterate through GPUs
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     cudaStream_t& stream = m_cudnn->m_streams[i];
@@ -460,6 +462,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
@@ -515,6 +518,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   std::vector<DataType*> d_error_signal(num_gpus, NULL);
   std::vector<DataType*> d_filter_work_space(num_gpus, NULL);
   std::vector<DataType*> d_data_work_space(num_gpus, NULL);
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMalloc(&d_src[i],
@@ -538,6 +542,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   }
 
   // Iterate through GPUs
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     cudaStream_t& stream = m_cudnn->m_streams[i];
@@ -638,6 +643,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
@@ -772,6 +778,7 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);
   std::vector<DataType*> d_dst(num_gpus, NULL);
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMalloc(&d_src[i],
@@ -781,6 +788,7 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
   }
   
   // Iterate through GPUs
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     cudaStream_t& stream = m_cudnn->m_streams[i];
@@ -827,6 +835,7 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
@@ -867,6 +876,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
   std::vector<DataType*> d_dst(num_gpus, NULL);
   std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
   std::vector<DataType*> d_error_signal(num_gpus, NULL);
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMalloc(&d_src[i],
@@ -880,6 +890,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
   }
 
   // Iterate through GPUs
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     cudaStream_t& stream = m_cudnn->m_streams[i];
@@ -952,6 +963,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
 
   // Free memory on GPU
   // Note: cudaFree is synchronous
+#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaFree(d_src[i]));
