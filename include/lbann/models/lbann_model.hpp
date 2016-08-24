@@ -74,6 +74,9 @@ public:
   inline int64_t get_cur_step() const { return m_current_step; }
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const { return m_execution_mode; }
+  inline int64_t set_current_mini_batch_size(int64_t mini_batch_size) 
+  { m_current_mini_batch = mini_batch_size; return m_current_mini_batch; }
+  inline int64_t get_current_mini_batch_size() { return m_current_mini_batch; }
 
   /** Produce summary information (if any). */
   virtual void summarize(lbann_summary& summarizer) {}
@@ -92,6 +95,8 @@ protected:
   int64_t m_current_epoch;
   /** Most recent/current training step for the model. */
   int64_t m_current_step;
+  /** Size of the current mini-batch */
+  int64_t m_current_mini_batch;
   /** Communicator for the model. */
   lbann_comm* comm;
   /** Current callbacks to process. */

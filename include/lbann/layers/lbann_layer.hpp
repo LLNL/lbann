@@ -46,6 +46,7 @@ namespace lbann
 
 // Forward-declare this.
 class regularizer;
+class model;
 
   class Layer {
   public:
@@ -147,6 +148,7 @@ class regularizer;
     ElMat *bp_input;
 
     lbann_comm* comm;
+    model* neural_network_model;
   protected:
     /** Apply the layer's linear update in forward propagation. */
     virtual void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y) {}
