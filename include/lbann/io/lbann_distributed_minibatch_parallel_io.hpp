@@ -59,7 +59,8 @@ namespace lbann
     int m_num_parallel_readers_validating; /** Number of parallel readers (I/O streams) for testing data  */
     int m_num_parallel_readers_testing; /** Number of parallel readers (I/O streams) for testing data  */
     int m_local_reader_done;
-    uint m_mini_batch_size; /** Size of the mini-batch */
+    uint m_max_mini_batch_size; /** Maximum size of the mini-batch */
+    uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
 
     long m_num_data_per_epoch;
