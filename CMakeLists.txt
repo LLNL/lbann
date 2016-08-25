@@ -44,6 +44,12 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/include/lbann")
 include_directories("${PROJECT_SOURCE_DIR}")
 
+#
+# Include CUB
+# TODO: make nice
+# 
+include_directories("/g/g17/moon13/cub")
+
 include(CheckSymbolExists)
 
 #

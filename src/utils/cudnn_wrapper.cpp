@@ -85,7 +85,8 @@ cudnnPoolingMode_t get_cudnn_pool_mode(const pool_mode mode)
 }
 
 cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
-  : comm(_comm)
+  : comm(_comm),
+    m_gpu_memory(cub::CachingDeviceAllocator(8u, 3u))
 {
 
   // Determine number of available GPUs
@@ -373,18 +374,30 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   std::vector<DataType*> d_work_space(num_gpus, NULL);
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaMalloc(&d_src[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_filter[i],
-                         m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_bias[i],
-                         m_dst_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[i],
-                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    const int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_src[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_filter[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_bias[i],
+                                        m_dst_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_dst[i],
+                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
     if(m_forward_work_space_size > 0) {
-      checkCUDA(cudaMalloc(&d_work_space[i],
-                           m_forward_work_space_size));
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &d_work_space[i],
+                                          m_forward_work_space_size,
+                                          stream));
     }
   }
 
@@ -461,15 +474,23 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   }
 
   // Free memory on GPU
-  // Note: cudaFree is synchronous
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaFree(d_src[i]));
-    checkCUDA(cudaFree(d_filter[i]));
-    checkCUDA(cudaFree(d_bias[i]));
-    checkCUDA(cudaFree(d_dst[i]));
-    checkCUDA(cudaFree(d_work_space[i]));
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    if(d_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
+    }
+  }
+
+  // Synchronize CUDA streams
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
   }
 
 }
@@ -520,24 +541,40 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   std::vector<DataType*> d_data_work_space(num_gpus, NULL);
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaMalloc(&d_src[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_filter[i],
-                         m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
-                         m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_filter_gradient[i],
-                         m_filter_size*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_error_signal[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    const int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_src[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_filter[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_prev_error_signal[i],
+                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_filter_gradient[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_error_signal[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
     if(m_backward_filter_work_space_size > 0) {
-      checkCUDA(cudaMalloc(&d_filter_work_space[i],
-                           m_backward_filter_work_space_size));
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &d_filter_work_space[i],
+                                          m_backward_filter_work_space_size,
+                                          stream));
     }
     if(m_backward_data_work_space_size > 0) {
-      checkCUDA(cudaMalloc(&d_data_work_space[i],
-                           m_backward_data_work_space_size));
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &d_data_work_space[i],
+                                          m_backward_data_work_space_size,
+                                          stream));
     }
   }
 
@@ -642,17 +679,27 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   }
 
   // Free memory on GPU
-  // Note: cudaFree is synchronous
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaFree(d_src[i]));
-    checkCUDA(cudaFree(d_filter[i]));
-    checkCUDA(cudaFree(d_prev_error_signal[i]));
-    checkCUDA(cudaFree(d_filter_gradient[i]));
-    checkCUDA(cudaFree(d_error_signal[i]));
-    checkCUDA(cudaFree(d_filter_work_space[i]));
-    checkCUDA(cudaFree(d_data_work_space[i]));
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
+    if(d_filter_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_work_space[i]));
+    }
+    if(d_data_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_data_work_space[i]));
+    }
+  }
+
+  // Synchronize CUDA streams
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
   }
 
 }
@@ -780,11 +827,17 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
   std::vector<DataType*> d_dst(num_gpus, NULL);
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaMalloc(&d_src[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[i],
-                         m_dst_size*samples_per_gpu*sizeof(DataType)));
+    const int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_src[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_dst[i],
+                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
   }
   
   // Iterate through GPUs
@@ -834,12 +887,19 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
   }
 
   // Free memory on GPU
-  // Note: cudaFree is synchronous
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaFree(d_src[i]));
-    checkCUDA(cudaFree(d_dst[i]));
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+  }
+
+
+  // Synchronize CUDA streams
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
   }
 
 }
@@ -878,15 +938,25 @@ void cudnn_pooling_layer::backward(const Mat& src,
   std::vector<DataType*> d_error_signal(num_gpus, NULL);
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaMalloc(&d_src[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_dst[i],
-                         m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_prev_error_signal[i],
-                         m_dst_size*samples_per_gpu*sizeof(DataType)));
-    checkCUDA(cudaMalloc(&d_error_signal[i],
-                         m_src_size*samples_per_gpu*sizeof(DataType)));
+    const int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_src[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_dst[i],
+                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_prev_error_signal[i],
+                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_error_signal[i],
+                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        stream));
   }
 
   // Iterate through GPUs
@@ -962,14 +1032,20 @@ void cudnn_pooling_layer::backward(const Mat& src,
   }
 
   // Free memory on GPU
-  // Note: cudaFree is synchronous
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaFree(d_src[i]));
-    checkCUDA(cudaFree(d_dst[i]));
-    checkCUDA(cudaFree(d_prev_error_signal[i]));
-    checkCUDA(cudaFree(d_error_signal[i]));
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = m_cudnn->m_gpu_memory;
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
+  }
+
+  // Synchronize CUDA streams
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
   }
 
 }

@@ -33,7 +33,8 @@
 
 #include <vector>
 #include <cuda.h>
-#include "cudnn.h"
+#include <cudnn.h>
+#include <cub/util_allocator.cuh>
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 
@@ -67,6 +68,10 @@ namespace cudnn
     int m_num_gpus;
     /** Number of available GPUs */
     int m_num_total_gpus;
+
+    /** GPU memory allocator
+     *  Faster than cudaMalloc/cudaFree since it uses a memory pool */
+    cub::CachingDeviceAllocator m_gpu_memory;
 
     /** GPUs for current MPI rank */
     std::vector<int> m_gpus;
