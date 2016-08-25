@@ -59,6 +59,29 @@ void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
   El::Gaussian(mat, m, n, mean, stddev);
 #else
+  gaussian_fill_procdet(mat, m, n, mean, stddev);
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+}
+
+void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p) {
+#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+  El::Bernoulli(mat, m, n, p);
+#else
+  bernoulli_fill_procdet(mat, m, n, p);
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES  
+}
+
+void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
+                   DataType radius) {
+#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+  El::Uniform(mat, m, n, center, radius);
+#else
+  uniform_fill_procdet(mat, m, n, center, radius);
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+}
+
+void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
+                           DataType stddev) {
   mat.Resize(m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(n * m);
@@ -71,13 +94,9 @@ void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
     }
   }
   mat.ProcessQueues();
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
-void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, DataType p) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
-  El::Bernoulli(mat, m, n, p);
-#else
+void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
   mat.Resize(m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(m * n);
@@ -90,14 +109,10 @@ void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, DataType p) {
     }
   }
   mat.ProcessQueues();
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES  
 }
 
-void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
-                   DataType radius) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
-  El::Uniform(mat, m, n, center, radius);
-#else
+void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
+                          DataType radius) {
   mat.Resize(m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(n * m);
@@ -111,7 +126,6 @@ void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
     }
   }
   mat.ProcessQueues();
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
 }  // namespace lbann
