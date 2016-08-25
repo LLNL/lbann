@@ -288,7 +288,7 @@ private:
   /** log_2(GR_M). */
   static const uqtype GR_K = 4;
   /** Number of samples to use in proportion_threshold_average. */
-  static const int NUM_PTA_SAMPLES = 2048;
+  static const int NUM_PTA_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
   static const int NUM_ONEBIT_SAMPLES = 128;
 
@@ -351,21 +351,11 @@ private:
                                 bool delta = false, DataType pos_avg = 0.0f,
                                 DataType neg_avg = 0.0f);
 
-  /** As with threshold_unquantize_apply, but adaptively. */
-  void adaptive_threshold_unquantize_apply(
-    const ThreshQuantized& q, Mat& mat, std::vector<unsigned>& positions,
-    bool delta = false);
-  /** As with threshold_quantize_apply, but adaptively. */
-  void adaptive_threshold_quantize_apply(
-    const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
-    std::vector<unsigned>& positions, bool delta = false);
   /**
-   * Internal version of proportion_threshold_average that only
-   * examines the positions in positions.
+   * Variant of adaptive_threshold_quantize that adds its entries.
    */
-  std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average_pos(
-    const Mat& mat, const Mat& qerror, int proportion,
-    const std::vector<unsigned>& positions, bool sample = true);
+  void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
+                                         bool delta = false);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
