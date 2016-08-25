@@ -106,101 +106,32 @@ DataType reLU_layer::reLUPrime(DataType z)
 ////////////////////////////////////////////////////////////////////////////////
 void sigmoid_layer::forwardProp(ElMat& m)
 {
-  const Int ngrows = m.Height();
-  const Int nrows = m.LocalHeight();
-  const Int ncols = m.LocalWidth();
   EntrywiseMap(m, std::function<DataType(DataType)>(sigmoid));
-
-  const Int r = nrows-1;
-  const Int gr = m.GlobalRow(r);
-  if(gr == ngrows - 1) { // Bias row
-    for (int c = 0; c < ncols; c++) {
-      m.SetLocal(r, c, 1.0); // Set the bias row back to 1.0
-    }
-  }
 }
 
 void sigmoid_layer::backwardProp(ElMat& m)
 {
-  const Int ngrows = m.Height();
-  const Int nrows = m.LocalHeight();
-  const Int ncols = m.LocalWidth();
   EntrywiseMap(m, std::function<DataType(DataType)>(sigmoidPrime));
-
-  const Int r = nrows-1;
-  const Int gr = m.GlobalRow(r);
-  if(gr == ngrows - 1) { // Bias row
-    for (int c = 0; c < ncols; c++) {
-      m.SetLocal(r, c, 0.0); // Set the bias row back to 0.0
-    }
-  }
 }
 
 void tanh_layer::forwardProp(ElMat& m)
 {
-  const Int ngrows = m.Height();
-  const Int nrows = m.LocalHeight();
-  const Int ncols = m.LocalWidth();
   EntrywiseMap(m, std::function<DataType(DataType)>(tanh));
-
-  const Int r = nrows-1;
-  const Int gr = m.GlobalRow(r);
-  if(gr == ngrows - 1) { // Bias row
-    for (int c = 0; c < ncols; c++) {
-      m.SetLocal(r, c, 1.0); // Set the bias row back to 1.0
-    }
-  }
 }
 
 void tanh_layer::backwardProp(ElMat& m)
 {
-  const Int ngrows = m.Height();
-  const Int nrows = m.LocalHeight();
-  const Int ncols = m.LocalWidth();
   EntrywiseMap(m, std::function<DataType(DataType)>(tanhPrime));
-
-  const Int r = nrows-1;
-  const Int gr = m.GlobalRow(r);
-  if(gr == ngrows - 1) { // Bias row
-    for (int c = 0; c < ncols; c++) {
-      m.SetLocal(r, c, 0.0); // Set the bias row back to 0.0
-    }
-  }
 }
 
 void reLU_layer::forwardProp(ElMat& m)
 {
-    const Int ngrows = m.Height();
-    const Int ngcols = m.Width();
-    const Int nrows = m.LocalHeight();
-    const Int ncols = m.LocalWidth();
-
     EntrywiseMap(m, std::function<DataType(DataType)>(reLU));
-
-    const Int r = nrows-1;
-    const Int gr = m.GlobalRow(r);
-    if(gr == ngrows - 1) { // Bias row
-        for (int c = 0; c < ncols; c++) {
-            m.SetLocal(r, c, 1.0); // Set the bias row back to 1.0
-        }
-    }
 }
 
 void reLU_layer::backwardProp(ElMat& m)
 {
-  const Int ngrows = m.Height();
-  const Int nrows = m.LocalHeight();
-  const Int ncols = m.LocalWidth();
-
   EntrywiseMap(m, std::function<DataType(DataType)>(reLUPrime));
-
-  const Int r = nrows-1;
-  const Int gr = m.GlobalRow(r);
-  if(gr == ngrows - 1) { // Bias row
-    for (int c = 0; c < ncols; c++) {
-      m.SetLocal(r, c, 0.0); // Set the bias row back to 0.0
-    }
-  }
 }
 
 }  // namespace lbann

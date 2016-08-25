@@ -42,10 +42,21 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
+
 }
 
 lbann::data_reader_nci::data_reader_nci(int batchSize)
   : data_reader_nci(batchSize, true) {}
+
+//copy constructor
+lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
+  : DataReader((const DataReader&) source),
+  m_num_labels(source.m_num_labels), m_num_samples(source.m_num_samples),
+  m_num_features(source.m_num_features),m_labels(source.m_labels),
+  m_index_map(source.m_index_map),m_infile(source.m_infile)
+  {
+
+  }
 
 lbann::data_reader_nci::~data_reader_nci()
 {
@@ -83,13 +94,14 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     int index = ShuffledIndices[n];
 
     if(index == 0) continue; //skip header
-    else std::getline(ifs.seekg(m_index_map[index-1]+index),line); 
+    else std::getline(ifs.seekg(m_index_map[index-1]+index),line);
     istringstream lstream(line);
     string field;
     int col = 0, f=0;
 
     while(getline(lstream, field, ' ')) {
       col++;
+      //if(col == 4) m_labels[index] = this->map_label_2int(field);
       if(col == 4) m_labels[index] = this->map_label_2int(field);
       if (col > 5) {
         if(field.empty()) field = "0"; //set empty feature field (unit) to zero
@@ -98,7 +110,7 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
       }//end if col > 5
     }// end while loop
   } // end for loop (batch)
-  ifs.close(); 
+  ifs.close();
   return (n - CurrentPos);
 }
 
@@ -132,12 +144,11 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size_t max_sample_count, bool firstN)
+bool lbann::data_reader_nci::load(const std::string infile)
 {
   ifstream ifs(infile.c_str());
   if (!ifs) { std::cout << "\n In load: can't open file : " << infile;  exit(1); }
   m_infile = infile;
-  m_has_header = has_header;
   string line;
   int i;
   double offset =0;
@@ -164,19 +175,55 @@ bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size
   for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
     ShuffledIndices[n] = n;
   }
-
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-  if (max_sample_count != 0) {
-    max_sample_count = __MIN(max_sample_count, m_num_samples);
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-    }
-    ShuffledIndices.resize(max_sample_count);
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-    }
-  }
   return true;
 }
 
+bool lbann::data_reader_nci::load(const std::string infile, size_t max_sample_count, bool firstN)
+{
+  bool load_successful = false;
+
+  load_successful = load(infile);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+bool lbann::data_reader_nci::load(const std::string infile, double use_percentage, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(infile);
+
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+lbann::data_reader_nci& lbann::data_reader_nci::operator=(const data_reader_nci& source)
+{
+
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+
+  this->m_num_labels = source.m_num_labels;
+  this->m_num_samples = source.m_num_samples;
+  this->m_num_features = source.m_num_features;
+  this->m_labels = source.m_labels;
+  this->m_index_map = source.m_index_map;
+  this->m_infile = source.m_infile;
+
+  return *this;
+}

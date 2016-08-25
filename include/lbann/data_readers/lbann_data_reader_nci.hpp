@@ -41,13 +41,17 @@ namespace lbann
     public:
       data_reader_nci(int batchSize, bool shuffle);
       data_reader_nci(int batchSize);
+      data_reader_nci(const data_reader_nci& source); //copy constructor
+      data_reader_nci& operator=(const data_reader_nci& source); //assignment operator
       ~data_reader_nci();
 
       int fetch_data(Mat& X);
       int fetch_label(Mat& Y);
       int getNumLabels() { return m_num_labels; } //@todo; check if used
 
-      bool load(const std::string infile,bool has_header=true, size_t max_sample_count=0, bool firstN=false);
+      bool load(const std::string infile);
+      bool load(const std::string infile,size_t max_sample_count, bool firstN=false);
+      bool load(const std::string infile, double validation_percent, bool firstN=false);
 
       size_t get_num_samples() {return m_num_samples;}
       size_t get_num_features() {return m_num_features;}
@@ -63,7 +67,6 @@ namespace lbann
       size_t m_num_features; //cols
       std::vector<int> m_labels;
       std::map<int,double> m_index_map;
-      bool m_has_header;
       std::string m_infile; //input file name
   };
 

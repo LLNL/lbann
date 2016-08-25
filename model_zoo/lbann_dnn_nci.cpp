@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -41,6 +41,8 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    init_random(42);
+    lbann_comm* comm = NULL;
 
   try {
 
@@ -50,11 +52,13 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
       TrainingParams trainParams;
       trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
-      trainParams.EpochCount = 10;
+      trainParams.EpochCount = 2;
       trainParams.MBSize = 50;
       trainParams.LearnRate = 0.0001;
       trainParams.DropOut = -1.0f;
       trainParams.ProcsPerModel = 0;
+      trainParams.PercentageTrainingSamples = 0.90;
+      trainParams.PercentageValidationSamples = 1.00;
       PerformanceParams perfParams;
       perfParams.BlockSize = 256;
 
@@ -98,12 +102,39 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         //data_reader_nci nci_dataset(g_MBSize, true, grid.Rank()*g_MBSize, parallel_io*g_MBSize);
       clock_t load_time = clock();
-      data_reader_nci nci_dataset(trainParams.MBSize, true);
-      if (!nci_dataset.load(train_data)) {
+      data_reader_nci nci_trainset(trainParams.MBSize, true);
+      if (!nci_trainset.load(train_data,trainParams.PercentageTrainingSamples)) {
         if (comm->am_world_master()) {
           cout << "NCI train data error" << endl;
         }
         return -1;
+      }
+
+      if (comm->am_world_master()) {
+        cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << nci_trainset.getNumData() << " samples." << endl;
+      }
+
+      ///////////////////////////////////////////////////////////////////
+      // create a validation set from the unused training data (NCI)
+      ///////////////////////////////////////////////////////////////////
+      data_reader_nci nci_validation_set(nci_trainset); // Clone the training set object
+      if (!nci_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
+        if (comm->am_world_master()) {
+          cout << "NCI validation data error" << endl;
+        }
+        return -1;
+      }
+
+      if(trainParams.PercentageValidationSamples == 1.00) {
+        if (comm->am_world_master()) {
+          cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << nci_validation_set.getNumData() << " samples." << endl;
+        }
+      }else {
+        size_t preliminary_validation_set_size = nci_validation_set.getNumData();
+        size_t final_validation_set_size = nci_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
+        if (comm->am_world_master()) {
+          cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
+        }
       }
 
 
@@ -138,29 +169,33 @@ int main(int argc, char* argv[])
       layer_factory* lfac = new layer_factory();
       deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
 
+      std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
+                                                             std::make_pair(execution_mode::validation, &nci_validation_set),
+                                                             std::make_pair(execution_mode::testing, &nci_testset)};
+
       input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io,
-                                (int) trainParams.MBSize, &nci_dataset, &nci_testset);
+                                (int) trainParams.MBSize, data_readers);
       dnn.add(input_layer);
 
-      dnn.add("FullyConnected", 500, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-      dnn.add("FullyConnected", 300, trainParams.ActivationType, {new dropout(trainParams.DropOut)});
-      dnn.add("Softmax", 2);
+      dnn.add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
+      dnn.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
+      dnn.add("Softmax", 2, activation_type::ID, weight_initialization::glorot_uniform, {});
 
 
       target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io,
-                                 (int) trainParams.MBSize, &nci_dataset, &nci_testset, true);
+                                 (int) trainParams.MBSize, data_readers, true);
       dnn.add(target_layer);
 
-      lbann_summary summarizer("/p/lscratchf/jacobs32", comm);
+      //lbann_summary summarizer("/p/lscratchf/jacobs32", comm);
       // Print out information for each epoch.
       lbann_callback_print print_cb;
       dnn.add_callback(&print_cb);
       // Record training time information.
-      lbann_callback_timer timer_cb(&summarizer);
-      dnn.add_callback(&timer_cb);
+      //lbann_callback_timer timer_cb(&summarizer);
+      //dnn.add_callback(&timer_cb);
       // Summarize information to Tensorboard.
-      lbann_callback_summary summary_cb(&summarizer, 25);
-      dnn.add_callback(&summary_cb);
+      //lbann_callback_summary summary_cb(&summarizer, 25);
+      //dnn.add_callback(&summary_cb);
 
       if (comm->am_world_master()) {
         cout << "Layer initialized:" << endl;
@@ -186,9 +221,9 @@ int main(int argc, char* argv[])
 
          //train/test
       for(int t = 0; t < trainParams.EpochCount; t++) {
-        dnn.train(1);
+        dnn.train(1,true);
         // testing
-        DataType accuracy = dnn.evaluate();
+        DataType accuracy = dnn.evaluate(execution_mode::testing);
       }
       delete optimizer;
       delete comm;

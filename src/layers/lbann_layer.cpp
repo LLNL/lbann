@@ -608,12 +608,36 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 }
 
 void lbann::Layer::fp_nonlinearity() {
+
+  // Forward propagation
   m_activation_fn->forwardProp(*Acts);
+
+  // Set bias row back to 1.0
+  const Int local_row = Acts->LocalHeight() - 1;
+  const Int global_row = Acts->GlobalRow(local_row);
+  if(global_row == Acts->Height() - 1) {
+    for(Int col = 0; col < Acts->LocalWidth(); ++col) {
+      Acts->SetLocal(local_row, col, DataType(1));
+    }
+  }
+
 }
 
 void lbann::Layer::bp_nonlinearity() {
+
+  // Backward propagation
   m_activation_fn->backwardProp(*Zs);
   if (m_activation_type != activation_type::ID) {
     Hadamard(*Ds, *Zs, *Ds);
   }
+
+  // Set bias row back to 0.0
+  const Int local_row = Ds->LocalHeight() - 1;
+  const Int global_row = Ds->GlobalRow(local_row);
+  if(global_row == Ds->Height() - 1) {
+    for(Int col = 0; col < Ds->LocalWidth(); ++col) {
+      Ds->SetLocal(local_row, col, DataType(0));
+    }
+  }
+  
 }

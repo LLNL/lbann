@@ -184,7 +184,11 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager();
+#if __LIB_CUDNN
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
+#else // __LIB_CUDNN
+        cudnn::cudnn_manager* cudnn = NULL;
+#endif // __LIB_CUDNN
         deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
@@ -246,7 +250,7 @@ int main(int argc, char* argv[])
           int poolWindowDims[] = {2, 2};
           int poolPads[] = {0, 0};
           int poolStrides[] = {2, 2};
-          int poolMode = 0;
+          pool_mode poolMode = pool_mode::max;
           pooling_layer* layer
             = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
@@ -330,11 +334,9 @@ int main(int argc, char* argv[])
         }
 
         // Free dynamically allocated memory
-        // delete target_layer;  // Causes segfault
-        // delete input_layer;  // Causes segfault
         // delete lfac;  // Causes segfault
         delete optimizer;
-        delete comm;
+        // delete comm;  // Causes error
 
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }
