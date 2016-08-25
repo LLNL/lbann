@@ -28,25 +28,42 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
+#include "lbann/utils/lbann_random.hpp"
 
 using namespace El;
 
 namespace lbann {
 
-dropout::dropout(float keep_prob) : m_keep_prob(keep_prob) {}
+dropout::dropout(lbann_comm* comm, float keep_prob) :
+  comm(comm), m_keep_prob(keep_prob)
+#ifdef LBANN_PROCDET_DROPOUT
+  , m_cur_mask(comm->get_model_grid())
+#endif
+{}
 
 void dropout::fp_activations() {
-
   // Terminate early if dropout is disabled
-  if(m_layer->m_execution_mode != execution_mode::training
-     || m_keep_prob < 0.0f) return;
+  if (m_layer->m_execution_mode != execution_mode::training
+      || m_keep_prob < 0.0f) return;
 
   // Get local activations
   ElMat* acts = m_layer->Acts;
-  Mat local_acts = acts->Matrix();
+  const Int local_height = acts->LocalHeight();
+  const Int local_width = acts->LocalWidth();
   const Int global_height = acts->Height();
-  const Int local_height = local_acts.Height();
-  const Int local_width = local_acts.Width();
+
+#ifdef LBANN_PROCDET_DROPOUT
+  bernoulli_fill_procdet(m_cur_mask, acts->Height(), acts->Width(),
+                         m_keep_prob);
+  m_cur_mask *= 1.0 / m_keep_prob;
+  if (acts->GlobalRow(local_height - 1) == global_height - 1) {
+    for (int col = 0; col < local_width; ++col) {
+      m_cur_mask.SetLocal(local_height - 1, col, 1.0f);
+    }
+  }
+  Hadamard(*acts, m_cur_mask, *acts);
+#else
+  Mat& local_acts = acts->Matrix();
 
   // Construct dropout mask
   // Note: Construct Bernoulli matrix and scale by
@@ -56,26 +73,28 @@ void dropout::fp_activations() {
   //   similar format.
   Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
   m_cur_mask *= 1.0 / m_keep_prob;
-  if(acts->GlobalRow(local_height-1) == global_height-1) {
-    for(int j=0; j<local_width; ++j)
-      m_cur_mask.Set(local_height-1, j, 1.0);
+  if (acts->GlobalRow(local_height - 1) == global_height - 1) {
+    for (int col = 0; col < local_width; ++col) {
+      m_cur_mask.Set(local_height - 1, col, 1.0f);
+    }
   }
-
   // Apply dropout mask to local activations
   Hadamard(local_acts, m_cur_mask, local_acts);
-
+#endif  // LBANN_PROCDET_DROPOUT
 }
 
 void dropout::bp_activations() {
-
   // Terminate early if dropout is disabled
-  if(m_layer->m_execution_mode != execution_mode::training
-     || m_keep_prob < 0.0f) return;
+  if (m_layer->m_execution_mode != execution_mode::training
+      || m_keep_prob < 0.0f) return;
 
+#ifdef LBANN_PROCDET_DROPOUT
+  Hadamard(*(m_layer->Ds), m_cur_mask, *(m_layer->Ds));
+#else
   // Re-weight the incoming loss using dropout mask
   Mat local_Ds = m_layer->Ds->Matrix();
   Hadamard(local_Ds, m_cur_mask, local_Ds);
-
+#endif  // LBANN_PROCDET_DROPOUT
 }
 
 }  // namespace lbann

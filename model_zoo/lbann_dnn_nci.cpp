@@ -177,8 +177,8 @@ int main(int argc, char* argv[])
                                 (int) trainParams.MBSize, data_readers);
       dnn.add(input_layer);
 
-      dnn.add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
-      dnn.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(trainParams.DropOut)});
+      dnn.add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+      dnn.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
       dnn.add("Softmax", 2, activation_type::ID, weight_initialization::glorot_uniform, {});
 
 

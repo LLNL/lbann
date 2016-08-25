@@ -788,7 +788,7 @@ int main(int argc, char* argv[])
             dnn->add("FullyConnected", netParams.Network[l],
                      trainParams.ActivationType,
                      weight_initialization::glorot_uniform,
-                     {new dropout(trainParams.DropOut)});
+                     {new dropout(comm, trainParams.DropOut)});
           }else {
             // Add a softmax layer to the end
             dnn->add("Softmax", netParams.Network[l],

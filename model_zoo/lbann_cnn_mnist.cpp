@@ -256,14 +256,14 @@ int main(int argc, char* argv[])
                                 poolWindowDims, poolPads, poolStrides, poolMode,
                                 trainParams.MBSize, activation_type::ID,
                                 comm,
-                                {new dropout(0.75)},
+                                {new dropout(comm, 0.75)},
                                 cudnn);
           dnn.add(layer);
         }
 
         // Fully connected and output layers
         dnn.add("FullyConnected", 128, trainParams.ActivationType,
-                weight_initialization::glorot_uniform, {new dropout(0.5)});
+                weight_initialization::glorot_uniform, {new dropout(comm, 0.5)});
         dnn.add("Softmax", 10, activation_type::ID,
                 weight_initialization::glorot_uniform, {});
 

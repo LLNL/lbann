@@ -71,6 +71,28 @@ void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
 void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
                   DataType radius = 1.0f);
 
+/**
+ * Make mat into an m x n matrix where each entry is independently drawn from
+ * a Gaussian distribution with given mean and standard deviation.
+ * This always ensures that the entries of the matrix do not change as the grid
+ * it is distributed over changes.
+ */
+void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n,
+                           DataType mean = 0.0f, DataType stddev = 1.0f);
+/**
+ * Make mat into an m x n matrix where each entry is an independent Bernoulli
+ * random variable with parameter p.
+ * This makes the same guarantees as gaussian_fill_procdet.
+ */
+void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
+/**
+ * Make mat into an m x n matrix where each entry is independently uniformly
+ * sampled from a ball with the given center and radius.
+ * This makes the same guarantees as gaussian_fill_procdet.
+ */
+void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n,
+                          DataType center = 0.0f, DataType radius = 1.0f);
+
 template<typename DistType,typename DType=DataType>
 class rng {
 

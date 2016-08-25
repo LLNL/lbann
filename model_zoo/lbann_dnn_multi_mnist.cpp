@@ -190,15 +190,15 @@ int main(int argc, char* argv[])
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(trainParams.DropOut)});
+      {new dropout(comm, trainParams.DropOut)});
     uint fcidx2 = dnn.add(
       "FullyConnected", 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(trainParams.DropOut)});
+      {new dropout(comm, trainParams.DropOut)});
     uint fcidx3 = dnn.add(
       "FullyConnected", 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(trainParams.DropOut)});
+      {new dropout(comm, trainParams.DropOut)});
     uint smidx = dnn.add(
       "Softmax", 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
