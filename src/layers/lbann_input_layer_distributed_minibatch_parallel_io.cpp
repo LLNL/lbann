@@ -62,8 +62,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
   m_num_data_per_epoch = 0;
 }
 
-void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity(
-  ElMat&, ElMat&, ElMat&, ElMat&) {
+void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
   DataReader *data_reader = input_layer::select_data_reader();
   int num_parallel_readers = get_num_parallel_readers();
 

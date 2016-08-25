@@ -78,7 +78,7 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   // Apply connection regularization. (e.g. DropConnect).
   for (regularizer* reg : regularizers) reg->fp_connections();
   // Layer layer's linearity.
-  fp_linearity(*WB, *fp_input, *Zs, *Acts);
+  fp_linearity();
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
   // Apply activation function/nonlinearity.

@@ -151,7 +151,7 @@ class model;
     model* neural_network_model;
   protected:
     /** Apply the layer's linear update in forward propagation. */
-    virtual void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y) {}
+    virtual void fp_linearity() {}
     /** Handle the layer's linearity in backward propagation. */
     virtual void bp_linearity() {}
     /** Apply the layer's nonlinearity in forward propagation. */

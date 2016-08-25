@@ -69,7 +69,7 @@ namespace lbann
         DataType avgCost() const;
 
     protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
+      void fp_linearity();
       void bp_linearity();
       void fp_nonlinearity() {}
       void bp_nonlinearity() {}

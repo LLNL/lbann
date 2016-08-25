@@ -122,7 +122,7 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
 // void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 //     vector<Blob<Dtype>*>* top) {
 
-void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y)
+void lbann::SoftmaxLayer::fp_linearity()
 {
   // _Z = WB * Xs                                               -- Xs is previous layer Activations
   // ZsColMax[c,0] = max(_Z[0..numNeurons-1, c])                -- (m_mini_batch_size x 1)
@@ -133,15 +133,15 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
 
   // Convert forward prop matrix to MC,MR format
   // TODO: store this matrix for back prop
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(_X);
+  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
   DistMat& X = XProxy.Get();
 
   // Apply linear transform
-  Gemm(NORMAL, NORMAL, (DataType) 1.0, _WB, X, (DataType) 0.0, _Z);
+  Gemm(NORMAL, NORMAL, (DataType) 1.0, *WB, X, (DataType) 0.0, *Zs);
 
   // For each minibatch (column) find the maximimum value
   Zeros(ZsColMax, m_mini_batch_size, 1);
-  ColumnMax((DistMat&) _Z, ZsColMax);
+  ColumnMax((DistMat&) *Zs, ZsColMax);
 
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);
@@ -150,7 +150,7 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   // entries to prevent the exp from blowing up. Large negative values are
   // expected to underflow to 0.
   IndexDependentMap(
-    _Z,
+    *Zs,
     (std::function<DataType(int,int,DataType)>)
     ([this](int r, int c, DataType z)->DataType {
       Int rL = this->ZsColMaxStar.LocalRow(c);
@@ -160,12 +160,12 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   // For each minibatch (column) sum up the exponentiated values
   Zeros(ZsNormExpSum, m_mini_batch_size, 1);
   //  ColSumMat ZsNormExpSum;
-  ColumnSum((DistMat&) _Z /*ZsNormExp*/, ZsNormExpSum);
+  ColumnSum((DistMat&) *Zs /*ZsNormExp*/, ZsNormExpSum);
   Copy(ZsNormExpSum, ZsNormExpSumStar);
 
   // Divide each entry: exp(x_ij) / Sum_i(exp(x_ij))
-  Copy(_Z /*ZsNormExp*/, _Y);
-  IndexDependentMap(_Y,
+  Copy(*Zs /*ZsNormExp*/, *Acts);
+  IndexDependentMap(*Acts,
                     (std::function<DataType(Int,Int,DataType)>)([this /*ZsNormExpSum*/](Int r, Int c, DataType z)->
                                                                 DataType{Int rL = this->ZsNormExpSumStar.LocalRow(c); return z/this->ZsNormExpSumStar.GetLocal(rL,0);}));
 

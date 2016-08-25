@@ -55,8 +55,7 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
   Zeros(X_local, NumNeurons + 1, m_mini_batch_size);
 }
 
-void lbann::input_layer_distributed_minibatch::fp_linearity(
-  ElMat&, ElMat&, ElMat&, ElMat&) {
+void lbann::input_layer_distributed_minibatch::fp_linearity() {
   DataReader *data_reader = input_layer::select_data_reader();
   int num_samples_in_batch = 0;
 

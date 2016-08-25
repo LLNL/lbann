@@ -146,21 +146,21 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
 
 }
 
-void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y)
+void lbann::FullyConnectedLayer::fp_linearity()
 {
   // Convert matrices to desired format
-  DistMatrixReadProxy<DataType,DataType,MC,MR> WBProxy(_WB);
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(_X); // TODO: Store for bp step
-  DistMatrixWriteProxy<DataType,DataType,MC,MR> ZProxy(_Z);
-  DistMatrixWriteProxy<DataType,DataType,MC,MR> YProxy(_Y);
-  DistMat& WB = WBProxy.Get();
+  // DistMatrixReadProxy<DataType,DataType,MC,MR> WBProxy(*WB);
+  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: Store for bp step
+  // DistMatrixWriteProxy<DataType,DataType,MC,MR> ZProxy(*Zs);
+  // DistMatrixWriteProxy<DataType,DataType,MC,MR> YProxy(*Acts);
+  // DistMat& WB = WBProxy.Get();
   DistMat& X = XProxy.Get();
-  DistMat& Z = ZProxy.Get();
-  DistMat& Y = YProxy.Get();
+  // DistMat& Z = ZProxy.Get();
+  // DistMat& Y = YProxy.Get();
 
   // Apply forward prop linearity
-  Gemm(NORMAL, NORMAL, (DataType) 1., WB, X, (DataType) 0., Z);
-  Copy(Z, Y);
+  Gemm(NORMAL, NORMAL, (DataType) 1., *WB, X, (DataType) 0., *Zs);
+  Copy(*Zs, *Acts);
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
@@ -267,15 +267,15 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
             }
 
             // J(theta)
-            this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
+            //            this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
             //this->fp_nonlinearity(*Acts);
 
             // J(thetaPlus(i))
-            this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
+            //            this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
             //this->fp_nonlinearity(Acts_E1);
 
             // J(thetaMinus(i))
-            this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
+            //            this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
             //this->fp_nonlinearity(Acts_E2);
 
             //            this->getCost();
