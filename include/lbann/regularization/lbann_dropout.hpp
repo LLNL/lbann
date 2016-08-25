@@ -47,16 +47,22 @@ namespace lbann {
 class dropout : public regularizer {
 public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(float keep_prob=0.5f);
+  dropout(lbann_comm* comm, float keep_prob=0.5f);
   /** Drop out units in forward propagation. */
   void fp_activations();
   /** Adjust gradients for dropout in backprop. */
   void bp_activations();
 protected:
+  lbann_comm* comm;
   /** Probability of keeping each unit. */
   float m_keep_prob;
+#ifdef LBANN_PROCDET_DROPOUT
+  /** Current dropout mask (a scaled Bernoulli random matrix). */
+  DistMat m_cur_mask;
+#else
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   Mat m_cur_mask;
+#endif
 };
 
 }  // namespace lbann
