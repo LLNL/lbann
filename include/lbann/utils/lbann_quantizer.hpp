@@ -351,6 +351,12 @@ private:
                                 bool delta = false, DataType pos_avg = 0.0f,
                                 DataType neg_avg = 0.0f);
 
+  /**
+   * Variant of adaptive_threshold_quantize that adds its entries.
+   */
+  void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
+                                         bool delta = false);
+
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized::const_iterator qstart,

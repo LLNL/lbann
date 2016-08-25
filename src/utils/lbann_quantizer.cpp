@@ -489,32 +489,68 @@ void lbann_quantizer::adaptive_threshold_quantize(
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
-  for (int col = 0; col < width; ++col) {
-    const Mat& col_view = mat(IR(0, height), IR(col, col + 1));
-    const Mat& qcol_view = qerror(IR(0, height), IR(col, col + 1));
-    DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-    std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
-      proportion_threshold_average(col_view, qcol_view, proportion);
-    // Store the averages for reconstruction.
-    uqtype tmp;
-    memcpy(&tmp, &pos_avg, sizeof(pos_avg));
-    q.push_back(tmp);
-    memcpy(&tmp, &neg_avg, sizeof(neg_avg));
-    q.push_back(tmp);
-    for (int row = 0; row < height; ++row) {
-      const unsigned pos = row + col * ldim;
-      const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= pos_thresh) {
-        qerror_buf[pos] = val - pos_avg;
-        q.emplace_back((pos << 1) | 1);
-      } else if (val <= neg_thresh) {
-        qerror_buf[pos] = val - neg_avg;
-        q.emplace_back(pos << 1);
-      } else {
-        qerror_buf[pos] = val;
+  if (!delta) {
+    for (int col = 0; col < width; ++col) {
+      const Mat& col_view = mat(IR(0, height), IR(col, col + 1));
+      const Mat& qcol_view = qerror(IR(0, height), IR(col, col + 1));
+      DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+      std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+        proportion_threshold_average(col_view, qcol_view, proportion);
+      // Store the averages for reconstruction.
+      uqtype tmp;
+      memcpy(&tmp, &pos_avg, sizeof(pos_avg));
+      q.push_back(tmp);
+      memcpy(&tmp, &neg_avg, sizeof(neg_avg));
+      q.push_back(tmp);
+      for (int row = 0; row < height; ++row) {
+        const unsigned pos = row + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        if (val >= pos_thresh) {
+          qerror_buf[pos] = val - pos_avg;
+          q.emplace_back((pos << 1) | 1);
+        } else if (val <= neg_thresh) {
+          qerror_buf[pos] = val - neg_avg;
+          q.emplace_back(pos << 1);
+        } else {
+          qerror_buf[pos] = val;
+        }
       }
+      q.push_back(~((uqtype) 0));  // Separator.
     }
-    q.push_back(~((uqtype) 0));  // Separator.
+  } else {
+    // Delta encoding is done within each column:
+    // only the difference between rows is recorded.
+    for (int col = 0; col < width; ++col) {
+      const Mat& col_view = mat(IR(0, height), IR(col, col + 1));
+      const Mat& qcol_view = qerror(IR(0, height), IR(col, col + 1));
+      DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+      std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+        proportion_threshold_average(col_view, qcol_view, proportion);
+      // Store the averages for reconstruction.
+      uqtype tmp;
+      memcpy(&tmp, &pos_avg, sizeof(pos_avg));
+      q.push_back(tmp);
+      memcpy(&tmp, &neg_avg, sizeof(neg_avg));
+      q.push_back(tmp);
+      unsigned prev_row = 0;
+      for (int row = 0; row < height; ++row) {
+        const unsigned pos = row + col * ldim;
+        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        if (val >= pos_thresh) {
+          qerror_buf[pos] = val - pos_avg;
+          // Delta encode the row.
+          q.emplace_back(((row - prev_row) << 1) | 1);
+          prev_row = row;
+        } else if (val <= neg_thresh) {
+          qerror_buf[pos] = val - neg_avg;
+          q.emplace_back((row - prev_row) << 1);
+          prev_row = row;
+        } else {
+          qerror_buf[pos] = val;
+        }
+      }
+      q.push_back(~((uqtype) 0));  // Separator.
+    }
   }
 }
 
@@ -526,19 +562,40 @@ void lbann_quantizer::adaptive_threshold_quantize(
 
 void lbann_quantizer::adaptive_threshold_unquantize(
   const ThreshQuantized& q, Mat& mat, bool delta) {
-  // Currently, no delta supported here.
   DataType* __restrict__ buf = mat.Buffer();
-  for (unsigned i = 0; i < q.size(); ++i) {
-    // Extract averages.
-    DataType pos_avg, neg_avg;
-    memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
-    memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
-    i += 2;  // Skip the averages.
-    for (; q[i] != ~((uqtype) 0); ++i) {
-      const uqtype val = q[i];
-      const unsigned pos = val >> 1;
-      if (val & 1) buf[pos] = pos_avg;
-      else buf[pos] = neg_avg;
+  if (!delta) {
+    for (unsigned i = 0; i < q.size(); ++i) {
+      // Extract averages.
+      DataType pos_avg, neg_avg;
+      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
+      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
+      i += 2;  // Skip the averages.
+      for (; q[i] != ~((uqtype) 0); ++i) {
+        const uqtype val = q[i];
+        const unsigned pos = val >> 1;
+        if (val & 1) buf[pos] = pos_avg;
+        else buf[pos] = neg_avg;
+      }
+    }
+  } else {
+    const Int ldim = mat.LDim();
+    int col = 0;
+    for (unsigned i = 0; i < q.size(); ++i) {
+      // Extract averages.
+      DataType pos_avg, neg_avg;
+      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
+      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
+      i += 2;  // Skip the averages.
+      unsigned prev_row = 0;
+      for (; q[i] != ~((uqtype) 0); ++i) {
+        const uqtype val = q[i];
+        const unsigned row = (val >> 1) + prev_row;
+        const unsigned pos = row + col * ldim;
+        prev_row = row;
+        if (val & 1) buf[pos] = pos_avg;
+        else buf[pos] = neg_avg;
+      }
+      ++col;
     }
   }
 }
@@ -546,6 +603,46 @@ void lbann_quantizer::adaptive_threshold_unquantize(
 void lbann_quantizer::adaptive_threshold_unquantize(
   const ThreshQuantized& q, DistMat& mat, bool delta) {
   adaptive_threshold_unquantize(q, mat.Matrix(), delta);
+}
+
+void lbann_quantizer::adaptive_threshold_unquantize_add(
+  const ThreshQuantized& q, Mat& mat, bool delta) {
+  DataType* __restrict__ buf = mat.Buffer();
+  if (!delta) {
+    for (unsigned i = 0; i < q.size(); ++i) {
+      // Extract averages.
+      DataType pos_avg, neg_avg;
+      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
+      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
+      i += 2;  // Skip the averages.
+      for (; q[i] != ~((uqtype) 0); ++i) {
+        const uqtype val = q[i];
+        const unsigned pos = val >> 1;
+        if (val & 1) buf[pos] += pos_avg;
+        else buf[pos] += neg_avg;
+      }
+    }
+  } else {
+    const Int ldim = mat.LDim();
+    int col = 0;
+    for (unsigned i = 0; i < q.size(); ++i) {
+      // Extract averages.
+      DataType pos_avg, neg_avg;
+      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
+      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
+      i += 2;  // Skip the averages.
+      unsigned prev_row = 0;
+      for (; q[i] != ~((uqtype) 0); ++i) {
+        const uqtype val = q[i];
+        const unsigned row = (val >> 1) + prev_row;
+        const unsigned pos = row + col * ldim;
+        prev_row = row;
+        if (val & 1) buf[pos] += pos_avg;
+        else buf[pos] += neg_avg;
+      }
+      ++col;
+    }
+  }
 }
 
 void lbann_quantizer::intermodel_sum_threshold_quantized(
@@ -685,7 +782,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
         uncompress_adaptive_thresholds(rs_recv, uncomp);
         std::swap(rs_recv, uncomp);
       }
-      adaptive_threshold_unquantize(rs_recv, accum, compress);
+      adaptive_threshold_unquantize_add(rs_recv, accum, compress);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
                                          rs_get_recv_buf, rs_recv_trans);
