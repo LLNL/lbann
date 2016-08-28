@@ -30,6 +30,7 @@
 #include "lbann/utils/lbann_quantizer.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include <cmath>
+#include <omp.h>
 
 namespace lbann {
 
@@ -56,6 +57,7 @@ void lbann_quantizer::quantize(
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   qtype* __restrict__ qmat_buf = qmat.Buffer();
+  #pragma omp parallel for schedule(static)
   for (int col = 0; col < width; ++col) {
     // First compute the positive and negative column averages.
     DataType pos_sum = 0.0f;
@@ -143,6 +145,7 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool app
   const Int qmat_ldim = qmat.LDim();
   const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
   DataType* __restrict__ mat_buf = mat.Buffer();
+  #pragma omp parallel for schedule(static)
   for (int col = 0; col < width; ++col) {
     int qrow = 2;
     // Extract the averages.
@@ -305,20 +308,14 @@ void lbann_quantizer::intermodel_sum_quantized2(lbann_comm* comm, DistMat& mat,
 
 void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
                                          Mat& qerror, DataType pos_thresh,
-                                         DataType neg_thresh, bool delta,
-                                         DataType pos_avg, DataType neg_avg) {
-  if (pos_avg == 0.0f) {
-    pos_avg = pos_thresh;
-  }
-  if (neg_avg == 0.0f) {
-    neg_avg = neg_thresh;
-  }
+                                         DataType neg_thresh, bool delta) {
   const Int ldim = mat.LDim();
   const Int width = mat.Width();
   const Int height = mat.Height();
   if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
+  std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   if (delta) {
     unsigned prev_pos = 0;
     for (int col = 0; col < width; ++col) {
@@ -326,12 +323,12 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
         const unsigned pos = row + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= pos_thresh) {
-          qerror_buf[pos] = val - pos_avg;
+          qerror_buf[pos] = val - pos_thresh;
           // Delta encode pos.
           quant.emplace_back(((pos - prev_pos) << 1) | 1);
           prev_pos = pos;
         } else if (val <= neg_thresh) {
-          qerror_buf[pos] = val - neg_avg;
+          qerror_buf[pos] = val - neg_thresh;
           quant.emplace_back((pos - prev_pos) << 1);
           prev_pos = pos;
         } else {
@@ -340,71 +337,73 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
       }
     }
   } else {
-    for (int col = 0; col < width; ++col) {
-      for (int row = 0; row < height; ++row) {
-        const unsigned pos = row + col * ldim;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= pos_thresh) {
-          qerror_buf[pos] = val - pos_avg;
-          quant.emplace_back((pos << 1) | 1);
-        } else if (val <= neg_thresh) {
-          qerror_buf[pos] = val - neg_avg;
-          quant.emplace_back(pos << 1);
-        } else {
-          qerror_buf[pos] = val;
+    #pragma omp parallel
+    {
+      const int tid = omp_get_thread_num();
+      #pragma omp for schedule(static)
+      for (int col = 0; col < width; ++col) {
+        for (int row = 0; row < height; ++row) {
+          const unsigned pos = row + col * ldim;
+          const DataType val = mat_buf[pos] + qerror_buf[pos];
+          if (val >= pos_thresh) {
+            qerror_buf[pos] = val - pos_thresh;
+            thread_qs[tid].emplace_back((pos << 1) | 1);
+          } else if (val <= neg_thresh) {
+            qerror_buf[pos] = val - neg_thresh;
+            thread_qs[tid].emplace_back(pos << 1);
+          } else {
+            qerror_buf[pos] = val;
+          }
         }
       }
+    }
+    // Copy the temporary vectors.
+    for (auto&& thread_q : thread_qs) {
+      quant.insert(quant.end(), thread_q.begin(), thread_q.end());
     }
   }
 }
 
 void lbann_quantizer::threshold_quantize(
   const DistMat& mat, ThreshQuantized& q, Mat& qerror, DataType pos_thresh,
-  DataType neg_thresh, bool delta, DataType pos_avg, DataType neg_avg) {
+  DataType neg_thresh, bool delta) {
   threshold_quantize(mat.LockedMatrix(), q, qerror, pos_thresh, neg_thresh,
-                     delta, pos_avg, neg_avg);
+                     delta);
 }
 
 void lbann_quantizer::threshold_unquantize(
-  const ThreshQuantized& quant, Mat& mat, DataType pos_avg, DataType neg_avg,
-  bool delta) {
-  threshold_unquantize(quant, quant.begin(), mat, pos_avg, neg_avg, delta);
-}
-
-void lbann_quantizer::threshold_unquantize(
-  const ThreshQuantized& quant, ThreshQuantized::const_iterator quant_start,
-  Mat& mat, DataType pos_avg, DataType neg_avg, bool delta) {
-  if (std::distance(quant_start, quant.end()) == 0) return;
+  const ThreshQuantized& quant, Mat& mat, DataType pos_thresh,
+  DataType neg_thresh, bool delta) {
   DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
     unsigned prev_pos = 0;
-    for (auto iter = quant_start; iter != quant.end(); ++iter) {
-      const uqtype q = *iter;
+    for (unsigned i = 0; i < quant.size(); ++i) {
+      const uqtype q = quant[i];
       const unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
-      if (q & 1) buf[pos] = pos_avg;
-      else buf[pos] = neg_avg;
+      if (q & 1) buf[pos] = pos_thresh;
+      else buf[pos] = neg_thresh;
     }
   } else {
-    for (auto iter = quant_start; iter != quant.end(); ++iter) {
-      const uqtype q = *iter;
+    #pragma omp parallel for schedule(static)
+    for (unsigned i = 0; i < quant.size(); ++i) {
+      const uqtype q = quant[i];
       const unsigned pos = q >> 1;
-      if (q & 1) buf[pos] = pos_avg;
-      else buf[pos] = neg_avg;
+      if (q & 1) buf[pos] = pos_thresh;
+      else buf[pos] = neg_thresh;
     }
   }
 }
 
 void lbann_quantizer::threshold_unquantize(
-  const ThreshQuantized& quant, DistMat& mat, DataType pos_avg,
-  DataType neg_avg, bool delta) {
-  threshold_unquantize(quant, mat.Matrix(), pos_avg, neg_avg, delta);
+  const ThreshQuantized& quant, DistMat& mat, DataType pos_thresh,
+  DataType neg_thresh, bool delta) {
+  threshold_unquantize(quant, mat.Matrix(), pos_thresh, neg_thresh, delta);
 }
 
 void lbann_quantizer::threshold_unquantize_apply(
-  const ThreshQuantized& quant, ThreshQuantized::const_iterator quant_start,
-  Mat& mat, DataType pos_avg, DataType neg_avg,
-  std::vector<unsigned>& positions, bool delta) {
+  const ThreshQuantized& quant, Mat& mat, DataType pos_thresh,
+  DataType neg_thresh, std::vector<unsigned>& positions, bool delta) {
   // A general note on positions that I'm putting here because I'm not sure
   // where else to: Using a vector admits the possibility that we have
   // duplicate entries. This could be fixed by using an unordered_set, but when
@@ -414,39 +413,31 @@ void lbann_quantizer::threshold_unquantize_apply(
   // the final unquantize is not an _apply, and so will just set that entry to
   // the same value multiple times. We send some extra data, but the overhead
   // is small.
-  if (std::distance(quant_start, quant.end()) == 0) return;
   DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
     unsigned prev_pos = 0;
-    for (auto iter = quant_start; iter != quant.end(); ++iter) {
-      const uqtype q = *iter;
+    for (unsigned i = 0; i < quant.size(); ++i) {
+      const uqtype q = quant[i];
       const unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
       positions.emplace_back(pos);
-      if (q & 1) buf[pos] += pos_avg;
-      else buf[pos] += neg_avg;
+      if (q & 1) buf[pos] += pos_thresh;
+      else buf[pos] += neg_thresh;
     }
   } else {
-    for (auto iter = quant_start; iter != quant.end(); ++iter) {
-      const uqtype q = *iter;
+    for (unsigned i = 0; i < quant.size(); ++i) {
+      const uqtype q = quant[i];
       const unsigned pos = q >> 1;
       positions.emplace_back(pos);
-      if (q & 1) buf[pos] += pos_avg;
-      else buf[pos] += neg_avg;
+      if (q & 1) buf[pos] += pos_thresh;
+      else buf[pos] += neg_thresh;
     }
   }
 }
 
 void lbann_quantizer::threshold_quantize_apply(
   const Mat& mat, ThreshQuantized& quant, Mat& qerror, DataType pos_thresh,
-  DataType neg_thresh, std::vector<unsigned>& positions, bool delta,
-  DataType pos_avg, DataType neg_avg) {
-  if (pos_avg == 0.0f) {
-    pos_avg = pos_thresh;
-  }
-  if (neg_avg == 0.0f) {
-    neg_avg = neg_thresh;
-  }
+  DataType neg_thresh, std::vector<unsigned>& positions, bool delta) {
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   if (delta) {
@@ -457,9 +448,11 @@ void lbann_quantizer::threshold_quantize_apply(
     for (const auto& pos : positions) {
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
+        qerror_buf[pos] = val - pos_thresh;
         quant.emplace_back(((pos - prev_pos) << 1) | 1);
         prev_pos = pos;
       } else if (val <= neg_thresh) {
+        qerror_buf[pos] = val - neg_thresh;
         quant.emplace_back((pos - prev_pos) << 1);
         prev_pos = pos;
       } else {
@@ -471,10 +464,10 @@ void lbann_quantizer::threshold_quantize_apply(
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
         quant.emplace_back((pos << 1) | 1);
-        qerror_buf[pos] = val - pos_avg;
+        qerror_buf[pos] = val - pos_thresh;
       } else if (val <= neg_thresh) {
         quant.emplace_back(pos << 1);
-        qerror_buf[pos] = val - neg_avg;
+        qerror_buf[pos] = val - neg_thresh;
       } else {
         qerror_buf[pos] = val;
       }
@@ -489,33 +482,48 @@ void lbann_quantizer::adaptive_threshold_quantize(
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
+  std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   if (!delta) {
-    for (int col = 0; col < width; ++col) {
-      const Mat& col_view = mat(IR(0, height), IR(col, col + 1));
-      const Mat& qcol_view = qerror(IR(0, height), IR(col, col + 1));
-      DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-      std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
-        proportion_threshold_average(col_view, qcol_view, proportion);
-      // Store the averages for reconstruction.
-      uqtype tmp;
-      memcpy(&tmp, &pos_avg, sizeof(pos_avg));
-      q.push_back(tmp);
-      memcpy(&tmp, &neg_avg, sizeof(neg_avg));
-      q.push_back(tmp);
-      for (int row = 0; row < height; ++row) {
-        const unsigned pos = row + col * ldim;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= pos_thresh) {
-          qerror_buf[pos] = val - pos_avg;
-          q.emplace_back((pos << 1) | 1);
-        } else if (val <= neg_thresh) {
-          qerror_buf[pos] = val - neg_avg;
-          q.emplace_back(pos << 1);
-        } else {
-          qerror_buf[pos] = val;
+    #pragma omp parallel
+    {
+      const int tid = omp_get_thread_num();
+      #pragma omp for schedule(static)
+      for (int col = 0; col < width; ++col) {
+        const Mat& col_view = mat(IR(0, height), IR(col, col + 1));
+        const Mat& qcol_view = qerror(IR(0, height), IR(col, col + 1));
+        DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+        std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+          proportion_threshold_average(col_view, qcol_view, proportion);
+        // Store the averages for reconstruction.
+        uqtype tmp;
+        memcpy(&tmp, &pos_avg, sizeof(pos_avg));
+        thread_qs[tid].emplace_back(tmp);
+        //q.push_back(tmp);
+        memcpy(&tmp, &neg_avg, sizeof(neg_avg));
+        //q.push_back(tmp);
+        thread_qs[tid].emplace_back(tmp);
+        for (int row = 0; row < height; ++row) {
+          const unsigned pos = row + col * ldim;
+          const DataType val = mat_buf[pos] + qerror_buf[pos];
+          if (val >= pos_thresh) {
+            qerror_buf[pos] = val - pos_avg;
+            //q.emplace_back((pos << 1) | 1);
+            thread_qs[tid].emplace_back((pos << 1) | 1);
+          } else if (val <= neg_thresh) {
+            qerror_buf[pos] = val - neg_avg;
+            //q.emplace_back(pos << 1);
+            thread_qs[tid].emplace_back(pos << 1);
+          } else {
+            qerror_buf[pos] = val;
+          }
         }
+        //q.push_back(~((uqtype) 0));  // Separator.
+        thread_qs[tid].emplace_back(~((uqtype) 0));
       }
-      q.push_back(~((uqtype) 0));  // Separator.
+    }
+    // Copy the temporary vectors.
+    for (auto&& thread_q : thread_qs) {
+      q.insert(q.end(), thread_q.begin(), thread_q.end());
     }
   } else {
     // Delta encoding is done within each column:
@@ -684,7 +692,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
         uncompress_thresholds(rs_recv, uncomp);
         std::swap(rs_recv, uncomp);
       }
-      threshold_unquantize_apply(rs_recv, rs_recv.begin(), accum, pos_thresh,
+      threshold_unquantize_apply(rs_recv, accum, pos_thresh,
                                  neg_thresh, positions, compress);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
