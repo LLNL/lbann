@@ -1,5 +1,5 @@
 project(LBANN)
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.12)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 #
@@ -57,21 +57,8 @@ endif()
 #
 # Link in CUDA,cuDNN
 #
-find_package(CUDA QUIET)
-if (CUDA_FOUND AND CMAKE_CUDNN_DIR)
-    include(FindCUDA)
-    include_directories("${CUDA_TOOLKIT_ROOT_DIR}/include")
-    link_directories("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
-    include_directories("${CMAKE_CUDNN_DIR}/include")
-    link_directories("${CMAKE_CUDNN_DIR}/lib64")
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDNN" )
-    #CUDA_LIBS = -lcudart -lcublas
-    set(CUDNN_LIBRARIES -lcudnn)
-endif()
-
-macro(link_cudnn target)
- target_link_libraries(${target} ${CUDA_LIBRARIES} ${CUDNN_LIBRARIES})
-endmacro()
+include(CUDA)
+include(cuDNN)
 
 #
 # Include CUB
@@ -180,49 +167,22 @@ endif(DOXYGEN_FOUND)
 #
 # Elemental is required
 #
-
-if(CMAKE_ELEMENTAL_DIR)
-   include_directories("${CMAKE_ELEMENTAL_DIR}/include/")
-   link_directories("${CMAKE_ELEMENTAL_DIR}/lib/")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_ELEMENTAL" )
-   message("-- Manually including Elemental Libraries: ${CMAKE_ELEMENTAL_DIR}")
-else()
-find_package(Elemental REQUIRED HINTS ${Elemental_ROOT_DIR})
-if(Elemental_FOUND)
-   set(CMAKE_CXX_FLAGS "${Elemental_COMPILE_FLAGS}")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_ELEMENTAL" )
-   include_directories(${Elemental_INCLUDE_DIRS})
-   add_definitions(${Elemental_DEFINITIONS})
-   message("-- Found Elemental Libraries: ${Elemental_LIBRARIES} ${Elemental_DIR}")
-else()
-#     add_subdirectory(external/Elemental)
-   message(FATAL_ERROR "Could not locate Elemental installation")
-endif()
-
-macro(link_elemental target)
-    target_link_libraries(${target} ${Elemental_LIBRARIES})
-    if(Elemental_LINK_FLAGS)
-       set_target_properties(${target} PROPERTIES LINK_FLAGS ${Elemental_LINK_FLAGS})
-    endif()
-endmacro()
-endif()
+include(Elemental)
 
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
 
 # Build LBANN
 
-add_subdirectory (src)
-add_subdirectory (model_zoo)
-#enable_testing()
-#add_subdirectory (test)
+add_subdirectory(src)
+add_subdirectory(model_zoo)
 
 add_library(src OBJECT ${SRCS})
-if(NOT CMAKE_ELEMENTAL_DIR)
-    add_dependencies(src El)
-endif(NOT CMAKE_ELEMENTAL_DIR)
 if(LBANN_BUILT_CUB)
     add_dependencies(src project_CUB)
+endif()
+if(LBANN_BUILT_ELEMENTAL)
+    add_dependencies(src project_Elemental)
 endif()
 
 set( LIBRARY_TYPE SHARED )
@@ -230,20 +190,20 @@ add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 
 # Link in found libraries
 link_opencv(lbann)
-  include_link_tbinf(lbann)
-  if(CMAKE_ELEMENTAL_DIR)
-  target_link_libraries(lbann El)
-else()
-  link_elemental(lbann)
-endif()
+include_link_tbinf(lbann)
+target_link_libraries(lbann El)
 
 if(OpenBLAS_FOUND)
   link_openblas(lbann)
 endif()
 
-if(CUDA_FOUND)
-  link_cudnn(lbann)
+if(LBANN_HAS_CUDA)
+  target_link_libraries(lbann ${CUDA_LIBRARIES})
 endif()
+if(LBANN_HAS_CUDNN)
+  target_link_libraries(lbann ${CUDNN_LIBRARIES})
+endif()
+
 
 #link_directories(core)
 #
@@ -263,7 +223,7 @@ endif()
 #message("   LBANN_BUILD_TEST:   ${LBANN_BUILD_TEST}")
 message("   MPI_FOUND:             ${MPI_FOUND}")
 message("   DOXYGEN_FOUND:   ${DOXYGEN_FOUND}")
-message("   Elemental_FOUND:   ${Elemental_FOUND}")
+message("   Elemental_FOUND:   ${LBANN_HAS_ELEMENTAL}")
 message("   OpenCV_FOUND:      ${OpenCV_FOUND}")
 #MPI params found
 if(MPI_FOUND)
