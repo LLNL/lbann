@@ -9,9 +9,9 @@ if(NOT ELEMENTAL_FOUND)
   endif()
   if(NOT DEFINED ELEMENTAL_TAG)
      # Commit from 8/29/2016
-     set(ELEMENTAL_TAG "85572b9c79fab694457bf133e4b01289d4cdcd21")
-     # Commit from 6/24/2016
-     # set(ELEMENTAL_TAG "a95d62152fb9eb25dfdbc67e24097108cd5f9d7d")
+     # set(ELEMENTAL_TAG "85572b9c79fab694457bf133e4b01289d4cdcd21")
+     # Commit from 6/8/2016
+     set(ELEMENTAL_TAG "4748937")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -19,15 +19,14 @@ if(NOT ELEMENTAL_FOUND)
   if(NOT DEFINED ELEMENTAL_BUILD_TYPE)
     set(ELEMENTAL_BUILD_TYPE "Release")
   endif()
-  if(NOT DEFINED ELEMENTAL_INSTALL_PYTHON_PACKAGE)
-    set(ELEMENTAL_INSTALL_PYTHON_PACKAGE OFF)
-  endif()
-  if(NOT DEFINED ELEMENTAL_HYBRID)
-    set(ELEMENTAL_HYBRID ON)
-  endif()
+  option(ELEMENTAL_BUILD_SHARED_LIBS "Elemental: build with shared libraries?" ON)
+  option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
+  option(ELEMENTAL_C_INTERFACE "Elemental: build C interface?" OFF)
+  option(ELEMENTAL_INSTALL_PYTHON_PACKAGE "Elemental: install Python interface?" OFF)
+  option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" OFF)
 
   # TODO: make nice
-  set(MATH_LIBS "-L/opt/intel-16.0/linux/mkl/lib/intel64 -lmkl_rt")
+  set(MATH_LIBS "-L/usr/gapps/brain/installs/BLAS/surface/lib -lopenblas")
 
   # Download and build location
   set(ELEMENTAL_SOURCE_DIR "${PROJECT_BINARY_DIR}/download/elemental/source")
@@ -53,9 +52,12 @@ if(NOT ELEMENTAL_FOUND)
       -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER}
       -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER}
       -D MATH_LIBS=${MATH_LIBS}
-      -D BUILD_SHARED_LIBS=ON
+      -D BUILD_SHARED_LIBS=${ELEMENTAL_BUILD_SHARED_LIBS}
       -D EL_HYBRID=${ELEMENTAL_HYBRID}
+      -D EL_C_INTERFACE=${ELEMENTAL_C_INTERFACE}
       -D INSTALL_PYTHON_PACKAGE=${ELEMENTAL_INSTALL_PYTHON_PACKAGE}
+      -D EL_DISABLE_PARMETIS=${ELEMENTAL_DISABLE_PARMETIS}
+      -D CMAKE_CXX_FLAGS="-I/usr/gapps/brain/installs/BLAS/surface/include" # TODO: remove
   )
 
   # Get header files
@@ -64,7 +66,11 @@ if(NOT ELEMENTAL_FOUND)
 
   # Get library
   add_library(libelemental SHARED IMPORTED)
-  set(ELEMENTAL_LIBRARIES "${install_dir}/lib/libelemental.so")
+  if(ELEMENTAL_BUILD_SHARED_LIBS)
+    set(ELEMENTAL_LIBRARIES "${install_dir}/lib/libelemental.so")
+  else()
+    set(ELEMENTAL_LIBRARIES "${install_dir}/lib/libelemental.a")
+  endif()
   set_property(TARGET libelemental PROPERTY IMPORTED_LOCATION ${ELEMENTAL_LIBRARIES})
   link_directories("${install_dir}/lib")
 
