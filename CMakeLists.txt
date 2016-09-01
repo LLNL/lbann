@@ -85,6 +85,10 @@ macro (add_sources)
     endif()
 endmacro()
 
+# Protocol Buffers
+# TODO
+# include(protobuf)
+
 # TBinf (Tensorboard interface)
 # This must come first so the right protobuf libraries are found.
 if(CMAKE_TBINF)
@@ -191,7 +195,7 @@ add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 # Link in found libraries
 link_opencv(lbann)
 include_link_tbinf(lbann)
-target_link_libraries(lbann El)
+target_link_libraries(lbann ELEMENTAL_LIBRARIES)
 
 if(OpenBLAS_FOUND)
   link_openblas(lbann)
@@ -222,6 +226,7 @@ elseif(CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 message(STATUS "  MPI_FOUND:           ${MPI_FOUND}")
 message(STATUS "  DOXYGEN_FOUND:       ${DOXYGEN_FOUND}")
+message(STATUS "  LBANN_HAS_PROTOBUF   ${LBANN_HAS_PROTOBUF}")
 message(STATUS "  LBANN_HAS_CUDA:      ${LBANN_HAS_CUDA}")
 message(STATUS "  LBANN_HAS_CUDNN:     ${LBANN_HAS_CUDNN}")
 message(STATUS "  LBANN_HAS_ELEMENTAL: ${LBANN_HAS_ELEMENTAL}")

@@ -19,11 +19,20 @@ if(NOT ELEMENTAL_FOUND)
   if(NOT DEFINED ELEMENTAL_BUILD_TYPE)
     set(ELEMENTAL_BUILD_TYPE "Release")
   endif()
+  if(NOT DEFINED ELEMENTAL_C_COMPILER)
+    set(ELEMENTAL_C_COMPILER ${CMAKE_C_COMPILER})
+  endif()
+  if(NOT DEFINED ELEMENTAL_CXX_COMPILER)
+    set(ELEMENTAL_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+  endif()
+  if(NOT DEFINED ELEMENTAL_Fortran_COMPILER)
+    set(ELEMENTAL_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
+  endif()
   option(ELEMENTAL_BUILD_SHARED_LIBS "Elemental: build with shared libraries?" ON)
   option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
   option(ELEMENTAL_C_INTERFACE "Elemental: build C interface?" OFF)
   option(ELEMENTAL_INSTALL_PYTHON_PACKAGE "Elemental: install Python interface?" OFF)
-  option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" OFF)
+  option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" ON)
 
   # TODO: make nice
   set(MATH_LIBS "-L/usr/gapps/brain/installs/BLAS/surface/lib -lopenblas")
@@ -45,9 +54,9 @@ if(NOT ELEMENTAL_FOUND)
     CMAKE_ARGS
       -D CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
       -D CMAKE_BUILD_TYPE=${ELEMENTAL_BUILD_TYPE}
-      -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+      -D CMAKE_C_COMPILER=${ELEMENTAL_C_COMPILER}
+      -D CMAKE_CXX_COMPILER=${ELEMENTAL_CXX_COMPILER}
+      -D CMAKE_Fortran_COMPILER=${ELEMENTAL_Fortran_COMPILER}
       -D MPI_C_COMPILER=${MPI_C_COMPILER}
       -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER}
       -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER}
@@ -61,18 +70,18 @@ if(NOT ELEMENTAL_FOUND)
   )
 
   # Get header files
-  ExternalProject_Get_Property(project_Elemental install_dir)
-  set(ELEMENTAL_INCLUDE_DIRS "${install_dir}/include")
+  set(ELEMENTAL_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 
   # Get library
-  add_library(libelemental SHARED IMPORTED)
   if(ELEMENTAL_BUILD_SHARED_LIBS)
-    set(ELEMENTAL_LIBRARIES "${install_dir}/lib/libelemental.so")
+    add_library(libelemental SHARED IMPORTED)
+    set(ELEMENTAL_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libelemental.so")
   else()
-    set(ELEMENTAL_LIBRARIES "${install_dir}/lib/libelemental.a")
+    add_library(libelemental STATIC IMPORTED)
+    set(ELEMENTAL_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libelemental.a")
   endif()
   set_property(TARGET libelemental PROPERTY IMPORTED_LOCATION ${ELEMENTAL_LIBRARIES})
-  link_directories("${install_dir}/lib")
+  link_directories("${CMAKE_INSTALL_PREFIX}/lib")
 
   # LBANN has built Elemental
   set(LBANN_BUILT_ELEMENTAL TRUE)
