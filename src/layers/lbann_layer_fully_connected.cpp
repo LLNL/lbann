@@ -28,6 +28,7 @@
 
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -87,6 +88,8 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     }
 
     // Initialize weight-bias matrix
+    // Note that the weight-bias matrix has an extra column so that it will include
+    // the bias term from the previous layer's activations in the linear combination
     Zeros(*WB, NumNeurons+1, numPrevNeurons+1);
     if(WB->IsLocal(NumNeurons,numPrevNeurons)) {
       WB->SetLocal(WB->LocalHeight()-1, WB->LocalWidth()-1, DataType(1));
@@ -144,6 +147,24 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
     View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
 
+#if 0
+    // Set bias row back to 1.0
+    const Int local_row = Acts->LocalHeight() - 1;
+    const Int global_row = Acts->GlobalRow(local_row);
+    if(global_row == Acts->Height() - 1) {
+      for(Int col = 0; col < Acts->LocalWidth(); ++col) {
+        int gcol = Ds->GlobalCol(col);
+        //      if(gcol < neural_network_model->get_current_mini_batch_size()) {
+        Acts->SetLocal(local_row, col, DataType(1));
+        //      }
+        //      cout << col << " ";
+      }
+    }
+#endif
+
+    /// Create a view of the weights matrix
+    View(*m_weights_v, *WB, IR(0, WB->Height()), IR(0, WB->Width()));
+    View(*m_weights_gradient_v, *WB_D, IR(0, WB_D->Height()), IR(0, WB_D->Width()));
 }
 
 void lbann::FullyConnectedLayer::fp_linearity()
@@ -157,6 +178,9 @@ void lbann::FullyConnectedLayer::fp_linearity()
   DistMat& X = XProxy.Get();
   // DistMat& Z = ZProxy.Get();
   // DistMat& Y = YProxy.Get();
+  DistMat X_v;
+
+  View(X_v, X, IR(0, X.Height()), IR(0, neural_network_model->get_current_mini_batch_size()));
 
   // Apply forward prop linearity
   Gemm(NORMAL, NORMAL, (DataType) 1., *WB, X, (DataType) 0., *Zs);
@@ -168,12 +192,14 @@ void lbann::FullyConnectedLayer::bp_linearity()
     // Convert forward and backward prop matrices to MC,MR format
     DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: store from fp step
     DistMat& X = XProxy.Get();
+    DistMat X_v;
+    View(X_v, X, IR(0, X.Height()), IR(0, neural_network_model->get_current_mini_batch_size()));
 
     // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
+    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
     // Compute update for weights
-    Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
-         X, (DataType) 0., *WB_D);
+    Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
+         X_v, (DataType) 0., *m_weights_gradient_v);
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {

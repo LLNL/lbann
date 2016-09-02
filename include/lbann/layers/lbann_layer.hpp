@@ -38,6 +38,7 @@
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include <string>
 #include <vector>
 
@@ -142,6 +143,14 @@ class model;
     ElMat *Ds_Temp;        // Temporary deltas for computation ((# neurons + 1) x mini-batch size)
     ElMat *Acts;           // Activations ((# neurons + 1) x mini-batch size)
 
+    /// Create a view of each matrix so that it can accomodate partial mini-batches
+    ElMat *m_weights_v;            /// WB
+    ElMat *m_weights_gradient_v;   /// WB_D
+    ElMat *m_preactivations_v;     /// Zs
+    ElMat *m_prev_error_signal_v;  /// Ds
+    ElMat *m_error_signal_v;       /// Ds_Temp
+    ElMat *m_activations_v;        /// Acts
+
     Optimizer *optimizer;
 
     ElMat *fp_input;
@@ -150,6 +159,8 @@ class model;
     lbann_comm* comm;
     model* neural_network_model;
   protected:
+    /** Setup views of the matrices for the layer's forward and backward propagation. */
+    virtual void fp_set_std_matrix_view();
     /** Apply the layer's linear update in forward propagation. */
     virtual void fp_linearity() {}
     /** Handle the layer's linearity in backward propagation. */

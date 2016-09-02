@@ -27,6 +27,7 @@
 #include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,24 +81,41 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
   target_layer::update_num_samples_processed(num_samples_in_batch);
 
+  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+
+  if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
+    throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
+  }
+
+  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
+  DistMat& X = XProxy.Get();
+  DistMat X_v;
+  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
+  Mat Y_local_v;
+  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
+
+  // Clear the contents of the intermediate matrices
+  Zeros(YsColMax, Layer::m_mini_batch_size, 1);
+  Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
+
   /// Compute the error between the previous layers activations and the ground truth
-  ColumnMax((DistMat) *fp_input, YsColMax); /// For each minibatch (column) find the maximimum value
+  ColumnMax(X_v, YsColMax); /// For each minibatch (column) find the maximimum value
   Copy(YsColMax, YsColMaxStar); /// Give every rank a copy so that they can find the max index locally
 
-  Zeros(m_max_index, Layer::m_mini_batch_size, 1);
+  Zeros(m_max_index, Layer::m_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
-  for (int mb_index= 0; mb_index < fp_input->LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
-    int mb_global_index = fp_input->GlobalCol(mb_index);
+  for (int mb_index = 0; mb_index < X_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
+    int mb_global_index = X_v.GlobalCol(mb_index);
     DataType sample_max = YsColMaxStar.GetLocal(mb_global_index, 0);
-    for (int f_index = 0; f_index < fp_input->LocalHeight(); f_index++) { /// For each feature
+    for (int f_index = 0; f_index < X_v.LocalHeight(); f_index++) { /// For each feature
       if(fp_input->GetLocal(f_index, mb_index) == sample_max) {
-        m_max_index.Set(mb_global_index, 0, fp_input->GlobalRow(f_index));
+        m_max_index.Set(mb_global_index, 0, X_v.GlobalRow(f_index));
       }
     }
   }
 
-  Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1);
+  Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
   Layer::comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indicies.Buffer(), mpi::MAX);
 
@@ -106,12 +124,12 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
 
   /// Allow the current root to compute the errors, since it has the data locally
   if(is_current_root()) {
-    for (int mb_index= 0; mb_index < Y_local.Width(); mb_index++) { /// For each sample in mini-batch
+    for (int mb_index= 0; mb_index < Y_local_v.Width(); mb_index++) { /// For each sample in mini-batch
       int targetidx = -1;
       float targetmax = 0;
-      for (int f_index= 0; f_index < Y_local.Height(); f_index++) {
-        if (targetmax < Y_local.Get(f_index, mb_index)) {
-          targetmax = Y_local.Get(f_index, mb_index);
+      for (int f_index= 0; f_index < Y_local_v.Height(); f_index++) {
+        if (targetmax < Y_local_v.Get(f_index, mb_index)) {
+          targetmax = Y_local_v.Get(f_index, mb_index);
           targetidx = f_index;
         }
       }
@@ -122,6 +140,7 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
   }
   num_errors = Layer::comm->model_broadcast(m_root, num_errors);
 
+  /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
   distribute_from_local_matrix(Y_local, Ys);
 
   return num_errors;

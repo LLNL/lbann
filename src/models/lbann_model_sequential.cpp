@@ -506,7 +506,7 @@ lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
   }
 
   // Establish the backward pass input pointers
-  // Note: the last layer doens't require input
+  // Note: the last layer doesn't require input
   for (int l = m_layers.size()-2; l >= 0; --l) {
     m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
   }

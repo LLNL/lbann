@@ -165,7 +165,7 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  *num_samples += m_current_mini_batch_size;
   do_model_forward_prop_end_cbs();
 
   // Update training accuracy
@@ -246,7 +246,7 @@ bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
     L2NormSum = m_layers[l]->forwardProp(L2NormSum);
   }
   *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  *num_samples += m_current_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers
