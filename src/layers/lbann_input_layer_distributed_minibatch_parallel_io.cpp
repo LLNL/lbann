@@ -26,6 +26,7 @@
 
 #include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -68,6 +69,10 @@ void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
 
   int num_samples_in_batch = fetch_to_local_matrix(X_local);
   input_layer::update_num_samples_processed(num_samples_in_batch);
+
+  /// Let each rank know this size of the current mini-batch 
+  /// Note that this field has to be updated before distributing the data
+  neural_network_model->set_current_mini_batch_size(Layer::comm->model_broadcast(m_root, num_samples_in_batch));
 
   distribute_from_local_matrix(X_local, Xs);
 
