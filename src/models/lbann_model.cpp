@@ -37,6 +37,7 @@ lbann::model::model(lbann_comm* comm) :
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
+  m_current_mini_batch_size(0),
   comm(comm) {}
 
 void lbann::model::add_callback(lbann::lbann_callback* cb) {
