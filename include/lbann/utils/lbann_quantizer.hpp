@@ -120,30 +120,26 @@ public:
    * @param pos_thresh The positive threshold level.
    * @param neg_thresh The negative threshold level.
    * @param delta Whether to do delta encoding (default false).
-   * @param pos_avg The positive quantization value (0 for default).
-   * @param neg_avg The negative quantization value (0 for default).
    */
   void threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
-                          bool delta = false, DataType pos_avg = 0.0f,
-                          DataType neg_avg = 0.0f);
+                          bool delta = false);
   void threshold_quantize(const DistMat& mat, ThreshQuantized& q, Mat& qerror,
                           DataType pos_thresh, DataType neg_thresh,
-                          bool delta = false, DataType pos_avg = 0.0f,
-                          DataType neg_avg = 0.0f);
+                          bool delta = false);
   /**
    * Unquantize a thresholded-and-quantized matrix.
    * @param q The quantized matrix.
    * @param mat The output unquantized matrix.
-   * @param pos_avg The positive quantization value.
-   * @param neg_avg The negative quantization value.
+   * @param pos_thresh The positive threshold value.
+   * @param neg_thresh The negative negative value.
    * @param delta Whether q was quantized with delta encoding (default false).
    */
   void threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                            DataType pos_avg, DataType neg_avg,
+                            DataType pos_thresh, DataType neg_thresh,
                             bool delta = false);
   void threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                            DataType pos_avg, DataType neg_avg,
+                            DataType pos_thresh, DataType neg_thresh,
                             bool delta = false);
   /**
    * Threshold and quantize a matrix, dynamically choosing the threshold and
@@ -215,12 +211,14 @@ public:
    * @param mat The matrix to compute threshold values for.
    * @param qerror The accumulated quantization error in mat.
    * @param proportion Proportion of entries to keep.
+   * @param col The column to compute values for.
    * @param sample Whether to approximate stats with a sample.
    * @return In this order: The positive and negative threshold values, then the
    * positive and negative averages.
    */
   std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
-    const Mat& mat, const Mat& qerror, int proportion, bool sample = true);
+    const Mat& mat, const Mat& qerror, int proportion, int col,
+    bool sample = true);
 
   /** Get the total number of bytes sent during quantization. */
   size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
@@ -326,19 +324,13 @@ private:
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
 
-  /** Handle threshold unquantization from arbitrary locations. */
-  void threshold_unquantize(const ThreshQuantized& q,
-                            ThreshQuantized::const_iterator qstart, Mat& mat,
-                            DataType pos_avg, DataType neg_avg,
-                            bool delta = false);
   /**
    * Do threshold unquantization from arbitrary locations, adding the
    * unquantized values to existing ones instead of replacing them, and storing
    * the locations applied.
    */
-  void threshold_unquantize_apply(const ThreshQuantized& q,
-                                  ThreshQuantized::const_iterator qstart,
-                                  Mat& mat, DataType pos_avg, DataType neg_avg,
+  void threshold_unquantize_apply(const ThreshQuantized& q, Mat& mat,
+                                  DataType pos_thresh, DataType neg_thresh,
                                   std::vector<unsigned>& positions,
                                   bool delta = false);
   /**
@@ -348,8 +340,7 @@ private:
   void threshold_quantize_apply(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                                 DataType pos_thresh, DataType neg_thresh,
                                 std::vector<unsigned>& positions,
-                                bool delta = false, DataType pos_avg = 0.0f,
-                                DataType neg_avg = 0.0f);
+                                bool delta = false);
 
   /**
    * Variant of adaptive_threshold_quantize that adds its entries.
