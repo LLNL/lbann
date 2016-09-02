@@ -52,6 +52,23 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC};
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
+static const char* _to_string(execution_mode m) { 
+  switch(m) {
+  case execution_mode::training:
+    return "training";
+  case execution_mode::validation:
+    return "validation";
+  case execution_mode::testing:
+    return "testing";
+  case execution_mode::prediction:
+    return "prediction";
+  case execution_mode::invalid:
+    return "invalid";
+  default:
+    throw("Invalid execution mode specified");
+  }
+  return NULL;
+}
 
 /// Weight matrix initialization scheme
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
