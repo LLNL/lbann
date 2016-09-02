@@ -1,6 +1,6 @@
-project (LBANN)
-cmake_minimum_required (VERSION 2.8.8)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
+project(LBANN)
+cmake_minimum_required(VERSION 2.8.8)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 #
 # Options
@@ -72,6 +72,13 @@ endif()
 macro(link_cudnn target)
  target_link_libraries(${target} ${CUDA_LIBRARIES} ${CUDNN_LIBRARIES})
 endmacro()
+
+#
+# Include CUB
+# 
+if(CUDA_FOUND)
+    include(CUB)
+endif()
 
 #
 # Build nested source lists
@@ -214,6 +221,9 @@ add_library(src OBJECT ${SRCS})
 if(NOT CMAKE_ELEMENTAL_DIR)
     add_dependencies(src El)
 endif(NOT CMAKE_ELEMENTAL_DIR)
+if(LBANN_BUILT_CUB)
+    add_dependencies(src project_CUB)
+endif()
 
 set( LIBRARY_TYPE SHARED )
 add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
