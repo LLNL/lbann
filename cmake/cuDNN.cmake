@@ -4,9 +4,9 @@ if(DEFINED CMAKE_CUDNN_DIR)
   message(STATUS "Found cuDNN: ${CMAKE_CUDNN_DIR}")
 
   # cuDNN header files and libraries
-  include_directories("${CMAKE_CUDNN_DIR}/include")
-  link_directories("${CMAKE_CUDNN_DIR}/lib64")
-  set(CUDNN_LIBRARIES "-lcudnn")
+  set(CUDNN_INCLUDE_DIRS "${CMAKE_CUDNN_DIR}/include")
+  include_directories(${CUDNN_INCLUDE_DIRS})
+  set(CUDNN_LIBRARIES "${CMAKE_CUDNN_DIR}/lib64/libcudnn.so")
 
   # Add preprocessor flag for cuDNN  
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDNN")

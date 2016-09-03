@@ -16,7 +16,7 @@ if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
     set(PROTOBUF_URL "https://github.com/google/protobuf.git")
   endif()
   if(NOT DEFINED PROTOBUF_TAG)
-     set(PROTOBUF_TAG "v3.0.0-beta-2")
+     set(PROTOBUF_TAG "v3.0.0")
   endif()
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
 
@@ -41,11 +41,9 @@ if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
 
   # Get header files
   set(PROTOBUF_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-
+  
   # Get library
-  add_library(libprotobuf SHARED IMPORTED)
   set(PROTOBUF_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libprotobuf.so")
-  set_property(TARGET libprotobuf PROPERTY IMPORTED_LOCATION ${PROTOBUF_LIBRARIES})
 
   # Get protoc compiler
   set(PROTOBUF_PROTOC_EXECUTABLE "${CMAKE_INSTALL_PREFIX}/bin/protoc")
@@ -57,5 +55,6 @@ endif()
 
 # LBANN has access to Protocol Buffers
 if(PROTOBUF_FOUND OR LBANN_BUILT_PROTOBUF)
+  include_directories(${PROTOBUF_INCLUDE_DIRS})
   set(LBANN_HAS_PROTOBUF TRUE)
 endif()

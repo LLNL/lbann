@@ -8,9 +8,15 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Use Rpath for dependencies." TRUE)
 #option(HAVOQGT_BUILD_TEST "Build HAVOQGT tests." TRUE)
 
-################################################################################
-# Always full RPATH
-################################################################################
+if(NOT DEFINED MAKE_NUM_PROCESSES)
+  set(MAKE_NUM_PROCESSES 1)
+endif()
+
+
+################################################################
+# Initialize RPATH (always full RPATH)
+# Note: copied from https://cmake.org/Wiki/CMake_RPATH_handling
+################################################################
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
@@ -29,13 +35,14 @@ LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib"
 IF("${isSystemDir}" STREQUAL "-1")
    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF("${isSystemDir}" STREQUAL "-1")
-################################################################################
+################################################################
 
 # Get the git version so that we can embed it into the executable
 execute_process(COMMAND git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVERSION=\\\"${GIT_VERSION}\\\"" )
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
+# Initialize C++ flags
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11" )
 
 #
 # Main Include directory
@@ -195,7 +202,7 @@ add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 # Link in found libraries
 link_opencv(lbann)
 include_link_tbinf(lbann)
-target_link_libraries(lbann ELEMENTAL_LIBRARIES)
+target_link_libraries(lbann ${ELEMENTAL_LIBRARIES})
 
 if(OpenBLAS_FOUND)
   link_openblas(lbann)

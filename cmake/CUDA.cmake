@@ -8,7 +8,6 @@ if(CUDA_FOUND)
 
   # CUDA header files and libraries
   include_directories("${CUDA_TOOLKIT_ROOT_DIR}/include")
-  link_directories("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
 
   # Add preprocessor flag for CUDA
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDA")

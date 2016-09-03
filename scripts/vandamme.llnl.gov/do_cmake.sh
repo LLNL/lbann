@@ -12,12 +12,14 @@ INSTALL_PREFIX=${PWD}
 
 rm CMakeCache.txt
 cmake ../../ \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
   -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
   -DCMAKE_C_COMPILER=/usr/bin/gcc \
-  -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran \
   -DMPI_C_COMPILER=${HOMEBREW_PATH}/bin/mpicc \
   -DMPI_CXX_COMPILER=${HOMEBREW_PATH}/bin/mpic++ \
+  -DMPI_CXX_COMPILER=${HOMEBREW_PATH}/bin/mpifortran \
   -DCMAKE_OPENCV_DIR="/usr/local/Cellar/opencv/2.4.12_2" \
   -DCMAKE_CXX_FLAGS_RELEASE="-std=c++11 -O3 -DEL_NEW_MPI_REQUEST" \
   -DMPIEXEC_PREFLAGS="-hosts;localhost" \

@@ -71,7 +71,7 @@ namespace cudnn
 
     /** GPU memory allocator
      *  Faster than cudaMalloc/cudaFree since it uses a memory pool */
-    cub::CachingDeviceAllocator m_gpu_memory;
+    cub::CachingDeviceAllocator* m_gpu_memory;
 
     /** GPUs for current MPI rank */
     std::vector<int> m_gpus;
