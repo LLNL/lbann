@@ -16,8 +16,8 @@ else()
     set(ELEMENTAL_URL "https://github.com/elemental/Elemental.git")
   endif()
   if(NOT DEFINED ELEMENTAL_TAG)
-     # Commit from 1/8/2016
-     set(ELEMENTAL_TAG "6ec56aaead47848095411a07c73443b036438a72")
+     # Commit from 5/30/2016
+     set(ELEMENTAL_TAG "4a33924fe57aacbe84a3bcf089dcffe034cb979e")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -94,7 +94,6 @@ else()
 endif()
 set_property(TARGET libElemental PROPERTY IMPORTED_LOCATION ${ELEMENTAL_LIBRARIES})
 link_directories("${CMAKE_ELEMENTAL_DIR}/lib")
-#  set(CMAKE_CXX_FLAGS "${MATH_LIBS} ${CMAKE_CXX_FLAGS}")
 
 # Add preprocessor flag for Elemental
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_ELEMENTAL")

@@ -36,13 +36,8 @@ using namespace El;
 namespace lbann
 {
 
-#ifdef EL_NEW_MPI_REQUEST
-template <typename T>
-using lbann_mpi_req = mpi::Request<T>;
-#else
-template <typename T>
-using lbann_mpi_req = mpi::Request;
-#endif  // EL_NEW_MPI_REQUEST
+  template <typename T>
+  using lbann_mpi_req = mpi::Request<T>;
 
   /**
    * Manage communication.

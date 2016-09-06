@@ -141,6 +141,7 @@ pushd ${BUILD_DIR}
     -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
     -D CMAKE_CUDNN_DIR=${CMAKE_CUDNN_DIR} \
     -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
+    -D OpenBLAS_DIR="/usr/gapps/brain/installs/BLAS/${CLUSTER}" \
     ../..
 
   # Compile LBANN
