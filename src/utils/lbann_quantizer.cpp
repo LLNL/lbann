@@ -873,8 +873,62 @@ void lbann_quantizer::compress_thresholds(const ThreshQuantized& q,
 
 void lbann_quantizer::compress_thresholds(
   const ThreshQuantized& q, ThreshQuantized::const_iterator qstart,
+  ThreshQuantized::const_iterator qend, ThreshQuantized& comp_q) {
+  // Current bit to write to. This is in the range [0, NUM_BITS-1] (e.g. 0-31).
+  uqtype cur_bit = 0;
+  comp_q.emplace_back(0);
+  for (auto iter = qstart; iter != qend; ++iter) {
+    uqtype entry = *iter;
+    uqtype quotient = entry >> GR_K;
+    uqtype remainder = entry & (GR_M - 1);
+    size_t cur_pos = comp_q.size() - 1;
+    // quotient should usually be 0; if not, choose a better GR_K.
+    if (quotient == 0) {
+      // Just increment the current bit, since cur_bit <= 31 here.
+      ++cur_bit;
+    } else {
+      // The quotient needs quotient 1s then a 0.
+      // Determine how many bits we need to set in the current word.
+      uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit, quotient);
+      // This shift is done with 64 bits to deal with the case that:
+      // cur_bit == 0 && quotient == NUM_BITS => bits_set_cur = 32
+      // which breaks when sizeof(uqtype) == 32 (which we use).
+      // If we switch to 64 bits, we'll need to come up with something else,
+      // since the same problem will occur.
+      comp_q[cur_pos] |= ((((uint64_t) 1) << bits_set_cur) - 1) << cur_bit;
+      // Add the appropriate number of words filled with 1s (may be 0).
+      comp_q.resize(comp_q.size() + (quotient - bits_set_cur) / NUM_BITS,
+                    ~((uqtype) 0));
+      // Add the final bits if any and update cur_bit.
+      uqtype final_bits = (quotient - bits_set_cur) & (NUM_BITS - 1);
+      comp_q.resize(comp_q.size() + (final_bits > 0), (1 << final_bits) - 1);
+      cur_bit = (cur_bit + quotient) & (NUM_BITS - 1);
+      // Add the 0 terminator.
+      comp_q.resize(comp_q.size() + !cur_bit, 0);
+      ++cur_bit;
+    }
+    // Write remainder using GR_K bits. cur_bit == NUM_BITS is possible here.
+    uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit, GR_K);
+    cur_pos = comp_q.size() - 1;
+    // Write what we can to the current word.
+    comp_q[cur_pos] |= (remainder & ((1 << bits_set_cur) - 1)) << cur_bit;
+    // Write the rest to a new word, if needed.
+    comp_q.resize(comp_q.size() + (bits_set_cur != GR_K),
+                  remainder >> bits_set_cur);
+    cur_bit = (cur_bit + GR_K) & (NUM_BITS - 1);
+    // Add a new word if needed.
+    comp_q.resize(comp_q.size() + !cur_bit, 0);
+  }
+  // Pad the final word with 1s to terminate.
+  size_t cur_pos = comp_q.size() - 1;
+  comp_q[cur_pos] |= ((1 << (NUM_BITS - cur_bit)) - 1) << cur_bit;
+}
+
+void lbann_quantizer::compress_thresholds(
+  const ThreshQuantized& q, ThreshQuantized::const_iterator qstart,
   ThreshQuantized& cq) {
-  // Handle empty input.
+  compress_thresholds(q, qstart, q.end(), cq);
+/*  // Handle empty input.
   if (std::distance(qstart, q.end()) == 0) {
     cq.push_back(~((uqtype) 0));
     return;
@@ -966,7 +1020,7 @@ void lbann_quantizer::compress_thresholds(
   }
   if (cur) {
     cq.push_back(cur);
-  }
+    }*/
 }
 
 void lbann_quantizer::compress_adaptive_thresholds(const ThreshQuantized& q,
