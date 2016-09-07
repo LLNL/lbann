@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 # Options
 ################################################################
 
+option(VERBOSE "Verbose output" OFF)
 option(FORCE_OPENCV_BUILD "Force a build of OpenCV" OFF)
 option(FORCE_ELEMENTAL_BUILD "Force a build of Elemental" OFF)
 if(NOT DEFINED MAKE_NUM_PROCESSES)
@@ -48,6 +49,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVERSION=\\\"${GIT_VERSION}\\\"")
 
 # Initialize C++ flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
+
+# Set verbose output
+if(VERBOSE)
+  set(VERBOSE 1)
+else()
+  set(VERBOSE 0)
+endif()
 
 ################################################################
 # Initialize dependencies
