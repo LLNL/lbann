@@ -359,6 +359,10 @@ private:
   /** Handle uncompression starting from arbitrary locations. */
   void uncompress_thresholds(const ThreshQuantized& cq,
                              ThreshQuantized::const_iterator cqstart,
+                             ThreshQuantized::const_iterator cqend,
+                             ThreshQuantized& q);
+  void uncompress_thresholds(const ThreshQuantized& cq,
+                             ThreshQuantized::const_iterator cqstart,
                              ThreshQuantized& q);
 
   template <typename T>

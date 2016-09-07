@@ -908,7 +908,8 @@ void lbann_quantizer::compress_thresholds(
       ++cur_bit;
     }
     // Write remainder using GR_K bits. cur_bit == NUM_BITS is possible here.
-    uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit, GR_K);
+    uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit,
+                                   static_cast<uqtype>(GR_K));
     cur_pos = comp_q.size() - 1;
     // Write what we can to the current word.
     comp_q[cur_pos] |= (remainder & ((1 << bits_set_cur) - 1)) << cur_bit;
@@ -1037,8 +1038,57 @@ void lbann_quantizer::uncompress_thresholds(const ThreshQuantized& cq,
 
 void lbann_quantizer::uncompress_thresholds(
   const ThreshQuantized& cq, ThreshQuantized::const_iterator cqstart,
-  ThreshQuantized& q) {
+  ThreshQuantized::const_iterator cqend, ThreshQuantized& q) {
   uqtype quotient = 0;
+  uqtype remainder = 0;
+  uqtype cur_bit = 0;
+  uqtype cur = *cqstart;
+  for (auto iter = cqstart; iter != cqend;) {
+    // Decode the quotient by continuing until a 0 is found.
+    int ffz;
+    while ((ffz = __builtin_ffs(~cur)) == 0) {
+      ++iter;
+      if (iter == cqend) {
+        return;
+      }
+      cur = *iter;
+      quotient += NUM_BITS - cur_bit;
+      cur_bit = 0;
+    }
+    quotient += ffz - 1 - cur_bit;
+    cur_bit = ffz;
+    // Decode the remainder (GR_K bits).
+    uqtype bits_left = std::min((uqtype) NUM_BITS - cur_bit,
+                                static_cast<uqtype>(GR_K));
+    remainder = (cur >> cur_bit) & ((1 << bits_left) - 1);
+    iter += !!(bits_left != GR_K);
+    if (bits_left != GR_K) {
+      cur = *iter;
+    }
+    remainder |= (cur & ((1 << (GR_K - bits_left)) - 1)) << bits_left;
+    cur_bit = (cur_bit + GR_K) & (NUM_BITS - 1);
+    // Decode the final value.
+    q.emplace_back(quotient * GR_M + remainder);
+    quotient = 0;
+    remainder = 0;
+    // Advance to the next entry if needed.
+    if (!cur_bit) {
+      iter += !cur_bit;
+      if (iter != cqend) {
+        cur = *iter;
+      }
+    }
+    // Fill everything before the current bit with 1s to avoid confusing the
+    // quotient calculation.
+    cur |= (1 << cur_bit) - 1;
+  }
+}
+
+void lbann_quantizer::uncompress_thresholds(
+  const ThreshQuantized& cq, ThreshQuantized::const_iterator cqstart,
+  ThreshQuantized& q) {
+  uncompress_thresholds(cq, cqstart, cq.end(), q);
+  /*uqtype quotient = 0;
   uqtype remainder = 0;
   // Like in compress, cur_bit is the current bit being read.
   uqtype cur_bit = 0;
@@ -1090,7 +1140,7 @@ void lbann_quantizer::uncompress_thresholds(
     q.push_back(quotient * GR_M + remainder);
     quotient = 0;
     remainder = 0;
-  }
+    }*/
 }
 
 void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
