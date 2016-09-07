@@ -1,17 +1,14 @@
 project(LBANN)
 cmake_minimum_required(VERSION 2.8.12)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-#
+################################################################
 # Options
-#
-#option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Use Rpath for dependencies." TRUE)
-#option(HAVOQGT_BUILD_TEST "Build HAVOQGT tests." TRUE)
-
+################################################################
+option(FORCE_OPENCV_BUILD "Force a build of OpenCV" OFF)
+option(FORCE_ELEMENTAL_BUILD "Force a build of Elemental" ON)
 if(NOT DEFINED MAKE_NUM_PROCESSES)
   set(MAKE_NUM_PROCESSES 1)
 endif()
-
 
 ################################################################
 # Initialize RPATH (always full RPATH)
@@ -35,43 +32,33 @@ LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib"
 IF("${isSystemDir}" STREQUAL "-1")
    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF("${isSystemDir}" STREQUAL "-1")
+
 ################################################################
 
-# Get the git version so that we can embed it into the executable
+# Add CMake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Get version ID using Git version
 execute_process(COMMAND git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVERSION=\\\"${GIT_VERSION}\\\"" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVERSION=\\\"${GIT_VERSION}\\\"")
 
 # Initialize C++ flags
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
-#
-# Main Include directory
-#
+# Include LBANN header files
 include_directories("${PROJECT_SOURCE_DIR}/include")
-include_directories("${PROJECT_SOURCE_DIR}/include/lbann")
-include_directories("${PROJECT_SOURCE_DIR}")
 
-include(CheckSymbolExists)
-
-#
-# Link in OpenMP
-#
+# Include OpenMP
 find_package(OpenMP QUIET)
-if (OPENMP_FOUND)
-   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+if(OPENMP_FOUND)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-#
-# Link in CUDA,cuDNN
-#
+# Include CUDA, cuDNN, and CUB
 include(CUDA)
-include(cuDNN)
-
-#
-# Include CUB
-# 
 if(CUDA_FOUND)
-    include(CUB)
+  include(cuDNN)
+  include(CUB)
 endif()
 
 #
@@ -116,12 +103,6 @@ macro(include_link_tbinf target)
     endif(CMAKE_TBINF)
 endmacro()
 
-# Link in OpenCV
-include_directories("/usr/gapps/brain/installs/generic/include")
-link_directories("/usr/gapps/brain/installs/generic/lib")
-#CV_LIBS = -lopencv_core -lopencv_highgui
-set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D__LIB_OPENCV" )
-
 #
 # MPI is required
 #
@@ -134,20 +115,7 @@ endmacro()
 #
 # OpenCV is required
 #
-#set(OpenCV_STATIC ON)
-#set(OpenCV_CUDA OFF)
-
-find_package( OpenCV REQUIRED HINTS ${OpenCV_DIR})
-#find_package( OpenCV REQUIRED HINTS ${CMAKE_OPENCV_DIR})
-if(OpenCV_FOUND)
-  include_directories("${OpenCV_INCLUDE_DIRS}")
-  set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D__LIB_OPENCV" )
-  message("-- Found OpenCV version: ${OpenCV_VERSION} ${OpenCV_DIR}")
-endif()
-
-macro(link_opencv target)
- target_link_libraries(${target} ${OpenCV_LIBRARIES})
-endmacro()
+include(OpenCV)
 
 if(NOT ${CMAKE_CXX_COMPILER} MATCHES "icpc")
   find_package( OpenBLAS HINTS ${OpenBLAS_DIR})
@@ -190,29 +158,30 @@ add_subdirectory(model_zoo)
 
 add_library(src OBJECT ${SRCS})
 if(LBANN_BUILT_CUB)
-    add_dependencies(src project_CUB)
+  add_dependencies(src project_CUB)
+endif()
+if(LBANN_BUILT_OPENCV)
+  add_dependencies(src project_OpenCV)
 endif()
 if(LBANN_BUILT_ELEMENTAL)
-    add_dependencies(src project_Elemental)
+  add_dependencies(src project_Elemental)
 endif()
 
 set( LIBRARY_TYPE SHARED )
 add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 
 # Link in found libraries
-link_opencv(lbann)
 include_link_tbinf(lbann)
-target_link_libraries(lbann ${ELEMENTAL_LIBRARIES})
-
+target_link_libraries(lbann ${OpenCV_LIBRARIES})
+target_link_libraries(lbann ${Elemental_LIBRARIES})
 if(OpenBLAS_FOUND)
   link_openblas(lbann)
 endif()
-
 if(LBANN_HAS_CUDA)
   target_link_libraries(lbann ${CUDA_LIBRARIES})
 endif()
 if(LBANN_HAS_CUDNN)
-  target_link_libraries(lbann ${CUDNN_LIBRARIES})
+  target_link_libraries(lbann ${cuDNN_LIBRARIES})
 endif()
 
 
@@ -236,8 +205,8 @@ message(STATUS "  DOXYGEN_FOUND:       ${DOXYGEN_FOUND}")
 message(STATUS "  LBANN_HAS_PROTOBUF   ${LBANN_HAS_PROTOBUF}")
 message(STATUS "  LBANN_HAS_CUDA:      ${LBANN_HAS_CUDA}")
 message(STATUS "  LBANN_HAS_CUDNN:     ${LBANN_HAS_CUDNN}")
+message(STATUS "  LBANN_HAS_OPENCV:    ${LBANN_HAS_OPENCV}")
 message(STATUS "  LBANN_HAS_ELEMENTAL: ${LBANN_HAS_ELEMENTAL}")
-message(STATUS "  OpenCV_FOUND:        ${OpenCV_FOUND}")
 #MPI params found
 if(MPI_FOUND)
   message("   MPIEXEC: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} PROCS 

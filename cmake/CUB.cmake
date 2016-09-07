@@ -1,13 +1,13 @@
 include(ExternalProject)
 
 # Download CUB if it is not found
-if(NOT DEFINED CUB_INCLUDE_DIRS)
+if(NOT CUB_INCLUDE_DIRS)
 
   # Git repository URL and tag
-  if(NOT DEFINED CUB_URL)
+  if(NOT CUB_URL)
     set(CUB_URL "https://github.com/NVlabs/cub.git")
   endif()
-  if(NOT DEFINED CUB_TAG)
+  if(NOT CUB_TAG)
     set(CUB_TAG "1.5.2")
   endif()
   message(STATUS "Will pull CUB (tag ${CUB_TAG}) from ${CUB_URL}")

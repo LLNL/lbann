@@ -5,8 +5,9 @@ COMPILER=gnu
 
 # Help message
 function help_message {
-  local n=`tput sgr0`    # Normal text
-  local c=`tput setf 4`  # Colored text
+  local SCRIPT=`basename ${0}`
+  local N=`tput sgr0`    # Normal text
+  local C=`tput setf 4`  # Colored text
 cat << EOF
 Build LBANN on an LLNL LC system.
 Usage: ${SCRIPT} [options]
@@ -14,6 +15,7 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel').
   ${C}--verbose${N}               Verbose output.
+  ${C}--debug{N}                  Build with debug flag.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
 EOF
@@ -40,6 +42,10 @@ while :; do
       # Verbose output
       VERBOSE=1
       ;;
+    -d|--debug)
+      # Debug mode
+      BUILD_TYPE="Debug"
+      ;;
     --build-clean)
       # Clean build directory
       BUILD_CLEAN=1
@@ -64,19 +70,7 @@ while :; do
 done
 
 # Detect computing system
-HOSTNAME=$(hostname)
-if [[ "${HOSTNAME}" == *"surface"* ]]; then
-  CLUSTER="surface"
-elif [[ "${HOSTNAME}" == *"catalyst"* ]]; then
-  CLUSTER="catalyst"
-elif [[ "${HOSTNAME}" == *"flash"* ]]; then
-  CLUSTER="flash"
-elif [[ "${HOSTNAME}" == *"vandamme"* ]]; then
-  CLUSTER="vandamme"
-else
-  echo "Unrecognized host name (${HOSTNAME})"
-  exit 1
-fi
+CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 
 # Build and install directories
 BUILD_DIR=$(git rev-parse --show-toplevel)/build/${CLUSTER}.llnl.gov
@@ -110,7 +104,12 @@ MPI_Fortran_COMPILER=${MPI_DIR}/mpifort
 # Get CUDA and cuDNN
 if [ "${CLUSTER}" == "surface" ]; then
   CUDA_TOOLKIT_ROOT_DIR="/opt/cudatoolkit-7.5"
-  CMAKE_CUDNN_DIR="/usr/gapps/brain/installs/cudnn/v5"
+  cuDNN_DIR="/usr/gapps/brain/installs/cudnn/v5"
+fi
+
+# Build type
+if [ -z "${BUILD_TYPE}" ]; then
+  BUILD_TYPE="Release"
 fi
 
 # Number of parallel processes for make
@@ -128,7 +127,7 @@ pushd ${BUILD_DIR}
 
   # Initialize build with CMake
   cmake  \
-    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
     -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
     -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
@@ -136,13 +135,14 @@ pushd ${BUILD_DIR}
     -D MPI_C_COMPILER=${MPI_C_COMPILER} \
     -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
     -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
-    -D MATH_LIBS="-L/usr/gapps/brain/installs/BLAS/${CLUSTER}/lib -lopenblas" \
-    -D OpenCV_DIR="/usr/gapps/brain/tools/OpenCV/2.4.13/" \
     -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
-    -D CMAKE_CUDNN_DIR=${CMAKE_CUDNN_DIR} \
+    -D cuDNN_DIR=${cuDNN_DIR} \
     -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
+    -D OpenCV_DIR="/usr/gapps/brain/tools/OpenCV/2.4.13/" \
+    -D MATH_LIBS="-L/usr/gapps/brain/installs/BLAS/${CLUSTER}/lib -lopenblas" \
     -D OpenBLAS_DIR="/usr/gapps/brain/installs/BLAS/${CLUSTER}" \
     ../..
+
 
   # Compile LBANN
   make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}

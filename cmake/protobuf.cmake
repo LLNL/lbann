@@ -12,10 +12,10 @@ endif()
 if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
 
   # Git repository URL and tag
-  if(NOT DEFINED PROTOBUF_URL)
+  if(NOT PROTOBUF_URL)
     set(PROTOBUF_URL "https://github.com/google/protobuf.git")
   endif()
-  if(NOT DEFINED PROTOBUF_TAG)
+  if(NOT PROTOBUF_TAG)
      set(PROTOBUF_TAG "v3.0.0")
   endif()
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
