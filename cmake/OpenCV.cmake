@@ -15,7 +15,7 @@ else()
 
   # Git repository URL and tag
   if(NOT OPENCV_URL)
-    set(OPENCV_URL "https://github.com/opencv/opencv.git")
+    set(OPENCV_URL https://github.com/opencv/opencv.git)
   endif()
   if(NOT OPENCV_TAG)
     set(OPENCV_TAG "2.4.13")
@@ -35,14 +35,14 @@ else()
   option(OPENCV_WITH_GPHOTO "OpenCV: Include gPhoto2 library support" OFF) # Causes a compilation error
 
   # Download and build location
-  set(OPENCV_SOURCE_DIR "${PROJECT_BINARY_DIR}/download/opencv/source")
-  set(OPENCV_BINARY_DIR "${PROJECT_BINARY_DIR}/download/opencv/build")
+  set(OPENCV_SOURCE_DIR ${PROJECT_BINARY_DIR}/download/opencv/source)
+  set(OPENCV_BINARY_DIR ${PROJECT_BINARY_DIR}/download/opencv/build)
 
   # Get OpenCV from Git repository and build
   ExternalProject_Add(project_OpenCV
     PREFIX          ${CMAKE_INSTALL_PREFIX}
-    TMP_DIR         "${OPENCV_BINARY_DIR}/tmp"
-    STAMP_DIR       "${OPENCV_BINARY_DIR}/stamp"
+    TMP_DIR         ${OPENCV_BINARY_DIR}/tmp
+    STAMP_DIR       ${OPENCV_BINARY_DIR}/stamp
     GIT_REPOSITORY  ${OPENCV_URL}
     GIT_TAG         ${OPENCV_TAG}
     SOURCE_DIR      ${OPENCV_SOURCE_DIR}
@@ -63,13 +63,12 @@ else()
   )
 
   # Get install directory
-  set(OpenCV_DIR "${CMAKE_INSTALL_PREFIX}")
+  set(OpenCV_DIR ${CMAKE_INSTALL_PREFIX})
 
   # Get header files
-  set(OpenCV_INCLUDE_DIRS "${OpenCV_DIR}/include")
+  set(OpenCV_INCLUDE_DIRS ${OpenCV_DIR}/include)
 
   # Get libraries
-#  set(OpenCV_LIBRARIES "${OpenCV_DIR}/lib/libopencv_imgcodecs.so ${OpenCV_DIR}/lib/libopencv_core.so")
   set(OpenCV_LIBRARIES ${OpenCV_DIR}/lib/libopencv_highgui.so ${OpenCV_DIR}/lib/libopencv_core.so)
 
   # LBANN has built OpenCV

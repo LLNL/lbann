@@ -13,7 +13,7 @@ if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
 
   # Git repository URL and tag
   if(NOT PROTOBUF_URL)
-    set(PROTOBUF_URL "https://github.com/google/protobuf.git")
+    set(PROTOBUF_URL https://github.com/google/protobuf.git)
   endif()
   if(NOT PROTOBUF_TAG)
      set(PROTOBUF_TAG "v3.0.0")
@@ -21,14 +21,14 @@ if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
 
   # Download and build location
-  set(PROTOBUF_SOURCE_DIR "${PROJECT_BINARY_DIR}/download/protobuf/source")
-  set(PROTOBUF_BINARY_DIR "${PROJECT_BINARY_DIR}/download/protobuf/build")
+  set(PROTOBUF_SOURCE_DIR ${PROJECT_BINARY_DIR}/download/protobuf/source)
+  set(PROTOBUF_BINARY_DIR ${PROJECT_BINARY_DIR}/download/protobuf/build)
 
   # Get Protocol Buffers from Git repository and build
   ExternalProject_Add(project_protobuf
     PREFIX         ${CMAKE_INSTALL_PREFIX}
-    TMP_DIR        "${PROTOBUF_BINARY_DIR}/tmp"
-    STAMP_DIR      "${PROTOBUF_BINARY_DIR}/stamp"
+    TMP_DIR        ${PROTOBUF_BINARY_DIR}/tmp
+    STAMP_DIR      ${PROTOBUF_BINARY_DIR}/stamp
     GIT_REPOSITORY ${PROTOBUF_URL}
     GIT_TAG        ${PROTOBUF_TAG}
     SOURCE_DIR     ${PROTOBUF_SOURCE_DIR}
