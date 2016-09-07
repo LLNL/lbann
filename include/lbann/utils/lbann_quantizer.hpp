@@ -149,23 +149,23 @@ public:
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
-   * @param delta Whether to do delta encoding (default false).
+   * @param compress Whether to compress the data (default false).
    */
   void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
-                                   int proportion, bool delta = false);
+                                   int proportion, bool compress = false);
   void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
                                    Mat& qerror, int proportion,
-                                   bool delta = false);
+                                   bool compress = false);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
-   * @param delta Whether delta encoding was used (default false).
+   * @param compress Whether compression was used (default false).
    */
   void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                                     bool delta = false);
+                                     bool compress = false);
   void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                                     bool delta = false);
+                                     bool compress = false);
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
    */
@@ -195,13 +195,9 @@ public:
    */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized& cq);
-  void compress_adaptive_thresholds(const ThreshQuantized& q,
-                                    ThreshQuantized& cq);
   /** Corresponding uncompress. */
   void uncompress_thresholds(const ThreshQuantized& cq,
                              ThreshQuantized& q);
-  void uncompress_adaptive_thresholds(const ThreshQuantized& cq,
-                                      ThreshQuantized& q);
 
   /**
    * Compute positive and negative threshold values such that only one in
@@ -346,7 +342,7 @@ private:
    * Variant of adaptive_threshold_quantize that adds its entries.
    */
   void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
-                                         bool delta = false);
+                                         bool compress = false);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,

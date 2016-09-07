@@ -165,19 +165,14 @@ void test_adaptive_threshold_quantize() {
 void test_adaptive_threshold_compression() {
   Mat mat;
   El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::ThreshQuantized qmat;
+  lbann_quantizer::ThreshQuantized qmat, comp_qmat;
   Mat qerror;
   El::Zeros(qerror, mat.Height(), mat.Width());
   lbann_quantizer quantizer;
-  quantizer.adaptive_threshold_quantize(mat, qmat, qerror, 3);
-  lbann_quantizer::ThreshQuantized compressed_qmat;
-  quantizer.compress_adaptive_thresholds(qmat, compressed_qmat);
-  lbann_quantizer::ThreshQuantized uncompressed_qmat;
-  quantizer.uncompress_adaptive_thresholds(compressed_qmat, uncompressed_qmat);
-  ASSERT_VECTOR_EQ(qmat, uncompressed_qmat);
+  quantizer.adaptive_threshold_quantize(mat, comp_qmat, qerror, 3, true);
   Mat uqmat;
   El::Zeros(uqmat, mat.Width(), mat.Height());
-  quantizer.adaptive_threshold_unquantize(qmat, uqmat);
+  quantizer.adaptive_threshold_unquantize(comp_qmat, uqmat, true);
   // Ensure there's some quantization error.
   Mat z;
   El::Zeros(z, mat.Height(), mat.Width());
@@ -367,7 +362,7 @@ void test_adaptive_threshold_quantize_allreduce() {
  * compression.
  */
 void test_compressed_adaptive_threshold_quantize_allreduce() {
-    lbann_comm* comm = new lbann_comm(2);
+  lbann_comm* comm = new lbann_comm(2);
   DistMat mat(comm->get_model_grid());
   if (comm->get_model_rank() == 0) {
     El::Rademacher(mat, 10, 10);
