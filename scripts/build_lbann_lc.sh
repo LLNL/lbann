@@ -1,13 +1,19 @@
 #!/bin/bash
 
+################################################################
 # Default options
+################################################################
+
 COMPILER=gnu
 BUILD_TYPE="Release"
 VERBOSE=0
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 
+################################################################
 # Help message
+################################################################
+
 function help_message {
   local SCRIPT=$(basename ${0})
   local N=$(tput sgr0)    # Normal text
@@ -26,7 +32,10 @@ Options:
 EOF
 }
 
+################################################################
 # Parse command-line arguments
+################################################################
+
 while :; do
   case ${1} in
     -h|--help)
@@ -74,6 +83,10 @@ while :; do
   shift
 done
 
+################################################################
+# Initialize variables
+################################################################
+
 # Detect computing system
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
@@ -114,6 +127,10 @@ if [ "${CLUSTER}" == "surface" ]; then
   cuDNN_DIR="/usr/gapps/brain/installs/cudnn/v5"
 fi
 
+################################################################
+# Build LBANN
+################################################################
+
 # Work in build directory
 pushd ${BUILD_DIR}
 
@@ -122,8 +139,8 @@ pushd ${BUILD_DIR}
     rm -rf *
   fi
 
-  # Initialize build with CMake
-  CMAKE_COMMAND=$(cat << EOF
+  # Configure build with CMake
+  CONFIGURE_COMMAND=$(cat << EOF
 cmake \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
@@ -143,15 +160,22 @@ ${ROOT_DIR}
 EOF
 )
   if [ ${VERBOSE} -ne 0 ]; then
-    echo "${CMAKE_COMMAND}"
+    echo "${CONFIGURE_COMMAND}"
   fi
-  ${CMAKE_COMMAND}
+  ${CONFIGURE_COMMAND}
 
-  # Compile LBANN
-  MAKE_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+  # Build LBANN with make
+  BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
   if [ ${VERBOSE} -ne 0 ]; then
-    echo "${MAKE_COMMAND}"
+    echo "${BUILD_COMMAND}"
   fi
-  ${MAKE_COMMAND}
+  ${BUILD_COMMAND}
+
+  # Install LBANN with make
+  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${INSTALL_COMMAND}"
+  fi
+  ${INSTALL_COMMAND}
 
 popd
