@@ -8,15 +8,19 @@ if(NOT PROTOBUF_FORCE_BUILD)
   find_package(Protobuf QUIET)
 endif()
 
-# Download and build Protocol Buffers if it is not found
-if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
+# Check if Protocol Buffers has been found
+if(PROTOBUF_FOUND AND NOT FORCE_PROTOBUF_BUILD)
+
+  message(STATUS "Found Protocol Buffers: ${PROTOBUF_INCLUDE_DIRS} ${PROTOBUF_LIBRARIES}")
+
+else()
 
   # Git repository URL and tag
   if(NOT PROTOBUF_URL)
     set(PROTOBUF_URL https://github.com/google/protobuf.git)
   endif()
   if(NOT PROTOBUF_TAG)
-     set(PROTOBUF_TAG "v3.0.0")
+     set(PROTOBUF_TAG "v3.0.2")
   endif()
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
 
@@ -26,27 +30,27 @@ if(NOT PROTOBUF_FOUND OR PROTOBUF_FORCE_BUILD)
 
   # Get Protocol Buffers from Git repository and build
   ExternalProject_Add(project_protobuf
-    PREFIX         ${CMAKE_INSTALL_PREFIX}
-    TMP_DIR        ${PROTOBUF_BINARY_DIR}/tmp
-    STAMP_DIR      ${PROTOBUF_BINARY_DIR}/stamp
-    GIT_REPOSITORY ${PROTOBUF_URL}
-    GIT_TAG        ${PROTOBUF_TAG}
-    SOURCE_DIR     ${PROTOBUF_SOURCE_DIR}
-    CONFIGURE_COMMAND "${PROTOBUF_SOURCE_DIR}/autogen.sh && ${PROTOBUF_SOURCE_DIR}/configure --prefix=${CMAKE_INSTALL_PREFIX}"
-    BINARY_DIR     ${PROTOBUF_BINARY_DIR}
-#    BINARY_COMMAND "make"
-    INSTALL_DIR    ${CMAKE_INSTALL_PREFIX}
-#    INSTALL_COMMAND "make install"
+    PREFIX            ${CMAKE_INSTALL_PREFIX}
+    TMP_DIR           ${PROTOBUF_BINARY_DIR}/tmp
+    STAMP_DIR         ${PROTOBUF_BINARY_DIR}/stamp
+    GIT_REPOSITORY    ${PROTOBUF_URL}
+    GIT_TAG           ${PROTOBUF_TAG}
+    SOURCE_DIR        ${PROTOBUF_SOURCE_DIR}
+    CONFIGURE_COMMAND ""
+    BINARY_DIR        ${PROTOBUF_BINARY_DIR}
+    BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && ./autogen.sh && ./configure --prefix=${CMAKE_INSTALL_PREFIX} && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
+    INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
+    INSTALL_COMMAND   pushd ${PROTOBUF_SOURCE_DIR} && ${CMAKE_MAKE_PROGRAM} install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
   )
 
   # Get header files
-  set(PROTOBUF_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+  set(PROTOBUF_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include)
   
   # Get library
-  set(PROTOBUF_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libprotobuf.so")
+  set(PROTOBUF_LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/libprotobuf.so)
 
   # Get protoc compiler
-  set(PROTOBUF_PROTOC_EXECUTABLE "${CMAKE_INSTALL_PREFIX}/bin/protoc")
+  set(PROTOBUF_PROTOC_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/bin/protoc)
 
   # LBANN has built Protocol Buffers
   set(LBANN_BUILT_PROTOBUF TRUE)

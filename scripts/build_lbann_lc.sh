@@ -5,9 +5,10 @@
 ################################################################
 
 COMPILER=gnu
-BUILD_TYPE="Release"
-VERBOSE=0
+BUILD_TYPE=Release
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+VERBOSE=0
+CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 
 ################################################################
@@ -55,10 +56,11 @@ while :; do
     -v|--verbose)
       # Verbose output
       VERBOSE=1
+      CMAKE_INSTALL_MESSAGE=ALWAYS
       ;;
     -d|--debug)
       # Debug mode
-      BUILD_TYPE="Debug"
+      BUILD_TYPE=Debug
       ;;
     --build-clean)
       # Clean build directory
@@ -143,6 +145,7 @@ pushd ${BUILD_DIR}
   CONFIGURE_COMMAND=$(cat << EOF
 cmake \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+-D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \

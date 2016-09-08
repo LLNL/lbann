@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 2.8.11)
 option(VERBOSE "Verbose output" OFF)
 option(FORCE_OPENCV_BUILD "Force a build of OpenCV" OFF)
 option(FORCE_ELEMENTAL_BUILD "Force a build of Elemental" OFF)
+option(FORCE_PROTOBUF_BUILD "Force a build of Protocol Buffers" OFF)
 if(NOT DEFINED MAKE_NUM_PROCESSES)
   set(MAKE_NUM_PROCESSES 1)
 endif()
@@ -73,7 +74,7 @@ if(CUDA_FOUND)
   include(cuDNN)
   include(CUB)
 endif()
-# include(protobuf)
+include(protobuf)
 
 #
 # Build nested source lists
