@@ -43,18 +43,18 @@ void lbann::lbann_callback_debug::on_batch_end(model* m) {
 }
 
 void lbann::lbann_callback_debug::on_forward_prop_begin(model* m, Layer* l) {
-  std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->Index << std::endl;
+  std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->Index << std::endl;
 }
 
 void lbann::lbann_callback_debug::on_forward_prop_end(model* m, Layer* l) {
-  std::cout << "Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->Index << std::endl;
+  std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->Index << std::endl;
 }
 
 void lbann::lbann_callback_debug::on_backward_prop_begin(model* m, Layer* l) {
-  std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting backward propagation for layer " << l->Index << std::endl;
+  std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting backward propagation for layer " << l->Index << std::endl;
 }
 
 void lbann::lbann_callback_debug::on_backward_prop_end(model* m, Layer* l) {
-  std::cout << "Phase: " << _to_string(m->get_execution_mode()) << "   ending backward propagation for layer " << l->Index << std::endl;
+  std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending backward propagation for layer " << l->Index << std::endl;
 }
 
