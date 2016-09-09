@@ -68,7 +68,10 @@ void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
   int num_parallel_readers = get_num_parallel_readers();
 
   int num_samples_in_batch = fetch_to_local_matrix(X_local);
-  input_layer::update_num_samples_processed(num_samples_in_batch);
+  if(is_current_root()) {
+    /// Only update the number of samples processed by this parallel reader, when it is the current root
+    input_layer::update_num_samples_processed(num_samples_in_batch);
+  }
 
   /// Let each rank know this size of the current mini-batch 
   /// Note that this field has to be updated before distributing the data

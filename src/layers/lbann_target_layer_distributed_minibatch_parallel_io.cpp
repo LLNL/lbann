@@ -79,7 +79,10 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
 ///@todo update this to use the new fp_linearity framework
 DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(DataType prev_WBL2NormSum) {
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
-  target_layer::update_num_samples_processed(num_samples_in_batch);
+  if(is_current_root()) {
+    /// Only update the number of samples processed by this parallel reader, when it is the current root
+    target_layer::update_num_samples_processed(num_samples_in_batch);
+  }
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
@@ -109,7 +112,7 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
     int mb_global_index = X_v.GlobalCol(mb_index);
     DataType sample_max = YsColMaxStar.GetLocal(mb_global_index, 0);
     for (int f_index = 0; f_index < X_v.LocalHeight(); f_index++) { /// For each feature
-      if(fp_input->GetLocal(f_index, mb_index) == sample_max) {
+      if(X_v.GetLocal(f_index, mb_index) == sample_max) {
         m_max_index.Set(mb_global_index, 0, X_v.GlobalRow(f_index));
       }
     }
