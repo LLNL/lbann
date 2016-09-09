@@ -7,8 +7,9 @@ add_subdirectory(io)
 add_subdirectory(utils)
 add_subdirectory(regularization)
 
-add_sources(lbann_Elemental_extensions.cpp 
-            lbann_params.cpp
-            lbann_comm.cpp
-            )
+add_sources(
+  lbann_Elemental_extensions.cpp 
+  lbann_params.cpp
+  lbann_comm.cpp
+)
 

@@ -1,9 +1,10 @@
 include(ExternalProject)
 
-# Library type (defaults to shared library)
+# Options
 if(NOT ELEMENTAL_LIBRARY_TYPE)
   set(ELEMENTAL_LIBRARY_TYPE SHARED)
 endif()
+option(FORCE_ELEMENTAL_BUILD "Elemental: force build" OFF)
 
 # Check if Elemental has been provided
 if(Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
@@ -33,9 +34,9 @@ else()
   option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" ON)
 
   # Determine library type
-  if(${ELEMENTAL_LIBRARY_TYPE} STREQUAL STATIC)
+  if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)
     set(ELEMENTAL_BUILD_SHARED_LIBS OFF)
-  elseif(${ELEMENTAL_LIBRARY_TYPE} STREQUAL SHARED)
+  elseif(ELEMENTAL_LIBRARY_TYPE STREQUAL SHARED)
     set(ELEMENTAL_BUILD_SHARED_LIBS ON)
   else()
     message(WARNING "Elemental: unknown library type (${ELEMENTAL_LIBRARY_TYPE}), defaulting to shared library.")
@@ -69,7 +70,7 @@ else()
       -D MPI_C_COMPILER=${MPI_C_COMPILER}
       -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER}
       -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER}
-      -D MATH_LIBS=${MATH_LIBS}
+      -D MATH_LIBS=${ELEMENTAL_MATH_LIBS}
       -D BUILD_SHARED_LIBS=${ELEMENTAL_BUILD_SHARED_LIBS}
       -D EL_HYBRID=${ELEMENTAL_HYBRID}
       -D EL_C_INTERFACE=${ELEMENTAL_C_INTERFACE}

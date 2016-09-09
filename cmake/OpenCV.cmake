@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+# Options
+option(FORCE_OPENCV_BUILD "OpenCV: force build" OFF)
+
 # Try finding OpenCV
 if(NOT FORCE_OPENCV_BUILD)
   find_package(OpenCV QUIET HINTS ${OpenCV_DIR})

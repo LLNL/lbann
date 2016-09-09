@@ -6,6 +6,7 @@
 
 COMPILER=gnu
 BUILD_TYPE=Release
+Elemental_DIR=
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
@@ -154,6 +155,7 @@ cmake \
 -D MPI_C_COMPILER=${MPI_C_COMPILER} \
 -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
 -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
+-D Elemental_DIR=${Elemental_DIR} \
 -D OpenCV_DIR=${OpenCV_DIR} \
 -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
 -D cuDNN_DIR=${cuDNN_DIR} \

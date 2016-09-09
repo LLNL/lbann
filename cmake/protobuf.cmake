@@ -1,10 +1,10 @@
 include(ExternalProject)
 
-# Protocol Buffers options
-option(PROTOBUF_FORCE_BUILD "Protocol Buffers: force build?" ON)
+# Options
+option(FORCE_PROTOBUF_BUILD "Protocol Buffers: force build" OFF)
 
 # Check if Protocol Buffers is already installed
-if(NOT PROTOBUF_FORCE_BUILD)
+if(NOT FORCE_PROTOBUF_BUILD)
   find_package(Protobuf QUIET)
 endif()
 
@@ -36,9 +36,9 @@ else()
     GIT_REPOSITORY    ${PROTOBUF_URL}
     GIT_TAG           ${PROTOBUF_TAG}
     SOURCE_DIR        ${PROTOBUF_SOURCE_DIR}
-    CONFIGURE_COMMAND ""
+    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && ./autogen.sh && ./configure --prefix=${CMAKE_INSTALL_PREFIX} && popd
     BINARY_DIR        ${PROTOBUF_BINARY_DIR}
-    BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && ./autogen.sh && ./configure --prefix=${CMAKE_INSTALL_PREFIX} && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
+    BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
     INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
     INSTALL_COMMAND   pushd ${PROTOBUF_SOURCE_DIR} && ${CMAKE_MAKE_PROGRAM} install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
   )
@@ -59,6 +59,6 @@ endif()
 
 # LBANN has access to Protocol Buffers
 if(PROTOBUF_FOUND OR LBANN_BUILT_PROTOBUF)
-  include_directories(${PROTOBUF_INCLUDE_DIRS})
+  include_directories(BEFORE ${PROTOBUF_INCLUDE_DIRS}) # Need to get ahead of system protobuf
   set(LBANN_HAS_PROTOBUF TRUE)
 endif()
