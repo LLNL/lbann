@@ -190,7 +190,7 @@ public:
 
   /**
    * Compress the output of threshold_quantize.
-   * This uses Golumb-Rice coding, with the quotient stored first, followed by
+   * This uses Golomb-Rice coding, with the quotient stored first, followed by
    * the remainder.
    */
   void compress_thresholds(const ThreshQuantized& q,
@@ -275,12 +275,12 @@ private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
   /**
-   * Golumb-Rice M parameter, a power of 2. Should be large-ish relative to the
+   * Golomb-Rice M parameter, a power of 2. Should be large-ish relative to the
    * data being encoded, but log_2(GR_M) should be <= 31.
    */
-  static const uqtype GR_M = 16;
+  static const uqtype GR_M = 128;
   /** log_2(GR_M). */
-  static const uqtype GR_K = 4;
+  static const uqtype GR_K = 7;
   /** Number of samples to use in proportion_threshold_average. */
   static const int NUM_PTA_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
