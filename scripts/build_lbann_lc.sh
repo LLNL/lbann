@@ -103,7 +103,7 @@ mkdir -p ${INSTALL_DIR}
 # Get C/C++/Fortran compilers
 if [ "${COMPILER}" == "gnu" ]; then
   # GNU compilers
-  GNU_DIR=/opt/rh/devtoolset-2/root/usr/bin
+  GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
   CMAKE_CXX_COMPILER=${GNU_DIR}/g++
   CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran

@@ -4,7 +4,7 @@ find_package(OpenMP QUIET)
 if(OPENMP_FOUND)
 
   # Status message
-  message(STATUS "Found OpenMP")
+  message(STATUS "Found OpenMP: OpenMP_CXX_FLAGS=\"${OpenMP_CXX_FLAGS}\"")
 
   # Add C and C++ flags
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
