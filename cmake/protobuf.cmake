@@ -11,7 +11,7 @@ endif()
 # Check if Protocol Buffers has been found
 if(PROTOBUF_FOUND AND NOT FORCE_PROTOBUF_BUILD)
 
-  message(STATUS "Found Protocol Buffers: ${PROTOBUF_INCLUDE_DIRS} ${PROTOBUF_LIBRARIES}")
+  message(STATUS "Found Protocol Buffers: ${PROTOBUF_LIBRARIES}")
 
 else()
 

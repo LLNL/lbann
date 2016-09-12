@@ -88,13 +88,13 @@ endif()
 # Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in 
-               ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
-add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc
-    COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in 
+                 ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
+  add_custom_target(doc
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc
+      COMMENT "Generating API documentation with Doxygen" VERBATIM
+  )
 endif(DOXYGEN_FOUND)
 
 ################################################################
@@ -156,19 +156,6 @@ if(LBANN_HAS_CUDNN)
 endif()
 if(LBANN_HAS_TBINF)
   target_link_libraries(lbann TBinf)
-endif()
-
-################################################################
-# Install LBANN
-################################################################
-
-if(FALSE)
-
-install(TARGETS lbann
-  EXPORT lbann
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
 endif()
 
 ################################################################

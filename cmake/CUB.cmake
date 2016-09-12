@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 # Download CUB if it is not found
-if(NOT CUB_INCLUDE_DIRS)
+if(NOT CUB_DIR)
 
   # Git repository URL and tag
   if(NOT CUB_URL)
@@ -15,7 +15,7 @@ if(NOT CUB_INCLUDE_DIRS)
   # Download and build location
   set(CUB_SOURCE_DIR ${PROJECT_BINARY_DIR}/download/cub/source)
   set(CUB_BINARY_DIR ${PROJECT_BINARY_DIR}/download/cub/build)
-  set(CUB_INCLUDE_DIRS ${CUB_SOURCE_DIR})
+  set(CUB_DIR ${CUB_SOURCE_DIR})
 
   # Get CUB from Git repository
   # Note: no compilation is required since CUB is a header library
@@ -39,6 +39,7 @@ if(NOT CUB_INCLUDE_DIRS)
 endif()
 
 # Include CUB header files
+set(CUB_INCLUDE_DIRS ${CUB_DIR})
 include_directories(${CUB_INCLUDE_DIRS})
 
 # LBANN has access to CUB

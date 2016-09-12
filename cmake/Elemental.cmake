@@ -19,8 +19,8 @@ else()
     set(ELEMENTAL_URL https://github.com/elemental/Elemental.git)
   endif()
   if(NOT ELEMENTAL_TAG)
-     # Commit from 5/30/2016
-     set(ELEMENTAL_TAG "4a33924fe57aacbe84a3bcf089dcffe034cb979e")
+     # Commit from 9/11/2016
+     set(ELEMENTAL_TAG "d14e8f396cbafac8cf6b46da442ad3b7a1d42508")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -31,7 +31,8 @@ else()
   option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
   option(ELEMENTAL_C_INTERFACE "Elemental: build C interface?" OFF)
   option(ELEMENTAL_INSTALL_PYTHON_PACKAGE "Elemental: install Python interface?" OFF)
-  option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" ON)
+  option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" ON) # Non-commercial license
+  option(ELEMENTAL_DISABLE_QUAD "Elemental: disable quad precision" ON) # GPL license
 
   # Determine library type
   if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)
@@ -76,6 +77,7 @@ else()
       -D EL_C_INTERFACE=${ELEMENTAL_C_INTERFACE}
       -D INSTALL_PYTHON_PACKAGE=${ELEMENTAL_INSTALL_PYTHON_PACKAGE}
       -D EL_DISABLE_PARMETIS=${ELEMENTAL_DISABLE_PARMETIS}
+      -D EL_DISABLE_QUAD=${ELEMENTAL_DISABLE_QUAD}
   )
 
   # Get install directory
@@ -92,9 +94,9 @@ include_directories(${Elemental_INCLUDE_DIRS})
 
 # Get library
 if(ELEMENTAL_SHARED_LIBS STREQUAL STATIC)
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/libEl.a)
+  set(Elemental_LIBRARIES ${Elemental_DIR}/lib64/libEl.a)
 else()
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/libEl.so)
+  set(Elemental_LIBRARIES ${Elemental_DIR}/lib64/libEl.so)
 endif()
 
 # Add preprocessor flag for Elemental
