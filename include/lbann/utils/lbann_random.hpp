@@ -36,7 +36,7 @@ typedef std::mt19937 rng_gen;  // Mersenne Twister
 
 /**
  * Return a reference to the global LBANN random number generator.
- * @note If it matters, the generator is not thread-safe.
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 rng_gen& get_generator();
 
