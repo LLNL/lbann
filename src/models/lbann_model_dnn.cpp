@@ -170,7 +170,6 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
 
   // Update training accuracy
   m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -188,6 +187,7 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
   const bool data_set_processed = m_layers[0]->update();
 
   do_batch_end_cbs();
+  ++m_current_step; // Update the current step once the entire mini-batch is complete
   return data_set_processed;
 }
 
