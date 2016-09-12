@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 # Options
-option(FORCE_PROTOBUF_BUILD "Protocol Buffers: force build" OFF)
+option(FORCE_PROTOBUF_BUILD "Protocol Buffers: force build" ON) # Many protobuf builds are version 2, which is too old
 
 # Check if Protocol Buffers is already installed
 if(NOT FORCE_PROTOBUF_BUILD)
@@ -47,7 +47,7 @@ else()
   set(PROTOBUF_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include)
   
   # Get library
-  set(PROTOBUF_LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/libprotobuf.so)
+  set(PROTOBUF_LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}protobuf${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   # Get protoc compiler
   set(PROTOBUF_PROTOC_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/bin/protoc)

@@ -97,6 +97,8 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 ROOT_DIR=$(git rev-parse --show-toplevel)
 BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
 INSTALL_DIR=${BUILD_DIR}
+mkdir -p ${BUILD_DIR}
+mkdir -p ${INSTALL_DIR}
 
 # Get C/C++/Fortran compilers
 if [ "${COMPILER}" == "gnu" ]; then
@@ -126,8 +128,8 @@ MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 
 # Get CUDA and cuDNN
 if [ "${CLUSTER}" == "surface" ]; then
-  CUDA_TOOLKIT_ROOT_DIR="/opt/cudatoolkit-7.5"
-  cuDNN_DIR="/usr/gapps/brain/installs/cudnn/v5"
+  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
+  cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 fi
 
 ################################################################
@@ -175,12 +177,5 @@ EOF
     echo "${BUILD_COMMAND}"
   fi
   ${BUILD_COMMAND}
-
-  # Install LBANN with make
-  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${INSTALL_COMMAND}"
-  fi
-  ${INSTALL_COMMAND}
 
 popd

@@ -6,7 +6,7 @@ if(cuDNN_DIR)
   # cuDNN header files and libraries
   set(cuDNN_INCLUDE_DIRS ${cuDNN_DIR}/include)
   include_directories(${cuDNN_INCLUDE_DIRS})
-  set(cuDNN_LIBRARIES ${cuDNN_DIR}/lib64/libcudnn.so)
+  set(cuDNN_LIBRARIES ${cuDNN_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}cudnn${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   # Add preprocessor flag for cuDNN  
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDNN")

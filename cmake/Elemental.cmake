@@ -92,9 +92,9 @@ include_directories(${Elemental_INCLUDE_DIRS})
 
 # Get library
 if(ELEMENTAL_SHARED_LIBS STREQUAL STATIC)
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/libEl.a)
+  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}El${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/libEl.so)
+  set(Elemental_LIBRARIES ${Elemental_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}El${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
 
 # Add preprocessor flag for Elemental

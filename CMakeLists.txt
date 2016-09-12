@@ -18,7 +18,7 @@ endif()
 
 ################################################################
 # Initialize RPATH (always full RPATH)
-# Note: copied from https://cmake.org/Wiki/CMake_RPATH_handling
+# Note: mostly copied from https://cmake.org/Wiki/CMake_RPATH_handling
 ################################################################
 
 # use, i.e. don't skip the full RPATH for the build tree
@@ -39,6 +39,10 @@ LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib"
 IF("${isSystemDir}" STREQUAL "-1")
    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF("${isSystemDir}" STREQUAL "-1")
+
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+endif()
 
 ################################################################
 # Initialize build
@@ -156,19 +160,6 @@ if(LBANN_HAS_CUDNN)
 endif()
 if(LBANN_HAS_TBINF)
   target_link_libraries(lbann TBinf)
-endif()
-
-################################################################
-# Install LBANN
-################################################################
-
-if(FALSE)
-
-install(TARGETS lbann
-  EXPORT lbann
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
 endif()
 
 ################################################################

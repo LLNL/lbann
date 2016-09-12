@@ -73,7 +73,11 @@ else()
   set(OpenCV_INCLUDE_DIRS ${OpenCV_DIR}/include)
 
   # Get libraries
-  set(OpenCV_LIBRARIES ${OpenCV_DIR}/lib/libopencv_highgui.so ${OpenCV_DIR}/lib/libopencv_core.so)
+  set(OpenCV_LIBRARIES
+    ${OpenCV_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}opencv_core${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OpenCV_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}opencv_imgproc${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OpenCV_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}opencv_highgui${CMAKE_SHARED_LIBRARY_SUFFIX}
+  )
 
   # LBANN has built OpenCV
   set(LBANN_BUILT_OPENCV TRUE)
