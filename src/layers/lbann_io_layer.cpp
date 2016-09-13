@@ -190,17 +190,22 @@ long lbann::io_layer::get_linearized_label_size() {
   return linearized_label_size;
 }
 
-void lbann::io_layer::setup_data_readers(int base_offset, int stride, int model_offset) {
+void lbann::io_layer::setup_data_readers_for_training(int base_offset, int stride, int model_offset) {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
   }
+}
 
+/** Do not spread data readers that are used for evaluation across multiple models.  
+ * Allow each model instance to use the full data set for evaluation so that each model is fairly compared.
+ */
+void lbann::io_layer::setup_data_readers_for_evaluation(int base_offset, int stride, int model_offset) {
   if(m_validation_dataset.data_reader != NULL) {
-    m_validation_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
+    m_validation_dataset.data_reader->setup(base_offset, stride, model_offset, NULL/*comm*/);
   }
 
   if(m_testing_dataset.data_reader != NULL) {
-    m_testing_dataset.data_reader->setup(base_offset, stride, model_offset, comm);
+    m_testing_dataset.data_reader->setup(base_offset, stride, model_offset, NULL/*comm*/);
   }
   return;
 }

@@ -37,7 +37,8 @@ namespace lbann
   public:
     io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={}, bool data_sets_span_models=true);
     //    io_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader);
-    void setup_data_readers(int base_offset, int stride, int model_offset = 0);
+    void setup_data_readers_for_training(int base_offset, int stride, int model_offset = 0);
+    void setup_data_readers_for_evaluation(int base_offset, int stride, int model_offset = 0);
     DataReader *select_data_reader();
     DataReader *set_training_data_reader(DataReader *data_reader);
     DataReader *set_validation_data_reader(DataReader *data_reader);

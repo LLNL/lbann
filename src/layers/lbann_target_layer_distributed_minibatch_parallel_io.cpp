@@ -48,13 +48,19 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
     if(io_layer::m_data_sets_span_models) {
       int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
-      cout << "Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
-      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                   stride,
-                                   Layer::comm->get_model_rank() * stride);
+      int model_offset = Layer::comm->get_model_rank() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+      //cout << "Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
+      io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                stride,
+                                                model_offset);
+      /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
+      io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }else {
-      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                   m_num_parallel_readers_training * Layer::m_mini_batch_size);
+      io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                m_num_parallel_readers_training * Layer::m_mini_batch_size);
+      io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
   }
 
