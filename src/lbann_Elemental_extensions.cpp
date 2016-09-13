@@ -174,8 +174,12 @@ void ColumnMax
     // Modify the communication pattern from an adjoint Multiply
     // =========================================================
     Zeros( norms, A.Width(), 1 );
-    A.InitializeMultMeta();
-    const auto& meta = A.multMeta;
+    // TODO: (Moon 9/12/16) I replaced the commented code since
+    // Elemental no longer has a DistSparseMultMeta class. I do not
+    // know if the code is correct.
+    // A.InitializeMultMeta();
+    // const auto& meta = A.multMeta;
+    const auto& meta = A.InitializeMultMeta();
 
     // Pack the send values 
     // --------------------

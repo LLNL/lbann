@@ -70,12 +70,12 @@ endif()
 ################################################################
 
 # Required dependencies
+include(OpenMP)
 include(MPI)
 include(Elemental)
 include(OpenCV)
 
 # Optional dependencies
-include(OpenMP)
 if(WITH_CUDA)
   include(CUDA)
 endif()
@@ -92,13 +92,13 @@ endif()
 # Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in 
-               ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
-add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc
-    COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in 
+                 ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
+  add_custom_target(doc
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc
+      COMMENT "Generating API documentation with Doxygen" VERBATIM
+  )
 endif(DOXYGEN_FOUND)
 
 ################################################################
@@ -180,7 +180,6 @@ endif()
 message("  LBANN_HAS_MPI:       ${LBANN_HAS_MPI}")
 message("  LBANN_HAS_ELEMENTAL: ${LBANN_HAS_ELEMENTAL}")
 message("  LBANN_HAS_OPENCV:    ${LBANN_HAS_OPENCV}")
-message("  LBANN_HAS_OPENMP:    ${LBANN_HAS_OPENMP}")
 message("  LBANN_HAS_CUDA:      ${LBANN_HAS_CUDA}")
 message("  LBANN_HAS_CUDNN:     ${LBANN_HAS_CUDNN}")
 message("  LBANN_HAS_PROTOBUF:  ${LBANN_HAS_PROTOBUF}")

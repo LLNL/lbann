@@ -13,16 +13,16 @@ brew tap homebrew/science
 brew update
 brew install git
 brew install cmake
-brew install gcc5
-brew install open-mpi
+brew install gcc49
+brew install mpich
 brew install opencv
 brew install doxygen
 brew install metis
 
 # Parameters
-CMAKE_C_COMPILER=/usr/local/bin/gcc-5
-CMAKE_CXX_COMPILER=/usr/local/bin/g++-5
-CMAKE_Fortran_COMPILER=/usr/local/bin/gfortran-5
+CMAKE_C_COMPILER=/usr/bin/clang
+CMAKE_CXX_COMPILER=/usr/bin/clang++
+CMAKE_Fortran_COMPILER=/usr/local/bin/gfortran-4.9
 MPI_C_COMPILER=/usr/local/bin/mpicc
 MPI_CXX_COMPILER=/usr/local/bin/mpicxx
 MPI_Fortran_COMPILER=/usr/local/bin/mpifort
@@ -42,6 +42,9 @@ mkdir -p ${INSTALL_DIR}
 
 # Work in build directory
 pushd ${BUILD_DIR}
+
+  # Clear build directory
+  rm -rf *
 
   # Configure build with CMake
   cmake \

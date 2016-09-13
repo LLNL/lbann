@@ -90,7 +90,8 @@ float lbann_callback_step_learning_rate::schedule(model* m, Layer* l) {
 
 lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
   int64_t patience, float amt) :
-  lbann_callback_acc_learning_rate(patience, amt, {}) {}
+  lbann_callback_acc_learning_rate(patience, amt,
+                                   std::unordered_set<uint>()) {}
 
 lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
   int64_t patience, float amt, std::unordered_set<uint> _layers) :
