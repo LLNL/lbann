@@ -6,8 +6,10 @@
 
 COMPILER=gnu
 BUILD_TYPE=Release
+WITH_TBINF=OFF
 Elemental_DIR=
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+ELEMENTAL_MATH_LIBS=""
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
@@ -29,6 +31,7 @@ Options:
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel').
   ${C}--verbose${N}               Verbose output.
   ${C}--debug{N}                  Build with debug flag.
+  ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
 EOF
@@ -62,6 +65,10 @@ while :; do
     -d|--debug)
       # Debug mode
       BUILD_TYPE=Debug
+      ;;
+    --tbinf)
+      # Tensorboard interface
+      WITH_TBINF=ON
       ;;
     --build-clean)
       # Clean build directory
@@ -157,10 +164,12 @@ cmake \
 -D MPI_C_COMPILER=${MPI_C_COMPILER} \
 -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
 -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
+-D WITH_TBINF=${WITH_TBINF} \
 -D Elemental_DIR=${Elemental_DIR} \
 -D OpenCV_DIR=${OpenCV_DIR} \
 -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
 -D cuDNN_DIR=${cuDNN_DIR} \
+-D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
 -D VERBOSE=${VERBOSE} \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 ${ROOT_DIR}
