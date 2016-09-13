@@ -64,6 +64,7 @@ namespace lbann
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
 
     long m_num_data_per_epoch;
+    int m_num_valid_readers;
   };
 }
 
