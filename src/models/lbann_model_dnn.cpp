@@ -240,13 +240,19 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
 bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
                                                      long *num_errors)
 {
+  do_batch_evaluate_begin_cbs();
+
   // forward propagation (mini-batch)
+  do_model_evaluate_forward_prop_begin_cbs();
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
+    do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
     L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
   *num_errors += (long) L2NormSum;
   *num_samples += m_current_mini_batch_size;
+  do_model_evaluate_forward_prop_end_cbs();
 
   // Update layers
   // Note: should only affect the input and target layers
@@ -254,5 +260,16 @@ bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
+  do_batch_evaluate_end_cbs();
+  switch(m_execution_mode) {
+  case execution_mode::validation:
+    ++m_current_validation_step;
+    break;
+  case execution_mode::testing:
+    ++m_current_testing_step;
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
+  }
   return data_set_processed;
 }

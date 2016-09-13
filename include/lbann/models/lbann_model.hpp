@@ -72,6 +72,10 @@ public:
   inline int64_t get_cur_epoch() const { return m_current_epoch; }
   /** Get the current step for the model. */
   inline int64_t get_cur_step() const { return m_current_step; }
+  /** Get the current validation step for the model. */
+  inline int64_t get_cur_validation_step() const { return m_current_validation_step; }
+  /** Get the current testing step for the model. */
+  inline int64_t get_cur_testing_step() const { return m_current_testing_step; }
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const { return m_execution_mode; }
   inline int64_t set_current_mini_batch_size(int64_t mini_batch_size) 
@@ -95,6 +99,8 @@ protected:
   int64_t m_current_epoch;
   /** Most recent/current training step for the model. */
   int64_t m_current_step;
+  int64_t m_current_validation_step;
+  int64_t m_current_testing_step;
   /** Size of the current mini-batch */
   int64_t m_current_mini_batch_size;
   /** Communicator for the model. */
@@ -122,6 +128,13 @@ protected:
   void do_layer_backward_prop_begin_cbs(Layer* l);
   void do_model_backward_prop_end_cbs();
   void do_layer_backward_prop_end_cbs(Layer* l);
+  /// Evaluation phases (validation / testing)
+  void do_batch_evaluate_begin_cbs();
+  void do_batch_evaluate_end_cbs();
+  void do_model_evaluate_forward_prop_begin_cbs();
+  void do_layer_evaluate_forward_prop_begin_cbs(Layer* l);
+  void do_model_evaluate_forward_prop_end_cbs();
+  void do_layer_evaluate_forward_prop_end_cbs(Layer* l);
 };
 
 }  // namespace lbann

@@ -42,8 +42,8 @@ namespace lbann {
  */
 class lbann_callback_debug : public lbann_callback {
 public:
-  lbann_callback_debug(lbann_summary* _summarizer = nullptr) :
-    lbann_callback(1, _summarizer) {}
+  lbann_callback_debug(execution_mode phase = execution_mode::invalid, lbann_summary* _summarizer = nullptr) :
+    lbann_callback(1, _summarizer), m_debug_phase(phase) {}
   /** Start recording time for the epoch. */
   void on_epoch_begin(model* m);
   /** Report epoch and mean minibatch times. */
@@ -56,7 +56,15 @@ public:
   void on_forward_prop_end(model* m, Layer* l);
   void on_backward_prop_begin(model* m, Layer* l);
   void on_backward_prop_end(model* m, Layer* l);
+
+  /** Start record time for a batch. */
+  void on_batch_evaluate_begin(model* m);
+  /** Stop and save time for a batch. */
+  void on_batch_evaluate_end(model* m);
+  void on_evaluate_forward_prop_begin(model* m, Layer* l);
+  void on_evaluate_forward_prop_end(model* m, Layer* l);
 private:
+  execution_mode m_debug_phase;
 };
 
 }  // namespace lbann
