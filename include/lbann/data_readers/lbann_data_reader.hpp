@@ -51,7 +51,7 @@ namespace lbann
       BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
       m_stride(batchSize), m_base_offset(0), m_model_offset(0), 
       m_use_alt_last_mini_batch_size(false),
-      m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize), m_last_mini_batch_stride(0) 
+      m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize), m_last_mini_batch_stride(batchSize) 
     {}
     DataReader(int batchSize) :
       DataReader(batchSize, true) {}
@@ -76,9 +76,10 @@ namespace lbann
       m_model_offset = model_offset;
       m_base_offset = base_offset;
       m_stride = stride;
+      m_last_mini_batch_stride = stride;
 
       if(comm != NULL) {
-        calculate_multi_model_data_distribution(comm);
+        calculate_multi_model_data_distribution_packed(comm);
         m_use_alt_last_mini_batch_size = true;
       }
 
@@ -241,6 +242,8 @@ namespace lbann
       m_last_mini_batch_threshold = m_stride * num_whole_mini_batches;
       m_last_mini_batch_size = partial_mini_batch_size;
 
+      if(m_last_mini_batch_size > max_mini_batch_size) { throw new lbann_exception("Error in calculating the partial mini-batch size, exceeds the max mini-batch size"); }
+
       /// Note that comm->get_model_rank() + comm->get_rank_in_model() is not equivalent to comm->get_world_rank() from a parallel I/O perspective
       /// Given the data readers rank, how many readers have a higher rank
       int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model;
@@ -259,6 +262,8 @@ namespace lbann
 
       return;
     }
+
+    void calculate_multi_model_data_distribution_packed(lbann_comm *comm);
 
   protected:
     int							BatchSize;
