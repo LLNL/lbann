@@ -65,6 +65,9 @@ else()
   set(VERBOSE 0)
 endif()
 
+# Get installation directories
+include(GNUInstallDirs)
+
 ################################################################
 # Initialize dependencies
 ################################################################

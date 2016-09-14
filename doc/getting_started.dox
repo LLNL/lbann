@@ -10,7 +10,6 @@ $ git clone https://github.com/LLNL/lbann.git
 \endcode
 
 \section getting_started_dependencies Dependencies
-
 - \subpage cmake
 - \subpage mpi
 - \subpage elemental
@@ -75,19 +74,23 @@ After successfully compiling, proceed to \ref basic_usage.
 
 \section getting_started_scripts Build Scripts
 
-The shell script `scripts/build_lbann_lc.sh` is provided to
-automatically configure and build LBANN on LC systems at LLNL:
+The shell script `build_lbann_lc.sh` is provided to automatically
+configure and build LBANN on LC systems at LLNL:
 
 \code{.sh}
 $ cd path/to/lbann
+$ scripts/build_lbann_lc.sh --help
 $ scripts/build_lbann_lc.sh
 \endcode
 
-Put `--help` as a command-line argument to see more options.
+The shell script `build_lbann_osx.sh` is provided to install
+dependencies with <a href="http://brew.sh">Homebrew</a>, configure
+LBANN, and build LBANN on OS X systems:
 
-The shell script `scripts/build_lbann_osx.sh` is intended to configure
-and build LBANN on OS X systems. However, it is not functional as of
-9/12/2016.
+\code{.sh}
+$ cd path/to/lbann
+$ scripts/build_lbann_osx.sh
+\endcode
 
 */
 

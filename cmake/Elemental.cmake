@@ -92,14 +92,14 @@ else()
 endif()
 
 # Include header files
-set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/include)
+set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
 include_directories(${Elemental_INCLUDE_DIRS})
 
 # Get library
 if(ELEMENTAL_SHARED_LIBS STREQUAL STATIC)
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib64/${CMAKE_STATIC_LIBRARY_PREFIX}El${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}El${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
-  set(Elemental_LIBRARIES ${Elemental_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}El${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}El${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
 
 # Add preprocessor flag for Elemental

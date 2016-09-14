@@ -3,7 +3,6 @@
 ################################################################
 # Simple script to build LBANN in OS X.
 # Can be called anywhere in the LBANN project tree.
-# TODO: fix linking errors with OpenCV
 ################################################################
 
 # Install dependencies with Homebrew
@@ -13,15 +12,18 @@ brew tap homebrew/science
 brew update
 brew install git
 brew install cmake
-brew install gcc49
+brew install clang-omp  # Require OpenMP support in clang
+brew install gcc49      # gfortran-4.9 is compatible with clang
 brew install mpich
 brew install opencv
 brew install doxygen
-brew install metis
+brew install graphviz   # Doxygen dependency
+brew install metis      # Elemental dependency
+brew install scalapack  # Elemental dependency
 
 # Parameters
-CMAKE_C_COMPILER=/usr/bin/clang
-CMAKE_CXX_COMPILER=/usr/bin/clang++
+CMAKE_C_COMPILER=/usr/local/bin/clang-omp
+CMAKE_CXX_COMPILER=/usr/local/bin/clang-omp++
 CMAKE_Fortran_COMPILER=/usr/local/bin/gfortran-4.9
 MPI_C_COMPILER=/usr/local/bin/mpicc
 MPI_CXX_COMPILER=/usr/local/bin/mpicxx
@@ -69,4 +71,7 @@ pushd ${BUILD_DIR}
   # Build LBANN with make
   make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
 
+  # Generate documentation
+  make doc
+  
 popd
