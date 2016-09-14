@@ -63,7 +63,7 @@ void dropout::fp_activations() {
   }
   Hadamard(*acts, m_cur_mask, *acts);
 #else
-  Mat& local_acts = acts->Matrix();
+  Mat local_acts = acts->Matrix();
 
   // Construct dropout mask
   // Note: Construct Bernoulli matrix and scale by
