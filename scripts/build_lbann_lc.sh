@@ -10,6 +10,7 @@ WITH_TBINF=OFF
 Elemental_DIR=
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
 ELEMENTAL_MATH_LIBS=""
+CLEAN_BUILD=0
 VERBOSE=0
 DOC=0
 CMAKE_INSTALL_MESSAGE=LAZY
@@ -76,9 +77,9 @@ while :; do
       # Tensorboard interface
       WITH_TBINF=ON
       ;;
-    --build-clean)
+    --clean-build|--build-clean)
       # Clean build directory
-      BUILD_CLEAN=1
+      CLEAN_BUILD=1
       ;;
     -j|--make-processes)
       if [ -n "${2}" ]; then
@@ -153,7 +154,7 @@ fi
 pushd ${BUILD_DIR}
 
   # Clean up build directory
-  if [ -n "${BUILD_CLEAN}" ]; then
+  if [ ${CLEAN_BUILD} -ne 0 ]; then
     rm -rf *
   fi
 
