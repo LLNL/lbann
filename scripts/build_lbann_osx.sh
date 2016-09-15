@@ -9,6 +9,7 @@
 # Note: Requires sudo access. Homebrew can be downloaded from
 # http://brew.sh
 brew tap homebrew/science
+brew tap homebrew/boneyard
 brew update
 brew install git
 brew install cmake
@@ -29,7 +30,7 @@ MPI_C_COMPILER=/usr/local/bin/mpicc
 MPI_CXX_COMPILER=/usr/local/bin/mpicxx
 MPI_Fortran_COMPILER=/usr/local/bin/mpifort
 Elemental_DIR=
-OpenCV_DIR=
+OpenCV_DIR=/usr/local/share/OpenCV
 CUDA_TOOLKIT_ROOT_DIR=
 cuDNN_DIR=
 VERBOSE=1
