@@ -36,7 +36,6 @@ void lbann::DataReader::calculate_multi_model_data_distribution_packed(lbann_com
   int num_parallel_readers_per_model = (m_stride / comm->get_num_models()) / max_mini_batch_size;
   int min_stride_across_models = max_mini_batch_size * comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
 
-  //  m_max_std_parallel_readers = num_parallel_readers_per_model; /// @todo FIXME BVE this should be computed differently
   m_last_mini_batch_size = 0;
 
   int num_whole_mini_batches_per_model = rint(getNumData() / min_stride_across_models);
