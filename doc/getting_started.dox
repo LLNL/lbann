@@ -33,13 +33,6 @@ $ make
 $ make install
 \endcode
 
-To generate local documentation, navigate to the build directory and
-type:
-
-\code{.sh}
-$ make doc
-\endcode
-
 It will typically be necessary to manually set CMake variables to
 control the build configuration. For instance, to set the variable
 SOME_CMAKE_VARIABLE to a value of "/some/file/path", simply put "-D
@@ -55,7 +48,7 @@ CMAKE_Fortran_COMPILER | Fortran compiler
 MPI_CXX_COMPILER       | MPI C++ compiler
 MPI_C_COMPILER         | MPI C compiler
 MPI_Fortran_COMPILER   | MPI Fortran compiler
-GFORTRAN_LIB           | Fortran library (may be needed when using gfortran)
+GFORTRAN_LIB           | Fortran library (needed when using gfortran in non-standard location)
 Elemental_DIR          | Elemental install directory
 OpenCV_DIR             | OpenCV install directory
 CUDA_TOOLKIT_ROOT_DIR  | CUDA install directory
@@ -180,6 +173,16 @@ include paths to the appropriate library directories:
 \code{.sh}
 $ export LD_LIBRARY_PATH="/first/library/dir:/second/library/dir:$LD_LIBRARY_PATH"
 \endcode
+
+\section elemental_issues Issues (as of 9/16/2016)
+
+- There is a <a
+  href="https://github.com/elemental/Elemental/issues/177">known
+  issue</a> where Elemental fails to compile under the Intel compiler.
+- Elemental experiences compilation errors with GCC 4.8 or
+  earlier. GCC 4.9 works, but the LBANN team has heard reports that it
+  does a poor job optimizing certain vectorized operations. For this
+  reason, we recommend compiling with GCC 5.
 
 */
 

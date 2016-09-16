@@ -16,7 +16,6 @@ CMAKE_CXX_FLAGS=
 CMAKE_Fortran_FLAGS=
 CLEAN_BUILD=0
 VERBOSE=0
-DOC=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 
@@ -36,7 +35,6 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel').
   ${C}--verbose${N}               Verbose output.
-  ${C}--doc${N}                   Generate documentation.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--clean-build${N}           Clean build directory before building.
@@ -68,10 +66,6 @@ while :; do
       # Verbose output
       VERBOSE=1
       CMAKE_INSTALL_MESSAGE=ALWAYS
-      ;;
-    --doc)
-      # Generate documentation
-      DOC=1
       ;;
     -d|--debug)
       # Debug mode
@@ -220,14 +214,5 @@ EOF
     echo "${INSTALL_COMMAND}"
   fi
   ${INSTALL_COMMAND}
-
-  # Generate documentation with Doxygen
-  if [ ${DOC} -ne 0 ]; then
-    DOC_COMMAND="make doc"
-    if [ ${VERBOSE} -ne 0 ]; then
-      echo "${DOC_COMMAND}"
-    fi
-    ${DOC_COMMAND}
-  fi
   
 popd
