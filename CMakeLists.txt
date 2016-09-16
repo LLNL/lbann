@@ -17,34 +17,6 @@ if(NOT LIBRARY_TYPE)
 endif()
 
 ################################################################
-# Initialize RPATH (always full RPATH)
-# Note: mostly copied from https://cmake.org/Wiki/CMake_RPATH_handling
-################################################################
-
-# use, i.e. don't skip the full RPATH for the build tree
-SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-
-# when building, don't use the install RPATH already
-# (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# the RPATH to be used when installing, but only if it's not a system directory
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-IF("${isSystemDir}" STREQUAL "-1")
-   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-ENDIF("${isSystemDir}" STREQUAL "-1")
-
-if(APPLE)
-  set(CMAKE_MACOSX_RPATH ON)
-endif()
-
-################################################################
 # Initialize build
 ################################################################
 
@@ -69,6 +41,35 @@ endif()
 include(GNUInstallDirs)
 
 ################################################################
+# Initialize RPATH (always full RPATH)
+# Note: mostly copied from https://cmake.org/Wiki/CMake_RPATH_handling
+################################################################
+
+# use, i.e. don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
+# Use RPATH on OS X
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+endif()
+
+################################################################
 # Initialize dependencies
 ################################################################
 
@@ -91,18 +92,7 @@ endif()
 if(WITH_TBINF)
   include(TBinf)
 endif()
-
-# Doxygen
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in 
-                 ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
-  add_custom_target(doc
-      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc
-      COMMENT "Generating API documentation with Doxygen" VERBATIM
-  )
-endif(DOXYGEN_FOUND)
+include(Doxygen)
 
 ################################################################
 # Build LBANN
@@ -166,6 +156,28 @@ if(LBANN_HAS_TBINF)
 endif()
 
 ################################################################
+# Install LBANN
+################################################################
+
+install(
+  TARGETS lbann
+  EXPORT lbann
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(
+  DIRECTORY "${PROJECT_SOURCE_DIR}/include/lbann"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+install(
+  FILES "${PROJECT_SOURCE_DIR}/CONTRIBUTORS"
+        "${PROJECT_SOURCE_DIR}/LICENSE"
+        "${PROJECT_SOURCE_DIR}/README.md"
+        "${PROJECT_SOURCE_DIR}/README.md"
+  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+)
+
+################################################################
 # Configuration Summary
 ################################################################
 
@@ -187,4 +199,4 @@ message("  LBANN_HAS_CUDA:      ${LBANN_HAS_CUDA}")
 message("  LBANN_HAS_CUDNN:     ${LBANN_HAS_CUDNN}")
 message("  LBANN_HAS_PROTOBUF:  ${LBANN_HAS_PROTOBUF}")
 message("  LBANN_HAS_TBINF:     ${LBANN_HAS_TBINF}")
-message("  DOXYGEN_FOUND:       ${DOXYGEN_FOUND}")
+message("  LBANN_HAS_DOXYGEN:   ${LBANN_HAS_DOXYGEN}")

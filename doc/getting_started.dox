@@ -30,6 +30,7 @@ $ mkdir -p build/my_build_dir
 $ cd build/my_build_dir
 $ cmake ../..
 $ make
+$ make install
 \endcode
 
 To generate local documentation, navigate to the build directory and

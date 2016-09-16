@@ -72,6 +72,9 @@ pushd ${BUILD_DIR}
   # Build LBANN with make
   make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
 
+  # Install LBANN with make
+  make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
+
   # Generate documentation
   make doc
   

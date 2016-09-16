@@ -145,9 +145,7 @@ void ColumnMax( const SparseMatrix<F>& A, Matrix<Base<F>>& norms )
     // Form the maxima
     // ---------------
     typedef Base<F> Real;
-    const Int m = A.Height();
-    const Int n = A.Width();
-    Zeros( norms, n, 1 );
+    Zeros( norms, A.Width(), 1 );
 
     const Int numEntries = A.NumEntries();
     const Int* colBuf = A.LockedTargetBuffer();

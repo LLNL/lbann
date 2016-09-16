@@ -304,33 +304,8 @@ int main(int argc, char* argv[])
 
         // train/test
         for (int t = 0; t < trainParams.EpochCount; t++) {
-
-#if 0
-            // optionally check gradients
-            if (n > 0 && n % 10000 == 0) {
-               printf("Checking gradients...\n");
-               double errors[g_NumLayers];
-               dnn.checkGradient(Xs, Ys, errors);
-               printf("gradient errors: ");
-               for (uint l = 0; l < g_NumLayers; l++)
-                   printf("%lf ", errors[l]);
-               printf("\n");
-            }
-#endif
-
             dnn.train(1, true);
-
-            // Update the learning rate on each epoch
-            // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
-            // if(grid.Rank() == 0) {
-            //   cout << "Changing the learning rate to " << trainParams.LearnRate << " after processing " << (t+1) << " epochs" << endl;
-            // }
-
-
-            // testing
-            int numerrors = 0;
-
-            DataType accuracy = dnn.evaluate(execution_mode::testing);
+            dnn.evaluate(execution_mode::testing);
         }
 
         // Free dynamically allocated memory

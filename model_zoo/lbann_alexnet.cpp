@@ -506,7 +506,7 @@ int main(int argc, char* argv[])
         //************************************************************************
         // mainloop for train/validate
         //************************************************************************
-        for (uint epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
+        for (int epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
 
             // TODO: need to save this in checkpoint?
             decayIterations = 1;
@@ -779,7 +779,7 @@ int main(int argc, char* argv[])
         //************************************************************************
         // mainloop for train/validate
         //************************************************************************
-        for (uint epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
+        for (int epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
             if (grid.Rank() == 0) {
                 cout << "-----------------------------------------------------------" << endl;
                 cout << "[" << epoch << "] Epoch (learning rate = " << trainParams.LearnRate << ")"<< endl;

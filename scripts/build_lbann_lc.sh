@@ -6,10 +6,14 @@
 
 COMPILER=gnu
 BUILD_TYPE=Release
-WITH_TBINF=OFF
 Elemental_DIR=
 OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-ELEMENTAL_MATH_LIBS=""
+CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
+cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+ELEMENTAL_MATH_LIBS=
+CMAKE_C_FLAGS=
+CMAKE_CXX_FLAGS=
+CMAKE_Fortran_FLAGS=
 CLEAN_BUILD=0
 VERBOSE=0
 DOC=0
@@ -33,7 +37,7 @@ Options:
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel').
   ${C}--verbose${N}               Verbose output.
   ${C}--doc${N}                   Generate documentation.
-  ${C}--debug{N}                  Build with debug flag.
+  ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
@@ -101,6 +105,13 @@ while :; do
 done
 
 ################################################################
+# Load modules
+################################################################
+
+module load git
+module load cudatoolkit/7.5
+
+################################################################
 # Initialize variables
 ################################################################
 
@@ -142,8 +153,8 @@ MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 
 # Get CUDA and cuDNN
 if [ "${CLUSTER}" == "surface" ]; then
-  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
-  cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+  WITH_CUDA=ON
+  WITH_CUDNN=ON
 fi
 
 ################################################################
@@ -155,7 +166,11 @@ pushd ${BUILD_DIR}
 
   # Clean up build directory
   if [ ${CLEAN_BUILD} -ne 0 ]; then
-    rm -rf *
+    CLEAN_COMMAND="rm -rf ${BUILD_DIR}/*"
+    if [ ${VERBOSE} -ne 0 ]; then
+      echo "${CLEAN_COMMAND}"
+    fi
+    ${CLEAN_COMMAND}
   fi
 
   # Configure build with CMake
@@ -164,13 +179,18 @@ cmake \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
--D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
+-D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} \
 -D GFORTRAN_LIB=${GFORTRAN_LIB} \
--D MPI_C_COMPILER=${MPI_C_COMPILER} \
 -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
+-D MPI_C_COMPILER=${MPI_C_COMPILER} \
 -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
+-D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} \
+-D CMAKE_C_FLAGS=${CMAKE_C_FLAGS} \
+-D CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS} \
+-D WITH_CUDA=${WITH_CUDA} \
+-D WITH_CUDNN=${WITH_CUDNN} \
 -D WITH_TBINF=${WITH_TBINF} \
 -D Elemental_DIR=${Elemental_DIR} \
 -D OpenCV_DIR=${OpenCV_DIR} \
@@ -194,6 +214,13 @@ EOF
   fi
   ${BUILD_COMMAND}
 
+  # Build LBANN with make
+  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${INSTALL_COMMAND}"
+  fi
+  ${INSTALL_COMMAND}
+
   # Generate documentation with Doxygen
   if [ ${DOC} -ne 0 ]; then
     DOC_COMMAND="make doc"
@@ -202,6 +229,5 @@ EOF
     fi
     ${DOC_COMMAND}
   fi
-
   
 popd
