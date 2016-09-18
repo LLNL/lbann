@@ -138,7 +138,13 @@ void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
   View(m_activations_cost_v, Acts_Cost, IR(0, Acts_Cost.Height()), IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
-  set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
+    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
+    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+    set_effective_minibatch_size(total_mini_batch_size);
+  }else {
+    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  }
 }
 
 void lbann::SoftmaxLayer::fp_linearity()
