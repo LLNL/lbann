@@ -70,7 +70,7 @@
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_summary.hpp"
-#include "lbann_params.hpp"
+#include "lbann/lbann_params.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 
 #endif // LBANN_HPP_INCLUDED
