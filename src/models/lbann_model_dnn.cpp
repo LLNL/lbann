@@ -119,7 +119,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    /*long num_samples = 0;
+    long num_samples = 0;
     long num_errors = 0;
     bool finished_epoch;
     do {
@@ -147,7 +147,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     do_epoch_end_cbs();
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
-    }*/
+    }
   }
   do_train_end_cbs();
 }
