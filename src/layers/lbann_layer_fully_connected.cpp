@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -161,6 +161,7 @@ void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, 
   // Apply forward prop linearity
   Gemm(NORMAL, NORMAL, (DataType) 1., WB, X, (DataType) 0., Z);
   Copy(Z, Y);
+  //cout << "FC fp WB_D_Cache" << Index << " " << NumNeurons << " " << optimizer->WB_D_Cache.Height() << " " << optimizer->WB_D_Cache.Width() << endl;
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
@@ -174,6 +175,7 @@ void lbann::FullyConnectedLayer::bp_linearity()
     // Compute update for weights
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);
+    //cout << "FC bp WB_D_Cache" << Index << " " << NumNeurons << " " << optimizer->WB_D_Cache.Height() << " " << optimizer->WB_D_Cache.Width() << endl;
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
@@ -201,6 +203,7 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
 bool lbann::FullyConnectedLayer::update()
 {
+  //cout << "FC update WB_D_Cache" << Index << " " << NumNeurons << " " << optimizer->WB_D_Cache.Height() << " " << optimizer->WB_D_Cache.Width() << endl;
   if(m_execution_mode == execution_mode::training) {
     optimizer->update_weight_bias_matrix(*WB_D, *WB);
   }

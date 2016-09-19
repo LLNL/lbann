@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -90,6 +90,13 @@ void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
   }
 }
 
+//deep copy
+/*void lbann::deep_neural_network::copy_layers(vector<Layer*> layers) {
+  //m_layers.clear();
+  m_layers = new vector<Layers*>(layers.size());
+  for(auto&l:layers) m_layers.push_back(l);
+}*/
+
 void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 {
   do_train_begin_cbs();
@@ -106,12 +113,13 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < m_layers.size(); ++l) {
+      cout << "Layer Index and neurons " << m_layers[l]->Index << " : " << m_layers[l]->NumNeurons << endl;
       m_layers[l]->m_execution_mode = execution_mode::training;
     }
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    long num_samples = 0;
+    /*long num_samples = 0;
     long num_errors = 0;
     bool finished_epoch;
     do {
@@ -139,7 +147,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     do_epoch_end_cbs();
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
-    }
+    }*/
   }
   do_train_end_cbs();
 }

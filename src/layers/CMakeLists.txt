@@ -12,4 +12,5 @@ add_sources(
   lbann_target_layer.cpp
   lbann_target_layer_distributed_minibatch.cpp
   lbann_target_layer_distributed_minibatch_parallel_io.cpp
+  lbann_target_layer_unsupervised.cpp
 )

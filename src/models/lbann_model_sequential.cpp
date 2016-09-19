@@ -486,13 +486,13 @@ lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
   return tmp;
 }
 
-void lbann::sequential_model::setup()
+/*void lbann::sequential_model::setup()
 {
   // Setup each layer
   int prev_layer_dim = -1;
   for (size_t l = 0; l < m_layers.size(); ++l) {
     if (comm->am_model_master()) {
-      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
+      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << m_layers[l]->Index << endl;
     }
     m_layers[l]->setup(prev_layer_dim);
     prev_layer_dim = m_layers[l]->NumNeurons;
@@ -512,7 +512,53 @@ void lbann::sequential_model::setup()
 
   // Set up callbacks
   setup_callbacks();
+}*/
+
+void lbann::sequential_model::setup(size_t start_index)
+{
+  // Setup each layer
+  int prev_layer_dim, fp_index,bp_index;
+  if(start_index > 0) {
+    prev_layer_dim = m_layers[start_index-1]->NumNeurons;
+    fp_index = start_index;
+    bp_index = start_index-1;
+  }else {
+    prev_layer_dim = -1;
+    fp_index = 1;
+    bp_index = 0;
+  }
+
+  for (size_t l = start_index; l < m_layers.size(); ++l) {
+    if (comm->am_model_master()) {
+      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << m_layers[l]->Index << endl;
+    }
+    m_layers[l]->setup(prev_layer_dim);
+    prev_layer_dim = m_layers[l]->NumNeurons;
+  }
+
+  // Establish the forward pass input pointers
+  // Note: the first layer doesn't require input
+  for (size_t l = fp_index; l < m_layers.size(); ++l) {
+    if (comm->am_model_master()) {
+      //cout << "Setting up a fp input of layer " << l << "as layer " << l-1 << endl;
+    }
+    m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
+  }
+
+  // Establish the backward pass input pointers
+  // Note: the last layer doens't require input
+  for (int l = m_layers.size()-2; l >= bp_index; --l) {
+    if (comm->am_model_master()) {
+      //cout << "Setting up a bp input of layer " << l << "as layer " << l+1 << endl;
+    }
+    m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
+  }
+
+  // Set up callbacks
+  setup_callbacks();
 }
+
+
 
 #if 0
 DistMat* lbann::sequential_model::predict_mini_batch(DistMat* X)

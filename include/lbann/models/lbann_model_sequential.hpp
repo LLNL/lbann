@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -42,13 +42,13 @@ namespace lbann
 class sequential_model : public model
   {
   public:
-    
+
     /// Constructor
     sequential_model(const uint mini_batch_size,
                      lbann_comm* comm,
                      layer_factory* layer_fac,
                      Optimizer_factory* optimizer_factory);
-    
+
     /// Destructor
     ~sequential_model();
 
@@ -74,7 +74,10 @@ class sequential_model : public model
     /// Get mini-batch size
     int get_mini_batch_size() const { return m_mini_batch_size; }
     /// Get list of layers
-    std::vector<Layer*>& get_layers() { return m_layers; }
+    virtual std::vector<Layer*>& get_layers() { return m_layers; }
+
+    /// Set layers
+    virtual void set_layers(vector<Layer*>& layers) {m_layers = layers;}
 
     /// Add layer to sequential model
     virtual uint add(const std::string layer_name,
@@ -99,12 +102,12 @@ class sequential_model : public model
      *  deallocates all layers, so we might run into problems if a
      *  layer is deallocated externally. */
     virtual void insert(int index, Layer *new_layer);
-    
+
     /// Replace layer in sequential model
     virtual Layer* swap(int index, Layer *new_layer);
 
     /// Setup sequential model
-    virtual void setup();
+    virtual void setup(size_t start_index=0);
 
     /// Train model
     /** @param num_epochs Number of epochs to train

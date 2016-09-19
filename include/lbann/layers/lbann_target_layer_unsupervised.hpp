@@ -22,35 +22,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// This file is part of LBANN: Livermore Big Artificial Neural Network Toolkit, Version 0.9
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
-#define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_INCLUDED
+#define LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 
-#include "lbann/layers/lbann_input_layer.hpp"
+#include "lbann/layers/lbann_target_layer.hpp"
+#include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp" //@generalize to base class
 
 namespace lbann
 {
-  class input_layer_distributed_minibatch : public input_layer {
+  class target_layer_unsupervised : public target_layer, public distributed_minibatch_parallel_io {
   public:
-    input_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+    target_layer_unsupervised(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
+    //target_layer_unsupervised(lbann_comm* comm, input_layer* in_layer);
 
     void setup(int num_prev_neurons);
-    bool update();
-    Mat* get_local_mat() { return &X_local;};
-    CircMat* get_dist_mat() { return &Xs;};
+    DataType forwardProp(DataType prev_WBL2NormSum);
+    void backProp();
+    execution_mode get_execution_mode();
+    void set_input_layer(input_layer_distributed_minibatch_parallel_io*); //@todo replace with base layer class
 
   public:
-    int m_root; /* Which rank is the root of the CircMat */
-    Mat X_local;
-    CircMat Xs;
-    long m_num_data_per_epoch;
+    Mat* input_mat;
+    CircMat* input_circmat;
+    input_layer_distributed_minibatch_parallel_io* m_input_layer;
+
   protected:
-    /** Handle forward propagation (arguments are unused.) */
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&);
+    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
+    void bp_linearity() {}
   };
 }
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED

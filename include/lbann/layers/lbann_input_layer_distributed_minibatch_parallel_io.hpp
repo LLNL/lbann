@@ -44,7 +44,7 @@ namespace lbann
     bool update_data_reader();
     execution_mode get_execution_mode();
     Mat* get_local_mat();
-    CircMat* get_dist_mat(); 
+    CircMat* get_dist_mat();
 
   public:
     Mat X_local; /** Local matrix that holds data from data reader */
