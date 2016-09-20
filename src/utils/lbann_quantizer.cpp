@@ -476,7 +476,8 @@ void lbann_quantizer::threshold_quantize_apply(
 }
 
 void lbann_quantizer::adaptive_threshold_quantize(
-  const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion, bool delta) {
+  const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
+  bool compress) {
   // This uses a header to store all information needed to do unquantization in
   // one spot, which makes unquantization easier to multi-thread. The header has
   // one entry for each column, consisting of the starting offset of the
@@ -492,7 +493,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   q.resize(header_len);  // Space for the header.
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
-  if (!delta) {
+  if (!compress) {
     #pragma omp parallel
     {
       const int tid = omp_get_thread_num();
@@ -547,49 +548,78 @@ void lbann_quantizer::adaptive_threshold_quantize(
   } else {
     // Delta encoding is done within each column:
     // only the difference between rows is recorded.
-    for (int col = 0; col < width; ++col) {
-      DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-      std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
-        proportion_threshold_average(mat, qerror, proportion, col);
-      // Store the averages for reconstruction.
-      uqtype tmp;
-      memcpy(&tmp, &pos_avg, sizeof(pos_avg));
-      q.push_back(tmp);
-      memcpy(&tmp, &neg_avg, sizeof(neg_avg));
-      q.push_back(tmp);
-      unsigned prev_row = 0;
-      for (int row = 0; row < height; ++row) {
-        const unsigned pos = row + col * ldim;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= pos_thresh) {
-          qerror_buf[pos] = val - pos_avg;
-          // Delta encode the row.
-          q.emplace_back(((row - prev_row) << 1) | 1);
-          prev_row = row;
-        } else if (val <= neg_thresh) {
-          qerror_buf[pos] = val - neg_avg;
-          q.emplace_back((row - prev_row) << 1);
-          prev_row = row;
-        } else {
-          qerror_buf[pos] = val;
+    #pragma omp parallel
+    {
+      const int tid = omp_get_thread_num();
+      int start_offset = header_len;
+      #pragma omp for schedule(static)
+      for (int col = 0; col < width; ++col) {
+        const int header_loc = 3 * col;
+        ThreshQuantized uncomp;
+        q[header_loc] = start_offset;
+        DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+        std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+          proportion_threshold_average(mat, qerror, proportion, col);
+        // Store the averages for reconstruction.
+        memcpy(&q[header_loc + 1], &pos_avg, sizeof(pos_avg));
+        memcpy(&q[header_loc + 2], &neg_avg, sizeof(neg_avg));
+        unsigned prev_row = 0;
+        for (int row = 0; row < height; ++row) {
+          const unsigned pos = row + col * ldim;
+          const DataType val = mat_buf[pos] + qerror_buf[pos];
+          if (val >= pos_thresh) {
+            qerror_buf[pos] = val - pos_avg;
+            uncomp.emplace_back(((row - prev_row) << 1) | 1);
+            prev_row = row;
+          } else if (val <= neg_thresh) {
+            qerror_buf[pos] = val - neg_avg;
+            uncomp.emplace_back((row - prev_row) << 1);
+            prev_row = row;
+          } else {
+            qerror_buf[pos] = val;
+          }
+        }
+        // Compress and store into the global thread-local array.
+        compress_thresholds(uncomp, uncomp.begin(), uncomp.end(),
+                            thread_qs[tid]);
+        start_offset = header_len + thread_qs[tid].size();
+      }
+      #pragma omp single
+      {
+        // Compute the amount to adjust header counts by. This is essentially
+        // a shifted prefix-sum.
+        quantized_sums[0] = 0;
+        for (int t = 1; t < omp_get_max_threads(); ++t) {
+          quantized_sums[t] = quantized_sums[t - 1] + thread_qs[t - 1].size();
         }
       }
-      q.push_back(~((uqtype) 0));  // Separator.
+      // Have threads patch up the header counts.
+      // Static schedule guarantees threads are assigned the same way.
+      #pragma omp for schedule(static)
+      for (int col = 0; col < width; ++col) {
+        q[3 * col] += quantized_sums[tid];
+      }
     }
+    for (auto&& thread_q : thread_qs) {
+      q.insert(q.end(), thread_q.begin(), thread_q.end());
+    }
+    // Store the final number of entries.
+    q[3 * width] = q.size();
   }
 }
 
 void lbann_quantizer::adaptive_threshold_quantize(
   const DistMat& mat, ThreshQuantized& q, Mat& qerror, int proportion,
-  bool delta) {
-  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion, delta);
+  bool compress) {
+  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion,
+                              compress);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, Mat& mat, bool delta) {
+  const ThreshQuantized& q, Mat& mat, bool compress) {
   DataType* __restrict__ buf = mat.Buffer();
-  if (!delta) {
-    const unsigned header_len = mat.Width() * 3;
+  const unsigned header_len = mat.Width() * 3;
+  if (!compress) {
     #pragma omp parallel for schedule(static)
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += 3) {
       // Extract averages.
@@ -605,37 +635,40 @@ void lbann_quantizer::adaptive_threshold_unquantize(
     }
   } else {
     const Int ldim = mat.LDim();
-    int col = 0;
-    for (unsigned i = 0; i < q.size(); ++i) {
+    #pragma omp parallel for schedule(static)
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 3) {
       // Extract averages.
       DataType pos_avg, neg_avg;
-      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
-      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
-      i += 2;  // Skip the averages.
+      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
+      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      // Uncompress the range.
+      ThreshQuantized uncomp;
+      uncompress_thresholds(q, q.begin() + q[header_loc],
+                            q.begin() + q[header_loc + 3], uncomp);
       unsigned prev_row = 0;
-      for (; q[i] != ~((uqtype) 0); ++i) {
-        const uqtype val = q[i];
+      for (unsigned i = 0; i < uncomp.size(); ++i) {
+        const uqtype val = uncomp[i];
         const unsigned row = (val >> 1) + prev_row;
-        const unsigned pos = row + col * ldim;
+        // header_loc/3 is the same as the column.
+        const unsigned pos = row + (header_loc / 3) * ldim;
         prev_row = row;
         if (val & 1) buf[pos] = pos_avg;
         else buf[pos] = neg_avg;
       }
-      ++col;
     }
   }
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, DistMat& mat, bool delta) {
-  adaptive_threshold_unquantize(q, mat.Matrix(), delta);
+  const ThreshQuantized& q, DistMat& mat, bool compress) {
+  adaptive_threshold_unquantize(q, mat.Matrix(), compress);
 }
 
 void lbann_quantizer::adaptive_threshold_unquantize_add(
-  const ThreshQuantized& q, Mat& mat, bool delta) {
+  const ThreshQuantized& q, Mat& mat, bool compress) {
   DataType* __restrict__ buf = mat.Buffer();
-  if (!delta) {
-    const unsigned header_len = mat.Width() * 3;
+  const unsigned header_len = mat.Width() * 3;
+  if (!compress) {
     #pragma omp parallel for schedule(static)
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += 3) {
       // Extract averages.
@@ -651,23 +684,26 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
     }
   } else {
     const Int ldim = mat.LDim();
-    int col = 0;
-    for (unsigned i = 0; i < q.size(); ++i) {
+    #pragma omp parallel for schedule(static)
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 3) {
       // Extract averages.
       DataType pos_avg, neg_avg;
-      memcpy(&pos_avg, &(q[i]), sizeof(pos_avg));
-      memcpy(&neg_avg, &(q[i + 1]), sizeof(neg_avg));
-      i += 2;  // Skip the averages.
+      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
+      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      // Uncompress the range.
+      ThreshQuantized uncomp;
+      uncompress_thresholds(q, q.begin() + q[header_loc],
+                            q.begin() + q[header_loc + 3], uncomp);
       unsigned prev_row = 0;
-      for (; q[i] != ~((uqtype) 0); ++i) {
-        const uqtype val = q[i];
+      for (unsigned i = 0; i < uncomp.size(); ++i) {
+        const uqtype val = uncomp[i];
         const unsigned row = (val >> 1) + prev_row;
-        const unsigned pos = row + col * ldim;
+        // header_loc/3 is the same as the column.
+        const unsigned pos = row + (header_loc / 3) * ldim;
         prev_row = row;
         if (val & 1) buf[pos] += pos_avg;
         else buf[pos] += neg_avg;
       }
-      ++col;
     }
   }
 }
@@ -788,11 +824,6 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       rs_quant.clear();
       adaptive_threshold_quantize(to_send, rs_quant, to_send_qerr, proportion,
                                   compress);
-      if (compress) {
-        ThreshQuantized comp;
-        compress_adaptive_thresholds(rs_quant, comp);
-        std::swap(rs_quant, comp);
-      }
       count = rs_quant.size();
       return rs_quant.data();
     };
@@ -804,11 +835,6 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   auto rs_recv_trans = 
     [&rs_recv, compress, this]
     (uqtype* buf, Mat& accum) {
-      if (compress) {
-        ThreshQuantized uncomp;
-        uncompress_adaptive_thresholds(rs_recv, uncomp);
-        std::swap(rs_recv, uncomp);
-      }
       adaptive_threshold_unquantize_add(rs_recv, accum, compress);
     };
   intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
@@ -824,11 +850,6 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       }
       adaptive_threshold_quantize(reduced, ag_send, im_qerror, proportion,
                                   compress);
-      if (compress) {
-        ThreshQuantized comp;
-        compress_adaptive_thresholds(ag_send, comp);
-        std::swap(comp, ag_send);
-      }
     };
   auto ag_get_send_buf = [&ag_send] (int& count) {
       count = ag_send.size();
@@ -842,13 +863,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   auto ag_recv_trans = 
     [&ag_recv, compress, proportion, this]
     (uqtype*, Mat& accum) {
-      if (compress) {
-        ThreshQuantized uncomp;
-        uncompress_adaptive_thresholds(ag_recv, uncomp);
-        adaptive_threshold_unquantize(uncomp, accum, compress);
-      } else {
-        adaptive_threshold_unquantize(ag_recv, accum);
-      }
+      adaptive_threshold_unquantize(ag_recv, accum, compress);
     };
   auto ag_swap_bufs =
     [&ag_send, &ag_recv] (uqtype*, uqtype*) {
@@ -868,182 +883,110 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
 
 void lbann_quantizer::compress_thresholds(const ThreshQuantized& q,
                                           ThreshQuantized& cq) {
-  compress_thresholds(q, q.begin(), cq);
+  compress_thresholds(q, q.begin(), q.end(), cq);
 }
 
 void lbann_quantizer::compress_thresholds(
   const ThreshQuantized& q, ThreshQuantized::const_iterator qstart,
-  ThreshQuantized& cq) {
-  // Handle empty input.
-  if (std::distance(qstart, q.end()) == 0) {
-    cq.push_back(~((uqtype) 0));
-    return;
-  }
-  // Write to cur starting from cur's LSB.
-  uqtype cur = 0;
-  // The current bit to write to. This is between 0 and NUM_BITS-1.
-  // E.g., between 0, ... 31 inclusive, so the bit is 1 << cur_bit.
-  // Thus there are NUM_BITS - cur_bit bits left that can be written.
+  ThreshQuantized::const_iterator qend, ThreshQuantized& comp_q) {
+  // Current bit to write to. This is in the range [0, NUM_BITS-1] (e.g. 0-31).
   uqtype cur_bit = 0;
-  for (auto iter = qstart; iter != q.end(); ++iter) {
-    uqtype ent = *iter;
-    uqtype quotient = ent >> GR_K;
-    uqtype remainder = ent & (GR_M - 1);
-    uqtype bits_left = NUM_BITS - cur_bit;
-    // Write quotient 1s.
-    if (bits_left >= quotient) {
-      // Can fit in the current chunk.
-      if (quotient == NUM_BITS) {
-        cq.push_back(~((uqtype) 0));
-        // Don't need to reset cur, cur_bit: already 0.
-      } else {
-        cur |= ((1 << quotient) - 1) << cur_bit;
-        cur_bit += quotient;
-        if (cur_bit == NUM_BITS) {
-          cq.push_back(cur);
-          cur = 0;
-          cur_bit = 0;
-        }
-      }
+  comp_q.emplace_back(0);
+  for (auto iter = qstart; iter != qend; ++iter) {
+    uqtype entry = *iter;
+    uqtype quotient = entry >> GR_K;
+    uqtype remainder = entry & (GR_M - 1);
+    size_t cur_pos = comp_q.size() - 1;
+    // quotient should usually be 0; if not, choose a better GR_K.
+    if (quotient == 0) {
+      // Just increment the current bit, since cur_bit <= 31 here.
+      ++cur_bit;
     } else {
-      // Need to split quotient into multiple chunks.
-      // Write the first bits_left 1s to the current chunk.
-      if (bits_left == NUM_BITS) {
-        cur = ~((uqtype) 0);
-      } else {
-        cur |= ((1 << bits_left) - 1) << cur_bit;
-      }
-      cq.push_back(cur);
-      quotient -= bits_left;
-      // Write chunks of 1s until we have less than NUM_BITS left to write.
-      for (uqtype i = 0; i < quotient / NUM_BITS; ++i) {
-        cq.push_back(~((uqtype) 0));
-      }
-      // Lastly write the remaining 1s to a new chunk.
-      quotient %= NUM_BITS;
-      if (quotient > 0) {
-        cur = (1 << quotient) - 1;
-        cur_bit = quotient;
-      } else {
-        cur = 0;
-        cur_bit = 0;
-      }
+      // The quotient needs quotient 1s then a 0.
+      // Determine how many bits we need to set in the current word.
+      uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit, quotient);
+      // This shift is done with 64 bits to deal with the case that:
+      // cur_bit == 0 && quotient == NUM_BITS => bits_set_cur = 32
+      // which breaks when sizeof(uqtype) == 32 (which we use).
+      // If we switch to 64 bits, we'll need to come up with something else,
+      // since the same problem will occur.
+      comp_q[cur_pos] |= ((((uint64_t) 1) << bits_set_cur) - 1) << cur_bit;
+      // Add the appropriate number of words filled with 1s (may be 0).
+      comp_q.resize(comp_q.size() + (quotient - bits_set_cur) / NUM_BITS,
+                    ~((uqtype) 0));
+      // Add the final bits if any and update cur_bit.
+      uqtype final_bits = (quotient - bits_set_cur) & (NUM_BITS - 1);
+      comp_q.resize(comp_q.size() + (final_bits > 0), (1 << final_bits) - 1);
+      cur_bit = (cur_bit + quotient) & (NUM_BITS - 1);
+      // Add the 0 terminator.
+      comp_q.resize(comp_q.size() + !cur_bit, 0);
+      ++cur_bit;
     }
-    // Write trailing 0.
-    // There should always be at least one bit available here.
-    cur_bit += 1;
-    if (cur_bit == NUM_BITS) {
-      cq.push_back(cur);
-      cur = 0;
-      cur_bit = 0;
-    }
-    // Write remainder as a GR_K-length binary string.
-    // Always fits in at most two chunks, since GR_K <= 31.
-    bits_left = NUM_BITS - cur_bit;
-    if (bits_left >= GR_K) {
-      // Can fit the remainder in the current chunk.
-      cur |= remainder << cur_bit;
-      cur_bit += GR_K;
-      if (cur_bit == NUM_BITS) {
-        cq.push_back(cur);
-        cur = 0;
-        cur_bit = 0;
-      }
-    } else {
-      // Need to split the remainder into two chunks.
-      // Write the first bits_left bits to the current chunk.
-      cur |= (remainder & ((1 << bits_left) - 1)) << cur_bit;
-      cq.push_back(cur);
-      // Now write the remaining GR_K - bits_left bits to the new chunk.
-      cur = remainder >> bits_left;
-      cur_bit = GR_K - bits_left;
-    }
+    // Write remainder using GR_K bits. cur_bit == NUM_BITS is possible here.
+    uqtype bits_set_cur = std::min((uqtype) NUM_BITS - cur_bit,
+                                   static_cast<uqtype>(GR_K));
+    cur_pos = comp_q.size() - 1;
+    // Write what we can to the current word.
+    comp_q[cur_pos] |= (remainder & ((1 << bits_set_cur) - 1)) << cur_bit;
+    // Write the rest to a new word, if needed.
+    comp_q.resize(comp_q.size() + (bits_set_cur != GR_K),
+                  remainder >> bits_set_cur);
+    cur_bit = (cur_bit + GR_K) & (NUM_BITS - 1);
+    // Add a new word if needed.
+    comp_q.resize(comp_q.size() + !cur_bit, 0);
   }
-  // Pad the end of cur with 1s to terminate it (if needed).
-  if (cur_bit > 0) {
-    uqtype bits_left = NUM_BITS - cur_bit;
-    cur |= ((1 << bits_left) - 1) << cur_bit;
-  }
-  if (cur) {
-    cq.push_back(cur);
-  }
-}
-
-void lbann_quantizer::compress_adaptive_thresholds(const ThreshQuantized& q,
-                                                   ThreshQuantized& cq) {
-  cq.push_back(q[0]);
-  cq.push_back(q[1]);
-  compress_thresholds(q, std::next(q.begin(), 2), cq);
+  // Pad the final word with 1s to terminate.
+  size_t cur_pos = comp_q.size() - 1;
+  comp_q[cur_pos] |= ((1 << (NUM_BITS - cur_bit)) - 1) << cur_bit;
 }
 
 void lbann_quantizer::uncompress_thresholds(const ThreshQuantized& cq,
                                             ThreshQuantized& q) {
-  uncompress_thresholds(cq, cq.begin(), q);
+  uncompress_thresholds(cq, cq.begin(), cq.end(), q);
 }
 
 void lbann_quantizer::uncompress_thresholds(
   const ThreshQuantized& cq, ThreshQuantized::const_iterator cqstart,
-  ThreshQuantized& q) {
+  ThreshQuantized::const_iterator cqend, ThreshQuantized& q) {
   uqtype quotient = 0;
   uqtype remainder = 0;
-  // Like in compress, cur_bit is the current bit being read.
   uqtype cur_bit = 0;
-  for (size_t i = std::distance(cq.begin(), cqstart); i < cq.size();) {
-    uqtype cur = cq[i];
-    // Decode the quotient by continuing until we find a 0.
-    // If we hit the end without finding a 0, this was the end of the list.
-    while ((cur >> cur_bit) & 0x1) {
-      ++quotient;
-      ++cur_bit;
-      if (cur_bit == NUM_BITS) {
-        // Hit end of current chunk.
-        ++i;
-        if (i == cq.size()) {
-          return;  // Nothing left.
-        }
-        cur = cq[i];
-        cur_bit = 0;
+  uqtype cur = *cqstart;
+  for (auto iter = cqstart; iter != cqend;) {
+    // Decode the quotient by continuing until a 0 is found.
+    int ffz;
+    while ((ffz = __builtin_ffs(~cur)) == 0) {
+      ++iter;
+      if (iter == cqend) {
+        return;
       }
-    }
-    // Skip past the 0.
-    ++cur_bit;
-    if (cur_bit == NUM_BITS) {
-      ++i;
-      cur = cq[i];
+      cur = *iter;
+      quotient += NUM_BITS - cur_bit;
       cur_bit = 0;
     }
+    quotient += ffz - 1 - cur_bit;
+    cur_bit = ffz;
     // Decode the remainder (GR_K bits).
-    if (cur_bit + GR_K <= NUM_BITS) {
-      // Remainder is entirely in the current chunk.
-      remainder = (cur >> cur_bit) & (GR_M - 1);
-      cur_bit += GR_K;
-      if (cur_bit == NUM_BITS) {
-        ++i;
-        cur_bit = 0;
-      }
-    } else {
-      // Remainder is split over this and the next chunk.
-      uqtype bits_left = NUM_BITS - cur_bit;
-      // Start with the top bits_left bits.
-      remainder = cur >> cur_bit;
-      ++i;
-      cur = cq[i];
-      // Now get remaining GR_K - bits_left bits from the new cur.
-      remainder |= (cur & ((1 << (GR_K - bits_left)) - 1)) << bits_left;
-      cur_bit = GR_K - bits_left;
+    uqtype bits_left = std::min((uqtype) NUM_BITS - cur_bit,
+                                static_cast<uqtype>(GR_K));
+    remainder = (cur >> cur_bit) & ((1 << bits_left) - 1);
+    if (bits_left != GR_K) {
+      ++iter;
+      cur = *iter;
     }
-    // Now decode the final value.
-    q.push_back(quotient * GR_M + remainder);
+    remainder |= (cur & ((1 << (GR_K - bits_left)) - 1)) << bits_left;
+    cur_bit = (cur_bit + GR_K) & (NUM_BITS - 1);
+    // Decode the final value.
+    q.emplace_back(quotient * GR_M + remainder);
     quotient = 0;
     remainder = 0;
+    // Advance to the next entry if needed.
+    iter += !cur_bit;
+    if (!cur_bit && iter != cqend) cur = *iter;
+    // Fill everything before the current bit with 1s to avoid confusing the
+    // quotient calculation.
+    cur |= (1 << cur_bit) - 1;
   }
-}
-
-void lbann_quantizer::uncompress_adaptive_thresholds(const ThreshQuantized& cq,
-                                                     ThreshQuantized& q) {
-  q.push_back(cq[0]);
-  q.push_back(cq[1]);
-  uncompress_thresholds(cq, std::next(cq.begin(), 2), q);
 }
 
 std::tuple<DataType, DataType, DataType, DataType>

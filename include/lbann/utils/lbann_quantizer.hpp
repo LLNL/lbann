@@ -149,23 +149,23 @@ public:
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
-   * @param delta Whether to do delta encoding (default false).
+   * @param compress Whether to compress the data (default false).
    */
   void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
-                                   int proportion, bool delta = false);
+                                   int proportion, bool compress = false);
   void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
                                    Mat& qerror, int proportion,
-                                   bool delta = false);
+                                   bool compress = false);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
-   * @param delta Whether delta encoding was used (default false).
+   * @param compress Whether compression was used (default false).
    */
   void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                                     bool delta = false);
+                                     bool compress = false);
   void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                                     bool delta = false);
+                                     bool compress = false);
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
    */
@@ -190,18 +190,14 @@ public:
 
   /**
    * Compress the output of threshold_quantize.
-   * This uses Golumb-Rice coding, with the quotient stored first, followed by
+   * This uses Golomb-Rice coding, with the quotient stored first, followed by
    * the remainder.
    */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized& cq);
-  void compress_adaptive_thresholds(const ThreshQuantized& q,
-                                    ThreshQuantized& cq);
   /** Corresponding uncompress. */
   void uncompress_thresholds(const ThreshQuantized& cq,
                              ThreshQuantized& q);
-  void uncompress_adaptive_thresholds(const ThreshQuantized& cq,
-                                      ThreshQuantized& q);
 
   /**
    * Compute positive and negative threshold values such that only one in
@@ -279,12 +275,12 @@ private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
   /**
-   * Golumb-Rice M parameter, a power of 2. Should be large-ish relative to the
+   * Golomb-Rice M parameter, a power of 2. Should be large-ish relative to the
    * data being encoded, but log_2(GR_M) should be <= 31.
    */
-  static const uqtype GR_M = 16;
+  static const uqtype GR_M = 128;
   /** log_2(GR_M). */
-  static const uqtype GR_K = 4;
+  static const uqtype GR_K = 7;
   /** Number of samples to use in proportion_threshold_average. */
   static const int NUM_PTA_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
@@ -346,15 +342,17 @@ private:
    * Variant of adaptive_threshold_quantize that adds its entries.
    */
   void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
-                                         bool delta = false);
+                                         bool compress = false);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
                            ThreshQuantized::const_iterator qstart,
+                           ThreshQuantized::const_iterator qend,
                            ThreshQuantized& cq);
   /** Handle uncompression starting from arbitrary locations. */
   void uncompress_thresholds(const ThreshQuantized& cq,
                              ThreshQuantized::const_iterator cqstart,
+                             ThreshQuantized::const_iterator cqend,
                              ThreshQuantized& q);
 
   template <typename T>

@@ -24,10 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <omp.h>
 #include "lbann/utils/lbann_random.hpp"
 
 namespace {
 // Random number generator, file-visible only.
+// Defined like this to work around a GCC problem with threadprivate objects:
+// https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
+extern lbann::rng_gen generator;
+#pragma omp threadprivate(generator)
 lbann::rng_gen generator;
 }
 
@@ -39,7 +44,16 @@ rng_gen& get_generator() {
 
 void init_random(int seed) {
   if (seed != -1) {
+    // Seed every OpenMP thread, if present.
+    // Note: Threadprivate OMP variables don't work with dynamic threads.
+#ifdef _OPENMP
+    #pragma omp parallel
+    {
+      get_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+    }
+#else
     get_generator().seed(seed);
+#endif
 #ifdef LBANN_SET_EL_RNG
     El::Generator().seed(seed);
 #endif
@@ -47,7 +61,14 @@ void init_random(int seed) {
     // Seed with a random value.
     std::random_device rd;
     unsigned rand_val = rd();
+#ifdef _OPENMP
+    #pragma omp parallel
+    {
+      get_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+    }
+#else
     get_generator().seed(rand_val);
+#endif
 #ifdef LBANN_SET_EL_RNG
     El::Generator().seed(rand_val);
 #endif
