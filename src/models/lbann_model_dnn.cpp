@@ -113,7 +113,6 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < m_layers.size(); ++l) {
-      cout << "Layer Index and neurons " << m_layers[l]->Index << " : " << m_layers[l]->NumNeurons << endl;
       m_layers[l]->m_execution_mode = execution_mode::training;
     }
 
