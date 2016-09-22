@@ -8,7 +8,7 @@ if(DOXYGEN_FOUND)
 
   # Doxygen options
   if(NOT DOXYGEN_OUTPUT_DIR)
-    set(DOXYGEN_OUTPUT_DIR ${PROJECT_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR})
+    set(DOXYGEN_OUTPUT_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR})
   endif()
 
   # Configure Doxygen configuration file
