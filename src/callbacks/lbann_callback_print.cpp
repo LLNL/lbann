@@ -31,6 +31,15 @@
 
 namespace lbann {
 
+void lbann_callback_print::setup(model* m) {
+#ifdef LBANN_VERSION
+  lbann_comm* comm = m->get_comm();
+  if (comm->am_world_master()) {
+    std::cout << "Training with LLNL LBANN version " << LBANN_VERSION << endl;
+  }
+#endif
+}
+
 void lbann_callback_print::on_epoch_begin(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_world_master()) {

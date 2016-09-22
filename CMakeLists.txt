@@ -1,7 +1,11 @@
 project(LBANN)
 cmake_minimum_required(VERSION 2.8.12)
-set(LBANN_MAJOR_VERSION 0)
-set(LBANN_MINOR_VERSION 9)
+#set(LBANN_MAJOR_VERSION 0)
+#set(LBANN_MINOR_VERSION 91)
+
+# Get the git version so that we can embed it into the executable
+execute_process(COMMAND git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
 
 ################################################################
 # Options

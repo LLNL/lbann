@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// This file is part of LBANN: Livermore Big Artificial Neural Network Toolkit, Version 0.9
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
