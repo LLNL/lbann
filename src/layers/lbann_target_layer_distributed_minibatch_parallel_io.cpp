@@ -35,31 +35,25 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, shared_data_reader), 
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader->getNumData(), testing_data_reader->getNumData()),
+lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
+  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader), 
+    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Ys(comm->get_model_grid()), YsColMax(comm->get_model_grid()), YsColMaxStar(comm->get_model_grid())
 {
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
 
-lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, bool shared_data_reader)
-  : target_layer_distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader, NULL, shared_data_reader)
-{
-}
-
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_training_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
-    }
-  }
-
-  if(m_testing_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_testing_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_testing * Layer::m_mini_batch_size);
+  if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
+    if(io_layer::m_data_sets_span_models) {
+      int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+      cout << "Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
+      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                   stride,
+                                   Layer::comm->get_model_rank() * stride);
+    }else {
+      io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                   m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
   }
 
@@ -81,6 +75,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   m_num_data_per_epoch = 0;
 }
 
+///@todo update this to use the new fp_linearity framework
 DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(DataType prev_WBL2NormSum) {
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
   target_layer::update_num_samples_processed(num_samples_in_batch);
@@ -157,7 +152,9 @@ bool lbann::target_layer_distributed_minibatch_parallel_io::update_data_reader()
   DataReader *data_reader = target_layer::select_data_reader();
   if(m_shared_data_reader) { 
     /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
-    /// or will be done on the next update of the input layer (which includes adding the stride)
+    /// or will be done on the next update of the input layer (which includes adding the stride).
+    /// Note that target layers are always update before input layers, which is why the position
+    /// is not up to date yet.
     return (data_reader->get_next_position() < data_reader->getNumData());
   }else {
     return data_reader->update();

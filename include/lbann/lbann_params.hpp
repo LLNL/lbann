@@ -51,12 +51,12 @@ namespace lbann
     /** 0 - Pick first N training samples, 1 - Select N random training samples */
     int ShuffleTrainingData;
 
-    /// Maximum number of samples for training
-    int MaxTrainingSamples;
+    /// Percentage of samples for training
+    double PercentageTrainingSamples;
     /// Maximum number of samples for validation
-    int MaxValidationSamples;
+    double PercentageValidationSamples;
     /// Maximum number of samples for testing
-    int MaxTestSamples;
+    double PercentageTestingSamples;
     /// Test with training data
     int TestWithTrainData;
 
@@ -64,8 +64,6 @@ namespace lbann
     int EpochCount;
     /// Size of the mini-batch to be trained
     int MBSize;
-    /// Maximum number of mini-batches to use for training
-    int MaxMBCount;
 
     /// Learning rate
     float LearnRate;
@@ -102,7 +100,13 @@ namespace lbann
     std::string TrainFile;
     /// Test data file name
     std::string TestFile;
+    /// Location to write summary files.
+    std::string SummaryDir;
 
+    /// Type of intermodel communication to use, if any.
+    int IntermodelCommMethod;
+    /// Number of processes to use in each model (if using multiple).
+    int ProcsPerModel;
   };
 
   /// Performance parameters

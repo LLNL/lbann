@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -39,12 +39,24 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   : DataReader(batchSize, shuffle)
 {
   m_num_samples = 0;
+  //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
+
 }
 
 lbann::data_reader_nci::data_reader_nci(int batchSize)
   : data_reader_nci(batchSize, true) {}
+
+//copy constructor
+lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
+  : DataReader((const DataReader&) source),
+  m_num_labels(source.m_num_labels), m_num_samples(source.m_num_samples),
+  m_num_features(source.m_num_features),m_labels(source.m_labels),
+  m_index_map(source.m_index_map),m_infile(source.m_infile)
+  {
+
+  }
 
 lbann::data_reader_nci::~data_reader_nci()
 {
@@ -68,28 +80,28 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     return 0;
   }
 
+  int current_batch_size = getBatchSize();
+  ifstream ifs(m_infile.c_str());
+  if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
+
+  string line;
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; ++n) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
     if (n >= (int)ShuffledIndices.size())
       break;
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
 
-    ifstream ifs(m_infile.c_str());
-    if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
-
-
-    string line;
-    std::getline(ifs, line); //skip header*/
-    for(int i =0; i <= index; i++) std::getline(ifs, line);
-
+    if(index == 0) continue; //skip header
+    else std::getline(ifs.seekg(m_index_map[index-1]+index),line);
     istringstream lstream(line);
     string field;
     int col = 0, f=0;
 
     while(getline(lstream, field, ' ')) {
       col++;
+      //if(col == 4) m_labels[index] = this->map_label_2int(field);
       if(col == 4) m_labels[index] = this->map_label_2int(field);
       if (col > 5) {
         if(field.empty()) field = "0"; //set empty feature field (unit) to zero
@@ -97,8 +109,8 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
         f++;
       }//end if col > 5
     }// end while loop
-    ifs.close();
   } // end for loop (batch)
+  ifs.close();
   return (n - CurrentPos);
 }
 
@@ -107,14 +119,17 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
   if(!DataReader::position_valid()) {
     return 0;
   }
+  int current_batch_size = getBatchSize();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + BatchSize; ++n) {
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
     if (n >= (int)ShuffledIndices.size())
       break;
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    int sample_label = m_labels[index];
+    int sample_label = 0;
+    if(index == 0) continue; //skip header
+    else sample_label = m_labels[index];
 
     Y.Set(sample_label, k, 1);
   }
@@ -129,27 +144,27 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size_t max_sample_count, bool firstN)
+bool lbann::data_reader_nci::load(const std::string infile)
 {
   ifstream ifs(infile.c_str());
   if (!ifs) { std::cout << "\n In load: can't open file : " << infile;  exit(1); }
   m_infile = infile;
-  m_has_header = has_header;
   string line;
   int i;
-  std::getline(ifs, line); //skip header
+  double offset =0;
   while(std::getline (ifs, line) ) {
     string field;
+    offset = offset + line.length();
     istringstream lstream(line);
     i=0;
     m_num_features = 0;
-    //int label;
     while(getline(lstream, field, ' ')) {
       i++;
       if (i > 5) {
         m_num_features++;
       }
      }
+     m_index_map[m_num_samples] = offset;
      m_num_samples++;
   }
   ifs.close();
@@ -160,18 +175,55 @@ bool lbann::data_reader_nci::load(const std::string infile,bool has_header, size
   for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
     ShuffledIndices[n] = n;
   }
-
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-  if (max_sample_count != 0) {
-    max_sample_count = __MIN(max_sample_count, m_num_samples);
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-    }
-    ShuffledIndices.resize(max_sample_count);
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-    }
-  }
   return true;
+}
+
+bool lbann::data_reader_nci::load(const std::string infile, size_t max_sample_count, bool firstN)
+{
+  bool load_successful = false;
+
+  load_successful = load(infile);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+bool lbann::data_reader_nci::load(const std::string infile, double use_percentage, bool firstN) {
+  bool load_successful = false;
+
+  load_successful = load(infile);
+
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return load_successful;
+}
+
+lbann::data_reader_nci& lbann::data_reader_nci::operator=(const data_reader_nci& source)
+{
+
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+
+  this->m_num_labels = source.m_num_labels;
+  this->m_num_samples = source.m_num_samples;
+  this->m_num_features = source.m_num_features;
+  this->m_labels = source.m_labels;
+  this->m_index_map = source.m_index_map;
+  this->m_infile = source.m_infile;
+
+  return *this;
 }

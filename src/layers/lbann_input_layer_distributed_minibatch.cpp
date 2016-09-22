@@ -34,20 +34,21 @@ using namespace std;
 using namespace El;
 
 
-lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : input_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, regs), Xs(comm->get_model_grid())
+lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : input_layer(comm, mini_batch_size, data_readers, regs), Xs(comm->get_model_grid())
 {
   //  Index = index;
   m_root = 0;
+  m_num_data_per_epoch = 0;
+
 }
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    m_training_data_reader->setup(0, m_mini_batch_size);
-  }
-
-  if(m_testing_data_reader != NULL) {
-    m_testing_data_reader->setup(0, m_mini_batch_size);
+  if(io_layer::m_data_sets_span_models) {
+    io_layer::setup_data_readers(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
+                                 Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+  }else {
+    io_layer::setup_data_readers(0, m_mini_batch_size);
   }
 
   Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
@@ -57,13 +58,19 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
 void lbann::input_layer_distributed_minibatch::fp_linearity(
   ElMat&, ElMat&, ElMat&, ElMat&) {
   DataReader *data_reader = input_layer::select_data_reader();
+  int num_samples_in_batch = 0;
 
   if (comm->get_rank_in_model() == m_root) {
     Zero(X_local);
-    data_reader->fetch_data(X_local);
+    num_samples_in_batch = data_reader->fetch_data(X_local);
+    bool data_valid = (num_samples_in_batch > 0);
+    if(data_valid) {
+      m_num_data_per_epoch+=num_samples_in_batch;
+    }
+
     /// Set the bias term in the last row of the input matrix
     int linear_data_size = data_reader->get_linearized_data_size();
-    for(int n = 0; n < m_mini_batch_size; n++) {
+    for(size_t n = 0; n < m_mini_batch_size; n++) {
       X_local.Set(linear_data_size, n, 1);
     }
   }

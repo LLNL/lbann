@@ -31,7 +31,16 @@
 
 namespace lbann {
 
-void lbann_callback_print::on_epoch_begin(Model* m) {
+void lbann_callback_print::setup(model* m) {
+#ifdef LBANN_VERSION
+  lbann_comm* comm = m->get_comm();
+  if (comm->am_world_master()) {
+    std::cout << "Training with LLNL LBANN version " << LBANN_VERSION << endl;
+  }
+#endif
+}
+
+void lbann_callback_print::on_epoch_begin(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_world_master()) {
     std::cout << "-----------------------------------------------------------" << std::endl;
@@ -40,7 +49,7 @@ void lbann_callback_print::on_epoch_begin(Model* m) {
   }
 }
 
-void lbann_callback_print::on_epoch_end(Model* m) {
+void lbann_callback_print::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_model_master()) {
     DataType train_acc = m->get_train_accuracy();
@@ -67,7 +76,7 @@ void lbann_callback_print::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_print::on_test_end(Model* m) {
+void lbann_callback_print::on_test_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_model_master()) {
     DataType test_acc = m->get_test_accuracy();

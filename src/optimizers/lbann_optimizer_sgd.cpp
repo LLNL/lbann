@@ -48,17 +48,15 @@ lbann::SGD_factory::~SGD_factory()
 
 }
 
-lbann::Optimizer *lbann::SGD_factory::create_optimizer(matrix_distribution m_matrix_distribution) {
-  switch(m_matrix_distribution) {
-  case McMr:
+lbann::Optimizer *lbann::SGD_factory::create_optimizer(matrix_format format) {
+  switch(format) {
+  case matrix_format::MC_MR:
     return new SGD<DistMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case CircCirc:
+  case matrix_format::CIRC_CIRC:
     return new SGD<CircMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case StarStar:
+  case matrix_format::STAR_STAR:
     return new SGD<StarMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case MrStar:
-    return new SGD<ColSumMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case StarVc:
+  case matrix_format::STAR_VC:
     return new SGD<StarVCMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
   default:
     // TODO: throw an exception

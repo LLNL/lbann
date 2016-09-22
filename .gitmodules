@@ -1,3 +1,0 @@
-[submodule "external/Elemental"]
-	path = external/Elemental
-	url = git://github.com/elemental/Elemental.git

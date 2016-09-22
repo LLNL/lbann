@@ -71,7 +71,7 @@ namespace lbann
   public:
     Optimizer_factory() {}
     virtual ~Optimizer_factory() {}
-    virtual Optimizer *create_optimizer(matrix_distribution m_matrix_distribution=McMr) { return nullptr; };
+    virtual Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR) { return nullptr; };
 
   };
 }

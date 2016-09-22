@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summary .hpp .cpp - Callback hooks to summarize to Tensorboard
-////////////////////////////////////////////////////////////////////////////////
+// lbann_callback_timer .hpp .cpp - Callback hooks to time training
+///////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
 #include "lbann/utils/lbann_timer.hpp"
@@ -32,11 +32,11 @@
 
 namespace lbann {
 
-void lbann_callback_timer::on_epoch_begin(Model* m) {
+void lbann_callback_timer::on_epoch_begin(model* m) {
   epoch_start = get_time();
 }
 
-void lbann_callback_timer::on_epoch_end(Model* m) {
+void lbann_callback_timer::on_epoch_end(model* m) {
   double end = get_time();
   double epoch_time = end - epoch_start;
   // Compute minibatch stats.
@@ -81,11 +81,11 @@ void lbann_callback_timer::on_epoch_end(Model* m) {
   }
 }
 
-void lbann_callback_timer::on_batch_begin(Model* m) {
+void lbann_callback_timer::on_batch_begin(model* m) {
   batch_start = get_time();
 }
 
-void lbann_callback_timer::on_batch_end(Model* m) {
+void lbann_callback_timer::on_batch_end(model* m) {
   double end = get_time();
   double mb_time = end - batch_start;
   batch_times.push_back(mb_time);

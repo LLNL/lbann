@@ -145,9 +145,7 @@ void ColumnMax( const SparseMatrix<F>& A, Matrix<Base<F>>& norms )
     // Form the maxima
     // ---------------
     typedef Base<F> Real;
-    const Int m = A.Height();
-    const Int n = A.Width();
-    Zeros( norms, n, 1 );
+    Zeros( norms, A.Width(), 1 );
 
     const Int numEntries = A.NumEntries();
     const Int* colBuf = A.LockedTargetBuffer();
@@ -174,8 +172,12 @@ void ColumnMax
     // Modify the communication pattern from an adjoint Multiply
     // =========================================================
     Zeros( norms, A.Width(), 1 );
-    A.InitializeMultMeta();
-    const auto& meta = A.multMeta;
+    // TODO: (Moon 9/12/16) I replaced the commented code since
+    // Elemental no longer has a DistSparseMultMeta class. I do not
+    // know if the code is correct.
+    // A.InitializeMultMeta();
+    // const auto& meta = A.multMeta;
+    const auto& meta = A.InitializeMultMeta();
 
     // Pack the send values 
     // --------------------

@@ -27,34 +27,24 @@
 #ifndef LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
-#include "lbann/data_readers/lbann_data_reader.hpp"
+#include "lbann/layers/lbann_io_layer.hpp"
 
 namespace lbann
 {
-  class target_layer : public Layer {
+  class target_layer : public io_layer {
   public:
-    target_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, DataReader* testing_data_reader, bool shared_data_reader);
-    target_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader, bool shared_data_reader);
+    target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
     DistMat *fp_output();
-    DataReader *select_data_reader();
     DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
     DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
-    long update_num_samples_processed(long num_samples);
 
-    long get_num_samples_trained() { return m_num_training_samples_processed; }
-    long get_num_samples_tested() { return m_num_testing_samples_processed; }
-    long get_total_num_training_samples() { return m_total_training_samples; }
-    long get_total_num_testing_samples() { return m_total_testing_samples; }
+    /** No non-linearity */
+    void fp_nonlinearity() {}
+    /** No non-linearity */
+    void bp_nonlinearity() {}
 
   public:
-    DataReader *m_training_data_reader;
-    DataReader *m_testing_data_reader;
     bool m_shared_data_reader;
-    long m_num_training_samples_processed;
-    long m_total_training_samples;
-    long m_num_testing_samples_processed;
-    long m_total_testing_samples;
   };
 }
 

@@ -45,13 +45,13 @@ public:
   lbann_callback_timer(lbann_summary* _summarizer = nullptr) :
     lbann_callback(1, _summarizer) {}
   /** Start recording time for the epoch. */
-  void on_epoch_begin(Model* m);
+  void on_epoch_begin(model* m);
   /** Report epoch and mean minibatch times. */
-  void on_epoch_end(Model* m);
+  void on_epoch_end(model* m);
   /** Start record time for a batch. */
-  void on_batch_begin(Model* m);
+  void on_batch_begin(model* m);
   /** Stop and save time for a batch. */
-  void on_batch_end(Model* m);
+  void on_batch_end(model* m);
 private:
   /** Start time for the current epoch. */
   double epoch_start;

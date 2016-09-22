@@ -29,48 +29,75 @@
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
+#include <vector>
+#include "lbann/lbann_base.hpp"
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include <string>
 
 namespace lbann
 {
-    class Sequential;
 
-    class PoolingLayer: public Layer
-    {
-    public:
-        PoolingLayer(uint index, int poolDim, int channels,
-                     const int* inputDims, const int* poolWindowdim,
-                     const int* poolPad, const int* poolStride,
-                     int poolMode, uint miniBatchSize,
-                     lbann_comm* comm, Optimizer *optimizer);
-        ~PoolingLayer();
+  /// Pooling layer
+  class pooling_layer : public Layer
+  {
+  
+  public:
 
-        void setup(CudnnNet<DataType> *cudnnNet);
+    /// Constructor
+    pooling_layer(uint index,
+                  int num_dims,
+                  int num_channels,
+                  const int* input_dims,
+                  const int* pool_dims,
+                  const int* pool_pads,
+                  const int* pool_strides,
+                  pool_mode _pool_mode,
+                  uint mini_batch_size,
+                  activation_type activation,
+                  lbann_comm* comm,
+                  std::vector<regularizer*> regs,
+                  cudnn::cudnn_manager* cudnn=NULL);
 
-        bool update();
+    /// Destructor
+    ~pooling_layer();
 
-    public:
-        int PoolDim;            // 1D, 2D, or 3D (NCDHW)
-        int Channels;
-        int InputDims[3];     // 1D (W), 2D (HW), or 3D (DHW)
-        int OutputDims[3];    // 1D (W), 2D (HW), or 3D (DHW)
-        int PoolWindowDim[3];   // window dimension, eg., (2, 2, 2)
-        int PoolPad[3];        // padding, eg., (0, 0, 0)
-        int PoolStride[3];     // strides, e.g., (2, 2, 2)
-        int PoolMode;           // 0: max, 1: average
+    void setup(int num_prev_neurons);
 
-#ifdef __LIB_CUDNN
-        CudnnLayer<DataType>* cudnnLayer;
-#endif
+    bool update();
 
-    protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
-      void bp_linearity();
+  protected:
+    
+    void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
+    void bp_linearity();
 
-    };
+  public:
+
+    /// Pooling mode
+    const pool_mode m_pool_mode;
+
+    /// Number of data dimensions
+    const int m_num_dims;
+    /// Number of channels
+    const int m_num_channels;
+    /// Input dimensions
+    /** In HW or DHW format */
+    std::vector<int> m_input_dims;
+    /// Output dimensions
+    std::vector<int> m_output_dims;
+    /// Pooling padding
+    std::vector<int> m_pool_dims;
+    /// Pooling padding
+    std::vector<int> m_pool_pads;
+    /// Pooling strides
+    std::vector<int> m_pool_strides;
+
+  private:
+
+    /// cuDNN pooling layer
+    cudnn::cudnn_pooling_layer* m_cudnn_layer;
+  
+  };
+
 }
-
 
 #endif // LBANN_LAYER_POOLING_HPP_INCLUDED

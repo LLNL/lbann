@@ -33,30 +33,21 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, shared_data_reader), Ys(comm->get_model_grid())
+lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
+  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader), Ys(comm->get_model_grid())
 {
   //  Index = index;
   m_root = 0;
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
 
-lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader, bool shared_data_reader)
-  : target_layer_distributed_minibatch(comm, mini_batch_size, training_data_reader, NULL, shared_data_reader)
-{
-  //  target_layer_distributed_minibatch(comm, mini_batch_size, training_data_reader, NULL, shared_data_reader);
-}
-
 void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_training_data_reader->setup(0, m_mini_batch_size);
-    }
-  }
-
-  if(m_testing_data_reader != NULL) {
-    if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      m_testing_data_reader->setup(0, m_mini_batch_size);
+  if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
+    if(io_layer::m_data_sets_span_models) {
+      io_layer::setup_data_readers(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
+                                   Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+    }else {
+      io_layer::setup_data_readers(0, m_mini_batch_size);
     }
   }
 
@@ -71,6 +62,7 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
 
 }
 
+///@todo update this to use the new fp_linearity framework
 DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WBL2NormSum) {
   DataReader *data_reader = target_layer::select_data_reader();
 

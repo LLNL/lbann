@@ -38,6 +38,7 @@ namespace lbann
 	public:
     DataReader_ImageNet(int batchSize, bool shuffle);
     DataReader_ImageNet(int batchSize);
+    DataReader_ImageNet(const DataReader_ImageNet& source);
 		~DataReader_ImageNet();
 
     int fetch_data(Mat& X);
@@ -46,18 +47,20 @@ namespace lbann
 
 		// ImageNet specific functions
     //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count=0, bool firstN=false);
+    bool load(std::string imageDir, std::string imageListFile);
+    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count, bool firstN=false);
+    bool load(std::string imageDir, std::string imageListFile, double validation_percent, bool firstN=false);
+    void free();
 
 		int get_image_width() { return m_image_width; }
 		int get_image_height() { return m_image_height; }
     int get_linearized_data_size() { return m_image_width * m_image_height; }
     int get_linearized_label_size() { return m_num_labels; }
 
-	private:
-		bool fetch();
+    DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
 	private:
-		std::string									m_image_dir; // where images are stored
+		std::string							m_image_dir; // where images are stored
 		std::vector<std::pair<std::string, int> > 	ImageList; // list of image files and labels
 		int 										m_image_width; // image width (256)
 		int 										m_image_height; // image height (256)

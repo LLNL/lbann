@@ -34,8 +34,7 @@ namespace lbann
 {
   class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
   public:
-    target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader* training_data_reader, DataReader *testing_data_reader, bool shared_data_reader);
-    target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, DataReader* training_data_reader, bool shared_data_reader);
+    target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
 
     void setup(int num_prev_neurons);
     DataType forwardProp(DataType prev_WBL2NormSum);

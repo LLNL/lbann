@@ -27,17 +27,28 @@
 #include "lbann/layers/lbann_layer_softmax.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include <unistd.h>
 
 using namespace std;
 using namespace El;
 
-lbann::SoftmaxLayer::SoftmaxLayer(const uint index, const int numPrevNeurons, const uint numNeurons,
-                                  uint miniBatchSize, lbann_comm* comm, Optimizer *optimizer)
-  :  Layer(index, comm, optimizer, miniBatchSize)
-   , ZsColMax(comm->get_model_grid()), ZsNormExpSum(comm->get_model_grid()),
-     norms(comm->get_model_grid()), ZsColMaxStar(comm->get_model_grid()),
-     ZsNormExpSumStar(comm->get_model_grid()), Acts_Cost(comm->get_model_grid())
+lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
+                                  const int numPrevNeurons,
+                                  const uint numNeurons,
+                                  const uint miniBatchSize,
+                                  const weight_initialization init,
+                                  lbann_comm* comm,
+                                  Optimizer *optimizer)
+  :  Layer(index, comm, optimizer, miniBatchSize),
+     m_weight_initialization(init),
+     ZsColMax(comm->get_model_grid()),
+     ZsNormExpSum(comm->get_model_grid()),
+     norms(comm->get_model_grid()),
+     ZsColMaxStar(comm->get_model_grid()),
+     ZsNormExpSumStar(comm->get_model_grid()),
+     Acts_Cost(comm->get_model_grid()),
+     m_minibatch_cost(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
@@ -52,22 +63,59 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }
 
-    // Xavier random initialization - Derived from Caffe implementation
-    DataType var_scale = sqrt(3.0 / (numPrevNeurons + 1));
+    // Initialize weight-bias matrix
+    Zeros(*WB, NumNeurons, numPrevNeurons+1);
 
-    if (numPrevNeurons != -1) {
-      // For the softmax layer we do not want to have an extra row propagating the bias term to the output
-        Gaussian(*WB, NumNeurons, numPrevNeurons + 1, (DataType) 0.0, var_scale);
-        if (comm->am_model_master()) {
-          cout << "Softmax Layer " << Index << ": Xavier initialization: input size=" << (numPrevNeurons + 1) << " scale=" << var_scale << " and layer size " << NumNeurons << endl;
-        }
-        Zeros(*WB_D, NumNeurons, numPrevNeurons + 1);
-        Zeros(*Ds, NumNeurons, m_mini_batch_size);
-        Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-        Zeros(*Zs, NumNeurons, m_mini_batch_size);
+    // Initialize weights
+    DistMat weights;
+    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    switch(m_weight_initialization) {
+    case weight_initialization::uniform:
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), DataType(1));
+      break;
+    case weight_initialization::normal:
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), DataType(1));
+      break;
+    case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
     }
+    case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::he_normal: {
+      const DataType var = 1.0 / numPrevNeurons;
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / numPrevNeurons;
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(weights);
+      break;
+    }
+
+    // Initialize other matrices
+    Zeros(*WB_D, NumNeurons, numPrevNeurons + 1);
+    Zeros(*Ds, NumNeurons, m_mini_batch_size);
+    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
+    Zeros(*Zs, NumNeurons, m_mini_batch_size);
     Zeros(*Acts, NumNeurons, m_mini_batch_size);
     Zeros(Acts_Cost, NumNeurons, m_mini_batch_size);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
 }
 
 // template <typename Dtype>
@@ -98,13 +146,16 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);
 
-  // Subtract the max from each column to avoid numerical issues
-  IndexDependentMap(_Z,
-                    (std::function<DataType(int,int,DataType)>)([this](int r, int c, DataType z)->
-                                                                DataType{Int rL = this->ZsColMaxStar.LocalRow(c); return z - this->ZsColMaxStar.GetLocal(rL,0);}));
-
-  // Exponentiation
-  EntrywiseMap(_Z, (std::function<DataType(DataType)>)([](DataType z)->DataType{return exp(z);}));
+  // Compute exp(z) of each entry. Subtract the max of each column from its
+  // entries to prevent the exp from blowing up. Large negative values are
+  // expected to underflow to 0.
+  IndexDependentMap(
+    _Z,
+    (std::function<DataType(int,int,DataType)>)
+    ([this](int r, int c, DataType z)->DataType {
+      Int rL = this->ZsColMaxStar.LocalRow(c);
+      return std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0));
+    }));
 
   // For each minibatch (column) sum up the exponentiated values
   Zeros(ZsNormExpSum, m_mini_batch_size, 1);
@@ -118,7 +169,7 @@ void lbann::SoftmaxLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& 
                     (std::function<DataType(Int,Int,DataType)>)([this /*ZsNormExpSum*/](Int r, Int c, DataType z)->
                                                                 DataType{Int rL = this->ZsNormExpSumStar.LocalRow(c); return z/this->ZsNormExpSumStar.GetLocal(rL,0);}));
 
-#if 1
+#if 0
   ColSumMat Ycheck(_Y.Grid());
   Zeros(Ycheck, m_mini_batch_size, 1);
   ColumnSum((DistMat&) _Y /*ZsNormExp*/, Ycheck);
@@ -158,43 +209,33 @@ void lbann::SoftmaxLayer::bp_linearity()
     // Compute the partial delta update for the next lower layer
     Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
 
-    // Compute and display the cost function
-    DistMat Y(Acts->Grid());
-    Copy(DsNext, Y);
-
-    DataType avg_error = this->computeCost(Y);// + Lambda/2 * WBL2NormSum;
-    // DataType cost = (aggregate_cost / num_backprop_steps);
-    // DataType delta = 0.01 * cost;
-    // if(Output.Grid().Rank() == 0 && (1 || avg_error <= (cost-delta) || avg_error > (cost+delta))) {
-    //   cout << "Average of the softmax cost function across the mini-batch " << avg_error << endl;
-    // }
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
+    if (m_execution_mode == execution_mode::training) {
+      DataType avg_error = this->computeCost(DsNext);
+      aggregate_cost += avg_error;
+      num_backprop_steps++;
+    }
 
     // by divide mini-batch size
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
          X, (DataType) 0., *WB_D);
 }
 
-DataType lbann::SoftmaxLayer::computeCost(DistMat& Y) {
+DataType lbann::SoftmaxLayer::computeCost(const DistMat& Y) {
     // Compute the cost function
     // cost=-1/m*(sum(sum(groundTruth.*log(a3))))
     DataType avg_error = 0.0, total_error = 0.0;
     EntrywiseMap(*Acts, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);}));
 
-    // DistMat Y(Acts.Grid());
-    // Copy(Output, Y);
     Hadamard(Y, *Acts, Acts_Cost);
-    ColSumMat MBCost(m_mini_batch_size, 1, Acts->Grid());
-    Zeros(MBCost, m_mini_batch_size, 1);
-    ColumnSum(Acts_Cost, MBCost);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
+    ColumnSum(Acts_Cost, m_minibatch_cost);
 
-    int c = 0;
     // Sum the local, total error
-    for(int r = 0; r < MBCost.LocalHeight(); r++) {
-      total_error += MBCost.GetLocal(r,c);
+    const Int local_height = m_minibatch_cost.LocalHeight();
+    for(int r = 0; r < local_height; r++) {
+      total_error += m_minibatch_cost.GetLocal(r, 0);
     }
-    total_error = mpi::AllReduce(total_error, MBCost.DistComm());
+    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
 
     avg_error = -1.0 * total_error / m_mini_batch_size;
     return avg_error;
@@ -208,10 +249,11 @@ DataType lbann::SoftmaxLayer::WBL2norm() {
 inline DataType _sq(DataType x) { return (x * x); }
 inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
-bool lbann::SoftmaxLayer::update(/*const float LearnRate, const int LearnRateMethod, const DataType DecayRate*/)
+bool lbann::SoftmaxLayer::update()
 {
-  optimizer->update_weight_bias_matrix(*WB_D, *WB);
-  WBL2NormSum = 0.0;
+  if(m_execution_mode == execution_mode::training) {
+    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+  }
   return true;
 }
 
@@ -234,6 +276,11 @@ void lbann::SoftmaxLayer::epoch_print() const {
   } else {
     comm->intermodel_gather(avg_cost, comm->get_world_master());
   }
+}
+
+void lbann::SoftmaxLayer::epoch_reset() {
+  Layer::epoch_reset();
+  resetCost();
 }
 
 DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)

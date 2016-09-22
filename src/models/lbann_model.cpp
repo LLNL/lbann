@@ -33,46 +33,47 @@
 using namespace std;
 using namespace El;
 
-lbann::Model::Model(lbann_comm* comm) :
-  comm(comm), cur_epoch(0), cur_step(0), terminate_training(false) {
-  
-}
+lbann::model::model(lbann_comm* comm) :
+  m_execution_mode(execution_mode::invalid),
+  m_terminate_training(false),
+  m_current_epoch(0), m_current_step(0),
+  comm(comm) {}
 
-void lbann::Model::add_callback(lbann::lbann_callback* cb) {
+void lbann::model::add_callback(lbann::lbann_callback* cb) {
   callbacks.push_back(cb);
 }
 
-void lbann::Model::setup_callbacks() {
+void lbann::model::setup_callbacks() {
   for (auto&& cb : callbacks) {
     cb->setup(this);
   }
 }
 
-void lbann::Model::do_train_begin_cbs() {
+void lbann::model::do_train_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_train_begin(this);
   }
 }
 
-void lbann::Model::do_train_end_cbs() {
+void lbann::model::do_train_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_train_end(this);
   }
 }
 
-void lbann::Model::do_epoch_begin_cbs() {
+void lbann::model::do_epoch_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_epoch_begin(this);
   }
 }
 
-void lbann::Model::do_epoch_end_cbs() {
+void lbann::model::do_epoch_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_epoch_end(this);
   }
 }
 
-void lbann::Model::do_batch_begin_cbs() {
+void lbann::model::do_batch_begin_cbs() {
   for (auto&& cb : callbacks) {
     if (get_cur_step() % cb->batch_interval == 0) {
       cb->on_batch_begin(this);
@@ -80,7 +81,7 @@ void lbann::Model::do_batch_begin_cbs() {
   }
 }
 
-void lbann::Model::do_batch_end_cbs() {
+void lbann::model::do_batch_end_cbs() {
   for (auto&& cb : callbacks) {
     if (get_cur_step() % cb->batch_interval == 0) {
       cb->on_batch_end(this);
@@ -88,73 +89,73 @@ void lbann::Model::do_batch_end_cbs() {
   }
 }
 
-void lbann::Model::do_test_begin_cbs() {
+void lbann::model::do_test_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_test_begin(this);
   }
 }
 
-void lbann::Model::do_test_end_cbs() {
+void lbann::model::do_test_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_test_end(this);
   }
 }
 
-void lbann::Model::do_validation_begin_cbs() {
+void lbann::model::do_validation_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_validation_begin(this);
   }
 }
 
-void lbann::Model::do_validation_end_cbs() {
+void lbann::model::do_validation_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_validation_end(this);
   }
 }
 
-void lbann::Model::do_model_forward_prop_begin_cbs() {
+void lbann::model::do_model_forward_prop_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_forward_prop_begin(this);
   }
 }
 
-void lbann::Model::do_layer_forward_prop_begin_cbs(Layer* l) {
+void lbann::model::do_layer_forward_prop_begin_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
     cb->on_forward_prop_begin(this, l);
   }
 }
 
-void lbann::Model::do_model_forward_prop_end_cbs() {
+void lbann::model::do_model_forward_prop_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_forward_prop_end(this);
   }
 }
 
-void lbann::Model::do_layer_forward_prop_end_cbs(Layer* l) {
+void lbann::model::do_layer_forward_prop_end_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
     cb->on_forward_prop_end(this, l);
   }
 }
 
-void lbann::Model::do_model_backward_prop_begin_cbs() {
+void lbann::model::do_model_backward_prop_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_backward_prop_begin(this);
   }
 }
 
-void lbann::Model::do_layer_backward_prop_begin_cbs(Layer* l) {
+void lbann::model::do_layer_backward_prop_begin_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
     cb->on_backward_prop_begin(this, l);
   }
 }
 
-void lbann::Model::do_model_backward_prop_end_cbs() {
+void lbann::model::do_model_backward_prop_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_backward_prop_end(this);
   }
 }
 
-void lbann::Model::do_layer_backward_prop_end_cbs(Layer* l) {
+void lbann::model::do_layer_backward_prop_end_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
     cb->on_backward_prop_end(this, l);
   }

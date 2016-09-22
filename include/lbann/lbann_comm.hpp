@@ -36,13 +36,8 @@ using namespace El;
 namespace lbann
 {
 
-#ifdef EL_NEW_MPI_REQUEST
-template <typename T>
-using lbann_mpi_req = mpi::Request<T>;
-#else
-template <typename T>
-using lbann_mpi_req = mpi::Request;
-#endif  // EL_NEW_MPI_REQUEST
+  template <typename T>
+  using lbann_mpi_req = mpi::Request<T>;
 
   /**
    * Manage communication.
@@ -93,6 +88,10 @@ using lbann_mpi_req = mpi::Request;
     inline int get_num_models() const { return num_models; }
     /* Return the number of processes in a model. */
     inline int get_procs_per_model() const { return procs_per_model; }
+    /** Return the number of processes in a compute node. */
+    inline int get_procs_per_node() const { return procs_per_node; }
+    /** Return the rank of this process within its compute node. */
+    inline int get_rank_in_node() const { return rank_in_node; }
 
     /** Perform a sum reduction of mat over the inter-model communicator. */
     void intermodel_sum_matrix(Mat& mat);
@@ -147,6 +146,18 @@ using lbann_mpi_req = mpi::Request;
       mpi::Gather(&send, 1, recv.data(), 1, get_model_rank(),
                   intermodel_comm);
       bytes_received += sizeof(T) * (get_num_models() - 1);
+    }
+    /** Inter-model scalar-array gather (for non-root processes). */
+    template <typename T>
+    void intermodel_gather(T* send, int count, int root) {
+      bytes_sent += sizeof(T) * count;
+      mpi::Gather(send, count, (T*) NULL, 0, root, intermodel_comm);
+    }
+    /** Inter-model scalar-array gather (for root processes). */
+    template <typename T>
+    void intermodel_gather(T* send, int count, T* recv) {
+      mpi::Gather(send, count, recv, count, get_model_rank(), intermodel_comm);
+      bytes_received += sizeof(T) * count * (get_num_models() - 1);
     }
     /** Inter-model reduce (for non-root processes). */
     template <typename T>
@@ -354,11 +365,10 @@ using lbann_mpi_req = mpi::Request;
   private:
     /** Communicator for every process in this model. */
     mpi::Comm model_comm;
-    /**
-     * Communicator for every process with the same rank as this one in every
-     * model.
-     */
+    /** Communicator for every process with the same model rank. */
     mpi::Comm intermodel_comm;
+    /** Communicator for every process in the same compute node. */
+    mpi::Comm node_comm;
     /** Grid for this model. */
     Grid* grid;
     /** Number of models. */
@@ -369,6 +379,10 @@ using lbann_mpi_req = mpi::Request;
     int model_rank;
     /** Rank of this process within its model. */
     int rank_in_model;
+    /** Number of processers per compute node. */
+    int procs_per_node;
+    /** Rank of this process within its compute node. */
+    int rank_in_node;
     
     // Various statistics counters.
     size_t num_model_barriers;
@@ -385,6 +399,14 @@ using lbann_mpi_req = mpi::Request;
       mpi::CommGroup(mpi::COMM_WORLD, world_group);
       mpi::Incl(world_group, (int) ranks.size(), ranks.data(), g);
     }
+
+    /** Setup communicator for processes in the same compute node.
+     *  We obtain a string specifying the compute node. The string is
+     *  hashed (with salt) and used to split the communicators. To
+     *  avoid hash collisions, the splitting procedure is repeated
+     *  with a different salt. */
+    void setup_node_comm();
+    
   };
 }
 

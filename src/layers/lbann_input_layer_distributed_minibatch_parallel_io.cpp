@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,22 +34,24 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, DataReader *training_data_reader, DataReader *testing_data_reader, std::vector<regularizer*> regs)
-  : input_layer(comm, mini_batch_size, training_data_reader, testing_data_reader, regs), 
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, training_data_reader->getNumData(), testing_data_reader->getNumData()),
+lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : input_layer(comm, mini_batch_size, data_readers, regs),
+    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Xs(comm->get_model_grid())
 {
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
-  if(m_training_data_reader != NULL) {
-    m_training_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                  m_num_parallel_readers_training * Layer::m_mini_batch_size);
-  }
-
-  if(m_testing_data_reader != NULL) {
-    m_testing_data_reader->setup(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_testing * Layer::m_mini_batch_size);
+  if(io_layer::m_data_sets_span_models) {
+    int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+    int model_offset = Layer::comm->get_model_rank() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+    //    cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << (Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size) << endl;
+    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                 stride,
+                                 Layer::comm->get_model_rank() * m_num_parallel_readers_training * Layer::m_mini_batch_size);
+  }else {
+    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
   Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
@@ -99,7 +101,15 @@ bool lbann::input_layer_distributed_minibatch_parallel_io::update_data_reader() 
   DataReader *data_reader = input_layer::select_data_reader();
   return data_reader->update();
 }
-  
+
 execution_mode lbann::input_layer_distributed_minibatch_parallel_io::get_execution_mode() {
   return m_execution_mode;
+}
+
+Mat* lbann::input_layer_distributed_minibatch_parallel_io::get_local_mat() {
+  return &X_local;
+}
+
+CircMat* lbann::input_layer_distributed_minibatch_parallel_io::get_dist_mat() {
+  return &Xs;
 }
