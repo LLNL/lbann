@@ -5,22 +5,32 @@
 # Can be called anywhere in the LBANN project tree.
 ################################################################
 
+brew_check_install()
+{
+    PKG=$(brew list | grep $1)
+    if [ -z "$PKG" ]; then
+        brew install $1
+    fi
+}
+
 # Install dependencies with Homebrew
 # Note: Requires sudo access. Homebrew can be downloaded from
 # http://brew.sh
-brew tap homebrew/science
-brew tap homebrew/boneyard
-brew update
-brew install git
-brew install cmake
-brew install clang-omp  # Require OpenMP support in clang
-brew install gcc49      # gfortran-4.9 is compatible with clang
-brew install mpich
-brew install opencv
-brew install doxygen
-brew install graphviz   # Doxygen dependency
-brew install metis      # Elemental dependency
-brew install scalapack  # Elemental dependency
+# and installed / updated as shown below
+#   brew tap homebrew/science
+#   brew tap homebrew/boneyard
+#   brew update
+# Check for LBANN dependencies
+brew_check_install git
+brew_check_install cmake
+brew_check_install clang-omp  # Require OpenMP support in clang
+brew_check_install gcc49      # gfortran-4.9 is compatible with clang
+brew_check_install open-mpi
+brew_check_install opencv
+brew_check_install doxygen
+brew_check_install graphviz   # Doxygen dependency
+brew_check_install metis      # Elemental dependency
+brew_check_install scalapack  # Elemental dependency
 
 # Parameters
 CMAKE_C_COMPILER=/usr/local/bin/clang-omp
