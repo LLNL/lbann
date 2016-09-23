@@ -32,6 +32,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Initialize C++ flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
+# Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
 # Set verbose output (should be 0 or 1)
 if(VERBOSE)
   set(VERBOSE 1)
