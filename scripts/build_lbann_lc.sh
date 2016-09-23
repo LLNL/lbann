@@ -208,11 +208,18 @@ EOF
   fi
   ${BUILD_COMMAND}
 
-  # Build LBANN with make
+  # Install LBANN with make
   INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
   if [ ${VERBOSE} -ne 0 ]; then
     echo "${INSTALL_COMMAND}"
   fi
   ${INSTALL_COMMAND}
+
+  # Generate documentation with make
+  DOC_COMMAND="make doc"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${DOC_COMMAND}"
+  fi
+  ${DOC_COMMAND}
   
 popd
