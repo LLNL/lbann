@@ -143,6 +143,9 @@ void lbann_summary::flush() {
 }
 
 void lbann_summary::flush_means() {
+  if (pending_means.empty()) {
+    return;
+  }
   std::vector<DataType> local_sums;
   for (const auto& op : pending_means) {
     local_sums.push_back(op.local);
@@ -164,6 +167,9 @@ void lbann_summary::flush_means() {
 }
 
 void lbann_summary::flush_mins() {
+  if (pending_mins.empty()) {
+    return;
+  }
   std::vector<DataType> local_mins;
   for (const auto& op : pending_mins) {
     local_mins.push_back(op.local);
@@ -181,6 +187,9 @@ void lbann_summary::flush_mins() {
 }
 
 void lbann_summary::flush_maxes() {
+  if (pending_maxes.empty()) {
+    return;
+  }
   std::vector<DataType> local_maxes;
   for (const auto& op : pending_maxes) {
     local_maxes.push_back(op.local);
@@ -198,6 +207,9 @@ void lbann_summary::flush_maxes() {
 }
 
 void lbann_summary::flush_stdevs() {
+  if (pending_stdevs.empty()) {
+    return;
+  }
   std::vector<DataType> local_sums;
   std::vector<DataType> local_sqsums;
   for (const auto& op : pending_stdevs) {
@@ -234,6 +246,9 @@ void lbann_summary::flush_stdevs() {
 }
 
 void lbann_summary::flush_scalars() {
+  if (pending_scalars.empty()) {
+    return;
+  }
   if (comm->am_model_master()) {
     std::vector<DataType> local_scalars;
     for (const auto& op : pending_scalars) {
@@ -245,6 +260,9 @@ void lbann_summary::flush_scalars() {
 }
 
 void lbann_summary::flush_sum_scalars() {
+  if (pending_sum_scalars.empty()) {
+    return;
+  }
   std::vector<DataType> local_sums;
   for (const auto& op : pending_sum_scalars) {
     local_sums.push_back(op.local);
