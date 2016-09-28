@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,6 +36,8 @@
 /// Models
 #include "lbann/models/lbann_model_dnn.hpp"
 #include "lbann/models/lbann_model_autoencoder.hpp"
+#include "lbann/models/lbann_model_stacked_autoencoder.hpp"
+#include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
 /// Layers
 #include "lbann/layers/lbann_layer_activations.hpp"
@@ -49,6 +51,7 @@
 #include "lbann/layers/lbann_target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+//#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
