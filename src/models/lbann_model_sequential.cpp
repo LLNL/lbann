@@ -530,10 +530,11 @@ void lbann::sequential_model::setup(size_t start_index)
 
   for (size_t l = start_index; l < m_layers.size(); ++l) {
     if (comm->am_model_master()) {
-      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << m_layers[l]->Index << endl;
+      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
     }
     m_layers[l]->setup(prev_layer_dim);
     prev_layer_dim = m_layers[l]->NumNeurons;
+    m_layers[l]->Index = l;
   }
 
   // Establish the forward pass input pointers

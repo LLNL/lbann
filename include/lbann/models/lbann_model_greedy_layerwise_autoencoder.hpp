@@ -23,60 +23,61 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
+// lbann_model_dnn .hpp .cpp - Deep Neural Networks models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_STACKED_AUTOENCODER_HPP
-#define LBANN_MODEL_STACKED_AUTOENCODER_HPP
+#ifndef LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
+#define LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 
 #include "lbann/models/lbann_model_sequential.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
-//#include "lbann/lbann.hpp"
 #include <vector>
 #include <string>
 
 namespace lbann
 {
-  class stacked_autoencoder : public sequential_model
+  class greedy_layerwise_autoencoder : public sequential_model
   {
   public:
     /// Constructor
-    stacked_autoencoder(uint mini_batch_size,
+    greedy_layerwise_autoencoder(uint mini_batch_size,
                         lbann_comm* comm,
                         layer_factory* _layer_fac,
                         Optimizer_factory* _optimizer_fac);
 
     /// Destructor
-    ~stacked_autoencoder();
+    ~greedy_layerwise_autoencoder();
 
-    void begin_stack(const std::string layer_name,
-                     int layer_dim,
-                     activation_type activation=activation_type::RELU,
-                     weight_initialization init=weight_initialization::glorot_uniform,
-                     std::vector<regularizer*> regularizers={});
+    /// Check error in gradients
+    /** @todo This is very old and probably broken
+     */
+    void check_gradient(CircMat& X, CircMat& Y, double* gradient_errors);
 
-    //void setup();
     /// Compute layer summaries
     void summarize(lbann_summary& summarizer);
 
-    /// pre train stacked autoencoder neural network
-    /** Half of the layers is pretrained and the remaining ones
-     * are initialized with the transpose of the other layer W^1= W^k^T
-     * @param num_epochs Number of epochs to train
+    /// Train neural network
+    /** @param num_epochs Number of epochs to train
+     *  @param evaluation_frequency How often to evaluate model on
+     *  validation set. A value less than 1 will disable evaluation.
      */
     void train(int num_epochs, int evaluation_frequency=0);
+
+    void train_phase(size_t phase_index,int num_epochs, int evaluation_frequency);
+
     /// Training step on one mini-batch
-    bool train_mini_batch(long *num_samples, long *num_errors);
+    bool train_mini_batch(size_t phase_index, long *num_samples, long *num_errors);
+
+    /// Training step on one mini-batch
+    bool train_mini_batch(long *num_samples, long *num_errors) { }
+
 
     /// Evaluate neural network
-    DataType evaluate(execution_mode mode=execution_mode::testing) { }
+    DataType evaluate(execution_mode mode=execution_mode::testing);
     /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch(long *num_samples, long *num_errors) { }
+    bool evaluate_mini_batch(long *num_samples, long *num_errors);
 
-    /// Reconstruction uses unsupervised target layer
-    DataType reconstruction();
-
-    bool reconstruction_mini_batch(long *num_samples, long *num_errors);
+    void rewire_index();
 
     /// Get train accuracy
     /** Classification accuracy over the last training epoch
@@ -87,12 +88,6 @@ namespace lbann
     /// Get test accuracy
     DataType get_test_accuracy() const { return m_test_accuracy; }
 
-    /// Get test accuracy
-    DataType get_reconstruction_accuracy() const { return m_reconstruction_accuracy; }
-
-
-    //vector<Layer>& get_layers() const {return m_layers;}
-
   protected:
     /// Train accuracy over last training epoch
     DataType m_train_accuracy;
@@ -100,12 +95,10 @@ namespace lbann
     DataType m_validation_accuracy;
     /// Test accuracy
     DataType m_test_accuracy;
-    /// Reconstruction accuracy
-    DataType m_reconstruction_accuracy;
-    size_t m_num_layers;
-    target_layer_unsupervised* m_target_layer;
+  /*private:
+    void rewire_index();*/
   };
 }
 
 
-#endif // LBANN_MODEL_STACKED_AUTOENCODER_HPP
+#endif // LBANN_MODEL_DNN_HPP

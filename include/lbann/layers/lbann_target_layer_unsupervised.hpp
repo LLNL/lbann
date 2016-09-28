@@ -27,32 +27,49 @@
 #ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 
-#include "lbann/layers/lbann_target_layer.hpp"
-#include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp" //@generalize to base class
+#include "lbann/layers/lbann_layer.hpp"
 
 namespace lbann
 {
-  class target_layer_unsupervised : public target_layer, public distributed_minibatch_parallel_io {
+  class target_layer_unsupervised : public Layer{
   public:
-    target_layer_unsupervised(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
-    //target_layer_unsupervised(lbann_comm* comm, input_layer* in_layer);
+    target_layer_unsupervised(size_t index,lbann_comm* comm,
+                              Optimizer* optimizer,/*needed?*/
+                              const uint miniBatchSize,
+                              Layer* sibling_layer,
+                              weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
     DataType forwardProp(DataType prev_WBL2NormSum);
     void backProp();
+    bool update();
+    void summarize(lbann_summary& summarizer, int64_t step);
+    void epoch_print() const;
+    void epoch_reset();
     execution_mode get_execution_mode();
-    void set_input_layer(input_layer_distributed_minibatch_parallel_io*); //@todo replace with base layer class
+    DataType reconstruction_cost(const DistMat& Y);
+    void reset_cost();
+    DataType average_cost() const;
 
-  public:
-    Mat* input_mat;
-    CircMat* input_circmat;
-    input_layer_distributed_minibatch_parallel_io* m_input_layer;
+  /*public:
+    Layer* m_sibling_layer;*/
 
   protected:
     void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
     void bp_linearity() {}
+
+  private:
+    Layer* m_sibling_layer;
+    ElMat* m_sibling_mat;
+    DataType aggregate_cost;
+    long num_backprop_steps;
+    weight_initialization m_weight_initialization;
+    //squared error diff
+    DistMat diff;
+    /** Colume-wise sum of the costs of a minibatch. */
+    ColSumMat m_minibatch_cost;
+
   };
 }
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED2_HPP_INCLUDED
