@@ -174,7 +174,7 @@ namespace lbann
       bytes_received += sizeof(T) * (get_num_models() - 1);
       return val;
     }
-    /** Within-model all-reduce. */
+    /** Inter-model all-reduce. */
     template <typename T>
     T intermodel_allreduce(T send, mpi::Op op = mpi::SUM) {
       T val;
