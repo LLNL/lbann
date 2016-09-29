@@ -39,15 +39,15 @@ using namespace El;
 lbann::target_layer_unsupervised::target_layer_unsupervised(size_t index,lbann_comm* comm,
                                                               Optimizer* optimizer,/*needed?*/
                                                               const uint miniBatchSize,
-                                                              Layer* sibling_layer,
+                                                              Layer* original_layer,
                                                               const weight_initialization init)
-  :  Layer(index, comm, optimizer, miniBatchSize),m_sibling_layer(sibling_layer),
+  :  Layer(index, comm, optimizer, miniBatchSize),m_original_layer(original_layer),
      diff(comm->get_model_grid()),m_minibatch_cost(comm->get_model_grid()),
       m_weight_initialization(init)
 {
 
   Index = index;
-  NumNeurons = sibling_layer->NumNeurons;
+  NumNeurons = original_layer->NumNeurons;
   aggregate_cost = 0.0;
   num_backprop_steps = 0;
 }
@@ -130,8 +130,8 @@ void lbann::target_layer_unsupervised::backProp() {
   /// Copy the results (ground truth) to the Ds_Temp variable for access by the next lower layer
   /// And for reconstruction_cost
   //@todo use Acts for input layer and fp_input for others
-  //if(m_sibling_layer->Index == 0) m_sibling_layer->fp_input = m_sibling_layer->Acts;
-  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_sibling_layer->Acts);
+  //if(m_original_layer->Index == 0) m_original_layer->fp_input = m_original_layer->Acts;
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->Acts);
   DistMat& DsNext = DsNextProxy.Get();
   DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
   DistMat& X = XProxy.Get();
@@ -146,9 +146,9 @@ void lbann::target_layer_unsupervised::backProp() {
   // Compute the partial delta update for the next lower layer
   Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
   if (m_execution_mode == execution_mode::training) {
-    //DsNext is proxy of sibling layer
+    //DsNext is proxy of original layer
     // Compute cost will be sum of squared error of fp_input (linearly transformed to Acts)
-    // and sibling layer fp_input/original input (DsNext)
+    // and original layer fp_input/original input (DsNext)
     DataType avg_error = this->reconstruction_cost(DsNext);
     //draw_image(DsNext,Acts);
     aggregate_cost += avg_error;
@@ -165,7 +165,7 @@ void lbann::target_layer_unsupervised::backProp() {
 DataType lbann::target_layer_unsupervised::reconstruction_cost(const DistMat& Y) {
   //sumerrors += ((X[m][0] - XP[m][0]) * (X[m][0] - XP[m][0]));
   DataType avg_error = 0.0, total_error = 0.0;
-  //copy sibling layer (DsNext) to temporary diff (optimize)??
+  //copy original layer (DsNext) to temporary diff (optimize)??
   Copy(Y, diff); //optimize, need copy?
   //compute difference between original and computed input x(Y)-x_bar(Acts)
   Axpy(-1.,*Acts,diff);

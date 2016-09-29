@@ -34,9 +34,9 @@ namespace lbann
   class target_layer_unsupervised : public Layer{
   public:
     target_layer_unsupervised(size_t index,lbann_comm* comm,
-                              Optimizer* optimizer,/*needed?*/
+                              Optimizer* optimizer,
                               const uint miniBatchSize,
-                              Layer* sibling_layer,
+                              Layer* original_layer,
                               weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
@@ -51,20 +51,17 @@ namespace lbann
     void reset_cost();
     DataType average_cost() const;
 
-  /*public:
-    Layer* m_sibling_layer;*/
 
   protected:
     void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
     void bp_linearity() {}
 
   private:
-    Layer* m_sibling_layer;
-    ElMat* m_sibling_mat;
+    Layer* m_original_layer;
     DataType aggregate_cost;
     long num_backprop_steps;
     weight_initialization m_weight_initialization;
-    //squared error diff
+    //squared error differences
     DistMat diff;
     /** Colume-wise sum of the costs of a minibatch. */
     ColSumMat m_minibatch_cost;
@@ -72,4 +69,4 @@ namespace lbann
   };
 }
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED2_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED

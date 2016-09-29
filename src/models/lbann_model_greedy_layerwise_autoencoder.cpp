@@ -44,28 +44,6 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
 
 lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 
-//delete??
-void lbann::greedy_layerwise_autoencoder::check_gradient(CircMat& X, CircMat& Y, double* gradient_errors)
-{
-  // setup input (last/additional row should always be 1)
-  Copy(X, *(m_layers[0]->Acts));
-
-  // forward propagation (mini-batch)
-  DataType L2NormSum = 0;
-  for (size_t l = 1; l < m_layers.size(); l++)
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
-
-  // backward propagation (mini-batch)
-  for (size_t l = m_layers.size() - 1; l >= 1; l--) {
-    m_layers[l]->backProp();
-  }
-
-  // check gradient
-  gradient_errors[0] = 0;
-  for (size_t l = 1; l < m_layers.size(); l++)
-    gradient_errors[l] = m_layers[l]->checkGradientMB(*m_layers[l-1]);
-}
-
 void lbann::greedy_layerwise_autoencoder::summarize(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
     m_layers[l]->summarize(summarizer, get_cur_step());
@@ -75,26 +53,26 @@ void lbann::greedy_layerwise_autoencoder::summarize(lbann_summary& summarizer) {
 
 void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency)
 {
-  size_t num_phases = m_layers.size();
+  size_t num_phases = m_layers.size()-1;
   for(size_t phase_index=0; phase_index < num_phases; ++phase_index){
-    Layer* sibling_layer = m_layers[phase_index];
-    //int num_prev_neurons = m_layers[phase_index+1]->NumNeurons;
+    Layer* original_layer = m_layers[phase_index];
     Optimizer *optimizer = optimizer_fac->create_optimizer();
-    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(phase_index+2, comm, optimizer, m_mini_batch_size,sibling_layer);
-    //mirror_layer.setup(num_prev_neurons); //bug ? adding layer after network setup?
+    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(phase_index+2, comm, optimizer, m_mini_batch_size,original_layer);
     insert(phase_index+2,mirror_layer);
-    //rewire_index(); // move to base or inside insert
     //call base model set up again to reindex and set appropriate fp and bp input
     //@todo: this can be optimized by giving appropriate start index
     //assume that necessary layer parameters are set e.g., NumNeurons
     setup();  //set up all layers/ or all active layers
     //debug
-    for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
     train_phase(phase_index, num_epochs,evaluation_frequency);
     remove(phase_index+2); ///any delete on heap, vector resize?
     //call base model setup again to reindex and set appropriate fp and bp input
     //@todo: this can be optimized by giving appropriate start index
-    if(phase_index < num_phases-1) setup(); //skip last round, rewrite
+    if (comm->am_world_master()) {
+      std::cout << "Phase [" << phase_index << "] Done, Reset Layers " << std::endl;
+      for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
+    }
+    setup(); //skip last round, rewrite
 
   }
 
@@ -102,7 +80,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
 
 void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int num_epochs, int evaluation_frequency)
 {
-  //size_t phase_end = phase_index+2;
+  size_t phase_end = phase_index+2;
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -112,7 +90,13 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     if (get_terminate_training()) break;
 
     ++m_current_epoch;
-    do_epoch_begin_cbs();
+    //do_epoch_begin_cbs();
+    //@todo -replace with cbs
+    if (comm->am_world_master()) {
+      std::cout << "-----------------------------------------------------------" << std::endl;
+      std::cout << "Phase [" << phase_index  << "] Epoch [" << epoch << "]" <<  std::endl;
+      std::cout << "-----------------------------------------------------------" << std::endl;
+    }
 
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
@@ -147,7 +131,10 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
       }
     }*/
 
-    do_epoch_end_cbs();
+    //do_epoch_end_cbs();
+    //print reconstruction_cost
+    //@todo: replace with callbacks
+    m_layers[phase_end]->epoch_print();
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     }
@@ -263,13 +250,4 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch(long *num_samples,
   }
   const bool data_set_processed = m_layers[0]->update();
   return data_set_processed;
-}
-
-//remove, not use
-void lbann::greedy_layerwise_autoencoder::rewire_index()
-{
-  for (size_t n = 0; n < m_layers.size(); n++) {
-    Layer* layer = m_layers[n];
-    layer->Index = n;
-  }
 }

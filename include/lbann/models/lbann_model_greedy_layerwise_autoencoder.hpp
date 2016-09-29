@@ -48,21 +48,17 @@ namespace lbann
     /// Destructor
     ~greedy_layerwise_autoencoder();
 
-    /// Check error in gradients
-    /** @todo This is very old and probably broken
-     */
-    void check_gradient(CircMat& X, CircMat& Y, double* gradient_errors);
-
     /// Compute layer summaries
     void summarize(lbann_summary& summarizer);
 
     /// Train neural network
-    /** @param num_epochs Number of epochs to train
+    /** @param num_epochs Number of epochs to train at each phase
      *  @param evaluation_frequency How often to evaluate model on
      *  validation set. A value less than 1 will disable evaluation.
      */
     void train(int num_epochs, int evaluation_frequency=0);
 
+    // Train each phase ( a set of (original) input, hidden and mirror layers (output))
     void train_phase(size_t phase_index,int num_epochs, int evaluation_frequency);
 
     /// Training step on one mini-batch
@@ -76,8 +72,6 @@ namespace lbann
     DataType evaluate(execution_mode mode=execution_mode::testing);
     /// Evaluation step on one mini-batch
     bool evaluate_mini_batch(long *num_samples, long *num_errors);
-
-    void rewire_index();
 
     /// Get train accuracy
     /** Classification accuracy over the last training epoch
