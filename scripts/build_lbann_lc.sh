@@ -200,6 +200,12 @@ EOF
     echo "${CONFIGURE_COMMAND}"
   fi
   ${CONFIGURE_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "CONFIGURE FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Build LBANN with make
   BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
@@ -207,6 +213,12 @@ EOF
     echo "${BUILD_COMMAND}"
   fi
   ${BUILD_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Install LBANN with make
   INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
@@ -214,6 +226,12 @@ EOF
     echo "${INSTALL_COMMAND}"
   fi
   ${INSTALL_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE INSTALL FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Generate documentation with make
   DOC_COMMAND="make doc"
@@ -221,5 +239,11 @@ EOF
     echo "${DOC_COMMAND}"
   fi
   ${DOC_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE DOC FAILED"
+    echo "--------------------"
+    exit 1
+  fi
   
 popd
