@@ -176,6 +176,8 @@ int main(int argc, char* argv[])
           optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
           optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer = new Adam_factory(comm, trainParams.LearnRate);
         }else {
           optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
