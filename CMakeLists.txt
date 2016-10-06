@@ -96,6 +96,26 @@ endif()
 include(Doxygen)
 
 ################################################################
+# Check Compiler versions
+################################################################
+
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CXX_VERSION)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+   if(NOT (CXX_VERSION VERSION_GREATER 4.9 OR CXX_VERSION VERSION_EQUAL 4.9))
+     message(FATAL_ERROR "LBANN & Elemental requires G++ Version >= 4.9")
+   endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+   if(NOT (CXX_VERSION VERSION_GREATER 16.0 OR CXX_VERSION VERSION_EQUAL 16.0))
+     message(FATAL_ERROR "LBANN & Elemental requires icpc Version >= 16.0")
+   endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   message(FATAL_ERROR "Unsupported compiler: Clang")
+else()
+   message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor")
+endif()
+
+################################################################
 # Build LBANN
 ################################################################
 
