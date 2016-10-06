@@ -37,6 +37,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include <string>
 #include <vector>
 

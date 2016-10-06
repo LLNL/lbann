@@ -71,7 +71,7 @@ public:
     cur_rho1 *= rho1;
     cur_rho2 *= rho2;
     // Compute the correction factor.
-    const float correction = std::sqrt(1 - cur_rho2) / cur_rho1;
+    const float correction = std::sqrt(1.0f - cur_rho2) / (1.0f - cur_rho1);
     // Update the biased first and second moments.
     Scale(rho1, moment1_hist);
     Axpy(1.0f - rho1, WB_D, moment1_hist);
