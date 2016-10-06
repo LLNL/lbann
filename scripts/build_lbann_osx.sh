@@ -68,11 +68,14 @@ pushd ${BUILD_DIR}
     -D VERBOSE=${VERBOSE} \
     -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
     ${ROOT_DIR}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
   # Build LBANN with make
   make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
   # Install LBANN with make
   make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
   
 popd

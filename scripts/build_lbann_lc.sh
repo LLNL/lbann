@@ -200,6 +200,7 @@ EOF
     echo "${CONFIGURE_COMMAND}"
   fi
   ${CONFIGURE_COMMAND}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
   # Build LBANN with make
   BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
@@ -207,6 +208,7 @@ EOF
     echo "${BUILD_COMMAND}"
   fi
   ${BUILD_COMMAND}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
   # Build LBANN with make
   INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
@@ -214,5 +216,6 @@ EOF
     echo "${INSTALL_COMMAND}"
   fi
   ${INSTALL_COMMAND}
+  rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
   
 popd
