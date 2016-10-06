@@ -255,8 +255,6 @@ public:
   double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
   /** Get the time spent in proportion_threshold_average. */
   double get_pta_time() const { return pta_time; }
-  /** Get the time spent in proportion_threshold_average_pos. */
-  double get_pta_pos_time() const { return pta_pos_time; }
   /** Reset recorded time counters. */
   void reset_time_counters() {
     rs_time = 0.0;
@@ -268,7 +266,6 @@ public:
     ag_recv_buf_time = 0.0;
     ag_recv_trans_time = 0.0;
     pta_time = 0.0;
-    pta_pos_time = 0.0;
   }
 
 private:
@@ -312,8 +309,6 @@ private:
   double ag_recv_trans_time;
   /** Time spent in proportion_threshold_average. */
   double pta_time;
-  /** Time spent in proportion_threshold_average_pos. */
-  double pta_pos_time;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {

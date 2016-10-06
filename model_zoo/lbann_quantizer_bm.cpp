@@ -103,9 +103,6 @@ void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
   summarizer->reduce_scalar("pta_time",
                             quantizer.get_pta_time(),
                             trial);
-  summarizer->reduce_scalar("pta_pos_time",
-                            quantizer.get_pta_pos_time(),
-                            trial);
   quantizer.reset_bytes_counters();
   quantizer.reset_time_counters();
 }
@@ -299,7 +296,7 @@ int main(int argc, char** argv) {
     std::cout << "Models: " << comm->get_num_models() << std::endl;
     std::cout << "Procs per model: " << comm->get_procs_per_model() << std::endl;
   }
-  for (int mat_size = 64; mat_size <= 32768; mat_size *= 2) {
+  for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
     DistMat mat(comm->get_model_grid());
     El::Uniform(mat, mat_size, mat_size, 0.0f, 4.0f);
     test_mat(comm, mat);
