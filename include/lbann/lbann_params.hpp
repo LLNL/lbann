@@ -68,7 +68,7 @@ namespace lbann
     /// Learning rate
     float LearnRate;
     /// Learning method
-    /** 1 - Adagrad, 2 - RMSprop */
+    /** 1 - Adagrad, 2 - RMSprop, 3 - Adam */
     int LearnRateMethod;
     /// How much does the learning rate decay
     float LrDecayRate;
