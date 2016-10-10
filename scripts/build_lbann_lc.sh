@@ -95,7 +95,8 @@ while :; do
       ;;
     -?*)
       # Unknown option
-      echo "Ignored unknown option (${1})" >&2
+      echo "Unknown option (${1})" >&2
+      exit 1
       ;;
     *)
       # Break loop if there are no more options
