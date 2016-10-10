@@ -174,6 +174,8 @@ int main(int argc, char* argv[])
       optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+    } else if (trainParams.LearnRateMethod == 3) { // Adam
+      optimizer = new Adam_factory(comm, trainParams.LearnRate);
     } else {
       optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9,
                                   trainParams.LrDecayRate, true);
@@ -184,8 +186,8 @@ int main(int argc, char* argv[])
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
-    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+    //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024,
@@ -202,8 +204,8 @@ int main(int argc, char* argv[])
     uint smidx = dnn.add(
       "Softmax", 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
-    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+    //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);

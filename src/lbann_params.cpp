@@ -58,7 +58,7 @@ void lbann::TrainingParams::parse_params(void) {
   MBSize = Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
 
   LearnRate = Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
-  LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop", LearnRateMethod);
+  LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);
   LrDecayRate = Input("--lr-decay-rate", "How much does the learning rate decay when it decays", LrDecayRate);
   LrDecayCycles = Input("--lr-decay-cycle", "How often does the learning rate decay", LrDecayCycles);
   ActivationType = static_cast<activation_type>(Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", static_cast<int>(ActivationType)));

@@ -60,32 +60,75 @@ pushd ${BUILD_DIR}
   rm -rf *
 
   # Configure build with CMake
-  cmake \
-    -D CMAKE_BUILD_TYPE=Release \
-    -D CMAKE_INSTALL_MESSAGE=LAZY \
-    -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
-    -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
-    -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
-    -D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} \
-    -D MPI_C_COMPILER=${MPI_C_COMPILER} \
-    -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
-    -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
-    -D Elemental_DIR=${Elemental_DIR} \
-    -D OpenCV_DIR=${OpenCV_DIR} \
-    -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
-    -D cuDNN_DIR=${cuDNN_DIR} \
-    -D WITH_TBINF=OFF \
-    -D VERBOSE=${VERBOSE} \
-    -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
-    ${ROOT_DIR}
+  CONFIGURE_COMMAND=$(cat << EOF
+cmake \
+-D CMAKE_BUILD_TYPE=Release \
+-D CMAKE_INSTALL_MESSAGE=LAZY \
+-D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+-D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
+-D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} \
+-D MPI_C_COMPILER=${MPI_C_COMPILER} \
+-D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
+-D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
+-D Elemental_DIR=${Elemental_DIR} \
+-D OpenCV_DIR=${OpenCV_DIR} \
+-D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
+-D cuDNN_DIR=${cuDNN_DIR} \
+-D WITH_TBINF=OFF \
+-D VERBOSE=${VERBOSE} \
+-D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
+${ROOT_DIR}
+EOF
+)
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${CONFIGURE_COMMAND}"
+  fi
+  ${CONFIGURE_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "CONFIGURE FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Build LBANN with make
-  make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
+  BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${BUILD_COMMAND}"
+  fi
+  ${BUILD_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Install LBANN with make
-  make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
+  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${INSTALL_COMMAND}"
+  fi
+  ${INSTALL_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE INSTALL FAILED"
+    echo "--------------------"
+    exit 1
+  fi
 
   # Generate documentation with make
-  make doc
+  DOC_COMMAND="make doc"
+  if [ ${VERBOSE} -ne 0 ]; then
+    echo "${DOC_COMMAND}"
+  fi
+  ${DOC_COMMAND}
+  if [ $? -ne 0 ] ; then
+    echo "--------------------"
+    echo "MAKE DOC FAILED"
+    echo "--------------------"
+    exit 1
+  fi
   
 popd
