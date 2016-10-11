@@ -34,7 +34,7 @@ using namespace El;
 
 namespace lbann {
 
-Activation* new_activation(activation_type act_fn) {
+Activation* new_activation(activation_type act_fn, DataType param) {
   switch (act_fn) {
   case activation_type::SIGMOID:
     return new sigmoid_layer();
@@ -44,6 +44,8 @@ Activation* new_activation(activation_type act_fn) {
     return new reLU_layer();
   case activation_type::ID:
     return new id_layer();
+  case activation_type::LEAKY_RELU:
+    return new leaky_reLU_layer(param);
   default:
     throw lbann_exception("Unsupported activation type.");
   }
@@ -86,10 +88,26 @@ DataType reLU_layer::reLU(DataType z)
 
 DataType reLU_layer::reLUPrime(DataType z)
 {
-    if (z > 0.0) {
-      return 1.0;
-    }else {
-      return 0.0;
+    if (z > 0.0f) {
+      return 1.0f;
+    } else {
+      return 0.0f;
+    }
+}
+
+leaky_reLU_layer::leaky_reLU_layer(DataType leak) : leak(leak) {}
+
+DataType leaky_reLU_layer::leaky_reLU(DataType z, DataType k)
+{
+    return max(k * z, z);
+}
+
+DataType leaky_reLU_layer::leaky_reLUPrime(DataType z, DataType k)
+{
+    if (z > 0.0f) {
+      return 1.0f;
+    } else {
+      return k;
     }
 }
 
@@ -132,6 +150,18 @@ void reLU_layer::forwardProp(ElMat& m)
 void reLU_layer::backwardProp(ElMat& m)
 {
   EntrywiseMap(m, std::function<DataType(DataType)>(reLUPrime));
+}
+
+void leaky_reLU_layer::forwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>([this] (DataType x) -> DataType { return leaky_reLU(x, leak); }));
+  //EntrywiseMap(m, std::function<DataType(DataType)>(leaky_reLU));
+}
+
+void leaky_reLU_layer::backwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>([this] (DataType x) -> DataType { return leaky_reLUPrime(x, leak); }));
+  //EntrywiseMap(m, std::function<DataType(DataType)>(leaky_reLUPrime));
 }
 
 }  // namespace lbann

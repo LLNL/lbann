@@ -36,7 +36,8 @@ enum class activation_type {
   SIGMOID = 1,
   TANH,
   RELU,
-  ID
+  ID,
+  LEAKY_RELU  
 };
 
 /** Base activation function class. */
@@ -84,8 +85,28 @@ public:
   void backwardProp(ElMat& m) {}
 };
 
+/**
+ * Leaky rectified linear unit activation function.
+ * This is a ReLU variant that avoids the dying ReLU problem where a ReLU neuron
+ * can stop updating. See:
+ * Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier nonlinearities
+ * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
+ */
+class leaky_reLU_layer : public Activation {
+public:
+  /** Leak is the amount of signal to permit for negative values. */
+  leaky_reLU_layer(DataType leak = 0.01f);
+  void forwardProp(ElMat& m);
+  void backwardProp(ElMat& m);
+private:
+  static DataType leaky_reLU(DataType z, DataType k);
+  static DataType leaky_reLUPrime(DataType z, DataType k);
+  DataType leak;
+};
+
 /** Return a new Activation class of type act_fn. */
-Activation* new_activation(activation_type act_fn);
+Activation* new_activation(activation_type act_fn,
+                           DataType param = 0.0f);
 
 }  // namespace lbann
 
