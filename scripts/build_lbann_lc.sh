@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Detech OS version
+TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
+
+if [ "${TOSS}" == "3.10.0" ]; then
+  . /usr/tce/packages/dotkit/init.sh
+  use tcedk
+  use cmake-3.5.2
+fi
+
 ################################################################
 # Default options
 ################################################################
@@ -7,8 +16,10 @@
 COMPILER=gnu
 BUILD_TYPE=Release
 Elemental_DIR=
-OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
+if [ "${TOSS}" != "3.10.0" ]; then
+  OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
+fi
 cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
@@ -102,8 +113,10 @@ done
 # Load modules
 ################################################################
 
-module load git
-module load cudatoolkit/7.5
+if [ "${TOSS}" != "3.10.0" ]; then
+  module load git
+  module load cudatoolkit/7.5
+fi
 
 ################################################################
 # Initialize variables
@@ -122,11 +135,16 @@ mkdir -p ${INSTALL_DIR}
 # Get C/C++/Fortran compilers
 if [ "${COMPILER}" == "gnu" ]; then
   # GNU compilers
-  GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
+  if [ "${TOSS}" == "3.10.0" ]; then
+    GNU_DIR=/usr/tce/bin/
+    GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
+  else
+    GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
+    GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
+  fi
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
   CMAKE_CXX_COMPILER=${GNU_DIR}/g++
   CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran
-  GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
 elif [ "${COMPILER}" == "intel" ]; then
   # Intel compilers
   INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
@@ -140,7 +158,11 @@ else
 fi
 
 # Get MPI compilers
-MPI_DIR=/usr/local/tools/mvapich2-${COMPILER}-2.1
+if [ "${TOSS}" == "3.10.0" ]; then
+  MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}/
+else
+  MPI_DIR=/usr/local/tools/mvapich2-${COMPILER}-2.1
+fi
 MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
