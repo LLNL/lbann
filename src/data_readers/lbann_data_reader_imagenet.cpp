@@ -81,7 +81,7 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     int width, height;
     bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, true, m_pixels);
     if(!ret) {
-      throw lbann_exception("ImageNet: image_utils::loadJPG fauled to load");
+      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
     }
     if(width != m_image_width || height != m_image_height) {
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");

@@ -1006,8 +1006,7 @@ lbann_quantizer::proportion_threshold_average(
       if (val >= 0.0f) {
         pos_entries.emplace_back(val);
       } else {
-        // Flip negative entries to make selection easier.
-        neg_entries.emplace_back(-1 * val);
+        neg_entries.emplace_back(val);
       }
     }
   } else {
@@ -1021,7 +1020,7 @@ lbann_quantizer::proportion_threshold_average(
       if (val >= 0.0f) {
         pos_entries.emplace_back(val);
       } else {
-        neg_entries.emplace_back(-1 * val);
+        neg_entries.emplace_back(val);
       }
     }
   }
@@ -1047,19 +1046,13 @@ lbann_quantizer::proportion_threshold_average(
     auto i = pos_entries.begin() + (pos_entries.size() - pos_to_keep);
     std::nth_element(pos_entries.begin(), i, pos_entries.end());
     pos_thresh = *i;
-    for (; i != pos_entries.end(); ++i) {
-      pos_avg += *i;
-    }
-    pos_avg /= pos_to_keep;
+    pos_avg = std::accumulate(i, pos_entries.end(), 0.0f) / pos_to_keep;
   }
   if (neg_to_keep > 0 && neg_entries.size() > 0) {
-    auto i = neg_entries.begin() + (neg_entries.size() - neg_to_keep);
+    auto i = neg_entries.begin() + neg_to_keep;
     std::nth_element(neg_entries.begin(), i, neg_entries.end());
-    neg_thresh = -1 * (*i);
-    for (; i != neg_entries.end(); ++i) {
-      neg_avg -= *i;
-    }
-    neg_avg /= neg_to_keep;
+    neg_thresh = *i;
+    neg_avg = std::accumulate(neg_entries.begin(), i + 1, 0.0f) / neg_to_keep;
   }
   pta_time += get_time() - pta_start;
   return std::make_tuple(pos_thresh, neg_thresh, pos_avg, neg_avg);

@@ -21,6 +21,7 @@ if [ "${TOSS}" != "3.10.0" ]; then
   CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
 fi
 cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+VTUNE_DIR=/usr/local/tools/vtune
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
 CMAKE_CXX_FLAGS=
@@ -48,6 +49,7 @@ Options:
   ${C}--verbose${N}               Verbose output.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
+  ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
 EOF
@@ -86,6 +88,10 @@ while :; do
       # Tensorboard interface
       WITH_TBINF=ON
       ;;
+    --vtune)
+      # VTune libraries
+      WITH_VTUNE=ON
+      ;;
     --clean-build|--build-clean)
       # Clean build directory
       CLEAN_BUILD=1
@@ -100,7 +106,8 @@ while :; do
       ;;
     -?*)
       # Unknown option
-      echo "Ignored unknown option (${1})" >&2
+      echo "Unknown option (${1})" >&2
+      exit 1
       ;;
     *)
       # Break loop if there are no more options
@@ -208,10 +215,12 @@ cmake \
 -D WITH_CUDA=${WITH_CUDA} \
 -D WITH_CUDNN=${WITH_CUDNN} \
 -D WITH_TBINF=${WITH_TBINF} \
+-D WITH_VTUNE=${WITH_VTUNE} \
 -D Elemental_DIR=${Elemental_DIR} \
 -D OpenCV_DIR=${OpenCV_DIR} \
 -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
 -D cuDNN_DIR=${cuDNN_DIR} \
+-D VTUNE_DIR=${VTUNE_DIR} \
 -D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
 -D VERBOSE=${VERBOSE} \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
