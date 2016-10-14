@@ -30,6 +30,7 @@ CLEAN_BUILD=0
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
+INSTALL_LBANN=0
 
 ################################################################
 # Help message
@@ -103,6 +104,9 @@ while :; do
         echo "\"${1}\" option requires a non-empty option argument" >&2
         exit 1
       fi
+      ;;
+    -i|--install-lbann)
+      INSTALL_LBANN=1
       ;;
     -?*)
       # Unknown option
@@ -252,16 +256,18 @@ EOF
   fi
 
   # Install LBANN with make
-  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${INSTALL_COMMAND}"
-  fi
-  ${INSTALL_COMMAND}
-  if [ $? -ne 0 ] ; then
-    echo "--------------------"
-    echo "MAKE INSTALL FAILED"
-    echo "--------------------"
-    exit 1
+  if [ ${INSTALL_LBANN} -ne 0 ]; then
+      INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+      if [ ${VERBOSE} -ne 0 ]; then
+          echo "${INSTALL_COMMAND}"
+      fi
+      ${INSTALL_COMMAND}
+      if [ $? -ne 0 ] ; then
+          echo "--------------------"
+          echo "MAKE INSTALL FAILED"
+          echo "--------------------"
+          exit 1
+      fi
   fi
 
   # Generate documentation with make
