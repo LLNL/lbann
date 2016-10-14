@@ -53,6 +53,7 @@ Options:
   ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
+  ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
 EOF
 }
 
