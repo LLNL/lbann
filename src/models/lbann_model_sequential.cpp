@@ -534,6 +534,7 @@ void lbann::sequential_model::setup(size_t start_index)
     if (comm->am_model_master()) {
       cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
     }
+    m_layers[l]->neural_network_model = this; /// Provide a reverse point from each layer to the model
     m_layers[l]->setup(prev_layer_dim);
     prev_layer_dim = m_layers[l]->NumNeurons;
     m_layers[l]->Index = l;
