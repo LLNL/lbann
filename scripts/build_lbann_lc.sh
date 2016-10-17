@@ -14,6 +14,7 @@ fi
 ################################################################
 
 COMPILER=gnu
+COMPILER_CC_NAME_VERSION=
 BUILD_TYPE=Release
 Elemental_DIR=
 if [ "${TOSS}" != "3.10.0" ]; then
@@ -24,7 +25,7 @@ cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 VTUNE_DIR=/usr/local/tools/vtune
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
-CMAKE_CXX_FLAGS=
+CMAKE_CXX_FLAGS=-DLBANN_SET_EL_RNG
 CMAKE_Fortran_FLAGS=
 CLEAN_BUILD=0
 VERBOSE=0
@@ -157,6 +158,10 @@ if [ "${COMPILER}" == "gnu" ]; then
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
   CMAKE_CXX_COMPILER=${GNU_DIR}/g++
   CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran
+
+#  COMPILER_VERSION=
+#  COMPILER_CC_NAME_VERSION=gcc
+
 elif [ "${COMPILER}" == "intel" ]; then
   # Intel compilers
   INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
@@ -172,6 +177,7 @@ fi
 # Get MPI compilers
 if [ "${TOSS}" == "3.10.0" ]; then
   MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}/
+#  MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}-4.9.3/
 else
   MPI_DIR=/usr/local/tools/mvapich2-${COMPILER}-2.1
 fi
