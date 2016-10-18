@@ -166,7 +166,11 @@ fi
 
 # Get MPI compilers
 if [ "${TOSS}" == "3.10.0" ]; then
-  MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}/
+  if [ "${COMPILER}" == "gnu" ]; then
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3/
+  else
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}/
+  fi
 else
   MPI_DIR=/usr/local/tools/mvapich2-${COMPILER}-2.1
 fi
