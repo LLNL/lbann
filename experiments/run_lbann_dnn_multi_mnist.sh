@@ -47,7 +47,7 @@ TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
 TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
-ENABLE_HT=--enable-hyperthread
+ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
