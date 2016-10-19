@@ -1,17 +1,24 @@
 include(ExternalProject)
 
 # Options
-option(FORCE_PROTOBUF_BUILD "Protocol Buffers: force build" ON) # Many protobuf builds are version 2, which is too old
+option(FORCE_PROTOBUF_BUILD "Protocol Buffers: force build" OFF) # Many protobuf builds are version 2, which is too old
+set(PROTOBUF_MIN_VERSION "3.0.0")
 
 # Check if Protocol Buffers is already installed
 if(NOT FORCE_PROTOBUF_BUILD)
+  list(APPEND CMAKE_LIBRARY_PATH ${CMAKE_INSTALL_PREFIX}/lib)
+  list(APPEND CMAKE_INCLUDE_PATH ${CMAKE_INSTALL_PREFIX}/include)
   find_package(Protobuf QUIET)
+  execute_process(COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} --version OUTPUT_VARIABLE PROTOBUF_PROTOC_VERSION)
+  if ("${PROTOBUF_PROTOC_VERSION}" MATCHES "libprotoc ([0-9.]+)")
+    set(PROTOBUF_VERSION "${CMAKE_MATCH_1}")
+  endif()
 endif()
 
 # Check if Protocol Buffers has been found
-if(PROTOBUF_FOUND AND NOT FORCE_PROTOBUF_BUILD)
+if(PROTOBUF_FOUND AND NOT FORCE_PROTOBUF_BUILD AND (("${PROTOBUF_VERSION}" VERSION_EQUAL "${PROTOBUF_MIN_VERSION}") OR ("${PROTOBUF_VERSION}" VERSION_GREATER "${PROTOBUF_MIN_VERSION}")))
 
-  message(STATUS "Found Protocol Buffers: ${PROTOBUF_LIBRARIES}")
+  message(STATUS "Found Protocol Buffers (version ${PROTOBUF_VERSION}): ${PROTOBUF_LIBRARIES}")
 
 else()
 
@@ -36,11 +43,11 @@ else()
     GIT_REPOSITORY    ${PROTOBUF_URL}
     GIT_TAG           ${PROTOBUF_TAG}
     SOURCE_DIR        ${PROTOBUF_SOURCE_DIR}
-    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && ./autogen.sh && ./configure --prefix=${CMAKE_INSTALL_PREFIX} && popd
+    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && test -f configure && echo "Skipping autogen.sh" || ./autogen.sh  && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping configure" || ./configure --prefix=${CMAKE_INSTALL_PREFIX} && popd
     BINARY_DIR        ${PROTOBUF_BINARY_DIR}
-    BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
+    BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping make" || ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
     INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
-    INSTALL_COMMAND   pushd ${PROTOBUF_SOURCE_DIR} && ${CMAKE_MAKE_PROGRAM} install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
+    INSTALL_COMMAND   pushd ${PROTOBUF_SOURCE_DIR} && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping make install" || ${CMAKE_MAKE_PROGRAM} install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
   )
 
   # Get header files
