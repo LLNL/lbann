@@ -4,9 +4,7 @@
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 
 if [ "${TOSS}" == "3.10.0" ]; then
-  . /usr/tce/packages/dotkit/init.sh
-  use tcedk
-  use cmake-3.5.2
+  module load cmake/3.5.2
 fi
 
 ################################################################
@@ -16,12 +14,16 @@ fi
 COMPILER=gnu
 BUILD_TYPE=Release
 Elemental_DIR=
-if [ "${TOSS}" != "3.10.0" ]; then
+if [ "${TOSS}" == "3.10.0" ]; then
+  OpenCV_DIR=""
+  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit/7.5
+  VTUNE_DIR=/usr/tce/packages/vtune/default
+else
   OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
   CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
+  VTUNE_DIR=/usr/local/tools/vtune
 fi
 cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
-VTUNE_DIR=/usr/local/tools/vtune
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
 CMAKE_CXX_FLAGS=
@@ -139,22 +141,30 @@ INSTALL_DIR=${BUILD_DIR}
 mkdir -p ${BUILD_DIR}
 mkdir -p ${INSTALL_DIR}
 
-# Get C/C++/Fortran compilers
+# Get C/C++/Fortran compilers and corresponding top-level MPI directory
 if [ "${COMPILER}" == "gnu" ]; then
   # GNU compilers
   if [ "${TOSS}" == "3.10.0" ]; then
-    GNU_DIR=/usr/tce/bin/
+    GNU_DIR=/usr/tce/packages/gcc/gcc-4.9.3/bin
     GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
   else
     GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
     GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
+    MPI_DIR=/usr/local/tools/mvapich2-gnu-2.1
   fi
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
   CMAKE_CXX_COMPILER=${GNU_DIR}/g++
   CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran
 elif [ "${COMPILER}" == "intel" ]; then
   # Intel compilers
-  INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
+  if [ "${TOSS}" == "3.10.0" ]; then
+    INTEL_DIR=/usr/tce/packages/intel/intel-16.0.4/bin
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-intel-16.0.4
+  else
+    INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
+    MPI_DIR=/usr/local/tools/mvapich2-intel-2.1
+  fi
   CMAKE_C_COMPILER=${INTEL_DIR}/icc
   CMAKE_CXX_COMPILER=${INTEL_DIR}/icpc
   CMAKE_Fortran_COMPILER=${INTEL_DIR}/ifort
@@ -165,15 +175,6 @@ else
 fi
 
 # Get MPI compilers
-if [ "${TOSS}" == "3.10.0" ]; then
-  if [ "${COMPILER}" == "gnu" ]; then
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3/
-  else
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-${COMPILER}/
-  fi
-else
-  MPI_DIR=/usr/local/tools/mvapich2-${COMPILER}-2.1
-fi
 MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
