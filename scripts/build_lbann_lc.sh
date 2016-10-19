@@ -62,7 +62,6 @@ EOF
 ################################################################
 
 while :; do
-  echo "Parsing ${1}"
   case ${1} in
     -h|--help)
       # Help message
