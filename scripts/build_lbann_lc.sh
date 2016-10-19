@@ -62,6 +62,7 @@ EOF
 ################################################################
 
 while :; do
+  echo "Parsing ${1}"
   case ${1} in
     -h|--help)
       # Help message
@@ -72,6 +73,7 @@ while :; do
       # Choose compiler
       if [ -n "${2}" ]; then
         COMPILER=${2}
+        shift
       else
         echo "\"${1}\" option requires a non-empty option argument" >&2
         exit 1
