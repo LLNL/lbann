@@ -32,6 +32,7 @@ CLEAN_BUILD=0
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
+GEN_DOC=0
 
 ################################################################
 # Help message
@@ -54,6 +55,7 @@ Options:
   ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
+  ${C}--doc${N}                   Generate documentation.
 EOF
 }
 
@@ -102,10 +104,15 @@ while :; do
     -j|--make-processes)
       if [ -n "${2}" ]; then
         MAKE_NUM_PROCESSES=${2}
+        shift
       else
         echo "\"${1}\" option requires a non-empty option argument" >&2
         exit 1
       fi
+      ;;
+    --doc)
+      # Generate documentation
+      GEN_DOC=1
       ;;
     -?*)
       # Unknown option
@@ -271,16 +278,18 @@ EOF
   fi
 
   # Generate documentation with make
-  DOC_COMMAND="make doc"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${DOC_COMMAND}"
-  fi
-  ${DOC_COMMAND}
-  if [ $? -ne 0 ] ; then
-    echo "--------------------"
-    echo "MAKE DOC FAILED"
-    echo "--------------------"
-    exit 1
+  if [ ${CLEAN_BUILD} -ne 0 ]; then
+    DOC_COMMAND="make doc"
+    if [ ${VERBOSE} -ne 0 ]; then
+      echo "${DOC_COMMAND}"
+    fi
+    ${DOC_COMMAND}
+    if [ $? -ne 0 ] ; then
+      echo "--------------------"
+      echo "MAKE DOC FAILED"
+      echo "--------------------"
+      exit 1
+    fi
   fi
   
 popd
