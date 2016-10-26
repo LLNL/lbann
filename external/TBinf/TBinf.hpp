@@ -48,7 +48,7 @@ public:
    * Create a new event file in logdir to write to.
    * @param logdir The directory where the event file will be written.
    */
-  SummaryWriter(std::string logdir);
+  SummaryWriter(const std::string logdir);
   ~SummaryWriter();
 
   /**
@@ -57,14 +57,18 @@ public:
    * @param value The scalar value.
    * @param step Optional global step.
    */
-  void add_scalar(std::string tag, float value, int64_t step = -1);
+  void add_scalar(const std::string tag, float value, int64_t step = -1);
   /**
    * Add a histogram of values to the event file.
    * @param tag The tag for this summary.
-   * @param values A vector of values to histogram.
+   * @param first Iterator to the first value to add.
+   * @param last Iterator past the last value to add.
    * @param step Optional global step.
    */
-  void add_histogram(std::string tag, std::vector<double> values, int64_t step = -1);
+  void add_histogram(const std::string tag, 
+                     std::vector<double>::const_iterator first,
+                     std::vector<double>::const_iterator last,
+                     int64_t step = -1);
 
   /** Ensure all events are written out. */
   void flush();

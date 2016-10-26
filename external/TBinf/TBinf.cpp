@@ -35,7 +35,7 @@
 
 namespace TBinf {
 
-SummaryWriter::SummaryWriter(std::string logdir) {
+SummaryWriter::SummaryWriter(const std::string logdir) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   filename = logdir + "/events.tfevents.";
   double secs = get_time_in_seconds();
@@ -57,7 +57,8 @@ SummaryWriter::~SummaryWriter() {
   file.close();
 }
 
-void SummaryWriter::add_scalar(std::string tag, float value, int64_t step) {
+void SummaryWriter::add_scalar(const std::string tag, float value,
+                               int64_t step) {
   // Allocation is freed after the event takes ownership.
   tensorflow::Summary* s = new tensorflow::Summary();
   tensorflow::Summary::Value* v = s->add_value();
@@ -66,7 +67,9 @@ void SummaryWriter::add_scalar(std::string tag, float value, int64_t step) {
   write_summary_event(s, step);
 }
 
-void SummaryWriter::add_histogram(std::string tag, std::vector<double> values,
+void SummaryWriter::add_histogram(const std::string tag,
+                                  std::vector<double>::const_iterator first,
+                                  std::vector<double>::const_iterator last,
                                   int64_t step) {
   double min = std::numeric_limits<double>::infinity();
   double max = -std::numeric_limits<double>::infinity();
@@ -91,7 +94,8 @@ void SummaryWriter::add_histogram(std::string tag, std::vector<double> values,
                        pos_buckets.end());
   std::vector<double> buckets(bucket_limits.size(), 0.0);
   // Compute stats and buckets.
-  for (const auto& val : values) {
+  for (auto i = first; first != last; ++i) {
+    const auto& val = *i;
     int bucket = std::upper_bound(bucket_limits.begin(), bucket_limits.end(),
                                   val) - bucket_limits.begin();
     buckets[bucket] += 1.0;
