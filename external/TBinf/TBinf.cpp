@@ -68,8 +68,8 @@ void SummaryWriter::add_scalar(const std::string tag, float value,
 }
 
 void SummaryWriter::add_histogram(const std::string tag,
-                                  std::vector<double>::const_iterator first,
-                                  std::vector<double>::const_iterator last,
+                                  std::vector<float>::const_iterator first,
+                                  std::vector<float>::const_iterator last,
                                   int64_t step) {
   double min = std::numeric_limits<double>::infinity();
   double max = -std::numeric_limits<double>::infinity();
@@ -94,7 +94,7 @@ void SummaryWriter::add_histogram(const std::string tag,
                        pos_buckets.end());
   std::vector<double> buckets(bucket_limits.size(), 0.0);
   // Compute stats and buckets.
-  for (auto i = first; first != last; ++i) {
+  for (auto i = first; i != last; ++i) {
     const auto& val = *i;
     int bucket = std::upper_bound(bucket_limits.begin(), bucket_limits.end(),
                                   val) - bucket_limits.begin();

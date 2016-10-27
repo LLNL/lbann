@@ -66,8 +66,8 @@ public:
    * @param step Optional global step.
    */
   void add_histogram(const std::string tag, 
-                     std::vector<double>::const_iterator first,
-                     std::vector<double>::const_iterator last,
+                     std::vector<float>::const_iterator first,
+                     std::vector<float>::const_iterator last,
                      int64_t step = -1);
 
   /** Ensure all events are written out. */
