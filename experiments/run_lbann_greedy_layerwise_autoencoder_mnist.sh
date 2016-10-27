@@ -42,7 +42,8 @@ TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
 TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
-ENABLE_HT=--enable-hyperthread
+#ENABLE_HT=--enable-hyperthread
+ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
@@ -185,7 +186,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
 
-export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
+export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
 

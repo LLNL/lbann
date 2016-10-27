@@ -44,7 +44,8 @@ NNODES=${SLURM_NNODES}
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-ENABLE_HT=--enable-hyperthreads
+#ENABLE_HT=--enable-hyperthreads
+ENABLE_HT=
 CORES_PER_NODE=48
 elif [ "${CLUSTER}" = "sierra" ]; then
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
@@ -204,7 +205,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${NNODES} * ${TASKS_PER_NODE}))
 
-export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
+export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
 
