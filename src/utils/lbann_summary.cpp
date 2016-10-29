@@ -127,7 +127,19 @@ void lbann_summary::sum_reduce_scalar(const std::string tag, DataType s,
 
 void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
                                      int64_t step) {
-  
+  // Currently, only support the histogram on model 0.
+  if (comm->get_model_rank() == 0) {
+    // Move all data to the model master.
+    CircMat local_copy(mat);
+    if (comm->am_model_master()) {
+      const DataType* buf = local_copy.LockedBuffer();
+      std::vector<float>::const_iterator first(buf);
+      std::vector<float>::const_iterator last(buf + local_copy.AllocatedMemory());
+      sw->add_histogram(prepend_model(tag, comm->get_model_rank()),
+                        first, last,
+                        step);
+    }
+  }
 }
 
 void lbann_summary::flush() {
