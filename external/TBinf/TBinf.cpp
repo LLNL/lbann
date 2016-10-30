@@ -125,8 +125,63 @@ void SummaryWriter::add_histogram(const std::string tag,
   write_summary_event(s, step);
 }
 
+void SummaryWriter::add_histogram(const std::string tag,
+                                  const std::vector<float> buckets,
+                                  double min, double max, double num,
+                                  double sum, double sqsum,
+                                  int64_t step) {
+  // Set up the summary object.
+  tensorflow::Summary* s = new tensorflow::Summary();
+  tensorflow::Summary::Value* v = s->add_value();
+  v->set_tag(tag);
+  tensorflow::HistogramProto* histo = v->mutable_histo();
+  histo->Clear();
+  histo->set_min(min);
+  histo->set_max(max);
+  histo->set_num(num);
+  histo->set_sum(sum);
+  histo->set_sum_squares(sqsum);
+  for (size_t i = 0; i < buckets.size();) {
+    double end = histogram_buckets[i];
+    double count = buckets[i];
+    ++i;
+    while (i < buckets.size() && buckets[i] <= 0.0) {
+      end = histogram_buckets[i];
+      count = buckets[i];
+      ++i;
+    }
+    histo->add_bucket_limit(end);
+    histo->add_bucket(count);
+  }
+  if (histo->bucket_size() == 0.0) {
+    histo->add_bucket_limit(std::numeric_limits<double>::max());
+    histo->add_bucket(0.0);
+  }
+  write_summary_event(s, step);
+}
+
 const std::vector<double>& SummaryWriter::get_histogram_buckets() const {
   return histogram_buckets;
+}
+
+std::vector<double> SummaryWriter::get_default_histogram_buckets() {
+  // Set up the buckets.
+  std::vector<double> buckets;
+  std::vector<double> pos_buckets;
+  std::vector<double> neg_buckets;
+  for (double v = 1.0e-12; v < 1.0e20; v *= 1.1) {
+    pos_buckets.push_back(v);
+    neg_buckets.push_back(-v);
+  }
+  pos_buckets.push_back(std::numeric_limits<double>::max());
+  neg_buckets.push_back(-std::numeric_limits<double>::max());
+  std::reverse(neg_buckets.begin(), neg_buckets.end());
+  buckets.insert(buckets.end(), neg_buckets.begin(),
+                 neg_buckets.end());
+  buckets.push_back(0.0);
+  buckets.insert(buckets.end(), pos_buckets.begin(),
+                 pos_buckets.end());
+  return buckets;
 }
 
 void SummaryWriter::flush() {
@@ -168,21 +223,7 @@ double SummaryWriter::get_time_in_seconds() {
 }
 
 void SummaryWriter::init_histogram_buckets() {
-  // Set up the buckets.
-  std::vector<double> pos_buckets;
-  std::vector<double> neg_buckets;
-  for (double v = 1.0e-12; v < 1.0e20; v *= 1.1) {
-    pos_buckets.push_back(v);
-    neg_buckets.push_back(-v);
-  }
-  pos_buckets.push_back(std::numeric_limits<double>::max());
-  neg_buckets.push_back(-std::numeric_limits<double>::max());
-  std::reverse(neg_buckets.begin(), neg_buckets.end());
-  histogram_buckets.insert(histogram_buckets.end(), neg_buckets.begin(),
-                           neg_buckets.end());
-  histogram_buckets.push_back(0.0);
-  histogram_buckets.insert(histogram_buckets.end(), pos_buckets.begin(),
-                           pos_buckets.end());
+  histogram_buckets = get_default_histogram_buckets();
 }
 
 }  // namespace TBinf

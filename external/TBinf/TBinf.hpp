@@ -69,8 +69,26 @@ public:
                      std::vector<float>::const_iterator first,
                      std::vector<float>::const_iterator last,
                      int64_t step = -1);
+  /**
+   * Add a histogram based upon buckets to the event file.
+   * @param tag The tag for this summary.
+   * @param buckets The histogram buckets.
+   * @param min The minimum value in the dataset.
+   * @param max The maximum value in the dataset.
+   * @param num The number of values in the dataset.
+   * @param sum The sum of the values in the dataset.
+   * @param sqsum The sum of squared values in the dataset.
+   * @param step Optional global step.
+   */
+  void add_histogram(const std::string tag,
+                     const std::vector<float> buckets,
+                     double min, double max, double num,
+                     double sum, double sqsum,
+                     int64_t step = -1);
   /** Return the current histogram buckets. */
   const std::vector<double>& get_histogram_buckets() const;
+  /** Return the default histogram buckets. */
+  static std::vector<double> get_default_histogram_buckets();
 
   /** Ensure all events are written out. */
   void flush();
