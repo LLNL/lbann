@@ -111,6 +111,31 @@ private:
     /** Size of matrix (needed for mean/stdev). */
     int num;
   };
+  /** Represent a pending histogram operation. */
+  struct pending_histogram {
+    pending_histogram(const std::string tag, int64_t step,
+                      std::vector<float> buckets,
+                      DataType min, DataType max, DataType num,
+                      DataType sum, DataType sqsum) :
+      tag(tag), step(step), buckets(buckets), min(min), max(max), num(num),
+      sum(sum), sqsum(sqsum) {}
+    /** Associated tag. */
+    const std::string tag;
+    /** Global step. */
+    int64_t step;
+    /** Histogram buckets, using histogram_buckets as the limits. */
+    std::vector<float> buckets;
+    /** Minimum value in the data. */
+    DataType min;
+    /** Maximum value in the data. */
+    DataType max;
+    /** Number of values in the data. */
+    DataType num;
+    /** Sum of the values in the data. */
+    DataType sum;
+    /** Sum of the squares of the values in the data. */
+    DataType sqsum;
+  };
 
   /** Currently-pending reduce_means. */
   std::vector<pending_op> pending_means;
@@ -124,6 +149,10 @@ private:
   std::vector<pending_op> pending_scalars;
   /** Currently-pending sum_reduce_scalars. */
   std::vector<pending_op> pending_sum_scalars;
+  /** Buckets for histograms. */
+  std::vector<double> histogram_buckets;
+  /** Currently-pending reduce_histograms. */
+  std::vector<pending_histogram> pending_histograms;
 
   /** Execute all pending mean operations. */
   void flush_means();
@@ -137,6 +166,8 @@ private:
   void flush_scalars();
   /** Execute all pending sum-scalar operations. */
   void flush_sum_scalars();
+  /** Execute all pending histogram operations. */
+  void flush_histograms();
 
   /** Compute the sum of elements in mat. */
   DataType local_sum(const Mat& mat) const;
