@@ -50,6 +50,7 @@ SummaryWriter::SummaryWriter(const std::string logdir) {
   e.set_file_version(EVENT_VERSION);
   write_event(e);
   flush();
+  init_histogram_buckets();
 }
 
 SummaryWriter::~SummaryWriter() {
@@ -76,28 +77,13 @@ void SummaryWriter::add_histogram(const std::string tag,
   double num = 0.0;
   double sum = 0.0;
   double sqsum = 0.0;
-  // Set up the buckets.
-  std::vector<double> pos_buckets;
-  std::vector<double> neg_buckets;
-  for (double v = 1.0e-12; v < 1.0e20; v *= 1.1) {
-    pos_buckets.push_back(v);
-    neg_buckets.push_back(-v);
-  }
-  pos_buckets.push_back(std::numeric_limits<double>::max());
-  neg_buckets.push_back(-std::numeric_limits<double>::max());
-  std::reverse(neg_buckets.begin(), neg_buckets.end());
-  std::vector<double> bucket_limits;
-  bucket_limits.insert(bucket_limits.end(), neg_buckets.begin(),
-                       neg_buckets.end());
-  bucket_limits.push_back(0.0);
-  bucket_limits.insert(bucket_limits.end(), pos_buckets.begin(),
-                       pos_buckets.end());
-  std::vector<double> buckets(bucket_limits.size(), 0.0);
+  std::vector<double> buckets(histogram_buckets.size(), 0.0);
   // Compute stats and buckets.
   for (auto i = first; i != last; ++i) {
     const auto& val = *i;
-    int bucket = std::upper_bound(bucket_limits.begin(), bucket_limits.end(),
-                                  val) - bucket_limits.begin();
+    int bucket = std::upper_bound(histogram_buckets.begin(),
+                                  histogram_buckets.end(),
+                                  val) - histogram_buckets.begin();
     buckets[bucket] += 1.0;
     if (val < min) {
       min = val;
@@ -121,11 +107,11 @@ void SummaryWriter::add_histogram(const std::string tag,
   histo->set_sum(sum);
   histo->set_sum_squares(sqsum);
   for (size_t i = 0; i < buckets.size();) {
-    double end = bucket_limits[i];
+    double end = histogram_buckets[i];
     double count = buckets[i];
     ++i;
     while (i < buckets.size() && buckets[i] <= 0.0) {
-      end = bucket_limits[i];
+      end = histogram_buckets[i];
       count = buckets[i];
       ++i;
     }
@@ -137,6 +123,10 @@ void SummaryWriter::add_histogram(const std::string tag,
     histo->add_bucket(0.0);
   }
   write_summary_event(s, step);
+}
+
+const std::vector<double>& SummaryWriter::get_histogram_buckets() const {
+  return histogram_buckets;
 }
 
 void SummaryWriter::flush() {
@@ -175,6 +165,24 @@ double SummaryWriter::get_time_in_seconds() {
   using namespace std::chrono;
   auto now = system_clock::now().time_since_epoch();
   return duration_cast<duration<double>>(now).count();
+}
+
+void SummaryWriter::init_histogram_buckets() {
+  // Set up the buckets.
+  std::vector<double> pos_buckets;
+  std::vector<double> neg_buckets;
+  for (double v = 1.0e-12; v < 1.0e20; v *= 1.1) {
+    pos_buckets.push_back(v);
+    neg_buckets.push_back(-v);
+  }
+  pos_buckets.push_back(std::numeric_limits<double>::max());
+  neg_buckets.push_back(-std::numeric_limits<double>::max());
+  std::reverse(neg_buckets.begin(), neg_buckets.end());
+  histogram_buckets.insert(histogram_buckets.end(), neg_buckets.begin(),
+                           neg_buckets.end());
+  histogram_buckets.push_back(0.0);
+  histogram_buckets.insert(histogram_buckets.end(), pos_buckets.begin(),
+                           pos_buckets.end());
 }
 
 }  // namespace TBinf

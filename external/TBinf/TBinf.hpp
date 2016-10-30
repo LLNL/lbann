@@ -69,6 +69,8 @@ public:
                      std::vector<float>::const_iterator first,
                      std::vector<float>::const_iterator last,
                      int64_t step = -1);
+  /** Return the current histogram buckets. */
+  const std::vector<double>& get_histogram_buckets() const;
 
   /** Ensure all events are written out. */
   void flush();
@@ -90,6 +92,9 @@ private:
   /** Get current wall time in fractional seconds. */
   double get_time_in_seconds();
 
+  /** Initialize histogram buckets. */
+  void init_histogram_buckets();
+
   /** Current event version. */
   static constexpr const char* EVENT_VERSION = "brain.Event:2";
 
@@ -98,6 +103,9 @@ private:
 
   /** File stream for writing. */
   std::fstream file;
+
+  /** Current histogram buckets. */
+  std::vector<double> histogram_buckets;
 };
 
 }  // namespace TBinf
