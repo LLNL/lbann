@@ -61,9 +61,13 @@ void lbann_callback_summary::on_batch_end(model* m) {
 }
 
 void lbann_callback_summary::on_epoch_end(model* m) {
-  lbann_comm* comm = m->get_comm();
   summarizer->reduce_scalar("train_accuracy", m->get_train_accuracy(),
                             m->get_cur_step());
+  for (const auto& layer : m->get_layers()) {
+    std::string prefix = "layer" + std::to_string(layer->get_index()) + "/";
+    summarizer->reduce_histogram(prefix + "WB", layer->get_weights_biases(),
+                                 m->get_cur_step());
+  }
   summarizer->flush();
 }
 
