@@ -6,4 +6,5 @@ add_sources(
   lbann_callback_learning_rate.cpp
   lbann_callback_early_stopping.cpp
   lbann_callback_io.cpp
+  lbann_callback_dump_weights.cpp
 )
