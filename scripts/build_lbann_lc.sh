@@ -5,6 +5,9 @@ TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 
 if [ "${TOSS}" == "3.10.0" ]; then
   module load cmake/3.5.2
+else
+  # need to initialize modules on earlier versions of TOSS
+  . /usr/share/[mM]odules/init/bash
 fi
 
 ################################################################
