@@ -47,7 +47,7 @@ namespace lbann
     long m_num_data_per_epoch;
   protected:
     /** Handle forward propagation (arguments are unused.) */
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&);
+    void fp_linearity();
   };
 }
 

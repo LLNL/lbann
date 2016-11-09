@@ -55,7 +55,7 @@ namespace lbann
     Mat m_reduced_max_indicies;  /// Local array to build global view of maximum indicies
 
   protected:
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
+    void fp_linearity() {}
     void bp_linearity() {}
   };
 }

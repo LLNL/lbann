@@ -6,8 +6,6 @@ SCRIPT=`basename ${0}`
 
 # Figure out which cluster we are on
 CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
-# Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov/model_zoo"
 
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
@@ -20,7 +18,7 @@ PARIO=0
 BLOCK_SIZE=256
 MODE="false"
 MB_SIZE=192
-LR=0.1
+LR=0.01
 ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
@@ -65,6 +63,10 @@ NORM=`tput sgr0`
 BOLD=`tput bold`
 REV=`tput smso`
 
+#source "${DIRNAME}/parse_std_lbann_cmdline_options.sh"
+
+#echo "I found MB_SIZE=${MB_SIZE}"
+
 #Help function
 function HELP {
   echo -e \\n"Help documentation for ${BOLD}${SCRIPT}.${NORM}"\\n
@@ -103,13 +105,14 @@ while getopts ":a:b:cde:f:hi:j:k:l:m:n:o:p:q:r:s:t:uv:w:x:z:" opt; do
       ACT=$OPTARG
       ;;
     b)
-      MB_SIZE=$OPTARG
+      MB_SIZE="--mb-size $OPTARG"
       ;;
     c)
       TEST_W_TRAIN_DATA=1
       ;;
     d)
       RUN="totalview srun -a"
+#      DEBUGDIR="-debug"
       ;;
     e)
       EPOCHS="--num-epochs $OPTARG"
@@ -186,6 +189,9 @@ done
 shift $((OPTIND-1))
 # now do something with $@
 
+# Look for the binary in the cluster specific build directory
+BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+
 # Once all of the options are parsed, you can setup the environment
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_mvapich2 -v 0.86
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m openmpi -v 0.86
@@ -258,7 +264,7 @@ fi
 
 fi
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_dnn_multi_mnist --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL} ${EPOCHS}"
+CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_dnn_multi_mnist --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} ${SUMMARY_DIR} ${IMCOMM} ${PROCS_PER_MODEL} ${EPOCHS} ${MB_SIZE} --par-IO ${PARIO}"
 #CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${DIRNAME}/lbann_dnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}

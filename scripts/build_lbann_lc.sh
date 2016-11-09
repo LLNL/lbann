@@ -15,6 +15,7 @@ fi
 ################################################################
 
 COMPILER=gnu
+COMPILER_CC_NAME_VERSION=
 BUILD_TYPE=Release
 Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
@@ -29,13 +30,14 @@ fi
 cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
-CMAKE_CXX_FLAGS=
+CMAKE_CXX_FLAGS=-DLBANN_SET_EL_RNG
 CMAKE_Fortran_FLAGS=
 CLEAN_BUILD=0
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 GEN_DOC=0
+INSTALL_LBANN=0
 
 ################################################################
 # Help message
@@ -59,6 +61,7 @@ Options:
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
+  ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
 EOF
 }
 
@@ -116,6 +119,8 @@ while :; do
     --doc)
       # Generate documentation
       GEN_DOC=1
+    -i|--install-lbann)
+      INSTALL_LBANN=1
       ;;
     -?*)
       # Unknown option
@@ -167,6 +172,10 @@ if [ "${COMPILER}" == "gnu" ]; then
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
   CMAKE_CXX_COMPILER=${GNU_DIR}/g++
   CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran
+
+#  COMPILER_VERSION=
+#  COMPILER_CC_NAME_VERSION=gcc
+
 elif [ "${COMPILER}" == "intel" ]; then
   # Intel compilers
   if [ "${TOSS}" == "3.10.0" ]; then
@@ -268,16 +277,18 @@ EOF
   fi
 
   # Install LBANN with make
-  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${INSTALL_COMMAND}"
-  fi
-  ${INSTALL_COMMAND}
-  if [ $? -ne 0 ] ; then
-    echo "--------------------"
-    echo "MAKE INSTALL FAILED"
-    echo "--------------------"
-    exit 1
+  if [ ${INSTALL_LBANN} -ne 0 ]; then
+      INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+      if [ ${VERBOSE} -ne 0 ]; then
+          echo "${INSTALL_COMMAND}"
+      fi
+      ${INSTALL_COMMAND}
+      if [ $? -ne 0 ] ; then
+          echo "--------------------"
+          echo "MAKE INSTALL FAILED"
+          echo "--------------------"
+          exit 1
+      fi
   fi
 
   # Generate documentation with make
