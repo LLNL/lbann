@@ -102,6 +102,10 @@ namespace lbann
     std::string TestFile;
     /// Location to write summary files.
     std::string SummaryDir;
+    /// Whether to dump matrices.
+    bool DumpMatrices;
+    /// Location to dump matrices.
+    std::string DumpDir;
 
     /// Type of intermodel communication to use, if any.
     int IntermodelCommMethod;

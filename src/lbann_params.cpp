@@ -39,7 +39,8 @@ lbann::TrainingParams::TrainingParams(void)
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
     SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "),
-    TestFile(" "), SummaryDir("."), IntermodelCommMethod(0), ProcsPerModel(0) {
+    TestFile(" "), SummaryDir("."), DumpMatrices(false), DumpDir("."),
+    IntermodelCommMethod(0), ProcsPerModel(0) {
 }
 
 void lbann::TrainingParams::parse_params(void) {
@@ -75,6 +76,8 @@ void lbann::TrainingParams::parse_params(void) {
   LoadModel = Input("--load-model", "Load a saved model", LoadModel);
   Checkpoint = Input("--checkpoint", "Number of training epochs between checkpoints", Checkpoint);
   SummaryDir = Input("--summary-dir", "Directory to write summary files", SummaryDir);
+  DumpMatrices = Input("--dump-matrices", "Whether to dump matrices", DumpMatrices);
+  DumpDir = Input("--dump-dir", "Directory to dump matrices", DumpDir);
 
   IntermodelCommMethod = Input("--imcomm", "Type of inter-model communication",
                                IntermodelCommMethod);
