@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -202,6 +203,10 @@ int main(int argc, char* argv[])
 
         lbann_callback_print print_cb;
         dnn.add_callback(&print_cb);
+        if (trainParams.DumpMatrices) {
+          lbann_callback_dump_weights dump_cb(trainParams.DumpDir);
+          dnn.add_callback(&dump_cb);
+        }
         // lbann_callback_io io_cb({0,3});
         // dnn.add_callback(&io_cb);
 
