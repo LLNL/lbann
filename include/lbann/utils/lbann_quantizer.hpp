@@ -65,6 +65,14 @@ public:
   typedef El::Matrix<qtype> QuantizedMatrix;
   typedef std::vector<uqtype> ThreshQuantized;
 
+  /** Info for doing adaptive quantization. */
+  struct adaptive_info {
+    DataType pos_thresh;
+    DataType neg_thresh;
+    DataType pos_avg;
+    DataType neg_avg;
+  };
+
   lbann_quantizer();
   ~lbann_quantizer();
 
@@ -209,10 +217,9 @@ public:
    * @param proportion Proportion of entries to keep.
    * @param col The column to compute values for.
    * @param sample Whether to approximate stats with a sample.
-   * @return In this order: The positive and negative threshold values, then the
-   * positive and negative averages.
+   * @return The adaptive quantization info.
    */
-  std::tuple<DataType, DataType, DataType, DataType> proportion_threshold_average(
+  adaptive_info proportion_threshold_average(
     const Mat& mat, const Mat& qerror, int proportion, int col,
     bool sample = true);
 

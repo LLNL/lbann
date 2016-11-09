@@ -502,21 +502,20 @@ void lbann_quantizer::adaptive_threshold_quantize(
       for (int col = 0; col < width; ++col) {
         const int header_loc = 3 * col;
         q[header_loc] = num_quantized;
-        DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-        std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+        adaptive_info ainfo = 
           proportion_threshold_average(mat, qerror, proportion, col);
         // Store the averages for reconstruction.
-        memcpy(&q[header_loc + 1], &pos_avg, sizeof(pos_avg));
-        memcpy(&q[header_loc + 2], &neg_avg, sizeof(neg_avg));
+        memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
+        memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
         for (int row = 0; row < height; ++row) {
           const unsigned pos = row + col * ldim;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
-          if (val >= pos_thresh) {
-            qerror_buf[pos] = val - pos_avg;
+          if (val >= ainfo.pos_thresh) {
+            qerror_buf[pos] = val - ainfo.pos_avg;
             thread_qs[tid].emplace_back((pos << 1) | 1);
             ++num_quantized;
-          } else if (val <= neg_thresh) {
-            qerror_buf[pos] = val - neg_avg;
+          } else if (val <= ainfo.neg_thresh) {
+            qerror_buf[pos] = val - ainfo.neg_avg;
             thread_qs[tid].emplace_back(pos << 1);
             ++num_quantized;
           } else {
@@ -558,21 +557,21 @@ void lbann_quantizer::adaptive_threshold_quantize(
         ThreshQuantized uncomp;
         q[header_loc] = start_offset;
         DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-        std::tie(pos_thresh, neg_thresh, pos_avg, neg_avg) =
+        adaptive_info ainfo =
           proportion_threshold_average(mat, qerror, proportion, col);
         // Store the averages for reconstruction.
-        memcpy(&q[header_loc + 1], &pos_avg, sizeof(pos_avg));
-        memcpy(&q[header_loc + 2], &neg_avg, sizeof(neg_avg));
+        memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
+        memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
         unsigned prev_row = 0;
         for (int row = 0; row < height; ++row) {
           const unsigned pos = row + col * ldim;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
-          if (val >= pos_thresh) {
-            qerror_buf[pos] = val - pos_avg;
+          if (val >= ainfo.pos_thresh) {
+            qerror_buf[pos] = val - ainfo.pos_avg;
             uncomp.emplace_back(((row - prev_row) << 1) | 1);
             prev_row = row;
-          } else if (val <= neg_thresh) {
-            qerror_buf[pos] = val - neg_avg;
+          } else if (val <= ainfo.neg_thresh) {
+            qerror_buf[pos] = val - ainfo.neg_avg;
             uncomp.emplace_back((row - prev_row) << 1);
             prev_row = row;
           } else {
@@ -989,8 +988,7 @@ void lbann_quantizer::uncompress_thresholds(
   }
 }
 
-std::tuple<DataType, DataType, DataType, DataType>
-lbann_quantizer::proportion_threshold_average(
+lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
   const Mat& mat, const Mat& qerror, int proportion, int col, bool sample) {
   double pta_start = get_time();
   std::vector<DataType> pos_entries;
@@ -1055,7 +1053,7 @@ lbann_quantizer::proportion_threshold_average(
     neg_avg = std::accumulate(neg_entries.begin(), i + 1, 0.0f) / neg_to_keep;
   }
   pta_time += get_time() - pta_start;
-  return std::make_tuple(pos_thresh, neg_thresh, pos_avg, neg_avg);
+  return { pos_thresh, neg_thresh, pos_avg, neg_avg };
 }
 
 }  // namespace lbann
