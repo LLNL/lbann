@@ -77,9 +77,10 @@ namespace lbann
       m_base_offset = base_offset;
       m_stride = stride;
       m_last_mini_batch_stride = stride;
+      m_current_mini_batch_idx = 0;
 
       if(comm != NULL) {
-        calculate_multi_model_data_distribution_packed(comm);
+        calculate_multi_model_data_distribution(comm);
         m_use_alt_last_mini_batch_size = true;
       }
 
@@ -114,18 +115,22 @@ namespace lbann
      * around, then reshuffle the data indicies.
      */
     virtual bool update() {
-      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
+      int max_stride = std::max(m_stride, m_last_mini_batch_stride);
+      /// Is the mini-batch that is about to finish equal to the second to last mini-batch
+      if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
         CurrentPos += m_last_mini_batch_stride;
       }else {
         CurrentPos += m_stride;
       }
       if (CurrentPos < (int)ShuffledIndices.size()) {
+        m_current_mini_batch_idx++;
         return true;
       } else {
         if (m_shuffle) {
           std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                        get_generator());
         }
+        m_current_mini_batch_idx = 0;
         CurrentPos = m_base_offset + m_model_offset;
         return false;
       }
@@ -137,7 +142,7 @@ namespace lbann
 
     bool position_valid()   { return (CurrentPos < (int)ShuffledIndices.size()); }
     int getBatchSize()      { 
-      if(m_use_alt_last_mini_batch_size && CurrentPos >= m_last_mini_batch_threshold) {
+     if(m_use_alt_last_mini_batch_size && m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
         return m_last_mini_batch_size;
       }else {
         return BatchSize; 
@@ -145,7 +150,8 @@ namespace lbann
     }
 		int getPosition()       { return CurrentPos; }
     int get_next_position() { 
-      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
+      /// Is the mini-batch that is about to finish equal to the second to last mini-batch
+      if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
         return CurrentPos + m_last_mini_batch_stride;
       }else {
         return CurrentPos + m_stride;
@@ -222,48 +228,7 @@ namespace lbann
       return getNumData();
     }
 
-    void calculate_multi_model_data_distribution(lbann_comm *comm) {
-      int max_mini_batch_size = BatchSize;
-      int num_parallel_readers_per_model = (m_stride / comm->get_num_models()) / max_mini_batch_size;
-
-      int num_whole_mini_batches = rint(getNumData() / m_stride);
-      int partial_mini_batch_size = (getNumData() - (num_whole_mini_batches*m_stride))/(comm->get_num_models() * num_parallel_readers_per_model);
-      int world_master_remainder_data = 0;
-
-      int world_master_remainder_adjustment = getNumData() 
-        - (num_whole_mini_batches * m_stride) 
-        - (partial_mini_batch_size * comm->get_num_models() * num_parallel_readers_per_model);
-      if(comm->am_world_master()) {
-        world_master_remainder_data = world_master_remainder_adjustment;
-        world_master_remainder_adjustment = 0;
-      }
-      partial_mini_batch_size += world_master_remainder_data;
-
-      m_last_mini_batch_threshold = m_stride * num_whole_mini_batches;
-      m_last_mini_batch_size = partial_mini_batch_size;
-
-      if(m_last_mini_batch_size > max_mini_batch_size) { throw new lbann_exception("Error in calculating the partial mini-batch size, exceeds the max mini-batch size"); }
-
-      /// Note that comm->get_model_rank() + comm->get_rank_in_model() is not equivalent to comm->get_world_rank() from a parallel I/O perspective
-      /// Given the data readers rank, how many readers have a higher rank
-      int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model;
-      /// Given the data readers rank, how many readers have a lower rank
-      int num_readers_at_last_stride = comm->get_model_rank() * num_parallel_readers_per_model;
-      if(comm->get_rank_in_model() < num_parallel_readers_per_model) { /// If this rank is one of the readers, adjust the number of readers to account for that
-        num_readers_at_full_stride -= comm->get_rank_in_model();
-        num_readers_at_last_stride += comm->get_rank_in_model();
-      }
-      /// Compute how big the stride should be assuming that each higher ranked parallel reader has completed a full mini-batch
-      /// and each lower ranked parallel reader has completed a partial mini-batch
-      m_last_mini_batch_stride = max_mini_batch_size * num_readers_at_full_stride
-        + (partial_mini_batch_size * (num_readers_at_last_stride)) + world_master_remainder_adjustment;
-
-      //      cout << "[" << comm->get_rank_in_world() << "] " << comm->get_model_rank() << " model rank, num_whole_mini_batches=" << num_whole_mini_batches << " partial_mini_batch_size=" << partial_mini_batch_size << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << m_last_mini_batch_threshold << " with a last stride of " << m_last_mini_batch_stride << " and stride of " << m_stride << " and there are " << num_parallel_readers_per_model << " parallel readers per model " <<endl;
-
-      return;
-    }
-
-    void calculate_multi_model_data_distribution_packed(lbann_comm *comm);
+    void calculate_multi_model_data_distribution(lbann_comm *comm);
 
   protected:
     int							BatchSize;
@@ -279,6 +244,9 @@ namespace lbann
     int             m_last_mini_batch_threshold;
     int             m_last_mini_batch_size;
     int             m_last_mini_batch_stride;
+
+    int             m_current_mini_batch_idx;
+    int             m_num_mini_batches_per_reader;
 
     std::vector<int> 			ShuffledIndices;
     std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
