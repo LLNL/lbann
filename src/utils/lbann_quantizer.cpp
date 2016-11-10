@@ -1076,7 +1076,7 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
     zero_avg = std::accumulate(pos_entries.begin(), i, 0.0f);
   }
   if (neg_to_keep > 0 && neg_entries.size() > 0) {
-    auto i = neg_entries.begin() + neg_to_keep;
+    auto i = neg_entries.begin() + neg_to_keep - 1;
     std::nth_element(neg_entries.begin(), i, neg_entries.end());
     neg_thresh = *i;
     neg_avg = std::accumulate(neg_entries.begin(), i + 1, 0.0f) / neg_to_keep;
