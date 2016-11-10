@@ -47,7 +47,7 @@ void dropout::fp_activations() {
       || m_keep_prob < 0.0f) return;
 
   // Get local activations
-  ElMat* acts = m_layer->Acts;
+  ElMat* acts = m_layer->m_activations;
   const Int local_height = acts->LocalHeight();
   const Int local_width = acts->LocalWidth();
   const Int global_height = acts->Height();
@@ -89,11 +89,11 @@ void dropout::bp_activations() {
       || m_keep_prob < 0.0f) return;
 
 #ifdef LBANN_PROCDET_DROPOUT
-  Hadamard(*(m_layer->Ds), m_cur_mask, *(m_layer->Ds));
+  Hadamard(*(m_layer->m_prev_error_signal), m_cur_mask, *(m_layer->m_prev_error_signal));
 #else
   // Re-weight the incoming loss using dropout mask
-  Mat local_Ds = m_layer->Ds->Matrix();
-  Hadamard(local_Ds, m_cur_mask, local_Ds);
+  Mat local_prev_error_signal = m_layer->m_prev_error_signal->Matrix();
+  Hadamard(local_prev_error_signal, m_cur_mask, local_prev_error_signal);
 #endif  // LBANN_PROCDET_DROPOUT
 }
 

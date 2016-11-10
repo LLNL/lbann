@@ -195,7 +195,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
     for(size_t l=1; l<= m_num_layers/2; l++){
       //Copy(m_layers[l]->Acts, m_layers[m_num_layers-l]->fp_input)
       //output of reciprocating layer == input to (activation of )its succesor (l+1)
-      m_layers[m_num_layers-l]->setup_fp_input(m_layers[l+1]->Acts);
+      m_layers[m_num_layers-l]->setup_fp_input(m_layers[l+1]->m_activations);
     }
 
     //Reconstruction

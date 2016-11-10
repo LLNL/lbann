@@ -80,18 +80,18 @@ convolutional_layer::convolutional_layer(const uint index,
   }
   
   // Matrices should be in Star,Star and Star,VC distributions
-  delete WB;
-  delete WB_D;
-  delete Zs;
-  delete Ds;
-  delete Ds_Temp;
-  delete Acts;
-  WB = new StarMat(comm->get_model_grid());
-  WB_D = new StarMat(comm->get_model_grid());
-  Zs = new StarVCMat(comm->get_model_grid());
-  Ds = new StarVCMat(comm->get_model_grid());
-  Ds_Temp = new StarVCMat(comm->get_model_grid());
-  Acts = new StarVCMat(comm->get_model_grid());
+  delete m_weights;
+  delete m_weights_gradient;
+  delete m_preactivations;
+  delete m_prev_error_signal;
+  delete m_error_signal;
+  delete m_activations;
+  m_weights = new StarMat(comm->get_model_grid());
+  m_weights_gradient = new StarMat(comm->get_model_grid());
+  m_preactivations = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal = new StarVCMat(comm->get_model_grid());
+  m_error_signal = new StarVCMat(comm->get_model_grid());
+  m_activations = new StarVCMat(comm->get_model_grid());
 
   // Initialize cuDNN convolutional layer
   m_cudnn_layer = NULL;
@@ -149,11 +149,11 @@ void convolutional_layer::setup(const int num_prev_neurons)
     optimizer->setup(1, m_filter_size+NumNeurons);
 
   // Initialize weight-bias matrix
-  Zeros(*WB, m_filter_size+NumNeurons, 1);
+  Zeros(*m_weights, m_filter_size+NumNeurons, 1);
 
   // Initialize filters
   DistMat filters;
-  View(filters, *WB, IR(0,m_filter_size), ALL);
+  View(filters, *m_weights, IR(0,m_filter_size), ALL);
   Int fan_in = m_filter_size / m_num_output_channels;
   Int fan_out = m_filter_size / m_num_input_channels;
   switch(m_weight_initialization) {
@@ -196,28 +196,28 @@ void convolutional_layer::setup(const int num_prev_neurons)
   }
   
   // Initialize matrices
-  Zeros(*WB_D, m_filter_size+NumNeurons, 1);
-  Ones(*Zs, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
-  Ones(*Acts, NumNeurons+1, m_mini_batch_size);
+  Zeros(*m_weights_gradient, m_filter_size+NumNeurons, 1);
+  Ones(*m_preactivations, NumNeurons+1, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons+1, m_mini_batch_size);
+  Zeros(*m_error_signal, num_prev_neurons+1, m_mini_batch_size);
+  Ones(*m_activations, NumNeurons+1, m_mini_batch_size);
 
 }
 
 void lbann::convolutional_layer::fp_linearity() {
   
   // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,STAR> WBProxy(*WB);
+  DistMatrixReadProxy<DataType,DataType,STAR,STAR> WBProxy(*m_weights);
   DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(*fp_input);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*Zs);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*Acts);
-  StarMat& WB = WBProxy.Get();
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*m_preactivations);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*m_activations);
+  StarMat& m_weights = WBProxy.Get();
   StarVCMat& X = XProxy.Get();
   StarVCMat& Z = ZProxy.Get();
   StarVCMat& Y = YProxy.Get();
 
   // Get local matrices
-  const Mat& WBLocal = WB.LockedMatrix();
+  const Mat& WBLocal = m_weights.LockedMatrix();
   const Mat& XLocal = X.LockedMatrix();
   Mat& ZLocal = Z.Matrix();
   Mat& YLocal = Y.Matrix();
@@ -362,11 +362,11 @@ void lbann::convolutional_layer::bp_linearity() {
 
   // Get local matrices
   const Mat& input_local = input.LockedMatrix();
-  const Mat& filters_local = WB->LockedMatrix()(IR(0,m_filter_size),ALL);
-  const Mat& prev_error_signal_local = Ds->LockedMatrix();
-  Mat filters_gradient_local = WB_D->Matrix()(IR(0,m_filter_size),ALL);
-  Mat bias_gradient_local = WB_D->Matrix()(IR(m_filter_size,END),ALL);
-  Mat& error_signal_local = Ds_Temp->Matrix();
+  const Mat& filters_local = m_weights->LockedMatrix()(IR(0,m_filter_size),ALL);
+  const Mat& prev_error_signal_local = m_prev_error_signal->LockedMatrix();
+  Mat filters_gradient_local = m_weights_gradient->Matrix()(IR(0,m_filter_size),ALL);
+  Mat bias_gradient_local = m_weights_gradient->Matrix()(IR(m_filter_size,END),ALL);
+  Mat& error_signal_local = m_error_signal->Matrix();
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
@@ -601,15 +601,15 @@ void lbann::convolutional_layer::bp_linearity() {
   }
 
   // Obtain filter gradient with reduction and scaling
-  AllReduce(*WB_D, mpi::COMM_WORLD);  
-  *WB_D *= 1.0/get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, mpi::COMM_WORLD);  
+  *m_weights_gradient *= 1.0/get_effective_minibatch_size();
 
 }
 
 bool convolutional_layer::update()
 {
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
   }
   return true;
 }

@@ -58,7 +58,7 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
     throw -1;
   }
 
-  Zeros(*Ds_Temp, NumNeurons, m_mini_batch_size);
+  Zeros(*m_error_signal, NumNeurons, m_mini_batch_size);
   Zeros(Y_local, NumNeurons, m_mini_batch_size);
   Zeros(Ys, NumNeurons, m_mini_batch_size);
 
@@ -111,8 +111,8 @@ DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WB
 }
 
 void lbann::target_layer_distributed_minibatch::backProp() {
-  /// Copy the results to the Ds_Temp variable for access by the next lower layer
-  Copy(Ys, *Ds_Temp);
+  /// Copy the results to the m_error_signal variable for access by the next lower layer
+  Copy(Ys, *m_error_signal);
 }
 
 /**

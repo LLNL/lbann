@@ -61,7 +61,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
                                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
-  Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons + 1, Layer::m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, Layer::m_mini_batch_size);
 
   m_local_data_valid = false;
@@ -85,7 +85,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
 
   distribute_from_local_matrix(X_local, Xs);
 
-  Copy(Xs, *Acts);
+  Copy(Xs, *m_activations);
 }
 
 /**

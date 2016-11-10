@@ -70,7 +70,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
     throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
   }
 
-  Zeros(*Ds_Temp, NumNeurons, Layer::m_mini_batch_size);
+  Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
   Zeros(YsColMax, Layer::m_mini_batch_size, 1); /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
@@ -157,8 +157,8 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
-  /// Copy the results to the Ds_Temp variable for access by the next lower layer
-  Copy(Ys, *Ds_Temp);
+  /// Copy the results to the m_error_signal variable for access by the next lower layer
+  Copy(Ys, *m_error_signal);
 }
 
 /**

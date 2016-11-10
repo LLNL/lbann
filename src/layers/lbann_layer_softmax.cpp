@@ -65,11 +65,11 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     }
 
     // Initialize weight-bias matrix
-    Zeros(*WB, NumNeurons, numPrevNeurons+1);
+    Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
 
     // Initialize weights
     DistMat weights;
-    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    View(weights, *m_weights, IR(0,NumNeurons), IR(0,numPrevNeurons));
     switch(m_weight_initialization) {
     case weight_initialization::uniform:
       uniform_fill(weights, weights.Height(), weights.Width(),
@@ -110,17 +110,17 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     }
 
     // Initialize other matrices
-    Zeros(*WB_D, NumNeurons, numPrevNeurons + 1);
-    Zeros(*Ds, NumNeurons, m_mini_batch_size);
-    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-    Zeros(*Zs, NumNeurons, m_mini_batch_size);
-    Zeros(*Acts, NumNeurons, m_mini_batch_size);
+    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_error_signal, numPrevNeurons + 1, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*m_preactivations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(Acts_Cost, NumNeurons, m_mini_batch_size);
     Zeros(m_minibatch_cost, m_mini_batch_size, 1);
 
     /// Create a view of the weights matrix
-    View(*m_weights_v, *WB, IR(0, WB->Height()), IR(0, WB->Width()));
-    View(*m_weights_gradient_v, *WB_D, IR(0, WB_D->Height()), IR(0, WB_D->Width()));
+    View(*m_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()));
+    View(*m_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()));
 }
 
 // template <typename Dtype>
@@ -131,10 +131,10 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
 void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  View(*m_preactivations_v, *Zs, IR(0, Zs->Height()), IR(0, cur_mini_batch_size));
-  View(*m_prev_error_signal_v, *Ds, IR(0, Ds->Height()), IR(0, cur_mini_batch_size));
-  View(*m_error_signal_v, *Ds_Temp, IR(0, Ds_Temp->Height()), IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *Acts, IR(0, Acts->Height()), IR(0, cur_mini_batch_size));
+  View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
+  View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
   View(m_activations_cost_v, Acts_Cost, IR(0, Acts_Cost.Height()), IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
@@ -149,7 +149,7 @@ void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
 
 void lbann::SoftmaxLayer::fp_linearity()
 {
-  // _Z = WB * Xs                                               -- Xs is previous layer Activations
+  // _Z = m_weights * Xs                                               -- Xs is previous layer Activations
   // ZsColMax[c,0] = max(_Z[0..numNeurons-1, c])                -- (m_mini_batch_size x 1)
   // ZsNorm[r,c] = _Z[r,c] - ZsColMax[c,0]                      -- Column-wise normalized Zs matrix: _Z[r,c] - ZsColMax[1,c]
   // ZsNormExp[r,c] = exp(ZsNorm[r,c])
@@ -281,7 +281,7 @@ DataType lbann::SoftmaxLayer::computeCost(const DistMat& Y) {
 }
 
 DataType lbann::SoftmaxLayer::WBL2norm() {
-  DataType nrm2 = Nrm2(*WB);
+  DataType nrm2 = Nrm2(*m_weights);
   return nrm2 * nrm2;
 }
 
@@ -291,7 +291,7 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 bool lbann::SoftmaxLayer::update()
 {
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
   }
   return true;
 }

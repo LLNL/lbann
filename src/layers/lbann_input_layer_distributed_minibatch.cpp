@@ -54,7 +54,7 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
     io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
   }
 
-  Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons + 1, m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, m_mini_batch_size);
 }
 
@@ -89,7 +89,7 @@ void lbann::input_layer_distributed_minibatch::fp_linearity() {
 
   comm->model_barrier();
 
-  Copy(Xs, *Acts);
+  Copy(Xs, *m_activations);
 }
 
 /**

@@ -90,14 +90,14 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     // Initialize weight-bias matrix
     // Note that the weight-bias matrix has an extra column so that it will include
     // the bias term from the previous layer's activations in the linear combination
-    Zeros(*WB, NumNeurons+1, numPrevNeurons+1);
-    if(WB->IsLocal(NumNeurons,numPrevNeurons)) {
-      WB->SetLocal(WB->LocalHeight()-1, WB->LocalWidth()-1, DataType(1));
+    Zeros(*m_weights, NumNeurons+1, numPrevNeurons+1);
+    if(m_weights->IsLocal(NumNeurons,numPrevNeurons)) {
+      m_weights->SetLocal(m_weights->LocalHeight()-1, m_weights->LocalWidth()-1, DataType(1));
     }
 
     // Initialize weights
     DistMat weights;
-    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    View(weights, *m_weights, IR(0,NumNeurons), IR(0,numPrevNeurons));
     switch(m_weight_initialization) {
     case weight_initialization::uniform:
       uniform_fill(weights, weights.Height(), weights.Width(),
@@ -138,14 +138,14 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     }
 
     // Initialize other matrices
-    Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
-    Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
-    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-    Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
-    View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
-    View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
-    Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
-    View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
+    Zeros(*m_weights_gradient, NumNeurons + 1, numPrevNeurons + 1);
+    Zeros(*m_prev_error_signal, NumNeurons + 1, m_mini_batch_size);
+    Zeros(*m_error_signal, numPrevNeurons + 1, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*m_preactivations, NumNeurons + 1, m_mini_batch_size);
+    View(WB_view, *m_weights, IR(0, m_weights->Height() - 1), IR(0, m_weights->Width()));
+    View(WB_D_view, *m_weights_gradient, IR(0, m_weights_gradient->Height() - 1), IR(0, m_weights_gradient->Width()));
+    Zeros(*m_activations, NumNeurons + 1, m_mini_batch_size);
+    View(Acts_view, *m_activations, IR(0, m_activations->Height() - 1), IR(0, m_activations->Width()));
 
 #if 0
     // Set bias row back to 1.0
@@ -163,8 +163,8 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
 #endif
 
     /// Create a view of the weights matrix
-    View(*m_weights_v, *WB, IR(0, WB->Height()), IR(0, WB->Width()));
-    View(*m_weights_gradient_v, *WB_D, IR(0, WB_D->Height()), IR(0, WB_D->Width()));
+    View(*m_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()));
+    View(*m_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()));
 }
 
 void lbann::FullyConnectedLayer::fp_linearity()
@@ -183,8 +183,8 @@ void lbann::FullyConnectedLayer::fp_linearity()
   View(X_v, X, IR(0, X.Height()), IR(0, neural_network_model->get_current_mini_batch_size()));
 
   // Apply forward prop linearity
-  Gemm(NORMAL, NORMAL, (DataType) 1., *WB, X, (DataType) 0., *Zs);
-  Copy(*Zs, *Acts);
+  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, X, (DataType) 0., *m_preactivations);
+  Copy(*m_preactivations, *m_activations);
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
@@ -218,7 +218,7 @@ DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
 }
 
 DataType lbann::FullyConnectedLayer::WBL2norm() {
-  DataType nrm2 = Nrm2(*WB);
+  DataType nrm2 = Nrm2(*m_weights);
   return nrm2 * nrm2;
 }
 
@@ -228,31 +228,31 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 bool lbann::FullyConnectedLayer::update()
 {
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
   }
   return true;
 }
 
 DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
 {
-    DistMat WB_E1(WB->Grid());
-    DistMat WB_E2(WB->Grid());
-    DistMat Zs_E1(Zs->Grid());
-    DistMat Zs_E2(Zs->Grid());
-    DistMat Acts_E1(Acts->Grid());
-    DistMat Acts_E2(Acts->Grid());
+    DistMat WB_E1(m_weights->Grid());
+    DistMat WB_E2(m_weights->Grid());
+    DistMat Zs_E1(m_preactivations->Grid());
+    DistMat Zs_E2(m_preactivations->Grid());
+    DistMat Acts_E1(m_activations->Grid());
+    DistMat Acts_E2(m_activations->Grid());
     DataType grad_diff = 0;
     DataType grad_sum = 0;
 
-    Zeros(WB_E1, WB->Height(), WB->Width());
-    Zeros(WB_E2, WB->Height(), WB->Width());
-    Zeros(Zs_E1, Zs->Height(), Zs->Width());
-    Zeros(Zs_E2, Zs->Height(), Zs->Width());
-    Zeros(Acts_E1, Acts->Height(), Acts->Width());
-    Zeros(Acts_E2, Acts->Height(), Acts->Width());
+    Zeros(WB_E1, m_weights->Height(), m_weights->Width());
+    Zeros(WB_E2, m_weights->Height(), m_weights->Width());
+    Zeros(Zs_E1, m_preactivations->Height(), m_preactivations->Width());
+    Zeros(Zs_E2, m_preactivations->Height(), m_preactivations->Width());
+    Zeros(Acts_E1, m_activations->Height(), m_activations->Width());
+    Zeros(Acts_E2, m_activations->Height(), m_activations->Width());
 
-    Copy(*WB, WB_E1);
-    Copy(*WB, WB_E2);
+    Copy(*m_weights, WB_E1);
+    Copy(*m_weights, WB_E2);
 
     DataType sum_error = 0;
     int prow = 0;
@@ -268,8 +268,8 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
       int _pcol = WB_E2.LocalCol(pcol);
       WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) - Epsilon);
     }
-    for (int row = 0; row < WB->Height(); row++) {
-        for (int col = 0; col < WB->Width(); col++) {
+    for (int row = 0; row < m_weights->Height(); row++) {
+        for (int col = 0; col < m_weights->Width(); col++) {
           //          printf("Updating %d: %d x %d\n", Index, row, col);
             if(WB_E1.IsLocal(prow, pcol)) {
               int _prow = WB_E1.LocalRow(prow);
@@ -307,12 +307,12 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
             //            this->getCost();
 
             // gradApprox(i) = J(thetaPlus(i)) - J(thetaMinus(i)) / (2*Epsilon)
-            Axpy(-1.0, *Acts, Acts_E1);
-            Axpy(-1.0, *Acts, Acts_E2);
+            Axpy(-1.0, *m_activations, Acts_E1);
+            Axpy(-1.0, *m_activations, Acts_E2);
 
             bool bad_E1 = false, bad_E2 = false;
-            for(int r = 0; r < Acts->Height(); r++) {
-              for(int c = 0; c < Acts->Width(); c++) {
+            for(int r = 0; r < m_activations->Height(); r++) {
+              for(int c = 0; c < m_activations->Width(); c++) {
                 if(Acts_E1.IsLocal(r,c)) {
                   int _r = Acts_E1.LocalRow(r);
                   int _c = Acts_E1.LocalCol(c);
@@ -341,7 +341,7 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
               if(Acts_E1.Grid().Rank() == 0) {
                 printf("Acts\n");
               }
-              Print(*Acts);
+              Print(*m_activations);
             }
             if(bad_E2) {
               if(Acts_E2.Grid().Rank() == 0) {
