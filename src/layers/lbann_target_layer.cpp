@@ -87,13 +87,6 @@ DataType lbann::target_layer::compute_cost_cross_entropy() {
 
     EntrywiseMap(*m_prev_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
 
-    // if(comm->am_world_master()) {
-    // cout << "I am about to comput the cross entropy " << endl;
-    // cout << m_activations_v->Height() << " x " << m_activations_v->Width() << endl;
-    // cout << m_prev_activations_v->Height() << " x " << m_prev_activations_v->Width() << endl;
-    // cout << m_activations_cost_v.Height() << " x " << m_activations_cost_v.Width() << endl;
-    // }
-
     Hadamard(*m_activations_v, *m_prev_activations_v, m_activations_cost_v);
     Zeros(m_minibatch_cost, m_mini_batch_size, 1); // Clear the entire array
     ColumnSum(m_activations_cost_v, m_minibatch_cost);
