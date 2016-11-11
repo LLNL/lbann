@@ -146,6 +146,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     View(WB_D_view, *m_weights_gradient, IR(0, m_weights_gradient->Height() - 1), IR(0, m_weights_gradient->Width()));
     Zeros(*m_activations, NumNeurons + 1, m_mini_batch_size);
     View(Acts_view, *m_activations, IR(0, m_activations->Height() - 1), IR(0, m_activations->Width()));
+    Zeros(*m_prev_activations, numPrevNeurons + 1, m_mini_batch_size);
 
 #if 0
     // Set bias row back to 1.0
@@ -169,37 +170,20 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
 
 void lbann::FullyConnectedLayer::fp_linearity()
 {
-  // Convert matrices to desired format
-  // DistMatrixReadProxy<DataType,DataType,MC,MR> WBProxy(*WB);
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: Store for bp step
-  // DistMatrixWriteProxy<DataType,DataType,MC,MR> ZProxy(*Zs);
-  // DistMatrixWriteProxy<DataType,DataType,MC,MR> YProxy(*Acts);
-  // DistMat& WB = WBProxy.Get();
-  DistMat& X = XProxy.Get();
-  // DistMat& Z = ZProxy.Get();
-  // DistMat& Y = YProxy.Get();
-  DistMat X_v;
-
-  View(X_v, X, IR(0, X.Height()), IR(0, neural_network_model->get_current_mini_batch_size()));
-
   // Apply forward prop linearity
-  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, X, (DataType) 0., *m_preactivations);
+  // Note that this is done on the entire matrix, regardless of if there is a partial mini-batch
+  // Given that only the last mini-batch in an epoch could be smaller, it is not necessary to operate only on the sub-matrix
+  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations, (DataType) 0., *m_preactivations);
   Copy(*m_preactivations, *m_activations);
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
-    // Convert forward and backward prop matrices to MC,MR format
-    DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: store from fp step
-    DistMat& X = XProxy.Get();
-    DistMat X_v;
-    View(X_v, X, IR(0, X.Height()), IR(0, neural_network_model->get_current_mini_batch_size()));
-
     // Compute the partial delta update for the next lower layer
     Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
     // Compute update for weights
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-         X_v, (DataType) 0., *m_weights_gradient_v);
+         *m_prev_activations_v, (DataType) 0., *m_weights_gradient_v);
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {

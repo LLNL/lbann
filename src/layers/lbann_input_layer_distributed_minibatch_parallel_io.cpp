@@ -43,6 +43,7 @@ lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_mi
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
+  input_layer::setup(num_prev_neurons);
   if(io_layer::m_data_sets_span_models) {
     int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
     int base_offset = Layer::comm->get_rank_in_model() * Layer::comm->get_num_models() * Layer::m_mini_batch_size;

@@ -138,23 +138,25 @@ class model;
     ElMat *m_weights;            /// Weight-bias matrix Weight and Bias Set ((# neurons + 1) x (# previous layer's neurons + 1))
     ElMat *m_weights_gradient;   /// Gradient w.r.t. weight-bias matrix Weights and Bias Gradient ((# neurons + 1) x (# previous layer's neurons + 1))
     ElMat *m_preactivations;     /// Output of forward pass linear transformation Zs ((# neurons + 1) x mini-batch size)
-    ElMat *m_prev_error_signal;  // Error signal from "previous" layer Deltas ((# neurons + 1) x mini-batch size)
+    ElMat *m_prev_error_signal;  // Local copy of the error signal from "previous" layer ((# neurons + 1) x mini-batch size)
 
     ElMat *m_error_signal;       // Error signal to "next" layer Temporary deltas for computation ((# neurons + 1) x mini-batch size)
     ElMat *m_activations;        // Activations ((# neurons + 1) x mini-batch size)
+    ElMat *m_prev_activations;   // Local copy of the activations from the "previous" layer ((# previous layer's neurons + 1) x mini-batch size)
 
     /// Create a view of each matrix so that it can accomodate partial mini-batches
-    ElMat *m_weights_v;            /// WB
-    ElMat *m_weights_gradient_v;   /// WB_D
-    ElMat *m_preactivations_v;     /// Zs
-    ElMat *m_prev_error_signal_v;  /// Ds
-    ElMat *m_error_signal_v;       /// Ds_Temp
-    ElMat *m_activations_v;        /// Acts
+    ElMat *m_weights_v;
+    ElMat *m_weights_gradient_v;
+    ElMat *m_preactivations_v;
+    ElMat *m_prev_error_signal_v;
+    ElMat *m_error_signal_v;
+    ElMat *m_activations_v;
+    ElMat *m_prev_activations_v;
 
     Optimizer *optimizer;
 
-    ElMat *fp_input;
-    ElMat *bp_input;
+    ElMat *fp_input;            /// Pointer to input for the forward propagation - no local storage
+    ElMat *bp_input;            /// Pointer to the input for the backward propagation - no local storage
 
     lbann_comm* comm;
     model* neural_network_model;

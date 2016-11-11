@@ -30,10 +30,7 @@
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-//#include "lbann/layers/lbann_layer_fully_connected.hpp"
 #include <string>
-
-
 
 namespace lbann
 {
@@ -50,23 +47,9 @@ namespace lbann
                    Optimizer *optimizer);
         void setup(int numPrevNeurons);
         bool update();
-      void summarize(lbann_summary& summarizer, int64_t step);
-      void epoch_print() const;
-      void epoch_reset();
         DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
         //        void updateMB(const float LearnRate);
-        DataType computeCost(const DistMat& Y);
-        //        DataType computeCost(CircMat& Output);
         DataType WBL2norm();
-
-        bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
-        bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
-
-        bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
-        bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
-
-        void resetCost();
-        DataType avgCost() const;
 
     protected:
       void fp_set_std_matrix_view();
@@ -79,18 +62,12 @@ namespace lbann
         DataType   WBL2NormSum;
 
     private:
-        DataType aggregate_cost;   // if this type is changed, update checkpoint code
-        long num_backprop_steps; // if this type is changed, update checkpoint code
         weight_initialization m_weight_initialization;
         ColSumMat ZsColMax;
         ColSumMat ZsNormExpSum;
         ColSumMat norms;
         StarMat ZsColMaxStar;
         StarMat ZsNormExpSumStar;
-        DistMat Acts_Cost;
-        DistMat m_activations_cost_v;
-      /** Colume-wise sum of the costs of a minibatch. */
-      ColSumMat m_minibatch_cost;
     };
 }
 

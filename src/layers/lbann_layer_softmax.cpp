@@ -47,14 +47,10 @@ lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
      ZsNormExpSum(comm->get_model_grid()),
      norms(comm->get_model_grid()),
      ZsColMaxStar(comm->get_model_grid()),
-     ZsNormExpSumStar(comm->get_model_grid()),
-     Acts_Cost(comm->get_model_grid()),
-     m_minibatch_cost(comm->get_model_grid())
+     ZsNormExpSumStar(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
-    aggregate_cost = 0.0;
-    num_backprop_steps = 0;
     WBL2NormSum = 0.0;
 }
 
@@ -115,8 +111,7 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     Zeros(*m_error_signal, numPrevNeurons + 1, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*m_preactivations, NumNeurons, m_mini_batch_size);
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(Acts_Cost, NumNeurons, m_mini_batch_size);
-    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
+    Zeros(*m_prev_activations, numPrevNeurons + 1, m_mini_batch_size);
 
     /// Create a view of the weights matrix
     View(*m_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()));
@@ -131,11 +126,11 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
 void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
+  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
   View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
   View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
   View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
-  View(m_activations_cost_v, Acts_Cost, IR(0, Acts_Cost.Height()), IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
@@ -156,18 +151,8 @@ void lbann::SoftmaxLayer::fp_linearity()
   // ZsNormExpSum[c,0] = sum(ZsNormExp[0..numNeurons-1, c])     -- Column-wise sum over normalized, exponentiated _Z
   // _Y[r,c] = ZsNormExp[r,c] / ZsNormExpSum[c,0]               -- exp(norm(_Z[r,c])) = Sum(exp(norm(Zs[r,c])))
 
-  // Convert forward prop matrix to MC,MR format
-  // TODO: store this matrix for back prop
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-  DistMat X_v;
-
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
-
   // Apply linear transform
-  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights_v, X_v, (DataType) 0.0, *m_preactivations_v);
+  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights_v, *m_prev_activations_v, (DataType) 0.0, *m_preactivations_v);
 
   // For each minibatch (column) find the maximimum value
   Zeros(ZsColMax, m_mini_batch_size, 1); // Clear the entire matrix
@@ -226,58 +211,12 @@ void lbann::SoftmaxLayer::fp_linearity()
 
 void lbann::SoftmaxLayer::bp_linearity()
 {
-
-    // Convert forward and backward prop matrices to MC,MR formats
-    DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*bp_input);
-    DistMat& DsNext = DsNextProxy.Get();
-    DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-    DistMat& X = XProxy.Get();
-    DistMat X_v;
-    DistMat DsNext_v;
-    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-    View(X_v, X, IR(0, X.Height()), IR(0, cur_mini_batch_size));
-    View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, cur_mini_batch_size));
-
-    // delta = (activation - y)
-    // delta_w = delta * activation_prev^T
-    Copy(*m_activations_v, *m_prev_error_signal_v);
-    Axpy(-1., DsNext_v, *m_prev_error_signal_v); // Per-neuron error
-
-    // Compute the partial delta update for the next lower layer
+    // Compute the partial delta update for the next lower layer (delta * activation_prev^T)
     Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
-
-    if (m_execution_mode == execution_mode::training) {
-      DataType avg_error = this->computeCost(DsNext_v);
-      aggregate_cost += avg_error;
-      num_backprop_steps++;
-    }
 
     // by divide mini-batch size
     Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-         X_v, (DataType) 0., *m_weights_gradient_v);
-}
-
-DataType lbann::SoftmaxLayer::computeCost(const DistMat& Y) {
-    // Compute the cost function
-    // cost=-1/m*(sum(sum(groundTruth.*log(a3))))
-    DataType avg_error = 0.0, total_error = 0.0;
-    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-    EntrywiseMap(*m_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);}));
-
-    Hadamard(Y, *m_activations_v, m_activations_cost_v);
-    Zeros(m_minibatch_cost, m_mini_batch_size, 1); // Clear the entire array
-    ColumnSum(m_activations_cost_v, m_minibatch_cost);
-
-    // Sum the local, total error
-    const Int local_height = m_minibatch_cost.LocalHeight();
-    for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost.GetLocal(r, 0);
-    }
-    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
-
-    avg_error = -1.0 * total_error / cur_mini_batch_size;
-    return avg_error;
+         *m_prev_activations_v, (DataType) 0., *m_weights_gradient_v);
 }
 
 DataType lbann::SoftmaxLayer::WBL2norm() {
@@ -296,150 +235,7 @@ bool lbann::SoftmaxLayer::update()
   return true;
 }
 
-void lbann::SoftmaxLayer::summarize(lbann_summary& summarizer, int64_t step) {
-  Layer::summarize(summarizer, step);
-  std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
-    + "/SoftmaxCost";
-  summarizer.reduce_scalar(tag, avgCost(), step);
-}
-
-void lbann::SoftmaxLayer::epoch_print() const {
-  double avg_cost = avgCost();
-  if (comm->am_world_master()) {
-    std::vector<double> avg_costs(comm->get_num_models());
-    comm->intermodel_gather(avg_cost, avg_costs);
-    for (size_t i = 0; i < avg_costs.size(); ++i) {
-      std::cout << "Model " << i << " average softmax cost: " << avg_costs[i] <<
-        std::endl;
-    }
-  } else {
-    comm->intermodel_gather(avg_cost, comm->get_world_master());
-  }
-}
-
-void lbann::SoftmaxLayer::epoch_reset() {
-  Layer::epoch_reset();
-  resetCost();
-}
-
 DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
 {
   return 0.0;
-}
-
-void lbann::SoftmaxLayer::resetCost() {
-  aggregate_cost = 0.0;
-  num_backprop_steps = 0;
-}
-
-DataType lbann::SoftmaxLayer::avgCost() const {
-  return aggregate_cost / num_backprop_steps;
-}
-
-bool lbann::SoftmaxLayer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
-  ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (write_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += write_rc;
-
-  write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (write_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += write_rc;
-
-  return Layer::saveToCheckpoint(fd, filename, bytes);
-}
-
-bool lbann::SoftmaxLayer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
-  ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (read_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += read_rc;
-
-  read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (read_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += read_rc;
-
-  return Layer::loadFromCheckpoint(fd, filename, bytes);
-}
-
-bool lbann::SoftmaxLayer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
-{
-  // get our rank
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  // rank 0 writes softmax cost to file
-  if (rank == 0) {
-      // define the filename
-      char file[1024];
-      sprintf(file, "%s/SoftmaxCost_L%d", dir, Index);
-
-      // open the file
-      int fd = lbann::openwrite(file);
-      if (fd != -1 ) {
-          ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-          if (write_rc != sizeof(aggregate_cost)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-          if (write_rc != sizeof(num_backprop_steps)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          // close the file
-          lbann::closewrite(fd, file);
-      }
-  }
-
-  return Layer::saveToCheckpointShared(dir, bytes);
-}
-
-bool lbann::SoftmaxLayer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
-{
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // rank 0 writes softmax cost to file
-    if (rank == 0) {
-        // define the filename
-        char file[1024];
-        sprintf(file, "%s/SoftmaxCost_L%d", dir, Index);
-
-        // open the file
-        int fd = lbann::openread(file);
-        if (fd != -1 ) {
-            ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-            if (read_rc != sizeof(aggregate_cost)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-            if (read_rc != sizeof(num_backprop_steps)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            // close the file
-            lbann::closeread(fd, file);
-        }
-    }
-
-    // get values from rank 0
-    MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-
-    return Layer::loadFromCheckpointShared(dir, bytes);
 }

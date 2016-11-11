@@ -68,6 +68,8 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
 DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WBL2NormSum) {
   DataReader *data_reader = target_layer::select_data_reader();
 
+  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
+
   if (comm->get_rank_in_model() == m_root) {
     Zero(Y_local);
     data_reader->fetch_label(Y_local);
@@ -111,8 +113,17 @@ DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WB
 }
 
 void lbann::target_layer_distributed_minibatch::backProp() {
+  /// Compute the error between the target values and the previous layer's activations
   /// Copy the results to the m_error_signal variable for access by the next lower layer
-  Copy(Ys, *m_error_signal);
+  Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
+  Axpy(-1., Ys, *m_error_signal); // Per-neuron error
+  Copy(Ys, *m_activations);
+
+  if (m_execution_mode == execution_mode::training) {
+    DataType avg_error = this->compute_cost_cross_entropy();
+    aggregate_cost += avg_error;
+    num_backprop_steps++;
+  }
 }
 
 /**

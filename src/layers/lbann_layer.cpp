@@ -59,6 +59,7 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_prev_error_signal = new DistMat(comm->get_model_grid());
     m_error_signal = new DistMat(comm->get_model_grid());
     m_activations = new DistMat(comm->get_model_grid());
+    m_prev_activations = new DistMat(comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
     m_weights_v = new DistMat(comm->get_model_grid());
@@ -67,6 +68,7 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_prev_error_signal_v = new DistMat(comm->get_model_grid());
     m_error_signal_v = new DistMat(comm->get_model_grid());
     m_activations_v = new DistMat(comm->get_model_grid());
+    m_prev_activations_v = new DistMat(comm->get_model_grid());
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
@@ -81,16 +83,24 @@ lbann::Layer::~Layer() {
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
+  delete m_prev_activations;
   delete m_weights_v;
   delete m_weights_gradient_v;
   delete m_preactivations_v;
   delete m_prev_error_signal_v;
   delete m_error_signal_v;
   delete m_activations_v;
+  delete m_prev_activations_v;
 }
 
 DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   double fp_start = get_time();
+
+  // Get incoming activations and convert matrix distribution if necessary
+  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
+  if(fp_input != NULL) { // Input layers will not have a valid fp_input
+    *m_prev_activations = *fp_input;
+  }
   // Set the view for all of the standard matrices based on the
   // current mini-batch size
   fp_set_std_matrix_view();
@@ -112,7 +122,10 @@ void lbann::Layer::backProp() {
   double bp_start = get_time();
 
   // Get incoming loss and convert matrix distribution if necessary
-  *m_prev_error_signal = *bp_input;
+  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
+  if(bp_input != NULL) { // Target layers will not have a valid bp_input
+    *m_prev_error_signal = *bp_input;
+  }
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
@@ -127,20 +140,20 @@ void lbann::Layer::backProp() {
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/m_weights/";
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights/";
   // TODO: implement summarizer functions for other matrix distributions
   const ElMat& wb = get_weights_biases();
   summarizer.reduce_mean(prefix + "mean", wb, step);
   summarizer.reduce_min(prefix + "min", wb, step);
   summarizer.reduce_max(prefix + "max", wb, step);
   summarizer.reduce_stdev(prefix + "stdev", wb, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/m_weights_gradient/";
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights_gradient/";
   const ElMat& wb_d = get_weights_biases_gradient();
   summarizer.reduce_mean(prefix + "mean", wb_d, step);
   summarizer.reduce_min(prefix + "min", wb_d, step);
   summarizer.reduce_max(prefix + "max", wb_d, step);
   summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/m_activations/";
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/activations/";
   const ElMat& acts = get_activations();
   summarizer.reduce_mean(prefix + "mean", acts, step);
   summarizer.reduce_min(prefix + "min", acts, step);
@@ -629,8 +642,13 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 void lbann::Layer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
+  if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
+    View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
+  }
   View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
-  View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
+    View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  }
   View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, IR(0, m_activations->Height()-1), IR(0, cur_mini_batch_size)); /// Setup a view with no bias term
 
