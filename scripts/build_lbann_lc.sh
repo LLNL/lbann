@@ -119,6 +119,7 @@ while :; do
     --doc)
       # Generate documentation
       GEN_DOC=1
+      ;;
     -i|--install-lbann)
       INSTALL_LBANN=1
       ;;
