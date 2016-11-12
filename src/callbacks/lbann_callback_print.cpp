@@ -63,7 +63,7 @@ void lbann_callback_print::on_epoch_end(model* m) {
         std::cout << "Model " << i;
         std::cout << " @" << m->get_cur_step() << " steps";
         std::cout << " Training accuracy: " << train_accs[i] << "%";
-        std::cout << " Validation accuracy: " << validate_accs[i] << "%";
+        std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation accuracy: " << validate_accs[i] << "%";
         std::cout << std::endl;
       }
     } else {
@@ -84,7 +84,7 @@ void lbann_callback_print::on_test_end(model* m) {
       std::vector<DataType> accs(comm->get_num_models());
       comm->intermodel_gather(test_acc, accs);
       for (size_t i = 0; i < accs.size(); ++i) {
-        std::cout << "Model " << i << " external validation accuracy: ";
+        std::cout << "Model " << i << " @" << m->get_cur_testing_step() << " testing steps external validation accuracy: ";
         std::cout << accs[i] << "%" << std::endl;
       }
     } else {

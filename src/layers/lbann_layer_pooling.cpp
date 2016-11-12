@@ -139,15 +139,12 @@ void pooling_layer::setup(const int num_prev_neurons)
 
 }
 
-void lbann::pooling_layer::fp_linearity(ElMat& _WB,
-                                        ElMat& _X,
-                                        ElMat& _Z,
-                                        ElMat& _Y) {
+void lbann::pooling_layer::fp_linearity() {
   
   // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(_X);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(_Z);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(_Y);
+  DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(*fp_input);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*Zs);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*Acts);
   StarVCMat& X = XProxy.Get();
   StarVCMat& Z = ZProxy.Get();
   StarVCMat& Y = YProxy.Get();

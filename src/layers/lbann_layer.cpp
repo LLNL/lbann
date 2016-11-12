@@ -29,6 +29,7 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/regularization/lbann_regularizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -49,6 +50,7 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_execution_mode = execution_mode::training;
     fp_input = NULL;
     bp_input = NULL;
+    neural_network_model = NULL;
 
     // Most layers use standard elemental matrix distribution
     WB = new DistMat(comm->get_model_grid());
@@ -57,6 +59,14 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     Ds = new DistMat(comm->get_model_grid());
     Ds_Temp = new DistMat(comm->get_model_grid());
     Acts = new DistMat(comm->get_model_grid());
+
+    /// Instantiate these view objects but do not allocate data for them
+    m_weights_v = new DistMat(comm->get_model_grid());
+    m_weights_gradient_v = new DistMat(comm->get_model_grid());
+    m_preactivations_v = new DistMat(comm->get_model_grid());
+    m_prev_error_signal_v = new DistMat(comm->get_model_grid());
+    m_error_signal_v = new DistMat(comm->get_model_grid());
+    m_activations_v = new DistMat(comm->get_model_grid());
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
@@ -71,14 +81,23 @@ lbann::Layer::~Layer() {
   delete Ds;
   delete Ds_Temp;
   delete Acts;
+  delete m_weights_v;
+  delete m_weights_gradient_v;
+  delete m_preactivations_v;
+  delete m_prev_error_signal_v;
+  delete m_error_signal_v;
+  delete m_activations_v;
 }
 
 DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   double fp_start = get_time();
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  fp_set_std_matrix_view();
   // Apply connection regularization. (e.g. DropConnect).
   for (regularizer* reg : regularizers) reg->fp_connections();
   // Layer layer's linearity.
-  fp_linearity(*WB, *fp_input, *Zs, *Acts);
+  fp_linearity();
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
   // Apply activation function/nonlinearity.
@@ -607,10 +626,27 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
     return true;
 }
 
-void lbann::Layer::fp_nonlinearity() {
+void lbann::Layer::fp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
+  View(*m_preactivations_v, *Zs, IR(0, Zs->Height()), IR(0, cur_mini_batch_size));
+  View(*m_prev_error_signal_v, *Ds, IR(0, Ds->Height()), IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *Ds_Temp, IR(0, Ds_Temp->Height()), IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *Acts, IR(0, Acts->Height()-1), IR(0, cur_mini_batch_size)); /// Setup a view with no bias term
+
+  // Update the layer's effective mini-batch size so it averages properly.
+  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
+    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
+    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+    set_effective_minibatch_size(total_mini_batch_size);
+  }else {
+    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  }
+}
+
+void lbann::Layer::fp_nonlinearity() {
   // Forward propagation
-  m_activation_fn->forwardProp(*Acts);
+  m_activation_fn->forwardProp(*m_activations_v);
 
   // Set bias row back to 1.0
   const Int local_row = Acts->LocalHeight() - 1;
@@ -620,15 +656,14 @@ void lbann::Layer::fp_nonlinearity() {
       Acts->SetLocal(local_row, col, DataType(1));
     }
   }
-
 }
 
 void lbann::Layer::bp_nonlinearity() {
 
   // Backward propagation
-  m_activation_fn->backwardProp(*Zs);
+  m_activation_fn->backwardProp(*m_preactivations_v);
   if (m_activation_type != activation_type::ID) {
-    Hadamard(*Ds, *Zs, *Ds);
+    Hadamard(*m_prev_error_signal_v, *m_preactivations_v, *m_prev_error_signal_v);
   }
 
   // Set bias row back to 0.0
@@ -639,5 +674,4 @@ void lbann::Layer::bp_nonlinearity() {
       Ds->SetLocal(local_row, col, DataType(0));
     }
   }
-  
 }

@@ -62,6 +62,7 @@
 #include "lbann/callbacks/lbann_callback_summary.hpp"
 #include "lbann/callbacks/lbann_callback_timer.hpp"
 #include "lbann/callbacks/lbann_callback_learning_rate.hpp"
+#include "lbann/callbacks/lbann_callback_debug.hpp"
 
 /// Regularizers
 #include "lbann/regularization/lbann_dropout.hpp"
@@ -69,7 +70,7 @@
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_summary.hpp"
-#include "lbann_params.hpp"
+#include "lbann/lbann_params.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 
 #endif // LBANN_HPP_INCLUDED
