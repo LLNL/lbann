@@ -98,10 +98,9 @@ public:
    * Unquantize a matrix.
    * @param qmat The matrix to unquantize.
    * @param mat The output unquantized matrix.
-   * @param apply Whether to add or replace existing entries.
    */
-  void unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply = false);
-  void unquantize(const QuantizedMatrix& qmat, DistMat& mat, bool apply = false);
+  void unquantize(const QuantizedMatrix& qmat, Mat& mat);
+  void unquantize(const QuantizedMatrix& qmat, DistMat& mat);
   /**
    * Do a sum reduction of mat over comm's inter-model communicator, with all
    * communication being quantized. im_querror is a separate quantization error
@@ -328,6 +327,9 @@ private:
   inline int get_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
+
+  /** Variant of unquantize that adds its entries. */
+  void unquantize_add(const QuantizedMatrix& qmat, Mat& mat);
 
   /**
    * Do threshold unquantization from arbitrary locations, adding the

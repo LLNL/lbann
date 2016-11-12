@@ -138,7 +138,7 @@ void lbann_quantizer::quantize(const DistMat& mat, QuantizedMatrix& qmat,
   quantize(mat.LockedMatrix(), qmat, qerror, sample);
 }
 
-void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool apply) {
+void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat) {
   const Int width = mat.Width();
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
@@ -163,20 +163,47 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat, bool app
         if (row >= height) {
           break;
         }
-        if (apply) {
-          mat_buf[row + col * ldim] += (q >> bit) & 0x1 ? avg_pos : avg_neg;
-        } else {
-          mat_buf[row + col * ldim] = (q >> bit) & 0x1 ? avg_pos : avg_neg;
-        }
+        mat_buf[row + col * ldim] = (q >> bit) & 0x1 ? avg_pos : avg_neg;
       }
       ++qrow;
     }
   }
 }
 
-void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, DistMat& mat,
-                                 bool apply) {
-  unquantize(qmat, mat.Matrix(), apply);
+void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, DistMat& mat) {
+  unquantize(qmat, mat.Matrix());
+}
+
+void lbann_quantizer::unquantize_add(const QuantizedMatrix& qmat, Mat& mat) {
+  const Int width = mat.Width();
+  const Int height = mat.Height();
+  const Int ldim = mat.LDim();
+  const Int qmat_ldim = qmat.LDim();
+  const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
+  DataType* __restrict__ mat_buf = mat.Buffer();
+  #pragma omp parallel for schedule(static)
+  for (int col = 0; col < width; ++col) {
+    int qrow = 2;
+    // Extract the averages.
+    qtype tmp = qmat.Get(0, col);
+    DataType avg_pos;
+    memcpy(&avg_pos, &tmp, sizeof(avg_pos));
+    tmp = qmat.Get(1, col);
+    DataType avg_neg;
+    memcpy(&avg_neg, &tmp, sizeof(avg_neg));
+    // Unquantize this column.
+    for (int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
+      uqtype q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
+      for (size_t bit = 0; bit < NUM_BITS; ++bit) {
+        int row = row_chunk + bit;
+        if (row >= height) {
+          break;
+        }
+        mat_buf[row + col * ldim] += (q >> bit) & 0x1 ? avg_pos : avg_neg;
+      }
+      ++qrow;
+    }
+  }
 }
 
 void lbann_quantizer::intermodel_sum_quantized(
@@ -207,7 +234,7 @@ void lbann_quantizer::intermodel_sum_quantized(
     };
   auto rs_recv_trans = 
     [&rs_recv, this] (qtype*, Mat& accum) {
-      unquantize(rs_recv, accum, true);
+      unquantize_add(rs_recv, accum);
     };
   intermodel_ring_reduce_scatter<qtype>(comm, mat, false, rs_send_trans,
                                         rs_get_recv_buf, rs_recv_trans);
