@@ -131,7 +131,7 @@ void lbann::target_layer_unsupervised::backProp() {
   /// And for reconstruction_cost
   //@todo use Acts for input layer and fp_input for others
   //if(m_original_layer->Index == 0) m_original_layer->fp_input = m_original_layer->Acts;
-  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->Acts);
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations_v);
   DistMat& DsNext = DsNextProxy.Get();
   DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
   DistMat& X = XProxy.Get();
