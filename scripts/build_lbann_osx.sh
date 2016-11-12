@@ -32,6 +32,10 @@ brew_check_install graphviz   # Doxygen dependency
 brew_check_install metis      # Elemental dependency
 brew_check_install scalapack  # Elemental dependency
 
+################################################################
+# Default options
+################################################################
+
 # Parameters
 CMAKE_C_COMPILER=/usr/local/bin/clang-omp
 CMAKE_CXX_COMPILER=/usr/local/bin/clang-omp++
@@ -43,8 +47,84 @@ Elemental_DIR=
 OpenCV_DIR=/usr/local/share/OpenCV
 CUDA_TOOLKIT_ROOT_DIR=
 cuDNN_DIR=
-VERBOSE=1
+CLEAN_BUILD=0
+VERBOSE=0
+CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(sysctl -n hw.ncpu) + 1))
+INSTALL_LBANN=0
+
+################################################################
+# Help message
+################################################################
+
+function help_message {
+  local SCRIPT=$(basename ${0})
+  local N=$(tput sgr0)    # Normal text
+  local C=$(tput setf 4)  # Colored text
+cat << EOF
+Build LBANN on an LLNL LC system.
+Can be called anywhere in the LBANN project tree.
+Usage: ${SCRIPT} [options]
+Options:
+  ${C}--help${N}                  Display this help message and exit.
+  ${C}--verbose${N}               Verbose output.
+  ${C}--debug${N}                 Build with debug flag.
+  ${C}--clean-build${N}           Clean build directory before building.
+  ${C}--make-processes${N} <val>  Number of parallel processes for make.
+  ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
+EOF
+}
+
+################################################################
+# Parse command-line arguments
+################################################################
+
+while :; do
+  case ${1} in
+    -h|--help)
+      # Help message
+      help_message
+      exit 0
+      ;;
+    -v|--verbose)
+      # Verbose output
+      VERBOSE=1
+      CMAKE_INSTALL_MESSAGE=ALWAYS
+      ;;
+    -d|--debug)
+      # Debug mode
+      BUILD_TYPE=Debug
+      ;;
+    --clean-build|--build-clean)
+      # Clean build directory
+      CLEAN_BUILD=1
+      ;;
+    -j|--make-processes)
+      if [ -n "${2}" ]; then
+        MAKE_NUM_PROCESSES=${2}
+      else
+        echo "\"${1}\" option requires a non-empty option argument" >&2
+        exit 1
+      fi
+      ;;
+    -i|--install-lbann)
+      INSTALL_LBANN=1
+      ;;
+    -?*)
+      # Unknown option
+      echo "Unknown option (${1})" >&2
+      exit 1
+      ;;
+    *)
+      # Break loop if there are no more options
+      break
+  esac
+  shift
+done
+
+################################################################
+# Initialize variables
+################################################################
 
 # Build and install directories
 ROOT_DIR=$(git rev-parse --show-toplevel)
@@ -53,17 +133,28 @@ INSTALL_DIR=${BUILD_DIR}
 mkdir -p ${BUILD_DIR}
 mkdir -p ${INSTALL_DIR}
 
+
+################################################################
+# Build LBANN
+################################################################
+
 # Work in build directory
 pushd ${BUILD_DIR}
 
-  # Clear build directory
-  rm -rf *
+  # Clean up build directory
+  if [ ${CLEAN_BUILD} -ne 0 ]; then
+    CLEAN_COMMAND="rm -rf ${BUILD_DIR}/*"
+    if [ ${VERBOSE} -ne 0 ]; then
+      echo "${CLEAN_COMMAND}"
+    fi
+    ${CLEAN_COMMAND}
+  fi
 
   # Configure build with CMake
   CONFIGURE_COMMAND=$(cat << EOF
 cmake \
 -D CMAKE_BUILD_TYPE=Release \
--D CMAKE_INSTALL_MESSAGE=LAZY \
+-D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
@@ -106,16 +197,18 @@ EOF
   fi
 
   # Install LBANN with make
-  INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${INSTALL_COMMAND}"
-  fi
-  ${INSTALL_COMMAND}
-  if [ $? -ne 0 ] ; then
-    echo "--------------------"
-    echo "MAKE INSTALL FAILED"
-    echo "--------------------"
-    exit 1
+  if [ ${INSTALL_LBANN} -ne 0 ]; then
+      INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+      if [ ${VERBOSE} -ne 0 ]; then
+          echo "${INSTALL_COMMAND}"
+      fi
+      ${INSTALL_COMMAND}
+      if [ $? -ne 0 ] ; then
+          echo "--------------------"
+          echo "MAKE INSTALL FAILED"
+          echo "--------------------"
+          exit 1
+      fi
   fi
 
   # Generate documentation with make

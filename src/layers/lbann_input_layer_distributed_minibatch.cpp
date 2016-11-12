@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_input_layer_distributed_minibatch.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,18 +46,19 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lban
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
   if(io_layer::m_data_sets_span_models) {
-    io_layer::setup_data_readers(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
-                                 Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+    io_layer::setup_data_readers_for_training(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
+                                              Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+    io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
   }else {
-    io_layer::setup_data_readers(0, m_mini_batch_size);
+    io_layer::setup_data_readers_for_training(0, m_mini_batch_size);
+    io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
   }
 
   Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
   Zeros(X_local, NumNeurons + 1, m_mini_batch_size);
 }
 
-void lbann::input_layer_distributed_minibatch::fp_linearity(
-  ElMat&, ElMat&, ElMat&, ElMat&) {
+void lbann::input_layer_distributed_minibatch::fp_linearity() {
   DataReader *data_reader = input_layer::select_data_reader();
   int num_samples_in_batch = 0;
 
@@ -74,6 +76,10 @@ void lbann::input_layer_distributed_minibatch::fp_linearity(
       X_local.Set(linear_data_size, n, 1);
     }
   }
+
+  /// Let each rank know this size of the current mini-batch 
+  /// Note that this field has to be updated before distributing the data
+  neural_network_model->set_current_mini_batch_size(Layer::comm->model_broadcast(m_root, num_samples_in_batch));
 
   if (comm->get_rank_in_model() == m_root) {
     CopyFromRoot(X_local, Xs);

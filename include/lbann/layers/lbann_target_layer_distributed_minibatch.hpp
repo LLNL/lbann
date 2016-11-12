@@ -46,7 +46,7 @@ namespace lbann
     Mat Y_local;
     CircMat Ys;
   protected:
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
+    void fp_linearity() {}
     void bp_linearity() {}
   };
 }

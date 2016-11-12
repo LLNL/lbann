@@ -26,6 +26,7 @@
 
 #include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,14 +45,20 @@ lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_mi
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
   if(io_layer::m_data_sets_span_models) {
     int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
-    int model_offset = Layer::comm->get_model_rank() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
-    //    cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << (Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size) << endl;
-    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 stride,
-                                 Layer::comm->get_model_rank() * m_num_parallel_readers_training * Layer::m_mini_batch_size);
+    int base_offset = Layer::comm->get_rank_in_model() * Layer::comm->get_num_models() * Layer::m_mini_batch_size;
+    int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
+    //cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
+    io_layer::setup_data_readers_for_training(base_offset,
+                                              stride,
+                                              model_offset);
+    /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
+    io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }else {
-    io_layer::setup_data_readers(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
+    io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                              m_num_parallel_readers_training * Layer::m_mini_batch_size);
+    io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
+                                                m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
   Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
@@ -62,13 +69,19 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
   m_num_data_per_epoch = 0;
 }
 
-void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity(
-  ElMat&, ElMat&, ElMat&, ElMat&) {
+void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
   DataReader *data_reader = input_layer::select_data_reader();
   int num_parallel_readers = get_num_parallel_readers();
 
   int num_samples_in_batch = fetch_to_local_matrix(X_local);
-  input_layer::update_num_samples_processed(num_samples_in_batch);
+  if(is_current_root()) {
+    /// Only update the number of samples processed by this parallel reader, when it is the current root
+    input_layer::update_num_samples_processed(num_samples_in_batch);
+  }
+
+  /// Let each rank know this size of the current mini-batch 
+  /// Note that this field has to be updated before distributing the data
+  neural_network_model->set_current_mini_batch_size(Layer::comm->model_broadcast(m_root, num_samples_in_batch));
 
   distribute_from_local_matrix(X_local, Xs);
 

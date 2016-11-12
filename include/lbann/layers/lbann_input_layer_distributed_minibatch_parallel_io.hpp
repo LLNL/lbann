@@ -51,7 +51,7 @@ namespace lbann
     CircMat Xs; /** Distributed matrix used to stage local data to layer output */
   protected:
     /** Handle forward propagation (arguments are unused). */
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&);
+    void fp_linearity();
   };
 }
 

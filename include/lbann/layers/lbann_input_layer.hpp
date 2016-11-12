@@ -36,6 +36,9 @@ namespace lbann
     input_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
     DistMat *bp_output();
 
+    /** No setting the standard view of the matrix -- it defines the standard view */
+    void fp_set_std_matrix_view() {}
+
     /** No non-linearity */
     void fp_nonlinearity() {}
     /** No non-linearity */

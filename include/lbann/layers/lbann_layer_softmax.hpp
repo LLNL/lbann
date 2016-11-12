@@ -69,7 +69,8 @@ namespace lbann
         DataType avgCost() const;
 
     protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
+      void fp_set_std_matrix_view();
+      void fp_linearity();
       void bp_linearity();
       void fp_nonlinearity() {}
       void bp_nonlinearity() {}
@@ -87,6 +88,7 @@ namespace lbann
         StarMat ZsColMaxStar;
         StarMat ZsNormExpSumStar;
         DistMat Acts_Cost;
+        DistMat m_activations_cost_v;
       /** Colume-wise sum of the costs of a minibatch. */
       ColSumMat m_minibatch_cost;
     };

@@ -89,6 +89,19 @@ public:
   /** Called when a layer ends backward propagation. */
   virtual void on_backward_prop_end(model* m, Layer* l) {}
 
+  /** Called at the beginning of a (mini-)batch evaluation (validation / testing). */
+  virtual void on_batch_evaluate_begin(model* m) {}
+  /** Called at the end of a (mini-)batch evaluation (validation / testing). */
+  virtual void on_batch_evaluate_end(model* m) {}
+  /** Called when a model begins forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_begin(model* m) {}
+  /** Called when a layer begins forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_begin(model* m, Layer* l) {}
+  /** Called when a model ends forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_end(model* m) {}
+  /** Called when a layer ends forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_end(model* m, Layer* l) {}
+
   /** Batch methods should once every this many steps. */
   const int batch_interval;
 protected:
