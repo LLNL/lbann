@@ -67,6 +67,14 @@ namespace lbann
 
       const weight_initialization m_weight_initialization;
 
+      /// Views of the weight matrix that allow you to separate activation weights from bias weights
+      DistMat m_activation_weights_v;
+      DistMat m_bias_weights_v;
+      DistMat m_activation_weights_gradient_v;
+      DistMat m_bias_weights_gradient_v;
+      DistMat m_bias_bp_t;
+      DataType m_bias_term;
+
       /** View of the WB matrix, except for the bottom row. */
       DistMat WB_view;
       /** View of the WB_D matrix, except for the bottom row. */

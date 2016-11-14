@@ -78,7 +78,9 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
   Zeros(m_max_index, Layer::m_mini_batch_size, 1);
   Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1);
-  Zeros(*m_prev_activations, num_prev_neurons + 1, m_mini_batch_size);
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_preactivations, NumNeurons, m_mini_batch_size); // preactivations - weighted sums
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
 
   m_local_data_valid = false;
   m_local_reader_done = false;

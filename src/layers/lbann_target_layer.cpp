@@ -52,6 +52,7 @@ void lbann::target_layer::setup(int num_prev_neurons) {
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(m_activations_cost, NumNeurons, m_mini_batch_size);
     Zeros(m_minibatch_cost, m_mini_batch_size, 1);
+    Zeros(*m_preactivations, NumNeurons, m_mini_batch_size); // preactivations - weighted sums
 }
 
 

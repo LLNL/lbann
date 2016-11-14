@@ -57,11 +57,11 @@ lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
 void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
   Layer::setup(numPrevNeurons);
     if(optimizer != NULL) {
-      optimizer->setup(numPrevNeurons+1, NumNeurons);
+      optimizer->setup(numPrevNeurons, NumNeurons);
     }
 
     // Initialize weight-bias matrix
-    Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
+    Zeros(*m_weights, NumNeurons, numPrevNeurons);
 
     // Initialize weights
     DistMat weights;
@@ -106,16 +106,12 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     }
 
     // Initialize other matrices
-    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
+    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);
     Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-    Zeros(*m_error_signal, numPrevNeurons + 1, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*m_preactivations, NumNeurons, m_mini_batch_size);
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_activations, numPrevNeurons + 1, m_mini_batch_size);
-
-    /// Create a view of the weights matrix
-    View(*m_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()));
-    View(*m_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()));
+    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
 }
 
 // template <typename Dtype>
@@ -152,7 +148,7 @@ void lbann::SoftmaxLayer::fp_linearity()
   // _Y[r,c] = ZsNormExp[r,c] / ZsNormExpSum[c,0]               -- exp(norm(_Z[r,c])) = Sum(exp(norm(Zs[r,c])))
 
   // Apply linear transform
-  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights_v, *m_prev_activations_v, (DataType) 0.0, *m_preactivations_v);
+  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_preactivations_v);
 
   // For each minibatch (column) find the maximimum value
   Zeros(ZsColMax, m_mini_batch_size, 1); // Clear the entire matrix
@@ -211,12 +207,12 @@ void lbann::SoftmaxLayer::fp_linearity()
 
 void lbann::SoftmaxLayer::bp_linearity()
 {
-    // Compute the partial delta update for the next lower layer (delta * activation_prev^T)
-    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
-
-    // by divide mini-batch size
-    Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-         *m_prev_activations_v, (DataType) 0., *m_weights_gradient_v);
+  // Compute the partial delta update for the next lower layer (delta * activation_prev^T)
+  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+  
+  // Compute update for weights - include division by mini-batch size
+  Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       *m_prev_activations_v, (DataType) 0., *m_weights_gradient);
 }
 
 DataType lbann::SoftmaxLayer::WBL2norm() {

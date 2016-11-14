@@ -106,7 +106,7 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
   }
 
   // Initialize other matrices
-  Zeros(*m_error_signal, num_prev_neurons + 1, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
   Zeros(*m_activations, NumNeurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
   Zeros(*m_weights_gradient, NumNeurons,num_prev_neurons + 1); //clear up before filling with new results
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size); //clear up before filling with new results
@@ -116,12 +116,8 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
 
 ///@todo update this to use the new fp_linearity framework ?? not needed??
 DataType lbann::target_layer_unsupervised::forwardProp(DataType prev_WBL2NormSum) {
-#if 0
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-#endif
   //m_activations is linear transformation of m_weights * m_prev_activations^T
-  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations/*X*/, (DataType) 0., *m_activations);
+  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0., *m_activations_v);
   int num_errors = 0;
   //not used
   return num_errors;
@@ -134,10 +130,6 @@ void lbann::target_layer_unsupervised::backProp() {
   //if(m_original_layer->Index == 0) m_original_layer->fp_input = m_original_layer->m_activations;
   DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
   DistMat& DsNext = DsNextProxy.Get();
-#if 0
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-#endif
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
   //@todo: Optimize (may be we dont need this double copy)
@@ -146,7 +138,7 @@ void lbann::target_layer_unsupervised::backProp() {
   Copy(*m_activations, *m_prev_error_signal);
   Axpy(-1., DsNext, *m_prev_error_signal); // Per-neuron error
   // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
   if (m_execution_mode == execution_mode::training) {
     //DsNext is proxy of original layer
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
@@ -159,7 +151,7 @@ void lbann::target_layer_unsupervised::backProp() {
 
   // by divide mini-batch size
   Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, (DataType) 0., *m_weights_gradient_v); //??
+       *m_prev_activations_v, (DataType) 0., *m_weights_gradient); //??
 }
 
 // Compute the cost function

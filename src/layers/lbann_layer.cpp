@@ -62,8 +62,6 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_prev_activations = new DistMat(comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_weights_v = new DistMat(comm->get_model_grid());
-    m_weights_gradient_v = new DistMat(comm->get_model_grid());
     m_preactivations_v = new DistMat(comm->get_model_grid());
     m_prev_error_signal_v = new DistMat(comm->get_model_grid());
     m_error_signal_v = new DistMat(comm->get_model_grid());
@@ -84,8 +82,6 @@ lbann::Layer::~Layer() {
   delete m_error_signal;
   delete m_activations;
   delete m_prev_activations;
-  delete m_weights_v;
-  delete m_weights_gradient_v;
   delete m_preactivations_v;
   delete m_prev_error_signal_v;
   delete m_error_signal_v;
@@ -100,6 +96,11 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
     *m_prev_activations = *fp_input;
+  }
+  // Get incoming loss and convert matrix distribution if necessary
+  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
+  if(bp_input != NULL) { // Target layers will not have a valid bp_input
+    *m_prev_error_signal = *bp_input;
   }
   // Set the view for all of the standard matrices based on the
   // current mini-batch size
@@ -126,6 +127,9 @@ void lbann::Layer::backProp() {
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
     *m_prev_error_signal = *bp_input;
   }
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  //  bp_set_std_matrix_view();
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
   // Backprop the activation function/nonlinearity.
@@ -642,15 +646,16 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 void lbann::Layer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
+  if(m_prev_activations != NULL/* && m_prev_activations->Height() != 0 && m_prev_activations->Width() != 0*/) { // Input layers will not have a valid fp_input
     View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
   }
   View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
-  if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
+  // Target layers will not have a valid bp_input
+  if(m_prev_error_signal != NULL && m_prev_error_signal->Height() != 0 && m_prev_error_signal->Width() != 0) {
     View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
   }
   View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()-1), IR(0, cur_mini_batch_size)); /// Setup a view with no bias term
+  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
@@ -662,34 +667,39 @@ void lbann::Layer::fp_set_std_matrix_view() {
   }
 }
 
+#if 0
+void lbann::Layer::bp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+
+  if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
+    View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
+  }
+  View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
+  if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
+    View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  }
+  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
+
+  // Update the layer's effective mini-batch size so it averages properly.
+  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
+    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
+    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+    set_effective_minibatch_size(total_mini_batch_size);
+  }else {
+    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  }
+}
+#endif
 void lbann::Layer::fp_nonlinearity() {
   // Forward propagation
   m_activation_fn->forwardProp(*m_activations_v);
-
-  // Set bias row back to 1.0
-  const Int local_row = m_activations->LocalHeight() - 1;
-  const Int global_row = m_activations->GlobalRow(local_row);
-  if(global_row == m_activations->Height() - 1) {
-    for(Int col = 0; col < m_activations->LocalWidth(); ++col) {
-      m_activations->SetLocal(local_row, col, DataType(1));
-    }
-  }
 }
 
 void lbann::Layer::bp_nonlinearity() {
-
   // Backward propagation
   m_activation_fn->backwardProp(*m_preactivations_v);
   if (m_activation_type != activation_type::ID) {
     Hadamard(*m_prev_error_signal_v, *m_preactivations_v, *m_prev_error_signal_v);
-  }
-
-  // Set bias row back to 0.0
-  const Int local_row = m_prev_error_signal->LocalHeight() - 1;
-  const Int global_row = m_prev_error_signal->GlobalRow(local_row);
-  if(global_row == m_prev_error_signal->Height() - 1) {
-    for(Int col = 0; col < m_prev_error_signal->LocalWidth(); ++col) {
-      m_prev_error_signal->SetLocal(local_row, col, DataType(0));
-    }
   }
 }
