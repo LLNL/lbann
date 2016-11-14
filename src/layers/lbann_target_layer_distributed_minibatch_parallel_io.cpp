@@ -45,6 +45,7 @@ lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
+  target_layer::setup(num_prev_neurons);
   if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
     if(io_layer::m_data_sets_span_models) {
       int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
@@ -70,13 +71,16 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
     throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
   }
 
-  Zeros(*Ds_Temp, NumNeurons, Layer::m_mini_batch_size);
+  Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
   Zeros(YsColMax, Layer::m_mini_batch_size, 1); /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
   Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
   Zeros(m_max_index, Layer::m_mini_batch_size, 1);
   Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1);
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
 
   m_local_data_valid = false;
   m_local_reader_done = false;
@@ -104,23 +108,27 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
   Mat Y_local_v;
   View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
 
+  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
+  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
+  target_layer::fp_set_std_matrix_view();
+
   // Clear the contents of the intermediate matrices
   Zeros(YsColMax, Layer::m_mini_batch_size, 1);
   Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
 
   /// Compute the error between the previous layers activations and the ground truth
-  ColumnMax(X_v, YsColMax); /// For each minibatch (column) find the maximimum value
+  ColumnMax((DistMat)*m_prev_activations_v, YsColMax); /// For each minibatch (column) find the maximimum value
   Copy(YsColMax, YsColMaxStar); /// Give every rank a copy so that they can find the max index locally
 
   Zeros(m_max_index, Layer::m_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
-  for (int mb_index = 0; mb_index < X_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
-    int mb_global_index = X_v.GlobalCol(mb_index);
+  for (int mb_index = 0; mb_index < m_prev_activations_v->LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
+    int mb_global_index = m_prev_activations_v->GlobalCol(mb_index);
     DataType sample_max = YsColMaxStar.GetLocal(mb_global_index, 0);
-    for (int f_index = 0; f_index < X_v.LocalHeight(); f_index++) { /// For each feature
-      if(X_v.GetLocal(f_index, mb_index) == sample_max) {
-        m_max_index.Set(mb_global_index, 0, X_v.GlobalRow(f_index));
+    for (int f_index = 0; f_index < m_prev_activations_v->LocalHeight(); f_index++) { /// For each feature
+      if(m_prev_activations_v->GetLocal(f_index, mb_index) == sample_max) {
+        m_max_index.Set(mb_global_index, 0, m_prev_activations_v->GlobalRow(f_index));
       }
     }
   }
@@ -157,8 +165,17 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(Data
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
-  /// Copy the results to the Ds_Temp variable for access by the next lower layer
-  Copy(Ys, *Ds_Temp);
+  /// Compute the error between the target values and the previous layer's activations
+  /// Copy the results to the m_error_signal variable for access by the next lower layer
+  Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
+  Axpy(-1., Ys, *m_error_signal); // Per-neuron error
+  Copy(Ys, *m_activations);
+
+  if (m_execution_mode == execution_mode::training) {
+    DataType avg_error = this->compute_cost_cross_entropy();
+    aggregate_cost += avg_error;
+    num_backprop_steps++;
+  }
 }
 
 /**

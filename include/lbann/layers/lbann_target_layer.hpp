@@ -38,13 +38,37 @@ namespace lbann
     DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
     DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
 
+    void setup(int num_prev_neurons);
+    void fp_set_std_matrix_view();
     /** No non-linearity */
     void fp_nonlinearity() {}
     /** No non-linearity */
     void bp_nonlinearity() {}
 
+    DataType compute_cost_cross_entropy();
+
+    void summarize(lbann_summary& summarizer, int64_t step);
+    void epoch_print() const;
+    void epoch_reset();
+    void resetCost();
+    DataType avgCost() const;
+
+    bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
+
+    bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
+    bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
+
   public:
     bool m_shared_data_reader;
+
+  protected:
+    DataType aggregate_cost;   // if this type is changed, update checkpoint code
+    long num_backprop_steps; // if this type is changed, update checkpoint code
+    DistMat m_activations_cost;
+    DistMat m_activations_cost_v;
+    /** Colume-wise sum of the costs of a minibatch. */
+    ColSumMat m_minibatch_cost;
   };
 }
 

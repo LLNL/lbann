@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_target_layer.hpp"
+#include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -35,11 +37,24 @@ using namespace std;
 using namespace El;
 
 lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
-  : io_layer(comm, mini_batch_size, data_readers)
+  : io_layer(comm, mini_batch_size, data_readers),
+    m_activations_cost(comm->get_model_grid()),
+    m_activations_cost_v(comm->get_model_grid()),
+    m_minibatch_cost(comm->get_model_grid())
 {
   NumNeurons = io_layer::get_linearized_label_size();
   m_shared_data_reader = shared_data_reader;
+  aggregate_cost = 0.0;
+  num_backprop_steps = 0;
 }
+
+void lbann::target_layer::setup(int num_prev_neurons) {
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(m_activations_cost, NumNeurons, m_mini_batch_size);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+}
+
 
 /**
  * Target layers are not able to return target matrices for forward propagation
@@ -56,4 +71,176 @@ lbann::DataReader *lbann::target_layer::set_training_data_reader(DataReader *dat
 lbann::DataReader *lbann::target_layer::set_testing_data_reader(DataReader *data_reader, bool shared_data_reader) {
   m_shared_data_reader = shared_data_reader;
   return io_layer::set_testing_data_reader(data_reader);
+}
+
+void lbann::target_layer::fp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  Layer::fp_set_std_matrix_view();
+  View(m_activations_cost_v, m_activations_cost, IR(0, m_activations_cost.Height()), IR(0, cur_mini_batch_size));
+}
+
+/// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
+/// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
+DataType lbann::target_layer::compute_cost_cross_entropy() {
+    DataType avg_error = 0.0, total_error = 0.0;
+    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+
+    EntrywiseMap(*m_prev_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
+
+    Hadamard(*m_activations_v, *m_prev_activations_v, m_activations_cost_v);
+    Zeros(m_minibatch_cost, m_mini_batch_size, 1); // Clear the entire array
+    ColumnSum(m_activations_cost_v, m_minibatch_cost);
+
+    // Sum the local, total error
+    const Int local_height = m_minibatch_cost.LocalHeight();
+    for(int r = 0; r < local_height; r++) {
+      total_error += m_minibatch_cost.GetLocal(r, 0);
+    }
+    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
+
+    avg_error = -1.0 * total_error / cur_mini_batch_size;
+    return avg_error;
+}
+
+void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
+  Layer::summarize(summarizer, step);
+  std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
+    + "/CrossEntropyCost";
+  summarizer.reduce_scalar(tag, avgCost(), step);
+}
+
+void lbann::target_layer::epoch_print() const {
+  double avg_cost = avgCost();
+  if (comm->am_world_master()) {
+    std::vector<double> avg_costs(comm->get_num_models());
+    comm->intermodel_gather(avg_cost, avg_costs);
+    for (size_t i = 0; i < avg_costs.size(); ++i) {
+      std::cout << "Model " << i << " average cross entropy cost: " << avg_costs[i] <<
+        std::endl;
+    }
+  } else {
+    comm->intermodel_gather(avg_cost, comm->get_world_master());
+  }
+}
+
+void lbann::target_layer::epoch_reset() {
+  Layer::epoch_reset();
+  resetCost();
+}
+
+void lbann::target_layer::resetCost() {
+  aggregate_cost = 0.0;
+  num_backprop_steps = 0;
+}
+
+DataType lbann::target_layer::avgCost() const {
+  return aggregate_cost / num_backprop_steps;
+}
+
+bool lbann::target_layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
+{
+  ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
+  if (write_rc != sizeof(aggregate_cost)) {
+    // error!
+  }
+  *bytes += write_rc;
+
+  write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
+  if (write_rc != sizeof(num_backprop_steps)) {
+    // error!
+  }
+  *bytes += write_rc;
+
+  return Layer::saveToCheckpoint(fd, filename, bytes);
+}
+
+bool lbann::target_layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
+{
+  ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
+  if (read_rc != sizeof(aggregate_cost)) {
+    // error!
+  }
+  *bytes += read_rc;
+
+  read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
+  if (read_rc != sizeof(num_backprop_steps)) {
+    // error!
+  }
+  *bytes += read_rc;
+
+  return Layer::loadFromCheckpoint(fd, filename, bytes);
+}
+
+bool lbann::target_layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
+{
+  // get our rank
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // rank 0 writes softmax cost to file
+  if (rank == 0) {
+      // define the filename
+      char file[1024];
+      sprintf(file, "%s/CrossEntropyCost_L%d", dir, Index);
+
+      // open the file
+      int fd = lbann::openwrite(file);
+      if (fd != -1 ) {
+          ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
+          if (write_rc != sizeof(aggregate_cost)) {
+            // error!
+          }
+          *bytes += write_rc;
+
+          write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
+          if (write_rc != sizeof(num_backprop_steps)) {
+            // error!
+          }
+          *bytes += write_rc;
+
+          // close the file
+          lbann::closewrite(fd, file);
+      }
+  }
+
+  return Layer::saveToCheckpointShared(dir, bytes);
+}
+
+bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
+{
+    // get our rank
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // rank 0 writes softmax cost to file
+    if (rank == 0) {
+        // define the filename
+        char file[1024];
+        sprintf(file, "%s/SoftmaxCost_L%d", dir, Index);
+
+        // open the file
+        int fd = lbann::openread(file);
+        if (fd != -1 ) {
+            ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
+            if (read_rc != sizeof(aggregate_cost)) {
+              // error!
+            }
+            *bytes += read_rc;
+
+            read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
+            if (read_rc != sizeof(num_backprop_steps)) {
+              // error!
+            }
+            *bytes += read_rc;
+
+            // close the file
+            lbann::closeread(fd, file);
+        }
+    }
+
+    // get values from rank 0
+    MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+
+    return Layer::loadFromCheckpointShared(dir, bytes);
 }

@@ -43,6 +43,7 @@ lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_mi
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
+  input_layer::setup(num_prev_neurons);
   if(io_layer::m_data_sets_span_models) {
     int stride = Layer::comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
     int base_offset = Layer::comm->get_rank_in_model() * Layer::comm->get_num_models() * Layer::m_mini_batch_size;
@@ -61,8 +62,8 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
                                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
-  Zeros(*Acts, NumNeurons + 1, Layer::m_mini_batch_size);
-  Zeros(X_local, NumNeurons + 1, Layer::m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, Layer::m_mini_batch_size);
+  Zeros(X_local, NumNeurons, Layer::m_mini_batch_size);
 
   m_local_data_valid = false;
   m_local_reader_done = false;
@@ -85,7 +86,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::fp_linearity() {
 
   distribute_from_local_matrix(X_local, Xs);
 
-  Copy(Xs, *Acts);
+  Copy(Xs, *m_activations);
 }
 
 /**
@@ -102,12 +103,7 @@ int lbann::input_layer_distributed_minibatch_parallel_io::fetch_from_data_reader
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
-  DataReader *data_reader = input_layer::select_data_reader();
-  /// Set the bias term in the last row of the input matrix
-  int linear_data_size = data_reader->get_linearized_data_size();
-  for(int n = 0; n < num_samples_in_batch; n++) {
-    M_local.Set(linear_data_size, n, 1);
-  }
+  return;
 }
 
 bool lbann::input_layer_distributed_minibatch_parallel_io::update_data_reader() {

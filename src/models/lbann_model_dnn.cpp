@@ -66,7 +66,7 @@ lbann::deep_neural_network::~deep_neural_network() {}
 void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double* gradient_errors)
 {
   // setup input (last/additional row should always be 1)
-  Copy(X, *(m_layers[0]->Acts));
+  Copy(X, *(m_layers[0]->m_activations));
 
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;

@@ -59,8 +59,8 @@ void lbann_callback_imcomm::setup(model* m) {
           layer->get_minibatch_size() * m->get_comm()->get_num_models());
         // Skip adding matrices when we don't need to.
         if (!ct_does_quantization()) continue;
-        // TODO: handle case where WB_D is in other matrix distribution
-        DistMat& WB_D = (DistMat&) layer->get_weights_biases_gradient();
+        // TODO: handle case where weights_gradient is in other matrix distribution
+        DistMat& weights_gradient = (DistMat&) layer->get_weights_biases_gradient();
         quantization_errors.emplace(idx, Mat{});
         im_quantization_errors.emplace(idx, Mat{});
         if (ct == ONEBIT_QUANTIZATION) {
@@ -76,7 +76,7 @@ void lbann_callback_imcomm::setup(model* m) {
             layer->optimizer = new SGD<DistMat>(
               layer->comm, layer->optimizer->get_learning_rate(),
               0.0f, 0.0f, false);
-            layer->optimizer->setup(layer->WB->Width(), layer->WB->Height());
+            layer->optimizer->setup(layer->m_weights->Width(), layer->m_weights->Height());
           }
         }
       }
@@ -97,9 +97,9 @@ void lbann_callback_imcomm::on_epoch_end(model* m) {
         continue;
       }
       comm->intermodel_sum_matrix(quantization_errors[l]);
-      // TODO: handle case where WB_D is in other matrix distribution
-      DistMat& WB_D = (DistMat&) layers[l]->get_weights_biases_gradient();
-      Mat& local_mat = WB_D.Matrix();
+      // TODO: handle case where weights_gradient is in other matrix distribution
+      DistMat& weights_gradient = (DistMat&) layers[l]->get_weights_biases_gradient();
+      Mat& local_mat = weights_gradient.Matrix();
       local_mat = quantization_errors[l];
       // Apply optimizer update again.
       layers[l]->update();
@@ -120,41 +120,41 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
       continue;
     }
     double start_time = get_time();
-    // TODO: handle case where WB_D is in other matrix distribution
-    DistMat& WB_D = (DistMat&) layers[l]->get_weights_biases_gradient();
+    // TODO: handle case where weights_gradient is in other matrix distribution
+    DistMat& weights_gradient = (DistMat&) layers[l]->get_weights_biases_gradient();
     switch (ct) {
     case NONE:
       break;
     case NORMAL:
-      comm->intermodel_sum_matrix(WB_D);
+      comm->intermodel_sum_matrix(weights_gradient);
       break;
     case ONEBIT_QUANTIZATION:
       quantizer.intermodel_sum_quantized(
-        comm, WB_D, quantization_errors[l], im_quantization_errors[l], true,
+        comm, weights_gradient, quantization_errors[l], im_quantization_errors[l], true,
         &(gradhistories[l]));
       break;
     case THRESH_QUANTIZATION:
       // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 0.01f, -0.01f,
+        comm, weights_gradient, quantization_errors[l], 0.01f, -0.01f,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_THRESH_QUANTIZATION:
       // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 0.01f, -0.01f,
+        comm, weights_gradient, quantization_errors[l], 0.01f, -0.01f,
         im_quantization_errors[l], true);
       break;
     case ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 64,
+        comm, weights_gradient, quantization_errors[l], 64,
         im_quantization_errors[l], false);
       break;
     case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 64,
+        comm, weights_gradient, quantization_errors[l], 64,
         im_quantization_errors[l], true);
       break;
     }
@@ -171,8 +171,8 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
         bytes_received = quantizer.get_bytes_received();
       } else {
         // Use the same approximation the comm layer does.
-        bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
-        bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
+        bytes_sent = sizeof(DataType) * weights_gradient.LocalHeight() * weights_gradient.LocalWidth();
+        bytes_received = sizeof(DataType) * weights_gradient.LocalHeight() * weights_gradient.LocalWidth();
       }
       summarizer->reduce_scalar(prefix + "bytes_sent",
                                 bytes_sent, m->get_cur_step());

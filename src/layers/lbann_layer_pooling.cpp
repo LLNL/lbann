@@ -73,14 +73,14 @@ pooling_layer::pooling_layer(const uint index,
   }
   
   // Matrices should be in Star,VC distributions
-  delete Zs;
-  delete Ds;
-  delete Ds_Temp;
-  delete Acts;
-  Zs = new StarVCMat(comm->get_model_grid());
-  Ds = new StarVCMat(comm->get_model_grid());
-  Ds_Temp = new StarVCMat(comm->get_model_grid());
-  Acts = new StarVCMat(comm->get_model_grid());
+  delete m_weighted_sum;
+  delete m_prev_error_signal;
+  delete m_error_signal;
+  delete m_activations;
+  m_weighted_sum = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal = new StarVCMat(comm->get_model_grid());
+  m_error_signal = new StarVCMat(comm->get_model_grid());
+  m_activations = new StarVCMat(comm->get_model_grid());
 
   // Initialize cuDNN pooling layer
   m_cudnn_layer = NULL;
@@ -132,10 +132,10 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
-  Ones(*Zs, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds, NumNeurons+1, m_mini_batch_size);
-  Zeros(*Ds_Temp, num_prev_neurons+1, m_mini_batch_size);
-  Ones(*Acts, NumNeurons+1, m_mini_batch_size);
+  Ones(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  Ones(*m_activations, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -143,8 +143,8 @@ void lbann::pooling_layer::fp_linearity() {
   
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(*fp_input);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*Zs);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*Acts);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*m_weighted_sum);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*m_activations);
   StarVCMat& X = XProxy.Get();
   StarVCMat& Z = ZProxy.Get();
   StarVCMat& Y = YProxy.Get();
@@ -273,9 +273,9 @@ void lbann::pooling_layer::bp_linearity() {
 
   // Get local matrices
   const Mat& input_local = input.LockedMatrix();
-  const Mat& output_local = Acts->LockedMatrix();
-  const Mat& prev_error_signal_local = Ds->LockedMatrix();
-  Mat& error_signal_local = Ds_Temp->Matrix();
+  const Mat& output_local = m_activations->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal->LockedMatrix();
+  Mat& error_signal_local = m_error_signal->Matrix();
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
