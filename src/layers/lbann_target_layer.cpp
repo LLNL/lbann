@@ -76,7 +76,6 @@ lbann::DataReader *lbann::target_layer::set_testing_data_reader(DataReader *data
 void lbann::target_layer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
   Layer::fp_set_std_matrix_view();
-  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
   View(m_activations_cost_v, m_activations_cost, IR(0, m_activations_cost.Height()), IR(0, cur_mini_batch_size));
 }
 

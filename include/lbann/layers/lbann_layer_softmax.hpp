@@ -52,7 +52,6 @@ namespace lbann
         DataType WBL2norm();
 
     protected:
-      void fp_set_std_matrix_view();
       void fp_linearity();
       void bp_linearity();
       void fp_nonlinearity() {}

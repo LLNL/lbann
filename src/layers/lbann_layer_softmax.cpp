@@ -118,26 +118,6 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
 // void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 //     vector<Blob<Dtype>*>* top) {
 
-/** Override the standard matrix sub-view code so that the activations view includes all elements. */
-void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
-  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
-  View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
-  View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
-  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
-
-  // Update the layer's effective mini-batch size so it averages properly.
-  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
-    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
-    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
-    set_effective_minibatch_size(total_mini_batch_size);
-  }else {
-    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
-  }
-}
-
 void lbann::SoftmaxLayer::fp_linearity()
 {
   // _Z = m_weights * Xs                                               -- Xs is previous layer Activations
