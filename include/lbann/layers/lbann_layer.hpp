@@ -136,7 +136,7 @@ class model;
 
     ElMat *m_weights;            /// Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
     ElMat *m_weights_gradient;   /// Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
-    ElMat *m_preactivations;     /// Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
+    ElMat *m_weighted_sum;       /// Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
     ElMat *m_prev_error_signal;  /// Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
 
     ElMat *m_error_signal;       /// Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
@@ -144,7 +144,7 @@ class model;
     ElMat *m_prev_activations;   /// Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
 
     /// Create a view of each matrix so that it can accomodate partial mini-batches
-    ElMat *m_preactivations_v;
+    ElMat *m_weighted_sum_v;
     ElMat *m_prev_error_signal_v;
     ElMat *m_error_signal_v;
     ElMat *m_activations_v;

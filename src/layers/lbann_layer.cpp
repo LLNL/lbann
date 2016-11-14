@@ -55,14 +55,14 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     // Most layers use standard elemental matrix distribution
     m_weights = new DistMat(comm->get_model_grid());
     m_weights_gradient = new DistMat(comm->get_model_grid());
-    m_preactivations = new DistMat(comm->get_model_grid());
+    m_weighted_sum = new DistMat(comm->get_model_grid());
     m_prev_error_signal = new DistMat(comm->get_model_grid());
     m_error_signal = new DistMat(comm->get_model_grid());
     m_activations = new DistMat(comm->get_model_grid());
     m_prev_activations = new DistMat(comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_preactivations_v = new DistMat(comm->get_model_grid());
+    m_weighted_sum_v = new DistMat(comm->get_model_grid());
     m_prev_error_signal_v = new DistMat(comm->get_model_grid());
     m_error_signal_v = new DistMat(comm->get_model_grid());
     m_activations_v = new DistMat(comm->get_model_grid());
@@ -77,12 +77,12 @@ lbann::Layer::~Layer() {
   delete m_activation_fn;
   delete m_weights;
   delete m_weights_gradient;
-  delete m_preactivations;
+  delete m_weighted_sum;
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
   delete m_prev_activations;
-  delete m_preactivations_v;
+  delete m_weighted_sum_v;
   delete m_prev_error_signal_v;
   delete m_error_signal_v;
   delete m_activations_v;
@@ -649,7 +649,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
   if(m_prev_activations != NULL/* && m_prev_activations->Height() != 0 && m_prev_activations->Width() != 0*/) { // Input layers will not have a valid fp_input
     View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
   }
-  View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
+  View(*m_weighted_sum_v, *m_weighted_sum, IR(0, m_weighted_sum->Height()), IR(0, cur_mini_batch_size));
   // Target layers will not have a valid bp_input
   if(m_prev_error_signal != NULL && m_prev_error_signal->Height() != 0 && m_prev_error_signal->Width() != 0) {
     View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
@@ -674,7 +674,7 @@ void lbann::Layer::bp_set_std_matrix_view() {
   if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
     View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
   }
-  View(*m_preactivations_v, *m_preactivations, IR(0, m_preactivations->Height()), IR(0, cur_mini_batch_size));
+  View(*m_weighted_sum_v, *m_weighted_sum, IR(0, m_weighted_sum->Height()), IR(0, cur_mini_batch_size));
   if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
     View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
   }
@@ -698,8 +698,8 @@ void lbann::Layer::fp_nonlinearity() {
 
 void lbann::Layer::bp_nonlinearity() {
   // Backward propagation
-  m_activation_fn->backwardProp(*m_preactivations_v);
+  m_activation_fn->backwardProp(*m_weighted_sum_v);
   if (m_activation_type != activation_type::ID) {
-    Hadamard(*m_prev_error_signal_v, *m_preactivations_v, *m_prev_error_signal_v);
+    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
   }
 }

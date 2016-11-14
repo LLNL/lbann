@@ -82,13 +82,13 @@ convolutional_layer::convolutional_layer(const uint index,
   // Matrices should be in Star,Star and Star,VC distributions
   delete m_weights;
   delete m_weights_gradient;
-  delete m_preactivations;
+  delete m_weighted_sum;
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
   m_weights = new StarMat(comm->get_model_grid());
   m_weights_gradient = new StarMat(comm->get_model_grid());
-  m_preactivations = new StarVCMat(comm->get_model_grid());
+  m_weighted_sum = new StarVCMat(comm->get_model_grid());
   m_prev_error_signal = new StarVCMat(comm->get_model_grid());
   m_error_signal = new StarVCMat(comm->get_model_grid());
   m_activations = new StarVCMat(comm->get_model_grid());
@@ -197,10 +197,10 @@ void convolutional_layer::setup(const int num_prev_neurons)
   
   // Initialize matrices
   Zeros(*m_weights_gradient, m_filter_size+NumNeurons, 1);
-  Ones(*m_preactivations, NumNeurons+1, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons+1, m_mini_batch_size);
-  Zeros(*m_error_signal, num_prev_neurons+1, m_mini_batch_size);
-  Ones(*m_activations, NumNeurons+1, m_mini_batch_size);
+  Ones(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  Ones(*m_activations, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -209,7 +209,7 @@ void lbann::convolutional_layer::fp_linearity() {
   // Convert matrices to desired formats
   DistMatrixReadProxy<DataType,DataType,STAR,STAR> WBProxy(*m_weights);
   DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(*fp_input);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*m_preactivations);
+  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*m_weighted_sum);
   DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*m_activations);
   StarMat& m_weights = WBProxy.Get();
   StarVCMat& X = XProxy.Get();

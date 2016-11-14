@@ -109,7 +109,7 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);
     Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_preactivations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
 }
@@ -128,11 +128,11 @@ void lbann::SoftmaxLayer::fp_linearity()
   // _Y[r,c] = ZsNormExp[r,c] / ZsNormExpSum[c,0]               -- exp(norm(_Z[r,c])) = Sum(exp(norm(Zs[r,c])))
 
   // Apply linear transform
-  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_preactivations_v);
+  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_weighted_sum_v);
 
   // For each minibatch (column) find the maximimum value
   Zeros(ZsColMax, m_mini_batch_size, 1); // Clear the entire matrix
-  ColumnMax((DistMat&) *m_preactivations_v, ZsColMax);
+  ColumnMax((DistMat&) *m_weighted_sum_v, ZsColMax);
 
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);
@@ -141,7 +141,7 @@ void lbann::SoftmaxLayer::fp_linearity()
   // entries to prevent the exp from blowing up. Large negative values are
   // expected to underflow to 0.
   IndexDependentMap(
-    *m_preactivations_v,
+    *m_weighted_sum_v,
     (std::function<DataType(int,int,DataType)>)
     ([this](int r, int c, DataType z)->DataType {
       Int rL = this->ZsColMaxStar.LocalRow(c);
@@ -152,11 +152,11 @@ void lbann::SoftmaxLayer::fp_linearity()
   // For each minibatch (column) sum up the exponentiated values
   Zeros(ZsNormExpSum, m_mini_batch_size, 1); // Clear the entire matrix
   //  ColSumMat ZsNormExpSum;
-  ColumnSum((DistMat&) *m_preactivations_v, ZsNormExpSum);
+  ColumnSum((DistMat&) *m_weighted_sum_v, ZsNormExpSum);
   Copy(ZsNormExpSum, ZsNormExpSumStar);
 
   // Divide each entry: exp(x_ij) / Sum_i(exp(x_ij))
-  Copy(*m_preactivations_v, *m_activations_v);
+  Copy(*m_weighted_sum_v, *m_activations_v);
 
   IndexDependentMap(*m_activations_v,
                     (std::function<DataType(Int,Int,DataType)>)([this /*ZsNormExpSum*/](Int r, Int c, DataType z)->

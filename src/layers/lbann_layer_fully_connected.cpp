@@ -145,7 +145,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
     Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_preactivations, NumNeurons, m_mini_batch_size); // preactivations - weighted sums
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
     View(WB_view, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width())); /// BVE this is used by the data parallel communicator
     View(WB_D_view, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()));
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
@@ -172,14 +172,14 @@ void lbann::FullyConnectedLayer::fp_linearity()
 
   StarMat local_bias_weights(comm->get_model_grid());
   Copy(m_bias_weights_v, local_bias_weights);
-  IndexDependentFill(*m_preactivations, (std::function<DataType(int,int)>)
+  IndexDependentFill(*m_weighted_sum, (std::function<DataType(int,int)>)
                      ([this, local_bias_weights](int r, int c)->DataType { 
                        int rL = local_bias_weights.LocalRow(r);
                        if(!local_bias_weights.IsLocal(r,0)) { throw lbann_exception("Bad fill");}
                        return local_bias_weights.GetLocal(rL,0) * m_bias_term;
                      }));
-  Gemm(NORMAL, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_activations, (DataType) 1., *m_preactivations);
-  Copy(*m_preactivations_v, *m_activations_v);
+  Gemm(NORMAL, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_activations, (DataType) 1., *m_weighted_sum);
+  Copy(*m_weighted_sum_v, *m_activations_v);
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
@@ -229,8 +229,8 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 {
     DistMat WB_E1(m_weights->Grid());
     DistMat WB_E2(m_weights->Grid());
-    DistMat Zs_E1(m_preactivations->Grid());
-    DistMat Zs_E2(m_preactivations->Grid());
+    DistMat Zs_E1(m_weighted_sum->Grid());
+    DistMat Zs_E2(m_weighted_sum->Grid());
     DistMat Acts_E1(m_activations->Grid());
     DistMat Acts_E2(m_activations->Grid());
     DataType grad_diff = 0;
@@ -238,8 +238,8 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
     Zeros(WB_E1, m_weights->Height(), m_weights->Width());
     Zeros(WB_E2, m_weights->Height(), m_weights->Width());
-    Zeros(Zs_E1, m_preactivations->Height(), m_preactivations->Width());
-    Zeros(Zs_E2, m_preactivations->Height(), m_preactivations->Width());
+    Zeros(Zs_E1, m_weighted_sum->Height(), m_weighted_sum->Width());
+    Zeros(Zs_E2, m_weighted_sum->Height(), m_weighted_sum->Width());
     Zeros(Acts_E1, m_activations->Height(), m_activations->Width());
     Zeros(Acts_E2, m_activations->Height(), m_activations->Width());
 
