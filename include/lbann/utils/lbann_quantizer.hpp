@@ -419,7 +419,7 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
       IR(dst * cols_per_proc, dst * cols_per_proc + send_col_width), send_size);
     rs_send_trans_time += get_time() - send_trans_start;
     // Send.
-    lbann_mpi_req<T> req;
+    mpi::Request<T> req;
     comm->nb_send(send_buf, send_size, dst, req);
     rs_bytes_sent += send_size * sizeof(T);
     // Get receive buffer.
@@ -474,7 +474,7 @@ void lbann_quantizer::intermodel_ring_allgather(
   // Do the allgather.
   for (int step = 0; step < nprocs - 1; ++step) {
     // Send our data or forward received data.
-    lbann_mpi_req<T> req;
+    mpi::Request<T> req;
     int send_size;
     T* send_buf = get_send_buf(send_size);
     comm->nb_send(send_buf, send_size, dst, req);

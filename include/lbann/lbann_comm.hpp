@@ -36,9 +36,6 @@ using namespace El;
 namespace lbann
 {
 
-  template <typename T>
-  using lbann_mpi_req = mpi::Request<T>;
-
   /**
    * Manage communication.
    * This supports separate models, each of which are split over potentially
@@ -228,7 +225,7 @@ namespace lbann
 
     /** Wait for a non-blocking request to complete. */
     template <typename T>
-    void wait(lbann_mpi_req<T>& req) {
+    void wait(mpi::Request<T>& req) {
       mpi::Wait(req);
     }
 
@@ -256,20 +253,20 @@ namespace lbann
     /** Corresponding non-blocking sends. */
     template <typename T>
     void nb_send(const T* data, int count, int model, int rank,
-                 lbann_mpi_req<T>& req) {
+                 mpi::Request<T>& req) {
       bytes_sent += sizeof(T) * count;
       mpi::ISend(data, count, get_world_rank(model, rank), mpi::COMM_WORLD, req);
     }
     template <typename T> void nb_send(const T* data, int count, int model,
-                                       lbann_mpi_req<T>& req) {
+                                       mpi::Request<T>& req) {
       nb_send(data, count, model, rank_in_model, req);
     }
-    void nb_send(Mat& mat, int model, int rank, lbann_mpi_req<DataType>& req);
-    void nb_send(DistMat& mat, int model, int rank, lbann_mpi_req<DataType>& req);
-    void nb_send(Mat& mat, int model, lbann_mpi_req<DataType>& req) {
+    void nb_send(Mat& mat, int model, int rank, mpi::Request<DataType>& req);
+    void nb_send(DistMat& mat, int model, int rank, mpi::Request<DataType>& req);
+    void nb_send(Mat& mat, int model, mpi::Request<DataType>& req) {
       nb_send(mat, model, rank_in_model, req);
     }
-    void nb_send(DistMat& mat, int model, lbann_mpi_req<DataType>& req) {
+    void nb_send(DistMat& mat, int model, mpi::Request<DataType>& req) {
       nb_send(mat, model, rank_in_model, req);
     }
 
@@ -295,29 +292,29 @@ namespace lbann
 
     /** Corresponding non-blocking receives. */
     template <typename T> void nb_recv(T* data, int count, int model, int rank,
-                                       lbann_mpi_req<T>& req) {
+                                       mpi::Request<T>& req) {
       mpi::IRecv(data, count, get_world_rank(model, rank), mpi::COMM_WORLD,
                  req);
       bytes_received += sizeof(T) * count;
     }
     template <typename T> void nb_recv(T* data, int count, int model,
-                                       lbann_mpi_req<T>& req) {
+                                       mpi::Request<T>& req) {
       recv(data, count, model, rank_in_model, req);
     }
-    void nb_recv(Mat& mat, int model, int rank, lbann_mpi_req<DataType>& req);
-    void nb_recv(DistMat& mat, int model, int rank, lbann_mpi_req<DataType>& req);
-    void nb_recv(Mat& mat, int model, lbann_mpi_req<DataType>& req) {
+    void nb_recv(Mat& mat, int model, int rank, mpi::Request<DataType>& req);
+    void nb_recv(DistMat& mat, int model, int rank, mpi::Request<DataType>& req);
+    void nb_recv(Mat& mat, int model, mpi::Request<DataType>& req) {
       nb_recv(mat, model, rank_in_model, req);
     }
-    void nb_recv(DistMat& mat, int model, lbann_mpi_req<DataType>& req) {
+    void nb_recv(DistMat& mat, int model, mpi::Request<DataType>& req) {
       nb_recv(mat, model, rank_in_model, req);
     }
-    template <typename T> void nb_recv(T* data, int count, lbann_mpi_req<T>& req) {
+    template <typename T> void nb_recv(T* data, int count, mpi::Request<T>& req) {
       mpi::IRecv(data, count, mpi::ANY_SOURCE, mpi::COMM_WORLD, req);
       bytes_received += sizeof(T) * count;
     }
-    void nb_recv(Mat& mat, lbann_mpi_req<DataType>& req);
-    void nb_recv(DistMat& mat, lbann_mpi_req<DataType>& req);
+    void nb_recv(Mat& mat, mpi::Request<DataType>& req);
+    void nb_recv(DistMat& mat, mpi::Request<DataType>& req);
 
     /** Determine the size (count) of an incoming message. */
     template <typename T> int get_count(int model, int rank) {
