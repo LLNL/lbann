@@ -102,8 +102,12 @@ namespace lbann
     std::string TestFile;
     /// Location to write summary files.
     std::string SummaryDir;
-    /// Whether to dump matrices.
-    bool DumpMatrices;
+    /// Whether to dump weights.
+    bool DumpWeights;
+    /// Whether to dump activations;
+    bool DumpActivations;
+    /// Whether to dump gradients.
+    bool DumpGradients;
     /// Location to dump matrices.
     std::string DumpDir;
 
