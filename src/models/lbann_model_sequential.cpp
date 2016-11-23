@@ -48,9 +48,10 @@ using namespace El;
 
 lbann::sequential_model::sequential_model(const uint mini_batch_size,
                                           lbann_comm* comm,
+                                          objective_fn* obj_fn,
                                           layer_factory* _layer_fac,
                                           Optimizer_factory* _optimizer_fac)
-  : model(comm),
+  : model(comm, obj_fn),
     m_mini_batch_size(mini_batch_size),
     layer_fac(_layer_fac),
     optimizer_fac(_optimizer_fac) {}

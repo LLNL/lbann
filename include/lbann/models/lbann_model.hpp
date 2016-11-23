@@ -34,6 +34,7 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include <vector>
 #include <string>
 
@@ -47,7 +48,7 @@ class lbann_callback;
  */
 class model {
 public:
-  model(lbann_comm* comm);
+  model(lbann_comm* comm, objective_fn* obj_fn);
   virtual ~model() {}
 
   /** Initialize the model. */
@@ -89,6 +90,8 @@ public:
   bool get_terminate_training() const { return m_terminate_training; }
   /** Set the terminate training flag (on or off). */
   void set_terminate_training(bool f) { m_terminate_training = f; }
+
+  objective_fn* obj_fn;
     
 protected:
   /** The model's current execution mode. */

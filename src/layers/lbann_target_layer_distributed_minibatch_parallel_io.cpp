@@ -172,7 +172,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
   Copy(Ys, *m_activations);
 
   if (m_execution_mode == execution_mode::training) {
-    DataType avg_error = this->compute_cost_cross_entropy();
+    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
     aggregate_cost += avg_error;
     num_backprop_steps++;
   }

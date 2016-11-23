@@ -33,13 +33,16 @@
 using namespace std;
 using namespace El;
 
-lbann::model::model(lbann_comm* comm) :
+lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
+  obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
   m_current_validation_step(0), m_current_testing_step(0),
   m_current_mini_batch_size(0),
-  comm(comm) {}
+  comm(comm)
+{
+}
 
 void lbann::model::add_callback(lbann::lbann_callback* cb) {
   callbacks.push_back(cb);
