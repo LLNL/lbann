@@ -37,10 +37,7 @@ using namespace std;
 using namespace El;
 
 lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
-  : io_layer(comm, mini_batch_size, data_readers),
-    m_activations_cost(comm->get_model_grid()),
-    m_activations_cost_v(comm->get_model_grid()),
-    m_minibatch_cost(comm->get_model_grid())
+  : io_layer(comm, mini_batch_size, data_readers)
 {
   NumNeurons = io_layer::get_linearized_label_size();
   m_shared_data_reader = shared_data_reader;
@@ -49,10 +46,12 @@ lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::m
 }
 
 void lbann::target_layer::setup(int num_prev_neurons) {
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(m_activations_cost, NumNeurons, m_mini_batch_size);
-    Zeros(m_minibatch_cost, m_mini_batch_size, 1);
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  if(neural_network_model->obj_fn == NULL) {
+    throw lbann_exception("target layer has invalid objective function pointer");
+  }
+  neural_network_model->obj_fn->setup(NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 }
 
 
@@ -76,30 +75,7 @@ lbann::DataReader *lbann::target_layer::set_testing_data_reader(DataReader *data
 void lbann::target_layer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
   Layer::fp_set_std_matrix_view();
-  View(m_activations_cost_v, m_activations_cost, IR(0, m_activations_cost.Height()), IR(0, cur_mini_batch_size));
-}
-
-/// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
-/// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
-DataType lbann::target_layer::compute_cost_cross_entropy() {
-    DataType avg_error = 0.0, total_error = 0.0;
-    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-    EntrywiseMap(*m_prev_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
-
-    Hadamard(*m_activations_v, *m_prev_activations_v, m_activations_cost_v);
-    Zeros(m_minibatch_cost, m_mini_batch_size, 1); // Clear the entire array
-    ColumnSum(m_activations_cost_v, m_minibatch_cost);
-
-    // Sum the local, total error
-    const Int local_height = m_minibatch_cost.LocalHeight();
-    for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost.GetLocal(r, 0);
-    }
-    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
-
-    avg_error = -1.0 * total_error / cur_mini_batch_size;
-    return avg_error;
+  neural_network_model->obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
 }
 
 void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {

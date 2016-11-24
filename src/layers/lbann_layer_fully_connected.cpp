@@ -46,17 +46,13 @@ using namespace El;
 // [W00 ...   B0]
 // [|         |]
 // [Wn0       Bn]
-// [0  ...  0 1] - Initialize the final row to be all zeros and 1 in the bias to properly
-//                 set the bias for the next layer
+//
 // WB_D structure:
 // [dW     dB]
-// [0 ... 0 0]
 // D structure:
 // [D        ]
-// [0 ... 0 0]
 // Z, Zs, Act, Acts structure:
 // [Acts     ]
-// [1 ... 1 1]
 
 lbann::FullyConnectedLayer::
 FullyConnectedLayer(const uint index,
@@ -74,10 +70,7 @@ FullyConnectedLayer(const uint index,
     m_bias_weights_v(comm->get_model_grid()),
     m_activation_weights_gradient_v(comm->get_model_grid()),
     m_bias_weights_gradient_v(comm->get_model_grid()),
-    m_bias_bp_t(comm->get_model_grid()),
-    WB_view(comm->get_model_grid()),
-    WB_D_view(comm->get_model_grid()),
-    Acts_view(comm->get_model_grid())
+    m_bias_bp_t(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
@@ -146,10 +139,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-    View(WB_view, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width())); /// BVE this is used by the data parallel communicator
-    View(WB_D_view, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()));
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    View(Acts_view, *m_activations, IR(0, m_activations->Height()), IR(0, m_activations->Width()));
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
 
     /// Setup independent views of the weight matrix for the activations and bias terms

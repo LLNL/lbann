@@ -28,10 +28,11 @@
 #define LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/lbann_target_layer.hpp"
 
 namespace lbann
 {
-  class target_layer_unsupervised : public Layer{
+  class target_layer_unsupervised : public target_layer{
   public:
     target_layer_unsupervised(size_t index,lbann_comm* comm,
                               Optimizer* optimizer,
@@ -60,12 +61,14 @@ namespace lbann
     Layer* m_original_layer;
     DataType aggregate_cost;
     long num_backprop_steps;
+    /// Views of the weight matrix that allow you to separate activation weights from bias weights
+    DistMat m_activation_weights_v;
+    DistMat m_bias_weights_v;
+    DistMat m_activation_weights_gradient_v;
+    DistMat m_bias_weights_gradient_v;
+    DistMat m_bias_bp_t;
+    DataType m_bias_term;
     weight_initialization m_weight_initialization;
-    //squared error differences
-    DistMat diff;
-    /** Colume-wise sum of the costs of a minibatch. */
-    ColSumMat m_minibatch_cost;
-
   };
 }
 
