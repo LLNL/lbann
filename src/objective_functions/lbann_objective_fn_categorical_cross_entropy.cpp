@@ -33,40 +33,40 @@ using namespace El;
 
 lbann::categorical_cross_entropy::categorical_cross_entropy(lbann_comm* comm) 
   : objective_fn(), 
-    m_activations_cost(comm->get_model_grid()), 
-    m_activations_cost_v(comm->get_model_grid()), 
+    m_cross_entropy_cost(comm->get_model_grid()),
+    m_cross_entropy_cost_v(comm->get_model_grid()),
     m_minibatch_cost(comm->get_model_grid()) {}
 
 lbann::categorical_cross_entropy::~categorical_cross_entropy() {
-  m_activations_cost.Empty();
-  m_activations_cost_v.Empty();
+  m_cross_entropy_cost.Empty();
+  m_cross_entropy_cost_v.Empty();
   m_minibatch_cost.Empty();
 }
 
 void lbann::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
-  Zeros(m_activations_cost, num_neurons, mini_batch_size);
+  Zeros(m_cross_entropy_cost, num_neurons, mini_batch_size);
   Zeros(m_minibatch_cost, mini_batch_size, 1);
 }
 
 void lbann::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(m_activations_cost_v, m_activations_cost, IR(0, m_activations_cost.Height()), IR(0, cur_mini_batch_size));
+  View(m_cross_entropy_cost_v, m_cross_entropy_cost, IR(0, m_cross_entropy_cost.Height()), IR(0, cur_mini_batch_size));
 }
 
 /// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
 /// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
-/// coding_dist - coding distribution (e.g. prev_activations)
-/// true_dist - true distribution (e.g. activations)
-DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &prev_activations_v, ElMat &activations_v) {
+/// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
+/// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
+DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
     DataType avg_error = 0.0, total_error = 0.0;
-    int64_t cur_mini_batch_size = activations_v.Width();
+    int64_t cur_mini_batch_size = groundtruth_v.Width();
 
     /// Note that this will modify the activations of the previous layer, but it should already be done with them
-    EntrywiseMap(prev_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
+    EntrywiseMap(predictions_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
 
-    Hadamard(activations_v, prev_activations_v, m_activations_cost_v);
+    Hadamard(groundtruth_v, predictions_v, m_cross_entropy_cost_v);
     Zeros(m_minibatch_cost, cur_mini_batch_size, 1); // Clear the entire array
-    ColumnSum(m_activations_cost_v, m_minibatch_cost);
+    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost);
 
     // Sum the local, total error
     const Int local_height = m_minibatch_cost.LocalHeight();

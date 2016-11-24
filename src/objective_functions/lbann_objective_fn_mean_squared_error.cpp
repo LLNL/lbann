@@ -55,14 +55,14 @@ void lbann::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_si
 
 /// Compute mean squared error
 /// sumerrors += ((X[m][0] - XP[m][0]) * (X[m][0] - XP[m][0]));
-DataType lbann::mean_squared_error::compute_obj_fn(ElMat &prev_activations_v, ElMat &activations_v) {
+DataType lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
   DataType avg_error = 0.0, total_error = 0.0;
-  int64_t cur_mini_batch_size = activations_v.Width();
+  int64_t cur_mini_batch_size = groundtruth_v.Width();
 
   // copy activations from the previous layer into the temporary matrix m_sum_squared_errors
-  Copy(prev_activations_v, m_sum_squared_errors); //optimize, need copy?
+  Copy(predictions_v, m_sum_squared_errors); //optimize, need copy?
   // compute difference between original and computed input x(Y)-x_bar(m_activations)
-  Axpy(-1., activations_v, m_sum_squared_errors);
+  Axpy(-1., groundtruth_v, m_sum_squared_errors);
   //square the differences
   EntrywiseMap(m_sum_squared_errors, (std::function<DataType(DataType)>)([](DataType z)->DataType{return z*z;}));
   // sum up squared in a column (i.e., per minibatch/image)

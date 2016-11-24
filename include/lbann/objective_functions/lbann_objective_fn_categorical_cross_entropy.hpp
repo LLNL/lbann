@@ -39,12 +39,12 @@ namespace lbann
 
     void setup(int num_neurons, int mini_batch_size);
     void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-    DataType compute_obj_fn(ElMat &prev_activations_v, ElMat &activations_v);
+    DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
 
   protected:
     /** Workspace to compute the difference between predicted categories and ground truth */
-    DistMat m_activations_cost;
-    DistMat m_activations_cost_v;
+    DistMat m_cross_entropy_cost;
+    DistMat m_cross_entropy_cost_v;
     /** Colume-wise sum of the costs of a minibatch. */
     ColSumMat m_minibatch_cost;
   };
