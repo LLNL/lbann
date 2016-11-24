@@ -52,9 +52,6 @@ namespace lbann
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void setup(int numPrevNeurons);
-      DistMat& get_weights_biases() { return WB_view; }
-      DistMat& get_weights_biases_gradient() { return WB_D_view; }
-      DistMat& get_activations() { return Acts_view; }
       bool update();
       DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
       DataType computeCost(DistMat &deltas);
@@ -74,13 +71,6 @@ namespace lbann
       DistMat m_bias_weights_gradient_v;
       DistMat m_bias_bp_t;
       DataType m_bias_term;
-
-      /** View of the WB matrix, except for the bottom row. */
-      DistMat WB_view;
-      /** View of the WB_D matrix, except for the bottom row. */
-      DistMat WB_D_view;
-      /** View of the Acts matrix, except for the bottom row. */
-      DistMat Acts_view;
 
     public:
       //Probability of dropping neuron/input used in dropout_layer
