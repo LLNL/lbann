@@ -28,7 +28,6 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
-#include "lbann/callbacks/lbann_callback_imcomm.hpp"
 
 using namespace std;
 using namespace lbann;
@@ -69,7 +68,7 @@ int main(int argc, char* argv[])
     trainParams.DropOut = -1.0f;
     trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
     trainParams.IntermodelCommMethod = static_cast<int>(
-      lbann_callback_imcomm::ADAPTIVE_THRESH_QUANTIZATION);
+                                                        lbann_callback_imcomm::NORMAL/*ADAPTIVE_THRESH_QUANTIZATION*/);
     trainParams.PercentageTrainingSamples = 0.90;
     trainParams.PercentageValidationSamples = 1.00;
     PerformanceParams perfParams;
@@ -182,12 +181,12 @@ int main(int argc, char* argv[])
     }
 
     layer_factory* lfac = new layer_factory();
-    deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
+    deep_neural_network dnn(trainParams.MBSize, comm, new categorical_cross_entropy(comm), lfac, optimizer);
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
-    input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
-    //input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
       "FullyConnected", 1024,
@@ -204,8 +203,8 @@ int main(int argc, char* argv[])
     uint smidx = dnn.add(
       "Softmax", 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
-    target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-    //target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -228,6 +227,8 @@ int main(int argc, char* argv[])
     dnn.add_callback(&lrsched);
     // lbann_callback_io io_cb({0,4}); // Monitor layers 0 and 4
     // dnn.add_callback(&io_cb);
+    lbann_callback_debug debug_cb(execution_mode::training);
+    //dnn.add_callback(&debug_cb);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
