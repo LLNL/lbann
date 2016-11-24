@@ -32,6 +32,8 @@
 #include "datatype.hpp"
 #include "El.hpp"
 
+// typedef double DataType; // if you change this, also update DataTypeMPI
+// static MPI_Datatype DataTypeMPI = MPI_DOUBLE;
 typedef float DataType; // if you change this, also update DataTypeMPI
 static MPI_Datatype DataTypeMPI = MPI_FLOAT;
 
@@ -87,5 +89,11 @@ namespace lbann
     
     
 }
+
+/// Print the dimensions and name of a Elemental matrix
+static const char* __attribute__((used)) _display_matrix(ElMat *m, char *name) {
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
+}
+#define DISPLAY_MATRIX(x) _display_matrix(x, #x);
 
 #endif // LBANN_BASE_HPP
