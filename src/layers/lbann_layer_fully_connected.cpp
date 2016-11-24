@@ -46,17 +46,13 @@ using namespace El;
 // [W00 ...   B0]
 // [|         |]
 // [Wn0       Bn]
-// [0  ...  0 1] - Initialize the final row to be all zeros and 1 in the bias to properly
-//                 set the bias for the next layer
+//
 // WB_D structure:
 // [dW     dB]
-// [0 ... 0 0]
 // D structure:
 // [D        ]
-// [0 ... 0 0]
 // Z, Zs, Act, Acts structure:
 // [Acts     ]
-// [1 ... 1 1]
 
 lbann::FullyConnectedLayer::
 FullyConnectedLayer(const uint index,
