@@ -42,8 +42,7 @@ namespace lbann
     DataType compute_obj_fn(ElMat &prev_activations_v, ElMat &activations_v);
 
   protected:
-    DataType aggregate_cost;   // if this type is changed, update checkpoint code
-    long num_backprop_steps; // if this type is changed, update checkpoint code
+    /** Workspace to compute the difference between predicted categories and ground truth */
     DistMat m_activations_cost;
     DistMat m_activations_cost_v;
     /** Colume-wise sum of the costs of a minibatch. */
