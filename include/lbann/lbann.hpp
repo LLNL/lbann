@@ -69,6 +69,7 @@
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 
 
 /// Regularizers

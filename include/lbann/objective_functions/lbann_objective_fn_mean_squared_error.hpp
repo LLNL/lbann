@@ -22,26 +22,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-//
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FN_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FN_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/lbann_Elemental_extensions.h"
 
 namespace lbann
 {
-  class objective_fn {
+  class mean_squared_error : public objective_fn {
   public:
-    objective_fn() {}
-    virtual ~objective_fn() {}
-    virtual void setup(int num_neurons, int mini_batch_size) {}
-    virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
-    virtual DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {}
+    mean_squared_error(lbann_comm* comm);
+    ~mean_squared_error();
+
+    void setup(int num_neurons, int mini_batch_size);
+    void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+    DataType compute_obj_fn(ElMat &prev_activations_v, ElMat &activations_v);
+
+  protected:
+    /** Workspace to compute the squared error differences */
+    DistMat m_sum_squared_errors;
+    DistMat m_sum_squared_errors_v;
+    /** Colume-wise sum of the costs of a minibatch. */
+    ColSumMat m_minibatch_cost;
   };
 }
 
-#endif // LBANN_OBJECTIVE_FN_INCLUDED
+#endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED

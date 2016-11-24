@@ -27,6 +27,7 @@
 #include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 //#include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include "lbann/utils/lbann_random.hpp"
 //#include <sys/types.h>
@@ -37,29 +38,34 @@ using namespace std;
 using namespace El;
 
 lbann::target_layer_unsupervised::target_layer_unsupervised(size_t index,lbann_comm* comm,
-                                                              Optimizer* optimizer,/*needed?*/
+                                                            Optimizer* optimizer,/*needed?*/
                                                               const uint miniBatchSize,
                                                               Layer* original_layer,
                                                               const weight_initialization init)
-  :  Layer(index, comm, optimizer, miniBatchSize),m_original_layer(original_layer),
-     diff(comm->get_model_grid()),m_minibatch_cost(comm->get_model_grid()),
-      m_weight_initialization(init)
+  :  target_layer(comm, miniBatchSize, {}, false),m_original_layer(original_layer),
+     m_activation_weights_v(comm->get_model_grid()),
+     m_bias_weights_v(comm->get_model_grid()),
+     m_activation_weights_gradient_v(comm->get_model_grid()),
+     m_bias_weights_gradient_v(comm->get_model_grid()),
+     m_bias_bp_t(comm->get_model_grid()),
+     m_weight_initialization(init)
 {
 
   Index = index;
   NumNeurons = original_layer->NumNeurons;
+  this->optimizer = optimizer; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
   num_backprop_steps = 0;
+  m_bias_term = 1.0;
 }
 
 void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
 
-
+  target_layer::setup(num_prev_neurons);
   Layer::setup(num_prev_neurons);
   if(optimizer != NULL) {
     optimizer->setup(num_prev_neurons+1, NumNeurons);
   }
-
   // Initialize weight-bias matrix
   Zeros(*m_weights, NumNeurons, num_prev_neurons+1);
 
@@ -110,14 +116,38 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
   Zeros(*m_activations, NumNeurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
   Zeros(*m_weights_gradient, NumNeurons,num_prev_neurons + 1); //clear up before filling with new results
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size); //clear up before filling with new results
-  Zeros(diff, NumNeurons, m_mini_batch_size); //holds squared diff of "ground truth" and computed value
-  Zeros(m_minibatch_cost, m_mini_batch_size, 1); //holds sum of squared diff for each sample in a minibatch
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+
+  /// Setup independent views of the weight matrix for the activations and bias terms
+  View(m_activation_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()-1));
+  View(m_bias_weights_v, *m_weights, IR(0, m_weights->Height()), IR(m_weights->Width()-1, m_weights->Width()));
+
+  /// Setup independent views of the weights gradient matrix for the activations and bias terms
+  View(m_activation_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()-1));
+  View(m_bias_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(m_weights_gradient->Width()-1, m_weights_gradient->Width()));
+
+  /// Create a "transposed" vector of the bias term for use in backprop
+  Ones(m_bias_bp_t, m_mini_batch_size, 1);
 }
 
 ///@todo update this to use the new fp_linearity framework ?? not needed??
 DataType lbann::target_layer_unsupervised::forwardProp(DataType prev_WBL2NormSum) {
+  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
+  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
+  target_layer::fp_set_std_matrix_view();
+
+  StarMat local_bias_weights(comm->get_model_grid());
+  Copy(m_bias_weights_v, local_bias_weights);
+  IndexDependentFill(*m_activations_v, (std::function<DataType(int,int)>)
+                     ([this, local_bias_weights](int r, int c)->DataType {
+                       int rL = local_bias_weights.LocalRow(r);
+                       if(!local_bias_weights.IsLocal(r,0)) { throw lbann_exception("Bad fill");}
+                       return local_bias_weights.GetLocal(rL,0) * m_bias_term;
+                     }));
+
   //m_activations is linear transformation of m_weights * m_prev_activations^T
-  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0., *m_activations_v);
+  Gemm(NORMAL, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_activations_v, (DataType) 1., *m_activations_v);
   int num_errors = 0;
   //not used
   return num_errors;
@@ -128,57 +158,40 @@ void lbann::target_layer_unsupervised::backProp() {
   /// And for reconstruction_cost
   //@todo use Acts for input layer and fp_input for others
   //if(m_original_layer->Index == 0) m_original_layer->fp_input = m_original_layer->Acts;
-  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations_v);
+  /// Grab the original activations from the input layer -- note do not use the view because
+  /// input layers do not setup the views.
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
   DistMat& DsNext = DsNextProxy.Get();
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
   //@todo: Optimize (may be we dont need this double copy)
   //Activation in this layer is same as linear transformation of its input, no linearity
   //@todo: Optimize (check that may be we dont need this double copy)
-  Copy(*m_activations, *m_prev_error_signal);
-  Axpy(-1., DsNext, *m_prev_error_signal); // Per-neuron error
+
+  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  DistMat DsNext_v;
+  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
+
+  Copy(*m_activations_v, *m_prev_error_signal_v);
+  Axpy(-1., DsNext_v, *m_prev_error_signal_v); // Per-neuron error
   // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+  Gemm(TRANSPOSE, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
   if (m_execution_mode == execution_mode::training) {
     //DsNext is proxy of original layer
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input (DsNext)
-    DataType avg_error = this->reconstruction_cost(DsNext);
+    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(/**m_prev_activations_v,*/ *m_activations_v, DsNext_v);
     //draw_image(DsNext,m_activations);
     aggregate_cost += avg_error;
     num_backprop_steps++;
   }
 
-  // by divide mini-batch size
+  // Compute update for activation weights
   Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, (DataType) 0., *m_weights_gradient); //??
-}
-
-// Compute the cost function
-//Sum of squared errors
-DataType lbann::target_layer_unsupervised::reconstruction_cost(const DistMat& Y) {
-  //sumerrors += ((X[m][0] - XP[m][0]) * (X[m][0] - XP[m][0]));
-  DataType avg_error = 0.0, total_error = 0.0;
-  //copy original layer (DsNext) to temporary diff (optimize)??
-  Copy(Y, diff); //optimize, need copy?
-  //compute difference between original and computed input x(Y)-x_bar(m_activations)
-  Axpy(-1.,*m_activations,diff);
-  //square the differences
-  EntrywiseMap(diff, (std::function<DataType(DataType)>)([](DataType z)->DataType{return z*z;}));
-  // sum up squared in a column (i.e., per minibatch/image)
-  Zeros(m_minibatch_cost, m_mini_batch_size, 1);
-  ColumnSum(diff,m_minibatch_cost);
-
-  // Sum the local, total error
-  const Int local_height = m_minibatch_cost.LocalHeight();
-  for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost.GetLocal(r, 0);
-  }
-  total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
-
-  //avg_error = -1.0 * total_error / m_mini_batch_size;
-  avg_error = total_error / m_mini_batch_size;
-  return avg_error;
+       *m_prev_activations_v, (DataType) 0., m_activation_weights_gradient_v);
+  // Compute update for bias terms
+  Gemv(NORMAL, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       m_bias_bp_t, (DataType) 0., m_bias_weights_gradient_v);
 }
 
 //draw image here for debugging original = DsNext, computed = m_activations
