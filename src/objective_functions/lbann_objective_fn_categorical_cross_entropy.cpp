@@ -44,7 +44,6 @@ lbann::categorical_cross_entropy::~categorical_cross_entropy() {
 }
 
 void lbann::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
-  //  Zeros(m_activcations_cost, num_neurons, m_mini_batch_size);
   Zeros(m_activations_cost, num_neurons, mini_batch_size);
   Zeros(m_minibatch_cost, mini_batch_size, 1);
 }
@@ -62,6 +61,7 @@ DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &prev_activation
     DataType avg_error = 0.0, total_error = 0.0;
     int64_t cur_mini_batch_size = activations_v.Width();
 
+    /// Note that this will modify the activations of the previous layer, but it should already be done with them
     EntrywiseMap(prev_activations_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
 
     Hadamard(activations_v, prev_activations_v, m_activations_cost_v);
