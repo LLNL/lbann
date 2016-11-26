@@ -205,24 +205,29 @@ int main(int argc, char* argv[])
 
         lbann_callback_print print_cb;
         dnn.add_callback(&print_cb);
+        lbann_callback_dump_weights* dump_weights_cb;
+        lbann_callback_dump_activations* dump_activations_cb;
+        lbann_callback_dump_gradients* dump_gradients_cb;
         if (trainParams.DumpWeights) {
-          lbann_callback_dump_weights dump_weights_cb(trainParams.DumpDir);
-          dnn.add_callback(&dump_weights_cb);
+          dump_weights_cb = new lbann_callback_dump_weights(
+            trainParams.DumpDir);
+          dnn.add_callback(dump_weights_cb);
         }
         if (trainParams.DumpActivations) {
-          lbann_callback_dump_activations dump_activations_cb(
+          dump_activations_cb = new lbann_callback_dump_activations(
             trainParams.DumpDir);
-          dnn.add_callback(&dump_activations_cb);
+          dnn.add_callback(dump_activations_cb);
         }
         if (trainParams.DumpGradients) {
-          lbann_callback_dump_gradients dump_gradients_cb(trainParams.DumpDir);
-          dnn.add_callback(&dump_gradients_cb);
+          dump_gradients_cb = new lbann_callback_dump_gradients(
+            trainParams.DumpDir);
+          dnn.add_callback(dump_gradients_cb);
         }
         // lbann_callback_io io_cb({0,3});
         // dnn.add_callback(&io_cb);
-        lbann_callback_io io_cb({0,3});
+        //lbann_callback_io io_cb({0,3});
         //        dnn.add_callback(&io_cb);
-        lbann_callback_debug debug_cb(execution_mode::testing);
+        //lbann_callback_debug debug_cb(execution_mode::testing);
         //        dnn.add_callback(&debug_cb);
 
         if (comm->am_world_master()) {
@@ -282,6 +287,15 @@ int main(int argc, char* argv[])
         // delete target_layer;  // Causes segfault
         // delete input_layer;  // Causes segfault
         // delete lfac;  // Causes segfault
+        if (trainParams.DumpWeights) {
+          delete dump_weights_cb;
+        }
+        if (trainParams.DumpActivations) {
+          delete dump_activations_cb;
+        }
+        if (trainParams.DumpGradients) {
+          delete dump_gradients_cb;
+        }
         delete optimizer;
         delete comm;
 
