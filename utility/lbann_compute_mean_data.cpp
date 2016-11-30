@@ -115,23 +115,12 @@ trainParams.PercentageTrainingSamples
           }
         }
 
-        unsigned int max = 0;
-        unsigned int min = INT_MAX;
-        for (size_t i=0; i<d.size(); i++) {
-          max = d[i] > max ? d[i] : max;
-          min = d[i] < min ? d[i] : min;
-        }
-        cout << "max_1: " << max << " min_1: " << min << endl;
-
-        max = 0;
-        min = INT_MAX;
         size_t n = data.size();
+        int max = 0;
         for (size_t i=0; i<d.size(); i++) {
           d[i] /= n;
           max = d[i] > max ? d[i] : max;
-          min = d[i] < min ? d[i] : min;
         }
-        cout << "max_2: " << max << " min_2: " << min << endl;
 
         if (max > 255) {
           err << __FILE__ << " max value in mean_data is > 255: " << max;
