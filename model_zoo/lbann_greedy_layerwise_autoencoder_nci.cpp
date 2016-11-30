@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
       TrainingParams trainParams;
       trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
-      trainParams.EpochCount = 2;
+      trainParams.EpochCount = 10;
       trainParams.MBSize = 50;
       trainParams.LearnRate = 0.0001;
       trainParams.DropOut = -1.0f;
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
 
       gla.setup();
       if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
-      gla.train(trainParams.EpochCount);
+      gla.train(trainParams.EpochCount,true);
 
       delete optimizer;
       delete comm;

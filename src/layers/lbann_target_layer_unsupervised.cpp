@@ -55,7 +55,7 @@ lbann::target_layer_unsupervised::target_layer_unsupervised(size_t index,lbann_c
   NumNeurons = original_layer->NumNeurons;
   this->optimizer = optimizer; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
-  num_backprop_steps = 0;
+  num_forwardprop_steps = 0;
   m_bias_term = 1.0;
 }
 
@@ -148,6 +148,18 @@ DataType lbann::target_layer_unsupervised::forwardProp(DataType prev_WBL2NormSum
 
   //m_activations is linear transformation of m_weights * m_prev_activations^T
   Gemm(NORMAL, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_activations_v, (DataType) 1., *m_activations_v);
+
+  //compute reconstruction cost here
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
+  DistMat& DsNext = DsNextProxy.Get();
+  DistMat DsNext_v;
+  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
+  //DsNext is proxy of original layer
+  // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
+  // and original layer fp_input/original input (DsNext)
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, DsNext_v);
+  aggregate_cost += avg_error;
+  num_forwardprop_steps++;
   int num_errors = 0;
   //not used
   return num_errors;
@@ -155,7 +167,6 @@ DataType lbann::target_layer_unsupervised::forwardProp(DataType prev_WBL2NormSum
 
 void lbann::target_layer_unsupervised::backProp() {
   /// Copy the results (ground truth) to the m_error_signal variable for access by the next lower layer
-  /// And for reconstruction_cost
   //@todo use Acts for input layer and fp_input for others
   //if(m_original_layer->Index == 0) m_original_layer->fp_input = m_original_layer->Acts;
   /// Grab the original activations from the input layer -- note do not use the view because
@@ -165,7 +176,7 @@ void lbann::target_layer_unsupervised::backProp() {
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
   //@todo: Optimize (may be we dont need this double copy)
-  //Activation in this layer is same as linear transformation of its input, no linearity
+  //Activation in this layer is same as linear transformation of its input, no nonlinearity
   //@todo: Optimize (check that may be we dont need this double copy)
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
@@ -176,15 +187,6 @@ void lbann::target_layer_unsupervised::backProp() {
   Axpy(-1., DsNext_v, *m_prev_error_signal_v); // Per-neuron error
   // Compute the partial delta update for the next lower layer
   Gemm(TRANSPOSE, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
-  if (m_execution_mode == execution_mode::training) {
-    //DsNext is proxy of original layer
-    // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
-    // and original layer fp_input/original input (DsNext)
-    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(/**m_prev_activations_v,*/ *m_activations_v, DsNext_v);
-    //draw_image(DsNext,m_activations);
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
-  }
 
   // Compute update for activation weights
   Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
@@ -223,8 +225,7 @@ void lbann::target_layer_unsupervised::epoch_print() const {
     std::vector<double> avg_costs(comm->get_num_models());
     comm->intermodel_gather(avg_cost, avg_costs);
     for (size_t i = 0; i < avg_costs.size(); ++i) {
-      std::cout << "Model " << i << " average reconstruction cost: " << avg_costs[i] <<
-        std::endl;
+      std::cout << "model " << i << " average reconstruction cost: " << avg_costs[i] << std::endl;
     }
   } else {
     comm->intermodel_gather(avg_cost, comm->get_world_master());
@@ -238,9 +239,9 @@ void lbann::target_layer_unsupervised::epoch_reset() {
 
 void lbann::target_layer_unsupervised::reset_cost() {
   aggregate_cost = 0.0;
-  num_backprop_steps = 0;
+  num_forwardprop_steps = 0;
 }
 
 DataType lbann::target_layer_unsupervised::average_cost() const {
-  return aggregate_cost / num_backprop_steps;
+  return aggregate_cost / num_forwardprop_steps;
 }
