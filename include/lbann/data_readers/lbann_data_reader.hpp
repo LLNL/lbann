@@ -109,6 +109,7 @@ namespace lbann
 		// 		return false;
 		// 	}
 		// }
+    virtual int fetch_response(Mat& Y) { return 0; }
     /**
      * During the network's update phase, the data reader will
      * advanced the current position pointer.  If the pointer wraps
@@ -137,8 +138,10 @@ namespace lbann
     }
 
 		virtual int getNumLabels() { return 0; }
+		virtual int getNumResponses() { return 1; }
     virtual int get_linearized_data_size() { return 0; }
     virtual int get_linearized_label_size() { return 0; }
+    virtual int get_linearized_response_size() { return 1; }
 
     bool position_valid()   { return (CurrentPos < (int)ShuffledIndices.size()); }
     int getBatchSize()      { 

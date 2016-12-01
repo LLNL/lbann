@@ -35,7 +35,7 @@ namespace lbann
 {
   class io_layer : public Layer {
   public:
-    io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={}, bool data_sets_span_models=true);
+    io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={}, bool data_sets_span_models=true, bool for_regression=false);
     //    io_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader);
     void setup_data_readers_for_training(int base_offset, int stride, int model_offset = 0);
     void setup_data_readers_for_evaluation(int base_offset, int stride, int model_offset = 0);
@@ -52,12 +52,18 @@ namespace lbann
 
     long get_linearized_data_size();
     long get_linearized_label_size();
+    long get_linearized_response_size(void) const { return static_cast<long>(1); }
 
   public:
     dataset m_training_dataset;
     dataset m_testing_dataset;
     dataset m_validation_dataset;
     bool m_data_sets_span_models;
+
+  private:
+    const bool m_for_regression;
+  public:
+    bool is_for_regression(void) const { return m_for_regression; }
   };
 }
 

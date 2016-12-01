@@ -33,7 +33,7 @@ namespace lbann
 {
   class target_layer : public io_layer {
   public:
-    target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
+    target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
     DistMat *fp_output();
     DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
     DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
@@ -44,6 +44,8 @@ namespace lbann
     void fp_nonlinearity() {}
     /** No non-linearity */
     void bp_nonlinearity() {}
+
+    DataType compute_cost_cross_entropy();
 
     void summarize(lbann_summary& summarizer, int64_t step);
     void epoch_print() const;
@@ -63,6 +65,10 @@ namespace lbann
   protected:
     DataType aggregate_cost;   // if this type is changed, update checkpoint code
     long num_backprop_steps; // if this type is changed, update checkpoint code
+    DistMat m_activations_cost;
+    DistMat m_activations_cost_v;
+    /** Colume-wise sum of the costs of a minibatch. */
+    ColSumMat m_minibatch_cost;
   };
 }
 

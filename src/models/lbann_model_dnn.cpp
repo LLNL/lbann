@@ -33,6 +33,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/layers/lbann_target_layer.hpp" // temporary
 
 #include <string>
 #include <chrono>
@@ -126,6 +127,8 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
       finished_epoch = train_mini_batch(&num_samples, &num_errors);
     } while(!finished_epoch);
 
+  // This is RMSE not accuracy
+  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
     // Compute train accuracy on current epoch
     m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
@@ -165,10 +168,16 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
     L2NormSum = m_layers[l]->forwardProp(L2NormSum);
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
+
+  // This is RMSE not accuracy
+  if (dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
+      m_train_accuracy = static_cast<DataType>(sqrt((m_train_accuracy*m_train_accuracy * (*num_samples) + L2NormSum) / (*num_samples + m_current_mini_batch_size)));
+
   *num_errors += (long) L2NormSum;
   *num_samples += m_current_mini_batch_size;
   do_model_forward_prop_end_cbs();
 
+  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
   // Update training accuracy
   m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
 
@@ -218,6 +227,7 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
     finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);
   } while(!finished_epoch);
 
+  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
   // Compute test accuracy
   m_test_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
@@ -251,6 +261,10 @@ bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
     L2NormSum = m_layers[l]->forwardProp(L2NormSum);
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
+  // This is RMSE not accuracy
+  if (dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
+      m_test_accuracy = static_cast<DataType>(sqrt((m_test_accuracy*m_test_accuracy * (*num_samples) + L2NormSum) / (*num_samples + m_current_mini_batch_size)));
+
   *num_errors += (long) L2NormSum;
   *num_samples += m_current_mini_batch_size;
   do_model_evaluate_forward_prop_end_cbs();

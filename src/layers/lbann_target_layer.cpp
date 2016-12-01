@@ -36,10 +36,13 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
-  : io_layer(comm, mini_batch_size, data_readers)
+lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
+  : io_layer(comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression)
 {
-  NumNeurons = io_layer::get_linearized_label_size();
+  if (is_for_regression())
+    NumNeurons = io_layer::get_linearized_response_size();
+  else
+    NumNeurons = io_layer::get_linearized_label_size();
   m_shared_data_reader = shared_data_reader;
   aggregate_cost = 0.0;
   num_backprop_steps = 0;
