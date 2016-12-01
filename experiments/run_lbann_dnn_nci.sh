@@ -42,7 +42,7 @@ TASKS_PER_NODE=8
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-ENABLE_HT=--enable-hyperthread
+#ENABLE_HT=--enable-hyperthread
 else
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
 ENABLE_HT=
