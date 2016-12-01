@@ -45,8 +45,6 @@ namespace lbann
     /** No non-linearity */
     void bp_nonlinearity() {}
 
-    DataType compute_cost_cross_entropy();
-
     void summarize(lbann_summary& summarizer, int64_t step);
     void epoch_print() const;
     void epoch_reset();
@@ -65,10 +63,6 @@ namespace lbann
   protected:
     DataType aggregate_cost;   // if this type is changed, update checkpoint code
     long num_backprop_steps; // if this type is changed, update checkpoint code
-    DistMat m_activations_cost;
-    DistMat m_activations_cost_v;
-    /** Colume-wise sum of the costs of a minibatch. */
-    ColSumMat m_minibatch_cost;
   };
 }
 
