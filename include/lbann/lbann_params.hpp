@@ -28,6 +28,7 @@
 #define LBANN_PARAMS_HPP_INCLUDED
 
 #include "lbann/lbann.hpp"
+#include "lbann_base.hpp"
 #include <string>
 
 namespace lbann
@@ -74,6 +75,8 @@ namespace lbann
     float LrDecayRate;
     /// How often does the learning rate decay
     int LrDecayCycles;
+    /// LrMomentum for SGD learning rate method
+    float LrMomentum;
     /// Activation function
     /** 1 - Sigmoid, 2 - Tanh, 3 - reLU */
     activation_type ActivationType;
@@ -83,6 +86,9 @@ namespace lbann
     float DropOut;
     /// Lambda for L2 regularization
     double Lambda;
+    /// Weight initialization method
+    /** 0 - zero, 1 - uniform, 2 - normal, 3 - glorot_normal, 4 - glorot_uniform, 5 - he_normal, 6 - he_uniform */
+    weight_initialization WeightInitType;
 
     /// Location of training and test data
     std::string DatasetRootDir;

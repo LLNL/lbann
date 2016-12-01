@@ -16,29 +16,11 @@ function(add_mpi_ctest TEST_NAME)
 
   # ctest with 1, 2, and 4 MPI processes
   set(NUM_PROCS 1)
-  while(8 GREATER ${NUM_PROCS})
     add_test("${TEST_NAME}_${NUM_PROCS}"
       ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NUM_PROCS} ${MPIEXEC_PREFLAGS}
       ${CMAKE_CURRENT_BINARY_DIR}/${TEST_EXE})
-    math(EXPR NUM_PROCS "${NUM_PROCS} * 2")
-  endwhile()
 
 endfunction()
 
 # Parallel Tests
-add_mpi_ctest( comm_test )
-add_mpi_ctest( quantizer_test )
-add_mpi_ctest( quantizer_bm )
-add_mpi_ctest( dnn_mnist )
-add_mpi_ctest( dnn_multi_mnist )
-add_mpi_ctest( dnn_imagenet )
-add_mpi_ctest( dnn_nci )
-add_mpi_ctest( dnn_nci_regression )
-add_mpi_ctest( cnn_mnist )
-add_mpi_ctest( alexnet )
-#add_mpi_ctest( stacked_autoencoder_mnist )
-add_mpi_ctest( greedy_layerwise_autoencoder_mnist)
-add_mpi_ctest( greedy_layerwise_autoencoder_imagenet)
-add_mpi_ctest( greedy_layerwise_autoencoder_nci)
-#add_mpi_ctest( test_uslayer )
-# add_mpi_ctest( autoencoder_mnist )
+add_mpi_ctest( compute_mean_data )

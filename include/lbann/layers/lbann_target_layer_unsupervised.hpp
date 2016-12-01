@@ -60,7 +60,7 @@ namespace lbann
   private:
     Layer* m_original_layer;
     DataType aggregate_cost;
-    long num_backprop_steps;
+    long num_forwardprop_steps;
     /// Views of the weight matrix that allow you to separate activation weights from bias weights
     DistMat m_activation_weights_v;
     DistMat m_bias_weights_v;

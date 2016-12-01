@@ -114,30 +114,39 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
       finished_epoch = train_mini_batch(phase_index, &num_samples, &num_errors);
     } while(!finished_epoch);
 
-    // Compute train accuracy on current epoch
-    m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
+    //Is training and testing enough? Do we need validation? val/test look similar!
     /*if(evaluation_frequency > 0
        && (epoch + 1) % evaluation_frequency == 0) {
-      // Evaluate model on validation set
-      // TODO: do we need validation callbacks here?
-      // do_validation_begin_cbs();
       m_validation_accuracy = evaluate(execution_mode::validation);
-      // do_validation_end_cbs();
 
       // Set execution mode back to training
       m_execution_mode = execution_mode::training;
-      for (size_t l = ; l < m_layers.size(); l++) {
-        m_layers[l]->m_execution_mode = execution_mode::training;
+      for (Layer* layer : m_layers) {
+        layer->m_execution_mode = execution_mode::training;
       }
     }*/
 
-    //do_epoch_end_cbs();
-    //print reconstruction_cost
-    //@todo: replace with callbacks
+    //print training reconstruction cost
+    if (comm->am_world_master()) std::cout << "Training ";
     m_layers[phase_end]->epoch_print();
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
+    } // train epoch end, this reset cost
+
+    evaluate(execution_mode::testing);
+
+    //print testing reconstruction cost (somewhat validation)
+    if (comm->am_world_master()) std::cout << "Testing ";
+    m_layers[phase_end]->epoch_print();
+    //Reset cost again
+    for (Layer* layer : m_layers) {
+      layer->epoch_reset();
+    } // train epoch
+    // Reset execution mode back to training
+    m_execution_mode = execution_mode::training;
+    for (Layer* layer : m_layers) {
+      layer->m_execution_mode = execution_mode::training;
     }
   }
   do_train_end_cbs();
@@ -189,15 +198,6 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, l
 
 DataType lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
 {
-  switch(mode) {
-  case execution_mode::validation:
-    do_validation_begin_cbs(); break;
-  case execution_mode::testing:
-    do_test_begin_cbs(); break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate function");
-  }
-
   // Set the execution mode
   m_execution_mode = mode;
   for (size_t l = 0; l < m_layers.size(); ++l) {
@@ -206,29 +206,17 @@ DataType lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  long num_samples = 0;
-  long num_errors = 0;
+  long num_samples = 0; //not use
+  long num_errors = 0; //not use
   bool finished_epoch;
   do {
     finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);
   } while(!finished_epoch);
 
-  // Compute test accuracy
-  m_test_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
-  switch(mode) {
-  case execution_mode::validation:
-    do_validation_end_cbs(); break;
-  case execution_mode::testing:
-    do_test_end_cbs();
-    // Reset after testing.
-    for (Layer* layer : m_layers) {
-      layer->epoch_reset();
-    }
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate function");
-  }
+  /*for (Layer* layer : m_layers) {
+    layer->epoch_reset();
+  }*/
 
   return m_test_accuracy;
 }
@@ -241,8 +229,8 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch(long *num_samples,
   for (size_t l = 0; l < m_layers.size(); l++) {
     L2NormSum = m_layers[l]->forwardProp(L2NormSum);
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  //*num_errors += (long) L2NormSum;
+  //*num_samples += m_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers

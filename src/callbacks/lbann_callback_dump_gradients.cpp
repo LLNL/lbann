@@ -31,15 +31,16 @@
 
 namespace lbann {
 
-void lbann_callback_dump_gradients::on_forward_prop_end(model* m, Layer* l) {
+void lbann_callback_dump_gradients::on_backward_prop_end(model* m, Layer* l) {
   const std::string prefix = basename + "epoch" +
-    std::to_string(m->get_cur_epoch()) + "-layer";
+    std::to_string(m->get_cur_epoch()) + "-step" +
+    std::to_string(m->get_cur_step()) + "-layer";
   uint idx = l->get_index();
   // Skip the input and output layers.
   if (idx == 0 || idx == m->get_layers().size() - 1) {
     return;
   }
-  El::Write(l->get_activations(),
+  El::Write(l->get_weights_biases_gradient(),
             prefix + std::to_string(idx) +
             "-Gradients",
             El::ASCII);

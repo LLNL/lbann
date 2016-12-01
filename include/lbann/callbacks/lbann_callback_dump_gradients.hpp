@@ -49,7 +49,7 @@ public:
    */
   lbann_callback_dump_gradients(std::string basename) :
     lbann_callback(), basename(basename) {}
-  void on_forward_prop_end(model* m, Layer* l);
+  void on_backward_prop_end(model* m, Layer* l);
 private:
   /** Basename for writing files. */
   std::string basename;

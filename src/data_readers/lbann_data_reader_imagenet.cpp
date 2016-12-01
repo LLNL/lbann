@@ -38,26 +38,24 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
 {
   m_image_width = 256;
   m_image_height = 256;
+  m_image_depth = 3;
   m_num_labels = 1000;
 
-  m_pixels = new unsigned char[m_image_width * m_image_height * 3];
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
 }
-
-lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize)
-  : DataReader_ImageNet(batchSize, true) {}
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
     m_image_dir(source.m_image_dir), ImageList(source.ImageList),
     m_image_width(source.m_image_width), m_image_height(source.m_image_height), m_num_labels(source.m_num_labels)
 {
-  m_pixels = new unsigned char[m_image_width * m_image_height * 3];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * 3);
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 }
 
 lbann::DataReader_ImageNet::~DataReader_ImageNet()
 {
-  delete m_pixels;
+  delete [] m_pixels;
 }
 
 int lbann::DataReader_ImageNet::fetch_data(Mat& X)
@@ -66,10 +64,11 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     return 0;
   }
 	
-	int pixelcount = m_image_width * m_image_height;
+	int pixelcount = m_image_width * m_image_height * m_image_depth;
   int current_batch_size = getBatchSize();
 	
   int n = 0;
+  bool have_mean_data = m_mean_data.size() ? true : false;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
     if (n >= (int)ShuffledIndices.size())
       break;
@@ -86,9 +85,13 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     if(width != m_image_width || height != m_image_height) {
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");
     }
-			
+
     for (int p = 0; p < pixelcount; p++) {
-      X.Set(p, k, m_pixels[p] / 255.0f);
+      if (have_mean_data) {
+        X.Set(p, k, m_pixels[p] - m_mean_data[p] / 255.0f);
+      } else {
+        X.Set(p, k, m_pixels[p] / 255.0f);
+      }
     }
   }
 
@@ -174,7 +177,7 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
 
 void lbann::DataReader_ImageNet::free()
 {
-  delete m_pixels;
+  delete [] m_pixels;
 }
 
 // Assignment operator
@@ -188,16 +191,81 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   DataReader::operator=(source);
 
   // first we need to deallocate any data that this data reader is holding!
-  delete m_pixels;
+  delete [] m_pixels;
 
   this->m_image_dir = source.m_image_dir;
   this->ImageList = source.ImageList;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
   this->m_num_labels = source.m_num_labels;
+  this->m_mean_data = source.m_mean_data;
 
-  m_pixels = new unsigned char[m_image_width * m_image_height * 3];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * 3);
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 
   return *this;
+}
+
+void lbann::DataReader_ImageNet::load_mean_data(std::string fn) {
+  stringstream err;
+
+  ifstream in(fn.c_str());
+  if (not in) {
+    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data failed to open file for reading: " << fn;
+    throw lbann_exception(err.str());
+  }
+
+	int pixelcount = m_image_width * m_image_height * m_image_depth;
+  m_mean_data.reserve(pixelcount);
+  unsigned char d;
+
+  int sanity = 0;
+  while (not in.eof()) {
+    in >> d;
+    m_mean_data.push_back(d);
+    ++sanity;
+    if (sanity > pixelcount) {
+      break;
+    }
+  }
+
+  if (sanity != pixelcount) {
+    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data file size is incorrect: " << fn << " should contain " << pixelcount << " unsigned ints";
+    throw lbann_exception(err.str());
+  }
+}
+
+int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process) {
+  stringstream err;
+
+  if(!DataReader::position_valid()) {
+    err << "lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
+    throw lbann_exception(err.str());
+    return 0;
+  }
+
+  size_t num_to_process = max_to_process > 0 ? max_to_process : ImageList.size();
+
+  data.clear();
+  data.reserve(num_to_process);
+	
+	int pixelcount = m_image_width * m_image_height * m_image_depth;
+  vector<unsigned char> pixels(pixelcount);
+  unsigned char *v = &(pixels[0]);
+
+  int width, height;
+  for (size_t n = 0; n < num_to_process; n++) {
+    string imagepath = m_image_dir + ImageList[n].first;
+    if (n < 10) cout << "DataReader_ImageNet::fetch_data(); loading: " << imagepath << endl;
+    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, true, v);
+    if(!ret) {
+      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
+    }
+    if(width != m_image_width || height != m_image_height) {
+      throw lbann_exception("ImageNet: mismatch data size -- either width or height");
+    }
+
+    data.push_back(pixels);
+  }
+  return 0;
 }
