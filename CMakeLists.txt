@@ -146,6 +146,7 @@ endmacro()
 # Add LBANN source files
 add_subdirectory(src)
 add_subdirectory(model_zoo)
+add_subdirectory(utility)
 
 # Build LBANN source files
 add_library(src OBJECT ${SRCS})

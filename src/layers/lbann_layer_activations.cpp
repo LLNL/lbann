@@ -46,6 +46,13 @@ Activation* new_activation(activation_type act_fn, DataType param) {
     return new id_layer();
   case activation_type::LEAKY_RELU:
     return new leaky_reLU_layer(param);
+#if 0
+  case activation_type::SOFTPLUS:
+    return new softplus_layer();
+#else
+  case activation_type::SMOOTH_RELU:
+    return new smooth_reLU_layer();
+#endif
   default:
     throw lbann_exception("Unsupported activation type.");
   }
@@ -111,6 +118,30 @@ DataType leaky_reLU_layer::leaky_reLUPrime(DataType z, DataType k)
     }
 }
 
+#if 0
+DataType softplus_layer::softplus(DataType z)
+{
+    return log(1.0 + exp(z)); // exp(z) can be very large and blow up
+    // return log((exp(-z) + 1.0)/exp(-z)); // this can overflow or divided by zero
+}
+
+DataType softplus_layer::softplusPrime(DataType z)
+{
+    return (1.0 / (1.0 + exp(-z)));
+}
+#else
+DataType smooth_reLU_layer::smooth_reLU(DataType z)
+{
+    return (z / (1.0 + exp(-z)));
+}
+
+DataType smooth_reLU_layer::smooth_reLUPrime(DataType z)
+{
+    DataType s = (1.0 / (1.0 + exp(-z)));
+    return (s + z*s - z*s*s);
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // There are three mechanisms for updating all fields of a distributed matrix
 // 1) EntrywiseMap + independent reset of the bias row - Fastest (about ~30% faster)
@@ -163,5 +194,27 @@ void leaky_reLU_layer::backwardProp(ElMat& m)
   EntrywiseMap(m, std::function<DataType(DataType)>([this] (DataType x) -> DataType { return leaky_reLUPrime(x, leak); }));
   //EntrywiseMap(m, std::function<DataType(DataType)>(leaky_reLUPrime));
 }
+
+#if 0
+void softplus_layer::forwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>(softplus));
+}
+
+void softplus_layer::backwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>(softplusPrime));
+}
+#else
+void smooth_reLU_layer::forwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>(smooth_reLU));
+}
+
+void smooth_reLU_layer::backwardProp(ElMat& m)
+{
+  EntrywiseMap(m, std::function<DataType(DataType)>(smooth_reLUPrime));
+}
+#endif
 
 }  // namespace lbann

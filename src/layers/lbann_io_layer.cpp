@@ -34,9 +34,9 @@
 using namespace std;
 using namespace El;
 
-lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models)
+lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models, bool for_regression)
   : Layer(0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
-    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation]), m_data_sets_span_models(data_sets_span_models)
+    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation]), m_data_sets_span_models(data_sets_span_models), m_for_regression(for_regression)
 {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
@@ -159,6 +159,8 @@ long lbann::io_layer::get_linearized_data_size() {
 }
 
 long lbann::io_layer::get_linearized_label_size() {
+  if (is_for_regression()) return static_cast<long>(1);
+
   long linearized_label_size = -1;
 
   /// @todo NumNeurons should be hidden inside of an accessor function

@@ -34,8 +34,8 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader), Ys(comm->get_model_grid())
+lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
+  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(comm->get_model_grid())
 {
   //  Index = index;
   m_root = 0;
