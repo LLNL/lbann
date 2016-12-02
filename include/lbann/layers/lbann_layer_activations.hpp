@@ -37,7 +37,12 @@ enum class activation_type {
   TANH,
   RELU,
   ID,
-  LEAKY_RELU  
+  LEAKY_RELU,
+#if 0
+  SOFTPLUS
+#else
+  SMOOTH_RELU
+#endif
 };
 
 /** Base activation function class. */
@@ -103,6 +108,28 @@ private:
   static DataType leaky_reLUPrime(DataType z, DataType k);
   DataType leak;
 };
+
+#if 0
+/** softplus (Smooth Rectified linear unit) activation function. ln(1+e^x) */
+class softplus_layer : public Activation {
+public:
+  void forwardProp(ElMat& m);
+  void backwardProp(ElMat& m);
+private:
+  static DataType softplus(DataType z);
+  static DataType softplusPrime(DataType z);
+};
+#else
+/** Smooth Rectified linear unit activation function. x*e^x */
+class smooth_reLU_layer : public Activation {
+public:
+  void forwardProp(ElMat& m);
+  void backwardProp(ElMat& m);
+private:
+  static DataType smooth_reLU(DataType z);
+  static DataType smooth_reLUPrime(DataType z);
+};
+#endif
 
 /** Return a new Activation class of type act_fn. */
 Activation* new_activation(activation_type act_fn,
