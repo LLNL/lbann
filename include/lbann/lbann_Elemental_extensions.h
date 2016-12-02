@@ -41,10 +41,6 @@ namespace El {
     void ColumnMax
     ( const DistMatrix<F,U,V>& A, DistMatrix<Base<F>,V,STAR>& norms );
 
-  template<typename F,Dist U,Dist V>
-    void ColumnMax
-    ( const DistMatrix<F,U,V>& A, DistMatrix<Base<F>,V,STAR>& norms );
-
   template<typename F>
     void ColumnMax( const DistMultiVec<F>& X, Matrix<Base<F>>& norms );
 
