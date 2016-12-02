@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
       TrainingParams trainParams;
       trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
+      //trainParams.DumpWeights = "false"; //set to true to dump weight bias matrices
+      //trainParams.DumpDir = "."; //provide directory to dump weight bias matrices
       trainParams.EpochCount = 2;
       trainParams.MBSize = 50;
       trainParams.LearnRate = 0.0001;
@@ -190,6 +192,14 @@ int main(int argc, char* argv[])
       // Print out information for each epoch.
       lbann_callback_print print_cb;
       dnn.add_callback(&print_cb);
+
+      //Dump Weight-Bias matrices to files in DumpDir
+      lbann_callback_dump_weights* dump_weights_cb;
+      if (trainParams.DumpWeights) {
+        dump_weights_cb = new lbann_callback_dump_weights(
+          trainParams.DumpDir);
+        gla.add_callback(dump_weights_cb);
+      }
       // Record training time information.
       //lbann_callback_timer timer_cb(&summarizer);
       //dnn.add_callback(&timer_cb);
@@ -207,8 +217,10 @@ int main(int argc, char* argv[])
       if (comm->am_world_master()) {
         cout << "Parameter settings:" << endl;
         cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-        cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
+        cout << "\tLearning rate: " << trainParams.LearnRate << endl;
         cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+        cout << "\t Dump Weights? " << trainParams.DumpWeights << endl;
+        cout << "\tDump Dir : " << trainParams.DumpDir << endl;
       }
 
 

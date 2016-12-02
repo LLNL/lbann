@@ -26,6 +26,9 @@
 // lbann_dnn_nci.cpp - Autoencoder application for NCI
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
+#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
+#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -52,6 +55,8 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
       TrainingParams trainParams;
       trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
+      //trainParams.DumpWeights = "false"; //set to true to dump weight bias matrices
+      //trainParams.DumpDir = "."; //provide directory to dump weight bias matrices
       trainParams.EpochCount = 10;
       trainParams.MBSize = 50;
       trainParams.LearnRate = 0.0001;
@@ -180,16 +185,22 @@ int main(int argc, char* argv[])
       gla.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
 
-      // Print out information for each epoch.
-      lbann_callback_print print_cb;
-      gla.add_callback(&print_cb);
+      //Dump Weight-Bias matrices to files in DumpDir
+      lbann_callback_dump_weights* dump_weights_cb;
+      if (trainParams.DumpWeights) {
+        dump_weights_cb = new lbann_callback_dump_weights(
+          trainParams.DumpDir);
+        gla.add_callback(dump_weights_cb);
+      }
 
 
       if (comm->am_world_master()) {
         cout << "Parameter settings:" << endl;
         cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-        cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
+        cout << "\tLearning rate: " << trainParams.LearnRate << endl;
         cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+        cout << "\t Dump Weights? " << trainParams.DumpWeights << endl;
+        cout << "\tDump Dir : " << trainParams.DumpDir << endl;
       }
 
 
@@ -197,6 +208,10 @@ int main(int argc, char* argv[])
       gla.setup();
       if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
       gla.train(trainParams.EpochCount,true);
+
+      if (trainParams.DumpWeights) {
+        delete dump_weights_cb;
+      }
 
       delete optimizer;
       delete comm;

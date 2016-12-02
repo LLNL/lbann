@@ -91,8 +91,8 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     if (get_terminate_training()) break;
 
     ++m_current_epoch;
-    //do_epoch_begin_cbs();
-    //@todo -replace with cbs
+    do_epoch_begin_cbs(); // needed for selected callback e.g., dump matrices
+    //Overide default print callback
     if (comm->am_world_master()) {
       std::cout << "-----------------------------------------------------------" << std::endl;
       std::cout << "Phase [" << phase_index  << "] Epoch [" << epoch << "]" <<  std::endl;
@@ -130,6 +130,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     //print training reconstruction cost
     if (comm->am_world_master()) std::cout << "Training ";
     m_layers[phase_end]->epoch_print();
+    do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     } // train epoch end, this reset cost
