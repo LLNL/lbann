@@ -28,7 +28,12 @@ else()
   if(NOT ELEMENTAL_BUILD_TYPE)
     set(ELEMENTAL_BUILD_TYPE ${CMAKE_BUILD_TYPE})
   endif()
-  option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
+  else()
+   option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
+  endif()
   option(ELEMENTAL_C_INTERFACE "Elemental: build C interface?" OFF)
   option(ELEMENTAL_INSTALL_PYTHON_PACKAGE "Elemental: install Python interface?" OFF)
   option(ELEMENTAL_DISABLE_PARMETIS "Elemental: disable ParMETIS?" ON) # Non-commercial license
