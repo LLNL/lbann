@@ -184,38 +184,6 @@ void test_adaptive_threshold_compression() {
   ASSERT_MAT_EQ(mat, with_qerror);
 }
 
-/** Test the inter-model quantize-and-allreduce (high-bandwidth version). */
-void test_quantize_allreduce2() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
-  }
-  DistMat exact_sum(mat);
-  Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
-  lbann_quantizer quantizer;
-  quantizer.intermodel_sum_quantized2(comm, mat, qerror, im_qerror);
-  comm->intermodel_sum_matrix(exact_sum);
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  // Should have no error.
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ(mat, exact_sum);
-  ASSERT_MAT_EQ(abs_elemerr, z);
-}
-
 /** Test the inter-model quantize-and-allreduce. */
 void test_quantize_allreduce() {
   lbann_comm* comm = new lbann_comm(2);
@@ -403,7 +371,6 @@ int main(int argc, char** argv) {
   test_threshold_compression();
   test_adaptive_threshold_quantize();
   test_adaptive_threshold_compression();
-  test_quantize_allreduce2();
   test_quantize_allreduce();
   test_threshold_quantize_allreduce();
   test_compressed_threshold_quantize_allreduce();

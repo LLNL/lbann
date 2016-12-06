@@ -125,10 +125,6 @@ public:
   void intermodel_sum_quantized(lbann_comm* comm, DistMat& mat, Mat& qerror,
                                 Mat& im_qerror, bool do_adagrad = false,
                                 Mat* gradhist = nullptr);
-  void intermodel_sum_quantized2(lbann_comm* comm, Mat& mat, Mat& qerror,
-                                 Mat& im_qerror);
-  void intermodel_sum_quantized2(lbann_comm* comm, DistMat& mat, Mat& qerror,
-                                 Mat& im_qerror);
 
   /**
    * Threshold and quantize a matrix. qerror needs to be initialized with:

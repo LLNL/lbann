@@ -353,43 +353,6 @@ void lbann_quantizer::intermodel_sum_quantized(
                            gradhist);
 }
 
-void lbann_quantizer::intermodel_sum_quantized2(lbann_comm* comm, Mat& mat_,
-                                                Mat& qerror_, Mat& im_qerror) {
-  if (qerror_.Height() == 0) {
-    Zeros(qerror_, mat_.Height(), mat_.Width());
-  }
-  Mat mat;
-  Transpose(mat_, mat);
-  Mat qerror;
-  Transpose(qerror_, qerror);
-  QuantizedMatrix qmat;
-  quantize(mat, qmat, qerror);
-  QuantizedMatrix recv_qmat;
-  recv_qmat.Resize(qmat.Height(), qmat.Width());
-  for (int i = 0; i < comm->get_num_models(); ++i) {
-    if (i == comm->get_model_rank()) {
-      for (int dst = 0; dst < comm->get_num_models(); ++dst) {
-        if (dst != comm->get_model_rank()) {
-          comm->send(qmat.Buffer(), qmat.Width() * qmat.Height(), dst);
-        }
-      }
-    } else {
-      comm->recv(recv_qmat.Buffer(), recv_qmat.Width() * recv_qmat.Height(), i);
-      Mat uqmat;
-      uqmat.Resize(mat.Height(), mat.Width());
-      unquantize(recv_qmat, uqmat);
-      mat += uqmat;
-    }
-  }
-  Transpose(mat, mat_);
-  Transpose(qerror, qerror_);
-}
-
-void lbann_quantizer::intermodel_sum_quantized2(lbann_comm* comm, DistMat& mat,
-                                                Mat& qerror, Mat& im_qerror) {
-  intermodel_sum_quantized2(comm, mat.Matrix(), qerror, im_qerror);
-}
-
 void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
                                          Mat& qerror, DataType pos_thresh,
                                          DataType neg_thresh, bool delta) {
