@@ -282,6 +282,8 @@ public:
     ag_recv_trans_time = 0.0;
     pta_time = 0.0;
   }
+  /** Return the most recent number of quantized entries. */
+  size_t get_quantized_count() const { return quantized_count; }
 
 private:
   /** Number of bits per quantized word. */
@@ -324,6 +326,8 @@ private:
   double ag_recv_trans_time;
   /** Time spent in proportion_threshold_average. */
   double pta_time;
+  /** Most recent number of quantized entries. */
+  size_t quantized_count;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {

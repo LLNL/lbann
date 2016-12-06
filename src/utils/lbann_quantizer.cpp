@@ -37,6 +37,7 @@ namespace lbann {
 lbann_quantizer::lbann_quantizer() {
   reset_bytes_counters();
   reset_time_counters();
+  quantized_count = 0;
 }
 
 lbann_quantizer::~lbann_quantizer() {
@@ -592,6 +593,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
     }
     // Store the final number of entries.
     q[4 * width] = q.size();
+    quantized_count = q.size() - header_len;
   } else {
     // Delta encoding is done within each column:
     // only the difference between rows is recorded.

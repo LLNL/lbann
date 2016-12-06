@@ -205,6 +205,11 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
                                   m->get_cur_step());
         quantizer.reset_bytes_counters();
         quantizer.reset_time_counters();
+        if (ct == ADAPTIVE_THRESH_QUANTIZATION) {
+          summarizer->reduce_scalar(prefix + "quantized_count",
+                                    quantizer.get_quantized_count(),
+                                    m->get_cur_step());
+        }
       }
     }
   }
