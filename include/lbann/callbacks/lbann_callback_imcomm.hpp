@@ -53,6 +53,7 @@ public:
     COMPRESSED_THRESH_QUANTIZATION,  /** Do compressed thresholded one-bit quantization. */
     ADAPTIVE_THRESH_QUANTIZATION,  /** Do adaptive thresholded one-bit quantization. */
     COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION,  /** Do compressed adaptive thresholded one-bit quantization. */
+    NORMAL_AR  /** Sum gradient updates but use the custom allreduce. */
   };
   /** Do inter-model gradient updates of the given type. */
   lbann_callback_imcomm(comm_type ct = NONE, lbann_summary* _summarizer = nullptr);

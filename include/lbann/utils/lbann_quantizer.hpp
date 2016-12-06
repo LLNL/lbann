@@ -83,6 +83,12 @@ public:
   ~lbann_quantizer();
 
   /**
+   * Do an allreduce of mat, using the custom allreduce algorithm.
+   */
+  void intermodel_sum(lbann_comm* comm, Mat& mat);
+  void intermodel_sum(lbann_comm* comm, DistMat& mat);
+
+  /**
    * Quantize a matrix. qerror needs to be initialized with:
    * Zeros(qerror, mat.Height(), mat.Width()).
    * @param mat The matrix to quantize.

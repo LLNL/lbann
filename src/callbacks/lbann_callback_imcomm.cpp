@@ -128,6 +128,9 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
     case NORMAL:
       comm->intermodel_sum_matrix(weights_gradient);
       break;
+    case NORMAL_AR:
+      quantizer.intermodel_sum(comm, weights_gradient);
+      break;
     case ONEBIT_QUANTIZATION:
       quantizer.intermodel_sum_quantized(
         comm, weights_gradient, quantization_errors[l], im_quantization_errors[l], true,

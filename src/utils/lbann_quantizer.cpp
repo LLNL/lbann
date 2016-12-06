@@ -43,6 +43,63 @@ lbann_quantizer::~lbann_quantizer() {
 
 }
 
+void lbann_quantizer::intermodel_sum(lbann_comm* comm, Mat& mat) {
+  Mat rs_recv;
+  auto rs_send_trans = 
+    [] (Mat& mat, IR h, IR w, int& count) {
+      // Assumes h is the full height of the matrix and column-major order
+      // so the buffer is contiguous.
+      auto to_send = mat(h, w);
+      count = to_send.Height() * to_send.Width();
+      return to_send.Buffer();
+    };
+  auto rs_get_recv_buf =
+    [&rs_recv] (Mat& mat, int& count) {
+      if (rs_recv.Width() != mat.Width()) {
+        rs_recv.Resize(mat.Height(), mat.Width());
+      }
+      count = rs_recv.Height() * rs_recv.Width();
+      return rs_recv.Buffer();
+    };
+  auto rs_recv_trans =
+    [&rs_recv] (DataType*, Mat& accum) {
+      accum += rs_recv;
+    };
+  intermodel_ring_reduce_scatter<DataType>(comm, mat, false, rs_send_trans,
+                                           rs_get_recv_buf, rs_recv_trans);
+  Mat ag_send;
+  Mat ag_recv;
+  auto ag_reduced_trans =
+    [&ag_send] (Mat& reduced) {
+      ag_send = reduced;
+    };
+  auto ag_get_send_buf = [&ag_send] (int& count) {
+      count = ag_send.Width() * ag_send.Height();
+      return ag_send.Buffer();
+    };
+  auto ag_get_recv_buf =
+    [&ag_recv] (Mat& recv_view, int& count) {
+      ag_recv.Resize(recv_view.Height(), recv_view.Width());
+      count = ag_recv.Height() * ag_recv.Width();
+      return ag_recv.Buffer();
+    };
+  auto ag_recv_trans =
+    [&ag_recv] (DataType*, Mat& accum) {
+      accum = ag_recv;
+    };
+  auto ag_swap_bufs =
+    [&ag_send, &ag_recv] (DataType*, DataType*) {
+      std::swap(ag_send, ag_recv);
+    };
+  intermodel_ring_allgather<DataType>(comm, mat, false, ag_reduced_trans,
+                                      ag_get_send_buf, ag_get_recv_buf,
+                                      ag_recv_trans, ag_swap_bufs);
+}
+
+void lbann_quantizer::intermodel_sum(lbann_comm* comm, DistMat& mat) {
+  intermodel_sum(comm, mat.Matrix());
+}
+
 void lbann_quantizer::quantize(
   const Mat& mat, QuantizedMatrix& qmat, Mat& qerror, bool sample) {
   // Set up the quantized matrix. (+2 for the averages.)
