@@ -120,49 +120,65 @@ void lbann::model::do_validation_end_cbs() {
 
 void lbann::model::do_model_forward_prop_begin_cbs() {
   for (auto&& cb : callbacks) {
-    cb->on_forward_prop_begin(this);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_forward_prop_begin(this);
+    }
   }
 }
 
 void lbann::model::do_layer_forward_prop_begin_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
-    cb->on_forward_prop_begin(this, l);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_forward_prop_begin(this, l);
+    }
   }
 }
 
 void lbann::model::do_model_forward_prop_end_cbs() {
   for (auto&& cb : callbacks) {
-    cb->on_forward_prop_end(this);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_forward_prop_end(this);
+    }
   }
 }
 
 void lbann::model::do_layer_forward_prop_end_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
-    cb->on_forward_prop_end(this, l);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_forward_prop_end(this, l);
+    }
   }
 }
 
 void lbann::model::do_model_backward_prop_begin_cbs() {
   for (auto&& cb : callbacks) {
-    cb->on_backward_prop_begin(this);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_backward_prop_begin(this);
+    }
   }
 }
 
 void lbann::model::do_layer_backward_prop_begin_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
-    cb->on_backward_prop_begin(this, l);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_backward_prop_begin(this, l);
+    }
   }
 }
 
 void lbann::model::do_model_backward_prop_end_cbs() {
   for (auto&& cb : callbacks) {
-    cb->on_backward_prop_end(this);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_backward_prop_end(this);
+    }
   }
 }
 
 void lbann::model::do_layer_backward_prop_end_cbs(Layer* l) {
   for (auto&& cb : callbacks) {
-    cb->on_backward_prop_end(this, l);
+    if (get_cur_step() % cb->batch_interval == 0) {
+      cb->on_backward_prop_end(this, l);
+    }
   }
 }
 
