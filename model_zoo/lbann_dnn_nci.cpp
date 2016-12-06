@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
       if (trainParams.DumpWeights) {
         dump_weights_cb = new lbann_callback_dump_weights(
           trainParams.DumpDir);
-        gla.add_callback(dump_weights_cb);
+        dnn.add_callback(dump_weights_cb);
       }
       // Record training time information.
       //lbann_callback_timer timer_cb(&summarizer);
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
         cout << "\tMini-batch size: " << trainParams.MBSize << endl;
         cout << "\tLearning rate: " << trainParams.LearnRate << endl;
         cout << "\tEpoch count: " << trainParams.EpochCount << endl;
-        cout << "\t Dump Weights? " << trainParams.DumpWeights << endl;
+        cout << "\tDump Weights? " << trainParams.DumpWeights << endl;
         cout << "\tDump Dir : " << trainParams.DumpDir << endl;
       }
 
