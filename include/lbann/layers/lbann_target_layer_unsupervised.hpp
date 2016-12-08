@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
