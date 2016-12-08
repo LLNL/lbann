@@ -68,6 +68,16 @@ trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile,
 trainParams.PercentageTrainingSamples
 */
 
+cout << endl << endl << "1st error: attempting to read past end of vector\n\n";
+std::vector<int> v(4, 11);
+for (int h=0; h<6; h++) cout << h << " " << v[h] << endl;
+
+cout << endl << endl << "2nd error: attempting to read past end of vector; testing if continuing after error works ...\n\n";
+for (int h=0; h<6; h++) cout << h << " " << v[h] << endl;
+
+
+
+
     try {
         //sanity check to ensure we're running with a single processor
         int size;
@@ -108,10 +118,10 @@ trainParams.PercentageTrainingSamples
 
         cout << "num_pixels: " << num_pixels << endl;
 
-        vector<unsigned int> d(num_pixels, 0);
+        vector<double> d(num_pixels, 0);
         for (size_t i=0; i<data.size(); i++) {
           for (size_t j=0; j<num_pixels; j++) {
-            d[j] += (int)data[i][j];
+            d[j] += (double)data[i][j];
           }
         }
 
