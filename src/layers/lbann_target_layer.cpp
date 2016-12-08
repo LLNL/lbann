@@ -53,6 +53,9 @@ void lbann::target_layer::setup(int num_prev_neurons) {
     throw lbann_exception("target layer has invalid objective function pointer");
   }
   neural_network_model->obj_fn->setup(NumNeurons, m_mini_batch_size);
+  for (auto&& m : neural_network_model->metrics) {
+    m->setup(NumNeurons, m_mini_batch_size);
+  }
   Zeros(*m_activations, NumNeurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 }
@@ -79,6 +82,9 @@ void lbann::target_layer::fp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
   Layer::fp_set_std_matrix_view();
   neural_network_model->obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
+  for (auto&& m : neural_network_model->metrics) {
+    m->fp_set_std_matrix_view(cur_mini_batch_size);
+  }
 }
 
 void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {

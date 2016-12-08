@@ -71,6 +71,9 @@
 #include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 
+/// Metrics
+#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
 
 /// Regularizers
 #include "lbann/regularization/lbann_dropout.hpp"

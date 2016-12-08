@@ -121,6 +121,8 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
   target_layer::fp_set_std_matrix_view();
 
+  /// This is computing the categorical accuracy
+
   // Clear the contents of the intermediate matrices
   Zeros(YsColMax, Layer::m_mini_batch_size, 1);
   Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
@@ -169,6 +171,16 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
 
   /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
   distribute_from_local_matrix(Y_local, Ys);
+  Copy(Ys, *m_activations);
+
+  int tmp_num_errors = 0;
+  for (auto&& m : neural_network_model->metrics) {
+    tmp_num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
+  }
+
+  if(num_errors != (int) tmp_num_errors) {
+    cout << "The new metric function calculated " << tmp_num_errors << " errors and the old function computed " << num_errors << endl;
+  }
 
   return num_errors;
 }
@@ -213,6 +225,7 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regr
   SSE = Layer::comm->model_broadcast(m_root, SSE);
   /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
   distribute_from_local_matrix(Y_local, Ys);
+  Copy(Ys, *m_activations);
 
   return SSE;
 }
@@ -221,7 +234,6 @@ void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
   /// Compute the error between the target values and the previous layer's activations
   /// Copy the results to the m_error_signal variable for access by the next lower layer
   Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
-  Copy(Ys, *m_activations);
   Axpy(-1., *m_activations, *m_error_signal); // Per-neuron error
   /// @todo - BVE should we be using views here.
 

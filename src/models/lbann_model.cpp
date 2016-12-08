@@ -54,6 +54,10 @@ void lbann::model::setup_callbacks() {
   }
 }
 
+void lbann::model::add_metric(lbann::metric* m) {
+  metrics.push_back(m);
+}
+
 void lbann::model::do_train_begin_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_train_begin(this);
