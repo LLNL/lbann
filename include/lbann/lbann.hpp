@@ -35,7 +35,6 @@
 
 /// Models
 #include "lbann/models/lbann_model_dnn.hpp"
-#include "lbann/models/lbann_model_autoencoder.hpp"
 #include "lbann/models/lbann_model_stacked_autoencoder.hpp"
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
