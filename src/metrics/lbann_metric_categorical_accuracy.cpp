@@ -32,13 +32,20 @@ using namespace El;
 lbann::categorical_accuracy::categorical_accuracy(lbann_comm* comm) 
   : metric(comm),
     YsColMax(comm->get_model_grid()),
-    YsColMaxStar(comm->get_model_grid()) {}
+    YsColMaxStar(comm->get_model_grid()),
+    YsColMax_v(comm->get_model_grid()),
+    YsColMaxStar_v(comm->get_model_grid()) {}
 
 lbann::categorical_accuracy::~categorical_accuracy() {
   YsColMax.Empty();
   YsColMaxStar.Empty();
   m_max_index.Empty();
-  m_reduced_max_indicies.Empty();
+  m_reduced_max_indices.Empty();
+
+  YsColMax_v.Empty();
+  YsColMaxStar_v.Empty();
+  m_max_index_v.Empty();
+  m_reduced_max_indices_v.Empty();
 }
 
 void lbann::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
@@ -47,12 +54,17 @@ void lbann::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   Zeros(YsColMax, mini_batch_size, 1);
   Zeros(YsColMaxStar, mini_batch_size, 1);
   Zeros(m_max_index, mini_batch_size, 1); // Clear the entire matrix
+  Zeros(m_reduced_max_indices, mini_batch_size, 1); // Clear the entire matrix
   m_max_mini_batch_size = mini_batch_size;
 }
 
 void lbann::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  //  View(m_cross_entropy_cost_v, m_cross_entropy_cost, IR(0, m_cross_entropy_cost.Height()), IR(0, cur_mini_batch_size));
+  View(YsColMax_v, YsColMax, IR(0, YsColMax.Height()), IR(0, cur_mini_batch_size));
+  View(YsColMaxStar_v, YsColMaxStar, IR(0, YsColMaxStar.Height()), IR(0, cur_mini_batch_size));
+  View(m_max_index_v, m_max_index, IR(0, m_max_index.Height()), IR(0, cur_mini_batch_size));
+  View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, m_reduced_max_indices.Height()), IR(0, cur_mini_batch_size));
+  //  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, cur_mini_batch_size));
 }
 
 double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
@@ -62,25 +74,25 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
   Zeros(YsColMaxStar, m_max_mini_batch_size, 1);
 
   /// Compute the error between the previous layers activations and the ground truth
-  ColumnMax((DistMat)predictions_v, YsColMax); /// For each minibatch (column) find the maximimum value
-  Copy(YsColMax, YsColMaxStar); /// Give every rank a copy so that they can find the max index locally
+  ColumnMax((DistMat)predictions_v, YsColMax_v); /// For each minibatch (column) find the maximimum value
+  Copy(YsColMax_v, YsColMaxStar_v); /// Give every rank a copy so that they can find the max index locally
 
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
   for(int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
     int mb_global_index = predictions_v.GlobalCol(mb_index);
-    DataType sample_max = YsColMaxStar.GetLocal(mb_global_index, 0);
+    DataType sample_max = YsColMaxStar_v.GetLocal(mb_global_index, 0);
     for(int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
       if(predictions_v.GetLocal(f_index, mb_index) == sample_max) {
-        m_max_index.Set(mb_global_index, 0, predictions_v.GlobalRow(f_index));
+        m_max_index_v.Set(mb_global_index, 0, predictions_v.GlobalRow(f_index));
       }
     }
   }
 
-  Zeros(m_reduced_max_indicies, m_max_mini_batch_size, 1); // Clear the entire matrix
+  Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
-  comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indicies.Buffer(), mpi::MAX);
+  comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
 
   /// Check to see if the predicted results match the target results
   int num_errors = 0;
@@ -102,7 +114,7 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
     }
     if(targetidx != -1) { /// Only check against the prediction if this rank holds the groundtruth value
       Int global_mb_index = groundtruth_v.GlobalCol(mb_index);
-      if(m_reduced_max_indicies.Get(global_mb_index, 0) != targetidx) {
+      if(m_reduced_max_indices_v.Get(global_mb_index, 0) != targetidx) {
         num_errors++;
       }
     }
@@ -122,13 +134,15 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
           targetidx = f_index;
         }
       }
-      if(m_reduced_max_indicies.Get(mb_index, 0) != targetidx) {
+      if(m_reduced_max_indices.Get(mb_index, 0) != targetidx) {
         num_errors++;
       }
     }
   }
   num_errors = comm->model_broadcast(m_root, num_errors);
 #endif
+
+  record_error(num_errors, predictions_v.Width());
 
   return num_errors;
 }

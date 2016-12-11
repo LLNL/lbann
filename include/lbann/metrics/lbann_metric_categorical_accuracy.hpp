@@ -73,12 +73,16 @@ namespace lbann
     // long m_total_num_samples;
 
     ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-    StarMat YsColMaxStar;
+    StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
     Mat m_max_index;    /// Local array to hold max indicies
-    Mat m_reduced_max_indicies;  /// Local array to build global view of maximum indicies
-    
-    Mat Y_local;
-    Mat Y_local_v;
+    Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
+    //    Mat Y_local;
+
+    ColSumMat YsColMax_v;
+    StarMat YsColMaxStar_v;
+    Mat m_max_index_v;
+    Mat m_reduced_max_indices_v;
+    //    Mat Y_local_v;
 
     int64_t m_max_mini_batch_size;
   };

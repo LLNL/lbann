@@ -74,8 +74,9 @@ namespace lbann
     void display_average_error();
 
     void record_error(StarMat y_true, StarMat y_pred, long num_samples);
+#endif
 
-    void record_error(T error, long num_samples) {
+    void record_error(double error, long num_samples) {
       m_error_per_epoch += error;
       m_samples_per_epoch += num_samples;
     }
@@ -83,10 +84,9 @@ namespace lbann
     void reset_error() {
       m_total_error += m_error_per_epoch;
       m_total_num_samples += m_samples_per_epoch;
-      m_error_per_epoch = (T) 0;
+      m_error_per_epoch = 0;
       m_samples_per_epoch = 0;
     }
-#endif
 
   public:
     //  protected:
