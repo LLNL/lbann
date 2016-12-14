@@ -1107,6 +1107,8 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
   if (neg_to_keep == 0) {
     neg_to_keep = 1;
   }
+  int num_zero = pos_entries.size() + neg_entries.size() -
+    pos_to_keep - neg_to_keep;
   // Determine the threshold value with a selection algorithm to keep only the
   // largest pos/neg_to_keep elements.
   // Set to 0 if there's none.
@@ -1131,8 +1133,12 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
     neg_avg = std::accumulate(neg_entries.begin(), i + 1, 0.0f) / neg_to_keep;
     zero_avg += std::accumulate(i + 1, neg_entries.end(), 0.0f);
   }
-  zero_avg /= pos_entries.size() + neg_entries.size() -
-    pos_to_keep - neg_to_keep;
+  if (num_zero == 0) {
+    zero_avg = 0.0f;
+  } else {
+    zero_avg /= pos_entries.size() + neg_entries.size() -
+      pos_to_keep - neg_to_keep;
+  }
   pta_time += get_time() - pta_start;
   return { pos_thresh, neg_thresh, pos_avg, neg_avg, zero_avg };
 }
