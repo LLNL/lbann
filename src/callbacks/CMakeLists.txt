@@ -10,4 +10,5 @@ add_sources(
   lbann_callback_dump_weights.cpp
   lbann_callback_dump_activations.cpp
   lbann_callback_dump_gradients.cpp
+  lbann_callback_checknan.cpp
 )
