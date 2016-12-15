@@ -192,8 +192,8 @@ int main(int argc, char* argv[])
         gla.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
         gla.add("FullyConnected", 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
-        lbann_callback_print print_cb;
-        gla.add_callback(&print_cb);
+        //lbann_callback_print print_cb;
+        //gla.add_callback(&print_cb);
         // lbann_callback_io io_cb({0,3});
         // gla.add_callback(&io_cb);
 
