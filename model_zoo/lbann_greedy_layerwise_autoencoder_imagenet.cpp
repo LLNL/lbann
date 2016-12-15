@@ -199,19 +199,6 @@ int main(int argc, char* argv[])
         gla->add("FullyConnected", 1000, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm,trainParams.DropOut)});
         gla->add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm,trainParams.DropOut)});
 
-        lbann_summary summarizer("/p/lscratchf/jacobs32", comm);
-        // Print out information for each epoch.
-        lbann_callback_print print_cb;
-        gla->add_callback(&print_cb);
-        // Record training time information.
-        lbann_callback_timer timer_cb(&summarizer);
-        gla->add_callback(&timer_cb);
-        // Summarize information to Tensorboard.
-        lbann_callback_summary summary_cb(&summarizer, 25);
-        gla->add_callback(&summary_cb);
-        // lbann_callback_io io_cb({0});
-        // dnn->add_callback(&io_cb);
-
         gla->setup();
 
         if (comm->am_world_master()) {
@@ -220,7 +207,7 @@ int main(int argc, char* argv[])
                   cout << "\tLayer[" << n << "]: " << gla->get_layers()[n]->NumNeurons << endl;
             cout << endl;
 
-	    cout << "Parameter settings:" << endl;
+	     cout << "Parameter settings:" << endl;
             cout << "\tBlock size: " << perfParams.BlockSize << endl;
             cout << "\tEpochs: " << trainParams.EpochCount << endl;
             cout << "\tMini-batch size: " << trainParams.MBSize << endl;
