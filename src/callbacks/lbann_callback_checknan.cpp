@@ -79,8 +79,8 @@ void lbann_callback_checknan::on_batch_end(model* m) {
 
 bool lbann_callback_checknan::is_good(const DistMat& m) {
   const Mat& lm = m.LockedMatrix();
-  const Int height = m.Height();
-  const Int width = m.Width();
+  const Int height = lm.Height();
+  const Int width = lm.Width();
   for (int col = 0; col < width; ++col) {
     for (int row = 0; row < height; ++row) {
       const DataType val = lm(row, col);
