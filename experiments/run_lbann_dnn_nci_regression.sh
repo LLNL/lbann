@@ -54,7 +54,7 @@ TASKS_PER_NODE=8
 if [ "${CLUSTER}" = "catalyst" ]; then
 #LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
-ENABLE_HT=--enable-hyperthread
+ENABLE_HT=
 else
 LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
 #LUSTRE_FILEPATH="/p/lscratche/brainusr"

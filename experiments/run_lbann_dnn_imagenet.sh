@@ -44,7 +44,7 @@ NNODES=${SLURM_NNODES}
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-ENABLE_HT=--enable-hyperthreads
+ENABLE_HT=
 CORES_PER_NODE=48
 elif [ "${CLUSTER}" = "sierra" ]; then
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
