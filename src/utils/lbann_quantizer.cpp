@@ -72,7 +72,7 @@ void lbann_quantizer::intermodel_sum(lbann_comm* comm, Mat& mat) {
   Mat ag_recv;
   auto ag_reduced_trans =
     [&ag_send] (Mat& reduced) {
-      ag_send = reduced;
+      View(ag_send, reduced);
     };
   auto ag_get_send_buf = [&ag_send] (int& count) {
       count = ag_send.Width() * ag_send.Height();
@@ -80,17 +80,19 @@ void lbann_quantizer::intermodel_sum(lbann_comm* comm, Mat& mat) {
     };
   auto ag_get_recv_buf =
     [&ag_recv] (Mat& recv_view, int& count) {
-      ag_recv.Resize(recv_view.Height(), recv_view.Width());
-      count = ag_recv.Height() * ag_recv.Width();
-      return ag_recv.Buffer();
+      count = recv_view.Height() * recv_view.Width();
+      View(ag_recv, recv_view);
+      return recv_view.Buffer();
     };
   auto ag_recv_trans =
-    [&ag_recv] (DataType*, Mat& accum) {
-      accum = ag_recv;
+    [] (DataType*, Mat& accum) {
+      // NOP.
     };
   auto ag_swap_bufs =
     [&ag_send, &ag_recv] (DataType*, DataType*) {
-      std::swap(ag_send, ag_recv);
+      Mat tmp_view = View(ag_send);
+      View(ag_send, ag_recv);
+      View(ag_recv, tmp_view);
     };
   intermodel_ring_allgather<DataType>(comm, mat, false, ag_reduced_trans,
                                       ag_get_send_buf, ag_get_recv_buf,

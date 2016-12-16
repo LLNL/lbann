@@ -184,6 +184,20 @@ void test_adaptive_threshold_compression() {
   ASSERT_MAT_EQ(mat, with_qerror);
 }
 
+/** Test the basic allreduce without quantization. */
+void test_allreduce() {
+  lbann_comm* comm = new lbann_comm(2);
+  DistMat mat(comm->get_model_grid());
+  El::Uniform(mat, 512, 512, 0.0f, 10.0f);
+  DistMat exact_sum(mat);
+  lbann_quantizer quantizer;
+  quantizer.intermodel_sum(comm, mat);
+  comm->intermodel_sum_matrix(exact_sum);
+  comm->global_barrier();
+  ASSERT_MAT_EQ(mat, exact_sum);
+  delete comm;
+}
+
 /** Test the inter-model quantize-and-allreduce. */
 void test_quantize_allreduce() {
   lbann_comm* comm = new lbann_comm(2);
@@ -371,6 +385,7 @@ int main(int argc, char** argv) {
   test_threshold_compression();
   test_adaptive_threshold_quantize();
   test_adaptive_threshold_compression();
+  test_allreduce();
   test_quantize_allreduce();
   test_threshold_quantize_allreduce();
   test_compressed_threshold_quantize_allreduce();
