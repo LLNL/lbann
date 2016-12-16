@@ -108,7 +108,7 @@ class sequential_model : public model
     virtual Layer* swap(int index, Layer *new_layer);
 
     /// Setup sequential model
-    virtual void setup(size_t start_index=0);
+    virtual void setup(size_t start_index=0,size_t end_index=0);
 
     /// Train model
     /** @param num_epochs Number of epochs to train

@@ -56,24 +56,23 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
 {
   size_t num_phases = m_layers.size()-1;
   for(size_t phase_index=0; phase_index < num_phases; ++phase_index){
+    size_t phase_end = phase_index+2;
     Layer* original_layer = m_layers[phase_index];
     Optimizer *optimizer = optimizer_fac->create_optimizer();
-    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(phase_index+2, comm, optimizer, m_mini_batch_size,original_layer);
-    insert(phase_index+2,mirror_layer);
-    //call base model set up again to reindex and set appropriate fp and bp input
-    //@todo: this can be optimized by giving appropriate start index
-    //assume that necessary layer parameters are set e.g., NumNeurons
-    setup();  //set up all layers/ or all active layers
+    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(phase_end, comm, optimizer, m_mini_batch_size,original_layer);
+    insert(phase_end,mirror_layer);
+    //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
+    //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
+    setup(phase_index,phase_end+1);  //set up  all active layers
     //debug
     train_phase(phase_index, num_epochs,evaluation_frequency);
-    remove(phase_index+2); ///any delete on heap, vector resize?
+    remove(phase_end); ///any delete on heap, vector resize?
     //call base model setup again to reindex and set appropriate fp and bp input
-    //@todo: this can be optimized by giving appropriate start index
     if (comm->am_world_master()) {
       std::cout << "Phase [" << phase_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
     }
-    setup(); //skip last round, rewrite
+    setup();
 
   }
 
@@ -172,8 +171,6 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, l
   *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
 
-  // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
   ++m_current_step;
 
   // Backward propagation
