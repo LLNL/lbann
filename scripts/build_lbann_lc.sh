@@ -38,6 +38,8 @@ CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 GEN_DOC=0
 INSTALL_LBANN=0
+ALTERNATE_BUILD_DIR=none
+BUILD_SUFFIX=
 
 ################################################################
 # Help message
@@ -53,7 +55,7 @@ Can be called anywhere in the LBANN project tree.
 Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}                  Display this help message and exit.
-  ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel').
+  ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or "clang").
   ${C}--verbose${N}               Verbose output.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
@@ -62,6 +64,8 @@ Options:
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
+  ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
+  ${C}--suffix${N}                Specify suffix for build subdirectory
 EOF
 }
 
@@ -76,6 +80,26 @@ while :; do
       help_message
       exit 0
       ;;
+    --build)
+      # Change default build directory
+      if [ -n "${2}" ]; then
+        ALTERNATE_BUILD_DIR=${2}
+        shift
+      else
+        echo "\"${1}\" option requires a non-empty option argument" >&2
+        exit 1
+      fi  
+      ;;
+    --suffix)
+      # Specify suffix for build directory
+       if [ -n "${2}" ]; then
+         BUILD_SUFFIX=${2}
+         shift
+       else
+         echo "\"${1}\" option requires a non-empty option argument" >&2
+         exit 1
+       fi
+       ;;
     --compiler)
       # Choose compiler
       if [ -n "${2}" ]; then
@@ -153,8 +177,17 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
 # Build and install directories
 ROOT_DIR=$(git rev-parse --show-toplevel)
-BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+if [ "${ALTERNATE_BUILD_DIR}" !=  "none" ]; then
+  BUILD_DIR=${ALTERNATE_BUILD_DIR}/${CLUSTER}.llnl.gov
+else
+  BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+fi
 INSTALL_DIR=${BUILD_DIR}
+
+if [ -n "${BUILD_SUFFIX}" ]; then
+  BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX} 
+fi
+
 mkdir -p ${BUILD_DIR}
 mkdir -p ${INSTALL_DIR}
 
@@ -189,6 +222,23 @@ elif [ "${COMPILER}" == "intel" ]; then
   CMAKE_C_COMPILER=${INTEL_DIR}/icc
   CMAKE_CXX_COMPILER=${INTEL_DIR}/icpc
   CMAKE_Fortran_COMPILER=${INTEL_DIR}/ifort
+
+elif [ "${COMPILER}" == "clang" ]; then
+  if [ "${TOSS}" == "3.10.0" ]; then
+    # (dah) clang is not currently installed on catalyst, so this will fail ...
+    GNU_DIR=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin
+    GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+  else
+    GNU_DIR=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin
+    GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
+    MPI_DIR=/usr/local/tools/mvapich2-gnu-2.1
+  fi
+  CMAKE_CXX_FLAGS="-DLBANN_SET_EL_RNG"
+  CMAKE_C_COMPILER=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin/clang
+  CMAKE_CXX_COMPILER=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin/clang++
+  CMAKE_Fortran_COMPILER=/opt/rh/devtoolset-3/root/usr/bin/gfortran
+
 else
   # Unrecognized compiler
   echo "Unrecognized compiler (${COMPILER})"
@@ -250,9 +300,11 @@ cmake \
 -D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
 -D VERBOSE=${VERBOSE} \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
+-D LBANN_HOME=${ROOT_DIR} \
 ${ROOT_DIR}
 EOF
 )
+
   if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}"
   fi
