@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.12)
 #set(LBANN_MINOR_VERSION 91)
 
 # Get the git version so that we can embed it into the executable
-execute_process(COMMAND git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
 
 ################################################################
@@ -35,6 +35,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+# Special handling if we're compiling with Clang's address sanitizer
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CXX_VERSION)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   if(NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
+     message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
+   endif()
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address")
+   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address")
+endif()
+
 
 # Set verbose output (should be 0 or 1)
 if(VERBOSE)
@@ -118,6 +129,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
    if(NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
      message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
    endif()
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address")
 else()
    message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor")
 endif()
