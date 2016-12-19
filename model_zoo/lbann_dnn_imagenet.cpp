@@ -625,6 +625,7 @@ int main(int argc, char* argv[])
     Initialize(argc, argv);
     lbann_comm *comm = NULL;
 
+    bool caught_exception = false;
     try {
         ///////////////////////////////////////////////////////////////////
         // initalize grid, block
@@ -932,15 +933,33 @@ int main(int argc, char* argv[])
             // training epoch loop
             //************************************************************************
 
+        if (comm->am_world_master()) {
+           cerr << "\nmain: calling train\n\n";
+        }
             dnn->train(1, true);
+        if (comm->am_world_master()) {
+           cerr << "\nDONE! main: calling train\n\n";
+        }
 
             dnn->evaluate();
         }
 
         delete dnn;
     }
-    catch (lbann_exception& e) { lbann_report_exception(e, comm); }
-    catch (exception& e) { ReportException(e); } /// Elemental exceptions
+    catch (lbann_exception& e) { 
+      lbann_report_exception(e, comm); 
+      caught_exception = true;
+    }
+    catch (exception& e) { 
+      ReportException(e); 
+      caught_exception = true;
+    } /// Elemental exceptions
+
+    if (caught_exception) {
+      cerr << "in main; caught exception!\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+      caught_exception = true;
+    }
 
     // free all resources by El and MPI
     Finalize();
