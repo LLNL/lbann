@@ -121,16 +121,15 @@ namespace lbann
       int rank = velocity.Grid().Rank();
 
       char path[512];
-      sprintf(path, "%s/SGD_Velocity_L%d_%03dx%03d", dir, Index, velocity.Height()-1, velocity.Width()-1);
+      sprintf(path, "%s/L%d_SGD_Velocity_%03dx%03d", dir, Index, velocity.Height()-1, velocity.Width()-1);
       if(rank == 0) {
         cout << "Saving layer " << Index << " to file " << path << endl;
       }
       Write(velocity, path, BINARY, "");
       //Write_MPI(velocity, path, BINARY, "");
 
-      if (rank == 0) {
-        *bytes += 2 * sizeof(int) + velocity.Height() * velocity.Width() * sizeof(DataType);
-      }
+      *bytes += 2 * sizeof(int) + velocity.Height() * velocity.Width() * sizeof(DataType);
+
       return true;
     }
 
@@ -141,7 +140,7 @@ namespace lbann
       struct stat buffer;
 
       // read in the cache of gradients for WB
-      sprintf(path, "%s/SGD_Velocity_L%d_%03dx%03d.bin", dir, Index, velocity.Height()-1, velocity.Width()-1);
+      sprintf(path, "%s/L%d_SGD_Velocity_%03dx%03d.bin", dir, Index, velocity.Height()-1, velocity.Width()-1);
 
       // check whether file exists
       int exists = 0;
@@ -150,18 +149,23 @@ namespace lbann
       }
       MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-      // read velocity file
-      if (rank == 0) {
-        cout << "Restoring layer " << Index << " from file " << path << endl;
-      }
-      Read(velocity, path, BINARY, 1);
-      //Read_MPI(velocity, path, BINARY, 1);
-
-      if (rank == 0) {
+      // read velocity file if it exists
+      if (exists) {
+        if (rank == 0) {
+          cout << "Restoring layer " << Index << " from file " << path << endl;
+        }
+        Read(velocity, path, BINARY, 1);
+        //Read_MPI(velocity, path, BINARY, 1);
+  
+        // sum up number of bytes we read
         *bytes += 2 * sizeof(int) + velocity.Height() * velocity.Width() * sizeof(DataType);
+  
+        // successfully read checkpoint
+        return true;
+      } else {
+        // no file, failed to read checkpoint
+        return false;
       }
-
-      return true;
     }
     
   };

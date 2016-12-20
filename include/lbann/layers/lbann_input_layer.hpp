@@ -44,6 +44,32 @@ namespace lbann
     /** No non-linearity */
     void bp_nonlinearity() {}
 
+    // save state of IO to a checkpoint
+    bool saveToCheckpointShared(const char* dir, uint64_t* bytes) {
+        // save state of data readers from input layer
+        m_training_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_training", bytes);
+        m_validation_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_validation", bytes);
+        m_testing_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_testing", bytes);
+
+        // save our own state
+        io_layer::saveToCheckpointShared(dir, bytes);
+
+        return true;
+    }
+
+    // reload state of IO from a checkpoint
+    bool loadFromCheckpointShared(const char* dir, uint64_t* bytes) {
+        // save our own state
+        io_layer::loadFromCheckpointShared(dir, bytes);
+
+        // save state of data readers from input layer
+        m_training_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_training", bytes);
+        m_validation_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_validation", bytes);
+        m_testing_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_testing", bytes);
+
+        return true;
+    }
+
   public:
   };
 }

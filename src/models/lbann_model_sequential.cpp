@@ -325,8 +325,15 @@ bool lbann::sequential_model::load_from_checkpoint(int fd, const char* filename,
     return true;
 }
 
+struct lbann_model_sequential_header {
+    int num_layers;
+};
+
 bool lbann::sequential_model::save_to_checkpoint_shared(const char* dir, uint64_t* bytes)
 {
+    // write parameters from base class first
+    model::save_to_checkpoint_shared(dir, bytes);
+
     // write a single header describing layers and sizes?
 
     // get our rank
@@ -337,73 +344,95 @@ bool lbann::sequential_model::save_to_checkpoint_shared(const char* dir, uint64_
     if (rank == 0) {
         // define filename for training state
         char filename[1024];
-        sprintf(filename, "%s/network", dir);
+        sprintf(filename, "%s/model_sequential", dir);
 
         // open the file for writing
         int fd = lbann::openwrite(filename);
 
-        // write number of layers (we'll check this on read)
-        int layers = m_layers.size();
-        int write_rc = write(fd, &layers, sizeof(int));
-        if (write_rc != sizeof(int)) {
-            fprintf(stderr, "ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\n",
+        // serialize model state
+        struct lbann_model_sequential_header header;
+        header.num_layers = m_layers.size();
+
+        // write mode state to file
+        int write_rc = write(fd, &header, sizeof(header));
+        if (write_rc != sizeof(header)) {
+            fprintf(stderr, "ERROR: Failed to write sequential model state to file `%s' (%d: %s) @ %s:%d\n",
                     filename, errno, strerror(errno), __FILE__, __LINE__
             );
             fflush(stderr);
         }
         *bytes += write_rc;
 
+        // TODO: record each layer type and size (to be checked when read back)
+
         // close our file
         lbann::closewrite(fd, filename);
     }
 
     // write out details for each layer
-    for (size_t l = 1; l < m_layers.size(); l++)
-        if (!m_layers[l]->saveToCheckpointShared(dir, bytes))
+    for (size_t l = 0; l < m_layers.size(); l++) {
+        if (! m_layers[l]->saveToCheckpointShared(dir, bytes)) {
             return false;
+        }
+    }
 
     return true;
 }
 
 bool lbann::sequential_model::load_from_checkpoint_shared(const char* dir, uint64_t* bytes)
 {
+    // read parameters from base class first
+    model::load_from_checkpoint_shared(dir, bytes);
+
     // get our rank
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // have rank 0 read the network file
     int file_layers = -1;
+    struct lbann_model_sequential_header header;
     if (rank == 0) {
         // define filename for training state
         char filename[1024];
-        sprintf(filename, "%s/network", dir);
+        sprintf(filename, "%s/model_sequential", dir);
 
-        // open the file for writing
+        // open the file for reading
         int fd = lbann::openread(filename);
         if (fd != -1) {
-            // read number of layers
-            int read_rc = read(fd, &file_layers, sizeof(int));
-            if (read_rc != sizeof(int)) {
-                fprintf(stderr, "ERROR: Failed to read number of layers from file `%s' (%d: %s) @ %s:%d\n",
+            // read model state from file
+            int read_rc = read(fd, &header, sizeof(header));
+            if (read_rc != sizeof(header)) {
+                fprintf(stderr, "ERROR: Failed to read sequential model state from file `%s' (%d: %s) @ %s:%d\n",
                         filename, errno, strerror(errno), __FILE__, __LINE__
                 );
                 fflush(stderr);
             }
             *bytes += read_rc;
 
+            // TODO: read back each layer type and size
+
             // close our file
             lbann::closeread(fd, filename);
         }
     }
-    MPI_Bcast(&file_layers, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (file_layers != m_layers.size()) {
+    // TODO: this assumes homogeneous processors
+    // broadcast state from rank 0
+    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    if (header.num_layers != m_layers.size()) {
         // error!
+        return false;
     }
 
-    for (size_t l = 1; l < m_layers.size(); l++)
-        if (!m_layers[l]->loadFromCheckpointShared(dir, bytes))
+    // TODO: check that each layer type matches what we'd expect
+
+    // read in each layer
+    for (size_t l = 0; l < m_layers.size(); l++) {
+        if (! m_layers[l]->loadFromCheckpointShared(dir, bytes)) {
             return false;
+        }
+    }
 
     return true;
 }

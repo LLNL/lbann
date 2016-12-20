@@ -33,7 +33,7 @@ lbann::TrainingParams::TrainingParams(void)
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
     PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
     PercentageTestingSamples(1.00), TestWithTrainData(0),
-    EpochCount(2), MBSize(192),
+    EpochStart(0), EpochCount(2), MBSize(192),
     LearnRate(0.3), LearnRateMethod(2),
     LrDecayRate(0.5), LrDecayCycles(5000),
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),

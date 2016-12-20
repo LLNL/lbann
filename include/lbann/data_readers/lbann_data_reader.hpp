@@ -33,10 +33,12 @@
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/io/lbann_file_io.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 
 /**
@@ -232,6 +234,121 @@ namespace lbann
     }
 
     void calculate_multi_model_data_distribution(lbann_comm *comm);
+
+    /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
+    bool saveToCheckpointShared(const char* dir, const char* file, uint64_t* bytes_written) {
+        // TODO: move me to cpp file
+        // get our rank and the number of ranks
+        int rank, ranks;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &ranks);
+  
+        // rank 0 writes the training state file
+        if (rank == 0) {
+            // define filename for training state
+            char filename[1024];
+            sprintf(filename, "%s/%s", dir, file);
+    
+            // open the file for writing
+            int fd = lbann::openwrite(filename);
+    
+            // get size of list of training examples
+            int size = ShuffledIndices.size();
+
+            // record size of ShuffleIndices
+            ssize_t write_rc = write(fd, &size, sizeof(size));
+            if (write_rc != sizeof(size)) {
+                // error!
+            }
+            *bytes_written += write_rc;
+
+            // record current position within training data
+            write_rc = write(fd, &CurrentPos, sizeof(CurrentPos));
+            if (write_rc != sizeof(CurrentPos)) {
+                // error!
+            }
+            *bytes_written += write_rc;
+
+            // write list of indices
+            size_t bytes = size * sizeof(int);
+            write_rc = write(fd, &ShuffledIndices[0], bytes);
+            if (write_rc != bytes) {
+                // error!
+            }
+            *bytes_written += write_rc;
+
+            // close our file
+            lbann::closewrite(fd, filename);
+        }
+
+        return true;
+    }
+
+    /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+    bool loadFromCheckpointShared(const char* dir, const char* file, uint64_t* bytes_read) {
+        // TODO: move me to cpp file
+        // get our rank and the number of ranks
+        int rank, ranks;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &ranks);
+  
+        // rank 0 reads the training state file
+        if (rank == 0) {
+            // define filename for training state
+            char filename[1024];
+            sprintf(filename, "%s/%s", dir, file);
+    
+            // open the file for writing
+            int fd = lbann::openread(filename);
+    
+            // get size of ShuffleIndices
+            int size;
+            ssize_t read_rc = read(fd, &size, sizeof(size));
+            if (read_rc != sizeof(size)) {
+                // error!
+            }
+            *bytes_read += read_rc;
+
+            // get current position within training data
+            read_rc = read(fd, &CurrentPos, sizeof(CurrentPos));
+            if (read_rc != sizeof(CurrentPos)) {
+                // error!
+            }
+            *bytes_read += read_rc;
+
+            // resize shuffled index array to hold values
+            ShuffledIndices.resize(size);
+
+            // read list of indices
+            size_t bytes = size * sizeof(int);
+            read_rc = read(fd, &ShuffledIndices[0], bytes);
+            if (read_rc != bytes) {
+                // error!
+            }
+            *bytes_read += read_rc;
+
+            // close our file
+            lbann::closeread(fd, filename);
+        }
+
+        // broadcast current position
+        MPI_Bcast(&CurrentPos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // broadcast values from rank 0
+        int size = ShuffledIndices.size();
+        MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // resize shuffled index array to hold values
+        if (rank != 0) {
+            ShuffledIndices.resize(size);
+        }
+
+        // broadcast index array
+        MPI_Bcast(&ShuffledIndices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
+
+        return true;
+    }
+
 
   protected:
     int							BatchSize;

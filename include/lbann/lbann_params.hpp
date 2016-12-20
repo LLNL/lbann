@@ -61,7 +61,9 @@ namespace lbann
     /// Test with training data
     int TestWithTrainData;
 
-    // Number of training epochs
+    /// Starting epoch (initialized to 0, overridden from checkpoint)
+    int EpochStart;
+    /// Number of training epochs
     int EpochCount;
     /// Size of the mini-batch to be trained
     int MBSize;

@@ -125,16 +125,14 @@ namespace lbann
       int rank = WB_D_Cache.Grid().Rank();
 
       char path[512];
-      sprintf(path, "%s/WB_D_CACHE_L%d_%03dx%03d", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
+      sprintf(path, "%s/L%d_RMSProp_%03dx%03d", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
       if(rank == 0) {
         cout << "Saving layer " << Index << " to file " << path << endl;
       }
       Write(WB_D_Cache, path, BINARY, "");
       //Write_MPI(WB_D_Cache, path, BINARY, "");
 
-      if (rank == 0) {
-        *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
-      }
+      *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
 
       return true;
     }
@@ -146,7 +144,7 @@ namespace lbann
       struct stat buffer;
 
       // read in the cache of gradients for WB
-      sprintf(path, "%s/WB_D_CACHE_L%d_%03dx%03d.bin", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
+      sprintf(path, "%s/L%d_RMSProp_%03dx%03d.bin", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
 
       // check whether file exists
       int exists = 0;
@@ -155,17 +153,23 @@ namespace lbann
       }
       MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-      // read WB_D_Cache file
-      if (rank == 0) {
-        cout << "Restoring layer " << Index << " from file " << path << endl;
-      }
-      Read(WB_D_Cache, path, BINARY, 1);
-      //Read_MPI(WB_D_Cache, path, BINARY, 1);
-
-      if (rank == 0) {
+      // read WB_D_Cache file if it exists
+      if (exists) {
+        if (rank == 0) {
+          cout << "Restoring layer " << Index << " from file " << path << endl;
+        }
+        Read(WB_D_Cache, path, BINARY, 1);
+        //Read_MPI(WB_D_Cache, path, BINARY, 1);
+  
+        // sum up number of bytes we read
         *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
+  
+        // successfully read checkpoint
+        return true;
+      } else {
+        // no file, failed to read checkpoint
+        return false;
       }
-      return true;
     }
     
   };

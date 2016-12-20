@@ -95,6 +95,11 @@ public:
 
   objective_fn* obj_fn;
 
+  /** Checkpoint model to given file descriptor, return number of bytes written */
+  virtual bool save_to_checkpoint_shared(const char* dir, uint64_t* bytes);
+  /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  virtual bool load_from_checkpoint_shared(const char* dir, uint64_t* bytes);
+    
 protected:
   /** The model's current execution mode. */
   execution_mode m_execution_mode;

@@ -130,7 +130,7 @@ class sequential_model : public model
 #endif
 
   protected:
-    /// Mini-batch size
+    /// Mini-batch size (no ckpt, so user can override on restart)
     const int m_mini_batch_size;
     /// List of layers
     std::vector<Layer*> m_layers;

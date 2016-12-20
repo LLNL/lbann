@@ -122,11 +122,11 @@ class model;
     bool saveToFile(int fd, const char* filename);
     bool loadFromFile(int fd, const char* filename);
 
-    bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
-    bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    virtual bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    virtual bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
 
-    bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
-    bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
+    virtual bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
+    virtual bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
 
   public:
     uint               Index;                  // Layer index (start with 0)

@@ -285,6 +285,9 @@ pushd ${BUILD_DIR}
     ${CLEAN_COMMAND}
   fi
 
+# ATM: goes after Elemental_DIR
+#-D OpenCV_DIR=${OpenCV_DIR} \
+
   # Configure build with CMake
   CONFIGURE_COMMAND=$(cat << EOF
 cmake \
@@ -306,7 +309,6 @@ cmake \
 -D WITH_TBINF=${WITH_TBINF} \
 -D WITH_VTUNE=${WITH_VTUNE} \
 -D Elemental_DIR=${Elemental_DIR} \
--D OpenCV_DIR=${OpenCV_DIR} \
 -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
 -D cuDNN_DIR=${cuDNN_DIR} \
 -D VTUNE_DIR=${VTUNE_DIR} \
