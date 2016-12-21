@@ -47,7 +47,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
     m_image_dir(source.m_image_dir), ImageList(source.ImageList),
-    m_image_width(source.m_image_width), m_image_height(source.m_image_height), m_num_labels(source.m_num_labels)
+    m_image_width(source.m_image_width), m_image_height(source.m_image_height), m_image_depth(source.m_image_depth), m_num_labels(source.m_num_labels)
 {
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
@@ -197,6 +197,7 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->ImageList = source.ImageList;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
+  this->m_image_depth = source.m_image_depth;
   this->m_num_labels = source.m_num_labels;
   this->m_mean_data = source.m_mean_data;
 

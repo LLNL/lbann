@@ -186,6 +186,7 @@ INSTALL_DIR=${BUILD_DIR}
 
 if [ -n "${BUILD_SUFFIX}" ]; then
   BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX} 
+  INSTALL_DIR=${BUILD_DIR}
 fi
 
 mkdir -p ${BUILD_DIR}
