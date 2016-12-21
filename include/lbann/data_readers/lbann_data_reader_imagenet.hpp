@@ -61,7 +61,7 @@ namespace lbann
 		int get_image_width() { return m_image_width; }
 		int get_image_height() { return m_image_height; }
 		int get_image_depth() { return m_image_depth; }
-    int get_linearized_data_size() { return m_image_width * m_image_height; }
+    int get_linearized_data_size() { return m_image_width * m_image_height * m_image_depth; }
     int get_linearized_label_size() { return m_num_labels; }
 
     DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
