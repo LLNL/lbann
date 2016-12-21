@@ -52,6 +52,7 @@ namespace lbann
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void setup(int numPrevNeurons);
+      void fp_set_std_matrix_view();
       bool update();
       DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
       DataType computeCost(DistMat &deltas);
@@ -69,7 +70,10 @@ namespace lbann
       DistMat m_bias_weights_v;
       DistMat m_activation_weights_gradient_v;
       DistMat m_bias_weights_gradient_v;
+
+      /// Special matrices to allow backprop across the bias term
       DistMat m_bias_bp_t;
+      DistMat m_bias_bp_t_v;
       DataType m_bias_term;
 
     public:
