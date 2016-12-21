@@ -60,7 +60,7 @@ lbann::Optimizer *lbann::RMSprop_factory::create_optimizer(matrix_format format)
     return new RMSprop<StarVCMat>(this->comm, this->lr, this->rho, this->epsilon);
   default:
     // TODO: throw an exception
-    printf("LBANN Error: unknown matrix distribution for Adagrad optimizer\n");
+    printf("LBANN Error: unknown matrix distribution for RMSprop optimizer\n");
     exit(-1);
   }
 }

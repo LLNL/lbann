@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Detech OS version
+# Detect OS version
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 
 if [ "${TOSS}" == "3.10.0" ]; then
@@ -8,6 +8,21 @@ if [ "${TOSS}" == "3.10.0" ]; then
 else
   # need to initialize modules on earlier versions of TOSS
   . /usr/share/[mM]odules/init/bash
+fi
+
+# Detect the cuda toolkit version loaded or use default
+if [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
+  # use default
+  CUDATOOLKIT_VERSION=7.0
+  module load cudatoolkit/$CUDATOOLKIT_VERSION
+  if [ -d /opt/cudatoolkit/$CUDATOOLKIT_VERSION ] ; then
+      CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit/$CUDATOOLKIT_VERSION
+  elif [ -d /opt/cudatoolkit-$CUDATOOLKIT_VERSION ] ; then
+      CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-$CUDATOOLKIT_VERSION
+  fi
+else
+  CUDATOOLKIT_VERSION=`basename "$CUDA_PATH" | sed 's/cudatoolkit-//'`
+  CUDA_TOOLKIT_ROOT_DIR=$CUDA_PATH
 fi
 
 ################################################################
@@ -20,11 +35,9 @@ BUILD_TYPE=Release
 Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
   OpenCV_DIR=""
-  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit/7.5
   VTUNE_DIR=/usr/tce/packages/vtune/default
 else
   OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-  CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-7.5
   VTUNE_DIR=/usr/local/tools/vtune
 fi
 cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
@@ -165,7 +178,6 @@ done
 
 if [ "${TOSS}" != "3.10.0" ]; then
   module load git
-  module load cudatoolkit/7.5
 fi
 
 ################################################################
