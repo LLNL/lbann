@@ -70,7 +70,8 @@ FullyConnectedLayer(const uint index,
     m_bias_weights_v(comm->get_model_grid()),
     m_activation_weights_gradient_v(comm->get_model_grid()),
     m_bias_weights_gradient_v(comm->get_model_grid()),
-    m_bias_bp_t(comm->get_model_grid())
+    m_bias_bp_t(comm->get_model_grid()),
+    m_bias_bp_t_v(comm->get_model_grid())
 {
     Index = index;
     NumNeurons = numNeurons;
@@ -154,6 +155,16 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Ones(m_bias_bp_t, m_mini_batch_size, 1);
 }
 
+void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+
+  Layer::fp_set_std_matrix_view();
+
+  /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
+  /// limit the height, not the width
+  View(m_bias_bp_t_v, m_bias_bp_t, IR(0, cur_mini_batch_size), IR(0, m_bias_bp_t.Width()));
+}
+
 void lbann::FullyConnectedLayer::fp_linearity()
 {
   // Apply forward prop linearity
@@ -181,7 +192,7 @@ void lbann::FullyConnectedLayer::bp_linearity()
        *m_prev_activations_v, (DataType) 0., m_activation_weights_gradient_v);
   // Compute update for bias terms
   Gemv(NORMAL, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       m_bias_bp_t, (DataType) 0., m_bias_weights_gradient_v);
+       m_bias_bp_t_v, (DataType) 0., m_bias_weights_gradient_v);
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
