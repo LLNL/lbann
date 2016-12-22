@@ -237,6 +237,11 @@ int main(int argc, char* argv[])
         // testing
         DataType accuracy = dnn.evaluate(execution_mode::testing);
       }
+
+      if (trainParams.DumpWeights) {
+        delete dump_weights_cb;
+      }
+      
       delete optimizer;
       delete comm;
     }
