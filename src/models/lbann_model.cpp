@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -39,7 +39,7 @@ lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
   m_current_validation_step(0), m_current_testing_step(0),
-  m_current_mini_batch_size(0),
+  m_current_mini_batch_size(0),m_current_phase(0),
   comm(comm)
 {
 }
@@ -63,6 +63,12 @@ void lbann::model::do_train_begin_cbs() {
 void lbann::model::do_train_end_cbs() {
   for (auto&& cb : callbacks) {
     cb->on_train_end(this);
+  }
+}
+
+void lbann::model::do_phase_end_cbs() {
+  for (auto&& cb : callbacks) {
+    cb->on_phase_end(this);
   }
 }
 

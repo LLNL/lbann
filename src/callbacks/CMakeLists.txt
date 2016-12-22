@@ -11,4 +11,5 @@ add_sources(
   lbann_callback_dump_activations.cpp
   lbann_callback_dump_gradients.cpp
   lbann_callback_checknan.cpp
+  lbann_callback_save_images.cpp
 )

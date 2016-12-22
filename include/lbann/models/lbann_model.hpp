@@ -79,9 +79,11 @@ public:
   inline int64_t get_cur_testing_step() const { return m_current_testing_step; }
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const { return m_execution_mode; }
-  inline int64_t set_current_mini_batch_size(int64_t mini_batch_size) 
+  inline int64_t set_current_mini_batch_size(int64_t mini_batch_size)
   { m_current_mini_batch_size = mini_batch_size; return m_current_mini_batch_size; }
   inline int64_t get_current_mini_batch_size() { return m_current_mini_batch_size; }
+  /** Get the current phase (multiple epochs) in layer-wise model training. */
+  inline size_t get_current_phase() { return m_current_phase; }
 
   /** Produce summary information (if any). */
   virtual void summarize(lbann_summary& summarizer) {}
@@ -92,7 +94,7 @@ public:
   void set_terminate_training(bool f) { m_terminate_training = f; }
 
   objective_fn* obj_fn;
-    
+
 protected:
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
@@ -106,6 +108,8 @@ protected:
   int64_t m_current_testing_step;
   /** Size of the current mini-batch */
   int64_t m_current_mini_batch_size;
+  /** current phase (multiple of epoch counts) in training a model */
+  size_t m_current_phase;
   /** Communicator for the model. */
   lbann_comm* comm;
   /** Current callbacks to process. */
@@ -115,6 +119,7 @@ protected:
   void setup_callbacks();
   void do_train_begin_cbs();
   void do_train_end_cbs();
+  void do_phase_end_cbs();
   void do_epoch_begin_cbs();
   void do_epoch_end_cbs();
   void do_batch_begin_cbs();

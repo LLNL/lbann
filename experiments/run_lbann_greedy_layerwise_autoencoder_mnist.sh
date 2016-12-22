@@ -10,7 +10,7 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=10
+EPOCHS=50
 
 NETWORK="1000"
 
@@ -33,7 +33,7 @@ PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
 
-TASKS_PER_NODE=12
+TASKS_PER_NODE=1
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
@@ -71,7 +71,7 @@ function HELP {
   echo "${REV}-c${NORM}       --(CHEAT) Test / validate with the ${BOLD}training data${NORM}. Default is ${BOLD}${TEST_W_TRAIN_DATA}${NORM}."
   echo "${REV}-d${NORM}       --Sets the ${BOLD}debug mode${NORM}."
   echo "${REV}-e${NORM} <val> --Sets the ${BOLD}number of epochs${NORM}. Default is ${BOLD}${EPOCHS}${NORM}."
-  echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."  
+  echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."

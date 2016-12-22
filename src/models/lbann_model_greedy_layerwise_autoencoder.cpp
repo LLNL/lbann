@@ -27,6 +27,7 @@
 
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 #include "lbann/layers/lbann_target_layer_unsupervised.hpp"
+#include "lbann/data_readers/lbann_image_utils.hpp"
 
 using namespace std;
 using namespace El;
@@ -56,6 +57,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
 {
   size_t num_phases = m_layers.size()-1;
   for(size_t phase_index=0; phase_index < num_phases; ++phase_index){
+    m_current_phase = phase_index;
     size_t phase_end = phase_index+2;
     Layer* original_layer = m_layers[phase_index];
     Optimizer *optimizer = optimizer_fac->create_optimizer();
@@ -66,6 +68,11 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     setup(phase_index,phase_end+1);  //set up  all active layers
     //debug
     train_phase(phase_index, num_epochs,evaluation_frequency);
+
+    if (comm->am_world_master()) {
+      //end of phase cbs e.g., save a number of image to file
+      do_phase_end_cbs();
+    }
     remove(phase_end); ///any delete on heap, vector resize?
     //call base model setup again to reindex and set appropriate fp and bp input
     if (comm->am_world_master()) {
@@ -129,6 +136,12 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     //print training reconstruction cost
     if (comm->am_world_master()) std::cout << "Training ";
     m_layers[phase_end]->epoch_print();
+
+    /*if (comm->am_world_master()) {
+      int img_index = phase_index*10 + epoch;
+      save_image(m_layers[phase_index]->m_activations, m_layers[phase_end]->m_activations,img_index);
+    }*/
+
     do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
     for (Layer* layer : m_layers) {
       layer->epoch_reset();

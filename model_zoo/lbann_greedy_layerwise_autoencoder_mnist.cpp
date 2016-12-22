@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/callbacks/lbann_callback_save_images.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -68,8 +69,8 @@ int main(int argc, char* argv[])
         // Initialize parameter defaults
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
-        trainParams.EpochCount = 20;
-        trainParams.MBSize = 128;
+        trainParams.EpochCount = 50;
+        trainParams.MBSize = 192;
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
@@ -188,15 +189,7 @@ int main(int argc, char* argv[])
 
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
         gla.add(input_layer);
-        gla.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-        gla.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-        gla.add("FullyConnected", 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-
-        //lbann_callback_print print_cb;
-        //gla.add_callback(&print_cb);
-        // lbann_callback_io io_cb({0,3});
-        // gla.add_callback(&io_cb);
-
+        gla.add("FullyConnected", 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
         if (comm->am_world_master()) {
           cout << "Parameter settings:" << endl;
