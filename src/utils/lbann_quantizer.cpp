@@ -1121,14 +1121,14 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
   DataType pos_avg = 0.0f;
   DataType neg_avg = 0.0f;
   DataType zero_avg = 0.0f;
-  if (pos_to_keep > 0 && pos_entries.size() > 0) {
+  if (pos_entries.size() > 0) {
     auto i = pos_entries.begin() + (pos_entries.size() - pos_to_keep);
     std::nth_element(pos_entries.begin(), i, pos_entries.end());
     pos_thresh = *i;
     pos_avg = std::accumulate(i, pos_entries.end(), 0.0f) / pos_to_keep;
     zero_avg = std::accumulate(pos_entries.begin(), i, 0.0f);
   }
-  if (neg_to_keep > 0 && neg_entries.size() > 0) {
+  if (neg_entries.size() > 0) {
     auto i = neg_entries.begin() + neg_to_keep - 1;
     std::nth_element(neg_entries.begin(), i, neg_entries.end());
     neg_thresh = *i;
@@ -1138,8 +1138,7 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
   if (num_zero == 0) {
     zero_avg = 0.0f;
   } else {
-    zero_avg /= pos_entries.size() + neg_entries.size() -
-      pos_to_keep - neg_to_keep;
+    zero_avg /= num_zero;
   }
   pta_time += get_time() - pta_start;
   return { pos_thresh, neg_thresh, pos_avg, neg_avg, zero_avg };
