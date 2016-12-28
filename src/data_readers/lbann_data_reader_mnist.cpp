@@ -68,6 +68,9 @@ lbann::DataReader_MNIST::~DataReader_MNIST()
 int lbann::DataReader_MNIST::fetch_data(Mat& X)
 {
   if(!DataReader::position_valid()) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
+    throw lbann_exception(err.str());
     return 0;
   }
 
@@ -96,6 +99,9 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
 int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 {
   if(!DataReader::position_valid()) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
+    throw lbann_exception(err.str());
     return 0;
   }
 
@@ -126,8 +132,12 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
 
   // read labels
   FILE* fplbl = fopen(labelpath.c_str(), "rb");
-  if (!fplbl)
+  if (!fplbl) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: failed to open file: " << labelpath;
+    throw lbann_exception(err.str());
     return false;
+  }  
 
   int magicnum1, numitems1;
   fread(&magicnum1, 4, 1, fplbl);
@@ -137,8 +147,12 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
 
   // read images
   FILE* fpimg = fopen(imagepath.c_str(), "rb");
-  if (!fpimg)
+  if (!fpimg) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: failed to open file: " << imagepath;
+    throw lbann_exception(err.str());
     return false;
+  }  
 
   int magicnum2, numitems2, imgwidth, imgheight;
   fread(&magicnum2, 4, 1, fpimg);
@@ -153,6 +167,9 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   if (numitems1 != numitems2) {
     fclose(fplbl);
     fclose(fpimg);
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: numitems1 != numitems2";
+    throw lbann_exception(err.str());
     return false;
   }
 
@@ -183,7 +200,9 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   load_successful = load(FileDir, ImageFile, LabelFile);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
 
@@ -198,7 +217,9 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("MNIST data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
 
