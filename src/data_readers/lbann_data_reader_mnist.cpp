@@ -40,11 +40,14 @@ inline void __swapEndianInt(unsigned int& ui)
 
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+  : DataReader(batchSize, shuffle) 
 {
-	ImageWidth = 28;
-	ImageHeight = 28;
-	NumLabels = 10;
+	m_image_width = 28;
+	m_image_height = 28;
+	m_num_labels = 10;
+  m_scale = true;
+  m_variance = false;
+  m_mean = false;
 }
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
@@ -52,8 +55,9 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
 
 lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
   : DataReader((const DataReader&) source), 
-  ImageWidth(source.ImageWidth), ImageHeight(source.ImageHeight),
-  NumLabels(source.NumLabels)
+  m_image_width(source.m_image_width), m_image_height(source.m_image_height),
+  m_num_labels(source.m_num_labels), m_scale(source.m_scale),
+  m_variance(source.m_variance), m_mean(source.m_mean)
 {
   // No need to deallocate data on a copy constuctor
 
@@ -74,7 +78,7 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     return 0;
   }
 
-  int pixelcount = ImageWidth * ImageHeight;
+  int pixelcount = m_image_width * m_image_height;
   int current_batch_size = getBatchSize();
 
   int n = 0;
@@ -84,7 +88,7 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    unsigned char* data = ImageData[index];
+    unsigned char* data = m_image_data[index];
     unsigned char* pixels = &data[1];
     unsigned char label = data[0];
 
@@ -113,7 +117,7 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    unsigned char* data = ImageData[index];
+    unsigned char* data = m_image_data[index];
     unsigned char label = data[0];
 
     Y.Set(label, k, 1);
@@ -179,14 +183,14 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
     fread(&data[0], 1, 1, fplbl);
     fread(&data[1], imgwidth * imgheight, 1, fpimg);
 
-    ImageData.push_back(data);
+    m_image_data.push_back(data);
   }
   fclose(fpimg);
   fclose(fplbl);
 
   // reset indices
   ShuffledIndices.clear();
-  ShuffledIndices.resize(ImageData.size());
+  ShuffledIndices.resize(m_image_data.size());
   for (size_t n = 0; n < ShuffledIndices.size(); n++) {
     ShuffledIndices[n] = n;
   }
@@ -228,11 +232,11 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
 
 void lbann::DataReader_MNIST::free()
 {
-  for (size_t n = 0; n < ImageData.size(); n++) {
-    unsigned char* data = ImageData[n];
+  for (size_t n = 0; n < m_image_data.size(); n++) {
+    unsigned char* data = m_image_data[n];
     delete [] data;
   }
-  ImageData.clear();
+  m_image_data.clear();
 }
 
 // Assignment operator
@@ -246,30 +250,34 @@ lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNI
   DataReader::operator=(source);
 
   // first we need to deallocate any data that this data reader is holding!
-  for (size_t n = 0; n < ImageData.size(); n++) {
-    unsigned char* data = ImageData[n];
+  for (size_t n = 0; n < m_image_data.size(); n++) {
+    unsigned char* data = m_image_data[n];
     delete [] data;
   }
-  ImageData.clear();
+  m_image_data.clear();
 
-  this->ImageWidth = source.ImageWidth;
-  this->ImageHeight = source.ImageHeight;
-  this->NumLabels = source.NumLabels;
+  this->m_image_width = source.m_image_width;
+  this->m_image_height = source.m_image_height;
+  this->m_num_labels = source.m_num_labels;
+  this->m_num_labels = source.m_num_labels;
+  this->m_scale = source.m_scale;
+  this->m_variance = source.m_variance;
+  this->m_mean = source.m_mean;
 
   clone_image_data(source);
   return *this;
 }
 
 void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source) {
-  // ImageData has pointers, so we need to deep copy them
-  for (size_t n = 0; n < source.ImageData.size(); n++) {
-    unsigned char* data = new unsigned char[1 + ImageWidth * ImageHeight];
-    unsigned char* src_data = source.ImageData[n];
+  // m_image_data has pointers, so we need to deep copy them
+  for (size_t n = 0; n < source.m_image_data.size(); n++) {
+    unsigned char* data = new unsigned char[1 + m_image_width * m_image_height];
+    unsigned char* src_data = source.m_image_data[n];
 
-    for (size_t i = 0; i < 1 + ImageWidth * ImageHeight; i++) {
+    for (size_t i = 0; i < 1 + m_image_width * m_image_height; i++) {
       data[i] = src_data[i];
     }
-    ImageData.push_back(data);
+    m_image_data.push_back(data);
   }
   return;
 }
