@@ -65,6 +65,16 @@ int main(int argc, char* argv[])
                                                    "MNIST test set image file",
                                                    "t10k-images-idx3-ubyte");
 
+        //determine if we're going to scale, subtract mean, etc;
+        //scaling/standardization is on a per-example basis (computed independantly
+        //for each image)
+        bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+
+        //if set to true, above three settings have no effect
+        bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
         ///////////////////////////////////////////////////////////////////
         // initalize grid, block
         ///////////////////////////////////////////////////////////////////
@@ -121,10 +131,16 @@ int main(int argc, char* argv[])
                                  g_MNIST_TrainImageFile,
                                  g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
           if (comm->am_world_master()) {
-            cout << "MNIST train data error" << endl;
+            cerr << __FILE__ << " " << __LINE__ << " MNIST train data error" << endl;
           }
           return -1;
         }
+
+        mnist_trainset.scale(scale);
+        mnist_trainset.subtract_mean(subtract_mean);
+        mnist_trainset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
+
         if (comm->am_world_master()) {
           cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
         }
@@ -135,7 +151,7 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
         if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
           if (comm->am_world_master()) {
-            cout << "MNIST validation data error" << endl;
+            cerr << __FILE__ << " " << __LINE__ << " MNIST validation data error" << endl;
           }
           return -1;
         }
@@ -161,10 +177,16 @@ int main(int argc, char* argv[])
                                 g_MNIST_TestLabelFile,
                                 trainParams.PercentageTestingSamples)) {
           if (comm->am_world_master()) {
-            cout << "MNIST Test data error" << endl;
+            cerr << __FILE__ << " " << __LINE__ << " MNIST Test data error" << endl;
           }
           return -1;
         }
+
+        mnist_testset.scale(scale);
+        mnist_testset.subtract_mean(subtract_mean);
+        mnist_testset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
+
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
         }
