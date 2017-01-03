@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,9 +29,13 @@
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
+#include <fstream>
 using namespace std;
 using namespace El;
 
+double v_blue;
+double v_green;
+double v_red;
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   : DataReader(batchSize, shuffle)
@@ -40,14 +44,26 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   m_image_height = 256;
   m_image_depth = 3;
   m_num_labels = 1000;
+  m_mean_data_mode = 1;
+  m_variance = false;
+  m_mean = false;
+  m_z_score = false;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
 }
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
-    m_image_dir(source.m_image_dir), ImageList(source.ImageList),
-    m_image_width(source.m_image_width), m_image_height(source.m_image_height), m_image_depth(source.m_image_depth), m_num_labels(source.m_num_labels)
+    m_image_dir(source.m_image_dir), 
+    ImageList(source.ImageList),
+    m_image_width(source.m_image_width), 
+    m_image_height(source.m_image_height), 
+    m_image_depth(source.m_image_depth),  
+    m_num_labels(source.m_num_labels),
+    m_scale(source.m_scale), 
+    m_variance(source.m_variance), 
+    m_mean(source.m_mean), 
+    m_z_score(source.m_z_score)
 {
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
@@ -60,19 +76,37 @@ lbann::DataReader_ImageNet::~DataReader_ImageNet()
 
 int lbann::DataReader_ImageNet::fetch_data(Mat& X)
 {
+  static bool testme = true;
   if(!DataReader::position_valid()) {
-    return 0;
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
+    throw lbann_exception(err.str());
   }
-	
-	int pixelcount = m_image_width * m_image_height * m_image_depth;
+
+  if (m_z_score) {
+    m_scale = false;
+    m_mean = false;
+    m_variance = false;
+  }
+
+  int pixelcount = m_image_width * m_image_height * m_image_depth;
   int current_batch_size = getBatchSize();
-	
+
+  //special handling for these types of normalization
+  std::vector<float> pixels;
+  bool special = false;
+  if (m_mean or m_variance or m_z_score) {
+    special = true;
+    pixels.resize(pixelcount);
+  }
+
+  float scale = m_scale ? 255.0 : 1.0;
+
   int n = 0;
-  bool have_mean_data = m_mean_data.size() ? true : false;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
     if (n >= (int)ShuffledIndices.size())
       break;
-			
+
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     string imagepath = m_image_dir + ImageList[index].first;
@@ -86,22 +120,34 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");
     }
 
-    for (int p = 0; p < pixelcount; p++) {
-      if (have_mean_data) {
-        X.Set(p, k, m_pixels[p] - m_mean_data[p] / 255.0f);
-      } else {
-        X.Set(p, k, m_pixels[p] / 255.0f);
+    if (not special) {
+      for (int p = 0; p < pixelcount; p++) {
+        X.Set(p, k, m_pixels[p] / scale);
+      }
+    }
+
+    else {
+      for (int p = 0; p < pixelcount; p++) {
+        pixels[p] = m_pixels[p];
+      }
+      for (int x=0; x<3; x++) {
+        standardize(pixels, x);
+      }
+      for (int p = 0; p < pixelcount; p++) {
+        X.Set(p, k, pixels[p]);
       }
     }
   }
 
-	return (n - CurrentPos);
+  return (n - CurrentPos);
 }
 
 int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
 {
   if(!position_valid()) {
-    return 0;
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
+    throw lbann_exception(err.str());
   }
 
   int current_batch_size = getBatchSize();
@@ -109,58 +155,64 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
     if (n >= (int)ShuffledIndices.size())
       break;
-			
+
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     int label = ImageList[index].second;
 
     Y.Set(label, k, 1);
   }
-	return (n - CurrentPos);
+  return (n - CurrentPos);
 }
 
 bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile)
 {
-	m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
-	ImageList.clear();
+  m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
+  ImageList.clear();
 
-	// load image list
-	FILE* fplist = fopen(imageListFile.c_str(), "rt");
-	if (!fplist)
-		return false;
-	while (!feof(fplist)) {
-		char imagepath[512];
-		int imagelabel;
-		if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
-			break;
-		ImageList.push_back(make_pair(imagepath, imagelabel));
-	}
-	fclose(fplist);
-	
-	// reset indices
-	ShuffledIndices.clear();
-	ShuffledIndices.resize(ImageList.size());
-	for (size_t n = 0; n < ImageList.size(); n++) {
-		ShuffledIndices[n] = n;
-	}
+  // load image list
+  FILE* fplist = fopen(imageListFile.c_str(), "rt");
+  if (!fplist) {
+    cerr << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+  }
 
-	return true;
+  while (!feof(fplist)) {
+    char imagepath[512];
+    int imagelabel;
+    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
+      break;
+    ImageList.push_back(make_pair(imagepath, imagelabel));
+  }
+  fclose(fplist);
+
+  // reset indices
+  ShuffledIndices.clear();
+  ShuffledIndices.resize(ImageList.size());
+  for (size_t n = 0; n < ImageList.size(); n++) {
+    ShuffledIndices[n] = n;
+  }
+
+  return true;
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, size_t max_sample_count, bool firstN) {
+bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, size_t max_sample_count, bool firstN)
+{
   bool load_successful = false;
 
   load_successful = load(imageDir, imageListFile);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: ImageNet: data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
 
   return load_successful;
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, double use_percentage, bool firstN) {
+bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, double use_percentage, bool firstN)
+{
   bool load_successful = false;
 
   load_successful = load(imageDir, imageListFile);
@@ -168,7 +220,9 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("ImageNet: data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: ImageNet: data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
 
@@ -197,9 +251,19 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->ImageList = source.ImageList;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
-  this->m_image_depth = source.m_image_depth;
+  this->m_image_depth = source.m_image_height;
   this->m_num_labels = source.m_num_labels;
+
+  this->m_scale = source.m_scale;
+  this->m_variance = source.m_variance;
+  this->m_mean = source.m_mean;
+  this->m_z_score = source.m_z_score;
+
   this->m_mean_data = source.m_mean_data;
+  this->m_mean_data_mode = source.m_mean_data_mode;
+  this->m_mean_data_blue = source.m_mean_data_blue;
+  this->m_mean_data_green = source.m_mean_data_green;
+  this->m_mean_data_red = source.m_mean_data_red;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
@@ -207,50 +271,106 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   return *this;
 }
 
-void lbann::DataReader_ImageNet::load_mean_data(std::string fn) {
+
+void lbann::DataReader_ImageNet::load_mean_data(std::string fn, int mode)
+{
   stringstream err;
 
-  ifstream in(fn.c_str());
-  if (not in) {
-    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data failed to open file for reading: " << fn;
+  if (mode < 1 or mode > 4) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << " lbann::DataReader_ImageNet::load_mean_data() - mode: " 
+        << mode << "; must be 1, 2, 3, or 4";
     throw lbann_exception(err.str());
   }
 
-	int pixelcount = m_image_width * m_image_height * m_image_depth;
+  m_mean_data_mode = mode;
+
+  ifstream in(fn.c_str());
+  if (not in) {
+    err << __FILE__ << " " << __LINE__ << " ImageNet:lbann_data_reader_imagenet::load_mean_data failed to open file for reading: " << fn;
+    throw lbann_exception(err.str());
+  }
+
+  int pixelcount = m_image_width * m_image_height * m_image_depth;
   m_mean_data.reserve(pixelcount);
-  unsigned char d;
+  double d;
 
   int sanity = 0;
+  const double x = 123456789;
   while (not in.eof()) {
+    d = x;
     in >> d;
-    m_mean_data.push_back(d);
-    ++sanity;
-    if (sanity > pixelcount) {
-      break;
+    if (d != x) {
+      m_mean_data.push_back(d);
+      ++sanity;
+      if (sanity > pixelcount) {
+        break;
+      }
     }
   }
 
   if (sanity != pixelcount) {
-    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data file size is incorrect: " << fn << " should contain " << pixelcount << " unsigned ints";
+    err << __FILE__ << " " << __LINE__ << " ImageNet:lbann_data_reader_imagenet::load_mean_data file size is incorrect: " << fn << " should contain " << pixelcount << " doubles, but we read " << sanity << " entries\n";
     throw lbann_exception(err.str());
   }
+
+  m_mean_data_blue = 0.0;
+  m_mean_data_green = 0.0;
+  m_mean_data_red = 0.0;
+v_blue = 0.0;
+v_green = 0.0;
+v_red = 0.0;
+  sanity = 0;
+  size_t h;
+  for (h=0; h<m_mean_data.size(); h += 3) {
+    m_mean_data_blue += m_mean_data[h];
+    v_blue += (m_mean_data[h]*m_mean_data[h]);
+    m_mean_data_green += m_mean_data[h+1];
+    v_green += (m_mean_data[h+1]*m_mean_data[h+1]);
+    m_mean_data_red += m_mean_data[h+2];
+    v_red += (m_mean_data[h+2]*m_mean_data[h+2]);
+    ++sanity;
+  }
+
+
+
+  if (sanity != m_image_height*m_image_width) {
+    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data - sanity check failed; counted " << sanity << " pixels in each plane; should be " << m_image_height*m_image_width << "  m_mean_data.size(): " << m_mean_data.size() << "  pixel count: " << pixelcount << endl;
+    throw lbann_exception(err.str());
+  }
+  double area = m_image_height*m_image_width;
+  m_mean_data_blue /= area;
+  m_mean_data_green /= area;
+  m_mean_data_red /= area;
+
+  v_blue /= area;
+  v_green /= area;
+  v_red /= area;
+
+  v_blue = v_blue - (m_mean_data_blue * m_mean_data_blue);
+  v_green = v_green - (m_mean_data_green * m_mean_data_green);
+  v_red = v_red - (m_mean_data_red * m_mean_data_red);
+
+  v_blue = sqrt(v_blue);
+  v_green = sqrt(v_green);
+  v_red = sqrt(v_red);
 }
 
-int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process) {
+int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process)
+{
   stringstream err;
 
   if(!DataReader::position_valid()) {
-    err << "lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
+    err << __FILE__ << " " << __LINE__ << " lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
     throw lbann_exception(err.str());
-    return 0;
   }
 
   size_t num_to_process = max_to_process > 0 ? max_to_process : ImageList.size();
 
   data.clear();
   data.reserve(num_to_process);
-	
-	int pixelcount = m_image_width * m_image_height * m_image_depth;
+
+  int pixelcount = m_image_width * m_image_height * m_image_depth;
   vector<unsigned char> pixels(pixelcount);
   unsigned char *v = &(pixels[0]);
 
@@ -270,3 +390,68 @@ int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char
   }
   return 0;
 }
+
+void lbann::DataReader_ImageNet::standardize(std::vector<float> &pixels, int offset) {
+    float pixelcount = m_image_width * m_image_height;
+    if (m_z_score) {
+      float x_sqr = 0;
+      float mean = 0;
+      for (size_t p = offset; p < pixels.size(); p+= 3) {
+        mean += pixels[p];
+        x_sqr += (pixels[p] * pixels[p]);
+      }
+
+      mean /= pixelcount;
+      x_sqr /= pixelcount;
+      float std_dev = x_sqr - (mean*mean);
+      std_dev = sqrt(std_dev);
+      for (size_t p = offset; p < pixels.size(); p+= 3) {
+        pixels[p] = (pixels[p] - mean) / std_dev;
+      }
+    }
+
+    else {
+
+      // optionally scale to: [0,1]
+      // formula is:  x_i - min(x) / max(x) - min(x)
+      // but since min(x) = 0 and max(x) <= 255, we simply divide by 255
+      if (m_scale) {
+        for (size_t p = offset; p < pixels.size(); p+= 3) {
+          pixels[p] /= 255.0;
+        }
+      }
+
+      // optionally subtract the mean
+      if (m_mean) {
+        float mean = 0;
+        for (size_t p = offset; p < pixels.size(); p+= 3) {
+          mean += pixels[p];
+        }
+        mean /= pixelcount;
+        for (size_t p = offset; p < pixels.size(); p+= 3) {
+          pixels[p] -= mean;
+        }
+      }
+
+      // optionally standardize to unit variance;
+      // note: we need to recompute the mean and standard deviation,
+      //       in case we've rescaled (above) using min-max scaling
+      if (m_variance) {
+        float x_sqr = 0;
+        float mean = 0;
+        for (size_t p = offset; p < pixels.size(); p+= 3) {
+          mean += pixels[p];
+          x_sqr += (pixels[p] * pixels[p]);
+        }
+        mean /= pixelcount;
+        x_sqr /= pixelcount;
+        float std_dev = x_sqr - (mean*mean);
+        std_dev = sqrt(std_dev);
+
+        for (size_t p = offset; p < pixels.size(); p+= 3) {
+          pixels[p] /= std_dev;
+        }
+      }
+    }
+}
+
