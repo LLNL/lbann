@@ -66,10 +66,16 @@ namespace lbann
 
     DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
-    /* loads pre-computed data for mean subtraction;
-     * throws exceptions is something goes wrong
-     */
-    void load_mean_data(std::string fn);
+    void subtract_mean(bool b) { m_mean = b; }
+
+    void unit_variance(bool b) { m_variance = b; }
+
+    //! scale using min-max
+    void scale(bool b) { m_scale = b; }
+
+    //! normalize using z-score; if set to true, then settings for
+    //! subtract_mean(), unit_variance(), and scale() are ignored
+    void z_score(bool b) { m_z_score = b; }
 
 	private:
 		std::string							m_image_dir; // where images are stored
@@ -79,7 +85,13 @@ namespace lbann
 		int 										m_image_depth; // image depth (depth)
 		int											m_num_labels; // # labels (1000)
     unsigned char *         m_pixels;
-    std::vector<unsigned char> m_mean_data;
+
+    bool              m_scale;
+    bool              m_variance;
+    bool              m_mean;
+    bool              m_z_score;
+
+    void standardize(std::vector<float> &pixels, int offset); 
 	};
 }
 

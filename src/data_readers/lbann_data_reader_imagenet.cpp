@@ -33,10 +33,6 @@
 using namespace std;
 using namespace El;
 
-double v_blue;
-double v_green;
-double v_red;
-
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   : DataReader(batchSize, shuffle)
 {
@@ -44,7 +40,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   m_image_height = 256;
   m_image_depth = 3;
   m_num_labels = 1000;
-  m_mean_data_mode = 1;
+  m_scale = true;
   m_variance = false;
   m_mean = false;
   m_z_score = false;
@@ -259,102 +255,12 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->m_mean = source.m_mean;
   this->m_z_score = source.m_z_score;
 
-  this->m_mean_data = source.m_mean_data;
-  this->m_mean_data_mode = source.m_mean_data_mode;
-  this->m_mean_data_blue = source.m_mean_data_blue;
-  this->m_mean_data_green = source.m_mean_data_green;
-  this->m_mean_data_red = source.m_mean_data_red;
-
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 
   return *this;
 }
 
-
-void lbann::DataReader_ImageNet::load_mean_data(std::string fn, int mode)
-{
-  stringstream err;
-
-  if (mode < 1 or mode > 4) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ << " lbann::DataReader_ImageNet::load_mean_data() - mode: " 
-        << mode << "; must be 1, 2, 3, or 4";
-    throw lbann_exception(err.str());
-  }
-
-  m_mean_data_mode = mode;
-
-  ifstream in(fn.c_str());
-  if (not in) {
-    err << __FILE__ << " " << __LINE__ << " ImageNet:lbann_data_reader_imagenet::load_mean_data failed to open file for reading: " << fn;
-    throw lbann_exception(err.str());
-  }
-
-  int pixelcount = m_image_width * m_image_height * m_image_depth;
-  m_mean_data.reserve(pixelcount);
-  double d;
-
-  int sanity = 0;
-  const double x = 123456789;
-  while (not in.eof()) {
-    d = x;
-    in >> d;
-    if (d != x) {
-      m_mean_data.push_back(d);
-      ++sanity;
-      if (sanity > pixelcount) {
-        break;
-      }
-    }
-  }
-
-  if (sanity != pixelcount) {
-    err << __FILE__ << " " << __LINE__ << " ImageNet:lbann_data_reader_imagenet::load_mean_data file size is incorrect: " << fn << " should contain " << pixelcount << " doubles, but we read " << sanity << " entries\n";
-    throw lbann_exception(err.str());
-  }
-
-  m_mean_data_blue = 0.0;
-  m_mean_data_green = 0.0;
-  m_mean_data_red = 0.0;
-v_blue = 0.0;
-v_green = 0.0;
-v_red = 0.0;
-  sanity = 0;
-  size_t h;
-  for (h=0; h<m_mean_data.size(); h += 3) {
-    m_mean_data_blue += m_mean_data[h];
-    v_blue += (m_mean_data[h]*m_mean_data[h]);
-    m_mean_data_green += m_mean_data[h+1];
-    v_green += (m_mean_data[h+1]*m_mean_data[h+1]);
-    m_mean_data_red += m_mean_data[h+2];
-    v_red += (m_mean_data[h+2]*m_mean_data[h+2]);
-    ++sanity;
-  }
-
-
-
-  if (sanity != m_image_height*m_image_width) {
-    err << "ImageNet:lbann_data_reader_imagenet::load_mean_data - sanity check failed; counted " << sanity << " pixels in each plane; should be " << m_image_height*m_image_width << "  m_mean_data.size(): " << m_mean_data.size() << "  pixel count: " << pixelcount << endl;
-    throw lbann_exception(err.str());
-  }
-  double area = m_image_height*m_image_width;
-  m_mean_data_blue /= area;
-  m_mean_data_green /= area;
-  m_mean_data_red /= area;
-
-  v_blue /= area;
-  v_green /= area;
-  v_red /= area;
-
-  v_blue = v_blue - (m_mean_data_blue * m_mean_data_blue);
-  v_green = v_green - (m_mean_data_green * m_mean_data_green);
-  v_red = v_red - (m_mean_data_red * m_mean_data_red);
-
-  v_blue = sqrt(v_blue);
-  v_green = sqrt(v_green);
-  v_red = sqrt(v_red);
-}
 
 int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process)
 {

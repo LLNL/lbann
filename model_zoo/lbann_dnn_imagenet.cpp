@@ -625,7 +625,6 @@ int main(int argc, char* argv[])
     Initialize(argc, argv);
     lbann_comm *comm = NULL;
 
-    bool caught_exception = false;
     try {
         ///////////////////////////////////////////////////////////////////
         // initalize grid, block
@@ -658,6 +657,13 @@ int main(int argc, char* argv[])
 
         // training settings
         int decayIterations = 1;
+
+        bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+
+        //if set to true, above three settings have no effect
+        bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
         ProcessInput();
         PrintInputReport();
@@ -711,7 +717,7 @@ int main(int argc, char* argv[])
                                                      trainParams.PercentageTrainingSamples);
         if (!training_set_loaded) {
           if (comm->am_world_master()) {
-            cout << "ImageNet train data error" << endl;
+             cerr << __FILE__ << " " << __LINE__ << " ImageNet train data error: training set was not loaded" << endl;
           }
           return -1;
         }
@@ -719,13 +725,18 @@ int main(int argc, char* argv[])
           cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl;
         }
 
+        imagenet_trainset.scale(scale);
+        imagenet_trainset.subtract_mean(subtract_mean);
+        imagenet_trainset.unit_variance(unit_variance);
+        imagenet_trainset.z_score(z_score);
+
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_validation_set(imagenet_trainset); // Clone the training set object
         if (!imagenet_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
           if (comm->am_world_master()) {
-            cout << "ImageNet validation data error" << endl;
+             cerr << __FILE__ << " " << __LINE__ << " ImageNet validation data error" << endl;
           }
           return -1;
         }
@@ -752,13 +763,19 @@ int main(int argc, char* argv[])
                                                    trainParams.PercentageTestingSamples);
         if (!testing_set_loaded) {
           if (comm->am_world_master()) {
-            cout << "ImageNet Test data error" << endl;
+            cerr << __FILE__ << " " << __LINE__ << " ImageNet Test data error: testing set was not loaded" << endl;
           }
           return -1;
         }
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
         }
+
+        imagenet_testset.scale(scale);
+        imagenet_testset.subtract_mean(subtract_mean);
+        imagenet_testset.unit_variance(unit_variance);
+        imagenet_testset.z_score(z_score);
+
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
@@ -802,7 +819,7 @@ int main(int argc, char* argv[])
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
-        lbann_summary summarizer("/p/lscratchf/vanessen", comm);
+        lbann_summary summarizer("/p/lscratche/hysom", comm);
         // Print out information for each epoch.
         lbann_callback_print print_cb;
         dnn->add_callback(&print_cb);
@@ -933,33 +950,15 @@ int main(int argc, char* argv[])
             // training epoch loop
             //************************************************************************
 
-        if (comm->am_world_master()) {
-           cerr << "\nmain: calling train\n\n";
-        }
             dnn->train(1, true);
-        if (comm->am_world_master()) {
-           cerr << "\nDONE! main: calling train\n\n";
-        }
 
             dnn->evaluate();
         }
 
         delete dnn;
     }
-    catch (lbann_exception& e) { 
-      lbann_report_exception(e, comm); 
-      caught_exception = true;
-    }
-    catch (exception& e) { 
-      ReportException(e); 
-      caught_exception = true;
-    } /// Elemental exceptions
-
-    if (caught_exception) {
-      cerr << "in main; caught exception!\n";
-      MPI_Abort(MPI_COMM_WORLD, -1);
-      caught_exception = true;
-    }
+    catch (lbann_exception& e) { lbann_report_exception(e, comm); }
+    catch (exception& e) { ReportException(e); } /// Elemental exceptions
 
     // free all resources by El and MPI
     Finalize();
