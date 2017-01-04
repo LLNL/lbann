@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
                                                      trainParams.PercentageTrainingSamples);
         if (!training_set_loaded) {
           if (comm->am_world_master()) {
-            cerr << __FILE__ << " " __LINE__ << " ImageNet train data error" << endl;
+            cerr << __FILE__ << " " << __LINE__ << " ImageNet train data error" << endl;
           }
           return -1;
         }
