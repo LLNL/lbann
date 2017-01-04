@@ -55,8 +55,8 @@ void lbann::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_si
 
 /// Compute mean squared error
 /// sumerrors += ((X[m][0] - XP[m][0]) * (X[m][0] - XP[m][0]));
-DataType lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
-  DataType avg_error = 0.0, total_error = 0.0;
+double lbann::mean_squared_error::compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v) {
+  double avg_error = 0.0, total_error = 0.0;
   int64_t cur_mini_batch_size = groundtruth_v.Width();
 
   // copy activations from the previous layer into the temporary matrix m_sum_squared_errors
@@ -75,6 +75,14 @@ DataType lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &
       total_error += m_minibatch_cost.GetLocal(r, 0);
   }
   total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
+  return total_error;
+}
+
+DataType lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+  DataType avg_error = 0.0, total_error = 0.0;
+  int64_t cur_mini_batch_size = groundtruth_v.Width();
+
+  total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
 
   avg_error = total_error / cur_mini_batch_size;
   return avg_error;

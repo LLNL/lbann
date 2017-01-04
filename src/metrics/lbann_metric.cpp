@@ -29,7 +29,7 @@
 
 using namespace std;
 
-lbann::statistics* lbann::metric::get_statistics(execution_mode mode) {
+lbann::metrics::statistics* lbann::metrics::metric::get_statistics(execution_mode mode) {
   statistics *stats;
 
   switch(mode) {
@@ -49,14 +49,14 @@ lbann::statistics* lbann::metric::get_statistics(execution_mode mode) {
 }
 
 
-void lbann::metric::record_error(double error, long num_samples) {
+void lbann::metrics::metric::record_error(double error, long num_samples) {
   statistics *stats = get_statistics(neural_network_model->get_execution_mode());
   stats->m_error_per_epoch += error;
   stats->m_samples_per_epoch += num_samples;
   return;
 }
 
-void lbann::metric::reset_error() {
+void lbann::metrics::metric::reset_error() {
   m_training_stats.reset_stats();
   m_validation_stats.reset_stats();
   m_testing_stats.reset_stats();

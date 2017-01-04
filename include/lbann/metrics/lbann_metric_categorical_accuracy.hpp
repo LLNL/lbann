@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CATEGORICAL_ACCURACY_HPP
-#define LBANN_CATEGORICAL_ACCURACY_HPP
+#ifndef LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
+#define LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
 
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
@@ -33,61 +33,40 @@
 namespace lbann
 {
 
-  class categorical_accuracy : public metric
+  namespace metrics
   {
-  public:
-    /// Constructor
-    categorical_accuracy(lbann_comm* comm);
+    class categorical_accuracy : public metric
+    {
+    public:
+      /// Constructor
+      categorical_accuracy(lbann_comm* comm);
     
-    /// Destructor
-    ~categorical_accuracy();
+      /// Destructor
+      ~categorical_accuracy();
 
-    void setup(int num_neurons, int mini_batch_size);
-    void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-    double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
+      void setup(int num_neurons, int mini_batch_size);
+      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+      double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
-    double report_metric(execution_mode mode);
-#if 0
-    V report_average_error();
-    void display_average_error();
+      double report_metric(execution_mode mode);
 
-    void record_error(StarMat y_true, StarMat y_pred, long num_samples);
+    protected:
+      ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
+      StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
+      Mat m_max_index;    /// Local array to hold max indicies
+      Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
+      //    Mat Y_local;
 
-    void record_error(T error, long num_samples) {
-      m_error_per_epoch += error;
-      m_samples_per_epoch += num_samples;
-    }
-    
-    void reset_error() {
-      m_total_error += m_error_per_epoch;
-      m_total_num_samples += m_samples_per_epoch;
-      m_error_per_epoch = (T) 0;
-      m_samples_per_epoch = 0;
-    }
-#endif
+      ColSumMat YsColMax_v;
+      StarMat YsColMaxStar_v;
+      Mat m_max_index_v;
+      Mat m_reduced_max_indices_v;
+      //    Mat Y_local_v;
 
-  protected:
-    // T m_error_per_epoch;
-    // long m_samples_per_epoch;
-
-    // T m_total_error;
-    // long m_total_num_samples;
-
-    ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-    StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
-    Mat m_max_index;    /// Local array to hold max indicies
-    Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
-    //    Mat Y_local;
-
-    ColSumMat YsColMax_v;
-    StarMat YsColMaxStar_v;
-    Mat m_max_index_v;
-    Mat m_reduced_max_indices_v;
-    //    Mat Y_local_v;
-
-    int64_t m_max_mini_batch_size;
-  };
+      int64_t m_max_mini_batch_size;
+    };
+  }
 }
 
 
-#endif // LBANN_CATEGORICAL_ACCURACY_HPP
+#endif // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP

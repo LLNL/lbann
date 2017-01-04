@@ -59,7 +59,7 @@ public:
   virtual void add_callback(lbann_callback* cb);
 
   /** Register a new metric for the model. */
-  virtual void add_metric(metric* m);
+  virtual void add_metric(metrics::metric* m);
 
   /** Return the model's layers. */
   virtual std::vector<Layer*>& get_layers() = 0;
@@ -96,7 +96,7 @@ public:
   void set_terminate_training(bool f) { m_terminate_training = f; }
 
   objective_fn* obj_fn;
-  std::vector<metric*> metrics;
+  std::vector<metrics::metric*> metrics;
     
 protected:
   /** The model's current execution mode. */

@@ -39,6 +39,7 @@ namespace lbann
 
     void setup(int num_neurons, int mini_batch_size);
     void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+    double compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v);
     DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
 
   protected:

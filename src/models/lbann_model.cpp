@@ -54,7 +54,7 @@ void lbann::model::setup_callbacks() {
   }
 }
 
-void lbann::model::add_metric(lbann::metric* m) {
+void lbann::model::add_metric(lbann::metrics::metric* m) {
   metrics.push_back(m);
 }
 

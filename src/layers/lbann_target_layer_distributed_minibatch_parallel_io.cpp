@@ -228,6 +228,18 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regr
   distribute_from_local_matrix(Y_local, Ys);
   Copy(Ys, *m_activations);
 
+#if 1
+  double tmp_num_errors = 0;
+  for (auto&& m : neural_network_model->metrics) {
+    tmp_num_errors = m->compute_metric(*m_prev_activations_v, *m_activations_v);
+    m->record_error(tmp_num_errors, curr_mini_batch_size);
+  }
+
+  //  if(SSE != tmp_num_errors) {
+  if(SSE != tmp_num_errors /*!(SSE > tmp_num_errors || SSE < tmp_num_errors)*/) {
+    cout << "The new metric function calculated " << tmp_num_errors << " errors and the old function computed " << SSE << endl;
+  }
+#endif
   return SSE;
 }
 

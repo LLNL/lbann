@@ -65,8 +65,8 @@ void lbann_callback_print::on_epoch_end(model* m) {
         comm->intermodel_gather(train_score, train_scores);
         comm->intermodel_gather(validate_score, validate_scores);
 
-        std::vector<float> train_accs(comm->get_num_models());
-        std::vector<float> validate_accs(comm->get_num_models());
+        std::vector<DataType> train_accs(comm->get_num_models());
+        std::vector<DataType> validate_accs(comm->get_num_models());
         comm->intermodel_gather(train_acc, train_accs);
         comm->intermodel_gather(validate_acc, validate_accs);
 

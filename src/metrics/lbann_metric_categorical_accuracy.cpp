@@ -30,7 +30,7 @@
 using namespace std;
 using namespace El;
 
-lbann::categorical_accuracy::categorical_accuracy(lbann_comm* comm) 
+lbann::metrics::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
   : metric(comm),
     YsColMax(comm->get_model_grid()),
     YsColMaxStar(comm->get_model_grid()),
@@ -40,7 +40,7 @@ lbann::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
   this->type = metric_type::categorical_accuracy;
 }
 
-lbann::categorical_accuracy::~categorical_accuracy() {
+lbann::metrics::categorical_accuracy::~categorical_accuracy() {
   YsColMax.Empty();
   YsColMaxStar.Empty();
   m_max_index.Empty();
@@ -52,7 +52,7 @@ lbann::categorical_accuracy::~categorical_accuracy() {
   m_reduced_max_indices_v.Empty();
 }
 
-void lbann::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
+void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
   // Clear the contents of the intermediate matrices
   Zeros(YsColMax, mini_batch_size, 1);
@@ -62,7 +62,7 @@ void lbann::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   m_max_mini_batch_size = mini_batch_size;
 }
 
-void lbann::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   View(YsColMax_v, YsColMax, IR(0, YsColMax.Height()), IR(0, cur_mini_batch_size));
   View(YsColMaxStar_v, YsColMaxStar, IR(0, YsColMaxStar.Height()), IR(0, cur_mini_batch_size));
@@ -71,7 +71,7 @@ void lbann::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_
   //  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, cur_mini_batch_size));
 }
 
-double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
 
   // Clear the contents of the intermediate matrices
   Zeros(YsColMax, m_max_mini_batch_size, 1);
@@ -126,13 +126,10 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
   }
   
   num_errors = comm->model_allreduce(num_errors);
-  
-  record_error(num_errors, predictions_v.Width());
-
   return num_errors;
 }
 
-double lbann::categorical_accuracy::report_metric(execution_mode mode) {
+double lbann::metrics::categorical_accuracy::report_metric(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   double errors_per_epoch = stats->m_error_per_epoch;
   long samples_per_epoch = stats->m_samples_per_epoch;
