@@ -55,6 +55,7 @@ void lbann::target_layer::setup(int num_prev_neurons) {
   neural_network_model->obj_fn->setup(NumNeurons, m_mini_batch_size);
   for (auto&& m : neural_network_model->metrics) {
     m->setup(NumNeurons, m_mini_batch_size);
+    m->neural_network_model = neural_network_model;
   }
   Zeros(*m_activations, NumNeurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);

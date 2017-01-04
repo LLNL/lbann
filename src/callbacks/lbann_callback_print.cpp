@@ -66,6 +66,14 @@ void lbann_callback_print::on_epoch_end(model* m) {
         std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation accuracy: " << validate_accs[i] << "%";
         std::cout << std::endl;
       }
+
+      /// For each metric perform any 
+      for (auto&& metric : m->metrics) {
+        string score;
+        metric->report_metric(m->get_execution_mode(), score);
+        std::cout << " I also found a metric " << score << endl;
+      }
+
     } else {
       comm->intermodel_gather(train_acc, comm->get_intermodel_master());
       comm->intermodel_gather(validate_acc, comm->get_intermodel_master());

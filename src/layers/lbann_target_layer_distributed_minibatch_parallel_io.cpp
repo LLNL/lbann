@@ -176,6 +176,7 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   int tmp_num_errors = 0;
   for (auto&& m : neural_network_model->metrics) {
     tmp_num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
+    m->record_error(tmp_num_errors, curr_mini_batch_size);
   }
 
   if(num_errors != (int) tmp_num_errors) {

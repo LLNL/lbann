@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
+#include "lbann/models/lbann_model.hpp"
 
 using namespace std;
 using namespace El;
@@ -92,6 +93,7 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
 
   Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
+  /// Note that this has to operate on the raw buffer, not the view
   comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
 
   /// Check to see if the predicted results match the target results
@@ -122,27 +124,33 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
   
   num_errors = comm->model_allreduce(num_errors);
   
-#if 0
-  /// Allow the current root to compute the errors, since it has the data locally
-  if(is_current_root()) {
-    for (int mb_index= 0; mb_index < Y_local_v.Width(); mb_index++) { /// For each sample in mini-batch
-      int targetidx = -1;
-      float targetmax = 0;
-      for (int f_index= 0; f_index < Y_local_v.Height(); f_index++) {
-        if (targetmax < Y_local_v.Get(f_index, mb_index)) {
-          targetmax = Y_local_v.Get(f_index, mb_index);
-          targetidx = f_index;
-        }
-      }
-      if(m_reduced_max_indices.Get(mb_index, 0) != targetidx) {
-        num_errors++;
-      }
-    }
-  }
-  num_errors = comm->model_broadcast(m_root, num_errors);
-#endif
-
   record_error(num_errors, predictions_v.Width());
 
   return num_errors;
+}
+
+void lbann::categorical_accuracy::report_metric(execution_mode mode, string& score) {
+  long samples_per_epoch;
+  double errors_per_epoch;
+
+  switch(mode) {
+  case execution_mode::training:
+    errors_per_epoch = m_training_stats.m_error_per_epoch;
+    samples_per_epoch = m_training_stats.m_samples_per_epoch;
+    break;
+  case execution_mode::validation:
+    errors_per_epoch = m_validation_stats.m_error_per_epoch;
+    samples_per_epoch = m_validation_stats.m_samples_per_epoch;
+    break;
+  case execution_mode::testing:
+    errors_per_epoch = m_testing_stats.m_error_per_epoch;
+    samples_per_epoch = m_testing_stats.m_samples_per_epoch;
+    break;
+  };
+
+  float accuracy = (float)(samples_per_epoch - errors_per_epoch) / samples_per_epoch * 100;
+  score = std::to_string(accuracy);
+
+  std::cout << " reporting a metric with " << errors_per_epoch << " errors and " << samples_per_epoch << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
+  return;
 }
