@@ -74,6 +74,7 @@
 /// Metrics
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
+#include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
 
 /// Regularizers
 #include "lbann/regularization/lbann_dropout.hpp"
