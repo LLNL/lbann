@@ -28,24 +28,32 @@
 #include "lbann/models/lbann_model.hpp"
 
 using namespace std;
-//using namespace El;
 
-void lbann::metric::record_error(double error, long num_samples) {
-  execution_mode mode = neural_network_model->get_execution_mode();
+lbann::statistics* lbann::metric::get_statistics(execution_mode mode) {
+  statistics *stats;
+
   switch(mode) {
   case execution_mode::training:
-    m_training_stats.m_error_per_epoch += error;
-    m_training_stats.m_samples_per_epoch += num_samples;
+    stats = &m_training_stats;
     break;
   case execution_mode::validation:
-    m_validation_stats.m_error_per_epoch += error;
-    m_validation_stats.m_samples_per_epoch += num_samples;
+    stats = &m_validation_stats;
     break;
   case execution_mode::testing:
-    m_testing_stats.m_error_per_epoch += error;
-    m_testing_stats.m_samples_per_epoch += num_samples;
+    stats = &m_testing_stats;
     break;
+  default:
+    throw lbann_exception("Invalid execution mode");
   };
+  return stats;
+}
+
+
+void lbann::metric::record_error(double error, long num_samples) {
+  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
+  stats->m_error_per_epoch += error;
+  stats->m_samples_per_epoch += num_samples;
+  return;
 }
 
 void lbann::metric::reset_error() {
@@ -53,11 +61,6 @@ void lbann::metric::reset_error() {
   m_validation_stats.reset_stats();
   m_testing_stats.reset_stats();
 }
-
-// float lbann::classification::report_average_error() {
-//   float accuracy = float(m_samples_per_epoch - m_error_per_epoch) / m_samples_per_epoch * 100;
-//   return accuracy;
-// }
 
 
 // #if 0

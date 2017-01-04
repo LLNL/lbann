@@ -35,7 +35,10 @@ lbann::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
     YsColMax(comm->get_model_grid()),
     YsColMaxStar(comm->get_model_grid()),
     YsColMax_v(comm->get_model_grid()),
-    YsColMaxStar_v(comm->get_model_grid()) {}
+    YsColMaxStar_v(comm->get_model_grid())
+{
+  this->type = metric_type::categorical_accuracy;
+}
 
 lbann::categorical_accuracy::~categorical_accuracy() {
   YsColMax.Empty();
@@ -129,28 +132,14 @@ double lbann::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& 
   return num_errors;
 }
 
-void lbann::categorical_accuracy::report_metric(execution_mode mode, string& score) {
-  long samples_per_epoch;
-  double errors_per_epoch;
+double lbann::categorical_accuracy::report_metric(execution_mode mode) {
+  statistics *stats = get_statistics(mode);
+  double errors_per_epoch = stats->m_error_per_epoch;
+  long samples_per_epoch = stats->m_samples_per_epoch;
 
-  switch(mode) {
-  case execution_mode::training:
-    errors_per_epoch = m_training_stats.m_error_per_epoch;
-    samples_per_epoch = m_training_stats.m_samples_per_epoch;
-    break;
-  case execution_mode::validation:
-    errors_per_epoch = m_validation_stats.m_error_per_epoch;
-    samples_per_epoch = m_validation_stats.m_samples_per_epoch;
-    break;
-  case execution_mode::testing:
-    errors_per_epoch = m_testing_stats.m_error_per_epoch;
-    samples_per_epoch = m_testing_stats.m_samples_per_epoch;
-    break;
-  };
+  double accuracy = (double)(samples_per_epoch - errors_per_epoch) / samples_per_epoch * 100;
+  string score = std::to_string(accuracy);
 
-  float accuracy = (float)(samples_per_epoch - errors_per_epoch) / samples_per_epoch * 100;
-  score = std::to_string(accuracy);
-
-  std::cout << " reporting a metric with " << errors_per_epoch << " errors and " << samples_per_epoch << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
-  return;
+  std::cout << _to_string(type) << " reporting a metric with " << errors_per_epoch << " errors and " << samples_per_epoch << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
+  return accuracy;
 }

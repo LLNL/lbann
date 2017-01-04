@@ -29,6 +29,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann
 {
@@ -48,7 +49,19 @@ namespace lbann
   enum class metric_type {binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy,
       mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error,
       hinge, squared_hinge, categorical_crossentropy, sparse_categorical_crossentropy, binary_crossentropy, kullback_leibler_divergence,
-      poisson, cosine_proximity, matthews_correlation, precision, recall, fbeta_score, fmeasure};
+      poisson, cosine_proximity, matthews_correlation, precision, recall, fbeta_score, fmeasure, INVALID};
+
+  static const char* __attribute__((used)) _to_string(metric_type m) {
+    switch(m) {
+    case metric_type::categorical_accuracy:
+      return "categorical_accuracy";
+    case metric_type::mean_squared_error:
+      return "mean_squared_error";
+    default:
+      throw lbann_exception("Invalid metric type specified");
+    }
+    return NULL;
+  }
 
 
   class statistics
@@ -72,6 +85,8 @@ namespace lbann
       m_samples_per_epoch = 0;
     }
 
+    /// Error is accumulated as a double -- this works for both sum of
+    /// squared errors and categorical errors
     double m_error_per_epoch;
     long m_samples_per_epoch;
 
@@ -89,6 +104,7 @@ namespace lbann
       m_validation_stats.init_stats();
       m_testing_stats.init_stats();
       this->comm = comm;
+      this->type = metric_type::INVALID;
     }
 
     /// Destructor
@@ -97,7 +113,9 @@ namespace lbann
     virtual void setup(int num_neurons, int mini_batch_size) {}
     virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
     virtual double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {}
-    virtual void report_metric(execution_mode mode, string& score) {}
+    virtual double report_metric(execution_mode mode) {}
+
+    statistics* get_statistics(execution_mode mode);
 
     void record_error(double error, long num_samples);
     void reset_error();
@@ -109,6 +127,7 @@ namespace lbann
 
     lbann_comm* comm;
     model* neural_network_model;
+    metric_type type;
   };
 }
 

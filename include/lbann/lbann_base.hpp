@@ -67,7 +67,7 @@ static const char* __attribute__((used)) _to_string(execution_mode m) {
   case execution_mode::invalid:
     return "invalid";
   default:
-    throw("Invalid execution mode specified");
+    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
   }
   return NULL;
 }

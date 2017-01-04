@@ -46,7 +46,7 @@ namespace lbann
     void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
     double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
-    void report_metric(execution_mode mode, string& score);
+    double report_metric(execution_mode mode);
 #if 0
     V report_average_error();
     void display_average_error();
