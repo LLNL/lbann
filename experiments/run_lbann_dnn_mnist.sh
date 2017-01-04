@@ -38,18 +38,18 @@ TASKS_PER_NODE=12
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 DATASET_DIR="datasets/MNIST"
-TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
-TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
+TRAIN_LABEL_FILE="train-labels.idx1-ubyte"
+TRAIN_IMAGE_FILE="train-images.idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
-TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
-TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
-TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
-TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
+TRAIN_LABEL_FILE="train-labels.idx1-ubyte"
+TRAIN_IMAGE_FILE="train-images.idx3-ubyte"
+TEST_LABEL_FILE="t10k-labels.idx1-ubyte"
+TEST_IMAGE_FILE="t10k-images.idx3-ubyte"
 ENABLE_HT=
 fi
 

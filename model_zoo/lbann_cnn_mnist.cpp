@@ -84,6 +84,14 @@ int main(int argc, char* argv[])
         // Parse command-line inputs
         trainParams.parse_params();
         perfParams.parse_params();
+
+        bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+
+        //if set to true, above three settings have no effect
+        bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
         ProcessInput();
         PrintInputReport();
 
@@ -128,6 +136,11 @@ int main(int argc, char* argv[])
           cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
         }
 
+        mnist_trainset.scale(scale);
+        mnist_trainset.subtract_mean(subtract_mean);
+        mnist_trainset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
+
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
@@ -167,6 +180,11 @@ int main(int argc, char* argv[])
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
         }
+
+        mnist_testset.scale(scale);
+        mnist_testset.subtract_mean(subtract_mean);
+        mnist_testset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)

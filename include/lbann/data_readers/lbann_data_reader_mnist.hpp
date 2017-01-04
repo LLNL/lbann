@@ -45,7 +45,7 @@ namespace lbann
 
     int fetch_data(Mat& X);
     int fetch_label(Mat& Y);
-		int getNumLabels() { return NumLabels; }
+		int getNumLabels() { return m_num_labels; }
 
 		// MNIST-specific functions
     bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
@@ -54,21 +54,36 @@ namespace lbann
     bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
     void free();
 
-		int getImageWidth() { return ImageWidth; }
-		int getImageHeight() { return ImageHeight; }
-    int get_linearized_data_size() { return ImageWidth * ImageHeight; }
-    int get_linearized_label_size() { return NumLabels; }
+		int getImageWidth() { return m_image_width; }
+		int getImageHeight() { return m_image_height; }
+    int get_linearized_data_size() { return m_image_width * m_image_height; }
+    int get_linearized_label_size() { return m_num_labels; }
 
     DataReader_MNIST& operator=(const DataReader_MNIST& source);
+
+    void subtract_mean(bool b) { m_mean = b; }
+
+    void unit_variance(bool b) { m_variance = b; }
+
+    //! scale using min-max
+    void scale(bool b) { m_scale = b; }
+
+    //! normalize using z-score; if set to true, then settings for
+    //! subtract_mean(), unit_variance(), and scale() are ignored
+    void z_score(bool b) { m_z_score = b; }
 
   private:
     void clone_image_data(const DataReader_MNIST& source);
 
 	private:
-		std::vector<unsigned char*> 	ImageData;
-		int 							ImageWidth;
-		int 							ImageHeight;
-		int								NumLabels;
+		std::vector<unsigned char*> 	m_image_data;
+		int 							m_image_width;
+		int 							m_image_height;
+		int								m_num_labels;
+    bool              m_scale;
+    bool              m_variance;
+    bool              m_mean;
+    bool              m_z_score;
 	};
 
 }
