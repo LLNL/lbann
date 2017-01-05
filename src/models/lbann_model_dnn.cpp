@@ -122,6 +122,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     // Note: The data reader shuffles the data after each epoch
     long num_samples = 0;
     long num_errors = 0;
+    for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
       finished_epoch = train_mini_batch(&num_samples, &num_errors);
@@ -222,6 +223,7 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
   // Note: The data reader shuffles the data after each epoch
   long num_samples = 0;
   long num_errors = 0;
+  for (auto&& m : metrics) { m->reset_metric(); }
   bool finished_epoch;
   do {
     finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);

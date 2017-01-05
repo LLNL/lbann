@@ -140,3 +140,15 @@ double lbann::metrics::categorical_accuracy::report_metric(execution_mode mode) 
   std::cout << _to_string(type) << " reporting a metric with " << errors_per_epoch << " errors and " << samples_per_epoch << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
   return accuracy;
 }
+
+double lbann::metrics::categorical_accuracy::report_lifetime_metric(execution_mode mode) {
+  statistics *stats = get_statistics(mode);
+  double total_error = stats->m_total_error;
+  long total_num_samples = stats->m_total_num_samples;
+
+  double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
+  string score = std::to_string(accuracy);
+
+  std::cout << _to_string(type) << " reporting a metric with " << total_error << " errors and " << total_num_samples << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
+  return accuracy;
+}

@@ -56,10 +56,9 @@ void lbann::metrics::metric::record_error(double error, long num_samples) {
   return;
 }
 
-void lbann::metrics::metric::reset_error() {
-  m_training_stats.reset_stats();
-  m_validation_stats.reset_stats();
-  m_testing_stats.reset_stats();
+void lbann::metrics::metric::reset_metric() {
+  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
+  stats->reset_stats();
 }
 
 

@@ -49,6 +49,7 @@ namespace lbann
       double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
       double report_metric(execution_mode mode);
+      double report_lifetime_metric(execution_mode mode);
 
     protected:
       ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns

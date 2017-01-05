@@ -118,11 +118,12 @@ namespace lbann
       virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
       virtual double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {}
       virtual double report_metric(execution_mode mode) {}
+      virtual double report_lifetime_metric(execution_mode mode) {}
 
       statistics* get_statistics(execution_mode mode);
 
       void record_error(double error, long num_samples);
-      void reset_error();
+      void reset_metric();
 
       bool supports_early_termination() { return m_used_for_early_termination; }
       bool higher_score_is_better() { return m_higher_score_is_better; }

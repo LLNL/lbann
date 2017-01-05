@@ -68,3 +68,15 @@ double lbann::metrics::mean_squared_error::report_metric(execution_mode mode) {
   std::cout << _to_string(type) << " reporting a metric with " << error_per_epoch << " errors and " << samples_per_epoch << " samples, a mse of " << mse << " and a score of " << score << endl;
   return mse;
 }
+
+double lbann::metrics::mean_squared_error::report_lifetime_metric(execution_mode mode) {
+  statistics *stats = get_statistics(mode);
+  double total_error = stats->m_total_error;
+  long total_num_samples = stats->m_total_num_samples;
+
+  double mse = total_error / total_num_samples;
+  string score = std::to_string(mse);
+
+  std::cout << _to_string(type) << " reporting a metric with " << total_error << " errors and " << total_num_samples << " samples, a mse of " << mse << " and a score of " << score << endl;
+  return mse;
+}
