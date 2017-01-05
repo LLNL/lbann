@@ -45,16 +45,16 @@ namespace lbann {
 class lbann_callback_early_stopping : public lbann_callback {
 public:
   /**
-   * Continue training until accuracy has not improved for patience epochs.
+   * Continue training until score has not improved for patience epochs.
    */
   lbann_callback_early_stopping(int64_t patience);
-  /** Update validation accuracy and check for early stopping. */
+  /** Update validation score and check for early stopping. */
   void on_validation_end(model* m);
 private:
   /** Number of epochs to wait for improvements. */
   int64_t patience;
-  /** Last recorded accuracy. */
-  DataType last_acc;
+  /** Last recorded score. */
+  double last_score;
   /** Current number of epochs without improvement. */
   int64_t wait;
 };

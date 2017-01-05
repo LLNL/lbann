@@ -31,7 +31,7 @@ using namespace std;
 using namespace El;
 
 lbann::metrics::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
-  : metric(comm),
+  : metric(comm, true, true),
     YsColMax(comm->get_model_grid()),
     YsColMaxStar(comm->get_model_grid()),
     YsColMax_v(comm->get_model_grid()),

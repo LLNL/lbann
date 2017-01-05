@@ -65,6 +65,7 @@
 #include "lbann/callbacks/lbann_callback_debug.hpp"
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_early_stopping.hpp"
 
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/lbann_objective_fn.hpp"

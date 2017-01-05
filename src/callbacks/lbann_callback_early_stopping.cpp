@@ -31,22 +31,31 @@
 namespace lbann {
 
 lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  patience(patience), last_acc(0.0f), wait(0) {}
+  patience(patience), last_score(0.0f), wait(0) {}
 
 void lbann_callback_early_stopping::on_validation_end(model* m) {
-  DataType acc = m->get_validate_accuracy();
-  if (acc > last_acc) {
-    last_acc = acc;
-    wait = 0;
-  } else {
-    if (wait >= patience) {
-      m->set_terminate_training(true);
-      if (m->get_comm()->am_model_master()) {
-        std::cout << "Model " << m->get_comm()->get_model_rank() <<
-          " terminating training due to early stopping" << std::endl;
+  for (auto&& metric : m->metrics) {
+    if(metric->supports_early_termination()) {
+      double score = metric->report_metric(execution_mode::validation);
+      if ((metric->higher_score_is_better() && score > last_score) || (metric->lower_score_is_better() && score < last_score)) {
+        if (m->get_comm()->am_model_master()) {
+          std::cout << "Model " << m->get_comm()->get_model_rank() <<
+            " score is improving " << last_score << " >> " << score << std::endl;
+        }
+        last_score = score;
+        wait = 0;
+      } else {
+        if (wait >= patience) {
+          m->set_terminate_training(true);
+          if (m->get_comm()->am_model_master()) {
+            std::cout << "Model " << m->get_comm()->get_model_rank() <<
+              " terminating training due to early stopping" << std::endl;
+          }
+        } else {
+          ++wait;
+        }
       }
-    } else {
-      ++wait;
+      break; /// Only use the first available metric for early termination
     }
   }
 }

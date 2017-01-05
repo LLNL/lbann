@@ -31,7 +31,7 @@ using namespace std;
 using namespace El;
 
 lbann::metrics::mean_squared_error::mean_squared_error(lbann_comm* comm)
-  : metric(comm),
+  : metric(comm, true, false),
     internal_obj_fn(comm)
 {
   this->type = metric_type::mean_squared_error;
