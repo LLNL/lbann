@@ -122,60 +122,20 @@ namespace lbann
     }
 
     bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      // get our global rank
-      int rank = WB_D_Cache.Grid().Rank();
-
       // build the name of the checkpoint file
       char path[512];
       sprintf(path, "%s/adagrad_L%d_%03dx%03d", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
 
-      // write out checkpoint file
-      if(rank == 0) {
-        cout << "Saving layer " << Index << " to file " << path << endl;
-      }
-      Write(WB_D_Cache, path, BINARY, "");
-      //Write_MPI(WB_D_Cache, path, BINARY, "");
-
-      // sum up number of bytes we wrote
-      *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
-
-      return true;
+      return lbann::write_distmat(-1, path, (DistMat*)&WB_D_Cache, bytes);
     }
 
     bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      // get our global rank
-      int rank = WB_D_Cache.Grid().Rank();
-
       // build the name of the checkpoint file
       char path[512];
       sprintf(path, "%s/adagrad_L%d_%03dx%03d.bin", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
 
-      // check whether file exists
-      int exists = 0;
-      struct stat buffer;
-      if (rank == 0 && stat(path, &buffer) == 0) {
-        exists = 1;
-      }
-      MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-      // read WB_D_Cache file if it exists
-      if (exists) {
-        if (rank == 0) {
-          cout << "Restoring layer " << Index << " from file " << path << endl;
-        }
-        Read(WB_D_Cache, path, BINARY, 1);
-        //Read_MPI(WB_D_Cache, path, BINARY, 1);
-
-        // sum up number of bytes we read
-        *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
-  
-        // successfully read in checkpoint
-        return true;
-      } else {
-        // no file, failed to read checkpoint
-        return false;
-      }
-   }
+      return lbann::read_distmat(-1, path, (DistMat*)&WB_D_Cache, bytes);
+    }
     
   };
 

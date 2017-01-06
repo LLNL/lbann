@@ -31,6 +31,7 @@
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -194,411 +195,28 @@ void lbann::Layer::setup_bp_input(ElMat *bp_input)
   // cout << "Layer " << Index << " is looking at bp_input " << bp_input << endl;
 }
 
-/* TODO: user buffered I/O for more efficient writes */
-
-/** Stores meta data needed to reconstruct matrix in memory after reading
- *  it back from a file */
-struct layer_header {
-    uint64_t rank;       /**< rank of MPI process that wrote the file */
-    uint64_t width;      /**< global width of matrix */
-    uint64_t height;     /**< global height of matrix */
-    uint64_t localwidth; /**< local width of matrix on current process */
-    uint64_t localheight;/**< local height of matrix on current process */
-    uint64_t ldim;       /**< specifies padding of first dimension in local storage */
-};
-
-/** \brief Given an open file descriptor, file name, and a matrix, write the matrix
- *         to the file descriptor, return the number of bytes written */
-static bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes)
-{
-    // TODO: store in network order
-
-    // build our header
-    struct layer_header header;
-    header.rank        = (uint64_t) M.Grid().Rank();
-    header.width       = (uint64_t) M.Width();
-    header.height      = (uint64_t) M.Height();
-    header.localwidth  = (uint64_t) M.LocalWidth();
-    header.localheight = (uint64_t) M.LocalHeight();
-    header.ldim        = (uint64_t) M.LDim();
-
-    // write the header to the file
-    ssize_t write_rc = write(fd, &header, sizeof(header));
-    if (write_rc != sizeof(header)) {
-        // error!
-    }
-    *bytes += write_rc;
-
-    // now write the data for our part of the distributed matrix
-    const Int localHeight = M.LocalHeight();
-    const Int localWidth = M.LocalWidth();
-    const Int lDim = M.LDim();
-    if(localHeight == lDim) {
-        // the local dimension in memory matches the local height,
-        // so we can write our data in a single shot
-        void* buf = (void*) M.LockedBuffer();
-        size_t bufsize = localHeight * localWidth * sizeof(DataType);
-        write_rc = write(fd, buf, bufsize);
-        if (write_rc != bufsize) {
-            // error!
-        }
-        *bytes += write_rc;
-    } else {
-        // TODO: if this padding is small, may not be a big deal to write it out anyway
-        // we've got some padding along the first dimension
-        // while storing the matrix in memory, avoid writing the padding
-        for(Int j = 0; j < localWidth; ++j) {
-            void* buf = (void*) M.LockedBuffer(0, j);
-            size_t bufsize = localHeight * sizeof(DataType);
-            write_rc = write(fd, buf, bufsize);
-            if (write_rc != bufsize) {
-                // error!
-            }
-            *bytes += write_rc;
-        }
-    }
-
-    return true;
-}
-
-/** \brief Given an open file descriptor, file name, and a matrix, read the matrix
- *         from the file descriptor, return the number of bytes read */
-static bool readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
-{
-    // read in the header
-    struct layer_header header;
-    ssize_t read_rc = read(fd, &header, sizeof(header));
-    if (read_rc != sizeof(header)) {
-        // error!
-    }
-    *bytes += read_rc;
-
-    // resize our global matrix
-    Int height = header.height;
-    Int width  = header.width;
-    M.Resize(height, width);
-
-    // TODO: check that header values match up
-
-    if(M.ColStride() == 1 && M.RowStride() == 1) {
-        if(M.Height() == M.LDim()) {
-            void* buf = (void*) M.Buffer();
-            size_t bufsize = height * width * sizeof(DataType);
-            read_rc = read(fd, buf, bufsize);
-            if (read_rc != bufsize) {
-                // error!
-            }
-            *bytes += read_rc;
-        } else {
-            for(Int j = 0; j < width; ++j) {
-                void* buf = (void*) M.Buffer(0, j);
-                size_t bufsize = height * sizeof(DataType);
-                read_rc = read(fd, buf, bufsize);
-                if (read_rc != bufsize) {
-                    // error!
-                }
-                *bytes += read_rc;
-            }
-        }
-    } else {
-        const Int localHeight = M.LocalHeight();
-        const Int localWidth = M.LocalWidth();
-        const Int lDim = M.LDim();
-        if(localHeight == lDim) {
-            void* buf = (void*) M.Buffer();
-            size_t bufsize = localHeight * localWidth * sizeof(DataType);
-            read_rc = read(fd, buf, bufsize);
-            if (read_rc != bufsize) {
-                // error!
-            }
-            *bytes += read_rc;
-        } else {
-            for(Int jLoc = 0; jLoc < localWidth; ++jLoc) {
-                void* buf = (void*) M.Buffer(0, jLoc);
-                size_t bufsize = localHeight * sizeof(DataType);
-                read_rc = read(fd, buf, bufsize);
-                if (read_rc != bufsize) {
-                    // error!
-                }
-                *bytes += read_rc;
-            }
-        }
-    }
-    return true;
-}
-
-/** \brief Given a distributed matrix, compute the MPI datatypes needed for MPI I/O */
-static void create_types(const DistMatrix<DataType> &M, MPI_Datatype* mattype, MPI_Datatype* viewtype)
-{
-    // TODO: we could cache these datatypes on Matrix object
-
-    // initialize return params to known values
-    *mattype  = MPI_DATATYPE_NULL;
-    *viewtype = MPI_DATATYPE_NULL;
-
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
-
-    // get global width and height of matrix
-    Int global_width  = M.Width();
-    Int global_height = M.Height();
-
-    // get local width and height, plus leading dimension of local matrix
-    Int W    = M.LocalWidth();
-    Int H    = M.LocalHeight();
-    Int LDim = M.LDim();
-
-    // create a datatype to describe libelemental data in memory,
-    // data is stored in column-major order with a local height of H
-    // and a local width of W, also the leading dimension LDim >= H
-    // so there may be holes in our local buffer between consecutive
-    // columns which we need to account for
-
-    // first we have H consecutive elements in a column
-    MPI_Datatype tmptype;
-    MPI_Type_contiguous(H, type, &tmptype);
-
-    // then there may be some holes at then end of our column,
-    // since LDim >= H
-    MPI_Datatype coltype;
-    MPI_Aint extent = LDim * sizeof(DataType);
-    MPI_Type_create_resized(tmptype, 0, extent, &coltype);
-    MPI_Type_free(&tmptype);
-
-    // finally we have W such columns
-    MPI_Type_contiguous(W, coltype, mattype);
-    MPI_Type_free(&coltype);
-    MPI_Type_commit(mattype);
-
-    // create datatype to desribe fileview for a collective IO operation
-    // we will store matrix in column-major order in the file
-
-    // get width and height of the process grid
-    int rank    = M.Grid().Rank();
-    int ranks   = M.Grid().Size();
-    int pheight = M.Grid().Height();
-    int pwidth  = M.Grid().Width();
-
-    // TODO: need to account for alignment if user has set this
-
-    // create_darray expects processes to be in row-major order,
-    // find our global rank in row-major order
-    int prow = M.Grid().Row();
-    int pcol = M.Grid().Col();
-    int row_major_rank = prow * pwidth + pcol;
-
-    int gsizes[2];
-    gsizes[0] = global_height;
-    gsizes[1] = global_width;
-    int distribs[2] = {MPI_DISTRIBUTE_CYCLIC, MPI_DISTRIBUTE_CYCLIC};
-    // TODO: if using block sizes > 1, then change dargs below (BlockHeight, BlockWidth)
-    int dargs[2] = {1, 1};
-    int psizes[2];
-    psizes[0] = pheight;
-    psizes[1] = pwidth;
-    MPI_Type_create_darray(ranks, row_major_rank, 2, gsizes, distribs, dargs, psizes, MPI_ORDER_FORTRAN, type, viewtype);
-    MPI_Type_commit(viewtype);
-
-    return;
-}
-
-/** \brief Write the given a distributed matrix to the specified file using MPI I/O */
-void Write_MPI(const DistMatrix<DataType> &M, std::string basename = "DistMatrix", FileFormat format = BINARY, std::string title = "")
-{
-    // TODO: error out if format != BINARY
-
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
-
-    // define our file name
-    string filename = basename + "." + FileExtension(BINARY);
-    const char* path = filename.c_str();
-
-    // get MPI communicator
-    MPI_Comm comm = M.Grid().Comm().comm;
-
-    // get our rank
-    int rank = M.Grid().Rank();
-
-    // first, delete the existing file
-    if (rank == 0) {
-        /*
-        int unlink_rc = unlink(path);
-        if (unlink_rc != 0) {
-            fprintf(stderr, "Error deleting file `%s'\n", path);
-            fflush(stderr);
-        }
-        */
-        MPI_File_delete(path, MPI_INFO_NULL);
-    }
-
-    // get global width and height of matrix
-    Int global_width  = M.Width();
-    Int global_height = M.Height();
-
-    // define datatypes to describe local buffer and view into file
-    MPI_Datatype mattype, viewtype;
-    create_types(M, &mattype, &viewtype);
-
-    // define hints for creating the file (e.g., number of stripes on Lustre)
-    MPI_Info info;
-    MPI_Info_create(&info);
-    MPI_Info_set(info, "striping_factor", "10");
-    //MPI_Info_set(info, "striping_factor", "80");
-
-    // open the file
-    MPI_File fh;
-    MPI_Status status;
-    char datarep[] = "native";
-    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
-    MPI_File_open(comm, path, amode, info, &fh);
-
-    // done with the info object
-    MPI_Info_free(&info);
-
-    // truncate file to 0 bytes
-//    MPI_File_set_size(fh, 0);
-
-    // set our view to write header (height and width as unsigned 32-bit ints)
-    MPI_Offset disp = 0;
-    MPI_File_set_view(fh, disp, MPI_UINT32_T, MPI_UINT32_T, datarep, MPI_INFO_NULL);
-    if (rank == 0) {
-        uint32_t dimensions[2];
-        dimensions[0] = global_height;
-        dimensions[1] = global_width;
-        MPI_File_write_at(fh, 0, dimensions, 2, MPI_UINT32_T, &status);
-    }
-    disp += 2 * sizeof(uint32_t);
-
-    // set view to write data
-    MPI_File_set_view(fh, disp, type, viewtype, datarep, MPI_INFO_NULL);
-
-    // write our portion of the matrix, since we set our view using create_darray,
-    // all procs write at offset 0, the file view will take care of interleaving appropriately
-    const char* buf = (const char*) M.LockedBuffer();
-    MPI_File_write_at_all(fh, 0, buf, 1, mattype, &status);
-
-    // close file
-    MPI_File_close(&fh);
-
-    // free our datatypes
-    MPI_Type_free(&mattype);
-    MPI_Type_free(&viewtype);
-
-    return;
-}
-
-/** \brief Read the specified file and initialize a distributed matrix using MPI I/O */
-void Read_MPI(DistMatrix<DataType> &M, std::string filename, FileFormat format = BINARY, bool sequential = false)
-{
-    // TODO: error out if format != BINARY
-
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
-
-    // define our file name
-    const char* path = filename.c_str();
-
-    // get MPI communicator
-    MPI_Comm comm = M.Grid().Comm().comm;
-
-    // get our rank
-    int rank = M.Grid().Rank();
-
-    // open the file
-    MPI_File fh;
-    MPI_Status status;
-    char datarep[] = "native";
-    int amode = MPI_MODE_RDONLY;
-    int rc = MPI_File_open(comm, path, amode, MPI_INFO_NULL, &fh);
-    if (rc != MPI_SUCCESS) {
-        if (rank == 0) {
-            cout << "Failed to open file `" << path << "'" << endl;
-        }
-        return;
-    }
-
-    // set displacement to beginning of file
-    MPI_Offset disp = 0;
-
-    // set our view to read header (height and width as unsigned 32-bit ints)
-    uint32_t dimensions[2];
-    MPI_File_set_view(fh, disp, MPI_UINT32_T, MPI_UINT32_T, datarep, MPI_INFO_NULL);
-    if (rank == 0) {
-        MPI_File_read_at(fh, 0, dimensions, 2, MPI_UINT32_T, &status);
-    }
-    disp += 2 * sizeof(uint32_t);
-
-    // broadcast dimensions from rank 0
-    MPI_Bcast(dimensions, 2, MPI_UINT32_T, 0, comm);
-
-    // resize matrix to hold data
-    Int global_height = dimensions[0];
-    Int global_width  = dimensions[1];
-    M.Resize(global_height, global_width);
-
-    // now define datatypes to describe local buffer and view into file
-    MPI_Datatype mattype, viewtype;
-    create_types(M, &mattype, &viewtype);
-
-    // set view to write data
-    MPI_File_set_view(fh, disp, type, viewtype, datarep, MPI_INFO_NULL);
-
-    // write our portion of the matrix, since we set our view using create_darray,
-    // all procs write at offset 0, the file view will take care of interleaving appropriately
-    char* buf = (char*) M.Buffer();
-    MPI_File_read_at_all(fh, 0, buf, 1, mattype, &status);
-
-    // close file
-    MPI_File_close(&fh);
-
-    // free our datatypes
-    MPI_Type_free(&mattype);
-    MPI_Type_free(&viewtype);
-
-    return;
-}
-
 bool lbann::Layer::saveToFile(int fd, const char* dirname)
 {
-//    return writeDist(fd, filename, m_weights);
     char filepath[512];
     sprintf(filepath, "%s/weights_L%d_%03dx%03d", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
-    if(m_weights->Grid().Rank() == 0) {
-      cout << "Rank " << m_weights->Grid().Rank() << " saving layer " << Index << " to file " << filepath << endl;
-    }
-    Write(*m_weights, filepath, BINARY, "");
-    //Write_MPI(m_weights, filepath, BINARY, "");
-    return true;
+
+    uint64_t bytes;
+    return lbann::write_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
 }
 
 bool lbann::Layer::loadFromFile(int fd, const char* dirname)
 {
-//   return readDist(fd, filename, m_weights);
     char filepath[512];
     sprintf(filepath, "%s/weights_L%d_%03dx%03d.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
-    struct stat buffer;
-    Int restoreFileFound = 0;
-    if (m_weights->Grid().Rank() == 0 && stat(filepath, &buffer) == 0) {
-      restoreFileFound = 1;
-    }
-    mpi::Broadcast(&restoreFileFound, 1, 0, m_weights->Grid().Comm());
 
-    if (restoreFileFound == 1) {
-      if (m_weights->Grid().Rank() == 0) {
-        cout << "Rank " << m_weights->Grid().Rank() << " restoring layer " << Index << " from file " << filepath << endl;
-      }
-      Read(*m_weights, filepath, BINARY, 1);
-      //Read_MPI(m_weights, filepath, BINARY, 1);
-      return true;
-    } else {
-      return false;
-    }
+    uint64_t bytes;
+    return lbann::read_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
 }
 
 bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-    writeDist(fd, filename, *m_weights, bytes);
+    //writeDist(fd, filename, *m_weights, bytes);
+
     // Need to catch return value from function
     optimizer->saveToCheckpoint(fd, filename, bytes);
     return true;
@@ -607,7 +225,8 @@ bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* byte
 bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
     // TODO: implement reader for other matrix distributions
-    readDist(fd, filename, (DistMat&) *m_weights, bytes);
+    //readDist(fd, filename, (DistMat&) *m_weights, bytes);
+
     // Need to catch return value from function
     optimizer->loadFromCheckpoint(fd, filename, bytes);
     return true;
@@ -615,20 +234,13 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* by
 
 bool lbann::Layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
 {
-    int rank = m_weights->Grid().Rank();
-
+    // define name to store our parameters
     char path[512];
     sprintf(path, "%s/weights_L%d_%03dx%03d", dir, Index, m_weights->Height(), m_weights->Width());
-    if(rank == 0) {
-      cout << "Saving layer " << Index << " to file " << path << endl;
-    }
-    Write(*m_weights, path, BINARY, "");
-    //Write_MPI(m_weights, path, BINARY, "");
 
-    if (rank == 0) {
-        *bytes += 2 * sizeof(int) + m_weights->Height() * m_weights->Width() * sizeof(DataType);
-    }
+    lbann::write_distmat(-1, path, (DistMat*)m_weights, bytes);
 
+    // if saving training state, also write out state of optimizer
     optimizer->saveToCheckpointShared(dir, Index, bytes);
 
     return true;
@@ -636,29 +248,15 @@ bool lbann::Layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
 
 bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 {
-    int rank = m_weights->Grid().Rank();
-
+    // define name to store our parameters
     char path[512];
     sprintf(path, "%s/weights_L%d_%03dx%03d.bin", dir, Index, m_weights->Height(), m_weights->Width());
 
-    // check whether weights file exists
-    int exists = lbann::exists(path);
-    if (! exists) {
-        return false;
-    }
+    lbann::read_distmat(-1, path, (DistMat*)m_weights, bytes);
 
-    // read weights file
-    if (rank == 0) {
-        cout << "Restoring layer " << Index << " from file " << path << endl;
-    }
-    Read(*m_weights, path, BINARY, 1);
-    //Read_MPI(m_weights, path, BINARY, 1);
-
-    if (rank == 0) {
-        *bytes += 2 * sizeof(int) + m_weights->Height() * m_weights->Width() * sizeof(DataType);
-    }
-
+    // if loading training state, read in state of optimizer
     optimizer->loadFromCheckpointShared(dir, Index, bytes);
+
     return true;
 }
 

@@ -35,6 +35,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <vector>
 #include <string>
 
