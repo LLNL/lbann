@@ -66,8 +66,6 @@ namespace lbann
         bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
 
     private:
-        DataType aggregate_cost; // save(ckpt)
-        long num_backprop_steps; // save(ckpt)
         weight_initialization m_weight_initialization;
         ColSumMat ZsColMax;
         ColSumMat ZsNormExpSum;

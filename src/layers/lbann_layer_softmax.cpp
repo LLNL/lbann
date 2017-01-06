@@ -218,108 +218,20 @@ DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Eps
 
 bool lbann::SoftmaxLayer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-  ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (write_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += write_rc;
-
-  write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (write_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += write_rc;
-
   return Layer::saveToCheckpoint(fd, filename, bytes);
 }
 
 bool lbann::SoftmaxLayer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-  ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (read_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += read_rc;
-
-  read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (read_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += read_rc;
-
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
 bool lbann::SoftmaxLayer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
 {
-  // get our rank
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  // rank 0 writes softmax cost to file
-  if (rank == 0) {
-      // define the filename
-      char file[1024];
-      sprintf(file, "%s/L%d_SoftmaxCost", dir, Index);
-
-      // open the file
-      int fd = lbann::openwrite(file);
-      if (fd != -1 ) {
-          ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-          if (write_rc != sizeof(aggregate_cost)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-          if (write_rc != sizeof(num_backprop_steps)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          // close the file
-          lbann::closewrite(fd, file);
-      }
-  }
-
   return Layer::saveToCheckpointShared(dir, bytes);
 }
 
 bool lbann::SoftmaxLayer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
 {
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // rank 0 writes softmax cost to file
-    if (rank == 0) {
-        // define the filename
-        char file[1024];
-        sprintf(file, "%s/L%d_SoftmaxCost", dir, Index);
-
-        // open the file
-        int fd = lbann::openread(file);
-        if (fd != -1 ) {
-            ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-            if (read_rc != sizeof(aggregate_cost)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-            if (read_rc != sizeof(num_backprop_steps)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            // close the file
-            lbann::closeread(fd, file);
-        }
-    }
-
-    // get values from rank 0
-    MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-
     return Layer::loadFromCheckpointShared(dir, bytes);
 }
