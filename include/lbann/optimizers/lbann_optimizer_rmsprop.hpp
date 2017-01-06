@@ -125,7 +125,7 @@ namespace lbann
       int rank = WB_D_Cache.Grid().Rank();
 
       char path[512];
-      sprintf(path, "%s/L%d_RMSProp_%03dx%03d", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
+      sprintf(path, "%s/rmsprop_L%d_%03dx%03d", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
       if(rank == 0) {
         cout << "Saving layer " << Index << " to file " << path << endl;
       }
@@ -144,7 +144,7 @@ namespace lbann
       struct stat buffer;
 
       // read in the cache of gradients for WB
-      sprintf(path, "%s/L%d_RMSProp_%03dx%03d.bin", dir, Index, WB_D_Cache.Height()-1, WB_D_Cache.Width()-1);
+      sprintf(path, "%s/rmsprop_L%d_%03dx%03d.bin", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
 
       // check whether file exists
       int exists = 0;

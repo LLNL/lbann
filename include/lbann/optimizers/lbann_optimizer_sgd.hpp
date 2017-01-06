@@ -121,7 +121,7 @@ namespace lbann
       int rank = velocity.Grid().Rank();
 
       char path[512];
-      sprintf(path, "%s/L%d_SGD_Velocity_%03dx%03d", dir, Index, velocity.Height()-1, velocity.Width()-1);
+      sprintf(path, "%s/sgd_L%d_%03dx%03d", dir, Index, velocity.Height(), velocity.Width());
       if(rank == 0) {
         cout << "Saving layer " << Index << " to file " << path << endl;
       }
@@ -140,7 +140,7 @@ namespace lbann
       struct stat buffer;
 
       // read in the cache of gradients for WB
-      sprintf(path, "%s/L%d_SGD_Velocity_%03dx%03d.bin", dir, Index, velocity.Height()-1, velocity.Width()-1);
+      sprintf(path, "%s/sgd_L%d_%03dx%03d.bin", dir, Index, velocity.Height(), velocity.Width());
 
       // check whether file exists
       int exists = 0;

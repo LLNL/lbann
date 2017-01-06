@@ -160,7 +160,7 @@ bool lbann::target_layer::saveToCheckpointShared(const char* dir, uint64_t* byte
   if (rank == 0) {
       // define the filename
       char file[1024];
-      sprintf(file, "%s/CrossEntropyCost_L%d", dir, Index);
+      sprintf(file, "%s/target_L%d", dir, Index);
 
       // open the file
       int fd = lbann::openwrite(file);
@@ -182,7 +182,8 @@ bool lbann::target_layer::saveToCheckpointShared(const char* dir, uint64_t* byte
       }
   }
 
-  return Layer::saveToCheckpointShared(dir, bytes);
+  //return Layer::saveToCheckpointShared(dir, bytes);
+  return true;
 }
 
 bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
@@ -195,7 +196,7 @@ bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* by
     if (rank == 0) {
         // define the filename
         char file[1024];
-        sprintf(file, "%s/SoftmaxCost_L%d", dir, Index);
+        sprintf(file, "%s/target_L%d", dir, Index);
 
         // open the file
         int fd = lbann::openread(file);
@@ -221,5 +222,6 @@ bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* by
     MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-    return Layer::loadFromCheckpointShared(dir, bytes);
+    //return Layer::loadFromCheckpointShared(dir, bytes);
+    return true;
 }

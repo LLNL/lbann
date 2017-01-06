@@ -618,7 +618,7 @@ bool lbann::Layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
     int rank = m_weights->Grid().Rank();
 
     char path[512];
-    sprintf(path, "%s/weights_L%d_%03dx%03d", dir, Index, m_weights->Height()-1, m_weights->Width()-1);
+    sprintf(path, "%s/weights_L%d_%03dx%03d", dir, Index, m_weights->Height(), m_weights->Width());
     if(rank == 0) {
       cout << "Saving layer " << Index << " to file " << path << endl;
     }
@@ -639,7 +639,7 @@ bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
     int rank = m_weights->Grid().Rank();
 
     char path[512];
-    sprintf(path, "%s/weights_L%d_%03dx%03d.bin", dir, Index, m_weights->Height()-1, m_weights->Width()-1);
+    sprintf(path, "%s/weights_L%d_%03dx%03d.bin", dir, Index, m_weights->Height(), m_weights->Width());
 
     // check whether weights file exists
     int exists = lbann::exists(path);
