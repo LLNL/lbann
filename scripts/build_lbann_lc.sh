@@ -68,7 +68,7 @@ Can be called anywhere in the LBANN project tree.
 Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}                  Display this help message and exit.
-  ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or "clang").
+  ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or 'clang').
   ${C}--verbose${N}               Verbose output.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
@@ -78,7 +78,7 @@ Options:
   ${C}--doc${N}                   Generate documentation.
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
-  ${C}--suffix${N}                Specify suffix for build subdirectory
+  ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
 EOF
 }
 
