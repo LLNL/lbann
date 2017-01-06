@@ -258,6 +258,8 @@ int main(int argc, char* argv[])
         // Summarize information to Tensorboard.
         //lbann_callback_summary summary_cb(&summarizer, 25);
         //dnn.add_callback(&summary_cb);
+        lbann_callback_early_stopping stopping_cb(1);
+        dnn.add_callback(&stopping_cb);
 
         if (comm->am_world_master()) {
           cout << "Layer initialized:" << endl;

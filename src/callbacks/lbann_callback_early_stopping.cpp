@@ -33,6 +33,8 @@ namespace lbann {
 lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
   patience(patience), last_score(0.0f), wait(0) {}
 
+  /// @todo FIXME BVE should this use the objective function rather
+  /// than a metric - I think so
 void lbann_callback_early_stopping::on_validation_end(model* m) {
   for (auto&& metric : m->metrics) {
     if(metric->supports_early_termination()) {

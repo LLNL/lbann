@@ -58,10 +58,8 @@ lbann::deep_neural_network::deep_neural_network(const uint mini_batch_size,
                                                 objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
-    m_train_accuracy(0.0),
-    m_validation_accuracy(0.0),
-    m_test_accuracy(0.0) {}
+  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac)
+    {}
 
 lbann::deep_neural_network::~deep_neural_network() {}
 
@@ -128,17 +126,12 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
       finished_epoch = train_mini_batch(&num_samples, &num_errors);
     } while(!finished_epoch);
 
-  // This is RMSE not accuracy
-  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-    // Compute train accuracy on current epoch
-    m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
-
     if(evaluation_frequency > 0
        && (epoch + 1) % evaluation_frequency == 0) {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();
-      m_validation_accuracy = evaluate(execution_mode::validation);
+      evaluate(execution_mode::validation);
       // do_validation_end_cbs();
 
       // Set execution mode back to training
@@ -166,21 +159,10 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp(L2NormSum);
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-
-  // This is RMSE not accuracy
-  if (dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-      m_train_accuracy = static_cast<DataType>(sqrt((m_train_accuracy*m_train_accuracy * (*num_samples) + L2NormSum) / (*num_samples + m_current_mini_batch_size)));
-
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_current_mini_batch_size;
   do_model_forward_prop_end_cbs();
-
-  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-  // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -229,10 +211,6 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
     finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);
   } while(!finished_epoch);
 
-  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-  // Compute test accuracy
-  m_test_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
-
   switch(mode) {
   case execution_mode::validation:
     do_validation_end_cbs(); break;
@@ -247,7 +225,7 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
     throw lbann_exception("Illegal execution mode in evaluate function");
   }
 
-  return m_test_accuracy;
+  return 0.0 /*m_test_accuracy*/;
 }
 
 bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
@@ -260,15 +238,12 @@ bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
     do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp(L2NormSum);
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
-  // This is RMSE not accuracy
-  if (dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-      m_test_accuracy = static_cast<DataType>(sqrt((m_test_accuracy*m_test_accuracy * (*num_samples) + L2NormSum) / (*num_samples + m_current_mini_batch_size)));
 
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_current_mini_batch_size;
+  // *num_errors += (long) L2NormSum;
+  // *num_samples += m_current_mini_batch_size;
   do_model_evaluate_forward_prop_end_cbs();
 
   // Update layers

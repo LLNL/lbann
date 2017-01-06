@@ -93,15 +93,15 @@ private:
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
  */
-class lbann_callback_acc_learning_rate : public lbann_callback_learning_rate {
+class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rate {
 public:
   /**
    * Decrease the learning rate by amt if accuracy does not improve for patience
    * epochs.
    */
-  lbann_callback_acc_learning_rate(int64_t patience, float amt);
-  lbann_callback_acc_learning_rate(int64_t patience, float amt,
-                                   std::unordered_set<uint> _layers);
+  lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
+  lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
+                                        std::unordered_set<uint> _layers);
 protected:
   float schedule(model* m, Layer* l);
 private:
@@ -109,8 +109,8 @@ private:
   int64_t patience;
   /** Amount to decrease the learning rate by. */
   float amt;
-  /** Last recorded accuracy. */
-  DataType last_acc;
+  /** Last recorded score. */
+  double last_score;
   /** Current number of epochs without improvement. */
   int64_t wait;
 };

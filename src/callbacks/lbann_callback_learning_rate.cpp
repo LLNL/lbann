@@ -88,33 +88,40 @@ float lbann_callback_step_learning_rate::schedule(model* m, Layer* l) {
   }
 }
 
-lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
+lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   int64_t patience, float amt) :
-  lbann_callback_acc_learning_rate(patience, amt,
+  lbann_callback_adaptive_learning_rate(patience, amt,
                                    std::unordered_set<uint>()) {}
 
-lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
+lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   int64_t patience, float amt, std::unordered_set<uint> _layers) :
   lbann_callback_learning_rate(_layers), patience(patience), amt(amt),
-  last_acc(std::numeric_limits<DataType>::lowest()), wait(0) {}
+  last_score(std::numeric_limits<DataType>::lowest()), wait(0) {}
 
-float lbann_callback_acc_learning_rate::schedule(model* m, Layer* l) {
-  DataType cur_acc = m->get_test_accuracy();
+  /// @todo FIXME BVE should this use the objective function rather
+  /// than a metric - I think so
+float lbann_callback_adaptive_learning_rate::schedule(model* m, Layer* l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
-  if (cur_acc > last_acc) {
-    last_acc = cur_acc;
-    wait = 0;
-  } else {
-    if (wait >= patience) {
-      if (is_last_layer(l)) {
+  for (auto&& metric : m->metrics) {
+    if(metric->supports_early_termination()) {
+      double score = metric->report_metric(execution_mode::testing);
+      if ((metric->higher_score_is_better() && score > last_score) || (metric->lower_score_is_better() && score < last_score)) {
+        last_score = score;
         wait = 0;
-        last_acc = cur_acc;
+      } else {
+        if (wait >= patience) {
+          if (is_last_layer(l)) {
+            wait = 0;
+            last_score = score;
+          }
+          return cur_lr * amt;
+        } else {
+          if (is_last_layer(l)) {
+            ++wait;
+          }
+        }
       }
-      return cur_lr * amt;
-    } else {
-      if (is_last_layer(l)) {
-        ++wait;
-      }
+      break; /// Only use the first available metric for adaptive learning
     }
   }
   return cur_lr;

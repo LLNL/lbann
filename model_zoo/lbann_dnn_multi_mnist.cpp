@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
-  init_random(1);  // Deterministic initialization across every model.
+  init_random(42);  // Deterministic initialization across every model.
   lbann_comm* comm = NULL;
 
   try {
@@ -225,12 +225,14 @@ int main(int argc, char* argv[])
         trainParams.IntermodelCommMethod),
       {fcidx1, fcidx2, fcidx3, smidx}, &summarizer);
     dnn.add_callback(&imcomm_cb);
-    lbann_callback_acc_learning_rate lrsched(4, 0.1f);
+    lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);
     // lbann_callback_io io_cb({0,4}); // Monitor layers 0 and 4
     // dnn.add_callback(&io_cb);
     lbann_callback_debug debug_cb(execution_mode::training);
     //dnn.add_callback(&debug_cb);
+    lbann_callback_early_stopping stopping_cb(1);
+    dnn.add_callback(&stopping_cb);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
