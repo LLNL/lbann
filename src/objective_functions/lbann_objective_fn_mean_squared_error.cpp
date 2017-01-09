@@ -78,7 +78,8 @@ double lbann::mean_squared_error::compute_mean_squared_error(ElMat &predictions_
   return total_error;
 }
 
-DataType lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+/// Compute the average mean squared error over the mini-batch
+double lbann::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
   DataType avg_error = 0.0, total_error = 0.0;
   int64_t cur_mini_batch_size = groundtruth_v.Width();
 

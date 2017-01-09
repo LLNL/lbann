@@ -57,7 +57,7 @@ void lbann::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_b
 /// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
 /// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
 /// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
-DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+double lbann::categorical_cross_entropy::compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v) {
     DataType avg_error = 0.0, total_error = 0.0;
     int64_t cur_mini_batch_size = groundtruth_v.Width();
 
@@ -74,6 +74,16 @@ DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, 
       total_error += m_minibatch_cost.GetLocal(r, 0);
     }
     total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
+
+    return total_error;
+}
+
+/// Compute the average categorical cross entropy over the mini-batch
+double lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+    double avg_error = 0.0, total_error = 0.0;
+    int64_t cur_mini_batch_size = groundtruth_v.Width();
+
+    total_error = compute_categorical_cross_entropy(predictions_v, groundtruth_v);
 
     avg_error = -1.0 * total_error / cur_mini_batch_size;
     return avg_error;
