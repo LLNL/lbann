@@ -150,72 +150,34 @@ bool lbann::target_layer::loadFromCheckpoint(int fd, const char* filename, uint6
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::target_layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::target_layer::saveToCheckpointShared(persist& p)
 {
-  // get our rank
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  // rank 0 writes softmax cost to file
-  if (rank == 0) {
-      // define the filename
-      char file[1024];
-      sprintf(file, "%s/target_L%d", dir, Index);
-
-      // open the file
-      int fd = lbann::openwrite(file);
-      if (fd != -1 ) {
-          ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-          if (write_rc != sizeof(aggregate_cost)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-          if (write_rc != sizeof(num_backprop_steps)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          // close the file
-          lbann::closewrite(fd, file);
-      }
-  }
-
-  //return Layer::saveToCheckpointShared(dir, bytes);
-  return true;
+    // rank 0 writes softmax cost to file
+    if (p.m_rank == 0) {
+        lbann::write_double(p.m_train_fd, "aggregate cost", (double) aggregate_cost);
+        lbann::write_uint64(p.m_train_fd, "num backprop steps", (uint64_t) num_backprop_steps);
+  
+        size_t bytes = 16; //sizeof(double) +_sizeof(uint64_t);
+        p.m_bytes += bytes;
+    }
+  
+    return true;
 }
 
-bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::target_layer::loadFromCheckpointShared(persist& p)
 {
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     // rank 0 writes softmax cost to file
-    if (rank == 0) {
-        // define the filename
-        char file[1024];
-        sprintf(file, "%s/target_L%d", dir, Index);
+    if (p.m_rank == 0) {
+        double dval;
+        lbann::read_double(p.m_train_fd, "aggregate cost", &dval);
+        aggregate_cost = (DataType) dval;
 
-        // open the file
-        int fd = lbann::openread(file);
-        if (fd != -1 ) {
-            ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-            if (read_rc != sizeof(aggregate_cost)) {
-              // error!
-            }
-            *bytes += read_rc;
+        uint64_t val;
+        lbann::read_uint64(p.m_train_fd, "num backprop steps", &val);
+        num_backprop_steps = (long) val;
 
-            read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-            if (read_rc != sizeof(num_backprop_steps)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            // close the file
-            lbann::closeread(fd, file);
-        }
+        size_t bytes = 16; //sizeof(double) +_sizeof(uint64_t);
+        p.m_bytes += bytes;
     }
 
     // get values from rank 0

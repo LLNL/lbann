@@ -58,10 +58,10 @@ namespace lbann
     virtual bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes) {
       return false;
     }
-    virtual bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
+    virtual bool saveToCheckpointShared(persist& p, int Index) {
       return false;
     }
-    virtual bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
+    virtual bool loadFromCheckpointShared(persist& p, int Index) {
       return false;
     }
 

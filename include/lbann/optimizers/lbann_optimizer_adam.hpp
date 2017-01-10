@@ -93,6 +93,83 @@ public:
 
   void set_learning_rate(float _lr) { lr = _lr; }
 
+  bool saveToCheckpointShared(persist& p, int Index) {
+    char path[512];
+  
+    // current learning rate value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d learning_rate", Index);
+      lbann::write_float(p.m_train_fd, path, lr);
+    }
+    p.m_bytes += sizeof(float);
+  
+    // current rho1 value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d cur_rho1", Index);
+      lbann::write_float(p.m_train_fd, path, cur_rho1);
+    }
+    p.m_bytes += sizeof(float);
+  
+    // current rho2 value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d cur_rho2", Index);
+      lbann::write_float(p.m_train_fd, path, cur_rho2);
+    }
+    p.m_bytes += sizeof(float);
+  
+    // checkpoint matrix for first moment
+    sprintf(path, "%s/train_adam_moment1_L%d_%dx%d",
+      p.m_checkpoint_dir, Index, moment1_hist.Height(), moment1_hist.Width());
+    bool rc1 = lbann::write_distmat(-1, path, (DistMat*)&moment1_hist, &p.m_bytes);
+  
+    // checkpoint matrix for second moment
+    sprintf(path, "%s/train_adam_moment2_L%d_%dx%d",
+      p.m_checkpoint_dir, Index, moment2_hist.Height(), moment2_hist.Width());
+    bool rc2 = lbann::write_distmat(-1, path, (DistMat*)&moment2_hist, &p.m_bytes);
+  
+    return (rc1 && rc2);
+  }
+  
+  bool loadFromCheckpointShared(persist& p, int Index) {
+    char path[512];
+  
+    // current learning rate value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d learning_rate", Index);
+      lbann::read_float(p.m_train_fd, path, &lr);
+    }
+    p.m_bytes += sizeof(float);
+    MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  
+    // current rho1 value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d cur_rho1", Index);
+      lbann::read_float(p.m_train_fd, path, &cur_rho1);
+    }
+    p.m_bytes += sizeof(float);
+    MPI_Bcast(&cur_rho1, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  
+    // current rho2 value
+    if (p.m_rank == 0) {
+      sprintf(path, "L%d cur_rho2", Index);
+      lbann::read_float(p.m_train_fd, path, &cur_rho2);
+    }
+    p.m_bytes += sizeof(float);
+    MPI_Bcast(&cur_rho2, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  
+    // checkpoint matrix for first moment
+    sprintf(path, "%s/train_adam_moment1_L%d_%dx%d.bin",
+      p.m_checkpoint_dir, Index, moment1_hist.Height(), moment1_hist.Width());
+    bool rc1 = lbann::read_distmat(-1, path, (DistMat*)&moment1_hist, &p.m_bytes);
+  
+    // checkpoint matrix for second moment
+    sprintf(path, "%s/train_adam_moment2_L%d_%dx%d.bin",
+      p.m_checkpoint_dir, Index, moment2_hist.Height(), moment2_hist.Width());
+    bool rc2 = lbann::read_distmat(-1, path, (DistMat*)&moment2_hist, &p.m_bytes);
+  
+    return (rc1 && rc2);
+  }
+
 private:
   lbann_comm* comm;
   /** Learning rate. */

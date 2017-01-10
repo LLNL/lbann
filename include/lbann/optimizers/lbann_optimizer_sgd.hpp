@@ -117,55 +117,41 @@ namespace lbann
       return true;
     }
 
-    bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      int rank = velocity.Grid().Rank();
-
+    bool saveToCheckpointShared(persist& p, int Index) {
       char path[512];
-      sprintf(path, "%s/sgd_L%d_%03dx%03d", dir, Index, velocity.Height(), velocity.Width());
-      if(rank == 0) {
-        cout << "Saving layer " << Index << " to file " << path << endl;
-      }
-      Write(velocity, path, BINARY, "");
-      //Write_MPI(velocity, path, BINARY, "");
 
-      *bytes += 2 * sizeof(int) + velocity.Height() * velocity.Width() * sizeof(DataType);
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::write_float(p.m_train_fd, path, lr);
+      }
+      p.m_bytes += sizeof(float);
+
+      // build name of the checkpoint file
+      sprintf(path, "%s/train_sgd_L%d_%dx%d",
+        p.m_checkpoint_dir, Index, velocity.Height(), velocity.Width());
+      lbann::write_distmat(-1, path, (DistMat*)&velocity, &p.m_bytes);
 
       return true;
     }
 
-    bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      int rank = velocity.Grid().Rank();
-
+    bool loadFromCheckpointShared(persist& p, int Index) {
       char path[512];
-      struct stat buffer;
 
-      // read in the cache of gradients for WB
-      sprintf(path, "%s/sgd_L%d_%03dx%03d.bin", dir, Index, velocity.Height(), velocity.Width());
-
-      // check whether file exists
-      int exists = 0;
-      if (rank == 0 && stat(path, &buffer) == 0) {
-        exists = 1;
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::read_float(p.m_train_fd, path, &lr);
       }
-      MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      p.m_bytes += sizeof(float);
+      MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-      // read velocity file if it exists
-      if (exists) {
-        if (rank == 0) {
-          cout << "Restoring layer " << Index << " from file " << path << endl;
-        }
-        Read(velocity, path, BINARY, 1);
-        //Read_MPI(velocity, path, BINARY, 1);
-  
-        // sum up number of bytes we read
-        *bytes += 2 * sizeof(int) + velocity.Height() * velocity.Width() * sizeof(DataType);
-  
-        // successfully read checkpoint
-        return true;
-      } else {
-        // no file, failed to read checkpoint
-        return false;
-      }
+      // build name of the checkpoint file
+      sprintf(path, "%s/train_sgd_L%d_%dx%d.bin",
+        p.m_checkpoint_dir, Index, velocity.Height(), velocity.Width());
+      lbann::read_distmat(-1, path, (DistMat*)&velocity, &p.m_bytes);
+
+      return true;
     }
     
   };

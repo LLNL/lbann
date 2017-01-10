@@ -211,3 +211,69 @@ void lbann::io_layer::setup_data_readers_for_evaluation(int base_offset, int str
   }
   return;
 }
+
+bool lbann::io_layer::saveToCheckpointShared(persist& p)
+{
+    // rank 0 writes the file
+    if (p.m_rank == 0) {
+        lbann::write_uint64(p.m_train_fd, "reader_train_processed",
+            (uint64_t) m_training_dataset.num_samples_processed);
+        lbann::write_uint64(p.m_train_fd, "reader_train_total",
+            (uint64_t) m_training_dataset.total_samples);
+
+        lbann::write_uint64(p.m_train_fd, "reader_test_processed",
+            (uint64_t) m_testing_dataset.num_samples_processed);
+        lbann::write_uint64(p.m_train_fd, "reader_test_total",
+            (uint64_t) m_testing_dataset.total_samples);
+
+        lbann::write_uint64(p.m_train_fd, "reader_validate_processed",
+            (uint64_t) m_validation_dataset.num_samples_processed);
+        lbann::write_uint64(p.m_train_fd, "reader_validate_total",
+            (uint64_t) m_validation_dataset.total_samples);
+
+        ssize_t bytes = 6 * sizeof(uint64_t);
+        p.m_bytes += bytes;
+    }
+
+    return true;
+}
+
+struct dataset_header {
+    uint64_t train_proc;
+    uint64_t train_total;
+    uint64_t test_proc;
+    uint64_t test_total;
+    uint64_t validate_proc;
+    uint64_t validate_total;
+};
+
+bool lbann::io_layer::loadFromCheckpointShared(persist& p)
+{
+    // rank 0 reads the file
+    dataset_header header;
+    if (p.m_rank == 0) {
+        lbann::read_uint64(p.m_train_fd, "reader_train_processed",    &header.train_proc);
+        lbann::read_uint64(p.m_train_fd, "reader_train_total",        &header.train_total);
+        lbann::read_uint64(p.m_train_fd, "reader_test_processed",     &header.test_proc);
+        lbann::read_uint64(p.m_train_fd, "reader_test_total",         &header.test_total);
+        lbann::read_uint64(p.m_train_fd, "reader_validate_processed", &header.validate_proc);
+        lbann::read_uint64(p.m_train_fd, "reader_validate_total",     &header.validate_total);
+
+        ssize_t bytes = 6 * sizeof(uint64_t);
+        p.m_bytes += bytes;
+    }
+
+    // TODO: assumes homogeneous hardware
+    // broadcast data from rank 0
+    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    // set our fields
+    m_training_dataset.num_samples_processed   = (long) header.train_proc;
+    m_training_dataset.total_samples           = (long) header.train_total;
+    m_testing_dataset.num_samples_processed    = (long) header.test_proc;
+    m_testing_dataset.total_samples            = (long) header.test_total;
+    m_validation_dataset.num_samples_processed = (long) header.validate_proc;
+    m_validation_dataset.total_samples         = (long) header.validate_total;
+
+    return true;
+}

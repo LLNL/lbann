@@ -44,265 +44,6 @@ using namespace El;
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
 
-/** \brief Writes a "latest" file which records epoch number and sample offset for the most recent checkpoint */
-bool write_latest(const char* dir, const char* name, int epoch, int train)
-{
-   // define filename
-   char filename[1024];
-   sprintf(filename, "%s/%s", dir, name);
-
-   // open the file for writing
-   int fd = lbann::openwrite(filename);
-
-   ssize_t write_rc = write(fd, &epoch, sizeof(epoch));
-   if (write_rc != sizeof(epoch)) {
-   }
-
-   write_rc = write(fd, &train, sizeof(train));
-   if (write_rc != sizeof(train)) {
-   }
-
-   // close our file
-   lbann::closewrite(fd, filename);
-
-   return true;
-}
-
-/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
-bool read_latest(const char* dir, const char* name, int* epochLast, int* trainLast)
-{
-   // assume we don't have a file, we'll return -1 in that case
-   *epochLast = -1;
-   *trainLast = -1;
-
-   // define filename
-   char filename[1024];
-   sprintf(filename, "%s/%s", dir, name);
-
-   // open the file for reading
-   int fd = lbann::openread(filename);
-   if (fd != -1) {
-       // read epoch from file
-       int epoch;
-       ssize_t read_rc = read(fd, &epoch, sizeof(epoch));
-       if (read_rc == sizeof(epoch)) {
-           // got a value, overwrite return value
-           *epochLast = epoch;
-       }
-
-       // read epoch from file
-       int train;
-       read_rc = read(fd, &train, sizeof(train));
-       if (read_rc == sizeof(train)) {
-           // got a value, overwrite return value
-           *trainLast = train;
-       }
-
-       // close our file
-       lbann::closeread(fd, filename);
-   }
-
-   return true;
-}
-
-struct lbann_checkpoint {
-    int64_t epoch; // current epoch number
-    int64_t step;  // current offset into list of training example indices array
-    float learning_rate; // current learning rate
-};
-
-bool checkpointShared(TrainingParams& trainParams, model& m)
-{
-    // time how long this takes
-    Timer timer;
-
-    // get our rank and the number of ranks
-    int rank, ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
-    // read current epoch and step counters from model
-    int64_t epoch = m.get_cur_epoch();
-    int64_t step  = m.get_cur_step();
-
-    // let user know we're saving a checkpoint
-    uint64_t bytes_count = 0;
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
-        timer.Start();
-        printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
-        fflush(stdout);
-    }
-
-    // create top level directory
-    const char* dir = trainParams.ParameterDir.c_str();
-    lbann::makedir(dir);
-
-    // create subdirectory for this epoch
-    char epochdir[1024];
-    snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
-    lbann::makedir(epochdir);
-
-    // rank 0 writes the training state file
-    if (rank == 0) {
-        // define filename for training state
-        char filename[1024];
-        sprintf(filename, "%s/train", epochdir);
-
-        // open the file for writing
-        int fd = lbann::openwrite(filename);
-
-        // checkpoint epoch number and learning rate
-        lbann_checkpoint header;
-        header.epoch = epoch;
-        header.step  = step;
-        header.learning_rate = trainParams.LearnRate;
-
-        // write the header
-        ssize_t write_rc = write(fd, &header, sizeof(header));
-        if (write_rc != sizeof(header)) {
-            // error!
-        }
-        bytes_count += write_rc;
-
-        // close our file
-        lbann::closewrite(fd, filename);
-    }
-
-    // write network state
-    m.save_to_checkpoint_shared(epochdir, &bytes_count);
-
-    // write epoch number to current file, we do this at the end so as to only update
-    // this file when we know we have a new valid checkpoint
-    if (rank == 0) {
-        write_latest(dir, "shared.last", epoch, step);
-    }
-
-    // sum up bytes written across all procs
-    uint64_t all_bytes_count;
-    MPI_Allreduce(&bytes_count, &all_bytes_count, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
-
-    // stop timer and report cost
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
-        double secs = timer.Stop();
-        double bw = 0.0;
-        if (secs > 0.0) {
-            bw = ((double) all_bytes_count) / (secs * 1024.0 * 1024.0);
-        }
-        printf("Checkpoint complete: epoch %d (%f secs, %llu bytes, %f MB/sec)\n",
-            epoch, secs, (unsigned long long) all_bytes_count, bw
-        );
-        fflush(stdout);
-    }
-
-    return true;
-}
-
-bool restartShared(TrainingParams& trainParams, model& m)
-{
-    // get top level directory
-    const char* dir = trainParams.ParameterDir.c_str();
-
-    // get our rank and the number of ranks
-    int rank, ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
-    // read epoch number from current file
-    int epoch, train;
-    if (rank == 0) {
-        read_latest(dir, "shared.last", &epoch, &train);
-    }
-    MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&train, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // if we couldn't find the latest epoch, just return
-    if (epoch < 0) {
-        return false;
-    }
-
-    // time how long this takes
-    Timer timer;
-
-    // let user know we're restarting from a checkpoint
-    uint64_t bytes_count = 0;
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
-        timer.Start();
-        printf("Restart: epoch %d ...\n", epoch);
-        fflush(stdout);
-    }
-
-    // get subdirectory for this epoch
-    char epochdir[1024];
-    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, train);
-
-    // rank 0 reads the training state file
-    int success = 1;
-    lbann_checkpoint header;
-    if (rank == 0) {
-        // define filename for training state
-        char filename[1024];
-        sprintf(filename, "%s/train", epochdir);
-
-        // open the file for reading
-        int fd = lbann::openread(filename);
-        if (fd != -1) {
-            // read header from checkpoint file
-            ssize_t read_rc = read(fd, &header, sizeof(header));
-            if (read_rc != sizeof(header)) {
-                // process failed to read header
-                success = 0;
-            }
-            bytes_count += read_rc;
-
-            // close our file
-            lbann::closeread(fd, filename);
-        } else {
-            // failed to open the restart file
-            success = 0;
-        }
-    }
-
-    // broadcast whether rank 0 read training file
-    MPI_Bcast(&success, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (! success) {
-        return false;
-    }
-
-    // TODO: this assumes homogeneous hardware
-    // get header values from rank 0
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-    // restore epoch number and learning rate from checkpoint file
-    trainParams.EpochStart = header.epoch;
-    trainParams.LearnRate  = header.learning_rate;
-
-    // restore model from checkpoint
-    m.load_from_checkpoint_shared(epochdir, &bytes_count);
-
-    // sum up bytes written across all procs
-    uint64_t all_bytes_count;
-    MPI_Allreduce(&bytes_count, &all_bytes_count, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
-
-    // let user know we've completed reading our restart
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
-        double secs = timer.Stop();
-        double bw = 0.0;
-        if (secs > 0.0) {
-            bw = ((double) all_bytes_count) / (secs * 1024.0 * 1024.0);
-        }
-        printf("Restart complete: %d, trainOffset %d (%f secs, %llu bytes, %f MB/sec)\n",
-            epoch, train, secs, (unsigned long long) all_bytes_count, bw
-        );
-        fflush(stdout);
-    }
-
-    return true;
-}
-
 /// Main function
 int main(int argc, char* argv[])
 {
@@ -536,11 +277,15 @@ int main(int argc, char* argv[])
         // Initialize the model's data structures
         dnn.setup();
 
-        restartShared(trainParams, dnn);
+        // set checkpoint directory and checkpoint interval
+        dnn.set_checkpoint_dir(trainParams.ParameterDir);
+        dnn.set_checkpoint_secs(10.0);
+
+        // restart model from checkpoint if we have one
+        dnn.restartShared();
 
         // train/test
-        for (int t = trainParams.EpochStart; t < trainParams.EpochCount; t++) {
-
+        while (dnn.get_cur_epoch() < trainParams.EpochCount) {
 #if 0
             // optionally check gradients
             if (n > 0 && n % 10000 == 0) {
@@ -562,7 +307,8 @@ int main(int argc, char* argv[])
             //   cout << "Changing the learning rate to " << trainParams.LearnRate << " after processing " << (t+1) << " epochs" << endl;
             // }
 
-            checkpointShared(trainParams, dnn);
+            // save checkpoint after epoch
+            dnn.checkpointShared();
 
             // testing
             int numerrors = 0;
@@ -585,7 +331,6 @@ int main(int argc, char* argv[])
         }
         delete optimizer;
         delete comm;
-
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }
     catch (exception& e) { ReportException(e); } /// Elemental exceptions

@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_sequential.hpp"
+#include "lbann/layers/lbann_io_layer.hpp"
 #include "lbann/layers/lbann_layer_convolutional.hpp"
 #include "lbann/layers/lbann_layer_pooling.hpp"
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
@@ -35,6 +36,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/io/lbann_persist.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -69,17 +71,12 @@ bool lbann::sequential_model::save_to_file(const string file_dir)
     // get our directory name
     const char* dir = file_dir.c_str();
 
-    // get our rank and the number of ranks
-    int rank, ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
     // report how long this takes
     Timer timer;
 
     // start timer
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
+    if (m_rank == 0) {
         timer.Start();
         printf("Saving parameters to %s ...\n", dir);
         fflush(stdout);
@@ -100,7 +97,7 @@ bool lbann::sequential_model::save_to_file(const string file_dir)
 #if 0
     // define filename for this rank
     char filename[256];
-    sprintf(filename, "%s/params.%d", dir, rank);
+    sprintf(filename, "%s/params.%d", dir, m_rank);
 
     // open the file for writing
     mode_t mode = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
@@ -123,7 +120,7 @@ bool lbann::sequential_model::save_to_file(const string file_dir)
     }
 
     // write number of ranks (we'll check this on read)
-    ssize_t write_rc = write(fd, &ranks, sizeof(int));
+    ssize_t write_rc = write(fd, &m_ranks, sizeof(int));
     if (write_rc != sizeof(int)) {
         fprintf(stderr, "ERROR: Failed to write number of ranks to file `%s' (%d: %s) @ %s:%d\n",
                 filename, errno, strerror(errno), __FILE__, __LINE__
@@ -167,7 +164,7 @@ bool lbann::sequential_model::save_to_file(const string file_dir)
 
     // stop timer
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
+    if (m_rank == 0) {
         double secs = timer.Stop();
         printf("Saved parameters to %s (%f secs)\n", dir, secs);
         fflush(stdout);
@@ -181,17 +178,12 @@ bool lbann::sequential_model::load_from_file(const string file_dir)
     // get our directory name
     const char* dir = file_dir.c_str();
 
-    // get our rank and the number of ranks
-    int rank, ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
     // report how long this takes
     Timer timer;
 
     // start timer
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
+    if (m_rank == 0) {
         timer.Start();
         printf("Loading parameters from %s ...\n", dir);
         fflush(stdout);
@@ -202,14 +194,9 @@ bool lbann::sequential_model::load_from_file(const string file_dir)
             return false;
 
 #if 0
-    // get our rank and the number of ranks
-    int rank, ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
     // define filename for this rank
     char filename[256];
-    sprintf(filename, "%s/params.%d", dir, rank);
+    sprintf(filename, "%s/params.%d", dir, m_rank);
 
     // open the file for reading
     int fd = open(filename, O_RDONLY);
@@ -239,7 +226,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir)
         fflush(stderr);
     }
 
-    if (file_ranks != ranks) {
+    if (file_ranks != m_ranks) {
     }
 
     // read number of layers
@@ -271,7 +258,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir)
 
     // stop timer
     MPI_Barrier(MPI_COMM_WORLD);
-    if (rank == 0) {
+    if (m_rank == 0) {
         double secs = timer.Stop();
         printf("Loaded parameters from %s (%f secs)\n", dir, secs);
         fflush(stdout);
@@ -318,60 +305,38 @@ bool lbann::sequential_model::load_from_checkpoint(int fd, const char* filename,
         // error!
     }
 
-    for (size_t l = 1; l < m_layers.size(); l++)
-        if (!m_layers[l]->loadFromCheckpoint(fd, filename, bytes))
+    for (size_t l = 1; l < m_layers.size(); l++) {
+        if (! m_layers[l]->loadFromCheckpoint(fd, filename, bytes)) {
             return false;
+        }
+    }
 
     return true;
 }
 
 struct lbann_model_sequential_header {
-    int num_layers;
+    uint32_t layers;
 };
 
-bool lbann::sequential_model::save_to_checkpoint_shared(const char* dir, uint64_t* bytes)
+bool lbann::sequential_model::save_to_checkpoint_shared(lbann::persist& p)
 {
     // write parameters from base class first
-    model::save_to_checkpoint_shared(dir, bytes);
+    model::save_to_checkpoint_shared(p);
 
     // write a single header describing layers and sizes?
 
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     // have rank 0 write the network file
-    if (rank == 0) {
-        // define filename for training state
-        char filename[1024];
-        sprintf(filename, "%s/model_sequential", dir);
-
-        // open the file for writing
-        int fd = lbann::openwrite(filename);
-
-        // serialize model state
-        struct lbann_model_sequential_header header;
-        header.num_layers = m_layers.size();
-
-        // write mode state to file
-        int write_rc = write(fd, &header, sizeof(header));
-        if (write_rc != sizeof(header)) {
-            fprintf(stderr, "ERROR: Failed to write sequential model state to file `%s' (%d: %s) @ %s:%d\n",
-                    filename, errno, strerror(errno), __FILE__, __LINE__
-            );
-            fflush(stderr);
-        }
-        *bytes += write_rc;
+    if (p.m_rank == 0) {
+        uint32_t layers = m_layers.size();
+        lbann::write_uint32(p.m_model_fd, "layers", (uint32_t) layers);
 
         // TODO: record each layer type and size (to be checked when read back)
-
-        // close our file
-        lbann::closewrite(fd, filename);
     }
+    p.m_bytes += sizeof(uint32_t);
 
     // write out details for each layer
     for (size_t l = 0; l < m_layers.size(); l++) {
-        if (! m_layers[l]->saveToCheckpointShared(dir, bytes)) {
+        if (! m_layers[l]->saveToCheckpointShared(p)) {
             return false;
         }
     }
@@ -379,48 +344,25 @@ bool lbann::sequential_model::save_to_checkpoint_shared(const char* dir, uint64_
     return true;
 }
 
-bool lbann::sequential_model::load_from_checkpoint_shared(const char* dir, uint64_t* bytes)
+bool lbann::sequential_model::load_from_checkpoint_shared(lbann::persist& p)
 {
     // read parameters from base class first
-    model::load_from_checkpoint_shared(dir, bytes);
-
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    model::load_from_checkpoint_shared(p);
 
     // have rank 0 read the network file
-    int file_layers = -1;
     struct lbann_model_sequential_header header;
-    if (rank == 0) {
-        // define filename for training state
-        char filename[1024];
-        sprintf(filename, "%s/model_sequential", dir);
+    if (p.m_rank == 0) {
+        lbann::read_uint32(p.m_model_fd, "layers", &header.layers);
 
-        // open the file for reading
-        int fd = lbann::openread(filename);
-        if (fd != -1) {
-            // read model state from file
-            int read_rc = read(fd, &header, sizeof(header));
-            if (read_rc != sizeof(header)) {
-                fprintf(stderr, "ERROR: Failed to read sequential model state from file `%s' (%d: %s) @ %s:%d\n",
-                        filename, errno, strerror(errno), __FILE__, __LINE__
-                );
-                fflush(stderr);
-            }
-            *bytes += read_rc;
-
-            // TODO: read back each layer type and size
-
-            // close our file
-            lbann::closeread(fd, filename);
-        }
+        // TODO: read back each layer type and size
     }
+    p.m_bytes += sizeof(uint32_t);
 
     // TODO: this assumes homogeneous processors
     // broadcast state from rank 0
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-    if (header.num_layers != m_layers.size()) {
+    if (header.layers != m_layers.size()) {
         // error!
         return false;
     }
@@ -429,7 +371,7 @@ bool lbann::sequential_model::load_from_checkpoint_shared(const char* dir, uint6
 
     // read in each layer
     for (size_t l = 0; l < m_layers.size(); l++) {
-        if (! m_layers[l]->loadFromCheckpointShared(dir, bytes)) {
+        if (! m_layers[l]->loadFromCheckpointShared(p)) {
             return false;
         }
     }
@@ -564,7 +506,13 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
   setup_callbacks();
 }
 
-
+bool lbann::sequential_model::at_epoch_start()
+{
+  // use mini batch index in data reader to signify start of epoch
+  lbann::io_layer* input = (lbann::io_layer*) m_layers[0];
+  bool flag = input->at_new_epoch();
+  return flag;
+}
 
 #if 0
 DistMat* lbann::sequential_model::predict_mini_batch(DistMat* X)

@@ -30,6 +30,7 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/utils/lbann_dataset.hpp"
+#include "lbann/io/lbann_persist.hpp"
 
 // snprintf
 #include <stdio.h>
@@ -53,98 +54,15 @@ namespace lbann
     long get_total_num_training_samples() { return m_training_dataset.total_samples; }
     long get_total_num_testing_samples() { return m_testing_dataset.total_samples; }
 
+    bool at_new_epoch() { return m_training_dataset.data_reader->at_new_epoch(); }
+
     long get_linearized_data_size();
     long get_linearized_label_size();
     long get_linearized_response_size(void) const { return static_cast<long>(1); }
 
-    struct dataset_header {
-        long train_proc;
-        long train_total;
-        long test_proc;
-        long test_total;
-        long validate_proc;
-        long validate_total;
-    };
-
     // save state of IO to a checkpoint
-    bool saveToCheckpointShared(const char* dir, uint64_t* bytes) {
-        // get our rank and the number of ranks
-        int rank, ranks;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
-        // rank 0 writes the file
-        if (rank == 0) {
-            // define a filename for this layer
-            char filename[1024];
-            snprintf(filename, sizeof(filename), "%s/L%d_IO", dir, Index);
-
-            dataset_header header;
-            header.train_proc     = m_training_dataset.num_samples_processed;
-            header.train_total    = m_training_dataset.total_samples;
-            header.test_proc      = m_testing_dataset.num_samples_processed;
-            header.test_total     = m_testing_dataset.total_samples;
-            header.validate_proc  = m_validation_dataset.num_samples_processed;
-            header.validate_total = m_validation_dataset.total_samples;
-
-            // open the file for writing
-            int fd = lbann::openwrite(filename);
-
-            // write the header
-            ssize_t write_rc = write(fd, &header, sizeof(header));
-            if (write_rc != sizeof(header)) {
-                // error!
-            }
-            *bytes += write_rc;
-
-            // close our file
-            lbann::closewrite(fd, filename);
-        }
-
-        return true;
-    }
-
-    bool loadFromCheckpointShared(const char* dir, uint64_t* bytes) {
-        // get our rank and the number of ranks
-        int rank, ranks;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-
-        // rank 0 reads the file
-        dataset_header header;
-        if (rank == 0) {
-            // define a filename for this layer
-            char filename[1024];
-            snprintf(filename, sizeof(filename), "%s/L%d_IO", dir, Index);
-
-            // open the file for reading
-            int fd = lbann::openread(filename);
-
-            // read the header
-            ssize_t read_rc = read(fd, &header, sizeof(header));
-            if (read_rc != sizeof(header)) {
-                // error!
-            }
-            *bytes += read_rc;
-
-            // close our file
-            lbann::closeread(fd, filename);
-        }
-
-        // TODO: assumes homogeneous hardware
-        // broadcast data from rank 0
-        MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-        // set our fields
-        m_training_dataset.num_samples_processed   = header.train_proc;
-        m_training_dataset.total_samples           = header.train_total;
-        m_testing_dataset.num_samples_processed    = header.test_proc;
-        m_testing_dataset.total_samples            = header.test_total;
-        m_validation_dataset.num_samples_processed = header.validate_proc;
-        m_validation_dataset.total_samples         = header.validate_total;
-
-        return true;
-    }
+    bool saveToCheckpointShared(persist& p);
+    bool loadFromCheckpointShared(persist& p);
 
   public:
     dataset m_training_dataset;

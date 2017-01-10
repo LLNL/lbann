@@ -105,10 +105,12 @@ int lbann::openread(const char* file)
     // open the file for writing
     int fd = open(file, O_RDONLY);
     if (fd == -1) {
+        /*
         fprintf(stderr, "ERROR: Failed to open file `%s' (%d: %s) @ %s:%d\n",
                 file, errno, strerror(errno), __FILE__, __LINE__
         );
         fflush(stderr);
+        */
     }
     return fd;
 }

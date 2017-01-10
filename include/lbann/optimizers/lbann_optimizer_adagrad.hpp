@@ -121,22 +121,43 @@ namespace lbann
       return true;
     }
 
-    bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      // build the name of the checkpoint file
+    bool saveToCheckpointShared(persist& p, int Index) {
       char path[512];
-      sprintf(path, "%s/adagrad_L%d_%03dx%03d", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
-
-      return lbann::write_distmat(-1, path, (DistMat*)&WB_D_Cache, bytes);
-    }
-
-    bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
+    
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::write_float(p.m_train_fd, path, lr);
+      }
+      p.m_bytes += sizeof(float);
+    
       // build the name of the checkpoint file
-      char path[512];
-      sprintf(path, "%s/adagrad_L%d_%03dx%03d.bin", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
-
-      return lbann::read_distmat(-1, path, (DistMat*)&WB_D_Cache, bytes);
+      sprintf(path, "%s/train_adagrad_L%d_%dx%d",
+        p.m_checkpoint_dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
+      lbann::write_distmat(-1, path, (DistMat*)&WB_D_Cache, &p.m_bytes);
+    
+      return true;
     }
     
+    bool loadFromCheckpointShared(persist& p, int Index) {
+      char path[512];
+    
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::read_float(p.m_train_fd, path, &lr);
+      }
+      p.m_bytes += sizeof(float);
+      MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    
+      // build the name of the checkpoint file
+      sprintf(path, "%s/train_adagrad_L%d_%dx%d.bin",
+        p.m_checkpoint_dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
+      lbann::read_distmat(-1, path, (DistMat*)&WB_D_Cache, &p.m_bytes);
+    
+      return true;
+    }
+
   };
 
   class Adagrad_factory : public Optimizer_factory {

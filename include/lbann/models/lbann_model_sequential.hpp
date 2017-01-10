@@ -34,6 +34,7 @@
 #include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/layers/lbann_layer_factory.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <vector>
 #include <string>
 
@@ -68,9 +69,9 @@ class sequential_model : public model
     bool load_from_checkpoint(int fd, const char* filename, uint64_t* bytes);
 
     /** @todo This is old and likely broken */
-    bool save_to_checkpoint_shared(const char* dir, uint64_t* bytes);
+    bool save_to_checkpoint_shared(persist& p);
     /** @todo This is old and likely broken */
-    bool load_from_checkpoint_shared(const char* dir, uint64_t* bytes);
+    bool load_from_checkpoint_shared(persist& p);
 
     /// Get mini-batch size
     int get_mini_batch_size() const { return m_mini_batch_size; }
@@ -118,6 +119,9 @@ class sequential_model : public model
     virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
     /// Training step on one mini-batch
     virtual bool train_mini_batch(long *num_samples, long *num_errors) = 0;
+
+    /** Return true if about to start a new training epoch */
+    virtual bool at_epoch_start();
 
     /// Evaluate model
     virtual DataType evaluate(execution_mode mode) = 0;

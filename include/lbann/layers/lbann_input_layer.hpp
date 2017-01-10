@@ -45,27 +45,27 @@ namespace lbann
     void bp_nonlinearity() {}
 
     // save state of IO to a checkpoint
-    bool saveToCheckpointShared(const char* dir, uint64_t* bytes) {
+    bool saveToCheckpointShared(persist& p) {
         // save state of data readers from input layer
-        m_training_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_training", bytes);
-        m_validation_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_validation", bytes);
-        m_testing_dataset.data_reader->saveToCheckpointShared(dir, "data_reader_testing", bytes);
+        m_training_dataset.data_reader->saveToCheckpointShared(p, "data_reader_training");
+        m_validation_dataset.data_reader->saveToCheckpointShared(p, "data_reader_validation");
+        m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
 
         // save our own state
-        io_layer::saveToCheckpointShared(dir, bytes);
+        io_layer::saveToCheckpointShared(p);
 
         return true;
     }
 
     // reload state of IO from a checkpoint
-    bool loadFromCheckpointShared(const char* dir, uint64_t* bytes) {
-        // save our own state
-        io_layer::loadFromCheckpointShared(dir, bytes);
-
+    bool loadFromCheckpointShared(persist& p) {
         // save state of data readers from input layer
-        m_training_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_training", bytes);
-        m_validation_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_validation", bytes);
-        m_testing_dataset.data_reader->loadFromCheckpointShared(dir, "data_reader_testing", bytes);
+        m_training_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_training");
+        m_validation_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_validation");
+        m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
+
+        // save our own state
+        io_layer::loadFromCheckpointShared(p);
 
         return true;
     }

@@ -226,12 +226,12 @@ bool lbann::SoftmaxLayer::loadFromCheckpoint(int fd, const char* filename, uint6
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::SoftmaxLayer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::SoftmaxLayer::saveToCheckpointShared(lbann::persist& p)
 {
-  return Layer::saveToCheckpointShared(dir, bytes);
+  return Layer::saveToCheckpointShared(p);
 }
 
-bool lbann::SoftmaxLayer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::SoftmaxLayer::loadFromCheckpointShared(lbann::persist& p)
 {
-    return Layer::loadFromCheckpointShared(dir, bytes);
+    return Layer::loadFromCheckpointShared(p);
 }

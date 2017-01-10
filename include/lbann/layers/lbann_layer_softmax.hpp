@@ -62,8 +62,8 @@ namespace lbann
 
         bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
         bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
-        bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
-        bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
+        bool saveToCheckpointShared(persist& p);
+        bool loadFromCheckpointShared(persist& p);
 
     private:
         weight_initialization m_weight_initialization;

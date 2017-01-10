@@ -121,55 +121,41 @@ namespace lbann
       return true;
     }
 
-    bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      int rank = WB_D_Cache.Grid().Rank();
-
+    bool saveToCheckpointShared(persist& p, int Index) {
       char path[512];
-      sprintf(path, "%s/rmsprop_L%d_%03dx%03d", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
-      if(rank == 0) {
-        cout << "Saving layer " << Index << " to file " << path << endl;
-      }
-      Write(WB_D_Cache, path, BINARY, "");
-      //Write_MPI(WB_D_Cache, path, BINARY, "");
 
-      *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::write_float(p.m_train_fd, path, LearnRate);
+      }
+      p.m_bytes += sizeof(float);
+
+      // build name of the checkpoint file
+      sprintf(path, "%s/train_rmsprop_L%d_%dx%d",
+        p.m_checkpoint_dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
+      lbann::write_distmat(-1, path, (DistMat*)&WB_D_Cache, &p.m_bytes);
 
       return true;
     }
 
-    bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      int rank = WB_D_Cache.Grid().Rank();
-
+    bool loadFromCheckpointShared(persist& p, int Index) {
       char path[512];
-      struct stat buffer;
+
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(path, "L%d learning_rate", Index);
+        lbann::read_float(p.m_train_fd, path, &LearnRate);
+      }
+      p.m_bytes += sizeof(float);
+      MPI_Bcast(&LearnRate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
       // read in the cache of gradients for WB
-      sprintf(path, "%s/rmsprop_L%d_%03dx%03d.bin", dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
+      sprintf(path, "%s/train_rmsprop_L%d_%dx%d.bin",
+        p.m_checkpoint_dir, Index, WB_D_Cache.Height(), WB_D_Cache.Width());
+      lbann::read_distmat(-1, path, (DistMat*)&WB_D_Cache, &p.m_bytes);
 
-      // check whether file exists
-      int exists = 0;
-      if (rank == 0 && stat(path, &buffer) == 0) {
-        exists = 1;
-      }
-      MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-      // read WB_D_Cache file if it exists
-      if (exists) {
-        if (rank == 0) {
-          cout << "Restoring layer " << Index << " from file " << path << endl;
-        }
-        Read(WB_D_Cache, path, BINARY, 1);
-        //Read_MPI(WB_D_Cache, path, BINARY, 1);
-  
-        // sum up number of bytes we read
-        *bytes += 2 * sizeof(int) + WB_D_Cache.Height() * WB_D_Cache.Width() * sizeof(DataType);
-  
-        // successfully read checkpoint
-        return true;
-      } else {
-        // no file, failed to read checkpoint
-        return false;
-      }
+      return true;
     }
     
   };

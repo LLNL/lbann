@@ -39,6 +39,7 @@
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <vector>
 
@@ -125,8 +126,8 @@ class model;
     virtual bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
     virtual bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
 
-    virtual bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
-    virtual bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
+    virtual bool saveToCheckpointShared(persist& p);
+    virtual bool loadFromCheckpointShared(persist& p);
 
   public:
     uint               Index;                  // Layer index (start with 0)

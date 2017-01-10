@@ -105,12 +105,15 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
   // Epoch main loop
   for (int epoch = 0; epoch < num_epochs; ++epoch) {
-
     // Check if training has been terminated
     if (get_terminate_training()) break;
 
-    ++m_current_epoch;
-    do_epoch_begin_cbs();
+    // due to restart, may not always be at start of epoch
+    // use mini batch index in data reader to signify start of epoch
+    if (at_epoch_start()) {
+      ++m_current_epoch;
+      do_epoch_begin_cbs();
+    }
 
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
@@ -125,15 +128,22 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     bool finished_epoch;
     do {
       finished_epoch = train_mini_batch(&num_samples, &num_errors);
+
+      // save a checkpoint if needed
+      if (need_checkpoint()) {
+          checkpointShared();
+      }
     } while(!finished_epoch);
 
-  // This is RMSE not accuracy
-  if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) // temporary
-    // Compute train accuracy on current epoch
-    m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
-
+    // This is RMSE not accuracy
+    if (!dynamic_cast<target_layer*>(m_layers[m_layers.size()-1])->is_for_regression()) { // temporary
+      // Compute train accuracy on current epoch
+      m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
+    }
+  
     if(evaluation_frequency > 0
-       && (epoch + 1) % evaluation_frequency == 0) {
+       && (epoch + 1) % evaluation_frequency == 0)
+    {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();
@@ -148,10 +158,12 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     }
 
     do_epoch_end_cbs();
+
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     }
   }
+
   do_train_end_cbs();
 }
 

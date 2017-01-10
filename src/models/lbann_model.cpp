@@ -28,8 +28,11 @@
 
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <unistd.h>
+
+#include "mpi.h"
 
 using namespace std;
 using namespace El;
@@ -41,8 +44,15 @@ lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
   m_current_epoch(0), m_current_step(0),
   m_current_validation_step(0), m_current_testing_step(0),
   m_current_mini_batch_size(0),m_current_phase(0),
-  comm(comm)
+  comm(comm),
+  m_checkpoint_dir(""), m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime())
 {
+  /* store our global rank and size since we refer to this a lot */
+  int rank, ranks;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &ranks);
+  m_rank  = rank;
+  m_ranks = ranks;
 }
 
 void lbann::model::add_callback(lbann::lbann_callback* cb) {
@@ -233,85 +243,274 @@ void lbann::model::do_layer_evaluate_forward_prop_end_cbs(Layer* l) {
   }
 }
 
-/* struct used to serialize mode fields in file and MPI transfer */
-struct lbann_model_header {
-    uint32_t execution_mode;
-    uint32_t terminate_training;
-    int64_t current_epoch;
-    int64_t current_step;
+/** \brief Returns true if a checkpoint should be taken, false otherwise */
+bool lbann::model::need_checkpoint()
+{
+    /* TODO: since we're using clocks, this requires a bcast for each call,
+     * we could use number of samples processed to make a local decision */
+
+    // if checkpoint secs is 0, assume we're not checkpointing
+    if (m_checkpoint_secs == 0.0) {
+        return false;
+    }
+
+    // to avoid issues with clock skew, we rely on rank 0 to make decision
+
+    // have rank 0 determine whether we should checkpoint
+    int flag = 0;
+    if (m_rank == 0) {
+        // get the current time
+        double current = MPI_Wtime();
+    
+        // compute time next checkpoint is due
+        double next = m_checkpoint_last + m_checkpoint_secs;
+    
+        // determine whether it's time for a checkpoint
+        flag = (current >= next);
+    }
+
+    // get flag from rank 0
+    MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    return (bool)flag;
+}
+
+/** \brief Writes a "latest" file which records epoch number and sample offset for the most recent checkpoint */
+static bool write_latest(const char* dir, const char* name, int epoch, int train)
+{
+   // define filename
+   char filename[1024];
+   sprintf(filename, "%s/%s", dir, name);
+
+   // open the file for writing
+   int fd = lbann::openwrite(filename);
+   if (fd != -1) {
+       lbann::write_uint32(fd, "epoch", (uint32_t)epoch);
+       lbann::write_uint32(fd, "train", (uint32_t)train);
+
+       // close our file
+       lbann::closewrite(fd, filename);
+   }
+
+   return true;
+}
+
+/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
+static bool read_latest(const char* dir, const char* name, int* epochLast, int* trainLast)
+{
+   // assume we don't have a file, we'll return -1 in that case
+   *epochLast = -1;
+   *trainLast = -1;
+
+   // define filename
+   char filename[1024];
+   sprintf(filename, "%s/%s", dir, name);
+
+   // open the file for reading
+   int fd = lbann::openread(filename);
+   if (fd != -1) {
+       // read epoch from file
+       uint32_t epoch;
+       lbann::read_uint32(fd, "epoch", &epoch);
+       *epochLast = (int) epoch;
+
+       // read epoch from file
+       uint32_t train;
+       lbann::read_uint32(fd, "train", &train);
+       *trainLast = train;
+
+       // close our file
+       lbann::closeread(fd, filename);
+   }
+
+   return true;
+}
+
+struct lbann_checkpoint {
+    int64_t epoch; // current epoch number
+    int64_t step;  // current offset into list of training example indices array
+    float learning_rate; // current learning rate
 };
 
-bool lbann::model::save_to_checkpoint_shared(const char* dir, uint64_t* bytes)
+//bool lbann::model::checkpointShared(TrainingParams& trainParams)
+bool lbann::model::checkpointShared()
 {
-    // write a single header describing layers and sizes?
+    // if the checkpoint directory is not defined, bail
+    if (m_checkpoint_dir.length() == 0) {
+        return false;
+    }
 
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // time how long this takes
+    Timer timer;
 
-    // have rank 0 write the network file
-    if (rank == 0) {
-        // define filename for training state
-        char filename[1024];
-        sprintf(filename, "%s/model", dir);
+    // get checkpoint directory
+    const char* dir = m_checkpoint_dir.c_str();
 
-        // open the file for writing
-        int fd = lbann::openwrite(filename);
+    // read current epoch and step counters from model
+    int64_t epoch = m_current_epoch;
+    int64_t step  = m_current_step;
 
-        // fill the structure to write to disk
-        struct lbann_model_header header;
-        header.execution_mode     = (uint32_t) m_execution_mode;
-        header.terminate_training = (uint32_t) m_terminate_training;
-        header.current_epoch      = (int64_t)  m_current_epoch;
-        header.current_step       = (int64_t)  m_current_step;
+    // let user know we're saving a checkpoint
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (m_rank == 0) {
+        timer.Start();
+        printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
+        fflush(stdout);
+    }
 
-        // write out our model state
-        ssize_t write_rc = write(fd, &header, sizeof(header));
-        if (write_rc != sizeof(header)) {
-            fprintf(stderr, "ERROR: Failed to write model state to file `%s' (%d: %s) @ %s:%d\n",
-                    filename, errno, strerror(errno), __FILE__, __LINE__
-            );
-            fflush(stderr);
+    // create top level directory
+    //const char* dir = trainParams.ParameterDir.c_str();
+    lbann::makedir(dir);
+
+    // create subdirectory for this epoch
+    char epochdir[1024];
+    snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+
+    // start our checkpoint
+    lbann::persist p;
+    p.open_checkpoint(epochdir);
+
+    // call virtual function to checkpoint model state
+    this->save_to_checkpoint_shared(p);
+
+    // close our checkpoint
+    p.close_checkpoint();
+
+    uint64_t bytes_count = p.m_bytes;
+
+    // write epoch number to current file, we do this at the end so as to only update
+    // this file when we know we have a new valid checkpoint
+    if (m_rank == 0) {
+        write_latest(dir, "shared.last", epoch, step);
+    }
+
+    // stop timer and report cost
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (m_rank == 0) {
+        double secs = timer.Stop();
+        double bw = 0.0;
+        if (secs > 0.0) {
+            bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
         }
-        *bytes += write_rc;
+        printf("Checkpoint complete: epoch %d (%f secs, %llu bytes, %f MB/sec)\n",
+            epoch, secs, (unsigned long long) bytes_count, bw
+        );
+        fflush(stdout);
+    }
 
-        // close our file
-        lbann::closewrite(fd, filename);
+    // saved a checkpoint, update our last checkpoint time
+    m_checkpoint_last = MPI_Wtime();
+
+    return true;
+}
+
+bool lbann::model::restartShared()
+{
+    // if the checkpoint directory is not defined, bail
+    if (m_checkpoint_dir.length() == 0) {
+        return false;
+    }
+
+    // get top level directory
+    const char* dir = m_checkpoint_dir.c_str();
+
+    // read epoch number from current file
+    int epoch, train;
+    if (m_rank == 0) {
+        read_latest(dir, "shared.last", &epoch, &train);
+    }
+    MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&train, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // if we couldn't find the latest epoch, just return
+    if (epoch < 0) {
+        return false;
+    }
+
+    // time how long this takes
+    Timer timer;
+
+    // let user know we're restarting from a checkpoint
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (m_rank == 0) {
+        timer.Start();
+        printf("Restart: epoch %d ...\n", epoch);
+        fflush(stdout);
+    }
+
+    // get subdirectory for this epoch
+    char epochdir[1024];
+    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, train);
+
+    // open our checkpoint
+    lbann::persist p;
+    p.open_restart(epochdir);
+
+    // call virtual function to restore model from checkpoint
+    this->load_from_checkpoint_shared(p);
+
+    // close our checkpoint
+    p.close_restart();
+
+    uint64_t bytes_count = p.m_bytes;
+
+    // let user know we've completed reading our restart
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (m_rank == 0) {
+        double secs = timer.Stop();
+        double bw = 0.0;
+        if (secs > 0.0) {
+            bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
+        }
+        printf("Restart complete: %d, trainOffset %d (%f secs, %llu bytes, %f MB/sec)\n",
+            epoch, train, secs, (unsigned long long) bytes_count, bw
+        );
+        fflush(stdout);
     }
 
     return true;
 }
 
-bool lbann::model::load_from_checkpoint_shared(const char* dir, uint64_t* bytes)
+/* struct used to serialize mode fields in file and MPI transfer */
+struct lbann_model_header {
+    uint32_t execution_mode;
+    uint32_t terminate_training;
+    uint64_t current_epoch;
+    uint64_t current_step;
+};
+
+bool lbann::model::save_to_checkpoint_shared(lbann::persist& p)
 {
-    // get our rank
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // have rank 0 read the file
-    struct lbann_model_header header;
-    if (rank == 0) {
-        // define filename for model state
-        char filename[1024];
-        sprintf(filename, "%s/model", dir);
-
-        // open the file for reading
-        int fd = lbann::openread(filename);
-        if (fd != -1) {
-            // read state from file
-            ssize_t read_rc = read(fd, &header, sizeof(header));
-            if (read_rc != sizeof(header)) {
-                fprintf(stderr, "ERROR: Failed to read model state from file `%s' (%d: %s) @ %s:%d\n",
-                        filename, errno, strerror(errno), __FILE__, __LINE__
-                );
-                fflush(stderr);
-            }
-            *bytes += read_rc;
-
-            // close our file
-            lbann::closeread(fd, filename);
-        }
+    // write out fields we need to save for model
+    if (p.m_rank == 0) {
+        lbann::write_uint32(p.m_train_fd, "execution_mode",     (uint32_t) m_execution_mode);
+        lbann::write_uint32(p.m_train_fd, "terminate_training", (uint32_t) m_terminate_training);
+        lbann::write_uint64(p.m_train_fd, "current_epoch",      (uint64_t) m_current_epoch);
+        lbann::write_uint64(p.m_train_fd, "current_step",       (uint64_t) m_current_step);
     }
+    
+    // update number of bytes written
+    ssize_t count = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t);
+    p.m_bytes += count;
+
+    return true;
+}
+
+bool lbann::model::load_from_checkpoint_shared(lbann::persist& p)
+{
+    // have rank 0 read the file
+    // read state from file
+    struct lbann_model_header header;
+    if (p.m_rank == 0) {
+        lbann::read_uint32(p.m_train_fd, "execution_mode",     &header.execution_mode);
+        lbann::read_uint32(p.m_train_fd, "terminate_training", &header.terminate_training);
+        lbann::read_uint64(p.m_train_fd, "current_epoch",      &header.current_epoch);
+        lbann::read_uint64(p.m_train_fd, "current_step",       &header.current_step);
+    }
+
+    // update number of bytes read
+    ssize_t count = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t);
+    p.m_bytes += count;
 
     // TODO: this assumes homogeneous processors
     // broadcast state from rank 0
