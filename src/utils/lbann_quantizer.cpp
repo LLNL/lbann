@@ -543,6 +543,8 @@ void lbann_quantizer::adaptive_threshold_quantize(
   q.resize(header_len);  // Space for the header.
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
+  // Compute the thresholds.
+  adaptive_info threshes = proportion_threshold(mat, qerror, proportion);
   if (!compress) {
     #pragma omp parallel
     {
@@ -552,8 +554,10 @@ void lbann_quantizer::adaptive_threshold_quantize(
       for (int col = 0; col < width; ++col) {
         const int header_loc = 4 * col;
         q[header_loc] = num_quantized;
-        adaptive_info ainfo = 
-          proportion_threshold_average(mat, qerror, proportion, col);
+        //adaptive_info ainfo = 
+        //  proportion_threshold_average(mat, qerror, proportion, col);
+        adaptive_info ainfo =
+          col_reconstruction(mat, qerror, col, threshes);
         // Store the averages for reconstruction.
         memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
         memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
@@ -609,8 +613,10 @@ void lbann_quantizer::adaptive_threshold_quantize(
         ThreshQuantized uncomp;
         q[header_loc] = start_offset;
         DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
+        //adaptive_info ainfo =
+        //  proportion_threshold_average(mat, qerror, proportion, col);
         adaptive_info ainfo =
-          proportion_threshold_average(mat, qerror, proportion, col);
+          col_reconstruction(mat, qerror, col, threshes);
         // Store the averages for reconstruction.
         memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
         memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
@@ -1142,6 +1148,127 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
   }
   pta_time += get_time() - pta_start;
   return { pos_thresh, neg_thresh, pos_avg, neg_avg, zero_avg };
+}
+
+lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold(
+  const Mat& mat, const Mat& qerror, int proportion, bool sample) {
+  std::vector<DataType> entries;
+  const Int height = mat.Height();
+  const Int width = mat.Width();
+  const Int ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  if (width * height <= NUM_THRESHOLD_SAMPLES || !sample) {
+    // Copy entire matrix into vector.
+    entries.reserve(width * height);
+    for (int col = 0; col < width; ++col) {
+      const Int col_offset = col * ldim;
+      for (int row = 0; row < height; ++row) {
+        const unsigned pos = row + col_offset;
+        entries.emplace_back(mat_buf[pos] + qerror_buf[pos]);
+      }
+    }
+  } else {
+    // Randomly sample entries to approximate everything.
+    entries.reserve(NUM_THRESHOLD_SAMPLES);
+    std::uniform_int_distribution<int> row_dist(0, height - 1);
+    std::uniform_int_distribution<int> col_dist(0, width - 1);
+    rng_gen& gen = get_generator();
+    for (unsigned i = 0; i < NUM_THRESHOLD_SAMPLES; ++i) {
+      const unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
+      entries.emplace_back(mat_buf[pos] + qerror_buf[pos]);
+    }
+  }
+  // Determine the number of entries to keep.
+  int num_to_keep = std::max(1, (int) entries.size() / proportion);
+  // Determine the threshold values.
+  // This finds the num_to_keep'th value if sample were sorted by magnitude
+  // and assigns it to the appropriate threshold, then checks the upper portion
+  // of the partially-sorted vector to find the other threshold.
+  // In the case that the threshold would be 0, it is instead a small non-zero
+  // value.
+  DataType pos_thresh = 1e-8;
+  DataType neg_thresh = -1e-8;
+  auto i = entries.begin() + (entries.size() - num_to_keep);
+  std::nth_element(entries.begin(), i, entries.end(),
+                   [] (const DataType a, const DataType b) -> DataType {
+                     std::abs(a) < std::abs(b); 
+                   });
+  if (*i > 0) {
+    pos_thresh = *i;
+    for (++i; i < entries.end(); ++i) {
+      // Find the largest (closest to 0) negative value.
+      if (*i < 0) neg_thresh = std::max(neg_thresh, *i);
+    }
+  } else if (*i < 0) {
+    neg_thresh = *i;
+    for (++i; i < entries.end(); ++i) {
+      // Find the smallest (closest to 0) positive value.
+      if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
+    }
+  }
+  // Set the reconstruction values to NaNs for now.
+  return { pos_thresh, neg_thresh,
+      std::numeric_limits<DataType>::quiet_NaN(),
+      std::numeric_limits<DataType>::quiet_NaN(),
+      std::numeric_limits<DataType>::quiet_NaN() };
+}
+
+lbann_quantizer::adaptive_info lbann_quantizer::col_reconstruction(
+  const Mat& mat, const Mat& qerror, int col, adaptive_info ainfo, bool sample) {
+  std::vector<DataType> pos_entries;
+  std::vector<DataType> neg_entries;
+  std::vector<DataType> zero_entries;
+  const Int height = mat.Height();
+  const Int col_offset = col * mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  if (height <= NUM_RECON_SAMPLES || !sample) {
+    for (int row = 0; row < height; ++row) {
+      const unsigned pos = row + col_offset;
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
+      if (val >= ainfo.pos_thresh) {
+        pos_entries.emplace_back(val);
+      } else if (val <= ainfo.neg_thresh) {
+        neg_entries.emplace_back(val);
+      } else {
+        zero_entries.emplace_back(val);
+      }
+    }
+  } else {
+    // Randomly sample entries to approximate the means.
+    std::uniform_int_distribution<int> row_dist(0, height - 1);
+    rng_gen& gen = get_generator();
+    for (unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
+      const unsigned pos = row_dist(gen) + col_offset;
+      const DataType val = mat_buf[pos] + qerror_buf[pos];
+      if (val >= ainfo.pos_thresh) {
+        pos_entries.emplace_back(val);
+      } else if (val <= ainfo.neg_thresh) {
+        neg_entries.emplace_back(val);
+      } else {
+        zero_entries.emplace_back(val);
+      }
+    }
+  }
+  // Compute the means. Use the thresholds as initial values in case the
+  // sampling does not include any positive or negative values.
+  DataType pos_avg = ainfo.pos_thresh;
+  DataType neg_avg = ainfo.neg_thresh;
+  DataType zero_avg = 0.0f;
+  if (pos_entries.size() > 0) {
+    pos_avg = std::accumulate(pos_entries.begin(), pos_entries.end(), 0.0f) /
+      pos_entries.size();
+  }
+  if (neg_entries.size() > 0) {
+    neg_avg = std::accumulate(neg_entries.begin(), neg_entries.end(), 0.0f) /
+      neg_entries.size();
+  }
+  if (zero_entries.size() > 0) {
+    zero_avg = std::accumulate(zero_entries.begin(), zero_entries.end(), 0.0f) /
+      zero_entries.size();
+  }
+  return { ainfo.pos_thresh, ainfo.neg_thresh, pos_avg, neg_avg, zero_avg };
 }
 
 }  // namespace lbann

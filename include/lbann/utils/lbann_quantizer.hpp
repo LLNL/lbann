@@ -231,6 +231,31 @@ public:
     const Mat& mat, const Mat& qerror, int proportion, int col,
     bool sample = true);
 
+  /**
+   * Compute positive and negative thresholds such that only one in proportion
+   * of values in mat are >= to the positive threshold or <= to the negative
+   * threshold.
+   * @param mat The matrix to compute threshold values for.
+   * @param qerror The accumulated quantization error in mat.
+   * @param proportion Proportion of entries to keep.
+   * @param sample Whether to approximate stats by randomly sampling mat.
+   * @return Adaptive quantization info with the thresholds set.
+   */
+  adaptive_info proportion_threshold(
+    const Mat& mat, const Mat& qerror, int proportion, bool sample = true);
+  /**
+   * Compute reconstruction values for col.
+   * @param mat The matrix to compute reconstruction values for.
+   * @param qerror The accumulated quantization error in mat.
+   * @param col The column to compute reconstruction values for.
+   * @param ainfo Adaptive quantization info with thresholds filled in.
+   * @param sample Whether to approximate stats by randomly sampling mat.
+   * @return Adaptive quantization info.
+   */
+  adaptive_info col_reconstruction(
+    const Mat& mat, const Mat& qerror, int col, adaptive_info ainfo,
+    bool sample = true);
+
   /** Get the total number of bytes sent during quantization. */
   size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
   /** Get the total number of bytes sent during the reduce-scatter phase. */
@@ -297,6 +322,10 @@ private:
   static const uqtype GR_K = 7;
   /** Number of samples to use in proportion_threshold_average. */
   static const int NUM_PTA_SAMPLES = 128;
+  /** Number of samples to use in proportion_threshold. */
+  static const int NUM_THRESHOLD_SAMPLES = 256;
+  /** Number of samples to use in col_reconstruction. */
+  static const int NUM_RECON_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
   static const int NUM_ONEBIT_SAMPLES = 128;
 
