@@ -88,3 +88,95 @@ void lbann::DataReader::calculate_multi_model_data_distribution(lbann_comm *comm
 
   return;
 }
+
+    /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
+bool lbann::DataReader::saveToCheckpointShared(persist& p, const char* name)
+{
+    // rank 0 writes the training state file
+    if (p.m_rank == 0) {
+        char fieldname[1024];
+
+        // record minibatch index
+        snprintf(fieldname, sizeof(fieldname), "%s current mini batch idx", name);
+        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) m_current_mini_batch_idx);
+        p.m_bytes += sizeof(uint64_t);
+
+        // get size of list of training examples
+        int size = ShuffledIndices.size();
+
+        // record size of ShuffleIndices
+        snprintf(fieldname, sizeof(fieldname), "%s data size", name);
+        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) size);
+        p.m_bytes += sizeof(uint64_t);
+
+        // TODO: each model may have a different position, need to gather and write these
+        // record current position within training data
+        snprintf(fieldname, sizeof(fieldname), "%s data position", name);
+        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) CurrentPos);
+        p.m_bytes += sizeof(uint64_t);
+
+        // write list of indices
+        snprintf(fieldname, sizeof(fieldname), "%s data indices", name);
+        lbann::write_int32_contig(p.m_train_fd, fieldname, &ShuffledIndices[0], (uint64_t) size);
+        p.m_bytes += size * sizeof(int32_t);
+    }
+
+    return true;
+}
+
+/** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char* name)
+{
+    // rank 0 reads the training state file
+    if (p.m_rank == 0) {
+        char fieldname[1024];
+
+        // record minibatch index
+        uint64_t val;
+        snprintf(fieldname, sizeof(fieldname), "%s current mini batch idx", name);
+        lbann::read_uint64(p.m_train_fd, fieldname, &val);
+        p.m_bytes += sizeof(uint64_t);
+        m_current_mini_batch_idx = (int) val;
+
+        // get size of ShuffleIndices
+        snprintf(fieldname, sizeof(fieldname), "%s data size", name);
+        lbann::read_uint64(p.m_train_fd, fieldname, &val);
+        p.m_bytes += sizeof(uint64_t);
+        int size = (int) val;
+
+        // get current position within data
+        snprintf(fieldname, sizeof(fieldname), "%s data position", name);
+        lbann::read_uint64(p.m_train_fd, fieldname, &val);
+        p.m_bytes += sizeof(uint64_t);
+        CurrentPos = (int) val;
+
+        // resize shuffled index array to hold values
+        ShuffledIndices.resize(size);
+
+        // read list of indices
+        snprintf(fieldname, sizeof(fieldname), "%s data indices", name);
+        lbann::read_int32_contig(p.m_train_fd, fieldname, &ShuffledIndices[0], (uint64_t) size);
+        p.m_bytes += size * sizeof(int32_t);
+    }
+
+    // broadcast minibatch index
+    MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // TODO: with multiple readers, make this a scatter
+    // broadcast current position
+    MPI_Bcast(&CurrentPos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // broadcast values from rank 0
+    int size = ShuffledIndices.size();
+    MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // resize shuffled index array to hold values
+    if (p.m_rank != 0) {
+        ShuffledIndices.resize(size);
+    }
+
+    // broadcast index array
+    MPI_Bcast(&ShuffledIndices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
+
+    return true;
+}
