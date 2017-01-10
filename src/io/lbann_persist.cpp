@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "lbann/utils/lbann_exception.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/io/lbann_persist.hpp"
 
@@ -44,6 +45,11 @@
 
 using namespace std;
 using namespace El;
+
+/****************************************************
+ * These functions will save a libElemental matrix
+ * using a file-per-process
+ ****************************************************/
 
 /* TODO: user buffered I/O for more efficient writes */
 
@@ -121,6 +127,7 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
     ssize_t read_rc = read(fd, &header, sizeof(header));
     if (read_rc != sizeof(header)) {
         // error!
+        throw lbann_exception("Failed to read layer header");
     }
     *bytes += read_rc;
 
@@ -138,6 +145,7 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
             read_rc = read(fd, buf, bufsize);
             if (read_rc != bufsize) {
                 // error!
+                throw lbann_exception("Failed to read layer data");
             }
             *bytes += read_rc;
         } else {
@@ -147,6 +155,7 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
                 read_rc = read(fd, buf, bufsize);
                 if (read_rc != bufsize) {
                     // error!
+                    throw lbann_exception("Failed to read layer data");
                 }
                 *bytes += read_rc;
             }
@@ -161,6 +170,7 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
             read_rc = read(fd, buf, bufsize);
             if (read_rc != bufsize) {
                 // error!
+                throw lbann_exception("Failed to read layer data");
             }
             *bytes += read_rc;
         } else {
@@ -170,6 +180,7 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
                 read_rc = read(fd, buf, bufsize);
                 if (read_rc != bufsize) {
                     // error!
+                    throw lbann_exception("Failed to read layer data");
                 }
                 *bytes += read_rc;
             }
@@ -179,7 +190,8 @@ bool lbann::readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
 }
 
 /****************************************************
- * These functions are written in a style that should make it easy to add to libElemental
+ * These functions are written in a style that should
+ * make it easy to add to libElemental
  ****************************************************/
 
 /** \brief Given a distributed matrix, commit the MPI datatypes needed for MPI I/O */
@@ -415,13 +427,116 @@ static void Read_MPI(El::DistMatrix<DataType> &M, std::string filename, El::File
     return;
 }
 
-bool lbann::write_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes)
+/****************************************************
+ * Functions to read/write values to files
+ ****************************************************/
+
+lbann::persist::persist()
 {
-    int rank = M->Grid().Rank();
-    if(rank == 0) {
-      cout << "Writing file " << name << endl;
+    // lookup our MPI rank
+    MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+
+    // initialize number of bytes written
+    m_bytes = 0;
+
+    // initialize file descriptors
+    m_model_fd = -1;
+    m_train_fd = -1;
+}
+
+void lbann::persist::open_checkpoint(const char* dir)
+{
+    // create directory for checkpoint
+    lbann::makedir(dir);
+
+    // copy checkpoint directory
+    strcpy(m_checkpoint_dir, dir);
+
+    // define filename for model state
+    sprintf(m_model_filename, "%s/model", dir);
+
+    // define filename for train state
+    sprintf(m_train_filename, "%s/train", dir);
+
+    // open the file for writing
+    int fd = -1;
+    if (m_rank == 0) {
+        m_model_fd = lbann::openwrite(m_model_filename);
+        if (m_model_fd < 0) {
+            // failed to open checkpoint file
+        }
+
+        m_train_fd = lbann::openwrite(m_train_filename);
+        if (m_train_fd < 0) {
+            // failed to open checkpoint file
+        }
+    }
+}
+
+void lbann::persist::close_checkpoint(void)
+{
+    // close model file
+    if (m_model_fd >= 0) {
+        lbann::closewrite(m_model_fd, m_model_filename);
+        m_model_fd = -1;
     }
 
+    // close training file
+    if (m_train_fd >= 0) {
+        lbann::closewrite(m_train_fd, m_train_filename);
+        m_train_fd = -1;
+    }
+}
+
+void lbann::persist::open_restart(const char* dir)
+{
+    // copy checkpoint directory
+    strcpy(m_checkpoint_dir, dir);
+
+    // define filename for model state
+    sprintf(m_model_filename, "%s/model", dir);
+
+    // define filename for train state
+    sprintf(m_train_filename, "%s/train", dir);
+
+    // open the file for writing
+    int fd = -1;
+    if (m_rank == 0) {
+        m_model_fd = lbann::openread(m_model_filename);
+        if (m_model_fd < 0) {
+            // restart failed, throw exception
+            throw lbann_exception(std::string("Failed to read file: ") + m_model_filename);
+        }
+
+        m_train_fd = lbann::openread(m_train_filename);
+        if (m_train_fd < 0) {
+            // restart failed, throw exception
+            throw lbann_exception(std::string("Failed to read file: ") + m_train_filename);
+        }
+    }
+}
+
+void lbann::persist::close_restart(void)
+{
+    // close model file
+    if (m_model_fd >= 0) {
+        lbann::closeread(m_model_fd, m_model_filename);
+        m_model_fd = -1;
+    }
+
+    // close training file
+    if (m_train_fd >= 0) {
+        lbann::closeread(m_train_fd, m_train_filename);
+        m_train_fd = -1;
+    }
+}
+
+/****************************************************
+ * Functions to read/write values to files
+ ****************************************************/
+
+bool lbann::write_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes)
+{
     Write(*M, name, BINARY, "");
     //Write_MPI(M, name, BINARY, "");
 
@@ -436,12 +551,8 @@ bool lbann::read_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes)
     // check whether file exists
     int exists = lbann::exists(name);
     if (! exists) {
+        throw lbann_exception(std::string("Failed to read distmat: ") + name);
         return false;
-    }
-
-    int rank = M->Grid().Rank();
-    if(rank == 0) {
-      cout << "Reading file " << name << endl;
     }
 
     Read(*M, name, BINARY, 1);
@@ -451,4 +562,80 @@ bool lbann::read_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes)
     *bytes += bytes_read;
 
     return true;
+}
+
+bool lbann::write_bytes(int fd, const char* name, void* buf, size_t size)
+{
+    if (fd >= 0) {
+        ssize_t rc = write(fd, buf, size);
+        if (rc != size) {
+            throw lbann_exception(std::string("Failed to write: ") + name);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool lbann::read_bytes(int fd, const char* name, void* buf, size_t size)
+{
+    if (fd >= 0) {
+        ssize_t rc = read(fd, buf, size);
+        if (rc != size) {
+            throw lbann_exception(std::string("Failed to read: ") + name);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool lbann::write_uint32(int fd, const char* name, uint32_t val)
+{
+    return lbann::write_bytes(fd, name, &val, sizeof(uint32_t));
+}
+
+bool lbann::read_uint32(int fd, const char* name, uint32_t* val)
+{
+    return lbann::read_bytes(fd, name, val, sizeof(uint32_t));
+}
+
+bool lbann::write_uint64(int fd, const char* name, uint64_t val)
+{
+    return lbann::write_bytes(fd, name, &val, sizeof(uint64_t));
+}
+
+bool lbann::read_uint64(int fd, const char* name, uint64_t* val)
+{
+    return lbann::read_bytes(fd, name, val, sizeof(uint64_t));
+}
+
+bool lbann::write_int32_contig(int fd, const char* name, int32_t* buf, uint64_t count)
+{
+    size_t bytes = count * sizeof(int32_t);
+    return lbann::write_bytes(fd, name, buf, bytes);
+}
+
+bool lbann::read_int32_contig(int fd, const char* name, int32_t* buf, uint64_t count)
+{
+    size_t bytes = count * sizeof(int32_t);
+    return lbann::read_bytes(fd, name, buf, bytes);
+}
+
+bool lbann::write_float(int fd, const char* name, float val)
+{
+    return lbann::write_bytes(fd, name, &val, sizeof(float));
+}
+
+bool lbann::read_float(int fd, const char* name, float* val)
+{
+    return lbann::read_bytes(fd, name, val, sizeof(float));
+}
+
+bool lbann::write_double(int fd, const char* name, double val)
+{
+    return lbann::write_bytes(fd, name, &val, sizeof(double));
+}
+
+bool lbann::read_double(int fd, const char* name, double* val)
+{
+    return lbann::read_bytes(fd, name, val, sizeof(double));
 }

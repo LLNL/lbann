@@ -32,30 +32,53 @@
 #include "lbann/lbann_base.hpp"
 #include "El.hpp"
 
-namespace lbann
-{
-//    typedef struct lbann_persist_struct {
-//      int fd;
-//    } lbann_persist;
+namespace lbann {
 
-    
-    bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes);
-    bool readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes);
+class persist {
+public:
+  int m_rank;
+  uint64_t m_bytes;
+  int m_model_fd;
+  int m_train_fd;
+  char m_checkpoint_dir[1024];
+  char m_model_filename[1024];
+  char m_train_filename[1024];
 
-    bool write_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes);
-    bool read_distmat (int fd, const char* name, DistMat* M, uint64_t* bytes);
+public:
+  persist();
+  ~persist() {};
 
-    void write_uint32(int fd, const char* name, uint32_t  val);
-    void read_uint32 (int fd, const char* name, uint32_t* val);
+  void open_checkpoint(const char* dir);
+  void close_checkpoint(void);
 
-    void write_uint64(int fd, const char* name, uint64_t  val);
-    void read_uint64 (int fd, const char* name, uint64_t* val);
+  void open_restart(const char* dir);
+  void close_restart(void);
+};
 
-    void write_float(int fd,  const char* name, float     val);
-    void read_float (int fd,  const char* name, float*    val);
+bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes);
+bool readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes);
 
-    void write_double(int fd, const char* name, double    val);
-    void read_double (int fd, const char* name, double*   val);
-}
+bool write_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes);
+bool read_distmat (int fd, const char* name, DistMat* M, uint64_t* bytes);
+
+bool write_bytes(int fd, const char* name, void* buf, size_t size);
+bool read_bytes(int fd, const char* name, void* buf, size_t size);
+
+bool write_uint32(int fd, const char* name, uint32_t  val);
+bool read_uint32 (int fd, const char* name, uint32_t* val);
+
+bool write_uint64(int fd, const char* name, uint64_t  val);
+bool read_uint64 (int fd, const char* name, uint64_t* val);
+
+bool write_int32_contig(int fd, const char* name, int32_t* buf, uint64_t count);
+bool read_int32_contig (int fd, const char* name, int32_t* buf, uint64_t count);
+
+bool write_float(int fd, const char* name, float  val);
+bool read_float (int fd, const char* name, float* val);
+
+bool write_double(int fd, const char* name, double  val);
+bool read_double (int fd, const char* name, double* val);
+
+} // namespace lbann
 
 #endif // LBANN_PERSIST_H
