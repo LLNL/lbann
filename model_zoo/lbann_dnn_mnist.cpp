@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
         mnist_testset.scale(scale);
         mnist_testset.subtract_mean(subtract_mean);
         mnist_testset.unit_variance(unit_variance);
-        mnist_trainset.z_score(z_score);
+        mnist_testset.z_score(z_score);
 
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
