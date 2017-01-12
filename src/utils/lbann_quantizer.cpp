@@ -544,7 +544,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
   // Compute the thresholds.
-  adaptive_info threshes = proportion_threshold(mat, qerror, proportion);
+  adaptive_thresholds threshes = proportion_threshold(mat, qerror, proportion);
   if (!compress) {
     #pragma omp parallel
     {
@@ -554,31 +554,29 @@ void lbann_quantizer::adaptive_threshold_quantize(
       for (int col = 0; col < width; ++col) {
         const int header_loc = HEADER_FACTOR * col;
         q[header_loc] = num_quantized;
-        //adaptive_info ainfo = 
-        //  proportion_threshold_average(mat, qerror, proportion, col);
-        adaptive_info ainfo =
+        adaptive_reconstructions recons =
           col_reconstruction(mat, qerror, col, threshes);
         // Store the averages for reconstruction.
-        memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
-        memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
+        memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
+        memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-        memcpy(&q[header_loc + 3], &ainfo.zero_avg, sizeof(ainfo.zero_avg));
+        memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
         const Int col_offset = col * ldim;
         for (int row = 0; row < height; ++row) {
           const unsigned pos = row + col_offset;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
-          if (val >= ainfo.pos_thresh) {
-            qerror_buf[pos] = val - ainfo.pos_avg;
+          if (val >= threshes.pos_thresh) {
+            qerror_buf[pos] = val - recons.pos_recon;
             thread_qs[tid].emplace_back((pos << 1) | 1);
             ++num_quantized;
-          } else if (val <= ainfo.neg_thresh) {
-            qerror_buf[pos] = val - ainfo.neg_avg;
+          } else if (val <= threshes.neg_thresh) {
+            qerror_buf[pos] = val - recons.neg_recon;
             thread_qs[tid].emplace_back(pos << 1);
             ++num_quantized;
           } else {
 #if LBANN_QUANTIZER_TERNARY
-            qerror_buf[pos] = val - ainfo.zero_avg;
+            qerror_buf[pos] = val - recons.zero_recon;
 #else
             qerror_buf[pos] = val;
 #endif
@@ -619,33 +617,30 @@ void lbann_quantizer::adaptive_threshold_quantize(
         const int header_loc = HEADER_FACTOR * col;
         ThreshQuantized uncomp;
         q[header_loc] = start_offset;
-        DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
-        //adaptive_info ainfo =
-        //  proportion_threshold_average(mat, qerror, proportion, col);
-        adaptive_info ainfo =
+        adaptive_reconstructions recons =
           col_reconstruction(mat, qerror, col, threshes);
         // Store the averages for reconstruction.
-        memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
-        memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
+        memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
+        memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-        memcpy(&q[header_loc + 3], &ainfo.zero_avg, sizeof(ainfo.zero_avg));
+        memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
         unsigned prev_row = 0;
         const Int col_offset = col * ldim;
         for (int row = 0; row < height; ++row) {
           const unsigned pos = row + col_offset;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
-          if (val >= ainfo.pos_thresh) {
-            qerror_buf[pos] = val - ainfo.pos_avg;
+          if (val >= threshes.pos_thresh) {
+            qerror_buf[pos] = val - recons.pos_recon;
             uncomp.emplace_back(((row - prev_row) << 1) | 1);
             prev_row = row;
-          } else if (val <= ainfo.neg_thresh) {
-            qerror_buf[pos] = val - ainfo.neg_avg;
+          } else if (val <= threshes.neg_thresh) {
+            qerror_buf[pos] = val - recons.neg_recon;
             uncomp.emplace_back((row - prev_row) << 1);
             prev_row = row;
           } else {
 #if LBANN_QUANTIZER_TERNARY
-            qerror_buf[pos] = val - ainfo.zero_avg;
+            qerror_buf[pos] = val - recons.zero_recon;
 #else
             qerror_buf[pos] = val;
 #endif
@@ -697,32 +692,34 @@ void lbann_quantizer::adaptive_threshold_unquantize(
     #pragma omp parallel for schedule(static)
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
       // Extract averages.
-      DataType pos_avg, neg_avg, zero_avg;
-      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
-      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      DataType pos_recon, neg_recon;
+      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-      memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
+      DataType zero_recon;
+      memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
       // Fill the column, then update with the other values.
-      std::fill_n(&buf[(header_loc / 4) * ldim], height, zero_avg);
+      std::fill_n(&buf[(header_loc / HEADER_FACTOR) * ldim], height, zero_recon);
 #endif
       for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
         const uqtype val = q[i];
         const unsigned pos = val >> 1;
-        if (val & 1) buf[pos] = pos_avg;
-        else buf[pos] = neg_avg;
+        if (val & 1) buf[pos] = pos_recon;
+        else buf[pos] = neg_recon;
       }
     }
   } else {
     #pragma omp parallel for schedule(static)
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
       // Extract averages.
-      DataType pos_avg, neg_avg, zero_avg;
-      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
-      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      DataType pos_recon, neg_recon;
+      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-      memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
+      DataType zero_recon;
+      memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
       // Fill the column, then update with the other values.
-      std::fill_n(&buf[(header_loc / 4) * ldim], height, zero_avg);
+      std::fill_n(&buf[(header_loc / HEADER_FACTOR) * ldim], height, zero_recon);
 #endif
       // Uncompress the range.
       ThreshQuantized uncomp;
@@ -736,8 +733,8 @@ void lbann_quantizer::adaptive_threshold_unquantize(
         // header_loc/4 is the same as the column.
         const unsigned pos = row + col_offset;
         prev_row = row;
-        if (val & 1) buf[pos] = pos_avg;
-        else buf[pos] = neg_avg;
+        if (val & 1) buf[pos] = pos_recon;
+        else buf[pos] = neg_recon;
       }
     }
   }
@@ -759,41 +756,43 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
       const unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
       // Extract averages.
-      DataType pos_avg, neg_avg, zero_avg;
-      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
-      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      DataType pos_recon, neg_recon;
+      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-      memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
-      // Add zero_avg to everything and adjust the other means.
+      DataType zero_recon;
+      memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
+      // Add zero_recon to everything and adjust the other means.
       for (unsigned row = 0; row < height; ++row) {
-        buf[row + col_offset] += zero_avg;
+        buf[row + col_offset] += zero_recon;
       }
-      pos_avg -= zero_avg;
-      neg_avg += zero_avg;
+      pos_recon -= zero_recon;
+      neg_recon += zero_recon;
 #endif
       for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
         const uqtype val = q[i];
         const unsigned pos = val >> 1;
-        if (val & 1) buf[pos] += pos_avg;
-        else buf[pos] += neg_avg;
+        if (val & 1) buf[pos] += pos_recon;
+        else buf[pos] += neg_recon;
       }
     }
   } else {
     #pragma omp parallel for schedule(static)
     for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-      const unsigned col_offset = (header_loc / 4) * ldim;
+      const unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
       // Extract averages.
-      DataType pos_avg, neg_avg, zero_avg;
-      memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
-      memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+      DataType pos_recon, neg_recon;
+      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
 #if LBANN_QUANTIZER_TERNARY
-      memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
-      // Add zero_avg to everything and adjust the other means.
+      DataType zero_recon;
+      memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
+      // Add zero_recon to everything and adjust the other means.
       for (unsigned row = 0; row < height; ++row) {
-        buf[row + col_offset] += zero_avg;
+        buf[row + col_offset] += zero_recon;
       }
-      pos_avg -= zero_avg;
-      neg_avg += zero_avg;
+      pos_recon -= zero_recon;
+      neg_recon += zero_recon;
 #endif
       // Uncompress the range.
       ThreshQuantized uncomp;
@@ -806,8 +805,8 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
         // header_loc/HEADER_FACTOR is the same as the column.
         const unsigned pos = row + col_offset;
         prev_row = row;
-        if (val & 1) buf[pos] += pos_avg;
-        else buf[pos] += neg_avg;
+        if (val & 1) buf[pos] += pos_recon;
+        else buf[pos] += neg_recon;
       }
     }
   }
@@ -1094,85 +1093,7 @@ void lbann_quantizer::uncompress_thresholds(
   }
 }
 
-lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold_average(
-  const Mat& mat, const Mat& qerror, int proportion, int col, bool sample) {
-  double pta_start = get_time();
-  std::vector<DataType> pos_entries;
-  std::vector<DataType> neg_entries;
-  const Int height = mat.Height();
-  const Int col_offset = col * mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
-  if (height <= NUM_PTA_SAMPLES || !sample) {
-    for (int row = 0; row < height; ++row) {
-      const unsigned pos = row + col_offset;
-      const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= 0.0f) {
-        pos_entries.emplace_back(val);
-      } else {
-        neg_entries.emplace_back(val);
-      }
-    }
-  } else {
-    // Randomly sample NUM_PTA_SAMPLES entries and use these to approximate
-    // everything.
-    std::uniform_int_distribution<int> row_dist(0, height - 1);
-    rng_gen& gen = get_generator();
-    for (unsigned i = 0; i < NUM_PTA_SAMPLES; ++i) {
-      const unsigned pos = row_dist(gen) + col_offset;
-      const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= 0.0f) {
-        pos_entries.emplace_back(val);
-      } else {
-        neg_entries.emplace_back(val);
-      }
-    }
-  }
-  // Determine how many positive/negative entries we need to keep.
-  int pos_to_keep = pos_entries.size() / proportion;
-  if (pos_to_keep == 0) {
-    pos_to_keep = 1;
-  }
-  int neg_to_keep = neg_entries.size() / proportion;
-  if (neg_to_keep == 0) {
-    neg_to_keep = 1;
-  }
-  int num_zero = pos_entries.size() + neg_entries.size() -
-    pos_to_keep - neg_to_keep;
-  // Determine the threshold value with a selection algorithm to keep only the
-  // largest pos/neg_to_keep elements.
-  // Set to 0 if there's none.
-  // The partitioning also guarantees everything after the i'th element is
-  // greater than or equal to it.
-  DataType pos_thresh = 0.0f;
-  DataType neg_thresh = 0.0f;
-  DataType pos_avg = 0.0f;
-  DataType neg_avg = 0.0f;
-  DataType zero_avg = 0.0f;
-  if (pos_entries.size() > 0) {
-    auto i = pos_entries.begin() + (pos_entries.size() - pos_to_keep);
-    std::nth_element(pos_entries.begin(), i, pos_entries.end());
-    pos_thresh = *i;
-    pos_avg = std::accumulate(i, pos_entries.end(), 0.0f) / pos_to_keep;
-    zero_avg = std::accumulate(pos_entries.begin(), i, 0.0f);
-  }
-  if (neg_entries.size() > 0) {
-    auto i = neg_entries.begin() + neg_to_keep - 1;
-    std::nth_element(neg_entries.begin(), i, neg_entries.end());
-    neg_thresh = *i;
-    neg_avg = std::accumulate(neg_entries.begin(), i + 1, 0.0f) / neg_to_keep;
-    zero_avg += std::accumulate(i + 1, neg_entries.end(), 0.0f);
-  }
-  if (num_zero == 0) {
-    zero_avg = 0.0f;
-  } else {
-    zero_avg /= num_zero;
-  }
-  pta_time += get_time() - pta_start;
-  return { pos_thresh, neg_thresh, pos_avg, neg_avg, zero_avg };
-}
-
-lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold(
+lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   const Mat& mat, const Mat& qerror, int proportion, bool sample) {
   std::vector<DataType> entries;
   const Int height = mat.Height();
@@ -1209,12 +1130,12 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold(
   // of the partially-sorted vector to find the other threshold.
   // In the case that the threshold would be 0, it is instead a small non-zero
   // value.
-  DataType pos_thresh = 1e-8;
-  DataType neg_thresh = -1e-8;
+  DataType pos_thresh = std::numeric_limits<DataType>::min();
+  DataType neg_thresh = -std::numeric_limits<DataType>::min();
   auto i = entries.begin() + (entries.size() - num_to_keep);
   std::nth_element(entries.begin(), i, entries.end(),
-                   [] (const DataType a, const DataType b) -> DataType {
-                     std::abs(a) < std::abs(b); 
+                   [] (const DataType a, const DataType b) {
+                     return std::abs(a) < std::abs(b); 
                    });
   if (*i > 0) {
     pos_thresh = *i;
@@ -1229,18 +1150,17 @@ lbann_quantizer::adaptive_info lbann_quantizer::proportion_threshold(
       if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
     }
   }
-  // Set the reconstruction values to NaNs for now.
-  return { pos_thresh, neg_thresh,
-      std::numeric_limits<DataType>::quiet_NaN(),
-      std::numeric_limits<DataType>::quiet_NaN(),
-      std::numeric_limits<DataType>::quiet_NaN() };
+  return { pos_thresh, neg_thresh };
 }
 
-lbann_quantizer::adaptive_info lbann_quantizer::col_reconstruction(
-  const Mat& mat, const Mat& qerror, int col, adaptive_info ainfo, bool sample) {
+lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
+  const Mat& mat, const Mat& qerror, int col, adaptive_thresholds threshes,
+  bool sample) {
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
+#if LBANN_QUANTIZER_TERNARY
   std::vector<DataType> zero_entries;
+#endif
   const Int height = mat.Height();
   const Int col_offset = col * mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
@@ -1249,12 +1169,17 @@ lbann_quantizer::adaptive_info lbann_quantizer::col_reconstruction(
     for (int row = 0; row < height; ++row) {
       const unsigned pos = row + col_offset;
       const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= ainfo.pos_thresh) {
+      if (val >= threshes.pos_thresh) {
         pos_entries.emplace_back(val);
-      } else if (val <= ainfo.neg_thresh) {
-        neg_entries.emplace_back(val);
       } else {
-        zero_entries.emplace_back(val);
+        if (val <= threshes.neg_thresh) {
+          neg_entries.emplace_back(val);
+        } 
+#if LBANN_QUANTIZER_TERNARY
+        else {
+          zero_entries.emplace_back(val);
+        }
+#endif
       }
     }
   } else {
@@ -1264,33 +1189,44 @@ lbann_quantizer::adaptive_info lbann_quantizer::col_reconstruction(
     for (unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
       const unsigned pos = row_dist(gen) + col_offset;
       const DataType val = mat_buf[pos] + qerror_buf[pos];
-      if (val >= ainfo.pos_thresh) {
+      if (val >= threshes.pos_thresh) {
         pos_entries.emplace_back(val);
-      } else if (val <= ainfo.neg_thresh) {
-        neg_entries.emplace_back(val);
       } else {
-        zero_entries.emplace_back(val);
+        if (val <= threshes.neg_thresh) {
+          neg_entries.emplace_back(val);
+        }
+#if LBANN_QUANTIZER_TERNARY
+        else {
+          zero_entries.emplace_back(val);
+        }
+#endif
       }
     }
   }
   // Compute the means. Use the thresholds as initial values in case the
   // sampling does not include any positive or negative values.
-  DataType pos_avg = ainfo.pos_thresh;
-  DataType neg_avg = ainfo.neg_thresh;
-  DataType zero_avg = 0.0f;
+  DataType pos_recon = threshes.pos_thresh;
+  DataType neg_recon = threshes.neg_thresh;
+#if LBANN_QUANTIZER_TERNARY
+  DataType zero_recon = 0.0f;
+#endif
   if (pos_entries.size() > 0) {
-    pos_avg = std::accumulate(pos_entries.begin(), pos_entries.end(), 0.0f) /
+    pos_recon = std::accumulate(pos_entries.begin(), pos_entries.end(), 0.0f) /
       pos_entries.size();
   }
   if (neg_entries.size() > 0) {
-    neg_avg = std::accumulate(neg_entries.begin(), neg_entries.end(), 0.0f) /
+    neg_recon = std::accumulate(neg_entries.begin(), neg_entries.end(), 0.0f) /
       neg_entries.size();
   }
+#if LBANN_QUANTIZER_TERNARY
   if (zero_entries.size() > 0) {
-    zero_avg = std::accumulate(zero_entries.begin(), zero_entries.end(), 0.0f) /
+    zero_recon = std::accumulate(zero_entries.begin(), zero_entries.end(), 0.0f) /
       zero_entries.size();
   }
-  return { ainfo.pos_thresh, ainfo.neg_thresh, pos_avg, neg_avg, zero_avg };
+  return { pos_recon, neg_recon, zero_recon };
+#else
+  return { pos_recon, neg_recon };
+#endif
 }
 
 }  // namespace lbann

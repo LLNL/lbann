@@ -69,18 +69,23 @@ public:
   typedef El::Matrix<qtype> QuantizedMatrix;
   typedef std::vector<uqtype> ThreshQuantized;
 
-  /** Info for doing adaptive quantization. */
-  struct adaptive_info {
-    /** The positive threshold to use. */
+  /** Thresholds for use in adaptive quantization. */
+  struct adaptive_thresholds {
+    /** The positive/upper threshold. */
     DataType pos_thresh;
-    /** The negative threshold to use. */
+    /** The negative/lower threshold. */
     DataType neg_thresh;
-    /** The average of values greater than pos_thresh. */
-    DataType pos_avg;
-    /** The average of values less than neg_thresh. */
-    DataType neg_avg;
-    /** The average of values between neg_thresh and pos_thresh. */
-    DataType zero_avg;
+  };
+  /** Reconstruction values for adaptive quantization. */
+  struct adaptive_reconstructions {
+    /** The positive/upper reconstruction value. */
+    DataType pos_recon;
+    /** The negative/lower reconstruction value. */
+    DataType neg_recon;
+#if LBANN_QUANTIZER_TERNARY
+    /** The zero/middle reconstruction value. */
+    DataType zero_recon;
+#endif
   };
 
   lbann_quantizer();
@@ -219,23 +224,6 @@ public:
                              ThreshQuantized& q);
 
   /**
-   * Compute positive and negative threshold values such that only one in
-   * proportion of positive and negative entries are greater than or equal to
-   * the threshold. Additionally, compute the average value of the positive and
-   * negative values greater than this threshold, and the average of the values
-   * between these thresholds.
-   * @param mat The matrix to compute threshold values for.
-   * @param qerror The accumulated quantization error in mat.
-   * @param proportion Proportion of entries to keep.
-   * @param col The column to compute values for.
-   * @param sample Whether to approximate stats with a sample.
-   * @return The adaptive quantization info.
-   */
-  adaptive_info proportion_threshold_average(
-    const Mat& mat, const Mat& qerror, int proportion, int col,
-    bool sample = true);
-
-  /**
    * Compute positive and negative thresholds such that only one in proportion
    * of values in mat are >= to the positive threshold or <= to the negative
    * threshold.
@@ -243,9 +231,9 @@ public:
    * @param qerror The accumulated quantization error in mat.
    * @param proportion Proportion of entries to keep.
    * @param sample Whether to approximate stats by randomly sampling mat.
-   * @return Adaptive quantization info with the thresholds set.
+   * @return The threshold values.
    */
-  adaptive_info proportion_threshold(
+  adaptive_thresholds proportion_threshold(
     const Mat& mat, const Mat& qerror, int proportion, bool sample = true);
   /**
    * Compute reconstruction values for col.
@@ -254,10 +242,10 @@ public:
    * @param col The column to compute reconstruction values for.
    * @param ainfo Adaptive quantization info with thresholds filled in.
    * @param sample Whether to approximate stats by randomly sampling mat.
-   * @return Adaptive quantization info.
+   * @return Adaptive reconstruction values.
    */
-  adaptive_info col_reconstruction(
-    const Mat& mat, const Mat& qerror, int col, adaptive_info ainfo,
+  adaptive_reconstructions col_reconstruction(
+    const Mat& mat, const Mat& qerror, int col, adaptive_thresholds threshes,
     bool sample = true);
 
   /** Get the total number of bytes sent during quantization. */
