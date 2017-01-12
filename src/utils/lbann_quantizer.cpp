@@ -531,7 +531,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   // This uses a header to store all information needed to do unquantization in
   // one spot, which makes unquantization easier to multi-thread. The header has
   // one entry for each column, consisting of the starting offset of the
-  // quantized data in the array (including the header) and the three
+  // quantized data in the array (including the header) and the two/three
   // reconstruction values. The number of quantized entries is included as a
   // final entry to simplify unquantization.
   const Int width = mat.Width();
@@ -539,7 +539,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const int header_len = 4 * width + 1;
+  const int header_len = HEADER_FACTOR * width + 1;
   q.resize(header_len);  // Space for the header.
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
@@ -552,7 +552,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
       int num_quantized = header_len;
       #pragma omp for schedule(static)
       for (int col = 0; col < width; ++col) {
-        const int header_loc = 4 * col;
+        const int header_loc = HEADER_FACTOR * col;
         q[header_loc] = num_quantized;
         //adaptive_info ainfo = 
         //  proportion_threshold_average(mat, qerror, proportion, col);
@@ -561,9 +561,12 @@ void lbann_quantizer::adaptive_threshold_quantize(
         // Store the averages for reconstruction.
         memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
         memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
+#if LBANN_QUANTIZER_TERNARY
         memcpy(&q[header_loc + 3], &ainfo.zero_avg, sizeof(ainfo.zero_avg));
+#endif
+        const Int col_offset = col * ldim;
         for (int row = 0; row < height; ++row) {
-          const unsigned pos = row + col * ldim;
+          const unsigned pos = row + col_offset;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
           if (val >= ainfo.pos_thresh) {
             qerror_buf[pos] = val - ainfo.pos_avg;
@@ -574,7 +577,11 @@ void lbann_quantizer::adaptive_threshold_quantize(
             thread_qs[tid].emplace_back(pos << 1);
             ++num_quantized;
           } else {
+#if LBANN_QUANTIZER_TERNARY
             qerror_buf[pos] = val - ainfo.zero_avg;
+#else
+            qerror_buf[pos] = val;
+#endif
           }
         }
       }
@@ -591,14 +598,14 @@ void lbann_quantizer::adaptive_threshold_quantize(
       // Static schedule guarantees threads are assigned the same way.
       #pragma omp for schedule(static)
       for (int col = 0; col < width; ++col) {
-        q[4 * col] += quantized_sums[tid];
+        q[HEADER_FACTOR * col] += quantized_sums[tid];
       }
     }
     for (auto&& thread_q : thread_qs) {
       q.insert(q.end(), thread_q.begin(), thread_q.end());
     }
     // Store the final number of entries.
-    q[4 * width] = q.size();
+    q[HEADER_FACTOR * width] = q.size();
     quantized_count = q.size() - header_len;
   } else {
     // Delta encoding is done within each column:
@@ -609,7 +616,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
       int start_offset = header_len;
       #pragma omp for schedule(static)
       for (int col = 0; col < width; ++col) {
-        const int header_loc = 4 * col;
+        const int header_loc = HEADER_FACTOR * col;
         ThreshQuantized uncomp;
         q[header_loc] = start_offset;
         DataType pos_thresh, neg_thresh, pos_avg, neg_avg;
@@ -620,10 +627,13 @@ void lbann_quantizer::adaptive_threshold_quantize(
         // Store the averages for reconstruction.
         memcpy(&q[header_loc + 1], &ainfo.pos_avg, sizeof(ainfo.pos_avg));
         memcpy(&q[header_loc + 2], &ainfo.neg_avg, sizeof(ainfo.neg_avg));
+#if LBANN_QUANTIZER_TERNARY
         memcpy(&q[header_loc + 3], &ainfo.zero_avg, sizeof(ainfo.zero_avg));
+#endif
         unsigned prev_row = 0;
+        const Int col_offset = col * ldim;
         for (int row = 0; row < height; ++row) {
-          const unsigned pos = row + col * ldim;
+          const unsigned pos = row + col_offset;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
           if (val >= ainfo.pos_thresh) {
             qerror_buf[pos] = val - ainfo.pos_avg;
@@ -634,7 +644,11 @@ void lbann_quantizer::adaptive_threshold_quantize(
             uncomp.emplace_back((row - prev_row) << 1);
             prev_row = row;
           } else {
+#if LBANN_QUANTIZER_TERNARY
             qerror_buf[pos] = val - ainfo.zero_avg;
+#else
+            qerror_buf[pos] = val;
+#endif
           }
         }
         // Compress and store into the global thread-local array.
@@ -655,14 +669,14 @@ void lbann_quantizer::adaptive_threshold_quantize(
       // Static schedule guarantees threads are assigned the same way.
       #pragma omp for schedule(static)
       for (int col = 0; col < width; ++col) {
-        q[4 * col] += quantized_sums[tid];
+        q[HEADER_FACTOR * col] += quantized_sums[tid];
       }
     }
     for (auto&& thread_q : thread_qs) {
       q.insert(q.end(), thread_q.begin(), thread_q.end());
     }
     // Store the final number of entries.
-    q[4 * width] = q.size();
+    q[HEADER_FACTOR * width] = q.size();
   }
 }
 
@@ -676,20 +690,22 @@ void lbann_quantizer::adaptive_threshold_quantize(
 void lbann_quantizer::adaptive_threshold_unquantize(
   const ThreshQuantized& q, Mat& mat, bool compress) {
   DataType* __restrict__ buf = mat.Buffer();
-  const unsigned header_len = mat.Width() * 4;
+  const unsigned header_len = mat.Width() * HEADER_FACTOR;
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
   if (!compress) {
     #pragma omp parallel for schedule(static)
-    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 4) {
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
       // Extract averages.
       DataType pos_avg, neg_avg, zero_avg;
       memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
       memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+#if LBANN_QUANTIZER_TERNARY
       memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
       // Fill the column, then update with the other values.
       std::fill_n(&buf[(header_loc / 4) * ldim], height, zero_avg);
-      for (unsigned i = q[header_loc]; i < q[header_loc + 4]; ++i) {
+#endif
+      for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
         const uqtype val = q[i];
         const unsigned pos = val >> 1;
         if (val & 1) buf[pos] = pos_avg;
@@ -698,20 +714,22 @@ void lbann_quantizer::adaptive_threshold_unquantize(
     }
   } else {
     #pragma omp parallel for schedule(static)
-    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 4) {
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
       // Extract averages.
       DataType pos_avg, neg_avg, zero_avg;
       memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
       memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+#if LBANN_QUANTIZER_TERNARY
       memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
+      // Fill the column, then update with the other values.
+      std::fill_n(&buf[(header_loc / 4) * ldim], height, zero_avg);
+#endif
       // Uncompress the range.
       ThreshQuantized uncomp;
       uncompress_thresholds(q, q.begin() + q[header_loc],
-                            q.begin() + q[header_loc + 4], uncomp);
+                            q.begin() + q[header_loc + HEADER_FACTOR], uncomp);
       unsigned prev_row = 0;
-      const unsigned col_offset = (header_loc / 4) * ldim;
-      // Fill the column, then update with the other values.
-      std::fill_n(&buf[(header_loc / 4) * ldim], height, zero_avg);
+      const unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
       for (unsigned i = 0; i < uncomp.size(); ++i) {
         const uqtype val = uncomp[i];
         const unsigned row = (val >> 1) + prev_row;
@@ -733,25 +751,27 @@ void lbann_quantizer::adaptive_threshold_unquantize(
 void lbann_quantizer::adaptive_threshold_unquantize_add(
   const ThreshQuantized& q, Mat& mat, bool compress) {
   DataType* __restrict__ buf = mat.Buffer();
-  const unsigned header_len = mat.Width() * 4;
+  const unsigned header_len = mat.Width() * HEADER_FACTOR;
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
   if (!compress) {
     #pragma omp parallel for schedule(static)
-    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 4) {
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
+      const unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
       // Extract averages.
-      DataType pos_avg, neg_avg, zero_avg;;
+      DataType pos_avg, neg_avg, zero_avg;
       memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
       memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+#if LBANN_QUANTIZER_TERNARY
       memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
       // Add zero_avg to everything and adjust the other means.
-      const unsigned col_offset = (header_loc / 4) * ldim;
       for (unsigned row = 0; row < height; ++row) {
         buf[row + col_offset] += zero_avg;
       }
       pos_avg -= zero_avg;
       neg_avg += zero_avg;
-      for (unsigned i = q[header_loc]; i < q[header_loc + 4]; ++i) {
+#endif
+      for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
         const uqtype val = q[i];
         const unsigned pos = val >> 1;
         if (val & 1) buf[pos] += pos_avg;
@@ -760,28 +780,30 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
     }
   } else {
     #pragma omp parallel for schedule(static)
-    for (unsigned header_loc = 0; header_loc < header_len; header_loc += 4) {
+    for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
+      const unsigned col_offset = (header_loc / 4) * ldim;
       // Extract averages.
       DataType pos_avg, neg_avg, zero_avg;
       memcpy(&pos_avg, &q[header_loc + 1], sizeof(pos_avg));
       memcpy(&neg_avg, &q[header_loc + 2], sizeof(neg_avg));
+#if LBANN_QUANTIZER_TERNARY
       memcpy(&zero_avg, &q[header_loc + 3], sizeof(zero_avg));
-      // Uncompress the range.
-      ThreshQuantized uncomp;
-      uncompress_thresholds(q, q.begin() + q[header_loc],
-                            q.begin() + q[header_loc + 4], uncomp);
-      unsigned prev_row = 0;
-      const unsigned col_offset = (header_loc / 4) * ldim;
       // Add zero_avg to everything and adjust the other means.
       for (unsigned row = 0; row < height; ++row) {
         buf[row + col_offset] += zero_avg;
       }
       pos_avg -= zero_avg;
       neg_avg += zero_avg;
+#endif
+      // Uncompress the range.
+      ThreshQuantized uncomp;
+      uncompress_thresholds(q, q.begin() + q[header_loc],
+                            q.begin() + q[header_loc + HEADER_FACTOR], uncomp);
+      unsigned prev_row = 0;
       for (unsigned i = 0; i < uncomp.size(); ++i) {
         const uqtype val = uncomp[i];
         const unsigned row = (val >> 1) + prev_row;
-        // header_loc/4 is the same as the column.
+        // header_loc/HEADER_FACTOR is the same as the column.
         const unsigned pos = row + col_offset;
         prev_row = row;
         if (val & 1) buf[pos] += pos_avg;

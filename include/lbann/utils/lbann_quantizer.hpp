@@ -34,6 +34,10 @@
 #include "lbann/utils/lbann_timer.hpp"
 using namespace El;
 
+#ifndef LBANN_QUANTIZER_TERNARY
+#define LBANN_QUANTIZER_TERNARY 0
+#endif
+
 namespace lbann
 {
 
@@ -328,6 +332,12 @@ private:
   static const int NUM_RECON_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
   static const int NUM_ONEBIT_SAMPLES = 128;
+  /** Factor used when computing header lengths in adaptive quantization. */
+#if LBANN_QUANTIZER_TERNARY
+  static const int HEADER_FACTOR = 4;
+#else
+  static const int HEADER_FACTOR = 3;
+#endif
 
   /** Bytes sent in doing the reduce-scatter. */
   size_t rs_bytes_sent;
