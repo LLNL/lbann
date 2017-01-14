@@ -41,8 +41,6 @@ namespace lbann
                               weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
-    DataType forwardProp(DataType prev_WBL2NormSum);
-    void backProp();
     bool update();
     void summarize(lbann_summary& summarizer, int64_t step);
     void epoch_print() const;
@@ -54,20 +52,15 @@ namespace lbann
 
 
   protected:
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
-    void bp_linearity() {}
+    void fp_linearity();
+    void bp_linearity();
+    void fp_nonlinearity() {}
+    void bp_nonlinearity() {}
 
   private:
     Layer* m_original_layer;
     DataType aggregate_cost;
     long num_forwardprop_steps;
-    /// Views of the weight matrix that allow you to separate activation weights from bias weights
-    DistMat m_activation_weights_v;
-    DistMat m_bias_weights_v;
-    DistMat m_activation_weights_gradient_v;
-    DistMat m_bias_weights_gradient_v;
-    DistMat m_bias_bp_t;
-    DataType m_bias_term;
     weight_initialization m_weight_initialization;
   };
 }

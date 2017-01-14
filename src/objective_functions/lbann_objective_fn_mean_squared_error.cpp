@@ -50,7 +50,9 @@ void lbann::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
 
 void lbann::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(m_sum_squared_errors_v, m_sum_squared_errors, IR(0, m_sum_squared_errors.Height()), IR(0, cur_mini_batch_size));
+  // @todo: This is buggy and not used -- remove
+  // possible bug of creating view of a larger matrix (cur_mini_batch) from a smaller matrix (m_sum_sq_error.Width()) 
+  //View(m_sum_squared_errors_v, m_sum_squared_errors, IR(0, m_sum_squared_errors.Height()), IR(0, cur_mini_batch_size));
 }
 
 /// Compute mean squared error
