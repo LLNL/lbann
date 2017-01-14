@@ -53,6 +53,8 @@ Activation* new_activation(activation_type act_fn, DataType param) {
   case activation_type::SMOOTH_RELU:
     return new smooth_reLU_layer();
 #endif
+  case activation_type::ELU:
+    return new ELU_layer();
   default:
     throw lbann_exception("Unsupported activation type.");
   }
@@ -142,6 +144,25 @@ DataType smooth_reLU_layer::smooth_reLUPrime(DataType z)
 }
 #endif
 
+ELU_layer::ELU_layer(DataType alpha) : alpha(alpha) {}
+
+DataType ELU_layer::elu(DataType z, DataType alpha) {
+  if (z > 0) {
+    return z;
+  } else {
+    return alpha * (std::exp(z) - 1);
+  }
+}
+
+DataType ELU_layer::eluPrime(DataType z, DataType alpha) {
+  if (z > 0) {
+    return 1.0f;
+  } else {
+    // elu(z, alpha) + alpha
+    return alpha * (std::exp(z) - 1) + alpha;
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // There are three mechanisms for updating all fields of a distributed matrix
 // 1) EntrywiseMap + independent reset of the bias row - Fastest (about ~30% faster)
@@ -216,5 +237,15 @@ void smooth_reLU_layer::backwardProp(ElMat& m)
   EntrywiseMap(m, std::function<DataType(DataType)>(smooth_reLUPrime));
 }
 #endif
+
+void ELU_layer::forwardProp(ElMat& m) {
+  EntrywiseMap(m, std::function<DataType(DataType)>(
+                 [this] (DataType x) -> DataType { return elu(x, alpha); }));
+}
+
+void ELU_layer::backwardProp(ElMat& m) {
+  EntrywiseMap(m, std::function<DataType(DataType)>(
+                 [this] (DataType x) -> DataType { return eluPrime(x, alpha); }));
+}
 
 }  // namespace lbann

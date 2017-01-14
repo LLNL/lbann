@@ -39,10 +39,11 @@ enum class activation_type {
   ID,
   LEAKY_RELU,
 #if 0
-  SOFTPLUS
+  SOFTPLUS,
 #else
-  SMOOTH_RELU
+  SMOOTH_RELU,
 #endif
+  ELU
 };
 
 /** Base activation function class. */
@@ -130,6 +131,33 @@ private:
   static DataType smooth_reLUPrime(DataType z);
 };
 #endif
+
+/**
+ * Exponential linear unit.
+ * Tries to speed up learning by pushing the mean of activations more towards
+ * zero by allowing negative values. Helps avoid the need for batch
+ * normalization.
+ * See:
+ * Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter
+ * "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)"
+ * ICLR 2016.
+ */
+class ELU_layer : public Activation {
+public:
+  /**
+   * alpha controls the value to which the ELU saturates for negative inputs.
+   * alpha must be >= 0.
+   * If alpha = 0, this turns into a ReLU.
+   * Paper uses alpha = 1.0 as a good starting point.
+   */
+  ELU_layer(DataType alpha = 1.0f);
+  void forwardProp(ElMat& m);
+  void backwardProp(ElMat& m);
+private:
+  static DataType elu(DataType z, DataType alpha);
+  static DataType eluPrime(DataType z, DataType alpha);
+  DataType alpha;
+};
 
 /** Return a new Activation class of type act_fn. */
 Activation* new_activation(activation_type act_fn,

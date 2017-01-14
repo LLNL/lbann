@@ -53,7 +53,7 @@ public:
     moment2_hist(comm->get_model_grid()) {
     if (comm->am_model_master()) {
       std::cout << "Initializing Adam optimizer with lr=" << lr <<
-        " eps=" << eps << " rho1=" << rho1 << " rho2" << rho2 << std::endl;
+        " eps=" << eps << " rho1=" << rho1 << " rho2=" << rho2 << std::endl;
     }
   }
   ~Adam() {
