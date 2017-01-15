@@ -32,8 +32,9 @@
 namespace lbann {
 
 void lbann_callback_dump_activations::on_forward_prop_end(model* m, Layer* l) {
-  const std::string prefix = basename + "epoch" +
-    std::to_string(m->get_cur_epoch()) + "-step" +
+  const std::string prefix = basename + "model" +
+    std::to_string(m->get_comm()->get_model_rank()) +
+    "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
     std::to_string(m->get_cur_step()) + "-layer";
   // Skip the output layer.
   if (l->get_index() == m->get_layers().size() - 1) {
