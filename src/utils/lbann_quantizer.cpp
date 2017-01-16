@@ -325,6 +325,7 @@ void lbann_quantizer::intermodel_sum_quantized(
         Zero(im_qerror);
       }
       quantize(reduced, ag_send, im_qerror);
+      unquantize(ag_send, reduced);
     };
   auto ag_get_send_buf = [&ag_send] (int& count) {
       count = ag_send.Height() * ag_send.Width();
@@ -867,6 +868,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
       }
       threshold_quantize_apply(reduced, ag_send, im_qerror, pos_thresh,
                                neg_thresh, positions, compress);
+      threshold_unquantize(ag_send, reduced, pos_thresh, neg_thresh, compress);
       if (compress) {
         ThreshQuantized comp;
         compress_thresholds(ag_send, comp);
@@ -1103,6 +1105,10 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  // Bail out if needed.
+  if (width == 0) {
+    return { 0.0f, 0.0f };
+  }
   if (width * height <= NUM_THRESHOLD_SAMPLES || !sample) {
     // Copy entire matrix into vector.
     entries.reserve(width * height);

@@ -317,7 +317,7 @@ void test_adaptive_threshold_quantize_allreduce() {
     comm->intermodel_broadcast_matrix(mat, 0);
   }
   if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
+    El::Scale(-2, mat);
   }
   DistMat exact_sum(mat);
   Mat qerror;
