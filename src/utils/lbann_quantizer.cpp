@@ -954,6 +954,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       }
       adaptive_threshold_quantize(reduced, ag_send, im_qerror, proportion,
                                   compress);
+      adaptive_threshold_unquantize(ag_send, reduced, compress);
     };
   auto ag_get_send_buf = [&ag_send] (int& count) {
       count = ag_send.size();
@@ -1095,6 +1096,7 @@ void lbann_quantizer::uncompress_thresholds(
 
 lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   const Mat& mat, const Mat& qerror, int proportion, bool sample) {
+  double proportion_start = get_time();
   std::vector<DataType> entries;
   const Int height = mat.Height();
   const Int width = mat.Width();
@@ -1150,6 +1152,7 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
       if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
     }
   }
+  proportion_time += get_time() - proportion_start;
   return { pos_thresh, neg_thresh };
 }
 

@@ -285,8 +285,8 @@ public:
   double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
   /** Get the time spent in the all-gather send_trans. */
   double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
-  /** Get the time spent in proportion_threshold_average. */
-  double get_pta_time() const { return pta_time; }
+  /** Get the time spent in proportion_threshold. */
+  double get_proportion_time() const { return proportion_time; }
   /** Reset recorded time counters. */
   void reset_time_counters() {
     rs_time = 0.0;
@@ -297,7 +297,7 @@ public:
     ag_reduced_trans_time = 0.0;
     ag_recv_buf_time = 0.0;
     ag_recv_trans_time = 0.0;
-    pta_time = 0.0;
+    proportion_time = 0.0;
   }
   /** Return the most recent number of quantized entries. */
   size_t get_quantized_count() const { return quantized_count; }
@@ -351,8 +351,8 @@ private:
   double ag_recv_buf_time;
   /** Time spent in the all-gather recv_trans. */
   double ag_recv_trans_time;
-  /** Time spent in proportion_threshold_average. */
-  double pta_time;
+  /** Time spent in proportion_threshold. */
+  double proportion_time;
   /** Most recent number of quantized entries. */
   size_t quantized_count;
 

@@ -29,6 +29,9 @@
 #include "lbann/lbann.hpp"
 #include "lbann/utils/lbann_quantizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#ifdef LBANN_VTUNE
+#include <ittnotify.h>
+#endif
 
 /** Number of times to run the quantization. */
 const int num_trials = 20;
@@ -100,8 +103,8 @@ void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
   summarizer->reduce_scalar("ag_recv_trans_time",
                             quantizer.get_ag_recv_trans_time(),
                             trial);
-  summarizer->reduce_scalar("pta_time",
-                            quantizer.get_pta_time(),
+  summarizer->reduce_scalar("proportion_time",
+                            quantizer.get_proportion_time(),
                             trial);
   quantizer.reset_bytes_counters();
   quantizer.reset_time_counters();
