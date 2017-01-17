@@ -315,7 +315,7 @@ private:
   /** Number of samples to use in proportion_threshold_average. */
   static const int NUM_PTA_SAMPLES = 128;
   /** Number of samples to use in proportion_threshold. */
-  static const int NUM_THRESHOLD_SAMPLES = 256;
+  static const int NUM_THRESHOLD_SAMPLES = 1024;
   /** Number of samples to use in col_reconstruction. */
   static const int NUM_RECON_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */

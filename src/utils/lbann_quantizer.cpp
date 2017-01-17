@@ -1138,8 +1138,8 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   // of the partially-sorted vector to find the other threshold.
   // In the case that the threshold would be 0, it is instead a small non-zero
   // value.
-  DataType pos_thresh = std::numeric_limits<DataType>::min();
-  DataType neg_thresh = -std::numeric_limits<DataType>::min();
+  DataType pos_thresh = std::numeric_limits<DataType>::max();
+  DataType neg_thresh = -std::numeric_limits<DataType>::max();
   auto i = entries.begin() + (entries.size() - num_to_keep);
   std::nth_element(entries.begin(), i, entries.end(),
                    [] (const DataType a, const DataType b) {
@@ -1157,6 +1157,12 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
       // Find the smallest (closest to 0) positive value.
       if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
     }
+  }
+  if (pos_thresh == std::numeric_limits<DataType>::max()) {
+    pos_thresh = std::numeric_limits<DataType>::min();
+  }
+  if (neg_thresh == -std::numeric_limits<DataType>::max()) {
+    neg_thresh = -std::numeric_limits<DataType>::min();
   }
   proportion_time += get_time() - proportion_start;
   return { pos_thresh, neg_thresh };
