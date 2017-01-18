@@ -383,10 +383,19 @@ private:
                                 bool delta = false);
 
   /**
-   * Variant of adaptive_threshold_quantize that adds its entries.
+   * Variant of adaptive_threshold_unquantize that adds its entries.
    */
   void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
                                          bool compress = false);
+  /**
+   * Variant of adaptive_threshold_quantize that also replaces entries in mat
+   * with their quantized version. This is equivalent to:
+   * adaptive_threshold_quantize(mat, q, qerror, proportion);
+   * adaptive_threshold_unquantize(q, mat);
+   * Note this does not (currently) support compression.
+   */
+  void adaptive_threshold_quantize_replace(Mat& mat, ThreshQuantized& q,
+                                           Mat& qerror, int proportion);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
