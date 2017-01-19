@@ -531,6 +531,142 @@ void lbann::persist::close_restart(void)
     }
 }
 
+bool lbann::persist::write_distmat(persist_type type, const char* name, DistMat* M)
+{
+    // define full path to file to store matrix
+    char filename[1024];
+    if (type == persist_type::train) {
+        snprintf(filename, sizeof(filename), "%s/train_%s", m_checkpoint_dir, name);
+    } else if (type == persist_type::model) {
+        snprintf(filename, sizeof(filename), "%s/model_%s", m_checkpoint_dir, name);
+    }
+
+    Write(*M, filename, BINARY, "");
+    //Write_MPI(M, filename, BINARY, "");
+
+    uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+    m_bytes += bytes;
+
+    return true;
+}
+
+bool lbann::persist::read_distmat(persist_type type, const char* name, DistMat* M)
+{
+    // define full path to file to store matrix
+    char filename[1024];
+    if (type == persist_type::train) {
+        snprintf(filename, sizeof(filename), "%s/train_%s", m_checkpoint_dir, name);
+    } else if (type == persist_type::model) {
+        snprintf(filename, sizeof(filename), "%s/model_%s", m_checkpoint_dir, name);
+    }
+
+    // check whether file exists
+    int exists = lbann::exists(filename);
+    if (! exists) {
+        throw lbann_exception(std::string("Failed to read distmat: ") + filename);
+        return false;
+    }
+
+    Read(*M, filename, BINARY, 1);
+    //Read_MPI(M, filename, BINARY, 1);
+
+    uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+    m_bytes += bytes;
+
+    return true;
+}
+
+bool lbann::persist::write_bytes(persist_type type, const char* name, void* buf, size_t size)
+{
+    int fd = get_fd(type);
+    if (fd >= 0) {
+        ssize_t rc = write(fd, buf, size);
+        if (rc != size) {
+            throw lbann_exception(std::string("Failed to write: ") + name);
+            return false;
+        }
+        m_bytes += size;
+    }
+    return true;
+}
+
+bool lbann::persist::read_bytes(persist_type type, const char* name, void* buf, size_t size)
+{
+    int fd = get_fd(type);
+    if (fd >= 0) {
+        ssize_t rc = read(fd, buf, size);
+        if (rc != size) {
+            throw lbann_exception(std::string("Failed to read: ") + name);
+            return false;
+        }
+        m_bytes += size;
+    }
+    return true;
+}
+
+bool lbann::persist::write_uint32(persist_type type, const char* name, uint32_t val)
+{
+    return write_bytes(type, name, &val, sizeof(uint32_t));
+}
+
+bool lbann::persist::read_uint32(persist_type type, const char* name, uint32_t* val)
+{
+    return read_bytes(type, name, val, sizeof(uint32_t));
+}
+
+bool lbann::persist::write_uint64(persist_type type, const char* name, uint64_t val)
+{
+    return write_bytes(type, name, &val, sizeof(uint64_t));
+}
+
+bool lbann::persist::read_uint64(persist_type type, const char* name, uint64_t* val)
+{
+    return read_bytes(type, name, val, sizeof(uint64_t));
+}
+
+bool lbann::persist::write_int32_contig(persist_type type, const char* name, int32_t* buf, uint64_t count)
+{
+    size_t bytes = count * sizeof(int32_t);
+    return write_bytes(type, name, buf, bytes);
+}
+
+bool lbann::persist::read_int32_contig(persist_type type, const char* name, int32_t* buf, uint64_t count)
+{
+    size_t bytes = count * sizeof(int32_t);
+    return read_bytes(type, name, buf, bytes);
+}
+
+bool lbann::persist::write_float(persist_type type, const char* name, float val)
+{
+    return write_bytes(type, name, &val, sizeof(float));
+}
+
+bool lbann::persist::read_float(persist_type type, const char* name, float* val)
+{
+    return read_bytes(type, name, val, sizeof(float));
+}
+
+bool lbann::persist::write_double(persist_type type, const char* name, double val)
+{
+    return write_bytes(type, name, &val, sizeof(double));
+}
+
+bool lbann::persist::read_double(persist_type type, const char* name, double* val)
+{
+    return read_bytes(type, name, val, sizeof(double));
+}
+
+int lbann::persist::get_fd(persist_type type)
+{
+    int fd = -1;
+    if (type == persist_type::train) {
+        fd = m_train_fd;
+    } else if (type == persist_type::model) {
+        fd = m_model_fd;
+    }
+    return fd;
+}
+
 /****************************************************
  * Functions to read/write values to files
  ****************************************************/

@@ -97,28 +97,24 @@ bool lbann::DataReader::saveToCheckpointShared(persist& p, const char* name)
         char fieldname[1024];
 
         // record minibatch index
-        snprintf(fieldname, sizeof(fieldname), "%s current mini batch idx", name);
-        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) m_current_mini_batch_idx);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+        p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
 
         // get size of list of training examples
         int size = ShuffledIndices.size();
 
         // record size of ShuffleIndices
-        snprintf(fieldname, sizeof(fieldname), "%s data size", name);
-        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) size);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+        p.write_uint64(persist_type::train, fieldname, (uint64_t) size);
 
         // TODO: each model may have a different position, need to gather and write these
         // record current position within training data
-        snprintf(fieldname, sizeof(fieldname), "%s data position", name);
-        lbann::write_uint64(p.m_train_fd, fieldname, (uint64_t) CurrentPos);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+        p.write_uint64(persist_type::train, fieldname, (uint64_t) CurrentPos);
 
         // write list of indices
-        snprintf(fieldname, sizeof(fieldname), "%s data indices", name);
-        lbann::write_int32_contig(p.m_train_fd, fieldname, &ShuffledIndices[0], (uint64_t) size);
-        p.m_bytes += size * sizeof(int32_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+        p.write_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
     }
 
     return true;
@@ -133,30 +129,26 @@ bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char* name)
 
         // record minibatch index
         uint64_t val;
-        snprintf(fieldname, sizeof(fieldname), "%s current mini batch idx", name);
-        lbann::read_uint64(p.m_train_fd, fieldname, &val);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+        p.read_uint64(persist_type::train, fieldname, &val);
         m_current_mini_batch_idx = (int) val;
 
         // get size of ShuffleIndices
-        snprintf(fieldname, sizeof(fieldname), "%s data size", name);
-        lbann::read_uint64(p.m_train_fd, fieldname, &val);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+        p.read_uint64(persist_type::train, fieldname, &val);
         int size = (int) val;
 
         // get current position within data
-        snprintf(fieldname, sizeof(fieldname), "%s data position", name);
-        lbann::read_uint64(p.m_train_fd, fieldname, &val);
-        p.m_bytes += sizeof(uint64_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+        p.read_uint64(persist_type::train, fieldname, &val);
         CurrentPos = (int) val;
 
         // resize shuffled index array to hold values
         ShuffledIndices.resize(size);
 
         // read list of indices
-        snprintf(fieldname, sizeof(fieldname), "%s data indices", name);
-        lbann::read_int32_contig(p.m_train_fd, fieldname, &ShuffledIndices[0], (uint64_t) size);
-        p.m_bytes += size * sizeof(int32_t);
+        snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+        p.read_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
     }
 
     // broadcast minibatch index

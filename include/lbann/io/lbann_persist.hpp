@@ -34,8 +34,15 @@
 
 namespace lbann {
 
+enum class persist_type {
+  train, // data should be saved in file with train data
+  model, // data should be saved in file with model data
+};
+
 class persist {
 public:
+  // eventually, we'll move most of these to be private,
+  // but we expose them for now while converting old code to new code
   int m_rank;
   uint64_t m_bytes;
   int m_model_fd;
@@ -53,6 +60,32 @@ public:
 
   void open_restart(const char* dir);
   void close_restart(void);
+
+  uint64_t get_bytes() { return m_bytes; }
+
+  bool write_distmat(persist_type type, const char* name, DistMat* M);
+  bool read_distmat (persist_type type, const char* name, DistMat* M);
+  
+  bool write_bytes(persist_type type, const char* name, void* buf, size_t size);
+  bool read_bytes(persist_type type, const char* name, void* buf, size_t size);
+  
+  bool write_uint32(persist_type type, const char* name, uint32_t  val);
+  bool read_uint32 (persist_type type, const char* name, uint32_t* val);
+  
+  bool write_uint64(persist_type type, const char* name, uint64_t  val);
+  bool read_uint64 (persist_type type, const char* name, uint64_t* val);
+  
+  bool write_int32_contig(persist_type type, const char* name, int32_t* buf, uint64_t count);
+  bool read_int32_contig (persist_type type, const char* name, int32_t* buf, uint64_t count);
+  
+  bool write_float(persist_type type, const char* name, float  val);
+  bool read_float (persist_type type, const char* name, float* val);
+  
+  bool write_double(persist_type type, const char* name, double  val);
+  bool read_double (persist_type type, const char* name, double* val);
+
+private:
+  int get_fd(persist_type type);
 };
 
 bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes);

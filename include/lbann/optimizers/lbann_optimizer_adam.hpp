@@ -94,78 +94,72 @@ public:
   void set_learning_rate(float _lr) { lr = _lr; }
 
   bool saveToCheckpointShared(persist& p, int Index) {
-    char path[512];
+    char name[512];
   
     // current learning rate value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d learning_rate", Index);
-      lbann::write_float(p.m_train_fd, path, lr);
+      sprintf(name, "L%d_learning_rate", Index);
+      p.write_float(persist_type::train, name, lr);
     }
-    p.m_bytes += sizeof(float);
   
     // current rho1 value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d cur_rho1", Index);
-      lbann::write_float(p.m_train_fd, path, cur_rho1);
+      sprintf(name, "L%d_cur_rho1", Index);
+      p.write_float(persist_type::train, name, cur_rho1);
     }
-    p.m_bytes += sizeof(float);
   
     // current rho2 value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d cur_rho2", Index);
-      lbann::write_float(p.m_train_fd, path, cur_rho2);
+      sprintf(name, "L%d_cur_rho2", Index);
+      p.write_float(persist_type::train, name, cur_rho2);
     }
-    p.m_bytes += sizeof(float);
   
     // checkpoint matrix for first moment
-    sprintf(path, "%s/train_adam_moment1_L%d_%dx%d",
-      p.m_checkpoint_dir, Index, moment1_hist.Height(), moment1_hist.Width());
-    bool rc1 = lbann::write_distmat(-1, path, (DistMat*)&moment1_hist, &p.m_bytes);
+    sprintf(name, "L%d_adam_moment1_%dx%d",
+      Index, moment1_hist.Height(), moment1_hist.Width());
+    bool rc1 = p.write_distmat(persist_type::train, name, (DistMat*)&moment1_hist);
   
     // checkpoint matrix for second moment
-    sprintf(path, "%s/train_adam_moment2_L%d_%dx%d",
-      p.m_checkpoint_dir, Index, moment2_hist.Height(), moment2_hist.Width());
-    bool rc2 = lbann::write_distmat(-1, path, (DistMat*)&moment2_hist, &p.m_bytes);
+    sprintf(name, "L%d_adam_moment2_%dx%d",
+      Index, moment2_hist.Height(), moment2_hist.Width());
+    bool rc2 = p.write_distmat(persist_type::train, name, (DistMat*)&moment2_hist);
   
     return (rc1 && rc2);
   }
   
   bool loadFromCheckpointShared(persist& p, int Index) {
-    char path[512];
+    char name[512];
   
     // current learning rate value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d learning_rate", Index);
-      lbann::read_float(p.m_train_fd, path, &lr);
+      sprintf(name, "L%d_learning_rate", Index);
+      p.read_float(persist_type::train, name, &lr);
     }
-    p.m_bytes += sizeof(float);
     MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   
     // current rho1 value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d cur_rho1", Index);
-      lbann::read_float(p.m_train_fd, path, &cur_rho1);
+      sprintf(name, "L%d_cur_rho1", Index);
+      p.read_float(persist_type::train, name, &cur_rho1);
     }
-    p.m_bytes += sizeof(float);
     MPI_Bcast(&cur_rho1, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   
     // current rho2 value
     if (p.m_rank == 0) {
-      sprintf(path, "L%d cur_rho2", Index);
-      lbann::read_float(p.m_train_fd, path, &cur_rho2);
+      sprintf(name, "L%d_cur_rho2", Index);
+      p.read_float(persist_type::train, name, &cur_rho2);
     }
-    p.m_bytes += sizeof(float);
     MPI_Bcast(&cur_rho2, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   
     // checkpoint matrix for first moment
-    sprintf(path, "%s/train_adam_moment1_L%d_%dx%d.bin",
-      p.m_checkpoint_dir, Index, moment1_hist.Height(), moment1_hist.Width());
-    bool rc1 = lbann::read_distmat(-1, path, (DistMat*)&moment1_hist, &p.m_bytes);
+    sprintf(name, "L%d_adam_moment1_%dx%d.bin",
+      Index, moment1_hist.Height(), moment1_hist.Width());
+    bool rc1 = p.read_distmat(persist_type::train, name, (DistMat*)&moment1_hist);
   
     // checkpoint matrix for second moment
-    sprintf(path, "%s/train_adam_moment2_L%d_%dx%d.bin",
-      p.m_checkpoint_dir, Index, moment2_hist.Height(), moment2_hist.Width());
-    bool rc2 = lbann::read_distmat(-1, path, (DistMat*)&moment2_hist, &p.m_bytes);
+    sprintf(name, "L%d_adam_moment2_%dx%d.bin",
+      Index, moment2_hist.Height(), moment2_hist.Width());
+    bool rc2 = p.read_distmat(persist_type::train, name, (DistMat*)&moment2_hist);
   
     return (rc1 && rc2);
   }

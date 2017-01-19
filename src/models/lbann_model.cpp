@@ -45,7 +45,8 @@ lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
   m_current_validation_step(0), m_current_testing_step(0),
   m_current_mini_batch_size(0),m_current_phase(0),
   comm(comm),
-  m_checkpoint_dir(""), m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime())
+  m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
+  m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime())
 {
   /* store our global rank and size since we refer to this a lot */
   int rank, ranks;
@@ -249,28 +250,48 @@ bool lbann::model::need_checkpoint()
     /* TODO: since we're using clocks, this requires a bcast for each call,
      * we could use number of samples processed to make a local decision */
 
-    // if checkpoint secs is 0, assume we're not checkpointing
-    if (m_checkpoint_secs == 0.0) {
+    // if none of our checkpoint conditions are set, assume we're not checkpointing
+    if (m_checkpoint_epochs == 0 &&
+        m_checkpoint_steps  == 0 &&
+        m_checkpoint_secs   == 0.0)
+    {
         return false;
     }
 
-    // to avoid issues with clock skew, we rely on rank 0 to make decision
-
-    // have rank 0 determine whether we should checkpoint
+    // assume that we won't checkpoint
     int flag = 0;
-    if (m_rank == 0) {
-        // get the current time
-        double current = MPI_Wtime();
-    
-        // compute time next checkpoint is due
-        double next = m_checkpoint_last + m_checkpoint_secs;
-    
-        // determine whether it's time for a checkpoint
-        flag = (current >= next);
+
+    // if at start of epoch and evenly divide
+    if (flag == 0 && m_checkpoint_epochs > 0) {
+        if (at_epoch_start()) {
+            flag = (int) (m_current_epoch % m_checkpoint_epochs == 0);
+        }
     }
 
-    // get flag from rank 0
-    MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // if our current step is evenly divisable by checkpoint steps,
+    // take a checkpoint
+    if (flag == 0 && m_checkpoint_steps > 0) {
+        flag = (int) (m_current_step % m_checkpoint_steps == 0);
+    }
+
+    // check the clock if time-based checkpoint is enabled
+    if (flag == 0 && m_checkpoint_secs != 0.0) {
+        // have rank 0 determine whether we should checkpoint
+        // to avoid issues with clock skew, we rely on rank 0 to make decision
+        if (m_rank == 0) {
+            // get the current time
+            double current = MPI_Wtime();
+        
+            // compute time next checkpoint is due
+            double next = m_checkpoint_last + m_checkpoint_secs;
+        
+            // determine whether it's time for a checkpoint
+            flag = (current >= next);
+        }
+
+        // get flag from rank 0
+        MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    }
 
     return (bool)flag;
 }
@@ -376,7 +397,7 @@ bool lbann::model::checkpointShared()
     // close our checkpoint
     p.close_checkpoint();
 
-    uint64_t bytes_count = p.m_bytes;
+    uint64_t bytes_count = p.get_bytes();
 
     // write epoch number to current file, we do this at the end so as to only update
     // this file when we know we have a new valid checkpoint
@@ -452,7 +473,7 @@ bool lbann::model::restartShared()
     // close our checkpoint
     p.close_restart();
 
-    uint64_t bytes_count = p.m_bytes;
+    uint64_t bytes_count = p.get_bytes();
 
     // let user know we've completed reading our restart
     MPI_Barrier(MPI_COMM_WORLD);
@@ -483,16 +504,12 @@ bool lbann::model::save_to_checkpoint_shared(lbann::persist& p)
 {
     // write out fields we need to save for model
     if (p.m_rank == 0) {
-        lbann::write_uint32(p.m_train_fd, "execution_mode",     (uint32_t) m_execution_mode);
-        lbann::write_uint32(p.m_train_fd, "terminate_training", (uint32_t) m_terminate_training);
-        lbann::write_uint64(p.m_train_fd, "current_epoch",      (uint64_t) m_current_epoch);
-        lbann::write_uint64(p.m_train_fd, "current_step",       (uint64_t) m_current_step);
+        p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+        p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
+        p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
+        p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
     }
     
-    // update number of bytes written
-    ssize_t count = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t);
-    p.m_bytes += count;
-
     return true;
 }
 
@@ -502,15 +519,11 @@ bool lbann::model::load_from_checkpoint_shared(lbann::persist& p)
     // read state from file
     struct lbann_model_header header;
     if (p.m_rank == 0) {
-        lbann::read_uint32(p.m_train_fd, "execution_mode",     &header.execution_mode);
-        lbann::read_uint32(p.m_train_fd, "terminate_training", &header.terminate_training);
-        lbann::read_uint64(p.m_train_fd, "current_epoch",      &header.current_epoch);
-        lbann::read_uint64(p.m_train_fd, "current_step",       &header.current_step);
+        p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
+        p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
+        p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
+        p.read_uint64(persist_type::train, "current_step",       &header.current_step);
     }
-
-    // update number of bytes read
-    ssize_t count = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t);
-    p.m_bytes += count;
 
     // TODO: this assumes homogeneous processors
     // broadcast state from rank 0

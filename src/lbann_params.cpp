@@ -38,8 +38,9 @@ lbann::TrainingParams::TrainingParams(void)
     LrDecayRate(0.5), LrDecayCycles(5000),
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
-    SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "),
-    TestFile(" "), SummaryDir("."), DumpWeights(false), DumpActivations(false),
+    SaveModel(false), LoadModel(false),
+    CkptEpochs(0), CkptSteps(0), CkptSecs(0.0),
+    TrainFile(" "), TestFile(" "), SummaryDir("."), DumpWeights(false), DumpActivations(false),
     DumpGradients(false), DumpDir("."), IntermodelCommMethod(0),
     ProcsPerModel(0) {
 }
@@ -75,7 +76,11 @@ void lbann::TrainingParams::parse_params(void) {
   ParameterDir = Input("--params", "Location to save model parameters", ParameterDir);
   SaveModel = Input("--save-model", "Save the current model", SaveModel);
   LoadModel = Input("--load-model", "Load a saved model", LoadModel);
-  Checkpoint = Input("--checkpoint", "Number of training epochs between checkpoints", Checkpoint);
+
+  CkptEpochs = Input("--ckpt-epochs", "Number of training epochs between checkpoints", CkptEpochs);
+  CkptSteps  = Input("--ckpt-steps", "Number of training steps between checkpoints", CkptSteps);
+  CkptSecs   = Input("--ckpt-secs", "Number of seconds between checkpoints", CkptSecs);
+
   SummaryDir = Input("--summary-dir", "Directory to write summary files", SummaryDir);
   DumpWeights = Input("--dump-weights", "Whether to dump weights", DumpWeights);
   DumpActivations = Input("--dump-activations", "Whether to dump weights", DumpActivations);

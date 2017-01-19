@@ -102,8 +102,14 @@ namespace lbann
     bool SaveModel;
     /// Load a saved model file
     bool LoadModel;
+
     /// Number of epochs between checkpoints
-    int Checkpoint;
+    int CkptEpochs;
+    /// Number of training steps between checkpoints
+    int CkptSteps;
+    /// Number of seconds between checkpoints
+    int CkptSecs;
+
     /// Train data file name
     std::string TrainFile;
     /// Test data file name

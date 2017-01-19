@@ -279,7 +279,9 @@ int main(int argc, char* argv[])
 
         // set checkpoint directory and checkpoint interval
         dnn.set_checkpoint_dir(trainParams.ParameterDir);
-        dnn.set_checkpoint_secs(10.0);
+        dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
+        dnn.set_checkpoint_steps(trainParams.CkptSteps);
+        dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
         // restart model from checkpoint if we have one
         dnn.restartShared();
@@ -306,9 +308,6 @@ int main(int argc, char* argv[])
             // if(grid.Rank() == 0) {
             //   cout << "Changing the learning rate to " << trainParams.LearnRate << " after processing " << (t+1) << " epochs" << endl;
             // }
-
-            // save checkpoint after epoch
-            dnn.checkpointShared();
 
             // testing
             int numerrors = 0;

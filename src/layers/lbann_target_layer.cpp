@@ -154,11 +154,8 @@ bool lbann::target_layer::saveToCheckpointShared(persist& p)
 {
     // rank 0 writes softmax cost to file
     if (p.m_rank == 0) {
-        lbann::write_double(p.m_train_fd, "aggregate cost", (double) aggregate_cost);
-        lbann::write_uint64(p.m_train_fd, "num backprop steps", (uint64_t) num_backprop_steps);
-  
-        size_t bytes = 16; //sizeof(double) +_sizeof(uint64_t);
-        p.m_bytes += bytes;
+        p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
+        p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
     }
   
     return true;
@@ -169,15 +166,12 @@ bool lbann::target_layer::loadFromCheckpointShared(persist& p)
     // rank 0 writes softmax cost to file
     if (p.m_rank == 0) {
         double dval;
-        lbann::read_double(p.m_train_fd, "aggregate cost", &dval);
+        p.read_double(persist_type::train, "aggregate cost", &dval);
         aggregate_cost = (DataType) dval;
 
         uint64_t val;
-        lbann::read_uint64(p.m_train_fd, "num backprop steps", &val);
+        p.read_uint64(persist_type::train, "num backprop steps", &val);
         num_backprop_steps = (long) val;
-
-        size_t bytes = 16; //sizeof(double) +_sizeof(uint64_t);
-        p.m_bytes += bytes;
     }
 
     // get values from rank 0

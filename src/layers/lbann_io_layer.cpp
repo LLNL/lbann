@@ -216,23 +216,20 @@ bool lbann::io_layer::saveToCheckpointShared(persist& p)
 {
     // rank 0 writes the file
     if (p.m_rank == 0) {
-        lbann::write_uint64(p.m_train_fd, "reader_train_processed",
+        p.write_uint64(persist_type::train, "reader_train_processed",
             (uint64_t) m_training_dataset.num_samples_processed);
-        lbann::write_uint64(p.m_train_fd, "reader_train_total",
+        p.write_uint64(persist_type::train, "reader_train_total",
             (uint64_t) m_training_dataset.total_samples);
 
-        lbann::write_uint64(p.m_train_fd, "reader_test_processed",
+        p.write_uint64(persist_type::train, "reader_test_processed",
             (uint64_t) m_testing_dataset.num_samples_processed);
-        lbann::write_uint64(p.m_train_fd, "reader_test_total",
+        p.write_uint64(persist_type::train, "reader_test_total",
             (uint64_t) m_testing_dataset.total_samples);
 
-        lbann::write_uint64(p.m_train_fd, "reader_validate_processed",
+        p.write_uint64(persist_type::train, "reader_validate_processed",
             (uint64_t) m_validation_dataset.num_samples_processed);
-        lbann::write_uint64(p.m_train_fd, "reader_validate_total",
+        p.write_uint64(persist_type::train, "reader_validate_total",
             (uint64_t) m_validation_dataset.total_samples);
-
-        ssize_t bytes = 6 * sizeof(uint64_t);
-        p.m_bytes += bytes;
     }
 
     return true;
@@ -252,15 +249,12 @@ bool lbann::io_layer::loadFromCheckpointShared(persist& p)
     // rank 0 reads the file
     dataset_header header;
     if (p.m_rank == 0) {
-        lbann::read_uint64(p.m_train_fd, "reader_train_processed",    &header.train_proc);
-        lbann::read_uint64(p.m_train_fd, "reader_train_total",        &header.train_total);
-        lbann::read_uint64(p.m_train_fd, "reader_test_processed",     &header.test_proc);
-        lbann::read_uint64(p.m_train_fd, "reader_test_total",         &header.test_total);
-        lbann::read_uint64(p.m_train_fd, "reader_validate_processed", &header.validate_proc);
-        lbann::read_uint64(p.m_train_fd, "reader_validate_total",     &header.validate_total);
-
-        ssize_t bytes = 6 * sizeof(uint64_t);
-        p.m_bytes += bytes;
+        p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
+        p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
+        p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
+        p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
+        p.read_uint64(persist_type::train, "reader_validate_processed", &header.validate_proc);
+        p.read_uint64(persist_type::train, "reader_validate_total",     &header.validate_total);
     }
 
     // TODO: assumes homogeneous hardware

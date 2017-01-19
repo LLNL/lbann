@@ -131,7 +131,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
       // save a checkpoint if needed
       if (need_checkpoint()) {
-          checkpointShared();
+        checkpointShared();
       }
     } while(!finished_epoch);
 
@@ -161,6 +161,11 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
+    }
+
+    // save checkpoint after epoch
+    if (need_checkpoint()) {
+      checkpointShared();
     }
   }
 

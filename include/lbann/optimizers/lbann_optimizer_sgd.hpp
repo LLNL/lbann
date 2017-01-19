@@ -118,38 +118,34 @@ namespace lbann
     }
 
     bool saveToCheckpointShared(persist& p, int Index) {
-      char path[512];
+      char name[512];
 
       // current learning rate value
       if (p.m_rank == 0) {
-        sprintf(path, "L%d learning_rate", Index);
-        lbann::write_float(p.m_train_fd, path, lr);
+        sprintf(name, "L%d_learning_rate", Index);
+        p.write_float(persist_type::train, name, lr);
       }
-      p.m_bytes += sizeof(float);
 
       // build name of the checkpoint file
-      sprintf(path, "%s/train_sgd_L%d_%dx%d",
-        p.m_checkpoint_dir, Index, velocity.Height(), velocity.Width());
-      lbann::write_distmat(-1, path, (DistMat*)&velocity, &p.m_bytes);
+      sprintf(name, "L%d_sgd_%dx%d", Index, velocity.Height(), velocity.Width());
+      p.write_distmat(persist_type::train, name, (DistMat*)&velocity);
 
       return true;
     }
 
     bool loadFromCheckpointShared(persist& p, int Index) {
-      char path[512];
+      char name[512];
 
       // current learning rate value
       if (p.m_rank == 0) {
-        sprintf(path, "L%d learning_rate", Index);
-        lbann::read_float(p.m_train_fd, path, &lr);
+        sprintf(name, "L%d_learning_rate", Index);
+        p.read_float(persist_type::train, name, &lr);
       }
-      p.m_bytes += sizeof(float);
       MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
       // build name of the checkpoint file
-      sprintf(path, "%s/train_sgd_L%d_%dx%d.bin",
-        p.m_checkpoint_dir, Index, velocity.Height(), velocity.Width());
-      lbann::read_distmat(-1, path, (DistMat*)&velocity, &p.m_bytes);
+      sprintf(name, "L%d_sgd_%dx%d.bin", Index, velocity.Height(), velocity.Width());
+      p.read_distmat(persist_type::train, name, (DistMat*)&velocity);
 
       return true;
     }

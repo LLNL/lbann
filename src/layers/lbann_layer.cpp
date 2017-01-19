@@ -235,10 +235,11 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* by
 bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
 {
     // define name to store our parameters
-    char path[512];
-    sprintf(path, "%s/model_weights_L%d_%dx%d", p.m_checkpoint_dir, Index, m_weights->Height(), m_weights->Width());
+    char name[512];
+    sprintf(name, "weights_L%d_%dx%d", Index, m_weights->Height(), m_weights->Width());
 
-    lbann::write_distmat(-1, path, (DistMat*)m_weights, &p.m_bytes);
+    // write out our weights to the model file
+    p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if saving training state, also write out state of optimizer
     optimizer->saveToCheckpointShared(p, Index);
@@ -249,10 +250,11 @@ bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
 bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 {
     // define name to store our parameters
-    char path[512];
-    sprintf(path, "%s/model_weights_L%d_%dx%d.bin", p.m_checkpoint_dir, Index, m_weights->Height(), m_weights->Width());
+    char name[512];
+    sprintf(name, "weights_L%d_%dx%d.bin", Index, m_weights->Height(), m_weights->Width());
 
-    lbann::read_distmat(-1, path, (DistMat*)m_weights, &p.m_bytes);
+    // read our weights from model file
+    p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if loading training state, read in state of optimizer
     optimizer->loadFromCheckpointShared(p, Index);

@@ -99,9 +99,11 @@ public:
 
   objective_fn* obj_fn;
 
-  /** Set checkpoint directory */
-  inline void set_checkpoint_dir(std::string dir) { m_checkpoint_dir  = dir;  }
-  inline void set_checkpoint_secs(double secs)    { m_checkpoint_secs = secs; }
+  /** Set checkpoint values */
+  inline void set_checkpoint_dir(std::string dir)   { m_checkpoint_dir    = dir;    }
+  inline void set_checkpoint_epochs(int64_t epochs) { m_checkpoint_epochs = epochs; }
+  inline void set_checkpoint_steps(int64_t steps)   { m_checkpoint_steps  = steps;  }
+  inline void set_checkpoint_secs(double secs)      { m_checkpoint_secs   = secs;   }
 
   /** Returns true if a checkpoint should be taken, false otherwise */
   bool need_checkpoint();
@@ -145,6 +147,10 @@ protected:
 
   /** Directory where we should save checkpoints */
   std::string m_checkpoint_dir;
+  /** Number of training steps to elapse between checkpoints */
+  int64_t m_checkpoint_epochs;
+  /** Number of training steps to elapse between checkpoints */
+  int64_t m_checkpoint_steps;
   /** Number of seconds to elapse between checkpoints (checkpoint interval) */
   double m_checkpoint_secs;
   /** Timestamp of last checkpoint */
