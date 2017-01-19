@@ -44,8 +44,6 @@ lbann::target_layer::target_layer(lbann_comm* comm, uint mini_batch_size, std::m
   else
     NumNeurons = io_layer::get_linearized_label_size();
   m_shared_data_reader = shared_data_reader;
-  aggregate_cost = 0.0;
-  num_backprop_steps = 0;
 }
 
 void lbann::target_layer::setup(int num_prev_neurons) {
@@ -92,20 +90,20 @@ void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
   std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
     + "/CrossEntropyCost";
-  summarizer.reduce_scalar(tag, avgCost(), step);
+  summarizer.reduce_scalar(tag, neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
 }
 
 void lbann::target_layer::epoch_print() const {
-  double avg_cost = avgCost();
+  double obj_cost = neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
   if (comm->am_world_master()) {
-    std::vector<double> avg_costs(comm->get_num_models());
-    comm->intermodel_gather(avg_cost, avg_costs);
-    for (size_t i = 0; i < avg_costs.size(); ++i) {
-      std::cout << "Model " << i << " average cross entropy cost: " << avg_costs[i] <<
+    std::vector<double> avg_obj_fn_costs(comm->get_num_models());
+    comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
+    for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
+      std::cout << "Model " << i << " average cross entropy cost: " << avg_obj_fn_costs[i] <<
         std::endl;
     }
   } else {
-    comm->intermodel_gather(avg_cost, comm->get_world_master());
+    comm->intermodel_gather(obj_cost, comm->get_world_master());
   }
 }
 
@@ -115,45 +113,18 @@ void lbann::target_layer::epoch_reset() {
 }
 
 void lbann::target_layer::resetCost() {
-  aggregate_cost = 0.0;
-  num_backprop_steps = 0;
-}
-
-DataType lbann::target_layer::avgCost() const {
-  return aggregate_cost / num_backprop_steps;
+  neural_network_model->obj_fn->reset_obj_fn();
 }
 
 bool lbann::target_layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-  ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (write_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += write_rc;
-
-  write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (write_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += write_rc;
-
+  /// @todo should probably save m_shared_data_reader
   return Layer::saveToCheckpoint(fd, filename, bytes);
 }
 
 bool lbann::target_layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-  ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-  if (read_rc != sizeof(aggregate_cost)) {
-    // error!
-  }
-  *bytes += read_rc;
-
-  read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-  if (read_rc != sizeof(num_backprop_steps)) {
-    // error!
-  }
-  *bytes += read_rc;
-
+  /// @todo should probably save m_shared_data_reader
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
@@ -172,18 +143,6 @@ bool lbann::target_layer::saveToCheckpointShared(const char* dir, uint64_t* byte
       // open the file
       int fd = lbann::openwrite(file);
       if (fd != -1 ) {
-          ssize_t write_rc = write(fd, &aggregate_cost, sizeof(aggregate_cost));
-          if (write_rc != sizeof(aggregate_cost)) {
-            // error!
-          }
-          *bytes += write_rc;
-
-          write_rc = write(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-          if (write_rc != sizeof(num_backprop_steps)) {
-            // error!
-          }
-          *bytes += write_rc;
-
           // close the file
           lbann::closewrite(fd, file);
       }
@@ -207,26 +166,10 @@ bool lbann::target_layer::loadFromCheckpointShared(const char* dir, uint64_t* by
         // open the file
         int fd = lbann::openread(file);
         if (fd != -1 ) {
-            ssize_t read_rc = read(fd, &aggregate_cost, sizeof(aggregate_cost));
-            if (read_rc != sizeof(aggregate_cost)) {
-              // error!
-            }
-            *bytes += read_rc;
-
-            read_rc = read(fd, &num_backprop_steps, sizeof(num_backprop_steps));
-            if (read_rc != sizeof(num_backprop_steps)) {
-              // error!
-            }
-            *bytes += read_rc;
-
             // close the file
             lbann::closeread(fd, file);
         }
     }
-
-    // get values from rank 0
-    MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
     return Layer::loadFromCheckpointShared(dir, bytes);
 }

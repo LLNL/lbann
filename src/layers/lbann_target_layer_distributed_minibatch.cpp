@@ -83,6 +83,7 @@ DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WB
   }
 
   comm->model_barrier();
+  Copy(Ys, *m_activations);
 
   /// Check to see if the predicted results match the target results
   int num_errors = 0;
@@ -109,22 +110,17 @@ DataType lbann::target_layer_distributed_minibatch::forwardProp(DataType prev_WB
       num_errors++;
       
   }
+
+  /// Compute and record the objective function score
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
  
   return num_errors;
 }
 
 void lbann::target_layer_distributed_minibatch::backProp() {
-  /// Compute the error between the target values and the previous layer's activations
-  /// Copy the results to the m_error_signal variable for access by the next lower layer
-  Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
-  Axpy(-1., Ys, *m_error_signal); // Per-neuron error
-  Copy(Ys, *m_activations);
-
-  if (m_execution_mode == execution_mode::training) {
-    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
-  }
+  /// Use the objective function to compute the error between the predictions and the target data
+  neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v, *m_activations_v, *m_error_signal);
 }
 
 /**

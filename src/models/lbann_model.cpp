@@ -33,7 +33,7 @@
 using namespace std;
 using namespace El;
 
-lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
+lbann::model::model(lbann_comm* comm, objective_functions::objective_fn* obj_fn) :
   obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),

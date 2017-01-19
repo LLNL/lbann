@@ -31,33 +31,28 @@
 namespace lbann {
 
 lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  patience(patience), last_score(0.0f), wait(0) {}
+  patience(patience), last_score(std::numeric_limits<double>::max()), wait(0) {}
 
-  /// @todo FIXME BVE should this use the objective function rather
-  /// than a metric - I think so
+/// Monitor the objective function to see if the validation score
+/// continues to improve
 void lbann_callback_early_stopping::on_validation_end(model* m) {
-  for (auto&& metric : m->metrics) {
-    if(metric->supports_early_termination()) {
-      double score = metric->report_metric(execution_mode::validation);
-      if ((metric->higher_score_is_better() && score > last_score) || (metric->lower_score_is_better() && score < last_score)) {
-        if (m->get_comm()->am_model_master()) {
-          std::cout << "Model " << m->get_comm()->get_model_rank() <<
-            " score is improving " << last_score << " >> " << score << std::endl;
-        }
-        last_score = score;
-        wait = 0;
-      } else {
-        if (wait >= patience) {
-          m->set_terminate_training(true);
-          if (m->get_comm()->am_model_master()) {
-            std::cout << "Model " << m->get_comm()->get_model_rank() <<
-              " terminating training due to early stopping" << std::endl;
-          }
-        } else {
-          ++wait;
-        }
+  double score = m->obj_fn->report_aggregate_avg_obj_fn(execution_mode::validation);
+  if (score < last_score) {
+    if (m->get_comm()->am_model_master()) {
+      std::cout << "Model " << m->get_comm()->get_model_rank() <<
+        " early stopping: score is improving " << last_score << " >> " << score << std::endl;
+    }
+    last_score = score;
+    wait = 0;
+  } else {
+    if (wait >= patience) {
+      m->set_terminate_training(true);
+      if (m->get_comm()->am_model_master()) {
+        std::cout << "Model " << m->get_comm()->get_model_rank() <<
+          " terminating training due to early stopping: " << score << " score and " << last_score << " last score" << std::endl;
       }
-      break; /// Only use the first available metric for early termination
+    } else {
+      ++wait;
     }
   }
 }

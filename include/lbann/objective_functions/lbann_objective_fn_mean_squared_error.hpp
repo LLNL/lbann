@@ -32,23 +32,27 @@
 
 namespace lbann
 {
-  class mean_squared_error : public objective_fn {
-  public:
-    mean_squared_error(lbann_comm* comm);
-    ~mean_squared_error();
+  namespace objective_functions
+  {
+    class mean_squared_error : public objective_fn {
+    public:
+      mean_squared_error(lbann_comm* comm);
+      ~mean_squared_error();
 
-    void setup(int num_neurons, int mini_batch_size);
-    void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-    double compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v);
-    double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
+      void setup(int num_neurons, int mini_batch_size);
+      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+      double compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v);
+      double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
+      void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat &error_signal_v);
 
-  protected:
-    /** Workspace to compute the squared error differences */
-    DistMat m_sum_squared_errors;
-    DistMat m_sum_squared_errors_v;
-    /** Colume-wise sum of the costs of a minibatch. */
-    ColSumMat m_minibatch_cost;
-  };
+    protected:
+      /** Workspace to compute the squared error differences */
+      DistMat m_sum_squared_errors;
+      DistMat m_sum_squared_errors_v;
+      /** Colume-wise sum of the costs of a minibatch. */
+      ColSumMat m_minibatch_cost;
+    };
+  }
 }
 
 #endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED

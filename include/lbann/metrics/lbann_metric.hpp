@@ -101,14 +101,12 @@ namespace lbann
     {
     public:
       /// Constructor
-      metric(lbann_comm *comm, bool early_termination=false, bool ascending_score=true) {
+      metric(lbann_comm *comm) {
         m_training_stats.init_stats();
         m_validation_stats.init_stats();
         m_testing_stats.init_stats();
         this->comm = comm;
         this->type = metric_type::INVALID;
-        this->m_used_for_early_termination = early_termination;
-        this->m_higher_score_is_better = ascending_score;
       }
 
       /// Destructor
@@ -125,10 +123,6 @@ namespace lbann
       void record_error(double error, long num_samples);
       void reset_metric();
 
-      bool supports_early_termination() { return m_used_for_early_termination; }
-      bool higher_score_is_better() { return m_higher_score_is_better; }
-      bool lower_score_is_better() { return !m_higher_score_is_better; }
-
     public:
       statistics m_training_stats;
       statistics m_validation_stats;
@@ -137,8 +131,6 @@ namespace lbann
       lbann_comm* comm;
       model* neural_network_model;
       metric_type type;
-      bool m_used_for_early_termination;
-      bool m_higher_score_is_better;
     };
   }
 }

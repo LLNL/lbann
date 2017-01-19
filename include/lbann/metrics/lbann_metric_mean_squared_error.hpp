@@ -52,7 +52,7 @@ namespace lbann
       double report_lifetime_metric(execution_mode mode);
 
     protected:
-      lbann::mean_squared_error internal_obj_fn;
+      lbann::objective_functions::mean_squared_error internal_obj_fn;
     };
   }
 }

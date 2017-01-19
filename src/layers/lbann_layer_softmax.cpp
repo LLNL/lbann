@@ -137,6 +137,8 @@ void lbann::SoftmaxLayer::fp_linearity()
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);
 
+  /// @todo - BVE FIXME I believe that this should be put into a softmax non-linearity / activation function
+
   // Compute exp(z) of each entry. Subtract the max of each column from its
   // entries to prevent the exp from blowing up. Large negative values are
   // expected to underflow to 0.

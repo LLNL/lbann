@@ -49,7 +49,7 @@ class lbann_callback;
  */
 class model {
 public:
-  model(lbann_comm* comm, objective_fn* obj_fn);
+  model(lbann_comm* comm, objective_functions::objective_fn* obj_fn);
   virtual ~model() {}
 
   /** Initialize the model. */
@@ -93,7 +93,7 @@ public:
    * training and can be used to adapt training via either early termination or
    * adaptive learning rates.
    */
-  objective_fn* obj_fn;
+  objective_functions::objective_fn* obj_fn;
   /**
    * A metric is a function that is used to judge the performance of your model.
    * A metric function is similar to an objective function, except that the

@@ -49,7 +49,7 @@ public:
   /** Do some initialization. */
   void setup(model* m);
   /** Apply the learning rate schedule. */
-  void on_epoch_begin(model* m);
+  void on_epoch_end(model* m);
 protected:
   /**
    * This is called every epoch to potentially update the learning rate.

@@ -35,7 +35,7 @@ using namespace El;
 
 lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint mini_batch_size,
                                                 lbann_comm* comm,
-                                                objective_fn* obj_fn,
+                                                objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),

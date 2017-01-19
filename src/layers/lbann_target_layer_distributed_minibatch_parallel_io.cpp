@@ -173,6 +173,10 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   distribute_from_local_matrix(Y_local, Ys);
   Copy(Ys, *m_activations);
 
+  /// Compute and record the objective function score
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+
   int tmp_num_errors = 0;
   for (auto&& m : neural_network_model->metrics) {
     tmp_num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
@@ -228,6 +232,10 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regr
   distribute_from_local_matrix(Y_local, Ys);
   Copy(Ys, *m_activations);
 
+  /// Compute and record the objective function score
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+
 #if 1
   double tmp_num_errors = 0;
   for (auto&& m : neural_network_model->metrics) {
@@ -244,17 +252,8 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regr
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
-  /// Compute the error between the target values and the previous layer's activations
-  /// Copy the results to the m_error_signal variable for access by the next lower layer
-  Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
-  Axpy(-1., *m_activations, *m_error_signal); // Per-neuron error
-  /// @todo - BVE should we be using views here.
-
-  if (m_execution_mode == execution_mode::training) {
-    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
-  }
+  /// Use the objective function to compute the error between the predictions and the target data
+  neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v, *m_activations_v, *m_error_signal);
 }
 
 /**
