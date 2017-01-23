@@ -39,7 +39,7 @@ namespace lbann {
  */
 class lbann_callback_checknan : public lbann_callback {
 public:
-  lbann_callback_checknan() : lbann_callback() {}
+  lbann_callback_checknan() : lbann_callback() { set_name("checknan"); }
   /** Check that activations are good. */
   void on_forward_prop_end(model* m, Layer* l);
   /** Check that gradients are good. */

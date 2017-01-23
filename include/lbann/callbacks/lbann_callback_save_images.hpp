@@ -43,7 +43,9 @@ public:
    * @param num_images number of images to save
    */
   lbann_callback_save_images(std::string image_dir, size_t num_images=10) :
-    lbann_callback(), m_image_dir(image_dir), m_num_images(num_images) {}
+    lbann_callback(), m_image_dir(image_dir), m_num_images(num_images) {
+      set_name("save_images");
+    }
   void on_phase_end(model* m);
 
 private:

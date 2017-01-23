@@ -43,7 +43,9 @@ namespace lbann {
 class lbann_callback_debug : public lbann_callback {
 public:
   lbann_callback_debug(execution_mode phase = execution_mode::invalid, lbann_summary* _summarizer = nullptr) :
-    lbann_callback(1, _summarizer), m_debug_phase(phase) {}
+    lbann_callback(1, _summarizer), m_debug_phase(phase) {
+      set_name("debug");
+    }
   /** Start recording time for the epoch. */
   void on_epoch_begin(model* m);
   /** Report epoch and mean minibatch times. */

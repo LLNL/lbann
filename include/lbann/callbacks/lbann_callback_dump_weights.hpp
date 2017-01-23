@@ -46,7 +46,9 @@ public:
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_weights(std::string basename, int _batch_interval = 1) :
-    lbann_callback(_batch_interval), basename(basename) {}
+    lbann_callback(_batch_interval), basename(basename) {
+      set_name("dump_weights");
+    }
   void on_epoch_end(model* m);
 private:
   /** Basename for writing files. */

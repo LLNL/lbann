@@ -33,7 +33,7 @@ namespace lbann {
 lbann_callback_summary::lbann_callback_summary(lbann_summary* _summarizer,
                                                int _batch_interval) :
   lbann_callback(_batch_interval, _summarizer) {
-  
+  set_name("summary");  
 }
 
 void lbann_callback_summary::on_batch_end(model* m) {
