@@ -33,27 +33,27 @@ using namespace El;
 
 lbann::objective_functions::mean_squared_error::mean_squared_error(lbann_comm* comm)
   : objective_fn(), 
-    m_sum_squared_errors(comm->get_model_grid()), 
-    m_sum_squared_errors_v(comm->get_model_grid()), 
-    m_minibatch_cost(comm->get_model_grid())
+    m_squared_errors(comm->get_model_grid()),
+    m_squared_errors_v(comm->get_model_grid()),
+    m_sum_squared_errors(comm->get_model_grid())
 {
   this->type = obj_fn_type::mean_squared_error;
 }
 
 lbann::objective_functions::mean_squared_error::~mean_squared_error() {
+  m_squared_errors.Empty();
+  m_squared_errors_v.Empty();
   m_sum_squared_errors.Empty();
-  m_sum_squared_errors_v.Empty();
-  m_minibatch_cost.Empty();
 }
 
 void lbann::objective_functions::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
-  Zeros(m_sum_squared_errors, num_neurons, mini_batch_size);
-  Zeros(m_minibatch_cost, mini_batch_size, 1);
+  Zeros(m_squared_errors, num_neurons, mini_batch_size);
+  Zeros(m_sum_squared_errors, mini_batch_size, 1);
 }
 
 void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(m_sum_squared_errors_v, m_sum_squared_errors, IR(0, m_sum_squared_errors.Height()), IR(0, cur_mini_batch_size));
+  View(m_squared_errors_v, m_squared_errors, IR(0, m_squared_errors.Height()), IR(0, cur_mini_batch_size));
 }
 
 /// Compute mean squared error
@@ -62,22 +62,22 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
   double avg_error = 0.0, total_error = 0.0;
   int64_t cur_mini_batch_size = groundtruth_v.Width();
 
-  // copy activations from the previous layer into the temporary matrix m_sum_squared_errors
-  Copy(predictions_v, m_sum_squared_errors); //optimize, need copy?
+  // copy activations from the previous layer into the temporary matrix m_squared_errors
+  Copy(predictions_v, m_squared_errors); //optimize, need copy?
   // compute difference between original and computed input x(Y)-x_bar(m_activations)
-  Axpy(-1., groundtruth_v, m_sum_squared_errors);
+  Axpy(-1., groundtruth_v, m_squared_errors);
   //square the differences
-  EntrywiseMap(m_sum_squared_errors, (std::function<DataType(DataType)>)([](DataType z)->DataType{return z*z;}));
+  EntrywiseMap(m_squared_errors, (std::function<DataType(DataType)>)([](DataType z)->DataType{return z*z;}));
   // sum up squared in a column (i.e., per minibatch/image)
-  Zeros(m_minibatch_cost, cur_mini_batch_size, 1);
-  ColumnSum(m_sum_squared_errors, m_minibatch_cost);
+  Zeros(m_sum_squared_errors, cur_mini_batch_size, 1);
+  ColumnSum(m_squared_errors, m_sum_squared_errors);
 
   // Sum the local, total error
-  const Int local_height = m_minibatch_cost.LocalHeight();
+  const Int local_height = m_sum_squared_errors.LocalHeight();
   for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost.GetLocal(r, 0);
+      total_error += m_sum_squared_errors.GetLocal(r, 0);
   }
-  total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
+  total_error = mpi::AllReduce(total_error, m_sum_squared_errors.DistComm());
   return total_error;
 }
 
