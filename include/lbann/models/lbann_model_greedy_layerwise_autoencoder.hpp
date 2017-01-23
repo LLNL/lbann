@@ -83,6 +83,8 @@ namespace lbann
     /// Get test accuracy
     DataType get_test_accuracy() const { return m_test_accuracy; }
 
+    const std::string & name() { return m_name; }
+
   protected:
     /// Train accuracy over last training epoch
     DataType m_train_accuracy;
@@ -90,6 +92,8 @@ namespace lbann
     DataType m_validation_accuracy;
     /// Test accuracy
     DataType m_test_accuracy;
+    /// Model's name
+    std::string m_name;
   /*private:
     void rewire_index();*/
   };

@@ -61,7 +61,8 @@ lbann::deep_neural_network::deep_neural_network(const uint mini_batch_size,
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
     m_train_accuracy(0.0),
     m_validation_accuracy(0.0),
-    m_test_accuracy(0.0) {}
+    m_test_accuracy(0.0),
+    m_name("deep_neural_network") {}
 
 lbann::deep_neural_network::~deep_neural_network() {}
 

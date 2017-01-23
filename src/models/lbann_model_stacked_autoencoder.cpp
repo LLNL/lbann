@@ -59,7 +59,8 @@ lbann::stacked_autoencoder::stacked_autoencoder(const uint mini_batch_size,
     m_train_accuracy(0.0),
     m_validation_accuracy(0.0),
     m_test_accuracy(0.0),
-    m_reconstruction_accuracy(0.0){
+    m_reconstruction_accuracy(0.0),
+    m_name("stacked_autoencoder") {
     //m_target_layer = new target_layer_unsupervised(comm,mini_batch_size);
     }
 
