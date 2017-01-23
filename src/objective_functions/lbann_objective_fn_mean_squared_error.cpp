@@ -32,7 +32,7 @@ using namespace std;
 using namespace El;
 
 lbann::mean_squared_error::mean_squared_error(lbann_comm* comm) 
-  : objective_fn(), 
+  : objective_fn("mean_squared_error"), 
     m_sum_squared_errors(comm->get_model_grid()), 
     m_sum_squared_errors_v(comm->get_model_grid()), 
     m_minibatch_cost(comm->get_model_grid()) {}

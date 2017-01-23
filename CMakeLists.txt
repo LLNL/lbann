@@ -92,6 +92,7 @@ include(OpenMP)
 include(MPI)
 include(Elemental)
 include(OpenCV)
+include(protobuf)
 
 # Optional dependencies
 if(WITH_CUDA)
