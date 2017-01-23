@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package lbann;
+
+message LbannModel {
+   NetParameter train_net = 1; 
+  
+}
+
+message NetParameter {
+  repeated LayerParameter layer = 1;
+}
+
+message LayerParameter {
+   string type = 1; //Input; FullyConnected; Pooling; Convolution; Softmax; Target; TargetParallel;
+
+   InputParameter input_param = 2;
+   FullyConnectedParameter fully_connected_param = 3;
+   PoolingParameter pooling_param = 4;
+   ConvolutionParameter convolution_param = 5;
+   SoftmaxParameter softmax_param = 6;
+   TargetParameter target_param = 7;
+   TargetParallelParameter target_parallel_param = 8;
+}
+
+message InputParameter {
+}
+
+message FullyConnectedParameter{
+}
+
+message PoolingParameter {
+}
+
+message ConvolutionParameter {
+}
+
+message SoftmaxParameter {
+}
+
+message TargetParameter {
+}
+
+message TargetParallelParameter {
+}
+
