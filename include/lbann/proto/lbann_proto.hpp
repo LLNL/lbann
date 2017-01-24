@@ -33,7 +33,7 @@
 #ifndef LBANN_PROTO_HPP_INCLUDED
 #define LBANN_PROTO_HPP_INCLUDED
 
-#include "lbann/lbann_params.hpp"
+//#include "lbann/lbann_params.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include <string>
 
@@ -48,25 +48,26 @@ public :
     return s_instance;
   }
 
-  /// read messages from a prototxt file. Call this method if you want to
-  /// load an lbann model from file. After calling this you should call the
-  /// appropriate getXXX() method(s) below.
-  void init(const std::string &filename);
+  void init(const char *filename = 0);
+
+  void writePrototextFile(const char *filename);
+
 
   /// Returns a TrainingParam object. If init() was not called, the returned object
   /// will contain whatever default values are defined in the TrainingParam ctor.
   /// If init() was called, some or all defaults will be overriden by the contents
   /// of the prototxt file
-  TrainingParams & getTrainingParams();
+  //TrainingParams & getTrainingParams();
 
-  PerformanceParams & getPerformanceParams();
+  //PerformanceParams & getPerformanceParams();
 
-  NetworkParams & getNetworkParams();
+  //NetworkParams & getNetworkParams();
 
-  SystemParams & getSystemParams();
+  //SystemParams & getSystemParams();
 
   /// Sets internal prototcol buffer fields from the TrainingParams object.
   /// You should call this prior to calling write()
+  /*
   void load(const TrainingParams &training);
 
   void load(const PerformanceParams &performance);
@@ -74,24 +75,29 @@ public :
   void load(const NetworkParams &network);
 
   void load(const SystemParams &System);
+  
 
   /// Writes a prototxt file that saves an lbann model. 
   /// You should call the appropriate load() methods prior to calling write()
   void write(const std::string &filename);
+  */
+
+  lbann_data::LbannPB & getLbannPB() { return m_pb; }
 
 private:
+  static lbann_proto *s_instance;
 
   lbann_proto();
   ~lbann_proto();
   lbann_proto(lbann_proto &) {}
   lbann_proto operator=(lbann_proto&) { return *this; }
 
-  static lbann_proto *s_instance;
+  //bool m_init_from_prototxt;
 
-  bool m_init_from_prototxt;
+  lbann_data::LbannPB m_pb;
 };
 
-}
+} //namespace lbann
 
 #endif //LBANN_PROTO_HPP_INCLUDED
 

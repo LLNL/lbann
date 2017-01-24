@@ -1,46 +1,141 @@
 syntax = "proto3";
 
-package lbann;
+package lbann_data;
 
-message LbannModel {
-   NetParameter train_net = 1; 
-  
+message LbannPB {
+  Model train_net = 1; 
+
+  string optimizer = 10; //adagrad, rmsprop, adam, sgd 
+  string objective_fn = 11; //categorical_cross_entropy, mean_squared_error
+  uint32 mini_batch_size = 12;
+
+  //string execution_mode = 13; 
+  //   training, validation, testing, prediction, invalid
+  //   do we need these? for future development
 }
 
-message NetParameter {
-  repeated LayerParameter layer = 1;
+message Model {
+  string name = 1; //dnn, stacked_autoencoder, layerwise_autoencoder
+
+  repeated Layer layer = 2;
+
+  // checknan, debug, dump_activations, etc;
+  // for complete list, see: lbann/include/lbann/callbacks
+  repeated string callback = 3; 
 }
 
-message LayerParameter {
-   string type = 1; //Input; FullyConnected; Pooling; Convolution; Softmax; Target; TargetParallel;
+message Layer {
+   uint32 index = 2; //corresponds to index wrt std::vector<Layer*>
 
-   InputParameter input_param = 2;
-   FullyConnectedParameter fully_connected_param = 3;
-   PoolingParameter pooling_param = 4;
-   ConvolutionParameter convolution_param = 5;
-   SoftmaxParameter softmax_param = 6;
-   TargetParameter target_param = 7;
-   TargetParallelParameter target_parallel_param = 8;
+   // a Layer should contain exactly one of the following
+   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;
+   InputDistributedMiniBatch input_distributed_minibatch = 9;
+   Input input = 10;
+   FullyConnected fully_connected = 11;
+   Pooling pooling = 12;
+   Convolution convolution = 13;
+   Softmax softmax = 14;
+   Target target = 15;
+   TargetParallel target_parallel = 16;
+   TargetDistributedMinibatch target_distributed_minibatch = 17;
+
+
 }
 
-message InputParameter {
+// Layer types start here
+message Input {
+  int32 mini_batch_size = 1;
 }
 
-message FullyConnectedParameter{
+message InputDistributedMiniBatchParallelIO {
+  uint32 num_parallel_readers = 1;
 }
 
-message PoolingParameter {
+message InputDistributedMiniBatch {
 }
 
-message ConvolutionParameter {
+enum WeightInitialization {
+  //see: lbann/include/lbann/lbann_base.hpp
+  ZERO = 0;
+  UNIFORM = 1;
+  NORMAL = 2;
+  GLOROT_NORMAL = 3;
+  HE_NORMAL = 4;
+  HE_UNIFORM = 5;
 }
 
-message SoftmaxParameter {
+enum ActivationType {
+  //see: lbann/include/lbann/layers/lbann_layer_activations.hpp
+  SIGMOID = 0;
+  TANH = 1;
+  RELU = 2;
+  ID = 3;
+  LEAKY_RELU = 4;
+  SMOOTH_RELU = 5;
+  ELU = 6;
 }
 
-message TargetParameter {
+message FullyConnected {
+  uint32 num_prev_neurons = 1;
+  uint32 num_neurons = 2;
+  WeightInitialization weight_initialization = 3;
+  ActivationType activation_type = 4;
+
+  //?? std::vector<regularizer*> regs,
 }
 
-message TargetParallelParameter {
+enum PoolMode {
+  //see: lbann/include/lbann/lbann_base.hpp
+  MAX = 0;
+  AVERAGE = 1;
+  AVERAGE_NO_PAD = 2;
 }
+
+message Pooling {
+  int32 num_dims = 1;
+  int32 num_channels = 2;
+  repeated int32 input_dims = 3;
+  repeated int32 pool_dims = 4;
+  repeated int32 pool_pads = 5;
+  repeated int32 pool_strides = 6;
+  PoolMode pool_mode = 7;
+  ActivationType activation_type = 8;
+
+  //?? std::vector<regularizer*> regs,
+}
+
+message Convolution {
+  uint32 num_dims = 1;
+  uint32 num_input_channels = 2;
+  repeated uint32 input_dims = 3;
+  uint32 num_output_channels = 4;
+  repeated uint32  filter_dims = 5;
+  repeated uint32  conv_pads = 6;
+  repeated uint32  conv_strides = 7;
+  uint32 mini_batch_size = 8;
+  WeightInitialization weight_initialization = 9;
+  ActivationType activation_type = 10;
+   
+  //?? std::vector<regularizer*> regs,
+}
+
+message Softmax {
+  uint32 num_prev_neurons = 1;
+  uint32 num_neurons = 2;
+  WeightInitialization weight_initialization = 3;
+}
+
+message Target {
+  //TODO
+}
+
+message TargetParallel {
+  //TODO
+}
+
+message TargetDistributedMinibatch {
+  //TODO
+}
+// end of Layer types
+
 
