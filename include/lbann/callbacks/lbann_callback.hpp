@@ -111,7 +111,7 @@ public:
   void set_name(std::string name) { m_name = name; }
 
   /** Returns the callback's name **/
-  const std::string name() { return m_name; }
+  const std::string & name() { return m_name; }
 protected:
   /** Optional summarizer for the callbacks to use. */
   lbann_summary* summarizer;
