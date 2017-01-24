@@ -36,9 +36,8 @@ namespace lbann
     target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
 
     void setup(int num_prev_neurons);
-    // Overrides regular forward prop; target layer doesn't involve sparsity, etc.
-    DataType forwardProp(DataType prev_WBL2NormSum);
-    void backProp();
+    void fp_linearity();
+    void bp_linearity();
     bool update();
 
   public:
@@ -46,8 +45,6 @@ namespace lbann
     Mat Y_local;
     CircMat Ys;
   protected:
-    void fp_linearity() {}
-    void bp_linearity() {}
   };
 }
 

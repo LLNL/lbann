@@ -39,7 +39,7 @@ using namespace El;
 lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression), 
     distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
-    Ys(comm->get_model_grid()), YsColMax(comm->get_model_grid()), YsColMaxStar(comm->get_model_grid())
+    Ys(comm->get_model_grid())
 {
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
@@ -74,12 +74,6 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
-  if (!is_for_regression()) {
-    Zeros(YsColMax, Layer::m_mini_batch_size, 1); /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-    Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
-    Zeros(m_max_index, Layer::m_mini_batch_size, 1);
-    Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1);
-  }
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
   Zeros(*m_activations, NumNeurons, m_mini_batch_size);
@@ -89,15 +83,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   m_num_data_per_epoch = 0;
 }
 
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(DataType prev_WBL2NormSum) {
-  if (is_for_regression())
-      return forwardProp_regression(prev_WBL2NormSum);
-  else
-      return forwardProp_classification(prev_WBL2NormSum);
-}
-
-///@todo update this to use the new fp_linearity framework
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_classification(DataType prev_WBL2NormSum) {
+void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
   if(is_current_root()) {
     /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -105,22 +91,9 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   }
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
   if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
     throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
   }
-
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-  DistMat X_v;
-  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
-  Mat Y_local_v;
-  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
-
-  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
-  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
-  target_layer::fp_set_std_matrix_view();
-
   /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
   distribute_from_local_matrix(Y_local, Ys);
   Copy(Ys, *m_activations);
@@ -129,57 +102,16 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
   neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
 
-  double num_errors;
   for (auto&& m : neural_network_model->metrics) {
-    num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
+    double num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
     m->record_error(num_errors, curr_mini_batch_size);
   }
 
-  return num_errors;
+  return;
 }
 
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regression(DataType prev_WBL2NormSum) {
-  int num_samples_in_batch = fetch_to_local_matrix(Y_local);
-  if(is_current_root()) {
-    /// Only update the number of samples processed by this parallel reader, when it is the current root
-    target_layer::update_num_samples_processed(num_samples_in_batch);
-  }
 
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-  if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
-    throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of responses does not match the current mini-batch size.");
-  }
-
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-  DistMat X_v;
-  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
-  Mat Y_local_v;
-  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
-
-  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
-  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
-  target_layer::fp_set_std_matrix_view();
-
-  /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-  distribute_from_local_matrix(Y_local, Ys);
-  Copy(Ys, *m_activations);
-
-  /// Compute and record the objective function score
-  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
-
-  double SSE = 0;
-  for (auto&& m : neural_network_model->metrics) {
-    SSE = m->compute_metric(*m_prev_activations_v, *m_activations_v);
-    m->record_error(SSE, curr_mini_batch_size);
-  }
-
-  return SSE;
-}
-
-void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
+void lbann::target_layer_distributed_minibatch_parallel_io::bp_linearity() {
   /// Use the objective function to compute the error between the predictions and the target data
   neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v, *m_activations_v, *m_error_signal);
 }

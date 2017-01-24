@@ -164,16 +164,16 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, l
   //@todo; optimize this? change start index from 0 to phase_index
   for (size_t l = 0; l <= phase_end; ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  // *num_errors += (long) L2NormSum;
+  // *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
 
   // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  ++m_current_step;
+  // m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
+  // ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -227,7 +227,7 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch(long *num_samples,
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
   }
   //*num_errors += (long) L2NormSum;
   //*num_samples += m_mini_batch_size;

@@ -71,7 +71,7 @@ void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double* 
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;
   for (size_t l = 1; l < m_layers.size(); l++)
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
 
   // backward propagation (mini-batch)
   for (size_t l = m_layers.size() - 1; l >= 1; l--) {
@@ -159,7 +159,7 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_forward_prop_end_cbs();
@@ -238,7 +238,7 @@ bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
     do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
 

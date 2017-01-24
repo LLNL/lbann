@@ -89,7 +89,7 @@ lbann::Layer::~Layer() {
   delete m_prev_activations_v;
 }
 
-DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
+void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
@@ -116,7 +116,7 @@ DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
   fp_time += get_time() - fp_start;
-  return prev_WBL2NormSum;
+  return;
 }
 
 void lbann::Layer::backProp() {

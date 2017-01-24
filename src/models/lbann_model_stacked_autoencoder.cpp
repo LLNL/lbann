@@ -225,16 +225,16 @@ bool lbann::stacked_autoencoder::train_mini_batch(long *num_samples,
   for (size_t l = 0; l <= m_num_layers/2; ++l) {
   //for (size_t l = 0; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  // *num_errors += (long) L2NormSum;
+  // *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
 
   // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  ++m_current_step;
+  // m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
+  // ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -288,10 +288,10 @@ bool lbann::stacked_autoencoder::reconstruction_mini_batch(long *num_samples,
   cout << " In Recon m_num_layers: " << m_num_layers << " m_layers size " << m_layers.size() << endl;
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
+  // *num_errors += (long) L2NormSum;
+  // *num_samples += m_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers
