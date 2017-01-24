@@ -187,6 +187,8 @@ add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 target_link_libraries(lbann ${MPI_CXX_LIBRARIES})
 target_link_libraries(lbann ${Elemental_LIBRARIES})
 target_link_libraries(lbann ${OpenCV_LIBRARIES})
+target_link_libraries(lbann ${PROTOBUF_LIBRARIES})
+
 if(LBANN_HAS_CUDA)
   target_link_libraries(lbann ${CUDA_LIBRARIES})
 endif()
