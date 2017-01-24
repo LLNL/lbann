@@ -46,6 +46,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   m_z_score = false;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
+  setName("ImageNet");
 }
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
@@ -61,6 +62,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& sourc
     m_mean(source.m_mean), 
     m_z_score(source.m_z_score)
 {
+  setName("ImageNet");
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 }

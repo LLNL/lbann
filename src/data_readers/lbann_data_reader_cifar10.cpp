@@ -38,6 +38,7 @@ lbann::DataReader_CIFAR10::DataReader_CIFAR10(const EGrid& grid, int batchSize)
 {
     ImageWidth = 32;
     ImageHeight = 32;	
+    setName("CIFAR10");
 }
 
 lbann::DataReader_CIFAR10::~DataReader_CIFAR10()

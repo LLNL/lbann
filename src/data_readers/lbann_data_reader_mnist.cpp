@@ -49,6 +49,7 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
   m_variance = false;
   m_mean = false;
   m_z_score = false;
+  setName("MNIST");
 }
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
@@ -63,6 +64,7 @@ lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
   // No need to deallocate data on a copy constuctor
 
   clone_image_data(source);
+  setName("MNIST");
 }
 
 lbann::DataReader_MNIST::~DataReader_MNIST()
