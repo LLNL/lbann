@@ -64,11 +64,11 @@ void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch
 
 void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(YsColMax_v, YsColMax, IR(0, YsColMax.Height()), IR(0, cur_mini_batch_size));
-  View(YsColMaxStar_v, YsColMaxStar, IR(0, YsColMaxStar.Height()), IR(0, cur_mini_batch_size));
-  View(m_max_index_v, m_max_index, IR(0, m_max_index.Height()), IR(0, cur_mini_batch_size));
-  View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, m_reduced_max_indices.Height()), IR(0, cur_mini_batch_size));
-  //  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, cur_mini_batch_size));
+  // Note that these matrices are transposed (column sum matrices) and thus the mini-batch size effects the number of rows, not columns
+  View(YsColMax_v, YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax.Width()));
+  View(YsColMaxStar_v, YsColMaxStar, IR(0, cur_mini_batch_size), IR(0, YsColMaxStar.Width()));
+  View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size), IR(0, m_max_index.Width()));
+  View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
 }
 
 double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
