@@ -32,7 +32,7 @@ using namespace std;
 using namespace El;
 
 lbann::categorical_cross_entropy::categorical_cross_entropy(lbann_comm* comm) 
-  : objective_fn(), 
+  : objective_fn("categorical_cross_entropy"), 
     m_cross_entropy_cost(comm->get_model_grid()),
     m_cross_entropy_cost_v(comm->get_model_grid()),
     m_minibatch_cost(comm->get_model_grid()) {}

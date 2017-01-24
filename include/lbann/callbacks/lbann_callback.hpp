@@ -51,7 +51,7 @@ public:
     batch_interval(_batch_interval), summarizer(_summarizer) {}
   void set_summarizer(lbann_summary* _summarizer) { summarizer = _summarizer; }
   /** Called once to set up the callback (after all layers are set up). */
-  virtual void setup(model* m) {}
+  virtual void setup(model* m) {};
   /** Called at the beginning of training. */
   virtual void on_train_begin(model* m) {}
   /** Called at the end of training. */
@@ -106,9 +106,17 @@ public:
 
   /** Batch methods should once every this many steps. */
   const int batch_interval;
+
+  /** sets the callback's name **/
+  void set_name(std::string name) { m_name = name; }
+
+  /** Returns the callback's name **/
+  const std::string & name() { return m_name; }
 protected:
   /** Optional summarizer for the callbacks to use. */
   lbann_summary* summarizer;
+  /** string representation of the callback, for use with protocol buffers **/
+  std::string m_name;
 };
 
 }  // namespace lbann

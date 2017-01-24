@@ -23,34 +23,52 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
+#include "lbann/proto/lbann_proto.hpp"
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
 
-namespace lbann {
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <fcntl.h>
+#include <unistd.h>
 
-/**
- * Check matrices for whether they include any NaNs or infs to help debugging.
- * This will kill the rank if such values are discovered.
- */
-class lbann_callback_checknan : public lbann_callback {
-public:
-  lbann_callback_checknan() : lbann_callback() { set_name("checknan"); }
-  /** Check that activations are good. */
-  void on_forward_prop_end(model* m, Layer* l);
-  /** Check that gradients are good. */
-  void on_backward_prop_end(model* m, Layer* l);
-  /** Check that weights are good. */
-  void on_batch_end(model* m);
-private:
-  /** Return true if there are no problems with m. */
-  bool is_good(const DistMat& m);
-};
+using google::protobuf::io::FileOutputStream;
 
-}  // namespace lbann
+using namespace std;
+using namespace lbann;
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
+
+lbann_proto * lbann_proto::s_instance = new lbann_proto;
+
+lbann_proto::lbann_proto() {
+}
+
+lbann_proto::~lbann_proto() {
+  delete s_instance;
+}
+
+void lbann_proto::writePrototextFile(const char *fn) {
+  int fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  FileOutputStream* output = new FileOutputStream(fd);
+  if (not google::protobuf::TextFormat::Print(m_pb, output)) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << " lbann_proto::writePrototextFile() - failed to write prototext file: " << fn;
+    throw runtime_error(err.str());
+  }
+  delete output;
+  close(fd);
+
+/*
+  string s;
+  google::protobuf::TextFormat::PrintToString(m_pb, &s);
+  cout << "as string: " << s << endl;
+  */
+}
+
+

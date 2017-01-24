@@ -37,10 +37,14 @@ namespace lbann
   class objective_fn {
   public:
     objective_fn() {}
+    objective_fn(std::string name): m_name(name) {}
     virtual ~objective_fn() {}
-    virtual void setup(int num_neurons, int mini_batch_size) {}
-    virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
-    virtual DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {}
+    virtual void setup(int num_neurons, int mini_batch_size) = 0;
+    virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) = 0;
+    virtual DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) = 0;
+    const std::string & name() { return m_name; }
+  private:
+    std::string m_name;
   };
 }
 

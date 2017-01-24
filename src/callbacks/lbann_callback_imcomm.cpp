@@ -35,14 +35,14 @@ namespace lbann {
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
                                              lbann_summary* _summarizer) :
   lbann_callback(1, _summarizer), ct(ct) {
-  
+  set_name("imcomm");  
 }
 
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
                                              std::unordered_set<uint> _layers,
                                              lbann_summary* _summarizer) :
   lbann_callback(1, _summarizer), ct(ct), layer_indices(_layers) {
-
+  set_name("imcomm");  
 }
 
 void lbann_callback_imcomm::setup(model* m) {

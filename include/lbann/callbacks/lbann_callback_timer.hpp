@@ -43,7 +43,9 @@ namespace lbann {
 class lbann_callback_timer : public lbann_callback {
 public:
   lbann_callback_timer(lbann_summary* _summarizer = nullptr) :
-    lbann_callback(1, _summarizer) {}
+    lbann_callback(1, _summarizer) {
+      set_name("timer");
+    }
   /** Start recording time for the epoch. */
   void on_epoch_begin(model* m);
   /** Report epoch and mean minibatch times. */

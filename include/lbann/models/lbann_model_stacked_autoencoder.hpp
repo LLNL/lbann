@@ -91,6 +91,8 @@ namespace lbann
     /// Get test accuracy
     DataType get_reconstruction_accuracy() const { return m_reconstruction_accuracy; }
 
+    /// Returns the model's name
+    const std::string & name() { return m_name; }
 
     //vector<Layer>& get_layers() const {return m_layers;}
 
@@ -105,6 +107,8 @@ namespace lbann
     DataType m_reconstruction_accuracy;
     size_t m_num_layers;
     target_layer_unsupervised* m_target_layer;
+    /// the Model's name
+    std::string m_name;
   };
 }
 
