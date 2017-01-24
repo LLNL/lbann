@@ -42,7 +42,7 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
-
+  setName("nci");
 }
 
 lbann::data_reader_nci::data_reader_nci(int batchSize)
@@ -55,7 +55,7 @@ lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
   m_num_features(source.m_num_features),m_labels(source.m_labels),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
   {
-
+    setName("nci");
   }
 
 lbann::data_reader_nci::~data_reader_nci()

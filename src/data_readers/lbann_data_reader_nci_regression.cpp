@@ -42,6 +42,7 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize, boo
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_responses = 1;
+  setName("nci_regression");
 }
 
 lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize)
@@ -54,6 +55,7 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_
   m_num_features(source.m_num_features),m_responses(source.m_responses),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
 {
+  setName("nci_regression");
 }
 
 lbann::data_reader_nci_regression::~data_reader_nci_regression()

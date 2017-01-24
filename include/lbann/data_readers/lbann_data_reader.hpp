@@ -56,6 +56,7 @@ namespace lbann
       m_use_alt_last_mini_batch_size(false),
       m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize), m_last_mini_batch_stride(batchSize) 
     {}
+    
     DataReader(int batchSize) :
       DataReader(batchSize, true) {}
     
@@ -243,6 +244,12 @@ namespace lbann
     /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
     bool loadFromCheckpointShared(persist& p, const char* name);
 
+    /** \brief Returns this class's name **/
+    const std::string & name() { return m_name; }
+
+    /** \brief Sets this class's name **/
+    void setName(std::string name) { m_name = name; }
+
   protected:
     int							BatchSize;
     int 						CurrentPos;
@@ -263,6 +270,8 @@ namespace lbann
 
     std::vector<int> 			ShuffledIndices;
     std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
+
+    std::string m_name;
 	};
 
 }
