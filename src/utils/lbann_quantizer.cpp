@@ -1246,11 +1246,12 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
       if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
     }
   }
+  // If there are no values of a sign, select threshold such that none are sent.
   if (pos_thresh == std::numeric_limits<DataType>::max()) {
-    pos_thresh = std::numeric_limits<DataType>::min();
+    pos_thresh = -neg_thresh;
   }
   if (neg_thresh == -std::numeric_limits<DataType>::max()) {
-    neg_thresh = -std::numeric_limits<DataType>::min();
+    neg_thresh = -pos_thresh;
   }
   proportion_time += get_time() - proportion_start;
   return { pos_thresh, neg_thresh };
