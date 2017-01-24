@@ -152,14 +152,14 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
         comm, weights_gradient, quantization_errors[l], 64,
-        im_quantization_errors[l], false);
+        im_quantization_errors[l]);
       break;
-    case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
+      /*case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
       // TODO: Don't hardcode proportion.
       quantizer.intermodel_sum_adaptive_threshold_quantized(
         comm, weights_gradient, quantization_errors[l], 64,
         im_quantization_errors[l], true);
-      break;
+        break;*/
     }
     double im_time = get_time() - start_time;
     if (summarizer != nullptr && ct != NONE) {
