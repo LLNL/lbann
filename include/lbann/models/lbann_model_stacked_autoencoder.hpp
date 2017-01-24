@@ -67,42 +67,21 @@ namespace lbann
      */
     void train(int num_epochs, int evaluation_frequency=0);
     /// Training step on one mini-batch
-    bool train_mini_batch(long *num_samples, long *num_errors);
+    bool train_mini_batch();
 
     /// Evaluate neural network
-    DataType evaluate(execution_mode mode=execution_mode::testing) { }
+    void evaluate(execution_mode mode=execution_mode::testing) { }
     /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch(long *num_samples, long *num_errors) { }
+    bool evaluate_mini_batch() { }
 
     /// Reconstruction uses unsupervised target layer
-    DataType reconstruction();
+    void reconstruction();
 
-    bool reconstruction_mini_batch(long *num_samples, long *num_errors);
-
-    /// Get train accuracy
-    /** Classification accuracy over the last training epoch
-     */
-    DataType get_train_accuracy() const { return m_train_accuracy; }
-    /// Get validation accuracy
-    DataType get_validate_accuracy() const { return m_validation_accuracy; }
-    /// Get test accuracy
-    DataType get_test_accuracy() const { return m_test_accuracy; }
-
-    /// Get test accuracy
-    DataType get_reconstruction_accuracy() const { return m_reconstruction_accuracy; }
-
+    bool reconstruction_mini_batch();
 
     //vector<Layer>& get_layers() const {return m_layers;}
 
   protected:
-    /// Train accuracy over last training epoch
-    DataType m_train_accuracy;
-    /// Validation accuracy
-    DataType m_validation_accuracy;
-    /// Test accuracy
-    DataType m_test_accuracy;
-    /// Reconstruction accuracy
-    DataType m_reconstruction_accuracy;
     size_t m_num_layers;
     target_layer_unsupervised* m_target_layer;
   };

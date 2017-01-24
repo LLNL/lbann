@@ -38,10 +38,7 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
                                                 objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
-    m_train_accuracy(0.0),
-    m_validation_accuracy(0.0),
-    m_test_accuracy(0.0) {}
+  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac) {}
 
 lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 
@@ -107,11 +104,10 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    long num_samples = 0;
-    long num_errors = 0;
+    for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(phase_index, &num_samples, &num_errors);
+      finished_epoch = train_mini_batch(phase_index);
     } while(!finished_epoch);
 
 
@@ -152,8 +148,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
   do_train_end_cbs();
 }
 
-bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, long *num_samples,
-                                                  long *num_errors)
+bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
 {
   size_t phase_end = phase_index+2;
   do_batch_begin_cbs();
@@ -167,13 +162,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, l
     m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-  // *num_errors += (long) L2NormSum;
-  // *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
-
-  // Update training accuracy
-  // m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  // ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -196,7 +185,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index, l
   return data_set_processed;
 }
 
-DataType lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
+void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
 {
   // Set the execution mode
   m_execution_mode = mode;
@@ -206,11 +195,10 @@ DataType lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  long num_samples = 0; //not use
-  long num_errors = 0; //not use
+  for (auto&& m : metrics) { m->reset_metric(); }
   bool finished_epoch;
   do {
-    finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);
+    finished_epoch = evaluate_mini_batch();
   } while(!finished_epoch);
 
 
@@ -218,19 +206,16 @@ DataType lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
     layer->epoch_reset();
   }*/
 
-  return m_test_accuracy;
+  return;
 }
 
-bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch(long *num_samples,
-                                                     long *num_errors)
+bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch()
 {
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
     m_layers[l]->forwardProp();
   }
-  //*num_errors += (long) L2NormSum;
-  //*num_samples += m_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers

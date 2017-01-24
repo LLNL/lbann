@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
     // train/test
     for (int t = 0; t < trainParams.EpochCount; t++) {
       dnn.train(1, true);
-      DataType accuracy = dnn.evaluate();
+      dnn.evaluate();
     }
   }
   catch (lbann_exception& e) { lbann_report_exception(e, comm); }

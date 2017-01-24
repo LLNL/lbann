@@ -117,12 +117,12 @@ class sequential_model : public model
      */
     virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
     /// Training step on one mini-batch
-    virtual bool train_mini_batch(long *num_samples, long *num_errors) = 0;
+    virtual bool train_mini_batch() = 0;
 
     /// Evaluate model
-    virtual DataType evaluate(execution_mode mode) = 0;
+    virtual void evaluate(execution_mode mode) = 0;
     /// Evaluation step on one mini-batch
-    virtual bool evaluate_mini_batch(long *num_samples, long *num_errors) = 0;
+    virtual bool evaluate_mini_batch() = 0;
 #if 0
     /// Prediction step on one mini-batch
     /** @todo This is old and likely broken */

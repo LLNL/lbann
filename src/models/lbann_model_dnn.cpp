@@ -118,12 +118,10 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    long num_samples = 0;
-    long num_errors = 0;
     for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(&num_samples, &num_errors);
+      finished_epoch = train_mini_batch();
     } while(!finished_epoch);
 
     if(evaluation_frequency > 0
@@ -149,8 +147,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
   do_train_end_cbs();
 }
 
-bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
-                                                  long *num_errors)
+bool lbann::deep_neural_network::train_mini_batch()
 {
   do_batch_begin_cbs();
 
@@ -184,7 +181,7 @@ bool lbann::deep_neural_network::train_mini_batch(long *num_samples,
   return data_set_processed;
 }
 
-DataType lbann::deep_neural_network::evaluate(execution_mode mode)
+void lbann::deep_neural_network::evaluate(execution_mode mode)
 {
   switch(mode) {
   case execution_mode::validation:
@@ -203,12 +200,10 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  long num_samples = 0;
-  long num_errors = 0;
   for (auto&& m : metrics) { m->reset_metric(); }
   bool finished_epoch;
   do {
-    finished_epoch = evaluate_mini_batch(&num_samples, &num_errors);
+    finished_epoch = evaluate_mini_batch();
   } while(!finished_epoch);
 
   switch(mode) {
@@ -225,25 +220,20 @@ DataType lbann::deep_neural_network::evaluate(execution_mode mode)
     throw lbann_exception("Illegal execution mode in evaluate function");
   }
 
-  return 0.0 /*m_test_accuracy*/;
+  return;
 }
 
-bool lbann::deep_neural_network::evaluate_mini_batch(long *num_samples,
-                                                     long *num_errors)
+bool lbann::deep_neural_network::evaluate_mini_batch()
 {
   do_batch_evaluate_begin_cbs();
 
   // forward propagation (mini-batch)
   do_model_evaluate_forward_prop_begin_cbs();
-  DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
     do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forwardProp();
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
-
-  // *num_errors += (long) L2NormSum;
-  // *num_samples += m_current_mini_batch_size;
   do_model_evaluate_forward_prop_end_cbs();
 
   // Update layers

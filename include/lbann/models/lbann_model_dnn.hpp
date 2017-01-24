@@ -64,12 +64,12 @@ namespace lbann
      */
     void train(int num_epochs, int evaluation_frequency=0);
     /// Training step on one mini-batch
-    bool train_mini_batch(long *num_samples, long *num_errors);
+    bool train_mini_batch();
 
     /// Evaluate neural network
-    DataType evaluate(execution_mode mode=execution_mode::testing);
+    void evaluate(execution_mode mode=execution_mode::testing);
     /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch(long *num_samples, long *num_errors);
+    bool evaluate_mini_batch();
   };
 }
 
