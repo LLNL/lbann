@@ -40,9 +40,9 @@ namespace lbann
     static const char* __attribute__((used)) _to_string(obj_fn_type o) {
       switch(o) {
       case obj_fn_type::categorical_cross_entropy:
-        return "categorical_cross_entropy";
+        return "categorical cross entropy";
       case obj_fn_type::mean_squared_error:
-        return "mean_squared_error";
+        return "mean squared error";
       default:
         throw lbann_exception("Invalid obj_fn type specified");
       }

@@ -99,7 +99,7 @@ void lbann::target_layer::epoch_print() const {
     std::vector<double> avg_obj_fn_costs(comm->get_num_models());
     comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
     for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
-      std::cout << "Model " << i << " average cross entropy cost: " << avg_obj_fn_costs[i] <<
+      std::cout << "Model " << i << " average " << _to_string(neural_network_model->obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
         std::endl;
     }
   } else {

@@ -65,8 +65,8 @@ void lbann_callback_print::on_epoch_end(model* m) {
         for (size_t i = 0; i < train_scores.size(); ++i) {
           std::cout << "Model " << i;
           std::cout << " @" << m->get_cur_step() << " steps";
-          std::cout << " Training accuracy: " << train_scores[i] << "%";
-          std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation accuracy: " << validate_scores[i] << "%";
+          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << "%";
+          std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation " << _to_string(metric->type) << ": " << validate_scores[i] << _disp_unit(metric->type);
           std::cout << std::endl;
         }
       } else {
@@ -90,8 +90,8 @@ void lbann_callback_print::on_test_end(model* m) {
         std::vector<double> test_scores(comm->get_num_models());
         comm->intermodel_gather(test_score, test_scores);
         for (size_t i = 0; i < test_scores.size(); ++i) {
-          std::cout << "Model " << i << " @" << m->get_cur_testing_step() << " testing steps external validation accuracy: ";
-          std::cout << test_scores[i] << "%" << std::endl;
+          std::cout << "Model " << i << " @" << m->get_cur_testing_step() << " testing steps external validation " << _to_string(metric->type) << ": ";
+          std::cout << test_scores[i] << _disp_unit(metric->type) << std::endl;
         }
       } else {
         comm->intermodel_gather(test_score, comm->get_intermodel_master());
