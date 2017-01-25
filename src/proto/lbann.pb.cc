@@ -2,7 +2,7 @@
 // source: lbann.proto
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
-#include "../../include/lbann/proto/lbann.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 #include <algorithm>
 

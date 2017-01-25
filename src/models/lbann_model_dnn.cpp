@@ -124,7 +124,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(&num_samples, &num_errors);
+      finished_epoch = train_mini_batch();
 
       // save a checkpoint if needed
       if (need_checkpoint()) {
