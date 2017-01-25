@@ -54,6 +54,7 @@ namespace lbann
       DistMat m_cross_entropy_cost_v;
       /** Colume-wise sum of the costs of a minibatch. */
       ColSumMat m_minibatch_cost;
+      ColSumMat m_minibatch_cost_v;
     };
   }
 }

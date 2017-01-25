@@ -37,7 +37,8 @@ lbann::objective_functions::categorical_cross_entropy::categorical_cross_entropy
     m_log_predictions_v(comm->get_model_grid()),
     m_cross_entropy_cost(comm->get_model_grid()),
     m_cross_entropy_cost_v(comm->get_model_grid()),
-    m_minibatch_cost(comm->get_model_grid())
+    m_minibatch_cost(comm->get_model_grid()),
+    m_minibatch_cost_v(comm->get_model_grid())
 {
   this->type = obj_fn_type::categorical_cross_entropy;
 }
@@ -48,6 +49,7 @@ lbann::objective_functions::categorical_cross_entropy::~categorical_cross_entrop
   m_cross_entropy_cost.Empty();
   m_cross_entropy_cost_v.Empty();
   m_minibatch_cost.Empty();
+  m_minibatch_cost_v.Empty();
 }
 
 void lbann::objective_functions::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
@@ -60,6 +62,8 @@ void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_vi
   // Set the view based on the size of the current mini-batch
   View(m_log_predictions_v, m_log_predictions, IR(0, m_log_predictions.Height()), IR(0, cur_mini_batch_size));
   View(m_cross_entropy_cost_v, m_cross_entropy_cost, IR(0, m_cross_entropy_cost.Height()), IR(0, cur_mini_batch_size));
+  // Note that these matrices are transposed (column sum matrices) and thus the mini-batch size effects the number of rows, not columns
+  View(m_minibatch_cost_v, m_minibatch_cost, IR(0, cur_mini_batch_size), IR(0, m_minibatch_cost.Width()));
 }
 
 /// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
@@ -75,14 +79,14 @@ double lbann::objective_functions::categorical_cross_entropy::compute_categorica
 
     Hadamard(groundtruth_v, m_log_predictions_v, m_cross_entropy_cost_v);
     Zeros(m_minibatch_cost, cur_mini_batch_size, 1); // Clear the entire array
-    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost); /// @todo should this be a view
+    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost_v);
 
     // Sum the local, total error
-    const Int local_height = m_minibatch_cost.LocalHeight();
+    const Int local_height = m_minibatch_cost_v.LocalHeight();
     for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost.GetLocal(r, 0);
+      total_error += m_minibatch_cost_v.GetLocal(r, 0);
     }
-    total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
+    total_error = mpi::AllReduce(total_error, m_minibatch_cost_v.DistComm());
 
     return total_error;
 }

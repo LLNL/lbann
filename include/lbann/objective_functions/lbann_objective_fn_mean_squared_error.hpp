@@ -51,6 +51,7 @@ namespace lbann
       DistMat m_squared_errors_v;
       /** Colume-wise sum of the costs of a minibatch. */
       ColSumMat m_sum_squared_errors;
+      ColSumMat m_sum_squared_errors_v;
     };
   }
 }
