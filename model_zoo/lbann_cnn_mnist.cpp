@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
 #else // __LIB_CUDNN
         cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
-        deep_neural_network dnn(trainParams.MBSize, comm, new categorical_cross_entropy(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};

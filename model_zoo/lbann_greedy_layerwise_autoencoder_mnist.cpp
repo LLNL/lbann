@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new mean_squared_error(comm), lfac, optimizer);
+        greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
