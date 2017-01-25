@@ -169,8 +169,9 @@ int main(int argc, char* argv[])
         optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
       }
       layer_factory* lfac = new layer_factory();
-      deep_neural_network dnn(trainParams.MBSize, comm, new categorical_cross_entropy(comm), lfac, optimizer);
-
+      deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+      metrics::categorical_accuracy acc(comm);
+      dnn.add_metric(&acc);
       std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                              std::make_pair(execution_mode::validation, &nci_validation_set),
                                                              std::make_pair(execution_mode::testing, &nci_testset)};
@@ -235,7 +236,7 @@ int main(int argc, char* argv[])
       for(int t = 0; t < trainParams.EpochCount; t++) {
         dnn.train(1,true);
         // testing
-        DataType accuracy = dnn.evaluate(execution_mode::testing);
+        dnn.evaluate(execution_mode::testing);
       }
 
       if (trainParams.DumpWeights) {

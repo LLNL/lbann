@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
             cout << "testing " << t << "th round ..." << endl;
           }
           // testing
-          DataType accuracy = dnn.evaluate(execution_mode::testing);
+          dnn.evaluate(execution_mode::testing);
         }
         if (comm->am_world_master()) {
           cout << "completing..." << endl;
