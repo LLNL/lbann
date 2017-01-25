@@ -29,6 +29,8 @@
 #ifndef LBANN_QUANTIZER_HPP_INCLUDED
 #define LBANN_QUANTIZER_HPP_INCLUDED
 
+#include <unordered_map>
+
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
@@ -351,6 +353,10 @@ private:
   double proportion_time;
   /** Most recent number of quantized entries. */
   size_t quantized_count;
+
+  /** Pre-allocated receive buffers for adaptive quantization. */
+  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs1;
+  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs2;
 
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {

@@ -756,6 +756,8 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
 
 void lbann_quantizer::adaptive_threshold_bound(
   const Mat& mat, Mat& qerror, ThreshQuantized& q, int proportion) {
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ qerror_buf = qerror.Buffer();
   const Int width = mat.Width();
   const Int height = mat.Height();
   const int num_quantized = q.size() - HEADER_FACTOR * width - 1;
@@ -775,7 +777,22 @@ void lbann_quantizer::adaptive_threshold_bound(
       if (num_in_col == 0) continue;
       int num_remove = std::min(excess, num_in_col);
       int num_left = num_in_col - num_remove;
-      // TODO: Update qerror.
+      DataType pos_recon, neg_recon;
+      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
+      // Add the deleted portions to qerror.
+      for (unsigned i = q[header_loc] + num_left;
+           i < q[header_loc + HEADER_FACTOR]; ++i) {
+        const uqtype val = q[i];
+        const unsigned pos = val >> 1;
+        if (val & 1) {
+          qerror_buf[pos] += pos_recon;
+        } else {
+          qerror_buf[pos] += neg_recon;
+        }
+      }
+      // TODO: When this is called from quantize_replace, this does not update
+      // the local matrix.
       q.erase(q.begin() + q[header_loc] + num_left, q.end());
       excess -= num_remove;
       remove_counts[header_loc / HEADER_FACTOR] = num_remove;
@@ -895,8 +912,15 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zero(qerror);
   }
+  const int max_size = mat.Width() * HEADER_FACTOR + 1 +
+    MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion;
+  if (adaptive_recv_bufs1.find(max_size) == adaptive_recv_bufs1.end()) {
+    // Initialize receive buffers.
+    adaptive_recv_bufs1.emplace(std::make_pair(max_size, ThreshQuantized(max_size)));
+    adaptive_recv_bufs2.emplace(std::make_pair(max_size, ThreshQuantized(max_size)));
+  }
   ThreshQuantized rs_quant;
-  ThreshQuantized rs_recv;
+  ThreshQuantized& rs_recv = adaptive_recv_bufs1[max_size];
   ThreshQuantized comp_buf;
   ThreshQuantized uncomp_buf;
   /* NOTE: std::vector::resize() initializes elements. This is unnecessary, but
@@ -917,48 +941,67 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       return rs_quant.data();
     };
   auto rs_get_recv_buf = 
-    [&rs_recv] (Mat& mat, int& count) {
-      rs_recv.resize(count);
+    [&rs_recv, max_size] (Mat& mat, int& count) {
+    //rs_recv.resize(count);
+      count = max_size;
       return rs_recv.data();
     };
   auto rs_recv_trans = 
     [&rs_recv, this]
     (uqtype* buf, Mat& accum) {
       adaptive_threshold_unquantize_add(rs_recv, accum);
+      // Fix the received bytes count.
+      rs_bytes_received -= rs_recv.size() * sizeof(uqtype);
+      rs_bytes_received += rs_recv[accum.Width() * HEADER_FACTOR];
     };
-  intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
+  intermodel_ring_reduce_scatter<uqtype>(comm, mat, false, rs_send_trans,
                                          rs_get_recv_buf, rs_recv_trans);
-  ThreshQuantized ag_send;
-  ThreshQuantized ag_recv;
+  ThreshQuantized local_send;
+  ThreshQuantized ag_send = adaptive_recv_bufs1[max_size];
+  ThreshQuantized ag_recv = adaptive_recv_bufs2[max_size];
+  int send_size = 0;
+  bool local_sent = false;
   auto ag_reduced_trans =
-    [&im_qerror, &ag_send, proportion, this]
+    [&im_qerror, &local_send, &send_size, proportion, this]
     (Mat& reduced) {
       if (im_qerror.Height() == 0) {
         im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
         Zero(im_qerror);
       }
-      adaptive_threshold_quantize_replace(reduced, ag_send, im_qerror,
+      adaptive_threshold_quantize_replace(reduced, local_send, im_qerror,
                                           proportion);
+      send_size = local_send.size();
     };
-  auto ag_get_send_buf = [&ag_send] (int& count) {
-      count = ag_send.size();
-      return ag_send.data();
+  auto ag_get_send_buf = [&ag_send, &local_send, &send_size, &local_sent]
+    (int& count) {
+      count = send_size;
+      if (!local_sent) {
+        local_sent = true;
+        return local_send.data();
+      } else {
+        return ag_send.data();
+      }
     };
   auto ag_get_recv_buf =
-    [&ag_recv] (Mat& recv_view, int& count) {
-      ag_recv.resize(count);
+    [&ag_recv, max_size] (Mat& recv_view, int& count) {
+    //ag_recv.resize(count);
+      count = max_size;
       return ag_recv.data();
     };
   auto ag_recv_trans = 
-    [&ag_recv, proportion, this]
+    [&ag_recv, &send_size, proportion, this]
     (uqtype*, Mat& accum) {
       adaptive_threshold_unquantize(ag_recv, accum);
+      send_size = ag_recv[accum.Width() * HEADER_FACTOR];
+      // Fix the received bytes count.
+      ag_bytes_received -= ag_recv.size() * sizeof(uqtype);
+      ag_bytes_received += ag_recv[accum.Width() * HEADER_FACTOR];
     };
   auto ag_swap_bufs =
-    [&ag_send, &ag_recv] (uqtype*, uqtype*) {
+    [&ag_send, &ag_recv, max_size] (uqtype*, uqtype*) {
       std::swap(ag_send, ag_recv);
     };
-  intermodel_ring_allgather<uqtype>(comm, mat, true, ag_reduced_trans,
+  intermodel_ring_allgather<uqtype>(comm, mat, false, ag_reduced_trans,
                                     ag_get_send_buf, ag_get_recv_buf,
                                     ag_recv_trans, ag_swap_bufs);
 }
