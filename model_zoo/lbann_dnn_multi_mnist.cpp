@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
-  init_random(1);  // Deterministic initialization across every model.
+  init_random(42);  // Deterministic initialization across every model.
   lbann_comm* comm = NULL;
 
   try {
@@ -181,7 +181,9 @@ int main(int argc, char* argv[])
     }
 
     layer_factory* lfac = new layer_factory();
-    deep_neural_network dnn(trainParams.MBSize, comm, new categorical_cross_entropy(comm), lfac, optimizer);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+    metrics::categorical_accuracy acc(comm);
+    dnn.add_metric(&acc);
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
@@ -223,12 +225,14 @@ int main(int argc, char* argv[])
         trainParams.IntermodelCommMethod),
       {fcidx1, fcidx2, fcidx3, smidx}, &summarizer);
     dnn.add_callback(&imcomm_cb);
-    lbann_callback_acc_learning_rate lrsched(4, 0.1f);
+    lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);
     // lbann_callback_io io_cb({0,4}); // Monitor layers 0 and 4
     // dnn.add_callback(&io_cb);
     lbann_callback_debug debug_cb(execution_mode::training);
     //dnn.add_callback(&debug_cb);
+    lbann_callback_early_stopping stopping_cb(1);
+    dnn.add_callback(&stopping_cb);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
@@ -262,7 +266,7 @@ int main(int argc, char* argv[])
     // train/test
     for (int t = 0; t < trainParams.EpochCount; t++) {
       dnn.train(1, true);
-      DataType accuracy = dnn.evaluate();
+      dnn.evaluate();
     }
   }
   catch (lbann_exception& e) { lbann_report_exception(e, comm); }

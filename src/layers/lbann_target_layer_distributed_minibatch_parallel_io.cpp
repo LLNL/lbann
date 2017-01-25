@@ -39,7 +39,7 @@ using namespace El;
 lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression), 
     distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
-    Ys(comm->get_model_grid()), YsColMax(comm->get_model_grid()), YsColMaxStar(comm->get_model_grid())
+    Ys(comm->get_model_grid())
 {
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
@@ -74,12 +74,6 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
   Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
-  if (!is_for_regression()) {
-    Zeros(YsColMax, Layer::m_mini_batch_size, 1); /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-    Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
-    Zeros(m_max_index, Layer::m_mini_batch_size, 1);
-    Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1);
-  }
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
   Zeros(*m_activations, NumNeurons, m_mini_batch_size);
@@ -89,15 +83,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   m_num_data_per_epoch = 0;
 }
 
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp(DataType prev_WBL2NormSum) {
-  if (is_for_regression())
-      return forwardProp_regression(prev_WBL2NormSum);
-  else
-      return forwardProp_classification(prev_WBL2NormSum);
-}
-
-///@todo update this to use the new fp_linearity framework
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_classification(DataType prev_WBL2NormSum) {
+void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
   int num_samples_in_batch = fetch_to_local_matrix(Y_local);
   if(is_current_root()) {
     /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -105,131 +91,29 @@ DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_clas
   }
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
   if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
     throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
   }
-
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-  DistMat X_v;
-  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
-  Mat Y_local_v;
-  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
-
-  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
-  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
-  target_layer::fp_set_std_matrix_view();
-
-  // Clear the contents of the intermediate matrices
-  Zeros(YsColMax, Layer::m_mini_batch_size, 1);
-  Zeros(YsColMaxStar, Layer::m_mini_batch_size, 1);
-
-  /// Compute the error between the previous layers activations and the ground truth
-  ColumnMax((DistMat)*m_prev_activations_v, YsColMax); /// For each minibatch (column) find the maximimum value
-  Copy(YsColMax, YsColMaxStar); /// Give every rank a copy so that they can find the max index locally
-
-  Zeros(m_max_index, Layer::m_mini_batch_size, 1); // Clear the entire matrix
-
-  /// Find which rank holds the index for the maxmimum value
-  for (int mb_index = 0; mb_index < m_prev_activations_v->LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
-    int mb_global_index = m_prev_activations_v->GlobalCol(mb_index);
-    DataType sample_max = YsColMaxStar.GetLocal(mb_global_index, 0);
-    for (int f_index = 0; f_index < m_prev_activations_v->LocalHeight(); f_index++) { /// For each feature
-      if(m_prev_activations_v->GetLocal(f_index, mb_index) == sample_max) {
-        m_max_index.Set(mb_global_index, 0, m_prev_activations_v->GlobalRow(f_index));
-      }
-    }
-  }
-
-  Zeros(m_reduced_max_indicies, Layer::m_mini_batch_size, 1); // Clear the entire matrix
-  /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
-  Layer::comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indicies.Buffer(), mpi::MAX);
-
-  /// Check to see if the predicted results match the target results
-  int num_errors = 0;
-
-  /// Allow the current root to compute the errors, since it has the data locally
-  if(is_current_root()) {
-    for (int mb_index= 0; mb_index < Y_local_v.Width(); mb_index++) { /// For each sample in mini-batch
-      int targetidx = -1;
-      float targetmax = 0;
-      for (int f_index= 0; f_index < Y_local_v.Height(); f_index++) {
-        if (targetmax < Y_local_v.Get(f_index, mb_index)) {
-          targetmax = Y_local_v.Get(f_index, mb_index);
-          targetidx = f_index;
-        }
-      }
-      if(m_reduced_max_indicies.Get(mb_index, 0) != targetidx) {
-        num_errors++;
-      }
-    }
-  }
-  num_errors = Layer::comm->model_broadcast(m_root, num_errors);
-
   /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
   distribute_from_local_matrix(Y_local, Ys);
-
-  return num_errors;
-}
-
-DataType lbann::target_layer_distributed_minibatch_parallel_io::forwardProp_regression(DataType prev_WBL2NormSum) {
-  int num_samples_in_batch = fetch_to_local_matrix(Y_local);
-  if(is_current_root()) {
-    /// Only update the number of samples processed by this parallel reader, when it is the current root
-    target_layer::update_num_samples_processed(num_samples_in_batch);
-  }
-
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-
-  if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
-    throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of responses does not match the current mini-batch size.");
-  }
-
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input);
-  DistMat& X = XProxy.Get();
-  DistMat X_v;
-  View(X_v, X, IR(0, X.Height()), IR(0, curr_mini_batch_size));
-  Mat Y_local_v;
-  View(Y_local_v, Y_local, IR(0, Y_local.Height()), IR(0, curr_mini_batch_size));
-
-  *m_prev_activations = *fp_input; // BVE this should be handled in the new fp framework
-  View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, curr_mini_batch_size));
-  target_layer::fp_set_std_matrix_view();
-
-
-  DataType sumSqErr = static_cast<DataType>(0);
-  DataType SSE = static_cast<DataType>(0); // error sum of squares: sum of (response-predicted)^2
-
-  /// Allow the current root to compute the errors, since it has the data locally
-  if(is_current_root()) {
-    for (int mb_index= 0; mb_index < Y_local_v.Width(); mb_index++) { /// For each sample in mini-batch
-      DataType response = Y_local_v.Get(0, mb_index); // truth
-      DataType predicted = X_v.Get(0, mb_index); // prediction
-      SSE += (response - predicted)*(response - predicted);
-      //cout << '#' << mb_index << ' ' << response << ' ' << predicted << endl;
-    }
-  }
-  SSE = Layer::comm->model_broadcast(m_root, SSE);
-  /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-  distribute_from_local_matrix(Y_local, Ys);
-
-  return SSE;
-}
-
-void lbann::target_layer_distributed_minibatch_parallel_io::backProp() {
-  /// Compute the error between the target values and the previous layer's activations
-  /// Copy the results to the m_error_signal variable for access by the next lower layer
-  Copy(*m_prev_activations, *m_error_signal); // delta = (activation - y)
   Copy(Ys, *m_activations);
-  Axpy(-1., *m_activations, *m_error_signal); // Per-neuron error
-  /// @todo - BVE should we be using views here.
 
-  if (m_execution_mode == execution_mode::training) {
-    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-    aggregate_cost += avg_error;
-    num_backprop_steps++;
+  /// Compute and record the objective function score
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+
+  for (auto&& m : neural_network_model->metrics) {
+    double num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
+    m->record_error(num_errors, curr_mini_batch_size);
   }
+
+  return;
+}
+
+
+void lbann::target_layer_distributed_minibatch_parallel_io::bp_linearity() {
+  /// Use the objective function to compute the error between the predictions and the target data
+  neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v, *m_activations_v, *m_error_signal);
 }
 
 /**

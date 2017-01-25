@@ -37,7 +37,7 @@
 using namespace std;
 using namespace El;
 
-lbann::model::model(lbann_comm* comm, objective_fn* obj_fn) :
+lbann::model::model(lbann_comm* comm, objective_functions::objective_fn* obj_fn) :
   obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
@@ -64,6 +64,10 @@ void lbann::model::setup_callbacks() {
   for (auto&& cb : callbacks) {
     cb->setup(this);
   }
+}
+
+void lbann::model::add_metric(lbann::metrics::metric* m) {
+  metrics.push_back(m);
 }
 
 void lbann::model::do_train_begin_cbs() {

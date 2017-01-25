@@ -24,35 +24,50 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#ifndef LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
+#define LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
 
-#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 
 namespace lbann
 {
-  namespace objective_functions
+
+  namespace metrics
   {
-    class mean_squared_error : public objective_fn {
+    class categorical_accuracy : public metric
+    {
     public:
-      mean_squared_error(lbann_comm* comm);
-      ~mean_squared_error();
+      /// Constructor
+      categorical_accuracy(lbann_comm* comm);
+    
+      /// Destructor
+      ~categorical_accuracy();
 
       void setup(int num_neurons, int mini_batch_size);
       void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-      double compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v);
-      double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
-      void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat &error_signal_v);
+      double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
+
+      double report_metric(execution_mode mode);
+      double report_lifetime_metric(execution_mode mode);
 
     protected:
-      /** Workspace to compute the squared error differences */
-      DistMat m_squared_errors;
-      DistMat m_squared_errors_v;
-      /** Colume-wise sum of the costs of a minibatch. */
-      ColSumMat m_sum_squared_errors;
+      ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
+      StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
+      Mat m_max_index;    /// Local array to hold max indicies
+      Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
+      //    Mat Y_local;
+
+      ColSumMat YsColMax_v;
+      StarMat YsColMaxStar_v;
+      Mat m_max_index_v;
+      Mat m_reduced_max_indices_v;
+      //    Mat Y_local_v;
+
+      int64_t m_max_mini_batch_size;
     };
   }
 }
 
-#endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
+
+#endif // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP

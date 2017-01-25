@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
             // testing
             int numerrors = 0;
 
-            DataType accuracy = dnn.evaluate(execution_mode::testing);
+            dnn.evaluate(execution_mode::testing);
         }
 
         // Free dynamically allocated memory

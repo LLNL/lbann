@@ -56,7 +56,7 @@ class model;
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
     virtual ~Layer();
-    virtual DataType forwardProp(DataType prev_WBL2NormSum);
+    virtual void forwardProp();
     virtual void backProp();
     virtual bool update() { return false; };
     virtual void summarize(lbann_summary& summarizer, int64_t step);

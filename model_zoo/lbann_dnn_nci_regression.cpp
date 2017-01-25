@@ -219,7 +219,10 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(trainParams.MBSize, comm, new mean_squared_error(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer);
+
+        metrics::mean_squared_error mse(comm);
+        dnn.add_metric(&mse);
 
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                               std::make_pair(execution_mode::validation, &nci_validation_set),
@@ -255,6 +258,8 @@ int main(int argc, char* argv[])
         // Summarize information to Tensorboard.
         //lbann_callback_summary summary_cb(&summarizer, 25);
         //dnn.add_callback(&summary_cb);
+        lbann_callback_early_stopping stopping_cb(1);
+        dnn.add_callback(&stopping_cb);
 
         if (comm->am_world_master()) {
           cout << "Layer initialized:" << endl;

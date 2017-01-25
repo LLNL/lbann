@@ -24,32 +24,38 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
+#define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 
-#include "lbann/layers/lbann_target_layer.hpp"
-#include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
+#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
+#include "lbann/lbann_Elemental_extensions.h"
 
 namespace lbann
 {
-  class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
-  public:
-    target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
+  namespace metrics
+  {
+    class mean_squared_error : public metric
+    {
+    public:
+      /// Constructor
+      mean_squared_error(lbann_comm* comm);
+    
+      /// Destructor
+      ~mean_squared_error();
 
-    void setup(int num_prev_neurons);
-    void fp_linearity();
-    void bp_linearity();
-    bool update();
+      void setup(int num_neurons, int mini_batch_size);
+      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+      double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
-    int fetch_from_data_reader(Mat& M_local);
-    void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-    bool update_data_reader();
-    execution_mode get_execution_mode();
+      double report_metric(execution_mode mode);
+      double report_lifetime_metric(execution_mode mode);
 
-  public:
-    Mat Y_local;
-    CircMat Ys;
-  };
+    protected:
+      lbann::objective_functions::mean_squared_error internal_obj_fn;
+    };
+  }
 }
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+
+#endif // LBANN_METRIC_MEAN_SQUARED_ERROR_HPP

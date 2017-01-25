@@ -61,8 +61,12 @@ void lbann_callback_summary::on_batch_end(model* m) {
 }
 
 void lbann_callback_summary::on_epoch_end(model* m) {
-  summarizer->reduce_scalar("train_accuracy", m->get_train_accuracy(),
-                            m->get_cur_step());
+  for (auto&& metric : m->metrics) {
+    double train_score = metric->report_metric(execution_mode::training);
+    string phase = "train_";
+    phase += _to_string(metric->type);
+    summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
+  }
   for (const auto& layer : m->get_layers()) {
     std::string prefix = "layer" + std::to_string(layer->get_index()) + "/";
     summarizer->reduce_histogram(prefix + "WB", layer->get_weights_biases(),
@@ -73,8 +77,12 @@ void lbann_callback_summary::on_epoch_end(model* m) {
 
 void lbann_callback_summary::on_test_end(model* m) {
   lbann_comm* comm = m->get_comm();
-  summarizer->reduce_scalar("test_accuracy", m->get_test_accuracy(),
-                            m->get_cur_step());
+  for (auto&& metric : m->metrics) {
+    double test_score = metric->report_metric(execution_mode::testing);
+    string phase = "test_";
+    phase += _to_string(metric->type);
+    summarizer->reduce_scalar(phase, test_score, m->get_cur_step());
+  }
   // Reset counters incremented during test phase.
   comm->reset_stats_counters();
   for (auto&& layer : m->get_layers()) {

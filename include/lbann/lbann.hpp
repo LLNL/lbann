@@ -64,12 +64,17 @@
 #include "lbann/callbacks/lbann_callback_debug.hpp"
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_early_stopping.hpp"
 
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 
+/// Metrics
+#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
+#include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
 
 /// Regularizers
 #include "lbann/regularization/lbann_dropout.hpp"

@@ -32,22 +32,30 @@
 
 namespace lbann
 {
-  class categorical_cross_entropy : public objective_fn {
-  public:
-    categorical_cross_entropy(lbann_comm* comm);
-    ~categorical_cross_entropy();
+  namespace objective_functions
+  {
+    class categorical_cross_entropy : public objective_fn {
+    public:
+      categorical_cross_entropy(lbann_comm* comm);
+      ~categorical_cross_entropy();
 
-    void setup(int num_neurons, int mini_batch_size);
-    void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-    DataType compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
+      void setup(int num_neurons, int mini_batch_size);
+      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+      double compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v);
+      double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
+      void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat& error_signal_v);
 
-  protected:
-    /** Workspace to compute the difference between predicted categories and ground truth */
-    DistMat m_cross_entropy_cost;
-    DistMat m_cross_entropy_cost_v;
-    /** Colume-wise sum of the costs of a minibatch. */
-    ColSumMat m_minibatch_cost;
-  };
+    protected:
+      /** Workspace to compute the logarithm of the predicted categories */
+      DistMat m_log_predictions;
+      DistMat m_log_predictions_v;
+      /** Workspace to compute the difference between predicted categories and ground truth */
+      DistMat m_cross_entropy_cost;
+      DistMat m_cross_entropy_cost_v;
+      /** Colume-wise sum of the costs of a minibatch. */
+      ColSumMat m_minibatch_cost;
+    };
+  }
 }
 
 #endif // LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED

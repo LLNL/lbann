@@ -52,14 +52,10 @@ using namespace El;
 
 lbann::stacked_autoencoder::stacked_autoencoder(const uint mini_batch_size,
                                                 lbann_comm* comm,
-                                                objective_fn* obj_fn,
+                                                objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn,  _layer_fac, _optimizer_fac),
-    m_train_accuracy(0.0),
-    m_validation_accuracy(0.0),
-    m_test_accuracy(0.0),
-    m_reconstruction_accuracy(0.0),
     m_name("stacked_autoencoder") {
     //m_target_layer = new target_layer_unsupervised(comm,mini_batch_size);
     }
@@ -183,15 +179,11 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    long num_samples = 0;
-    long num_errors = 0;
+    for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(&num_samples, &num_errors);
+      finished_epoch = train_mini_batch();
     } while(!finished_epoch);
-
-    // Compute train accuracy on current epoch
-    m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
     //Copy to (initialize) mirror layers
     for(size_t l=1; l<= m_num_layers/2; l++){
@@ -201,8 +193,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
     }
 
     //Reconstruction
-    m_reconstruction_accuracy = reconstruction();
-    cout << "Reconstruction accuracy " << m_reconstruction_accuracy << endl;
+    reconstruction();
 
     do_epoch_end_cbs();
     for (Layer* layer : m_layers) {
@@ -214,28 +205,20 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
   do_train_end_cbs();
 }
 
-bool lbann::stacked_autoencoder::train_mini_batch(long *num_samples,
-                                                  long *num_errors)
+bool lbann::stacked_autoencoder::train_mini_batch()
 {
   do_batch_begin_cbs();
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  DataType L2NormSum = 0;
   //pretrained half of layers
   for (size_t l = 0; l <= m_num_layers/2; ++l) {
   //for (size_t l = 0; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
-
-  // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -253,24 +236,18 @@ bool lbann::stacked_autoencoder::train_mini_batch(long *num_samples,
   for (size_t l = round(m_num_layers / 2); l > 0; --l) {
     m_layers[l]->update();
   }
-  //cout << "Samples : : " << *num_samples << endl;
   const bool data_set_processed = m_layers[0]->update();
   //cout << "data processed : " << data_set_processed << endl;
   do_batch_end_cbs();
   return data_set_processed;
 }
 
-DataType lbann::stacked_autoencoder::reconstruction()
+void lbann::stacked_autoencoder::reconstruction()
 {
-  long num_samples = 0;
-  long num_errors = 0;
   bool finished_epoch;
   do {
-    finished_epoch = reconstruction_mini_batch(&num_samples, &num_errors);
+    finished_epoch = reconstruction_mini_batch();
   } while(!finished_epoch);
-
-  // Compute reconstruction accuracy
-  m_reconstruction_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
   /*do_validation_end_cbs()
   // Reset after testing.
@@ -279,20 +256,16 @@ DataType lbann::stacked_autoencoder::reconstruction()
   }*/
 
 
-  return m_reconstruction_accuracy;
+  return;
 }
 
-bool lbann::stacked_autoencoder::reconstruction_mini_batch(long *num_samples,
-                                                     long *num_errors)
+bool lbann::stacked_autoencoder::reconstruction_mini_batch()
 {
   // forward propagation (mini-batch)
   cout << " In Recon m_num_layers: " << m_num_layers << " m_layers size " << m_layers.size() << endl;
-  DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers

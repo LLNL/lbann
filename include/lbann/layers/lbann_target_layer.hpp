@@ -49,7 +49,6 @@ namespace lbann
     void epoch_print() const;
     void epoch_reset();
     void resetCost();
-    DataType avgCost() const;
 
     bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
     bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
@@ -59,10 +58,6 @@ namespace lbann
 
   public:
     bool m_shared_data_reader;
-
-  protected:
-    DataType aggregate_cost;   // if this type is changed, update checkpoint code
-    long num_backprop_steps; // if this type is changed, update checkpoint code
   };
 }
 

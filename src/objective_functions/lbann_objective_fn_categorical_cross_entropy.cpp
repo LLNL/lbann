@@ -31,25 +31,34 @@
 using namespace std;
 using namespace El;
 
-lbann::categorical_cross_entropy::categorical_cross_entropy(lbann_comm* comm) 
+lbann::objective_functions::categorical_cross_entropy::categorical_cross_entropy(lbann_comm* comm)
   : objective_fn("categorical_cross_entropy"), 
+    m_log_predictions(comm->get_model_grid()),
+    m_log_predictions_v(comm->get_model_grid()),
     m_cross_entropy_cost(comm->get_model_grid()),
     m_cross_entropy_cost_v(comm->get_model_grid()),
-    m_minibatch_cost(comm->get_model_grid()) {}
+    m_minibatch_cost(comm->get_model_grid())
+{
+  this->type = obj_fn_type::categorical_cross_entropy;
+}
 
-lbann::categorical_cross_entropy::~categorical_cross_entropy() {
+lbann::objective_functions::categorical_cross_entropy::~categorical_cross_entropy() {
+  m_log_predictions.Empty();
+  m_log_predictions_v.Empty();
   m_cross_entropy_cost.Empty();
   m_cross_entropy_cost_v.Empty();
   m_minibatch_cost.Empty();
 }
 
-void lbann::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
+void lbann::objective_functions::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
+  Zeros(m_log_predictions, num_neurons, mini_batch_size);
   Zeros(m_cross_entropy_cost, num_neurons, mini_batch_size);
   Zeros(m_minibatch_cost, mini_batch_size, 1);
 }
 
-void lbann::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
+  View(m_log_predictions_v, m_log_predictions, IR(0, m_log_predictions.Height()), IR(0, cur_mini_batch_size));
   View(m_cross_entropy_cost_v, m_cross_entropy_cost, IR(0, m_cross_entropy_cost.Height()), IR(0, cur_mini_batch_size));
 }
 
@@ -57,16 +66,16 @@ void lbann::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_b
 /// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
 /// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
 /// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
-DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+double lbann::objective_functions::categorical_cross_entropy::compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v) {
     DataType avg_error = 0.0, total_error = 0.0;
     int64_t cur_mini_batch_size = groundtruth_v.Width();
 
-    /// Note that this will modify the activations of the previous layer, but it should already be done with them
-    EntrywiseMap(predictions_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);})); /// @todo check to see if this modifies the data of the lower layer
+    Copy(predictions_v, m_log_predictions_v);
+    EntrywiseMap(m_log_predictions_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);}));
 
-    Hadamard(groundtruth_v, predictions_v, m_cross_entropy_cost_v);
+    Hadamard(groundtruth_v, m_log_predictions_v, m_cross_entropy_cost_v);
     Zeros(m_minibatch_cost, cur_mini_batch_size, 1); // Clear the entire array
-    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost);
+    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost); /// @todo should this be a view
 
     // Sum the local, total error
     const Int local_height = m_minibatch_cost.LocalHeight();
@@ -75,6 +84,26 @@ DataType lbann::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, 
     }
     total_error = mpi::AllReduce(total_error, m_minibatch_cost.DistComm());
 
+    return total_error;
+}
+
+/// Compute the average categorical cross entropy over the mini-batch
+double lbann::objective_functions::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+    double avg_error = 0.0, total_error = 0.0;
+    int64_t cur_mini_batch_size = groundtruth_v.Width();
+
+    total_error = compute_categorical_cross_entropy(predictions_v, groundtruth_v);
+
     avg_error = -1.0 * total_error / cur_mini_batch_size;
+
     return avg_error;
+}
+
+void lbann::objective_functions::categorical_cross_entropy::compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat &error_signal_v) {
+  /// Compute the error between the target values and the previous layer's activations
+  /// Copy the results to the m_error_signal variable for access by the next lower layer
+  Copy(predictions_v, error_signal_v); // delta = (activation - y)
+  Axpy(-1., groundtruth_v, error_signal_v); // Per-neuron error
+
+  return;
 }

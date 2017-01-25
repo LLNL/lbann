@@ -36,6 +36,7 @@
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/metrics/lbann_metric.hpp"
 #include <vector>
 #include <string>
 
@@ -49,7 +50,7 @@ class lbann_callback;
  */
 class model {
 public:
-  model(lbann_comm* comm, objective_fn* obj_fn);
+  model(lbann_comm* comm, objective_functions::objective_fn* obj_fn);
   virtual ~model() {}
 
   /** Initialize the model. */
@@ -58,15 +59,11 @@ public:
   /** Register a new callback for the model. */
   virtual void add_callback(lbann_callback* cb);
 
+  /** Register a new metric for the model. */
+  virtual void add_metric(metrics::metric* m);
+
   /** Return the model's layers. */
   virtual std::vector<Layer*>& get_layers() = 0;
-
-  /** Get the most recent training accuracy. */
-  virtual DataType get_train_accuracy() const = 0;
-  /** Get the most recent validation accuracy. */
-  virtual DataType get_validate_accuracy() const = 0;
-  /** Get the most recent test accuracy. */
-  virtual DataType get_test_accuracy() const = 0;
 
   /** Get the model's comm. */
   inline lbann_comm* get_comm() const { return comm; }
@@ -97,7 +94,18 @@ public:
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start() = 0;
 
-  objective_fn* obj_fn;
+  /**
+   * Objective functions are used to judge the performance of the model during
+   * training and can be used to adapt training via either early termination or
+   * adaptive learning rates.
+   */
+  objective_functions::objective_fn* obj_fn;
+  /**
+   * A metric is a function that is used to judge the performance of your model.
+   * A metric function is similar to an objective function, except that the
+   * results from evaluating a metric are not used when training the model.
+   */
+  std::vector<metrics::metric*> metrics;
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   { m_checkpoint_dir    = dir;    }
