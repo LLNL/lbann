@@ -604,6 +604,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   // Store the final number of entries.
   q[HEADER_FACTOR * width] = q.size();
   quantized_count = q.size() - header_len;
+  adaptive_threshold_bound(mat, qerror, q, proportion);
 }
 
 void lbann_quantizer::adaptive_threshold_quantize(
@@ -750,6 +751,44 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   // Store the final number of entries.
   q[HEADER_FACTOR * width] = q.size();
   quantized_count = q.size() - header_len;
+  adaptive_threshold_bound(mat, qerror, q, proportion);
+}
+
+void lbann_quantizer::adaptive_threshold_bound(
+  const Mat& mat, Mat& qerror, ThreshQuantized& q, int proportion) {
+  const Int width = mat.Width();
+  const Int height = mat.Height();
+  const int num_quantized = q.size() - HEADER_FACTOR * width - 1;
+  if (num_quantized > MAX_QUANTIZED_EXCESS * width * height / proportion) {
+    // Ensure there is a maximum bound on the number of entries sent.
+    // This should only occur if the threshold sampling is really bad.
+    // As a simple recovery process, this just removes enough entries to fit
+    // within the appropriate size. Removals begin from the end to avoid copies
+    // when deleting entries.
+    int excess = num_quantized -
+      (MAX_QUANTIZED_EXCESS * width * height / proportion);
+    std::vector<int> remove_counts(width, 0);
+    for (unsigned header_loc = (width - 1) * HEADER_FACTOR;
+         header_loc >= 0 && excess > 0;
+         header_loc -= HEADER_FACTOR) {
+      int num_in_col = q[header_loc + HEADER_FACTOR] - q[header_loc];
+      if (num_in_col == 0) continue;
+      int num_remove = std::min(excess, num_in_col);
+      int num_left = num_in_col - num_remove;
+      // TODO: Update qerror.
+      q.erase(q.begin() + q[header_loc] + num_left, q.end());
+      excess -= num_remove;
+      remove_counts[header_loc / HEADER_FACTOR] = num_remove;
+    }
+    // Update all the header locations.
+    std::partial_sum(remove_counts.begin(), remove_counts.end(),
+                     remove_counts.begin());
+    for (unsigned header_loc = 0; header_loc < width * HEADER_FACTOR;
+         header_loc += HEADER_FACTOR) {
+      q[header_loc] -= remove_counts[header_loc / HEADER_FACTOR];
+    }
+    q[HEADER_FACTOR * width] = q.size();
+  }
 }
 
 void lbann_quantizer::intermodel_sum_threshold_quantized(
