@@ -721,6 +721,7 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
         } else {
 #if LBANN_QUANTIZER_TERNARY
           qerror_buf[pos] = val - recons.zero_recon;
+          mat_buf[pos] = recons.zero_recon;
 #else
           qerror_buf[pos] = val;
 #endif
