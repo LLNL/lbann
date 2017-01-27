@@ -29,6 +29,8 @@
 #ifndef LBANN_QUANTIZER_HPP_INCLUDED
 #define LBANN_QUANTIZER_HPP_INCLUDED
 
+#include <unordered_map>
+
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
@@ -173,23 +175,19 @@ public:
    * @param q The output list of quantized entries.
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
-   * @param compress Whether to compress the data (default false).
    */
   void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
-                                   int proportion, bool compress = false);
+                                   int proportion);
   void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
-                                   Mat& qerror, int proportion,
-                                   bool compress = false);
+                                   Mat& qerror, int proportion);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
-   * @param compress Whether compression was used (default false).
    */
-  void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat,
-                                     bool compress = false);
-  void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat,
-                                     bool compress = false);
+  void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat);
+  void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat);
+
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
    */
@@ -206,11 +204,9 @@ public:
    * As with intermodel_sum_quantized, but use adaptive threshold quantization.
    */
   void intermodel_sum_adaptive_threshold_quantized(
-    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
-    bool compress=true);
+    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror);
   void intermodel_sum_adaptive_threshold_quantized(
-    lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion, Mat& im_qerror,
-    bool compress=true);
+    lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion, Mat& im_qerror);
 
   /**
    * Compress the output of threshold_quantize.
@@ -326,6 +322,8 @@ private:
 #else
   static const int HEADER_FACTOR = 3;
 #endif
+  /** Max factor by which adaptive quantization can exceed optimal amount. */
+  static const int MAX_QUANTIZED_EXCESS = 4;
 
   /** Bytes sent in doing the reduce-scatter. */
   size_t rs_bytes_sent;
@@ -356,6 +354,10 @@ private:
   /** Most recent number of quantized entries. */
   size_t quantized_count;
 
+  /** Pre-allocated receive buffers for adaptive quantization. */
+  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs1;
+  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs2;
+
   /** Return the height of mat after quantization with quantize(). */
   inline int get_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
@@ -385,8 +387,7 @@ private:
   /**
    * Variant of adaptive_threshold_unquantize that adds its entries.
    */
-  void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat,
-                                         bool compress = false);
+  void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat);
   /**
    * Variant of adaptive_threshold_quantize that also replaces entries in mat
    * with their quantized version. This is equivalent to:
@@ -396,6 +397,12 @@ private:
    */
   void adaptive_threshold_quantize_replace(Mat& mat, ThreshQuantized& q,
                                            Mat& qerror, int proportion);
+  /**
+   * Ensure that q is no more than a factor of MAX_QUANTIZED_EXCESS larger
+   * than optimal.
+   */
+  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, ThreshQuantized& q,
+                                int proportion);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,

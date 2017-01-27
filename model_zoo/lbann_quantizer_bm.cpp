@@ -44,7 +44,7 @@ lbann_summary* onebit_summarizer;
 lbann_summary* thresh_summarizer;
 lbann_summary* comp_thresh_summarizer;
 lbann_summary* adaptive_summarizer;
-lbann_summary* comp_adaptive_summarizer;
+//lbann_summary* comp_adaptive_summarizer;
 
 std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
   std::vector<double> times;
@@ -183,7 +183,7 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_adaptive_threshold_quantized(
-      comm, mat, qerror, proportion, im_qerror, false);
+      comm, mat, qerror, proportion, im_qerror);
     double tot = get_time() - start;
     times.push_back(tot);
     adaptive_summarizer->reduce_scalar("time", tot, trial);
@@ -193,7 +193,7 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   return times;
 }
 
-std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
+/*std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
                                        int proportion) {
   std::vector<double> times;
   lbann_quantizer quantizer;
@@ -212,7 +212,7 @@ std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
     comm->global_barrier();
   }
   return times;
-}
+  }*/
 
 void print_stats(const std::vector<double>& times) {
   double sum = std::accumulate(times.begin(), times.end(), 0.0);
@@ -275,14 +275,14 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
     print_stats(adaptive_times);
   }
   adaptive_copy.Empty();
-  DistMat comp_adaptive_copy(mat);
+  /*DistMat comp_adaptive_copy(mat);
   auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 64);
   if (comm->am_world_master()) {
     std::cout << "Compressed adaptive 64 " << "(" << mat.Height() <<
       "x" << mat.Width() << "):" << std::endl;
     print_stats(comp_adaptive_times);
   }
-  comp_adaptive_copy.Empty();
+  comp_adaptive_copy.Empty();*/
 }
 
 int main(int argc, char** argv) {
@@ -293,7 +293,7 @@ int main(int argc, char** argv) {
   thresh_summarizer = new lbann_summary("qbm/thresh", comm);
   comp_thresh_summarizer = new lbann_summary("qbm/comp_thresh", comm);
   adaptive_summarizer = new lbann_summary("qbm/adaptive", comm);
-  comp_adaptive_summarizer = new lbann_summary("qbm/comp_adaptive", comm);
+  //comp_adaptive_summarizer = new lbann_summary("qbm/comp_adaptive", comm);
 
   if (comm->am_world_master()) {
     std::cout << "Models: " << comm->get_num_models() << std::endl;
@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
   delete thresh_summarizer;
   delete comp_thresh_summarizer;
   delete adaptive_summarizer;
-  delete comp_adaptive_summarizer;
+  //delete comp_adaptive_summarizer;
   delete comm;
   El::Finalize();
 }
