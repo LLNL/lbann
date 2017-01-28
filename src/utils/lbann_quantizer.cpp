@@ -544,7 +544,8 @@ void lbann_quantizer::adaptive_threshold_quantize(
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
   // Compute the thresholds.
-  adaptive_thresholds threshes = proportion_threshold(mat, qerror, proportion);
+  const adaptive_thresholds threshes =
+    proportion_threshold(mat, qerror, proportion);
   #pragma omp parallel
   {
     const int tid = omp_get_thread_num();
@@ -553,7 +554,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
     for (int col = 0; col < width; ++col) {
       const int header_loc = HEADER_FACTOR * col;
       q[header_loc] = num_quantized;
-      adaptive_reconstructions recons =
+      const adaptive_reconstructions recons =
         col_reconstruction(mat, qerror, col, threshes);
       // Store the averages for reconstruction.
       memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
@@ -688,7 +689,8 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
   // Compute the thresholds.
-  adaptive_thresholds threshes = proportion_threshold(mat, qerror, proportion);
+  const adaptive_thresholds threshes =
+    proportion_threshold(mat, qerror, proportion);
   #pragma omp parallel
   {
     const int tid = omp_get_thread_num();
@@ -697,7 +699,7 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
     for (int col = 0; col < width; ++col) {
       const int header_loc = HEADER_FACTOR * col;
       q[header_loc] = num_quantized;
-      adaptive_reconstructions recons =
+      const adaptive_reconstructions recons =
         col_reconstruction(mat, qerror, col, threshes);
       // Store the averages for reconstruction.
       memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
@@ -1149,8 +1151,16 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
     std::uniform_int_distribution<int> row_dist(0, height - 1);
     std::uniform_int_distribution<int> col_dist(0, width - 1);
     rng_gen& gen = get_generator();
+    std::vector<unsigned> poses(NUM_THRESHOLD_SAMPLES);
     for (unsigned i = 0; i < NUM_THRESHOLD_SAMPLES; ++i) {
       const unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
+      __builtin_prefetch(&mat_buf[pos]);
+      __builtin_prefetch(&qerror_buf[pos]);
+      poses[i] = pos;
+    }
+    for (unsigned i = 0; i < NUM_THRESHOLD_SAMPLES; ++i) {
+      //const unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
+      const unsigned pos = poses[i];
       entries.emplace_back(mat_buf[pos] + qerror_buf[pos]);
     }
   }
@@ -1194,8 +1204,8 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
 }
 
 lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
-  const Mat& mat, const Mat& qerror, int col, adaptive_thresholds threshes,
-  bool sample) {
+  const Mat& mat, const Mat& qerror, int col,
+  const adaptive_thresholds threshes, bool sample) {
   std::vector<DataType> pos_entries;
   std::vector<DataType> neg_entries;
 #if LBANN_QUANTIZER_TERNARY
@@ -1226,8 +1236,16 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
     // Randomly sample entries to approximate the means.
     std::uniform_int_distribution<int> row_dist(0, height - 1);
     rng_gen& gen = get_generator();
+    std::vector<unsigned> poses(NUM_RECON_SAMPLES);
     for (unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
       const unsigned pos = row_dist(gen) + col_offset;
+      __builtin_prefetch(&mat_buf[pos]);
+      __builtin_prefetch(&qerror_buf[pos]);
+      poses[i] = pos;
+    }
+    for (unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
+      //const unsigned pos = row_dist(gen) + col_offset;
+      const unsigned pos = poses[i];
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= threshes.pos_thresh) {
         pos_entries.emplace_back(val);
