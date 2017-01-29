@@ -33,66 +33,67 @@
 
 namespace lbann
 {
-	class DataReader_ImageNet : public DataReader
-	{
-	public:
-    DataReader_ImageNet(int batchSize, bool shuffle = true);
-    DataReader_ImageNet(const DataReader_ImageNet& source);
-		~DataReader_ImageNet();
+class DataReader_ImageNet : public DataReader
+{
+public:
+  DataReader_ImageNet(int batchSize, bool shuffle = true);
+  DataReader_ImageNet(const DataReader_ImageNet& source);
+  ~DataReader_ImageNet();
 
-    int fetch_data(Mat& X);
-    int fetch_label(Mat& Y);
+  int fetch_data(Mat& X);
+  int fetch_label(Mat& Y);
 
-    /** returns a vector of 256*256*3 vectors; if max_to_process > 0, only
-     *  returns that number of inner vectors; this is probably only useful
-     *  for development and testing
-     */
-    int fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process = 0);
+  /** returns a vector of 256*256*3 vectors; if max_to_process > 0, only
+   *  returns that number of inner vectors; this is probably only useful
+   *  for development and testing
+   */
+  int fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process = 0);
 
-		int get_num_labels() { return m_num_labels; }
+  int get_num_labels() { return m_num_labels; }
 
-		// ImageNet specific functions
-    //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-    bool load(std::string imageDir, std::string imageListFile);
-    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count, bool firstN=false);
-    bool load(std::string imageDir, std::string imageListFile, double validation_percent, bool firstN=false);
-    void free();
+  // ImageNet specific functions
+  //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
+  bool load(std::string imageDir, std::string imageListFile);
+  bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count, bool firstN=false);
+  bool load(std::string imageDir, std::string imageListFile, double validation_percent, bool firstN=false);
+  void free();
 
-		int get_image_width() { return m_image_width; }
-		int get_image_height() { return m_image_height; }
-		int get_image_depth() { return m_image_depth; }
-    int get_linearized_data_size() { return m_image_width * m_image_height * m_image_depth; }
-    int get_linearized_label_size() { return m_num_labels; }
+  int get_image_width() { return m_image_width; }
+  int get_image_height() { return m_image_height; }
+  int get_image_depth() { return m_image_depth; }
+  int get_linearized_data_size() { return m_image_width * m_image_height * m_image_depth; }
+  int get_linearized_label_size() { return m_num_labels; }
 
-    DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
+  DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
-    void subtract_mean(bool b) { m_mean = b; }
+  void subtract_mean(bool b) { m_mean = b; }
 
-    void unit_variance(bool b) { m_variance = b; }
+  void unit_variance(bool b) { m_variance = b; }
 
-    //! scale using min-max
-    void scale(bool b) { m_scale = b; }
+  //! scale using min-max
+  void scale(bool b) { m_scale = b; }
 
-    //! normalize using z-score; if set to true, then settings for
-    //! subtract_mean(), unit_variance(), and scale() are ignored
-    void z_score(bool b) { m_z_score = b; }
+  //! normalize using z-score; if set to true, then settings for
+  //! subtract_mean(), unit_variance(), and scale() are ignored
+  void z_score(bool b) { m_z_score = b; }
 
-	private:
-		std::string							m_image_dir; // where images are stored
-		std::vector<std::pair<std::string, int> > 	ImageList; // list of image files and labels
-		int 										m_image_width; // image width (256)
-		int 										m_image_height; // image height (256)
-		int 										m_image_depth; // image depth (depth)
-		int											m_num_labels; // # labels (1000)
-    unsigned char *         m_pixels;
+private:
+  std::string m_image_dir; // where images are stored
+  std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
+  int m_image_width; // image width (256)
+  int m_image_height; // image height (256)
+  int m_image_depth; // image depth (depth)
+  int m_num_labels; // # labels (1000)
+  unsigned char* m_pixels;
 
-    bool              m_scale;
-    bool              m_variance;
-    bool              m_mean;
-    bool              m_z_score;
+  bool m_scale;
+  bool m_variance;
+  bool m_mean;
+  bool m_z_score;
 
-    void standardize(std::vector<float> &pixels, int offset); 
-	};
-}
+  void standardize(std::vector<float> &pixels, int offset); 
+};
 
-#endif // LBANN_DATA_READER_IMAGENET_HPP
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_IMAGENET_HPP
