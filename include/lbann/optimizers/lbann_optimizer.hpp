@@ -73,7 +73,7 @@ namespace lbann
     Optimizer_factory() {}
     virtual ~Optimizer_factory() {}
     virtual Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR) { return nullptr; };
-
+    virtual const string name() = 0;
   };
 }
 
