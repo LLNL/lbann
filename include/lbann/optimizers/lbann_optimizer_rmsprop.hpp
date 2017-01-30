@@ -64,6 +64,7 @@ namespace lbann
         WB_D_Cache(comm->get_model_grid()),
         WB_D_Temp(comm->get_model_grid()),
         WB_D_Temp2(comm->get_model_grid()) {
+      set_name("rmsprop");
       if (comm->am_model_master()) {
         printf("Initializing RMSprop optimizer with lr=%f, rho=%f, and epsilon=%f\n", lr, rho, epsilon);
       }
@@ -162,7 +163,7 @@ namespace lbann
     RMSprop_factory(lbann_comm* comm, float lr=0.001, float rho=0.9, float epsilon=1e-6);
     ~RMSprop_factory();
     Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
-
+    const string name() { return "rmsprop"; }
   public:
     //    float LearnRate;
     lbann_comm* comm;

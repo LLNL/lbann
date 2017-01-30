@@ -50,6 +50,9 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
   m_mean = false;
   m_z_score = false;
   setName("MNIST");
+
+  lbann_proto *pb = lbann_proto::get();
+  pb->DataReaderMNIST_ctor(batchSize, shuffle);
 }
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
@@ -214,6 +217,9 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: failed to open file: " << labelpath;
     throw lbann_exception(err.str());
   }
+
+  lbann_proto *pb = lbann_proto::get();
+  pb->DataReaderMNIST_load(FileDir, ImageFile, LabelFile);
 
   int magicnum1, numitems1;
   fread(&magicnum1, 4, 1, fplbl);

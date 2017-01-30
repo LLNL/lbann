@@ -322,3 +322,29 @@ void lbann::Layer::bp_nonlinearity() {
     Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
   }
 }
+
+
+//enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+
+std::string lbann::Layer::weight_initialization_name(weight_initialization id) {
+  switch(id) {
+    case weight_initialization::zero : return "zero";
+         break;
+    case weight_initialization::uniform : return "uniform";
+         break;
+    case weight_initialization::normal : return "normal";
+         break;
+    case weight_initialization::glorot_normal : return "glorot_normal";
+         break;
+    case weight_initialization::glorot_uniform : return "glorot_uniform";
+         break;
+    case weight_initialization::he_normal : return "he_normal";
+         break;
+    case weight_initialization::he_uniform : return "he_uniform";
+         break;
+    default:
+      char b[1024];
+      sprintf(b, "%f %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
+      throw lbann_exception(b);
+  }
+}

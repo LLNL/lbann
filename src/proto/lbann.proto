@@ -3,9 +3,16 @@ syntax = "proto3";
 package lbann_data;
 
 message LbannPB {
-  Model train_net = 1; 
+  DataReader data_reader = 1; 
+  Model model = 2; 
 
+  //see not in Layer section below. This is the global optimzer, that is, as of
+  //this writing, passed to all pertinent layers. However, in theory we could
+  //pass different optimizers to different layers; therefore, each Layer
+  //that takes an optimizer in its ctor also has on optimizer field.
   string optimizer = 10; //adagrad, rmsprop, adam, sgd 
+
+
   string objective_fn = 11; //categorical_cross_entropy, mean_squared_error
   uint32 mini_batch_size = 12;
 
@@ -14,14 +21,52 @@ message LbannPB {
   //   do we need these? for future development
 }
 
+//===== start of DataReaders =====
+message DataReader {
+  repeated DataReaderMnist mnist = 1;
+  repeated DataReaderCifar10 cifar10 = 2;
+  repeated DataReaderImagenet imagenet = 3;
+  repeated DataReaderNci nci = 4;
+  repeated DataReaderNciRegression nci_regression = 5;
+}
+
+
+message DataReaderMnist {
+  string role = 1; //train, test
+  uint32 batch_size = 2;
+  bool shuffle = 3;
+  string file_dir = 4;
+  string image_file = 5;
+  string label_file = 6;
+}
+
+message DataReaderCifar10 {
+}
+
+message DataReaderImagenet {
+}
+
+message DataReaderNci {
+}
+
+message DataReaderNciRegression {
+}
+
+//===== end of DataReaders =====
+
+
 message Model {
   string name = 1; //dnn, stacked_autoencoder, layerwise_autoencoder
+  string objective_function = 2;
+  int32 evaluation_frequency = 3;
+  int32 num_epochs = 4;
+  string optimizer = 5;
 
-  repeated Layer layer = 2;
+  repeated Layer layer = 10;
 
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
-  repeated string callback = 3; 
+  repeated string callback = 20; 
 }
 
 message Layer {
@@ -42,54 +87,50 @@ message Layer {
 
 }
 
+//========================================================================
 // Layer types start here
+//========================================================================
+//
+// weight initialization should be one of: 
+//    zero, uniform, normal, glorot_normal, he_normal, he_uniform
+// see: lbann/include/lbann/lbann_base.hpp
+//
+//
+// activation_type should be one of:
+//    sigmoid, tanh, relu, id, leaky_relu, smooth_relu, elu
+// see: lbann/include/lbann/layers/lbann_layer_activations.hpp
+//
+//
+// optimizer should be one of: adagrad, rmsprop, adam, sgd 
+//see: lbann/include/lbann/lbann_base.hpp
+//
+//
+
 message Input {
   int32 mini_batch_size = 1;
 }
 
 message InputDistributedMiniBatchParallelIO {
   uint32 num_parallel_readers = 1;
+  uint32 mini_batch_size = 2;
+  //@TODO: regularizers
 }
 
 message InputDistributedMiniBatch {
 }
 
-enum WeightInitialization {
-  //see: lbann/include/lbann/lbann_base.hpp
-  ZERO = 0;
-  UNIFORM = 1;
-  NORMAL = 2;
-  GLOROT_NORMAL = 3;
-  HE_NORMAL = 4;
-  HE_UNIFORM = 5;
-}
-
-enum ActivationType {
-  //see: lbann/include/lbann/layers/lbann_layer_activations.hpp
-  SIGMOID = 0;
-  TANH = 1;
-  RELU = 2;
-  ID = 3;
-  LEAKY_RELU = 4;
-  SMOOTH_RELU = 5;
-  ELU = 6;
-}
 
 message FullyConnected {
   uint32 num_prev_neurons = 1;
   uint32 num_neurons = 2;
-  WeightInitialization weight_initialization = 3;
-  ActivationType activation_type = 4;
+  uint32 mini_batch_size = 3;
+  string activation_type = 4;
+  string weight_initialization = 5;
+  string optimizer = 10; 
 
   //?? std::vector<regularizer*> regs,
 }
 
-enum PoolMode {
-  //see: lbann/include/lbann/lbann_base.hpp
-  MAX = 0;
-  AVERAGE = 1;
-  AVERAGE_NO_PAD = 2;
-}
 
 message Pooling {
   int32 num_dims = 1;
@@ -98,8 +139,12 @@ message Pooling {
   repeated int32 pool_dims = 4;
   repeated int32 pool_pads = 5;
   repeated int32 pool_strides = 6;
-  PoolMode pool_mode = 7;
-  ActivationType activation_type = 8;
+
+  //pool_mode should be one of: max, average, average_no_pad
+  //see: lbann/include/lbann/lbann_base.hpp
+  string pool_mode = 7;
+
+  string activation_type = 8;
 
   //?? std::vector<regularizer*> regs,
 }
@@ -113,8 +158,8 @@ message Convolution {
   repeated uint32  conv_pads = 6;
   repeated uint32  conv_strides = 7;
   uint32 mini_batch_size = 8;
-  WeightInitialization weight_initialization = 9;
-  ActivationType activation_type = 10;
+  string weight_initialization = 9;
+  string activation_type = 10;
    
   //?? std::vector<regularizer*> regs,
 }
@@ -122,7 +167,7 @@ message Convolution {
 message Softmax {
   uint32 num_prev_neurons = 1;
   uint32 num_neurons = 2;
-  WeightInitialization weight_initialization = 3;
+  string weight_initialization = 3;
 }
 
 message Target {
@@ -136,6 +181,8 @@ message TargetParallel {
 message TargetDistributedMinibatch {
   //TODO
 }
+//========================================================================
 // end of Layer types
+//========================================================================
 
 

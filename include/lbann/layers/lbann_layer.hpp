@@ -31,6 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/proto/lbann_proto.hpp"
 #include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
@@ -56,6 +57,9 @@ class model;
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
     virtual ~Layer();
+
+    static std::string weight_initialization_name(weight_initialization id);
+
     virtual void forwardProp();
     virtual void backProp();
     virtual bool update() { return false; };

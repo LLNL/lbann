@@ -26,7 +26,6 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
-#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
@@ -38,6 +37,12 @@ void protobuf_AssignDesc_lbann_2eproto();
 void protobuf_ShutdownFile_lbann_2eproto();
 
 class Convolution;
+class DataReader;
+class DataReaderCifar10;
+class DataReaderImagenet;
+class DataReaderMnist;
+class DataReaderNci;
+class DataReaderNciRegression;
 class FullyConnected;
 class Input;
 class InputDistributedMiniBatch;
@@ -51,79 +56,6 @@ class Target;
 class TargetDistributedMinibatch;
 class TargetParallel;
 
-enum WeightInitialization {
-  ZERO = 0,
-  UNIFORM = 1,
-  NORMAL = 2,
-  GLOROT_NORMAL = 3,
-  HE_NORMAL = 4,
-  HE_UNIFORM = 5,
-  WeightInitialization_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
-  WeightInitialization_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
-};
-bool WeightInitialization_IsValid(int value);
-const WeightInitialization WeightInitialization_MIN = ZERO;
-const WeightInitialization WeightInitialization_MAX = HE_UNIFORM;
-const int WeightInitialization_ARRAYSIZE = WeightInitialization_MAX + 1;
-
-const ::google::protobuf::EnumDescriptor* WeightInitialization_descriptor();
-inline const ::std::string& WeightInitialization_Name(WeightInitialization value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    WeightInitialization_descriptor(), value);
-}
-inline bool WeightInitialization_Parse(
-    const ::std::string& name, WeightInitialization* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<WeightInitialization>(
-    WeightInitialization_descriptor(), name, value);
-}
-enum ActivationType {
-  SIGMOID = 0,
-  TANH = 1,
-  RELU = 2,
-  ID = 3,
-  LEAKY_RELU = 4,
-  SMOOTH_RELU = 5,
-  ELU = 6,
-  ActivationType_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
-  ActivationType_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
-};
-bool ActivationType_IsValid(int value);
-const ActivationType ActivationType_MIN = SIGMOID;
-const ActivationType ActivationType_MAX = ELU;
-const int ActivationType_ARRAYSIZE = ActivationType_MAX + 1;
-
-const ::google::protobuf::EnumDescriptor* ActivationType_descriptor();
-inline const ::std::string& ActivationType_Name(ActivationType value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    ActivationType_descriptor(), value);
-}
-inline bool ActivationType_Parse(
-    const ::std::string& name, ActivationType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<ActivationType>(
-    ActivationType_descriptor(), name, value);
-}
-enum PoolMode {
-  MAX = 0,
-  AVERAGE = 1,
-  AVERAGE_NO_PAD = 2,
-  PoolMode_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
-  PoolMode_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
-};
-bool PoolMode_IsValid(int value);
-const PoolMode PoolMode_MIN = MAX;
-const PoolMode PoolMode_MAX = AVERAGE_NO_PAD;
-const int PoolMode_ARRAYSIZE = PoolMode_MAX + 1;
-
-const ::google::protobuf::EnumDescriptor* PoolMode_descriptor();
-inline const ::std::string& PoolMode_Name(PoolMode value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    PoolMode_descriptor(), value);
-}
-inline bool PoolMode_Parse(
-    const ::std::string& name, PoolMode* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<PoolMode>(
-    PoolMode_descriptor(), name, value);
-}
 // ===================================================================
 
 class LbannPB : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.LbannPB) */ {
@@ -186,14 +118,23 @@ class LbannPB : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   // accessors -------------------------------------------------------
 
-  // optional .lbann_data.Model train_net = 1;
-  bool has_train_net() const;
-  void clear_train_net();
-  static const int kTrainNetFieldNumber = 1;
-  const ::lbann_data::Model& train_net() const;
-  ::lbann_data::Model* mutable_train_net();
-  ::lbann_data::Model* release_train_net();
-  void set_allocated_train_net(::lbann_data::Model* train_net);
+  // optional .lbann_data.DataReader data_reader = 1;
+  bool has_data_reader() const;
+  void clear_data_reader();
+  static const int kDataReaderFieldNumber = 1;
+  const ::lbann_data::DataReader& data_reader() const;
+  ::lbann_data::DataReader* mutable_data_reader();
+  ::lbann_data::DataReader* release_data_reader();
+  void set_allocated_data_reader(::lbann_data::DataReader* data_reader);
+
+  // optional .lbann_data.Model model = 2;
+  bool has_model() const;
+  void clear_model();
+  static const int kModelFieldNumber = 2;
+  const ::lbann_data::Model& model() const;
+  ::lbann_data::Model* mutable_model();
+  ::lbann_data::Model* release_model();
+  void set_allocated_model(::lbann_data::Model* model);
 
   // optional string optimizer = 10;
   void clear_optimizer();
@@ -228,7 +169,8 @@ class LbannPB : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
-  ::lbann_data::Model* train_net_;
+  ::lbann_data::DataReader* data_reader_;
+  ::lbann_data::Model* model_;
   ::google::protobuf::internal::ArenaStringPtr optimizer_;
   ::google::protobuf::internal::ArenaStringPtr objective_fn_;
   ::google::protobuf::uint32 mini_batch_size_;
@@ -239,6 +181,583 @@ class LbannPB : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   void InitAsDefaultInstance();
   static LbannPB* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReader : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReader) */ {
+ public:
+  DataReader();
+  virtual ~DataReader();
+
+  DataReader(const DataReader& from);
+
+  inline DataReader& operator=(const DataReader& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReader& default_instance();
+
+  void Swap(DataReader* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReader* New() const { return New(NULL); }
+
+  DataReader* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReader& from);
+  void MergeFrom(const DataReader& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReader* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // repeated .lbann_data.DataReaderMnist mnist = 1;
+  int mnist_size() const;
+  void clear_mnist();
+  static const int kMnistFieldNumber = 1;
+  const ::lbann_data::DataReaderMnist& mnist(int index) const;
+  ::lbann_data::DataReaderMnist* mutable_mnist(int index);
+  ::lbann_data::DataReaderMnist* add_mnist();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >*
+      mutable_mnist();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >&
+      mnist() const;
+
+  // repeated .lbann_data.DataReaderCifar10 cifar10 = 2;
+  int cifar10_size() const;
+  void clear_cifar10();
+  static const int kCifar10FieldNumber = 2;
+  const ::lbann_data::DataReaderCifar10& cifar10(int index) const;
+  ::lbann_data::DataReaderCifar10* mutable_cifar10(int index);
+  ::lbann_data::DataReaderCifar10* add_cifar10();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >*
+      mutable_cifar10();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >&
+      cifar10() const;
+
+  // repeated .lbann_data.DataReaderImagenet imagenet = 3;
+  int imagenet_size() const;
+  void clear_imagenet();
+  static const int kImagenetFieldNumber = 3;
+  const ::lbann_data::DataReaderImagenet& imagenet(int index) const;
+  ::lbann_data::DataReaderImagenet* mutable_imagenet(int index);
+  ::lbann_data::DataReaderImagenet* add_imagenet();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >*
+      mutable_imagenet();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >&
+      imagenet() const;
+
+  // repeated .lbann_data.DataReaderNci nci = 4;
+  int nci_size() const;
+  void clear_nci();
+  static const int kNciFieldNumber = 4;
+  const ::lbann_data::DataReaderNci& nci(int index) const;
+  ::lbann_data::DataReaderNci* mutable_nci(int index);
+  ::lbann_data::DataReaderNci* add_nci();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >*
+      mutable_nci();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >&
+      nci() const;
+
+  // repeated .lbann_data.DataReaderNciRegression nci_regression = 5;
+  int nci_regression_size() const;
+  void clear_nci_regression();
+  static const int kNciRegressionFieldNumber = 5;
+  const ::lbann_data::DataReaderNciRegression& nci_regression(int index) const;
+  ::lbann_data::DataReaderNciRegression* mutable_nci_regression(int index);
+  ::lbann_data::DataReaderNciRegression* add_nci_regression();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >*
+      mutable_nci_regression();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >&
+      nci_regression() const;
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReader)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist > mnist_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 > cifar10_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet > imagenet_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci > nci_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression > nci_regression_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReader* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReaderMnist : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderMnist) */ {
+ public:
+  DataReaderMnist();
+  virtual ~DataReaderMnist();
+
+  DataReaderMnist(const DataReaderMnist& from);
+
+  inline DataReaderMnist& operator=(const DataReaderMnist& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReaderMnist& default_instance();
+
+  void Swap(DataReaderMnist* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReaderMnist* New() const { return New(NULL); }
+
+  DataReaderMnist* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReaderMnist& from);
+  void MergeFrom(const DataReaderMnist& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReaderMnist* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string role = 1;
+  void clear_role();
+  static const int kRoleFieldNumber = 1;
+  const ::std::string& role() const;
+  void set_role(const ::std::string& value);
+  void set_role(const char* value);
+  void set_role(const char* value, size_t size);
+  ::std::string* mutable_role();
+  ::std::string* release_role();
+  void set_allocated_role(::std::string* role);
+
+  // optional uint32 batch_size = 2;
+  void clear_batch_size();
+  static const int kBatchSizeFieldNumber = 2;
+  ::google::protobuf::uint32 batch_size() const;
+  void set_batch_size(::google::protobuf::uint32 value);
+
+  // optional bool shuffle = 3;
+  void clear_shuffle();
+  static const int kShuffleFieldNumber = 3;
+  bool shuffle() const;
+  void set_shuffle(bool value);
+
+  // optional string file_dir = 4;
+  void clear_file_dir();
+  static const int kFileDirFieldNumber = 4;
+  const ::std::string& file_dir() const;
+  void set_file_dir(const ::std::string& value);
+  void set_file_dir(const char* value);
+  void set_file_dir(const char* value, size_t size);
+  ::std::string* mutable_file_dir();
+  ::std::string* release_file_dir();
+  void set_allocated_file_dir(::std::string* file_dir);
+
+  // optional string image_file = 5;
+  void clear_image_file();
+  static const int kImageFileFieldNumber = 5;
+  const ::std::string& image_file() const;
+  void set_image_file(const ::std::string& value);
+  void set_image_file(const char* value);
+  void set_image_file(const char* value, size_t size);
+  ::std::string* mutable_image_file();
+  ::std::string* release_image_file();
+  void set_allocated_image_file(::std::string* image_file);
+
+  // optional string label_file = 6;
+  void clear_label_file();
+  static const int kLabelFileFieldNumber = 6;
+  const ::std::string& label_file() const;
+  void set_label_file(const ::std::string& value);
+  void set_label_file(const char* value);
+  void set_label_file(const char* value, size_t size);
+  ::std::string* mutable_label_file();
+  ::std::string* release_label_file();
+  void set_allocated_label_file(::std::string* label_file);
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderMnist)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::internal::ArenaStringPtr role_;
+  ::google::protobuf::uint32 batch_size_;
+  bool shuffle_;
+  ::google::protobuf::internal::ArenaStringPtr file_dir_;
+  ::google::protobuf::internal::ArenaStringPtr image_file_;
+  ::google::protobuf::internal::ArenaStringPtr label_file_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReaderMnist* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReaderCifar10 : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderCifar10) */ {
+ public:
+  DataReaderCifar10();
+  virtual ~DataReaderCifar10();
+
+  DataReaderCifar10(const DataReaderCifar10& from);
+
+  inline DataReaderCifar10& operator=(const DataReaderCifar10& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReaderCifar10& default_instance();
+
+  void Swap(DataReaderCifar10* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReaderCifar10* New() const { return New(NULL); }
+
+  DataReaderCifar10* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReaderCifar10& from);
+  void MergeFrom(const DataReaderCifar10& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReaderCifar10* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderCifar10)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReaderCifar10* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReaderImagenet : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderImagenet) */ {
+ public:
+  DataReaderImagenet();
+  virtual ~DataReaderImagenet();
+
+  DataReaderImagenet(const DataReaderImagenet& from);
+
+  inline DataReaderImagenet& operator=(const DataReaderImagenet& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReaderImagenet& default_instance();
+
+  void Swap(DataReaderImagenet* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReaderImagenet* New() const { return New(NULL); }
+
+  DataReaderImagenet* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReaderImagenet& from);
+  void MergeFrom(const DataReaderImagenet& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReaderImagenet* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderImagenet)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReaderImagenet* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReaderNci : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderNci) */ {
+ public:
+  DataReaderNci();
+  virtual ~DataReaderNci();
+
+  DataReaderNci(const DataReaderNci& from);
+
+  inline DataReaderNci& operator=(const DataReaderNci& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReaderNci& default_instance();
+
+  void Swap(DataReaderNci* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReaderNci* New() const { return New(NULL); }
+
+  DataReaderNci* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReaderNci& from);
+  void MergeFrom(const DataReaderNci& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReaderNci* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderNci)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReaderNci* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class DataReaderNciRegression : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderNciRegression) */ {
+ public:
+  DataReaderNciRegression();
+  virtual ~DataReaderNciRegression();
+
+  DataReaderNciRegression(const DataReaderNciRegression& from);
+
+  inline DataReaderNciRegression& operator=(const DataReaderNciRegression& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const DataReaderNciRegression& default_instance();
+
+  void Swap(DataReaderNciRegression* other);
+
+  // implements Message ----------------------------------------------
+
+  inline DataReaderNciRegression* New() const { return New(NULL); }
+
+  DataReaderNciRegression* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const DataReaderNciRegression& from);
+  void MergeFrom(const DataReaderNciRegression& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(DataReaderNciRegression* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderNciRegression)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_lbann_2eproto();
+  friend void protobuf_AssignDesc_lbann_2eproto();
+  friend void protobuf_ShutdownFile_lbann_2eproto();
+
+  void InitAsDefaultInstance();
+  static DataReaderNciRegression* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -313,10 +832,44 @@ class Model : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   ::std::string* release_name();
   void set_allocated_name(::std::string* name);
 
-  // repeated .lbann_data.Layer layer = 2;
+  // optional string objective_function = 2;
+  void clear_objective_function();
+  static const int kObjectiveFunctionFieldNumber = 2;
+  const ::std::string& objective_function() const;
+  void set_objective_function(const ::std::string& value);
+  void set_objective_function(const char* value);
+  void set_objective_function(const char* value, size_t size);
+  ::std::string* mutable_objective_function();
+  ::std::string* release_objective_function();
+  void set_allocated_objective_function(::std::string* objective_function);
+
+  // optional int32 evaluation_frequency = 3;
+  void clear_evaluation_frequency();
+  static const int kEvaluationFrequencyFieldNumber = 3;
+  ::google::protobuf::int32 evaluation_frequency() const;
+  void set_evaluation_frequency(::google::protobuf::int32 value);
+
+  // optional int32 num_epochs = 4;
+  void clear_num_epochs();
+  static const int kNumEpochsFieldNumber = 4;
+  ::google::protobuf::int32 num_epochs() const;
+  void set_num_epochs(::google::protobuf::int32 value);
+
+  // optional string optimizer = 5;
+  void clear_optimizer();
+  static const int kOptimizerFieldNumber = 5;
+  const ::std::string& optimizer() const;
+  void set_optimizer(const ::std::string& value);
+  void set_optimizer(const char* value);
+  void set_optimizer(const char* value, size_t size);
+  ::std::string* mutable_optimizer();
+  ::std::string* release_optimizer();
+  void set_allocated_optimizer(::std::string* optimizer);
+
+  // repeated .lbann_data.Layer layer = 10;
   int layer_size() const;
   void clear_layer();
-  static const int kLayerFieldNumber = 2;
+  static const int kLayerFieldNumber = 10;
   const ::lbann_data::Layer& layer(int index) const;
   ::lbann_data::Layer* mutable_layer(int index);
   ::lbann_data::Layer* add_layer();
@@ -325,10 +878,10 @@ class Model : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   const ::google::protobuf::RepeatedPtrField< ::lbann_data::Layer >&
       layer() const;
 
-  // repeated string callback = 3;
+  // repeated string callback = 20;
   int callback_size() const;
   void clear_callback();
-  static const int kCallbackFieldNumber = 3;
+  static const int kCallbackFieldNumber = 20;
   const ::std::string& callback(int index) const;
   ::std::string* mutable_callback(int index);
   void set_callback(int index, const ::std::string& value);
@@ -347,6 +900,10 @@ class Model : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
   ::google::protobuf::internal::ArenaStringPtr name_;
+  ::google::protobuf::internal::ArenaStringPtr objective_function_;
+  ::google::protobuf::int32 evaluation_frequency_;
+  ::google::protobuf::int32 num_epochs_;
+  ::google::protobuf::internal::ArenaStringPtr optimizer_;
   ::google::protobuf::RepeatedPtrField< ::lbann_data::Layer > layer_;
   ::google::protobuf::RepeatedPtrField< ::std::string> callback_;
   mutable int _cached_size_;
@@ -689,12 +1246,19 @@ class InputDistributedMiniBatchParallelIO : public ::google::protobuf::Message /
   ::google::protobuf::uint32 num_parallel_readers() const;
   void set_num_parallel_readers(::google::protobuf::uint32 value);
 
+  // optional uint32 mini_batch_size = 2;
+  void clear_mini_batch_size();
+  static const int kMiniBatchSizeFieldNumber = 2;
+  ::google::protobuf::uint32 mini_batch_size() const;
+  void set_mini_batch_size(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:lbann_data.InputDistributedMiniBatchParallelIO)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
   ::google::protobuf::uint32 num_parallel_readers_;
+  ::google::protobuf::uint32 mini_batch_size_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_lbann_2eproto();
   friend void protobuf_AssignDesc_lbann_2eproto();
@@ -852,17 +1416,44 @@ class FullyConnected : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::uint32 num_neurons() const;
   void set_num_neurons(::google::protobuf::uint32 value);
 
-  // optional .lbann_data.WeightInitialization weight_initialization = 3;
-  void clear_weight_initialization();
-  static const int kWeightInitializationFieldNumber = 3;
-  ::lbann_data::WeightInitialization weight_initialization() const;
-  void set_weight_initialization(::lbann_data::WeightInitialization value);
+  // optional uint32 mini_batch_size = 3;
+  void clear_mini_batch_size();
+  static const int kMiniBatchSizeFieldNumber = 3;
+  ::google::protobuf::uint32 mini_batch_size() const;
+  void set_mini_batch_size(::google::protobuf::uint32 value);
 
-  // optional .lbann_data.ActivationType activation_type = 4;
+  // optional string activation_type = 4;
   void clear_activation_type();
   static const int kActivationTypeFieldNumber = 4;
-  ::lbann_data::ActivationType activation_type() const;
-  void set_activation_type(::lbann_data::ActivationType value);
+  const ::std::string& activation_type() const;
+  void set_activation_type(const ::std::string& value);
+  void set_activation_type(const char* value);
+  void set_activation_type(const char* value, size_t size);
+  ::std::string* mutable_activation_type();
+  ::std::string* release_activation_type();
+  void set_allocated_activation_type(::std::string* activation_type);
+
+  // optional string weight_initialization = 5;
+  void clear_weight_initialization();
+  static const int kWeightInitializationFieldNumber = 5;
+  const ::std::string& weight_initialization() const;
+  void set_weight_initialization(const ::std::string& value);
+  void set_weight_initialization(const char* value);
+  void set_weight_initialization(const char* value, size_t size);
+  ::std::string* mutable_weight_initialization();
+  ::std::string* release_weight_initialization();
+  void set_allocated_weight_initialization(::std::string* weight_initialization);
+
+  // optional string optimizer = 10;
+  void clear_optimizer();
+  static const int kOptimizerFieldNumber = 10;
+  const ::std::string& optimizer() const;
+  void set_optimizer(const ::std::string& value);
+  void set_optimizer(const char* value);
+  void set_optimizer(const char* value, size_t size);
+  ::std::string* mutable_optimizer();
+  ::std::string* release_optimizer();
+  void set_allocated_optimizer(::std::string* optimizer);
 
   // @@protoc_insertion_point(class_scope:lbann_data.FullyConnected)
  private:
@@ -871,8 +1462,10 @@ class FullyConnected : public ::google::protobuf::Message /* @@protoc_insertion_
   bool _is_default_instance_;
   ::google::protobuf::uint32 num_prev_neurons_;
   ::google::protobuf::uint32 num_neurons_;
-  int weight_initialization_;
-  int activation_type_;
+  ::google::protobuf::internal::ArenaStringPtr activation_type_;
+  ::google::protobuf::internal::ArenaStringPtr weight_initialization_;
+  ::google::protobuf::internal::ArenaStringPtr optimizer_;
+  ::google::protobuf::uint32 mini_batch_size_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_lbann_2eproto();
   friend void protobuf_AssignDesc_lbann_2eproto();
@@ -1003,17 +1596,27 @@ class Pooling : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
       mutable_pool_strides();
 
-  // optional .lbann_data.PoolMode pool_mode = 7;
+  // optional string pool_mode = 7;
   void clear_pool_mode();
   static const int kPoolModeFieldNumber = 7;
-  ::lbann_data::PoolMode pool_mode() const;
-  void set_pool_mode(::lbann_data::PoolMode value);
+  const ::std::string& pool_mode() const;
+  void set_pool_mode(const ::std::string& value);
+  void set_pool_mode(const char* value);
+  void set_pool_mode(const char* value, size_t size);
+  ::std::string* mutable_pool_mode();
+  ::std::string* release_pool_mode();
+  void set_allocated_pool_mode(::std::string* pool_mode);
 
-  // optional .lbann_data.ActivationType activation_type = 8;
+  // optional string activation_type = 8;
   void clear_activation_type();
   static const int kActivationTypeFieldNumber = 8;
-  ::lbann_data::ActivationType activation_type() const;
-  void set_activation_type(::lbann_data::ActivationType value);
+  const ::std::string& activation_type() const;
+  void set_activation_type(const ::std::string& value);
+  void set_activation_type(const char* value);
+  void set_activation_type(const char* value, size_t size);
+  ::std::string* mutable_activation_type();
+  ::std::string* release_activation_type();
+  void set_allocated_activation_type(::std::string* activation_type);
 
   // @@protoc_insertion_point(class_scope:lbann_data.Pooling)
  private:
@@ -1030,8 +1633,8 @@ class Pooling : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   mutable int _pool_pads_cached_byte_size_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 > pool_strides_;
   mutable int _pool_strides_cached_byte_size_;
-  int pool_mode_;
-  int activation_type_;
+  ::google::protobuf::internal::ArenaStringPtr pool_mode_;
+  ::google::protobuf::internal::ArenaStringPtr activation_type_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_lbann_2eproto();
   friend void protobuf_AssignDesc_lbann_2eproto();
@@ -1174,17 +1777,27 @@ class Convolution : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::google::protobuf::uint32 mini_batch_size() const;
   void set_mini_batch_size(::google::protobuf::uint32 value);
 
-  // optional .lbann_data.WeightInitialization weight_initialization = 9;
+  // optional string weight_initialization = 9;
   void clear_weight_initialization();
   static const int kWeightInitializationFieldNumber = 9;
-  ::lbann_data::WeightInitialization weight_initialization() const;
-  void set_weight_initialization(::lbann_data::WeightInitialization value);
+  const ::std::string& weight_initialization() const;
+  void set_weight_initialization(const ::std::string& value);
+  void set_weight_initialization(const char* value);
+  void set_weight_initialization(const char* value, size_t size);
+  ::std::string* mutable_weight_initialization();
+  ::std::string* release_weight_initialization();
+  void set_allocated_weight_initialization(::std::string* weight_initialization);
 
-  // optional .lbann_data.ActivationType activation_type = 10;
+  // optional string activation_type = 10;
   void clear_activation_type();
   static const int kActivationTypeFieldNumber = 10;
-  ::lbann_data::ActivationType activation_type() const;
-  void set_activation_type(::lbann_data::ActivationType value);
+  const ::std::string& activation_type() const;
+  void set_activation_type(const ::std::string& value);
+  void set_activation_type(const char* value);
+  void set_activation_type(const char* value, size_t size);
+  ::std::string* mutable_activation_type();
+  ::std::string* release_activation_type();
+  void set_allocated_activation_type(::std::string* activation_type);
 
   // @@protoc_insertion_point(class_scope:lbann_data.Convolution)
  private:
@@ -1203,8 +1816,8 @@ class Convolution : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::google::protobuf::uint32 mini_batch_size_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint32 > conv_strides_;
   mutable int _conv_strides_cached_byte_size_;
-  int weight_initialization_;
-  int activation_type_;
+  ::google::protobuf::internal::ArenaStringPtr weight_initialization_;
+  ::google::protobuf::internal::ArenaStringPtr activation_type_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_lbann_2eproto();
   friend void protobuf_AssignDesc_lbann_2eproto();
@@ -1287,11 +1900,16 @@ class Softmax : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::uint32 num_neurons() const;
   void set_num_neurons(::google::protobuf::uint32 value);
 
-  // optional .lbann_data.WeightInitialization weight_initialization = 3;
+  // optional string weight_initialization = 3;
   void clear_weight_initialization();
   static const int kWeightInitializationFieldNumber = 3;
-  ::lbann_data::WeightInitialization weight_initialization() const;
-  void set_weight_initialization(::lbann_data::WeightInitialization value);
+  const ::std::string& weight_initialization() const;
+  void set_weight_initialization(const ::std::string& value);
+  void set_weight_initialization(const char* value);
+  void set_weight_initialization(const char* value, size_t size);
+  ::std::string* mutable_weight_initialization();
+  ::std::string* release_weight_initialization();
+  void set_allocated_weight_initialization(::std::string* weight_initialization);
 
   // @@protoc_insertion_point(class_scope:lbann_data.Softmax)
  private:
@@ -1300,7 +1918,7 @@ class Softmax : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   bool _is_default_instance_;
   ::google::protobuf::uint32 num_prev_neurons_;
   ::google::protobuf::uint32 num_neurons_;
-  int weight_initialization_;
+  ::google::protobuf::internal::ArenaStringPtr weight_initialization_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_lbann_2eproto();
   friend void protobuf_AssignDesc_lbann_2eproto();
@@ -1542,42 +2160,80 @@ class TargetDistributedMinibatch : public ::google::protobuf::Message /* @@proto
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 // LbannPB
 
-// optional .lbann_data.Model train_net = 1;
-inline bool LbannPB::has_train_net() const {
-  return !_is_default_instance_ && train_net_ != NULL;
+// optional .lbann_data.DataReader data_reader = 1;
+inline bool LbannPB::has_data_reader() const {
+  return !_is_default_instance_ && data_reader_ != NULL;
 }
-inline void LbannPB::clear_train_net() {
-  if (GetArenaNoVirtual() == NULL && train_net_ != NULL) delete train_net_;
-  train_net_ = NULL;
+inline void LbannPB::clear_data_reader() {
+  if (GetArenaNoVirtual() == NULL && data_reader_ != NULL) delete data_reader_;
+  data_reader_ = NULL;
 }
-inline const ::lbann_data::Model& LbannPB::train_net() const {
-  // @@protoc_insertion_point(field_get:lbann_data.LbannPB.train_net)
-  return train_net_ != NULL ? *train_net_ : *default_instance_->train_net_;
+inline const ::lbann_data::DataReader& LbannPB::data_reader() const {
+  // @@protoc_insertion_point(field_get:lbann_data.LbannPB.data_reader)
+  return data_reader_ != NULL ? *data_reader_ : *default_instance_->data_reader_;
 }
-inline ::lbann_data::Model* LbannPB::mutable_train_net() {
+inline ::lbann_data::DataReader* LbannPB::mutable_data_reader() {
   
-  if (train_net_ == NULL) {
-    train_net_ = new ::lbann_data::Model;
+  if (data_reader_ == NULL) {
+    data_reader_ = new ::lbann_data::DataReader;
   }
-  // @@protoc_insertion_point(field_mutable:lbann_data.LbannPB.train_net)
-  return train_net_;
+  // @@protoc_insertion_point(field_mutable:lbann_data.LbannPB.data_reader)
+  return data_reader_;
 }
-inline ::lbann_data::Model* LbannPB::release_train_net() {
-  // @@protoc_insertion_point(field_release:lbann_data.LbannPB.train_net)
+inline ::lbann_data::DataReader* LbannPB::release_data_reader() {
+  // @@protoc_insertion_point(field_release:lbann_data.LbannPB.data_reader)
   
-  ::lbann_data::Model* temp = train_net_;
-  train_net_ = NULL;
+  ::lbann_data::DataReader* temp = data_reader_;
+  data_reader_ = NULL;
   return temp;
 }
-inline void LbannPB::set_allocated_train_net(::lbann_data::Model* train_net) {
-  delete train_net_;
-  train_net_ = train_net;
-  if (train_net) {
+inline void LbannPB::set_allocated_data_reader(::lbann_data::DataReader* data_reader) {
+  delete data_reader_;
+  data_reader_ = data_reader;
+  if (data_reader) {
     
   } else {
     
   }
-  // @@protoc_insertion_point(field_set_allocated:lbann_data.LbannPB.train_net)
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.LbannPB.data_reader)
+}
+
+// optional .lbann_data.Model model = 2;
+inline bool LbannPB::has_model() const {
+  return !_is_default_instance_ && model_ != NULL;
+}
+inline void LbannPB::clear_model() {
+  if (GetArenaNoVirtual() == NULL && model_ != NULL) delete model_;
+  model_ = NULL;
+}
+inline const ::lbann_data::Model& LbannPB::model() const {
+  // @@protoc_insertion_point(field_get:lbann_data.LbannPB.model)
+  return model_ != NULL ? *model_ : *default_instance_->model_;
+}
+inline ::lbann_data::Model* LbannPB::mutable_model() {
+  
+  if (model_ == NULL) {
+    model_ = new ::lbann_data::Model;
+  }
+  // @@protoc_insertion_point(field_mutable:lbann_data.LbannPB.model)
+  return model_;
+}
+inline ::lbann_data::Model* LbannPB::release_model() {
+  // @@protoc_insertion_point(field_release:lbann_data.LbannPB.model)
+  
+  ::lbann_data::Model* temp = model_;
+  model_ = NULL;
+  return temp;
+}
+inline void LbannPB::set_allocated_model(::lbann_data::Model* model) {
+  delete model_;
+  model_ = model;
+  if (model) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.LbannPB.model)
 }
 
 // optional string optimizer = 10;
@@ -1684,6 +2340,384 @@ inline void LbannPB::set_mini_batch_size(::google::protobuf::uint32 value) {
 
 // -------------------------------------------------------------------
 
+// DataReader
+
+// repeated .lbann_data.DataReaderMnist mnist = 1;
+inline int DataReader::mnist_size() const {
+  return mnist_.size();
+}
+inline void DataReader::clear_mnist() {
+  mnist_.Clear();
+}
+inline const ::lbann_data::DataReaderMnist& DataReader::mnist(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.mnist)
+  return mnist_.Get(index);
+}
+inline ::lbann_data::DataReaderMnist* DataReader::mutable_mnist(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.mnist)
+  return mnist_.Mutable(index);
+}
+inline ::lbann_data::DataReaderMnist* DataReader::add_mnist() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.mnist)
+  return mnist_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >*
+DataReader::mutable_mnist() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.mnist)
+  return &mnist_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >&
+DataReader::mnist() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.mnist)
+  return mnist_;
+}
+
+// repeated .lbann_data.DataReaderCifar10 cifar10 = 2;
+inline int DataReader::cifar10_size() const {
+  return cifar10_.size();
+}
+inline void DataReader::clear_cifar10() {
+  cifar10_.Clear();
+}
+inline const ::lbann_data::DataReaderCifar10& DataReader::cifar10(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.cifar10)
+  return cifar10_.Get(index);
+}
+inline ::lbann_data::DataReaderCifar10* DataReader::mutable_cifar10(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.cifar10)
+  return cifar10_.Mutable(index);
+}
+inline ::lbann_data::DataReaderCifar10* DataReader::add_cifar10() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.cifar10)
+  return cifar10_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >*
+DataReader::mutable_cifar10() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.cifar10)
+  return &cifar10_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >&
+DataReader::cifar10() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.cifar10)
+  return cifar10_;
+}
+
+// repeated .lbann_data.DataReaderImagenet imagenet = 3;
+inline int DataReader::imagenet_size() const {
+  return imagenet_.size();
+}
+inline void DataReader::clear_imagenet() {
+  imagenet_.Clear();
+}
+inline const ::lbann_data::DataReaderImagenet& DataReader::imagenet(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.imagenet)
+  return imagenet_.Get(index);
+}
+inline ::lbann_data::DataReaderImagenet* DataReader::mutable_imagenet(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.imagenet)
+  return imagenet_.Mutable(index);
+}
+inline ::lbann_data::DataReaderImagenet* DataReader::add_imagenet() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.imagenet)
+  return imagenet_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >*
+DataReader::mutable_imagenet() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.imagenet)
+  return &imagenet_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >&
+DataReader::imagenet() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.imagenet)
+  return imagenet_;
+}
+
+// repeated .lbann_data.DataReaderNci nci = 4;
+inline int DataReader::nci_size() const {
+  return nci_.size();
+}
+inline void DataReader::clear_nci() {
+  nci_.Clear();
+}
+inline const ::lbann_data::DataReaderNci& DataReader::nci(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.nci)
+  return nci_.Get(index);
+}
+inline ::lbann_data::DataReaderNci* DataReader::mutable_nci(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.nci)
+  return nci_.Mutable(index);
+}
+inline ::lbann_data::DataReaderNci* DataReader::add_nci() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.nci)
+  return nci_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >*
+DataReader::mutable_nci() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.nci)
+  return &nci_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >&
+DataReader::nci() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.nci)
+  return nci_;
+}
+
+// repeated .lbann_data.DataReaderNciRegression nci_regression = 5;
+inline int DataReader::nci_regression_size() const {
+  return nci_regression_.size();
+}
+inline void DataReader::clear_nci_regression() {
+  nci_regression_.Clear();
+}
+inline const ::lbann_data::DataReaderNciRegression& DataReader::nci_regression(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.nci_regression)
+  return nci_regression_.Get(index);
+}
+inline ::lbann_data::DataReaderNciRegression* DataReader::mutable_nci_regression(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.nci_regression)
+  return nci_regression_.Mutable(index);
+}
+inline ::lbann_data::DataReaderNciRegression* DataReader::add_nci_regression() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.nci_regression)
+  return nci_regression_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >*
+DataReader::mutable_nci_regression() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.nci_regression)
+  return &nci_regression_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >&
+DataReader::nci_regression() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.nci_regression)
+  return nci_regression_;
+}
+
+// -------------------------------------------------------------------
+
+// DataReaderMnist
+
+// optional string role = 1;
+inline void DataReaderMnist::clear_role() {
+  role_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& DataReaderMnist::role() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.role)
+  return role_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_role(const ::std::string& value) {
+  
+  role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.role)
+}
+inline void DataReaderMnist::set_role(const char* value) {
+  
+  role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.role)
+}
+inline void DataReaderMnist::set_role(const char* value, size_t size) {
+  
+  role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.role)
+}
+inline ::std::string* DataReaderMnist::mutable_role() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.role)
+  return role_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* DataReaderMnist::release_role() {
+  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.role)
+  
+  return role_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_allocated_role(::std::string* role) {
+  if (role != NULL) {
+    
+  } else {
+    
+  }
+  role_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), role);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.role)
+}
+
+// optional uint32 batch_size = 2;
+inline void DataReaderMnist::clear_batch_size() {
+  batch_size_ = 0u;
+}
+inline ::google::protobuf::uint32 DataReaderMnist::batch_size() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.batch_size)
+  return batch_size_;
+}
+inline void DataReaderMnist::set_batch_size(::google::protobuf::uint32 value) {
+  
+  batch_size_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.batch_size)
+}
+
+// optional bool shuffle = 3;
+inline void DataReaderMnist::clear_shuffle() {
+  shuffle_ = false;
+}
+inline bool DataReaderMnist::shuffle() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.shuffle)
+  return shuffle_;
+}
+inline void DataReaderMnist::set_shuffle(bool value) {
+  
+  shuffle_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.shuffle)
+}
+
+// optional string file_dir = 4;
+inline void DataReaderMnist::clear_file_dir() {
+  file_dir_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& DataReaderMnist::file_dir() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.file_dir)
+  return file_dir_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_file_dir(const ::std::string& value) {
+  
+  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.file_dir)
+}
+inline void DataReaderMnist::set_file_dir(const char* value) {
+  
+  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.file_dir)
+}
+inline void DataReaderMnist::set_file_dir(const char* value, size_t size) {
+  
+  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.file_dir)
+}
+inline ::std::string* DataReaderMnist::mutable_file_dir() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.file_dir)
+  return file_dir_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* DataReaderMnist::release_file_dir() {
+  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.file_dir)
+  
+  return file_dir_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_allocated_file_dir(::std::string* file_dir) {
+  if (file_dir != NULL) {
+    
+  } else {
+    
+  }
+  file_dir_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), file_dir);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.file_dir)
+}
+
+// optional string image_file = 5;
+inline void DataReaderMnist::clear_image_file() {
+  image_file_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& DataReaderMnist::image_file() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.image_file)
+  return image_file_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_image_file(const ::std::string& value) {
+  
+  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.image_file)
+}
+inline void DataReaderMnist::set_image_file(const char* value) {
+  
+  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.image_file)
+}
+inline void DataReaderMnist::set_image_file(const char* value, size_t size) {
+  
+  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.image_file)
+}
+inline ::std::string* DataReaderMnist::mutable_image_file() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.image_file)
+  return image_file_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* DataReaderMnist::release_image_file() {
+  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.image_file)
+  
+  return image_file_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_allocated_image_file(::std::string* image_file) {
+  if (image_file != NULL) {
+    
+  } else {
+    
+  }
+  image_file_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), image_file);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.image_file)
+}
+
+// optional string label_file = 6;
+inline void DataReaderMnist::clear_label_file() {
+  label_file_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& DataReaderMnist::label_file() const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.label_file)
+  return label_file_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_label_file(const ::std::string& value) {
+  
+  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.label_file)
+}
+inline void DataReaderMnist::set_label_file(const char* value) {
+  
+  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.label_file)
+}
+inline void DataReaderMnist::set_label_file(const char* value, size_t size) {
+  
+  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.label_file)
+}
+inline ::std::string* DataReaderMnist::mutable_label_file() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.label_file)
+  return label_file_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* DataReaderMnist::release_label_file() {
+  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.label_file)
+  
+  return label_file_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void DataReaderMnist::set_allocated_label_file(::std::string* label_file) {
+  if (label_file != NULL) {
+    
+  } else {
+    
+  }
+  label_file_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), label_file);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.label_file)
+}
+
+// -------------------------------------------------------------------
+
+// DataReaderCifar10
+
+// -------------------------------------------------------------------
+
+// DataReaderImagenet
+
+// -------------------------------------------------------------------
+
+// DataReaderNci
+
+// -------------------------------------------------------------------
+
+// DataReaderNciRegression
+
+// -------------------------------------------------------------------
+
 // Model
 
 // optional string name = 1;
@@ -1730,7 +2764,123 @@ inline void Model::set_allocated_name(::std::string* name) {
   // @@protoc_insertion_point(field_set_allocated:lbann_data.Model.name)
 }
 
-// repeated .lbann_data.Layer layer = 2;
+// optional string objective_function = 2;
+inline void Model::clear_objective_function() {
+  objective_function_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Model::objective_function() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Model.objective_function)
+  return objective_function_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Model::set_objective_function(const ::std::string& value) {
+  
+  objective_function_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Model.objective_function)
+}
+inline void Model::set_objective_function(const char* value) {
+  
+  objective_function_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Model.objective_function)
+}
+inline void Model::set_objective_function(const char* value, size_t size) {
+  
+  objective_function_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Model.objective_function)
+}
+inline ::std::string* Model::mutable_objective_function() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Model.objective_function)
+  return objective_function_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Model::release_objective_function() {
+  // @@protoc_insertion_point(field_release:lbann_data.Model.objective_function)
+  
+  return objective_function_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Model::set_allocated_objective_function(::std::string* objective_function) {
+  if (objective_function != NULL) {
+    
+  } else {
+    
+  }
+  objective_function_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), objective_function);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Model.objective_function)
+}
+
+// optional int32 evaluation_frequency = 3;
+inline void Model::clear_evaluation_frequency() {
+  evaluation_frequency_ = 0;
+}
+inline ::google::protobuf::int32 Model::evaluation_frequency() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Model.evaluation_frequency)
+  return evaluation_frequency_;
+}
+inline void Model::set_evaluation_frequency(::google::protobuf::int32 value) {
+  
+  evaluation_frequency_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Model.evaluation_frequency)
+}
+
+// optional int32 num_epochs = 4;
+inline void Model::clear_num_epochs() {
+  num_epochs_ = 0;
+}
+inline ::google::protobuf::int32 Model::num_epochs() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Model.num_epochs)
+  return num_epochs_;
+}
+inline void Model::set_num_epochs(::google::protobuf::int32 value) {
+  
+  num_epochs_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Model.num_epochs)
+}
+
+// optional string optimizer = 5;
+inline void Model::clear_optimizer() {
+  optimizer_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Model::optimizer() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Model.optimizer)
+  return optimizer_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Model::set_optimizer(const ::std::string& value) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Model.optimizer)
+}
+inline void Model::set_optimizer(const char* value) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Model.optimizer)
+}
+inline void Model::set_optimizer(const char* value, size_t size) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Model.optimizer)
+}
+inline ::std::string* Model::mutable_optimizer() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Model.optimizer)
+  return optimizer_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Model::release_optimizer() {
+  // @@protoc_insertion_point(field_release:lbann_data.Model.optimizer)
+  
+  return optimizer_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Model::set_allocated_optimizer(::std::string* optimizer) {
+  if (optimizer != NULL) {
+    
+  } else {
+    
+  }
+  optimizer_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), optimizer);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Model.optimizer)
+}
+
+// repeated .lbann_data.Layer layer = 10;
 inline int Model::layer_size() const {
   return layer_.size();
 }
@@ -1760,7 +2910,7 @@ Model::layer() const {
   return layer_;
 }
 
-// repeated string callback = 3;
+// repeated string callback = 20;
 inline int Model::callback_size() const {
   return callback_.size();
 }
@@ -2249,6 +3399,20 @@ inline void InputDistributedMiniBatchParallelIO::set_num_parallel_readers(::goog
   // @@protoc_insertion_point(field_set:lbann_data.InputDistributedMiniBatchParallelIO.num_parallel_readers)
 }
 
+// optional uint32 mini_batch_size = 2;
+inline void InputDistributedMiniBatchParallelIO::clear_mini_batch_size() {
+  mini_batch_size_ = 0u;
+}
+inline ::google::protobuf::uint32 InputDistributedMiniBatchParallelIO::mini_batch_size() const {
+  // @@protoc_insertion_point(field_get:lbann_data.InputDistributedMiniBatchParallelIO.mini_batch_size)
+  return mini_batch_size_;
+}
+inline void InputDistributedMiniBatchParallelIO::set_mini_batch_size(::google::protobuf::uint32 value) {
+  
+  mini_batch_size_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.InputDistributedMiniBatchParallelIO.mini_batch_size)
+}
+
 // -------------------------------------------------------------------
 
 // InputDistributedMiniBatch
@@ -2285,32 +3449,150 @@ inline void FullyConnected::set_num_neurons(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.num_neurons)
 }
 
-// optional .lbann_data.WeightInitialization weight_initialization = 3;
-inline void FullyConnected::clear_weight_initialization() {
-  weight_initialization_ = 0;
+// optional uint32 mini_batch_size = 3;
+inline void FullyConnected::clear_mini_batch_size() {
+  mini_batch_size_ = 0u;
 }
-inline ::lbann_data::WeightInitialization FullyConnected::weight_initialization() const {
-  // @@protoc_insertion_point(field_get:lbann_data.FullyConnected.weight_initialization)
-  return static_cast< ::lbann_data::WeightInitialization >(weight_initialization_);
+inline ::google::protobuf::uint32 FullyConnected::mini_batch_size() const {
+  // @@protoc_insertion_point(field_get:lbann_data.FullyConnected.mini_batch_size)
+  return mini_batch_size_;
 }
-inline void FullyConnected::set_weight_initialization(::lbann_data::WeightInitialization value) {
+inline void FullyConnected::set_mini_batch_size(::google::protobuf::uint32 value) {
   
-  weight_initialization_ = value;
-  // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.weight_initialization)
+  mini_batch_size_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.mini_batch_size)
 }
 
-// optional .lbann_data.ActivationType activation_type = 4;
+// optional string activation_type = 4;
 inline void FullyConnected::clear_activation_type() {
-  activation_type_ = 0;
+  activation_type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::lbann_data::ActivationType FullyConnected::activation_type() const {
+inline const ::std::string& FullyConnected::activation_type() const {
   // @@protoc_insertion_point(field_get:lbann_data.FullyConnected.activation_type)
-  return static_cast< ::lbann_data::ActivationType >(activation_type_);
+  return activation_type_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void FullyConnected::set_activation_type(::lbann_data::ActivationType value) {
+inline void FullyConnected::set_activation_type(const ::std::string& value) {
   
-  activation_type_ = value;
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.activation_type)
+}
+inline void FullyConnected::set_activation_type(const char* value) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.FullyConnected.activation_type)
+}
+inline void FullyConnected::set_activation_type(const char* value, size_t size) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.FullyConnected.activation_type)
+}
+inline ::std::string* FullyConnected::mutable_activation_type() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.FullyConnected.activation_type)
+  return activation_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* FullyConnected::release_activation_type() {
+  // @@protoc_insertion_point(field_release:lbann_data.FullyConnected.activation_type)
+  
+  return activation_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void FullyConnected::set_allocated_activation_type(::std::string* activation_type) {
+  if (activation_type != NULL) {
+    
+  } else {
+    
+  }
+  activation_type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), activation_type);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.FullyConnected.activation_type)
+}
+
+// optional string weight_initialization = 5;
+inline void FullyConnected::clear_weight_initialization() {
+  weight_initialization_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& FullyConnected::weight_initialization() const {
+  // @@protoc_insertion_point(field_get:lbann_data.FullyConnected.weight_initialization)
+  return weight_initialization_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void FullyConnected::set_weight_initialization(const ::std::string& value) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.weight_initialization)
+}
+inline void FullyConnected::set_weight_initialization(const char* value) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.FullyConnected.weight_initialization)
+}
+inline void FullyConnected::set_weight_initialization(const char* value, size_t size) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.FullyConnected.weight_initialization)
+}
+inline ::std::string* FullyConnected::mutable_weight_initialization() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.FullyConnected.weight_initialization)
+  return weight_initialization_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* FullyConnected::release_weight_initialization() {
+  // @@protoc_insertion_point(field_release:lbann_data.FullyConnected.weight_initialization)
+  
+  return weight_initialization_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void FullyConnected::set_allocated_weight_initialization(::std::string* weight_initialization) {
+  if (weight_initialization != NULL) {
+    
+  } else {
+    
+  }
+  weight_initialization_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), weight_initialization);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.FullyConnected.weight_initialization)
+}
+
+// optional string optimizer = 10;
+inline void FullyConnected::clear_optimizer() {
+  optimizer_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& FullyConnected::optimizer() const {
+  // @@protoc_insertion_point(field_get:lbann_data.FullyConnected.optimizer)
+  return optimizer_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void FullyConnected::set_optimizer(const ::std::string& value) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.FullyConnected.optimizer)
+}
+inline void FullyConnected::set_optimizer(const char* value) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.FullyConnected.optimizer)
+}
+inline void FullyConnected::set_optimizer(const char* value, size_t size) {
+  
+  optimizer_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.FullyConnected.optimizer)
+}
+inline ::std::string* FullyConnected::mutable_optimizer() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.FullyConnected.optimizer)
+  return optimizer_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* FullyConnected::release_optimizer() {
+  // @@protoc_insertion_point(field_release:lbann_data.FullyConnected.optimizer)
+  
+  return optimizer_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void FullyConnected::set_allocated_optimizer(::std::string* optimizer) {
+  if (optimizer != NULL) {
+    
+  } else {
+    
+  }
+  optimizer_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), optimizer);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.FullyConnected.optimizer)
 }
 
 // -------------------------------------------------------------------
@@ -2465,32 +3747,92 @@ Pooling::mutable_pool_strides() {
   return &pool_strides_;
 }
 
-// optional .lbann_data.PoolMode pool_mode = 7;
+// optional string pool_mode = 7;
 inline void Pooling::clear_pool_mode() {
-  pool_mode_ = 0;
+  pool_mode_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::lbann_data::PoolMode Pooling::pool_mode() const {
+inline const ::std::string& Pooling::pool_mode() const {
   // @@protoc_insertion_point(field_get:lbann_data.Pooling.pool_mode)
-  return static_cast< ::lbann_data::PoolMode >(pool_mode_);
+  return pool_mode_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void Pooling::set_pool_mode(::lbann_data::PoolMode value) {
+inline void Pooling::set_pool_mode(const ::std::string& value) {
   
-  pool_mode_ = value;
+  pool_mode_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.Pooling.pool_mode)
 }
-
-// optional .lbann_data.ActivationType activation_type = 8;
-inline void Pooling::clear_activation_type() {
-  activation_type_ = 0;
-}
-inline ::lbann_data::ActivationType Pooling::activation_type() const {
-  // @@protoc_insertion_point(field_get:lbann_data.Pooling.activation_type)
-  return static_cast< ::lbann_data::ActivationType >(activation_type_);
-}
-inline void Pooling::set_activation_type(::lbann_data::ActivationType value) {
+inline void Pooling::set_pool_mode(const char* value) {
   
-  activation_type_ = value;
+  pool_mode_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Pooling.pool_mode)
+}
+inline void Pooling::set_pool_mode(const char* value, size_t size) {
+  
+  pool_mode_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Pooling.pool_mode)
+}
+inline ::std::string* Pooling::mutable_pool_mode() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Pooling.pool_mode)
+  return pool_mode_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Pooling::release_pool_mode() {
+  // @@protoc_insertion_point(field_release:lbann_data.Pooling.pool_mode)
+  
+  return pool_mode_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Pooling::set_allocated_pool_mode(::std::string* pool_mode) {
+  if (pool_mode != NULL) {
+    
+  } else {
+    
+  }
+  pool_mode_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), pool_mode);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Pooling.pool_mode)
+}
+
+// optional string activation_type = 8;
+inline void Pooling::clear_activation_type() {
+  activation_type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Pooling::activation_type() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Pooling.activation_type)
+  return activation_type_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Pooling::set_activation_type(const ::std::string& value) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.Pooling.activation_type)
+}
+inline void Pooling::set_activation_type(const char* value) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Pooling.activation_type)
+}
+inline void Pooling::set_activation_type(const char* value, size_t size) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Pooling.activation_type)
+}
+inline ::std::string* Pooling::mutable_activation_type() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Pooling.activation_type)
+  return activation_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Pooling::release_activation_type() {
+  // @@protoc_insertion_point(field_release:lbann_data.Pooling.activation_type)
+  
+  return activation_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Pooling::set_allocated_activation_type(::std::string* activation_type) {
+  if (activation_type != NULL) {
+    
+  } else {
+    
+  }
+  activation_type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), activation_type);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Pooling.activation_type)
 }
 
 // -------------------------------------------------------------------
@@ -2673,32 +4015,92 @@ inline void Convolution::set_mini_batch_size(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:lbann_data.Convolution.mini_batch_size)
 }
 
-// optional .lbann_data.WeightInitialization weight_initialization = 9;
+// optional string weight_initialization = 9;
 inline void Convolution::clear_weight_initialization() {
-  weight_initialization_ = 0;
+  weight_initialization_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::lbann_data::WeightInitialization Convolution::weight_initialization() const {
+inline const ::std::string& Convolution::weight_initialization() const {
   // @@protoc_insertion_point(field_get:lbann_data.Convolution.weight_initialization)
-  return static_cast< ::lbann_data::WeightInitialization >(weight_initialization_);
+  return weight_initialization_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void Convolution::set_weight_initialization(::lbann_data::WeightInitialization value) {
+inline void Convolution::set_weight_initialization(const ::std::string& value) {
   
-  weight_initialization_ = value;
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.Convolution.weight_initialization)
 }
-
-// optional .lbann_data.ActivationType activation_type = 10;
-inline void Convolution::clear_activation_type() {
-  activation_type_ = 0;
-}
-inline ::lbann_data::ActivationType Convolution::activation_type() const {
-  // @@protoc_insertion_point(field_get:lbann_data.Convolution.activation_type)
-  return static_cast< ::lbann_data::ActivationType >(activation_type_);
-}
-inline void Convolution::set_activation_type(::lbann_data::ActivationType value) {
+inline void Convolution::set_weight_initialization(const char* value) {
   
-  activation_type_ = value;
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Convolution.weight_initialization)
+}
+inline void Convolution::set_weight_initialization(const char* value, size_t size) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Convolution.weight_initialization)
+}
+inline ::std::string* Convolution::mutable_weight_initialization() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Convolution.weight_initialization)
+  return weight_initialization_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Convolution::release_weight_initialization() {
+  // @@protoc_insertion_point(field_release:lbann_data.Convolution.weight_initialization)
+  
+  return weight_initialization_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Convolution::set_allocated_weight_initialization(::std::string* weight_initialization) {
+  if (weight_initialization != NULL) {
+    
+  } else {
+    
+  }
+  weight_initialization_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), weight_initialization);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Convolution.weight_initialization)
+}
+
+// optional string activation_type = 10;
+inline void Convolution::clear_activation_type() {
+  activation_type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Convolution::activation_type() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Convolution.activation_type)
+  return activation_type_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Convolution::set_activation_type(const ::std::string& value) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.Convolution.activation_type)
+}
+inline void Convolution::set_activation_type(const char* value) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Convolution.activation_type)
+}
+inline void Convolution::set_activation_type(const char* value, size_t size) {
+  
+  activation_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Convolution.activation_type)
+}
+inline ::std::string* Convolution::mutable_activation_type() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Convolution.activation_type)
+  return activation_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Convolution::release_activation_type() {
+  // @@protoc_insertion_point(field_release:lbann_data.Convolution.activation_type)
+  
+  return activation_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Convolution::set_allocated_activation_type(::std::string* activation_type) {
+  if (activation_type != NULL) {
+    
+  } else {
+    
+  }
+  activation_type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), activation_type);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Convolution.activation_type)
 }
 
 // -------------------------------------------------------------------
@@ -2733,18 +4135,48 @@ inline void Softmax::set_num_neurons(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:lbann_data.Softmax.num_neurons)
 }
 
-// optional .lbann_data.WeightInitialization weight_initialization = 3;
+// optional string weight_initialization = 3;
 inline void Softmax::clear_weight_initialization() {
-  weight_initialization_ = 0;
+  weight_initialization_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::lbann_data::WeightInitialization Softmax::weight_initialization() const {
+inline const ::std::string& Softmax::weight_initialization() const {
   // @@protoc_insertion_point(field_get:lbann_data.Softmax.weight_initialization)
-  return static_cast< ::lbann_data::WeightInitialization >(weight_initialization_);
+  return weight_initialization_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void Softmax::set_weight_initialization(::lbann_data::WeightInitialization value) {
+inline void Softmax::set_weight_initialization(const ::std::string& value) {
   
-  weight_initialization_ = value;
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:lbann_data.Softmax.weight_initialization)
+}
+inline void Softmax::set_weight_initialization(const char* value) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Softmax.weight_initialization)
+}
+inline void Softmax::set_weight_initialization(const char* value, size_t size) {
+  
+  weight_initialization_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Softmax.weight_initialization)
+}
+inline ::std::string* Softmax::mutable_weight_initialization() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Softmax.weight_initialization)
+  return weight_initialization_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Softmax::release_weight_initialization() {
+  // @@protoc_insertion_point(field_release:lbann_data.Softmax.weight_initialization)
+  
+  return weight_initialization_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Softmax::set_allocated_weight_initialization(::std::string* weight_initialization) {
+  if (weight_initialization != NULL) {
+    
+  } else {
+    
+  }
+  weight_initialization_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), weight_initialization);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Softmax.weight_initialization)
 }
 
 // -------------------------------------------------------------------
@@ -2784,34 +4216,22 @@ inline void Softmax::set_weight_initialization(::lbann_data::WeightInitializatio
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
 }  // namespace lbann_data
-
-#ifndef SWIG
-namespace google {
-namespace protobuf {
-
-template <> struct is_proto_enum< ::lbann_data::WeightInitialization> : ::google::protobuf::internal::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::lbann_data::WeightInitialization>() {
-  return ::lbann_data::WeightInitialization_descriptor();
-}
-template <> struct is_proto_enum< ::lbann_data::ActivationType> : ::google::protobuf::internal::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::lbann_data::ActivationType>() {
-  return ::lbann_data::ActivationType_descriptor();
-}
-template <> struct is_proto_enum< ::lbann_data::PoolMode> : ::google::protobuf::internal::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::lbann_data::PoolMode>() {
-  return ::lbann_data::PoolMode_descriptor();
-}
-
-}  // namespace protobuf
-}  // namespace google
-#endif  // SWIG
 
 // @@protoc_insertion_point(global_scope)
 
