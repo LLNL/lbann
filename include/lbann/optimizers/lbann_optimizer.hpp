@@ -65,7 +65,13 @@ namespace lbann
       return false;
     }
 
-  public:
+    const string name() { return m_name; }
+
+    void set_name(std::string name) { m_name = name; }
+
+  private :
+    std::string m_name;
+
   };
 
   class Optimizer_factory {

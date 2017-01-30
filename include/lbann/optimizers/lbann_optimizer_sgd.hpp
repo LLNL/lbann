@@ -62,6 +62,7 @@ namespace lbann
         decay(decay), nesterov(nesterov),
         velocity(comm->get_model_grid()),
         nesterov_ag(comm->get_model_grid()) {
+      set_name("sgd");
       iterations = 0;
     }
 

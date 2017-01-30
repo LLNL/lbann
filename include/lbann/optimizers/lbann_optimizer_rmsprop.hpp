@@ -64,6 +64,7 @@ namespace lbann
         WB_D_Cache(comm->get_model_grid()),
         WB_D_Temp(comm->get_model_grid()),
         WB_D_Temp2(comm->get_model_grid()) {
+      set_name("rmsprop");
       if (comm->am_model_master()) {
         printf("Initializing RMSprop optimizer with lr=%f, rho=%f, and epsilon=%f\n", lr, rho, epsilon);
       }

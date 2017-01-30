@@ -65,6 +65,7 @@ namespace lbann
         WB_D_Cache(comm->get_model_grid()),
         WB_D_Temp(comm->get_model_grid()),
         WB_D_Temp2(comm->get_model_grid()) {
+      set_name("adagrad");
       if (comm->am_model_master()) {
         printf("Initializing Adagrad optimizer with lr=%f and epsilon=%f\n", lr, epsilon);
       }
