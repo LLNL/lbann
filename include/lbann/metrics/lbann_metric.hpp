@@ -56,15 +56,26 @@ namespace lbann
     static const char* __attribute__((used)) _to_string(metric_type m) {
       switch(m) {
       case metric_type::categorical_accuracy:
-        return "categorical_accuracy";
+        return "categorical accuracy";
       case metric_type::mean_squared_error:
-        return "mean_squared_error";
+        return "mean squared error";
       default:
         throw lbann_exception("Invalid metric type specified");
       }
       return NULL;
     }
 
+    static const char* __attribute__((used)) _disp_unit(metric_type m) {
+      switch(m) {
+      case metric_type::categorical_accuracy:
+        return "%";
+      case metric_type::mean_squared_error:
+        return "";
+      default:
+        throw lbann_exception("Invalid metric type specified");
+      }
+      return NULL;
+    }
 
     class statistics
     {

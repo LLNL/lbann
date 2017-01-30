@@ -1,7 +1,9 @@
 include(ExternalProject)
 
 # Include Protocol Buffers dependency
-include(protobuf)
+if(NOT LBANN_HAS_PROTOBUF)
+  include(protobuf)
+endif()
 
 if(LBANN_HAS_PROTOBUF)
 
