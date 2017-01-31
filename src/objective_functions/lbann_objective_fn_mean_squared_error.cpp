@@ -71,7 +71,7 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
   // compute difference between original and computed input x(Y)-x_bar(m_activations)
   Axpy(-1., groundtruth_v, m_squared_errors_v);
   //square the differences
-  EntrywiseMap(m_squared_errors_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return z*z;}));
+  EntrywiseMap(m_squared_errors_v, (std::function<DataType(const DataType&)>)([](const DataType& z)->DataType{return z*z;}));
   // sum up squared in a column (i.e., per minibatch/image)
   Zeros(m_sum_squared_errors, cur_mini_batch_size, 1); // Clear the entire array
   ColumnSum(m_squared_errors_v, m_sum_squared_errors_v);

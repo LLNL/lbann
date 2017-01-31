@@ -300,9 +300,9 @@ void lbann_quantizer::intermodel_sum_quantized(
                                         rs_get_recv_buf, rs_recv_trans);
   QuantizedMatrix ag_send;
   QuantizedMatrix ag_recv;
-  std::function<DataType(DataType)> _sq = [](DataType x) { return x*x; };
-  std::function<DataType(DataType)> _sqrt =
-    [](DataType x) { return 1.0f / (std::sqrt(x) + 1e-8f); };
+  std::function<DataType(const DataType&)> _sq = [](const DataType& x) { return x*x; };
+  std::function<DataType(const DataType&)> _sqrt =
+    [](const DataType& x) { return 1.0f / (std::sqrt(x) + 1e-8f); };
   auto ag_reduced_trans =
     [&im_qerror, &ag_send, gradhist, do_adagrad, _sq, _sqrt, this] (Mat& reduced) {
       if (do_adagrad) {

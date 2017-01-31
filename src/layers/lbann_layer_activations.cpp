@@ -62,18 +62,18 @@ Activation* new_activation(activation_type act_fn, DataType param) {
 }
 
 // Activation class
-DataType sigmoid_layer::sigmoid(DataType z)
+DataType sigmoid_layer::sigmoid(const DataType& z)
 {
     return (1.0 / (1.0 + exp(-z)));
 }
 
-DataType sigmoid_layer::sigmoidPrime(DataType z)
+DataType sigmoid_layer::sigmoidPrime(const DataType& z)
 {
     DataType sigz = sigmoid(z);
     return sigz * (1 - sigz);
 }
 
-DataType tanh_layer::tanh(DataType z)
+DataType tanh_layer::tanh(const DataType& z)
 {
 #ifdef __ICC
     // If using Intel compiler, use the MKL specific Tanh function
@@ -84,18 +84,18 @@ DataType tanh_layer::tanh(DataType z)
 #endif
 }
 
-DataType tanh_layer::tanhPrime(DataType z)
+DataType tanh_layer::tanhPrime(const DataType& z)
 {
     float e = exp(2 * z);
     return ((e - 1) / (e + 1));
 }
 
-DataType reLU_layer::reLU(DataType z)
+DataType reLU_layer::reLU(const DataType& z)
 {
     return max((DataType) 0.0, z);
 }
 
-DataType reLU_layer::reLUPrime(DataType z)
+DataType reLU_layer::reLUPrime(const DataType& z)
 {
     if (z > 0.0f) {
       return 1.0f;
@@ -106,12 +106,12 @@ DataType reLU_layer::reLUPrime(DataType z)
 
 leaky_reLU_layer::leaky_reLU_layer(DataType leak) : leak(leak) {}
 
-DataType leaky_reLU_layer::leaky_reLU(DataType z, DataType k)
+DataType leaky_reLU_layer::leaky_reLU(const DataType& z, DataType k)
 {
     return max(k * z, z);
 }
 
-DataType leaky_reLU_layer::leaky_reLUPrime(DataType z, DataType k)
+DataType leaky_reLU_layer::leaky_reLUPrime(const DataType& z, DataType k)
 {
     if (z > 0.0f) {
       return 1.0f;
@@ -121,23 +121,23 @@ DataType leaky_reLU_layer::leaky_reLUPrime(DataType z, DataType k)
 }
 
 #if 0
-DataType softplus_layer::softplus(DataType z)
+DataType softplus_layer::softplus(const DataType& z)
 {
     return log(1.0 + exp(z)); // exp(z) can be very large and blow up
     // return log((exp(-z) + 1.0)/exp(-z)); // this can overflow or divided by zero
 }
 
-DataType softplus_layer::softplusPrime(DataType z)
+DataType softplus_layer::softplusPrime(const DataType& z)
 {
     return (1.0 / (1.0 + exp(-z)));
 }
 #else
-DataType smooth_reLU_layer::smooth_reLU(DataType z)
+DataType smooth_reLU_layer::smooth_reLU(const DataType& z)
 {
     return (z / (1.0 + exp(-z)));
 }
 
-DataType smooth_reLU_layer::smooth_reLUPrime(DataType z)
+DataType smooth_reLU_layer::smooth_reLUPrime(const DataType& z)
 {
     DataType s = (1.0 / (1.0 + exp(-z)));
     return (s + z*s - z*s*s);
@@ -146,7 +146,7 @@ DataType smooth_reLU_layer::smooth_reLUPrime(DataType z)
 
 ELU_layer::ELU_layer(DataType alpha) : alpha(alpha) {}
 
-DataType ELU_layer::elu(DataType z, DataType alpha) {
+DataType ELU_layer::elu(const DataType& z, DataType alpha) {
   if (z > 0) {
     return z;
   } else {
@@ -154,7 +154,7 @@ DataType ELU_layer::elu(DataType z, DataType alpha) {
   }
 }
 
-DataType ELU_layer::eluPrime(DataType z, DataType alpha) {
+DataType ELU_layer::eluPrime(const DataType& z, DataType alpha) {
   if (z > 0) {
     return 1.0f;
   } else {
@@ -176,76 +176,76 @@ DataType ELU_layer::eluPrime(DataType z, DataType alpha) {
 ////////////////////////////////////////////////////////////////////////////////
 void sigmoid_layer::forwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(sigmoid));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(sigmoid));
 }
 
 void sigmoid_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(sigmoidPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(sigmoidPrime));
 }
 
 void tanh_layer::forwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(tanh));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(tanh));
 }
 
 void tanh_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(tanhPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(tanhPrime));
 }
 
 void reLU_layer::forwardProp(ElMat& m)
 {
-    EntrywiseMap(m, std::function<DataType(DataType)>(reLU));
+    EntrywiseMap(m, std::function<DataType(const DataType&)>(reLU));
 }
 
 void reLU_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(reLUPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(reLUPrime));
 }
 
 void leaky_reLU_layer::forwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>([this] (DataType x) -> DataType { return leaky_reLU(x, leak); }));
-  //EntrywiseMap(m, std::function<DataType(DataType)>(leaky_reLU));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>([this] (const DataType& x) -> DataType { return leaky_reLU(x, leak); }));
+  //EntrywiseMap(m, std::function<DataType(const DataType&)>(leaky_reLU));
 }
 
 void leaky_reLU_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>([this] (DataType x) -> DataType { return leaky_reLUPrime(x, leak); }));
-  //EntrywiseMap(m, std::function<DataType(DataType)>(leaky_reLUPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>([this] (const DataType& x) -> DataType { return leaky_reLUPrime(x, leak); }));
+  //EntrywiseMap(m, std::function<DataType(const DataType&)>(leaky_reLUPrime));
 }
 
 #if 0
 void softplus_layer::forwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(softplus));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(softplus));
 }
 
 void softplus_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(softplusPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(softplusPrime));
 }
 #else
 void smooth_reLU_layer::forwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(smooth_reLU));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(smooth_reLU));
 }
 
 void smooth_reLU_layer::backwardProp(ElMat& m)
 {
-  EntrywiseMap(m, std::function<DataType(DataType)>(smooth_reLUPrime));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(smooth_reLUPrime));
 }
 #endif
 
 void ELU_layer::forwardProp(ElMat& m) {
-  EntrywiseMap(m, std::function<DataType(DataType)>(
-                 [this] (DataType x) -> DataType { return elu(x, alpha); }));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(
+                 [this] (const DataType& x) -> DataType { return elu(x, alpha); }));
 }
 
 void ELU_layer::backwardProp(ElMat& m) {
-  EntrywiseMap(m, std::function<DataType(DataType)>(
-                 [this] (DataType x) -> DataType { return eluPrime(x, alpha); }));
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(
+                 [this] (const DataType& x) -> DataType { return eluPrime(x, alpha); }));
 }
 
 }  // namespace lbann

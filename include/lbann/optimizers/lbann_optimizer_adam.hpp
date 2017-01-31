@@ -77,14 +77,14 @@ public:
     Axpy(1.0f - rho1, WB_D, moment1_hist);
     Scale(rho2, moment2_hist);
     EntrywiseMap(WB_D,
-                 std::function<DataType(DataType)>(
-                   [] (DataType x) { return x * x; }));
+                 std::function<DataType(const DataType&)>(
+                   [] (const DataType& x) { return x * x; }));
     Axpy(1.0f - rho2, WB_D, moment2_hist);
     // Compute the update. Use WB_D as a temporary as it's no longer needed.
     Copy(moment2_hist, WB_D);
     EntrywiseMap(WB_D,
-                 std::function<DataType(DataType)>(
-                   [this] (DataType x) { return 1.0f / std::sqrt(x + eps); }));
+                 std::function<DataType(const DataType&)>(
+                   [this] (const DataType& x) { return 1.0f / std::sqrt(x + eps); }));
     Hadamard(moment1_hist, WB_D, WB_D);
     Axpy(-lr * correction, WB_D, WB);
   }

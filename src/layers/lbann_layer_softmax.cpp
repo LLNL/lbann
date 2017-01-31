@@ -144,9 +144,9 @@ void lbann::SoftmaxLayer::fp_linearity()
   // expected to underflow to 0.
   IndexDependentMap(
     *m_weighted_sum_v,
-    (std::function<DataType(int,int,DataType)>)
-    ([this](int r, int c, DataType z)->DataType {
-      Int rL = this->ZsColMaxStar.LocalRow(c);
+    (std::function<DataType(El::Int,El::Int,const DataType&)>)
+    ([this](El::Int r, El::Int c, const DataType& z)->DataType {
+      El::Int rL = this->ZsColMaxStar.LocalRow(c);
       //      if(isnan(std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0)))) { cout << "[" << comm->get_rank_in_world() << "] has a nan "<<std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0)) << " at [" << r << ", " << c << "]="<<z<<endl;throw(new lbann_exception("Foo"));}
       return std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0));
     }));
@@ -161,7 +161,7 @@ void lbann::SoftmaxLayer::fp_linearity()
   Copy(*m_weighted_sum_v, *m_activations_v);
 
   IndexDependentMap(*m_activations_v,
-                    (std::function<DataType(Int,Int,DataType)>)([this /*ZsNormExpSum*/](Int r, Int c, DataType z)->
+                    (std::function<DataType(Int,Int,const DataType&)>)([this /*ZsNormExpSum*/](Int r, Int c, const DataType& z)->
                                                                 DataType{Int rL = this->ZsNormExpSumStar.LocalRow(c); return z/this->ZsNormExpSumStar.GetLocal(rL,0);}));
 
 #if 0

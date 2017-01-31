@@ -55,8 +55,8 @@ namespace lbann
     _DistMat     WB_D_Temp2;     // Temporary for Weights and Bias Gradient computation
 
   private:
-    static inline DataType _sq(DataType x) { return (x * x); }
-    static inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
+    static inline DataType _sq(const DataType& x) { return (x * x); }
+    static inline DataType _sqrt(const DataType& x) { return (1 / sqrt(x + 1e-8)); }
 
   public:
     RMSprop(lbann_comm* comm, float lr, float rho, float epsilon)
@@ -93,14 +93,14 @@ namespace lbann
       // KERAS: new_a = self.rho * a + (1 - self.rho) * K.square(g)
       Scale(rho /*DecayRate*/, WB_D_Cache);
       Copy(WB_D, WB_D_Temp);
-      EntrywiseMap(WB_D_Temp, std::function<DataType(DataType)>(_sq));
+      EntrywiseMap(WB_D_Temp, std::function<DataType(const DataType&)>(_sq));
       Scale(1 - rho /*DecayRate*/, WB_D_Temp);
       Axpy(1., WB_D_Temp, WB_D_Cache);
 
       // update parameters
       // KERAS: new_p = p - self.lr * g / K.sqrt(new_a + self.epsilon)
       Copy(WB_D_Cache, WB_D_Temp);
-      EntrywiseMap(WB_D_Temp, std::function<DataType(DataType)>(_sqrt));
+      EntrywiseMap(WB_D_Temp, std::function<DataType(const DataType&)>(_sqrt));
       Copy(WB_D, WB_D_Temp2);
       Hadamard(WB_D_Temp2, WB_D_Temp, WB_D);
 

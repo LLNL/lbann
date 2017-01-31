@@ -75,7 +75,7 @@ double lbann::objective_functions::categorical_cross_entropy::compute_categorica
     int64_t cur_mini_batch_size = groundtruth_v.Width();
 
     Copy(predictions_v, m_log_predictions_v);
-    EntrywiseMap(m_log_predictions_v, (std::function<DataType(DataType)>)([](DataType z)->DataType{return log(z);}));
+    EntrywiseMap(m_log_predictions_v, (std::function<DataType(const DataType&)>)([](const DataType& z)->DataType{return log(z);}));
 
     Hadamard(groundtruth_v, m_log_predictions_v, m_cross_entropy_cost_v);
     Zeros(m_minibatch_cost, cur_mini_batch_size, 1); // Clear the entire array

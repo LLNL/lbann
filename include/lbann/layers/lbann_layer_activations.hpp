@@ -60,8 +60,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType sigmoid(DataType z);
-  static DataType sigmoidPrime(DataType z);
+  static DataType sigmoid(const DataType& z);
+  static DataType sigmoidPrime(const DataType& z);
 };
 
 /** Hyperbolic tangent activation function. */
@@ -70,8 +70,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType tanh(DataType z);
-  static DataType tanhPrime(DataType z);
+  static DataType tanh(const DataType& z);
+  static DataType tanhPrime(const DataType& z);
 };
 
 /** Rectified linear unit activation function. */
@@ -80,8 +80,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType reLU(DataType z);
-  static DataType reLUPrime(DataType z);
+  static DataType reLU(const DataType& z);
+  static DataType reLUPrime(const DataType& z);
 };
 
 /** Identity activation function -- does nothing. */
@@ -105,8 +105,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType leaky_reLU(DataType z, DataType k);
-  static DataType leaky_reLUPrime(DataType z, DataType k);
+  static DataType leaky_reLU(const DataType& z, DataType k);
+  static DataType leaky_reLUPrime(const DataType& z, DataType k);
   DataType leak;
 };
 
@@ -117,8 +117,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType softplus(DataType z);
-  static DataType softplusPrime(DataType z);
+  static DataType softplus(const DataType& z);
+  static DataType softplusPrime(const DataType& z);
 };
 #else
 /** Smooth Rectified linear unit activation function. x*e^x */
@@ -127,8 +127,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType smooth_reLU(DataType z);
-  static DataType smooth_reLUPrime(DataType z);
+  static DataType smooth_reLU(const DataType& z);
+  static DataType smooth_reLUPrime(const DataType& z);
 };
 #endif
 
@@ -154,8 +154,8 @@ public:
   void forwardProp(ElMat& m);
   void backwardProp(ElMat& m);
 private:
-  static DataType elu(DataType z, DataType alpha);
-  static DataType eluPrime(DataType z, DataType alpha);
+  static DataType elu(const DataType& z, DataType alpha);
+  static DataType eluPrime(const DataType& z, DataType alpha);
   DataType alpha;
 };
 

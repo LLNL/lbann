@@ -173,9 +173,9 @@ void lbann::FullyConnectedLayer::fp_linearity()
 
   StarMat local_bias_weights(comm->get_model_grid());
   Copy(m_bias_weights_v, local_bias_weights);
-  IndexDependentFill(*m_weighted_sum, (std::function<DataType(int,int)>)
-                     ([this, local_bias_weights](int r, int c)->DataType { 
-                       int rL = local_bias_weights.LocalRow(r);
+  IndexDependentFill(*m_weighted_sum, (std::function<DataType(El::Int,El::Int)>)
+                     ([this, local_bias_weights](El::Int r, El::Int c)->DataType { 
+                       El::Int rL = local_bias_weights.LocalRow(r);
                        if(!local_bias_weights.IsLocal(r,0)) { throw lbann_exception("Bad fill");}
                        return local_bias_weights.GetLocal(rL,0) * m_bias_term;
                      }));

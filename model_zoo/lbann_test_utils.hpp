@@ -170,8 +170,8 @@ DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
   elemerr = true_val;
   elemerr -= approx_val;
   DataType abs_err = El::EntrywiseNorm(elemerr, 1);
-  El::EntrywiseMap(elemerr, std::function<DataType(DataType)>(
-                     [](DataType x) { return fabs(x); }));
+  El::EntrywiseMap(elemerr, std::function<DataType(const DataType&)>(
+                     [](const DataType& x) { return fabs(x); }));
   return abs_err;
 }
 
@@ -185,8 +185,8 @@ DataType relative_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
   DataType abs_err = absolute_error(approx_val, true_val, elemerr);
   DataType rel_err = abs_err / El::EntrywiseNorm(true_val, 1);
   Mat true_copy(true_val);
-  El::EntrywiseMap(true_copy, std::function<DataType(DataType)>(
-                     [](DataType x) { return 1.0f / fabs(x); }));
+  El::EntrywiseMap(true_copy, std::function<DataType(const DataType&)>(
+                     [](const DataType& x) { return 1.0f / fabs(x); }));
   Mat elemerr_copy(elemerr);
   El::Hadamard(elemerr_copy, true_copy, elemerr);
   return rel_err;

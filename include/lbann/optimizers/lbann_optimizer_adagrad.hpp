@@ -54,8 +54,8 @@ namespace lbann
     _DistMat     WB_D_Temp2;     // Temporary for Weights and Bias Gradient computation
 
   private:
-    static inline DataType _sq(DataType x) { return (x * x); }
-    static inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
+    static inline DataType _sq(const DataType& x) { return (x * x); }
+    static inline DataType _sqrt(const DataType& x) { return (1 / sqrt(x + 1e-8)); }
 
   public:
 
@@ -93,13 +93,13 @@ namespace lbann
     void update_weight_bias_matrix(ElMat& WB_D, ElMat& WB) {
       Copy(WB_D, WB_D_Temp);
       // Square each entry of the WB_D matrix
-      EntrywiseMap(WB_D_Temp, std::function<DataType(DataType)>(_sq));
+      EntrywiseMap(WB_D_Temp, std::function<DataType(const DataType&)>(_sq));
       // Add squared value to WB_D_Cache
       Axpy(1., WB_D_Temp, WB_D_Cache);
 
       Copy(WB_D_Cache, WB_D_Temp);
       // Compute the inverse of the square root of the historical gradient (with a small perturbation)
-      EntrywiseMap(WB_D_Temp, std::function<DataType(DataType)>(_sqrt));
+      EntrywiseMap(WB_D_Temp, std::function<DataType(const DataType&)>(_sqrt));
       Copy(WB_D, WB_D_Temp2);
       Hadamard(WB_D_Temp2, WB_D_Temp, WB_D);
 
