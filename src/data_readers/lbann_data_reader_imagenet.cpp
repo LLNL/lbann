@@ -34,16 +34,12 @@ using namespace std;
 using namespace El;
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+  : DataReader(batchSize, shuffle), lbann_image_preprocessor()
 {
   m_image_width = 256;
   m_image_height = 256;
   m_image_depth = 3;
   m_num_labels = 1000;
-  m_scale = true;
-  m_variance = false;
-  m_mean = false;
-  m_z_score = false;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   setName("ImageNet");
@@ -56,11 +52,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& sourc
     m_image_width(source.m_image_width), 
     m_image_height(source.m_image_height), 
     m_image_depth(source.m_image_depth),  
-    m_num_labels(source.m_num_labels),
-    m_scale(source.m_scale), 
-    m_variance(source.m_variance), 
-    m_mean(source.m_mean), 
-    m_z_score(source.m_z_score)
+    m_num_labels(source.m_num_labels)
 {
   setName("ImageNet");
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
@@ -81,24 +73,8 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     throw lbann_exception(err.str());
   }
 
-  if (m_z_score) {
-    m_scale = false;
-    m_mean = false;
-    m_variance = false;
-  }
-
   int pixelcount = m_image_width * m_image_height * m_image_depth;
   int current_batch_size = getBatchSize();
-
-  //special handling for these types of normalization
-  std::vector<float> pixels;
-  bool special = false;
-  if (m_mean or m_variance or m_z_score) {
-    special = true;
-    pixels.resize(pixelcount);
-  }
-
-  float scale = m_scale ? 255.0 : 1.0;
 
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
@@ -118,23 +94,12 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");
     }
 
-    if (not special) {
-      for (int p = 0; p < pixelcount; p++) {
-        X.Set(p, k, m_pixels[p] / scale);
-      }
+    for (int p = 0; p < pixelcount; p++) {
+      X.Set(p, k, m_pixels[p]);
     }
 
-    else {
-      for (int p = 0; p < pixelcount; p++) {
-        pixels[p] = m_pixels[p];
-      }
-      for (int x=0; x<3; x++) {
-        standardize(pixels, x);
-      }
-      for (int p = 0; p < pixelcount; p++) {
-        X.Set(p, k, pixels[p]);
-      }
-    }
+    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
+    preprocess(pixel_col, m_image_depth);
   }
 
   return (n - CurrentPos);
@@ -252,11 +217,6 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->m_image_depth = source.m_image_height;
   this->m_num_labels = source.m_num_labels;
 
-  this->m_scale = source.m_scale;
-  this->m_variance = source.m_variance;
-  this->m_mean = source.m_mean;
-  this->m_z_score = source.m_z_score;
-
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 
@@ -298,68 +258,3 @@ int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char
   }
   return 0;
 }
-
-void lbann::DataReader_ImageNet::standardize(std::vector<float> &pixels, int offset) {
-    float pixelcount = m_image_width * m_image_height;
-    if (m_z_score) {
-      float x_sqr = 0;
-      float mean = 0;
-      for (size_t p = offset; p < pixels.size(); p+= 3) {
-        mean += pixels[p];
-        x_sqr += (pixels[p] * pixels[p]);
-      }
-
-      mean /= pixelcount;
-      x_sqr /= pixelcount;
-      float std_dev = x_sqr - (mean*mean);
-      std_dev = sqrt(std_dev);
-      for (size_t p = offset; p < pixels.size(); p+= 3) {
-        pixels[p] = (pixels[p] - mean) / std_dev;
-      }
-    }
-
-    else {
-
-      // optionally scale to: [0,1]
-      // formula is:  x_i - min(x) / max(x) - min(x)
-      // but since min(x) = 0 and max(x) <= 255, we simply divide by 255
-      if (m_scale) {
-        for (size_t p = offset; p < pixels.size(); p+= 3) {
-          pixels[p] /= 255.0;
-        }
-      }
-
-      // optionally subtract the mean
-      if (m_mean) {
-        float mean = 0;
-        for (size_t p = offset; p < pixels.size(); p+= 3) {
-          mean += pixels[p];
-        }
-        mean /= pixelcount;
-        for (size_t p = offset; p < pixels.size(); p+= 3) {
-          pixels[p] -= mean;
-        }
-      }
-
-      // optionally standardize to unit variance;
-      // note: we need to recompute the mean and standard deviation,
-      //       in case we've rescaled (above) using min-max scaling
-      if (m_variance) {
-        float x_sqr = 0;
-        float mean = 0;
-        for (size_t p = offset; p < pixels.size(); p+= 3) {
-          mean += pixels[p];
-          x_sqr += (pixels[p] * pixels[p]);
-        }
-        mean /= pixelcount;
-        x_sqr /= pixelcount;
-        float std_dev = x_sqr - (mean*mean);
-        std_dev = sqrt(std_dev);
-
-        for (size_t p = offset; p < pixels.size(); p+= 3) {
-          pixels[p] /= std_dev;
-        }
-      }
-    }
-}
-

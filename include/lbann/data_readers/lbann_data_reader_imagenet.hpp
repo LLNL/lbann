@@ -30,10 +30,11 @@
 #define LBANN_DATA_READER_IMAGENET_HPP
 
 #include "lbann_data_reader.hpp"
+#include "lbann_image_preprocessor.hpp"
 
 namespace lbann
 {
-class DataReader_ImageNet : public DataReader
+class DataReader_ImageNet : public DataReader, public lbann_image_preprocessor
 {
 public:
   DataReader_ImageNet(int batchSize, bool shuffle = true);
@@ -66,17 +67,6 @@ public:
 
   DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
-  void subtract_mean(bool b) { m_mean = b; }
-
-  void unit_variance(bool b) { m_variance = b; }
-
-  //! scale using min-max
-  void scale(bool b) { m_scale = b; }
-
-  //! normalize using z-score; if set to true, then settings for
-  //! subtract_mean(), unit_variance(), and scale() are ignored
-  void z_score(bool b) { m_z_score = b; }
-
 private:
   std::string m_image_dir; // where images are stored
   std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
@@ -85,13 +75,6 @@ private:
   int m_image_depth; // image depth (depth)
   int m_num_labels; // # labels (1000)
   unsigned char* m_pixels;
-
-  bool m_scale;
-  bool m_variance;
-  bool m_mean;
-  bool m_z_score;
-
-  void standardize(std::vector<float> &pixels, int offset); 
 };
 
 }  // namespace lbann

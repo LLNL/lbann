@@ -30,10 +30,11 @@
 #define LBANN_DATA_READER_MNIST_HPP
 
 #include "lbann_data_reader.hpp"
+#include "lbann_image_preprocessor.hpp"
 
 namespace lbann
 {
-class DataReader_MNIST : public DataReader
+class DataReader_MNIST : public DataReader, public lbann_image_preprocessor
 {
 public:
   DataReader_MNIST(int batchSize, bool shuffle);
@@ -59,29 +60,13 @@ public:
 
   DataReader_MNIST& operator=(const DataReader_MNIST& source);
 
-  void subtract_mean(bool b) { m_mean = b; }
-
-  void unit_variance(bool b) { m_variance = b; }
-
-  //! scale using min-max
-  void scale(bool b) { m_scale = b; }
-
-  //! normalize using z-score; if set to true, then settings for
-  //! subtract_mean(), unit_variance(), and scale() are ignored
-  void z_score(bool b) { m_z_score = b; }
-
 private:
   void clone_image_data(const DataReader_MNIST& source);
 
-private:
   std::vector<unsigned char*> m_image_data;
   int m_image_width;
   int m_image_height;
   int m_num_labels;
-  bool m_scale;
-  bool m_variance;
-  bool m_mean;
-  bool m_z_score;
 };
 
 }  // namespace lbann
