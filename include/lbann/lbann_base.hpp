@@ -74,6 +74,9 @@ static const char* __attribute__((used)) _to_string(execution_mode m) {
 
 /// Weight matrix initialization scheme
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+  //if you change the above enum, please also edit:
+  //  static std::string Layer::weight_initialization_name(weight_initialization id);
+
 
 /// Pooling layer mode
 enum class pool_mode {max, average, average_no_pad};

@@ -62,6 +62,7 @@ namespace lbann
         decay(decay), nesterov(nesterov),
         velocity(comm->get_model_grid()),
         nesterov_ag(comm->get_model_grid()) {
+      set_name("sgd");
       iterations = 0;
     }
 
@@ -157,7 +158,7 @@ namespace lbann
     SGD_factory(lbann_comm* comm, float lr=0.01, float momentum=0.3, float decay=0.0, bool nesterov=false);
     ~SGD_factory();
     Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
-
+    const string name() { return "sgd"; }
   public:
     lbann_comm* comm;
     float lr;

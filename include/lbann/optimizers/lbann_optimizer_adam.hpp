@@ -51,6 +51,7 @@ public:
     cur_rho1(1.0f), cur_rho2(1.0f),
     moment1_hist(comm->get_model_grid()),
     moment2_hist(comm->get_model_grid()) {
+    set_name("adam");
     if (comm->am_model_master()) {
       std::cout << "Initializing Adam optimizer with lr=" << lr <<
         " eps=" << eps << " rho1=" << rho1 << " rho2=" << rho2 << std::endl;
@@ -190,6 +191,7 @@ public:
                float rho2 = 0.999f, float eps = 1e-8f);
   ~Adam_factory();
   Optimizer* create_optimizer(matrix_format format = matrix_format::MC_MR);
+  const string name() { return "adam"; }
 private:
   lbann_comm* comm;
   float lr;

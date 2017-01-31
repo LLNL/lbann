@@ -59,7 +59,10 @@ lbann::deep_neural_network::deep_neural_network(const uint mini_batch_size,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
-    m_name("deep_neural_network") {}
+    m_name("deep_neural_network") {
+    lbann_proto *pb = lbann_proto::get();
+    pb->Model_ctor("deep_neural_network", obj_fn->name(), _optimizer_fac->name());
+    }
 
 lbann::deep_neural_network::~deep_neural_network() {}
 
@@ -100,6 +103,9 @@ void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
 void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 {
   do_train_begin_cbs();
+
+  lbann_proto *pb = lbann_proto::get();
+  pb->Model_train(num_epochs, evaluation_frequency);
 
   // Epoch main loop
   for (int epoch = 0; epoch < num_epochs; ++epoch) {

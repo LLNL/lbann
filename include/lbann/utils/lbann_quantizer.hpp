@@ -241,8 +241,8 @@ public:
    * @return Adaptive reconstruction values.
    */
   adaptive_reconstructions col_reconstruction(
-    const Mat& mat, const Mat& qerror, int col, adaptive_thresholds threshes,
-    bool sample = true);
+    const Mat& mat, const Mat& qerror, int col,
+    const adaptive_thresholds threshes, bool sample = true);
 
   /** Get the total number of bytes sent during quantization. */
   size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
@@ -308,8 +308,6 @@ private:
   static const uqtype GR_M = 128;
   /** log_2(GR_M). */
   static const uqtype GR_K = 7;
-  /** Number of samples to use in proportion_threshold_average. */
-  static const int NUM_PTA_SAMPLES = 128;
   /** Number of samples to use in proportion_threshold. */
   static const int NUM_THRESHOLD_SAMPLES = 1024;
   /** Number of samples to use in col_reconstruction. */

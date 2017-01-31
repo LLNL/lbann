@@ -46,8 +46,7 @@ using namespace lbann;
 
 lbann_proto * lbann_proto::s_instance = new lbann_proto;
 
-lbann_proto::lbann_proto() {
-}
+lbann_proto::lbann_proto() {}
 
 lbann_proto::~lbann_proto() {
   delete s_instance;
@@ -63,12 +62,84 @@ void lbann_proto::writePrototextFile(const char *fn) {
   }
   delete output;
   close(fd);
-
-/*
-  string s;
-  google::protobuf::TextFormat::PrintToString(m_pb, &s);
-  cout << "as string: " << s << endl;
-  */
 }
 
+
+void lbann_proto::DataReaderMNIST_ctor(int batch_size, bool shuffle) {
+    allocateDataReader();
+    lbann_data::DataReader *reader = m_pb.mutable_data_reader();
+    lbann_data::DataReaderMnist *mnist = reader->add_mnist();
+    int size = reader->mnist_size();
+    if (size == 1) {
+      mnist->set_role("train");
+    } else if (size == 2) {
+      mnist->set_role("test");
+    } else {
+      std::cerr << __FILE__<<" "<<__LINE__<<" lbann_proto ERROR\n";
+      exit(-1);
+    }
+    mnist->set_batch_size(batch_size);
+    mnist->set_shuffle(shuffle);
+  }
+
+void lbann_proto::DataReaderMNIST_load(std::string file_dir, std::string image_file, std::string label_file) {
+    lbann_data::DataReader *reader = m_pb.mutable_data_reader();
+    int size = reader->mnist_size();
+    lbann_data::DataReaderMnist *mnist = reader->mutable_mnist(size-1); //@TODO add error check
+    mnist->set_file_dir(file_dir);
+    mnist->set_image_file(image_file);
+    mnist->set_label_file(label_file);
+}
+
+void lbann_proto::allocateDataReader() {
+    if (not m_pb.has_data_reader()) {
+      lbann_data::DataReader *reader = new lbann_data::DataReader;
+      m_pb.set_allocated_data_reader(reader);
+    }
+}
+
+void lbann_proto::Model_ctor(std::string name, std::string objective_function, std::string optimizer) {
+    lbann_data::Model *model;
+    if (not m_pb.has_model()) {
+      model = new lbann_data::Model;
+      m_pb.set_allocated_model(model);
+    }
+    model->set_name(name);
+    model->set_objective_function(objective_function);
+    model->set_optimizer(optimizer);
+}
+
+void lbann_proto::Model_train(int num_epochs, int evaluation_frequency) {
+    lbann_data::Model *model = m_pb.mutable_model();
+    model->set_num_epochs(num_epochs);
+    model->set_evaluation_frequency(evaluation_frequency);
+}
+
+void lbann_proto::Layer_InputDistributedMiniBatchParallelIO_ctor(int num_parallel_readers, int mini_batch_size) {
+  lbann_data::Model *model = m_pb.mutable_model();
+  lbann_data::Layer *layer = model->add_layer();
+  lbann_data::InputDistributedMiniBatchParallelIO *real_layer = new lbann_data::InputDistributedMiniBatchParallelIO;
+  layer->set_allocated_input_distributed_minibatch_parallel_io(real_layer);
+  real_layer->set_num_parallel_readers(num_parallel_readers);
+  real_layer->set_mini_batch_size(mini_batch_size);
+}
+
+void lbann_proto::Layer_FullyConnected_ctor(
+    int num_prev_neurons,
+    int num_neurons,
+    int mini_batch_size,
+    std::string activation_type,
+    std::string weight_initialization,
+    std::string optimizer) {
+  lbann_data::Model *model = m_pb.mutable_model();
+  lbann_data::Layer *layer = model->add_layer();
+  lbann_data::FullyConnected *real_layer = new lbann_data::FullyConnected;
+  layer->set_allocated_fully_connected(real_layer);
+  real_layer->set_num_prev_neurons(num_prev_neurons);
+  real_layer->set_num_neurons(num_neurons);
+  real_layer->set_mini_batch_size(mini_batch_size);
+  real_layer->set_activation_type(activation_type);
+  real_layer->set_weight_initialization(weight_initialization);
+  real_layer->set_optimizer(optimizer);
+}
 
