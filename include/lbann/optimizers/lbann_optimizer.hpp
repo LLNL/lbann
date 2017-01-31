@@ -65,7 +65,13 @@ namespace lbann
       return false;
     }
 
-  public:
+    const string name() { return m_name; }
+
+    void set_name(std::string name) { m_name = name; }
+
+  private :
+    std::string m_name;
+
   };
 
   class Optimizer_factory {
@@ -73,7 +79,7 @@ namespace lbann
     Optimizer_factory() {}
     virtual ~Optimizer_factory() {}
     virtual Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR) { return nullptr; };
-
+    virtual const string name() = 0;
   };
 }
 

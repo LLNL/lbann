@@ -162,7 +162,7 @@ void test_adaptive_threshold_quantize() {
 }
 
 /** Test adaptive threshold compression/uncompression. */
-void test_adaptive_threshold_compression() {
+/*void test_adaptive_threshold_compression() {
   Mat mat;
   El::Uniform(mat, 10, 10, 0.0f, 10.0f);
   lbann_quantizer::ThreshQuantized qmat, comp_qmat;
@@ -182,7 +182,7 @@ void test_adaptive_threshold_compression() {
   Mat with_qerror(uqmat);
   with_qerror += qerror;
   ASSERT_MAT_EQ(mat, with_qerror);
-}
+  }*/
 
 /** Test the basic allreduce without quantization. */
 void test_allreduce() {
@@ -326,7 +326,7 @@ void test_adaptive_threshold_quantize_allreduce() {
   lbann_quantizer quantizer;
   // Proportion such that everything is sent.
   quantizer.intermodel_sum_adaptive_threshold_quantized(comm, mat, qerror, 1,
-                                                        im_qerror, false);
+                                                        im_qerror);
   comm->intermodel_sum_matrix(exact_sum);
   Mat abs_elemerr;
   DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
@@ -343,7 +343,7 @@ void test_adaptive_threshold_quantize_allreduce() {
  * Test the inter-model adaptive threshold quantize-and-allreduce with
  * compression.
  */
-void test_compressed_adaptive_threshold_quantize_allreduce() {
+/*void test_compressed_adaptive_threshold_quantize_allreduce() {
   lbann_comm* comm = new lbann_comm(2);
   DistMat mat(comm->get_model_grid());
   if (comm->get_model_rank() == 0) {
@@ -374,7 +374,7 @@ void test_compressed_adaptive_threshold_quantize_allreduce() {
   ASSERT_MAT_EQ(mat, exact_sum);
   ASSERT_MAT_EQ(abs_elemerr, z);
   delete comm;
-}
+  }*/
 
 int main(int argc, char** argv) {
   El::Initialize(argc, argv);
@@ -384,13 +384,13 @@ int main(int argc, char** argv) {
   test_compression();
   test_threshold_compression();
   test_adaptive_threshold_quantize();
-  test_adaptive_threshold_compression();
+  //test_adaptive_threshold_compression();
   test_allreduce();
   test_quantize_allreduce();
   test_threshold_quantize_allreduce();
   test_compressed_threshold_quantize_allreduce();
   test_adaptive_threshold_quantize_allreduce();
-  test_compressed_adaptive_threshold_quantize_allreduce();
+  //test_compressed_adaptive_threshold_quantize_allreduce();
   El::Finalize();
   return 0;
 }

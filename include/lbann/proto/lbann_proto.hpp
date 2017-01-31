@@ -36,6 +36,7 @@
 //#include "lbann/lbann_params.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include <string>
+#include <iostream>
 
 namespace lbann
 {
@@ -48,9 +49,47 @@ public :
     return s_instance;
   }
 
+  /// for testing during development
+  lbann_data::LbannPB & getLbannPB() { return m_pb; }
+
   void init(const char *filename = 0);
 
+  void test() {
+     std::cerr << "in test!\n\n";
+  }
+
   void writePrototextFile(const char *filename);
+
+  void DataReaderMNIST_ctor(
+    int batch_size, 
+    bool shuffle); 
+
+  void DataReaderMNIST_load(
+    std::string file_dir, 
+    std::string image_file, 
+    std::string label_file); 
+
+  void Model_ctor(
+    std::string name, 
+    std::string objective_function, 
+    std::string optimizer);
+
+  void Model_train(
+    int num_epochs, 
+    int evaluation_frequency);
+
+  void Layer_InputDistributedMiniBatchParallelIO_ctor(
+    int num_parallel_readers, 
+    int mini_batch_size); 
+
+  void Layer_FullyConnected_ctor(
+    int num_prev_neurons, 
+    int num_neurons, 
+    int mini_batch_size, 
+    std::string activation_type, 
+    std::string weight_initialization, 
+    std::string optimizer);
+
 
 
   /// Returns a TrainingParam object. If init() was not called, the returned object
@@ -82,8 +121,6 @@ public :
   void write(const std::string &filename);
   */
 
-  lbann_data::LbannPB & getLbannPB() { return m_pb; }
-
 private:
   static lbann_proto *s_instance;
 
@@ -95,6 +132,10 @@ private:
   //bool m_init_from_prototxt;
 
   lbann_data::LbannPB m_pb;
+  lbann_data::DataReader *m_reader;
+
+  
+  void allocateDataReader();
 };
 
 } //namespace lbann

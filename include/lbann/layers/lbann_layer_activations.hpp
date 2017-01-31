@@ -33,6 +33,8 @@ namespace lbann {
 
 /** Represent the type of activation function. */
 enum class activation_type {
+  //if you add or change the following enums, please also edit the 
+  //activation_name() method in the Activation class
   SIGMOID = 1,
   TANH,
   RELU,
@@ -52,6 +54,7 @@ public:
   virtual ~Activation() {}
   virtual void forwardProp(ElMat& m) = 0;
   virtual void backwardProp(ElMat& m) = 0;
+  static const std::string activation_name(activation_type id);
 };
 
 /** Sigmoid activation function. */

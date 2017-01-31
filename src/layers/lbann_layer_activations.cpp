@@ -248,4 +248,29 @@ void ELU_layer::backwardProp(ElMat& m) {
                  [this] (const DataType& x) -> DataType { return eluPrime(x, alpha); }));
 }
 
+#include <string.h>
+const string Activation::activation_name(activation_type id) {
+  switch(id) {
+    case activation_type::SIGMOID : return "sigmoid";
+                   break;
+    case activation_type::TANH : return "tanh";
+                   break;
+    case activation_type::RELU : return "relu";
+                   break;
+    case activation_type::ID : return "id";
+                   break;
+    case activation_type::LEAKY_RELU : return "leaky_relu";
+                   break;
+    case activation_type::SMOOTH_RELU : return "smooth_relu";
+                   break;
+    case activation_type::ELU : return "elu";
+                   break;
+    default : 
+      stringstream err;
+      //??? getting compile error, for reasons I don't understand
+      //err << __FILE__ << " " << __LINE__ << " :: unknown activation_type: " << id;
+      throw lbann_exception("unknown activation_type");
+  }
+}
+
 }  // namespace lbann

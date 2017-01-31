@@ -29,6 +29,7 @@
 #ifndef LBANN_DATA_READER_HPP
 #define LBANN_DATA_READER_HPP
 
+#include "lbann/proto/lbann_proto.hpp"
 #include "lbann/lbann_base.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
@@ -65,7 +66,8 @@ namespace lbann
       m_stride(source.m_stride), m_base_offset(source.m_base_offset), m_model_offset(source.m_model_offset),
       m_use_alt_last_mini_batch_size(source.m_use_alt_last_mini_batch_size),
       m_last_mini_batch_threshold(source.m_last_mini_batch_threshold), m_last_mini_batch_size(source.m_last_mini_batch_size), m_last_mini_batch_stride(source.m_last_mini_batch_stride),
-      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices)
+      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices),
+      m_name(source.m_name)
     {}
 
     virtual ~DataReader() {}
@@ -222,6 +224,7 @@ namespace lbann
       // Vectors implement a deep copy
       this->ShuffledIndices = source.ShuffledIndices;
       this->m_unused_indices = source.m_unused_indices;
+      this->m_name = source.m_name;
       return *this;
     }
 
