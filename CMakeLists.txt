@@ -13,6 +13,8 @@ if(${GIT_REPO})
 else()
   if(LBANN_VERSION)
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${LBANN_VERSION}\\\"" )
+  else()
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"v0.UKWN\\\"" )
   endif()
 endif()
 
