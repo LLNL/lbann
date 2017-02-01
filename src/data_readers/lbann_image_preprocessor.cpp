@@ -284,7 +284,7 @@ void lbann_image_preprocessor::affine_trans(cv::Mat& sqpixels,
   cv_trans.at<float>(1, 1) = trans(1, 1);
   cv_trans.at<float>(1, 2) = trans(1, 2);
   cv::warpAffine(sqpixels_copy, sqpixels, cv_trans, sqpixels.size(),
-                 cv::INTER_LINEAR, cv::BORDER_REFLECT);
+                 cv::INTER_LINEAR, cv::BORDER_REPLICATE);
 }
 
 }  // namespace lbann

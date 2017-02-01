@@ -56,15 +56,28 @@ public:
   lbann_image_preprocessor();
   virtual ~lbann_image_preprocessor() {}
 
+  /** Whether to do random horizontal flips. */
   void horizontal_flip(bool b) { m_horizontal_flip = b; }
+  /** Whether to do random vertical flips. */
   void vertical_flip(bool b) { m_vertical_flip = b; }
+  /** Do random rotations up to range degrees (0-180). */
   void rotation(float range) { m_rotation_range = range; }
+  /** Do random horizontal shifts up to range (fraction of image width). */
   void horizontal_shift(float range) { m_horizontal_shift = range; }
+  /** Do random vertical shifts up to range (fraction of image height). */
   void vertical_shift(float range) { m_vertical_shift = range; }
+  /** Do random shears up to range (radians). */
   void shear_range(float range) { m_shear_range = range; }
+  /** Whether to subtract the sample-wise mean. */
   void subtract_mean(bool b) { m_mean_subtraction = b; }
+  /** Whether to normalize to unit variance, sample-wise. */
   void unit_variance(bool b) { m_unit_variance = b; }
+  /** Whether to scale to [0, 1] (assumes max value is 255). */
   void scale(bool b) { m_scale = b; }
+  /**
+   * Whether to normalize by z-scores, sample-wise.
+   * This and mean subtraction/unit variance are mutually exclusive.
+   */
   void z_score(bool b) { m_z_score = b; }
 
   /**
