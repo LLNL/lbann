@@ -3,9 +3,18 @@ cmake_minimum_required(VERSION 2.8.12)
 #set(LBANN_MAJOR_VERSION 0)
 #set(LBANN_MINOR_VERSION 91)
 
-# Get the git version so that we can embed it into the executable
-execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
+# Check to see if we are in a git repo
+execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_REPO OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(${GIT_REPO})
+  # Get the git version so that we can embed it into the executable
+  execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
+else()
+  if(LBANN_VERSION)
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${LBANN_VERSION}\\\"" )
+  endif()
+endif()
 
 ################################################################
 # Options
