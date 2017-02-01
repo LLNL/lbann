@@ -149,6 +149,7 @@ DataReader& DataReader::operator=(const DataReader& source) {
   // Vectors implement a deep copy
   this->ShuffledIndices = source.ShuffledIndices;
   this->m_unused_indices = source.m_unused_indices;
+  this->m_name = source.m_name;
   return *this;
 }
 

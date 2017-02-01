@@ -98,7 +98,7 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     }
 
     auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
-    preprocess(pixel_col, 1);
+    preprocess(pixel_col, m_image_height, m_image_width, 1);
   }
 
   return (n - CurrentPos);

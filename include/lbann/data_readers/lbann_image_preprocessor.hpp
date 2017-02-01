@@ -29,6 +29,12 @@
 #ifndef LBANN_IMAGE_PREPROCESSOR
 #define LBANN_IMAGE_PREPROCESSOR
 
+#ifdef __LIB_OPENCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#else
+#error OpenCV required
+#endif
 #include "lbann/lbann_base.hpp"
 
 namespace lbann {
@@ -64,9 +70,12 @@ public:
   /**
    * Preprocess pixels according to the currently-set transforms.
    * @param pixels The pixels to process as a column vector (num x 1 mat).
+   * @param imheight Height of the image in pixels.
+   * @param imwidth Width of the image in pixels.
    * @param num_channels The number of channels pixels has.
    */
-  void preprocess(Mat& pixels, unsigned num_channels);
+  void preprocess(Mat& pixels, unsigned imheight, unsigned imwidth,
+                  unsigned num_channels);
 
 protected:
   /** Whether to do horizontal flips. */
@@ -90,10 +99,29 @@ protected:
   /** Whether to normalize via z-score. */
   bool m_z_score;
 
+  /** The mathematical constant (this is the way to get it in C++). */
+  const float pi = std::acos(-1);
+
   void mean_subtraction(Mat& pixels, unsigned num_channels);
   void unit_variance(Mat& pixels, unsigned num_channels);
   void unit_scale(Mat& pixels, unsigned num_channels);
   void z_score(Mat& pixels, unsigned num_channels);
+
+  /**
+   * Convert a column vector of pixels to an OpenCV matrix.
+   */
+  cv::Mat cv_pixels(const Mat& pixels, unsigned imheight, unsigned imwidth,
+                    unsigned num_channels);
+  /** Undo cv_pixels. */
+  void col_pixels(const cv::Mat& sqpixels, Mat& pixels, unsigned num_channels);
+
+  /**
+   * Flip sqpixels.
+   * @param flip_flag OpenCV flip flag: 0=vertical, 1=horizontal, -1=both.
+   */
+  void flip(cv::Mat& sqpixels, int flip_flag);
+  /** Apply the affine transformation in 3x3 matrix trans. */
+  void affine_trans(cv::Mat& sqpixels, const Mat& trans);
 };
 
 }  // namespace lbann
