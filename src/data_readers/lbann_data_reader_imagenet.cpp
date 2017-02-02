@@ -99,7 +99,8 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     }
 
     auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
-    preprocess(pixel_col, m_image_height, m_image_width, m_image_depth);
+    augment(pixel_col, m_image_height, m_image_width, m_image_depth);
+    normalize(pixel_col, m_image_depth);
   }
 
   return (n - CurrentPos);

@@ -32,6 +32,7 @@
 #ifdef __LIB_OPENCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #else
 #error OpenCV required
 #endif
@@ -90,14 +91,29 @@ public:
   }
 
   /**
-   * Preprocess pixels according to the currently-set transforms.
+   * Preprocess pixels according to the currently-set augmentation transforms.
    * @param pixels The pixels to process as a column vector (num x 1 mat).
    * @param imheight Height of the image in pixels.
    * @param imwidth Width of the image in pixels.
    * @param num_channels The number of channels pixels has.
    */
-  void preprocess(Mat& pixels, unsigned imheight, unsigned imwidth,
-                  unsigned num_channels);
+  void augment(Mat& pixels, unsigned imheight, unsigned imwidth,
+               unsigned num_channels);
+  /**
+   * Normalize poxels according to the currently-set transforms.
+   * @param pixels The pixels to process as a column vector.
+   * @param num_channels The number of channels pixels has.
+   */
+  void normalize(Mat& pixels, unsigned num_channels);
+
+  /**
+   * External interface to saving an image.
+   * Classes that want to support this should use it to interface with
+   * internal_save_image.
+   * @param scale Whether pixels has been scaled (default true).
+   */
+  virtual void save_image(Mat& pixels, const std::string filename,
+                          bool scale = true) {}
 
 protected:
   /** Whether to do horizontal flips. */
@@ -144,6 +160,13 @@ protected:
   void flip(cv::Mat& sqpixels, int flip_flag);
   /** Apply the affine transformation in 3x3 matrix trans. */
   void affine_trans(cv::Mat& sqpixels, const Mat& trans);
+
+  /**
+   * Save pixels to filename.
+   */
+  void internal_save_image(Mat& pixels, const std::string filename,
+                           unsigned imheight, unsigned imwidth,
+                           unsigned num_channels, bool scale);
 };
 
 }  // namespace lbann

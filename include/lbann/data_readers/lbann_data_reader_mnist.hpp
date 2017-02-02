@@ -60,6 +60,11 @@ public:
 
   DataReader_MNIST& operator=(const DataReader_MNIST& source);
 
+  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+    internal_save_image(pixels, filename, m_image_height, m_image_width, 1,
+                        scale);
+  }
+
 private:
   void clone_image_data(const DataReader_MNIST& source);
 

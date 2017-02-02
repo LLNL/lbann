@@ -67,6 +67,11 @@ public:
 
   DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
+  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+    internal_save_image(pixels, filename, m_image_height, m_image_width,
+                        m_image_depth, scale);
+  }
+
 private:
   std::string m_image_dir; // where images are stored
   std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels

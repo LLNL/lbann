@@ -46,9 +46,9 @@ lbann_image_preprocessor::lbann_image_preprocessor() :
   m_z_score(false) {
 }
 
-void lbann_image_preprocessor::preprocess(Mat& pixels, unsigned imheight,
-                                          unsigned imwidth,
-                                          unsigned num_channels) {
+void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
+                                       unsigned imwidth,
+                                       unsigned num_channels) {
   bool do_transform = m_horizontal_flip || m_vertical_flip ||
     m_rotation_range || m_horizontal_shift || m_vertical_shift ||
     m_shear_range;
@@ -120,7 +120,9 @@ void lbann_image_preprocessor::preprocess(Mat& pixels, unsigned imheight,
     affine_trans(sqpixels, affine_mat);
     col_pixels(sqpixels, pixels, num_channels);
   }
-  // Normalization.
+}
+
+void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
   if (m_z_score) {
     z_score(pixels, num_channels);
   } else {
@@ -280,6 +282,21 @@ void lbann_image_preprocessor::affine_trans(cv::Mat& sqpixels,
   cv_trans.at<float>(1, 2) = trans(1, 2);
   cv::warpAffine(sqpixels_copy, sqpixels, cv_trans, sqpixels.size(),
                  cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+}
+
+void lbann_image_preprocessor::internal_save_image(
+  Mat& pixels, const std::string filename, unsigned imheight, unsigned imwidth,
+  unsigned num_channels, bool scale) {
+  cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
+  cv::Mat converted_pixels;
+  int dst_type = 0;
+  if (num_channels == 1) {
+    dst_type = CV_8UC1;
+  } else if (num_channels == 3) {
+    dst_type = CV_8UC3;
+  }  // cv_pixels ensures no other case happens.
+  sqpixels.convertTo(converted_pixels, dst_type, scale ? 1.0f / 255.0f : 1.0f);
+  cv::imwrite(filename, converted_pixels);
 }
 
 }  // namespace lbann
