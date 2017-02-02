@@ -55,6 +55,7 @@ namespace lbann {
 class lbann_image_preprocessor {
 public:
   lbann_image_preprocessor();
+  lbann_image_preprocessor(const lbann_image_preprocessor& source);
   virtual ~lbann_image_preprocessor() {}
 
   /** Whether to do random horizontal flips. */

@@ -47,6 +47,7 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
+    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_dir(source.m_image_dir), 
     ImageList(source.ImageList),
     m_image_width(source.m_image_width), 

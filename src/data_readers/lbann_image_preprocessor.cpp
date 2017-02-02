@@ -46,6 +46,18 @@ lbann_image_preprocessor::lbann_image_preprocessor() :
   m_z_score(false) {
 }
 
+lbann_image_preprocessor::lbann_image_preprocessor(
+  const lbann_image_preprocessor& source) :
+  m_horizontal_flip(source.m_horizontal_flip),
+  m_vertical_flip(source.m_vertical_flip),
+  m_horizontal_shift(source.m_horizontal_shift),
+  m_vertical_shift(source.m_vertical_shift),
+  m_shear_range(source.m_shear_range),
+  m_mean_subtraction(source.m_mean_subtraction),
+  m_unit_variance(source.m_unit_variance),
+  m_scale(source.m_scale),
+  m_z_score(source.m_z_score) {}
+
 void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
                                        unsigned imwidth,
                                        unsigned num_channels) {

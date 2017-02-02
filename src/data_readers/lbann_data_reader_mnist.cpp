@@ -56,6 +56,7 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
 
 lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
   : DataReader((const DataReader&) source),
+    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_width(source.m_image_width), m_image_height(source.m_image_height),
     m_num_labels(source.m_num_labels)
 {
