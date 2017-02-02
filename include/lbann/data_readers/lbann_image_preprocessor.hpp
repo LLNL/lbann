@@ -79,6 +79,15 @@ public:
    * This and mean subtraction/unit variance are mutually exclusive.
    */
   void z_score(bool b) { m_z_score = b; }
+  /** Disable all data augmentation. */
+  void disable_augmentation() {
+    horizontal_flip(false);
+    vertical_flip(false);
+    rotation(0.0f);
+    horizontal_shift(0.0f);
+    vertical_shift(0.0f);
+    shear_range(0.0f);
+  }
 
   /**
    * Preprocess pixels according to the currently-set transforms.
