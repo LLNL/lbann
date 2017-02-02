@@ -86,7 +86,7 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     string imagepath = m_image_dir + ImageList[index].first;
 
     int width, height;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, true, m_pixels);
+    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, m_pixels);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
     }
@@ -247,7 +247,7 @@ int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char
   for (size_t n = 0; n < num_to_process; n++) {
     string imagepath = m_image_dir + ImageList[n].first;
     if (n < 10) cout << "DataReader_ImageNet::fetch_data(); loading: " << imagepath << endl;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, true, v);
+    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, v);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
     }

@@ -110,6 +110,8 @@ public:
    * External interface to saving an image.
    * Classes that want to support this should use it to interface with
    * internal_save_image.
+   * @param pixels The image to save (as a column vector).
+   * @param filename The image filename (type inferred from extension).
    * @param scale Whether pixels has been scaled (default true).
    */
   virtual void save_image(Mat& pixels, const std::string filename,
