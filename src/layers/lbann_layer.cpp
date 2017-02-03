@@ -48,6 +48,9 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0)
 {
+
+    m_type = layer_type::INVALID;
+
     Index = index;
     m_execution_mode = execution_mode::training;
     fp_input = NULL;

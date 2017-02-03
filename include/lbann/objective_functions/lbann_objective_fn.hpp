@@ -52,7 +52,10 @@ namespace lbann
     class statistics
     {
     public:
-      statistics() {}
+      statistics() {
+        init_stats();
+      }
+
       ~statistics() {}
 
       void init_stats() {

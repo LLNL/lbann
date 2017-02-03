@@ -56,6 +56,8 @@ convolutional_layer::convolutional_layer(const uint index,
     m_num_output_channels(num_output_channels)
 {
 
+  m_type = layer_type::convolutional;
+
   // Initialize input dimensions and convolution parameters
   m_input_dims.resize(num_dims);
   m_filter_dims.resize(num_dims);

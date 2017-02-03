@@ -42,6 +42,7 @@ lbann::target_layer_unsupervised::target_layer_unsupervised(size_t index,lbann_c
      m_weight_initialization(init)
 {
 
+  m_type = layer_type::target_unsupervised;
   Index = index;
   NumNeurons = original_layer->NumNeurons;
   this->optimizer = optimizer; // Manually assign the optimizer since target layers normally set this to NULL

@@ -41,6 +41,7 @@ lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_
     distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Ys(comm->get_model_grid())
 {
+  m_type = layer_type::target_distributed_minibatch_parallel_io;
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
 

@@ -53,9 +53,17 @@ class model;
 
   class Layer {
   public:
+
+    // @todo: check list of layer types
+    enum class layer_type {fully_connected, softmax, convolutional, pooling,
+        input_distributed_minibatch, input_distributed_minibatch_parallel_io,
+        target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
+        INVALID};
+
     Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
+
     virtual ~Layer();
 
     static std::string weight_initialization_name(weight_initialization id);
@@ -134,6 +142,10 @@ class model;
     virtual bool loadFromCheckpointShared(persist& p);
 
   public:
+
+    /// Layer type
+    layer_type m_type;
+
     uint               Index;                  // Layer index (start with 0)
     uint 		NumNeurons; 	// # neurons
     execution_mode  m_execution_mode;
@@ -162,7 +174,9 @@ class model;
 
     lbann_comm* comm;
     model* neural_network_model;
+
   protected:
+
     /** Setup views of the matrices for the layer's forward propagation. */
     virtual void fp_set_std_matrix_view();
 #if 0
