@@ -78,7 +78,7 @@ double lbann::objective_functions::categorical_cross_entropy::compute_categorica
     EntrywiseMap(m_log_predictions_v, (std::function<DataType(const DataType&)>)([](const DataType& z)->DataType{return log(z);}));
 
     Hadamard(groundtruth_v, m_log_predictions_v, m_cross_entropy_cost_v);
-    Zeros(m_minibatch_cost, cur_mini_batch_size, 1); // Clear the entire array
+    Zeros(m_minibatch_cost_v, cur_mini_batch_size, 1);
     ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost_v);
 
     // Sum the local, total error

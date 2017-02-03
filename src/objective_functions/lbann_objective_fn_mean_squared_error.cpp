@@ -73,7 +73,7 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
   //square the differences
   EntrywiseMap(m_squared_errors_v, (std::function<DataType(const DataType&)>)([](const DataType& z)->DataType{return z*z;}));
   // sum up squared in a column (i.e., per minibatch/image)
-  Zeros(m_sum_squared_errors, cur_mini_batch_size, 1); // Clear the entire array
+  Zeros(m_sum_squared_errors_v, cur_mini_batch_size, 1);
   ColumnSum(m_squared_errors_v, m_sum_squared_errors_v);
 
   // Sum the local, total error
