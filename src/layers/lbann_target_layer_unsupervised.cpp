@@ -42,6 +42,7 @@ lbann::target_layer_unsupervised::target_layer_unsupervised(size_t index,lbann_c
      m_weight_initialization(init)
 {
 
+  m_type = layer_type::target_unsupervised;
   Index = index;
   NumNeurons = original_layer->NumNeurons;
   this->optimizer = optimizer; // Manually assign the optimizer since target layers normally set this to NULL
@@ -129,6 +130,9 @@ void lbann::target_layer_unsupervised::fp_linearity()
 
 void lbann::target_layer_unsupervised::bp_linearity()
 {
+
+  /// @todo: get error signal from objective_fn object
+
   DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
   DistMat& DsNext = DsNextProxy.Get();
   // delta = (activation - y)

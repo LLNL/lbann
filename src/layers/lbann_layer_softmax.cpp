@@ -49,6 +49,7 @@ lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
      ZsColMaxStar(comm->get_model_grid()),
      ZsNormExpSumStar(comm->get_model_grid())
 {
+    m_type = layer_type::softmax;
     Index = index;
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;
@@ -189,6 +190,42 @@ void lbann::SoftmaxLayer::fp_linearity()
 
 void lbann::SoftmaxLayer::bp_linearity()
 {
+
+  /// @todo Put softmax nonlinearity in bp_nonlinearity function
+
+  // Compute error signal from nonlinearity (categorical cross entropy case)
+  // Note: with softmax output layer and categorical cross entropy
+  // objective function,
+  //   error_signal = predictions - groundtruth
+  if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
+     && (m_next_layer_type == layer_type::target_distributed_minibatch
+         || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
+         // || m_next_layer_type == layer_type::target_unsupervised
+         )) {
+    Scale(DataType(-1), *m_prev_error_signal);
+    Axpy(DataType(1), *m_activations, *m_prev_error_signal);
+  }
+
+  // Compute error signal from nonlinearity (default case)
+  // Note: error_signal = (prev_error_signal - prev_error_signal^T activations) * activations
+  else {
+    StarMat prev_error_signal_dot_activations(get_effective_minibatch_size(), 1);
+    DistMat curr_prev_error_signal, curr_activations;
+    DataType curr_dot_product;
+    for(Int c = 0; c < get_effective_minibatch_size(); c++) {
+      LockedView(curr_prev_error_signal, *m_prev_error_signal, ALL, IR(c));
+      LockedView(curr_activations, *m_activations, ALL, IR(c));
+      curr_dot_product = Dot(curr_prev_error_signal, curr_activations);
+      prev_error_signal_dot_activations.SetLocal(c, 0, curr_dot_product);
+    }
+    IndexDependentMap(*m_prev_error_signal_v,
+                      (std::function<DataType(Int,Int,const DataType&)>)
+                      ([&prev_error_signal_dot_activations](Int r, Int c, const DataType& z)->DataType {
+                        return z - prev_error_signal_dot_activations.GetLocal(c,0);
+                      }));
+    Hadamard(*m_prev_error_signal_v, *m_activations_v, *m_prev_error_signal_v);
+  }
+
   // Compute the partial delta update for the next lower layer (delta * activation_prev^T)
   Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
   

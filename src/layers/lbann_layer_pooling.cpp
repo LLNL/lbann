@@ -51,6 +51,8 @@ pooling_layer::pooling_layer(const uint index,
     m_num_dims(num_dims), m_num_channels(num_channels)
 {
 
+    m_type = layer_type::pooling;
+
   // Initialize input dimensions and pooling parameters
   m_input_dims.resize(num_dims);
   m_pool_dims.resize(num_dims);

@@ -47,11 +47,8 @@ namespace lbann
 
     protected:
       /** Workspace to compute the squared error differences */
-      DistMat m_squared_errors;
-      DistMat m_squared_errors_v;
-      /** Colume-wise sum of the costs of a minibatch. */
-      ColSumMat m_sum_squared_errors;
-      ColSumMat m_sum_squared_errors_v;
+      DistMat m_errors;
+      DistMat m_errors_v;
     };
   }
 }

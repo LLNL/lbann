@@ -37,6 +37,7 @@ using namespace El;
 lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(comm->get_model_grid())
 {
+  m_type = layer_type::target_distributed_minibatch;
   //  Index = index;
   m_root = 0;
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
@@ -97,8 +98,21 @@ void lbann::target_layer_distributed_minibatch::fp_linearity() {
 }
 
 void lbann::target_layer_distributed_minibatch::bp_linearity() {
-  /// Use the objective function to compute the error between the predictions and the target data
-  neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v, *m_activations_v, *m_error_signal);
+
+  // Compute initial error signal (softmax output, categorical cross entropy objective case)
+  // Note: pass labels to previous layer, error signal is computed in softmax layer
+  if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
+     && m_prev_layer_type == layer_type::softmax) {
+    Copy(*m_activations, *m_error_signal);
+  }
+  
+  // Compute initial error signal (default case)
+  else {
+    neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v,
+                                                            *m_activations_v,
+                                                            *m_error_signal);
+  }
+
 }
 
 /**

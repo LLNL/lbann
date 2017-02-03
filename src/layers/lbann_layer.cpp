@@ -48,6 +48,11 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0)
 {
+
+    m_type = layer_type::INVALID;
+    m_prev_layer_type = layer_type::INVALID;
+    m_next_layer_type = layer_type::INVALID;    
+
     Index = index;
     m_execution_mode = execution_mode::training;
     fp_input = NULL;
@@ -98,11 +103,6 @@ void lbann::Layer::forwardProp() {
   // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
     *m_prev_activations = *fp_input;
-  }
-  // Get incoming loss and convert matrix distribution if necessary
-  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
-  if(bp_input != NULL) { // Target layers will not have a valid bp_input
-    *m_prev_error_signal = *bp_input;
   }
   // Set the view for all of the standard matrices based on the
   // current mini-batch size
@@ -186,13 +186,21 @@ ElMat *lbann::Layer::bp_output() {
 void lbann::Layer::setup_fp_input(ElMat *fp_input)
 {
   this->fp_input = fp_input;
-  // cout << "Layer " << Index << " is looking at fp_input " << fp_input << endl;
 }
 
 void lbann::Layer::setup_bp_input(ElMat *bp_input)
 {
   this->bp_input = bp_input;
-  // cout << "Layer " << Index << " is looking at bp_input " << bp_input << endl;
+}
+
+void lbann::Layer::set_prev_layer_type(layer_type type)
+{
+  this->m_prev_layer_type = type;
+}
+
+void lbann::Layer::set_next_layer_type(layer_type type)
+{
+  this->m_next_layer_type = type;
 }
 
 bool lbann::Layer::saveToFile(int fd, const char* dirname)

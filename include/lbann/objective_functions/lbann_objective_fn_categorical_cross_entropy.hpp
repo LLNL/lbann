@@ -44,17 +44,6 @@ namespace lbann
       double compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v);
       double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
       void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat& error_signal_v);
-
-    protected:
-      /** Workspace to compute the logarithm of the predicted categories */
-      DistMat m_log_predictions;
-      DistMat m_log_predictions_v;
-      /** Workspace to compute the difference between predicted categories and ground truth */
-      DistMat m_cross_entropy_cost;
-      DistMat m_cross_entropy_cost_v;
-      /** Colume-wise sum of the costs of a minibatch. */
-      ColSumMat m_minibatch_cost;
-      ColSumMat m_minibatch_cost_v;
     };
   }
 }

@@ -73,6 +73,9 @@ FullyConnectedLayer(const uint index,
     m_bias_bp_t(comm->get_model_grid()),
     m_bias_bp_t_v(comm->get_model_grid())
 {
+
+    m_type = layer_type::fully_connected;
+
     Index = index;
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;

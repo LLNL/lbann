@@ -459,19 +459,12 @@ lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
 
 void lbann::sequential_model::setup(size_t start_index,size_t end_index)
 {
-  // Setup each layer
-  if(end_index == 0) end_index = m_layers.size();
-  int prev_layer_dim, fp_index,bp_index;
-  if(start_index > 0) {
-    prev_layer_dim = m_layers[start_index-1]->NumNeurons;
-    fp_index = start_index;
-    bp_index = start_index-1;
-  }else {
-    prev_layer_dim = -1;
-    fp_index = 1;
-    bp_index = 0;
+  if(end_index <= 0) {
+    end_index = m_layers.size();
   }
+  int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->NumNeurons : -1;
 
+  // Setup each layer
   for (size_t l = start_index; l < end_index; ++l) {
     if (comm->am_model_master()) {
       cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
@@ -484,19 +477,15 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
 
   // Establish the forward pass input pointers
   // Note: the first layer doesn't require input
-  for (size_t l = fp_index; l < end_index; ++l) {
-    if (comm->am_model_master()) {
-      //cout << "Setting up a fp input of layer " << l << "as layer " << l-1 << endl;
-    }
+  for (size_t l = Max(start_index,1); l < end_index; ++l) {
+    m_layers[l]->set_prev_layer_type(m_layers[l-1]->m_type);
     m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
   }
 
   // Establish the backward pass input pointers
   // Note: the last layer doens't require input
-  for (int l = end_index-2; l >= bp_index; --l) {
-    if (comm->am_model_master()) {
-      //cout << "Setting up a bp input of layer " << l << "as layer " << l+1 << endl;
-    }
+  for (size_t l = end_index-1; l --> Max(start_index-1,0) ;) { // Cute decrement loop for unsigned int
+    m_layers[l]->set_next_layer_type(m_layers[l+1]->m_type);
     m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
   }
 

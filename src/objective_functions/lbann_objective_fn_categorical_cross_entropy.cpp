@@ -32,82 +32,75 @@ using namespace std;
 using namespace El;
 
 lbann::objective_functions::categorical_cross_entropy::categorical_cross_entropy(lbann_comm* comm)
-  : objective_fn("categorical_cross_entropy"), 
-    m_log_predictions(comm->get_model_grid()),
-    m_log_predictions_v(comm->get_model_grid()),
-    m_cross_entropy_cost(comm->get_model_grid()),
-    m_cross_entropy_cost_v(comm->get_model_grid()),
-    m_minibatch_cost(comm->get_model_grid()),
-    m_minibatch_cost_v(comm->get_model_grid())
+  : objective_fn("categorical_cross_entropy")
 {
   this->type = obj_fn_type::categorical_cross_entropy;
 }
 
-lbann::objective_functions::categorical_cross_entropy::~categorical_cross_entropy() {
-  m_log_predictions.Empty();
-  m_log_predictions_v.Empty();
-  m_cross_entropy_cost.Empty();
-  m_cross_entropy_cost_v.Empty();
-  m_minibatch_cost.Empty();
-  m_minibatch_cost_v.Empty();
-}
+lbann::objective_functions::categorical_cross_entropy::~categorical_cross_entropy() {}
 
-void lbann::objective_functions::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {
-  Zeros(m_log_predictions, num_neurons, mini_batch_size);
-  Zeros(m_cross_entropy_cost, num_neurons, mini_batch_size);
-  Zeros(m_minibatch_cost, mini_batch_size, 1);
-}
+void lbann::objective_functions::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {}
 
-void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
-  // Set the view based on the size of the current mini-batch
-  View(m_log_predictions_v, m_log_predictions, IR(0, m_log_predictions.Height()), IR(0, cur_mini_batch_size));
-  View(m_cross_entropy_cost_v, m_cross_entropy_cost, IR(0, m_cross_entropy_cost.Height()), IR(0, cur_mini_batch_size));
-  // Note that these matrices are transposed (column sum matrices) and thus the mini-batch size effects the number of rows, not columns
-  View(m_minibatch_cost_v, m_minibatch_cost, IR(0, cur_mini_batch_size), IR(0, m_minibatch_cost.Width()));
-}
+void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
 
 /// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
 /// cost=-1/m*(sum(sum(groundTruth.*log(a3))))
 /// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
 /// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
-double lbann::objective_functions::categorical_cross_entropy::compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v) {
-    DataType avg_error = 0.0, total_error = 0.0;
-    int64_t cur_mini_batch_size = groundtruth_v.Width();
+double lbann::objective_functions::categorical_cross_entropy::compute_categorical_cross_entropy(ElMat &predictions_v,
+                                                                                                ElMat &groundtruth_v) {
 
-    Copy(predictions_v, m_log_predictions_v);
-    EntrywiseMap(m_log_predictions_v, (std::function<DataType(const DataType&)>)([](const DataType& z)->DataType{return log(z);}));
-
-    Hadamard(groundtruth_v, m_log_predictions_v, m_cross_entropy_cost_v);
-    Zeros(m_minibatch_cost_v, cur_mini_batch_size, 1);
-    ColumnSum(m_cross_entropy_cost_v, m_minibatch_cost_v);
-
-    // Sum the local, total error
-    const Int local_height = m_minibatch_cost_v.LocalHeight();
-    for(int r = 0; r < local_height; r++) {
-      total_error += m_minibatch_cost_v.GetLocal(r, 0);
+    // Compute categorical cross entropy on current process
+    //   Note: robust against zero predictions; assumes predictions_v
+    //   and groundtruth_v are aligned
+    DataType total_error = 0;
+    for(Int c = 0; c < groundtruth_v.LocalWidth(); c++) {
+      for(Int r = 0; r < groundtruth_v.LocalHeight(); r++) {
+        const DataType true_val = groundtruth_v.GetLocal(r,c);
+        if(true_val != DataType(0)) {
+          const DataType pred_val = predictions_v.GetLocal(r,c);
+          total_error += - true_val * Log(pred_val);
+        }
+      }
     }
-    total_error = mpi::AllReduce(total_error, m_minibatch_cost_v.DistComm());
 
+    // Get categorical cross entropy by summing results from all processes
+    total_error = mpi::AllReduce(total_error, groundtruth_v.DistComm());
     return total_error;
+
 }
 
 /// Compute the average categorical cross entropy over the mini-batch
 double lbann::objective_functions::categorical_cross_entropy::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
     double avg_error = 0.0, total_error = 0.0;
-    int64_t cur_mini_batch_size = groundtruth_v.Width();
+    Int cur_mini_batch_size = groundtruth_v.Width();
 
     total_error = compute_categorical_cross_entropy(predictions_v, groundtruth_v);
 
-    avg_error = -1.0 * total_error / cur_mini_batch_size;
+    avg_error = total_error / cur_mini_batch_size;
 
     return avg_error;
 }
 
 void lbann::objective_functions::categorical_cross_entropy::compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat &error_signal_v) {
+
+  /// @todo Handle case with softmax output and cross entropy objective function
   /// Compute the error between the target values and the previous layer's activations
   /// Copy the results to the m_error_signal variable for access by the next lower layer
-  Copy(predictions_v, error_signal_v); // delta = (activation - y)
-  Axpy(-1., groundtruth_v, error_signal_v); // Per-neuron error
+  // Copy(predictions_v, error_signal_v); // delta = (activation - y)
+  // Axpy(-1., groundtruth_v, error_signal_v); // Per-neuron error
 
-  return;
+  // Compute derivative of categorical cross entropy
+  //   Note: robust against zero predictions; assumes predictions_v,
+  //   groundtruth_v, and error_signal_v are aligned
+  IndexDependentFill(error_signal_v.Matrix(),
+                     (std::function<DataType(Int,Int)>)
+                     ([&predictions_v, &groundtruth_v](Int r, Int c)->DataType {
+                       const DataType true_val = groundtruth_v.GetLocal(r,c);
+                       if(true_val != DataType(0))
+                         return - true_val / predictions_v.GetLocal(r,c);
+                       else
+                         return DataType(0);
+                     }));
+
 }
