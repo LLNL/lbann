@@ -127,6 +127,8 @@ class model;
     ElMat *bp_output();
     void setup_fp_input(ElMat *fp_input);
     void setup_bp_input(ElMat *bp_input);
+    void set_prev_layer_type(layer_type type);
+    void set_next_layer_type(layer_type type);
 
     /* void updateMB(const float LearnRate); */
     //    virtual double computeCost(DistMat &deltas) = 0;
@@ -145,6 +147,10 @@ class model;
 
     /// Layer type
     layer_type m_type;
+    /// Type of previous layer
+    layer_type m_prev_layer_type;
+    /// Type of next layer
+    layer_type m_next_layer_type;
 
     uint               Index;                  // Layer index (start with 0)
     uint 		NumNeurons; 	// # neurons

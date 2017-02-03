@@ -130,6 +130,9 @@ void lbann::target_layer_unsupervised::fp_linearity()
 
 void lbann::target_layer_unsupervised::bp_linearity()
 {
+
+  /// @todo: get error signal from objective_fn object
+
   DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
   DistMat& DsNext = DsNextProxy.Get();
   // delta = (activation - y)
