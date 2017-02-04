@@ -60,20 +60,20 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     neural_network_model = NULL;
 
     // Most layers use standard elemental matrix distribution
-    m_weights = new DistMat(comm->get_model_grid());
-    m_weights_gradient = new DistMat(comm->get_model_grid());
-    m_weighted_sum = new DistMat(comm->get_model_grid());
-    m_prev_error_signal = new DistMat(comm->get_model_grid());
-    m_error_signal = new DistMat(comm->get_model_grid());
-    m_activations = new DistMat(comm->get_model_grid());
-    m_prev_activations = new DistMat(comm->get_model_grid());
+    m_weights             = new DistMat(comm->get_model_grid());
+    m_weights_gradient    = new DistMat(comm->get_model_grid());
+    m_weighted_sum        = new DistMat(comm->get_model_grid());
+    m_prev_activations    = new DistMat(comm->get_model_grid());
+    m_activations         = new DistMat(comm->get_model_grid());
+    m_prev_error_signal   = new DistMat(comm->get_model_grid());
+    m_error_signal        = new DistMat(comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_weighted_sum_v = new DistMat(comm->get_model_grid());
+    m_weighted_sum_v      = new DistMat(comm->get_model_grid());
+    m_prev_activations_v  = new DistMat(comm->get_model_grid());
+    m_activations_v       = new DistMat(comm->get_model_grid());
     m_prev_error_signal_v = new DistMat(comm->get_model_grid());
-    m_error_signal_v = new DistMat(comm->get_model_grid());
-    m_activations_v = new DistMat(comm->get_model_grid());
-    m_prev_activations_v = new DistMat(comm->get_model_grid());
+    m_error_signal_v      = new DistMat(comm->get_model_grid());
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);

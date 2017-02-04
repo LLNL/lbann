@@ -74,15 +74,29 @@ pooling_layer::pooling_layer(const uint index,
     NumNeurons *= m_output_dims[i];
   }
   
-  // Matrices should be in Star,VC distributions
+  // Matrices should be in Star,VC distribution
   delete m_weighted_sum;
+  delete m_prev_activations;
+  delete m_activations;
   delete m_prev_error_signal;
   delete m_error_signal;
-  delete m_activations;
-  m_weighted_sum = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal = new StarVCMat(comm->get_model_grid());
-  m_error_signal = new StarVCMat(comm->get_model_grid());
-  m_activations = new StarVCMat(comm->get_model_grid());
+  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(comm->get_model_grid());
+  m_activations         = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
+  m_error_signal        = new StarVCMat(comm->get_model_grid());
+
+  // Matrix views should be in Star,VC distributions
+  delete m_weighted_sum_v;
+  delete m_prev_activations_v;
+  delete m_activations_v;
+  delete m_prev_error_signal_v;
+  delete m_error_signal_v;
+  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
+  m_activations_v       = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 
   // Initialize cuDNN pooling layer
   m_cudnn_layer = NULL;
@@ -143,18 +157,11 @@ void pooling_layer::setup(const int num_prev_neurons)
 
 void lbann::pooling_layer::fp_linearity() {
   
-  // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> XProxy(*fp_input);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> ZProxy(*m_weighted_sum);
-  DistMatrixWriteProxy<DataType,DataType,STAR,VC> YProxy(*m_activations);
-  StarVCMat& X = XProxy.Get();
-  StarVCMat& Z = ZProxy.Get();
-  StarVCMat& Y = YProxy.Get();
-
   // Get local matrices
-  const Mat& XLocal = X.LockedMatrix();
-  Mat& ZLocal = Z.Matrix();
-  Mat& YLocal = Y.Matrix();
+  /// @todo More descriptive variable names
+  const Mat& XLocal = m_prev_activations_v->LockedMatrix();
+  Mat& ZLocal = m_weighted_sum_v->Matrix();
+  Mat& YLocal = m_activations_v->Matrix();
 
   // Apply pooling on local data samples
   if(m_cudnn_layer) {
@@ -178,9 +185,8 @@ void lbann::pooling_layer::fp_linearity() {
 
     // Iterate through data samples in mini-batch
     for(int sample = 0; sample < XLocal.Width(); ++sample) {
-      const Mat input_sample = XLocal(IR(0,XLocal.Height()-1),
-                                      IR(sample));
-      Mat output_sample = ZLocal(IR(0,NumNeurons), IR(sample));
+      const Mat input_sample = XLocal(ALL, IR(sample));
+      Mat output_sample = ZLocal(ALL, IR(sample));
 
       // Iterate through channels
       for(int channel = 0; channel < m_num_channels; ++channel) {
@@ -224,7 +230,7 @@ void lbann::pooling_layer::fp_linearity() {
             }
 
             // Check if pool entry is larger than previous
-            DataType value = valid_pos ? input_channel.Get(input_pos, 0) : 0.0;
+            DataType value = valid_pos ? input_channel.Get(input_pos, 0) : DataType(0);
             max_value = value > max_value ? value : max_value;
 
             // Move to next pool entry
@@ -269,15 +275,11 @@ void lbann::pooling_layer::fp_linearity() {
 
 void lbann::pooling_layer::bp_linearity() {
 
-  // Convert matrices to desired formats
-  DistMatrixReadProxy<DataType,DataType,STAR,VC> input_proxy(*fp_input); // TODO: store from fp step
-  StarVCMat& input = input_proxy.Get();
-
   // Get local matrices
-  const Mat& input_local = input.LockedMatrix();
-  const Mat& output_local = m_activations->LockedMatrix();
-  const Mat& prev_error_signal_local = m_prev_error_signal->LockedMatrix();
-  Mat& error_signal_local = m_error_signal->Matrix();
+  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  const Mat& output_local = m_activations_v->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
+  Mat& error_signal_local = m_error_signal_v->Matrix();
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
@@ -304,12 +306,9 @@ void lbann::pooling_layer::bp_linearity() {
 
     // Iterate through data samples in mini-batch
     for(int sample = 0; sample < input_local.Width(); ++sample) {
-      const Mat input_sample = input_local(IR(0,input_local.Height()-1),
-                                           IR(sample));
-      const Mat prev_error_signal_sample
-        = prev_error_signal_local(IR(0,NumNeurons), IR(sample));
-      Mat error_signal_sample
-        = error_signal_local(IR(0,input_local.Height()-1), IR(sample));
+      const Mat input_sample = input_local(ALL, IR(sample));
+      const Mat prev_error_signal_sample = prev_error_signal_local(ALL, IR(sample));
+      Mat error_signal_sample = error_signal_local(ALL, IR(sample));
 
       // Iterate through channels
       for(int channel = 0; channel < m_num_channels; ++channel) {
@@ -321,7 +320,7 @@ void lbann::pooling_layer::bp_linearity() {
                          ALL);
         const Mat prev_error_signal_channel
           = prev_error_signal_sample(IR(channel*output_channel_size,
-                                        (channel+1)*input_channel_size),
+                                        (channel+1)*output_channel_size),
                                      ALL);
         Mat error_signal_channel
           = error_signal_sample(IR(channel*input_channel_size,
