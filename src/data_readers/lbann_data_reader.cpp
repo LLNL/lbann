@@ -30,7 +30,141 @@
 
 using namespace std;
 
-void lbann::DataReader::calculate_multi_model_data_distribution(lbann_comm *comm) {
+namespace lbann {
+
+void DataReader::setup(int base_offset, int stride, int model_offset,
+                       lbann_comm* comm) {
+  m_model_offset = model_offset;
+  m_base_offset = base_offset;
+  m_stride = stride;
+  m_last_mini_batch_stride = stride;
+  m_current_mini_batch_idx = 0;
+
+  if(comm != NULL) {
+    calculate_multi_model_data_distribution(comm);
+    m_use_alt_last_mini_batch_size = true;
+  }
+
+  CurrentPos = m_base_offset + m_model_offset;
+  if (m_shuffle) {
+    std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
+                 get_generator());
+  }
+}
+
+void DataReader::setup() {
+  DataReader::setup(0, BatchSize);
+}
+
+bool DataReader::update() {
+  int max_stride = std::max(m_stride, m_last_mini_batch_stride);
+  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
+  if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
+    CurrentPos += m_last_mini_batch_stride;
+  }else {
+    CurrentPos += m_stride;
+  }
+  if (CurrentPos < (int)ShuffledIndices.size()) {
+    m_current_mini_batch_idx++;
+    return true;
+  } else {
+    if (m_shuffle) {
+      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
+                   get_generator());
+    }
+    m_current_mini_batch_idx = 0;
+    CurrentPos = m_base_offset + m_model_offset;
+    return false;
+  }
+}
+
+int DataReader::getBatchSize() {
+  if (m_use_alt_last_mini_batch_size &&
+      m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
+    return m_last_mini_batch_size;
+  } else {
+    return BatchSize; 
+  }
+}
+
+int DataReader::get_next_position() {
+  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
+  if (m_use_alt_last_mini_batch_size &&
+      ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
+    return CurrentPos + m_last_mini_batch_stride;
+  } else {
+    return CurrentPos + m_stride;
+  }
+}
+
+void DataReader::select_subset_of_data(size_t max_sample_count, bool firstN) {
+  size_t num_data_samples = getNumData();
+      
+  /// If the user requested fewer than the total data set size, select
+  /// a random set from the entire data set.
+  if (max_sample_count != 0) {
+    max_sample_count = __MIN(max_sample_count, num_data_samples);
+    if(!firstN) {
+      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
+    }
+    m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
+    ShuffledIndices.resize(max_sample_count);
+
+    if(!firstN) {
+      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
+      std::sort(m_unused_indices.begin(), m_unused_indices.end());
+    }
+
+    // std::cout << "shuffled indices ";
+    // for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
+    //   std::cout << *i << ' ';
+    // std::cout << std::endl;
+
+    // std::cout << "unused indices ";
+    // for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
+    //   std::cout << *i << ' ';
+    // std::cout << std::endl;
+  }
+}
+
+bool DataReader::swap_used_and_unused_index_sets() {
+  std::vector<int> tmp_indices = ShuffledIndices;
+  ShuffledIndices = m_unused_indices;
+  m_unused_indices = tmp_indices;
+  return true;
+}
+
+DataReader& DataReader::operator=(const DataReader& source) {
+  this->BatchSize = source.BatchSize;
+  this->CurrentPos = source.CurrentPos;
+  this->m_shuffle = source.m_shuffle;
+  this->m_stride = source.m_stride;
+  this->m_base_offset = source.m_base_offset;
+  this->m_model_offset = source.m_model_offset;
+  this->m_use_alt_last_mini_batch_size = source.m_use_alt_last_mini_batch_size;
+  this->m_last_mini_batch_threshold = source.m_last_mini_batch_threshold;
+  this->m_last_mini_batch_size = source.m_last_mini_batch_size;
+  this->m_last_mini_batch_stride = source.m_last_mini_batch_stride;
+
+  // Vectors implement a deep copy
+  this->ShuffledIndices = source.ShuffledIndices;
+  this->m_unused_indices = source.m_unused_indices;
+  this->m_name = source.m_name;
+  return *this;
+}
+
+size_t DataReader::trim_data_set(double use_percentage, bool firstN) {
+  size_t max_sample_count = rint(getNumData()*use_percentage);
+      
+  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
+    throw lbann_exception("data reader trim error: invalid number of samples selected");
+  }
+  select_subset_of_data(max_sample_count, firstN);
+
+  return getNumData();
+}
+
+void DataReader::calculate_multi_model_data_distribution(lbann_comm *comm) {
   int max_mini_batch_size = BatchSize;
   int num_parallel_readers_per_model = (m_stride / comm->get_num_models()) / max_mini_batch_size;
   int min_stride_across_models = max_mini_batch_size * comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
@@ -89,8 +223,8 @@ void lbann::DataReader::calculate_multi_model_data_distribution(lbann_comm *comm
   return;
 }
 
-    /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool lbann::DataReader::saveToCheckpointShared(persist& p, const char* name)
+/** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
+bool DataReader::saveToCheckpointShared(persist& p, const char* name)
 {
     // rank 0 writes the training state file
     if (p.m_rank == 0) {
@@ -172,3 +306,5 @@ bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char* name)
 
     return true;
 }
+
+}  // namespace lbann

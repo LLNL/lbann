@@ -30,62 +30,50 @@
 #define LBANN_DATA_READER_MNIST_HPP
 
 #include "lbann_data_reader.hpp"
-
-
+#include "lbann_image_preprocessor.hpp"
 
 namespace lbann
 {
-	class DataReader_MNIST : public DataReader
-	{
-	public:
-    DataReader_MNIST(int batchSize, bool shuffle);
-    DataReader_MNIST(int batchSize);
-    DataReader_MNIST(const DataReader_MNIST& source);
-		~DataReader_MNIST();
+class DataReader_MNIST : public DataReader, public lbann_image_preprocessor
+{
+public:
+  DataReader_MNIST(int batchSize, bool shuffle);
+  DataReader_MNIST(int batchSize);
+  DataReader_MNIST(const DataReader_MNIST& source);
+  ~DataReader_MNIST();
 
-    int fetch_data(Mat& X);
-    int fetch_label(Mat& Y);
-		int getNumLabels() { return m_num_labels; }
+  int fetch_data(Mat& X);
+  int fetch_label(Mat& Y);
+  int getNumLabels() { return m_num_labels; }
 
-		// MNIST-specific functions
-    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
-    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
-    bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
-    void free();
+  // MNIST-specific functions
+  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
+  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
+  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
+  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
+  void free();
 
-		int getImageWidth() { return m_image_width; }
-		int getImageHeight() { return m_image_height; }
-    int get_linearized_data_size() { return m_image_width * m_image_height; }
-    int get_linearized_label_size() { return m_num_labels; }
+  int getImageWidth() { return m_image_width; }
+  int getImageHeight() { return m_image_height; }
+  int get_linearized_data_size() { return m_image_width * m_image_height; }
+  int get_linearized_label_size() { return m_num_labels; }
 
-    DataReader_MNIST& operator=(const DataReader_MNIST& source);
+  DataReader_MNIST& operator=(const DataReader_MNIST& source);
 
-    void subtract_mean(bool b) { m_mean = b; }
+  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+    internal_save_image(pixels, filename, m_image_height, m_image_width, 1,
+                        scale);
+  }
 
-    void unit_variance(bool b) { m_variance = b; }
+private:
+  void clone_image_data(const DataReader_MNIST& source);
 
-    //! scale using min-max
-    void scale(bool b) { m_scale = b; }
+  std::vector<unsigned char*> m_image_data;
+  int m_image_width;
+  int m_image_height;
+  int m_num_labels;
+};
 
-    //! normalize using z-score; if set to true, then settings for
-    //! subtract_mean(), unit_variance(), and scale() are ignored
-    void z_score(bool b) { m_z_score = b; }
+}  // namespace lbann
 
-  private:
-    void clone_image_data(const DataReader_MNIST& source);
-
-	private:
-		std::vector<unsigned char*> 	m_image_data;
-		int 							m_image_width;
-		int 							m_image_height;
-		int								m_num_labels;
-    bool              m_scale;
-    bool              m_variance;
-    bool              m_mean;
-    bool              m_z_score;
-	};
-
-}
-
-#endif // LBANN_DATA_READER_MNIST_HPP
+#endif  // LBANN_DATA_READER_MNIST_HPP

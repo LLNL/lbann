@@ -40,15 +40,11 @@ inline void __swapEndianInt(unsigned int& ui)
 
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+  : DataReader(batchSize, shuffle), lbann_image_preprocessor()
 {
   m_image_width = 28;
   m_image_height = 28;
   m_num_labels = 10;
-  m_scale = true;
-  m_variance = false;
-  m_mean = false;
-  m_z_score = false;
   setName("MNIST");
 
   lbann_proto *pb = lbann_proto::get();
@@ -60,9 +56,9 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
 
 lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
   : DataReader((const DataReader&) source),
+    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_width(source.m_image_width), m_image_height(source.m_image_height),
-    m_num_labels(source.m_num_labels), m_scale(source.m_scale),
-    m_variance(source.m_variance), m_mean(source.m_mean), m_z_score(source.m_z_score)
+    m_num_labels(source.m_num_labels)
 {
   // No need to deallocate data on a copy constuctor
 
@@ -77,12 +73,6 @@ lbann::DataReader_MNIST::~DataReader_MNIST()
 
 int lbann::DataReader_MNIST::fetch_data(Mat& X)
 {
-  if (m_z_score) {
-    m_scale = false;
-    m_mean = false;
-    m_variance = false;
-  }
-
   if(!DataReader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
@@ -101,77 +91,16 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     unsigned char* data = m_image_data[index];
-    unsigned char* pixels_u = &data[1];
+    unsigned char* pixels = &data[1];
     unsigned char label = data[0];
-
-    for (int p = 1; p < 1+pixelcount; p++) {
-      pixels[p-1] = pixels_u[p];
-    }
-
-
-    if (m_z_score) {
-      float x_sqr = 0;
-      float mean = 0;
-      for (int p = 0; p < pixelcount; p++) {
-        mean += pixels[p];
-        x_sqr += (pixels[p] * pixels[p]);
-      }
-      mean /= pixelcount;
-      x_sqr /= pixelcount;
-      float std_dev = x_sqr - (mean*mean);
-      std_dev = sqrt(std_dev);
-      for (int p = 0; p < pixelcount; p++) {
-        pixels[p] = (pixels[p] - mean) / std_dev;
-      }
-    }
-
-    else {
-
-      // optionally scale to: [0,1]
-      // formula is:  x_i - min(x) / max(x) - min(x)
-      // but since min(x) = 0 and max(x) <= 255, we simply divide by 255
-      if (m_scale) {
-        for (int p = 0; p < pixelcount; p++) {
-          pixels[p] /= 255.0;
-        }
-      }
-
-      // optionally subtract the mean
-      if (m_mean) {
-        float mean = 0;
-        for (int p = 0; p < pixelcount; p++) {
-          mean += pixels[p];
-        }
-        mean /= pixelcount;
-        for (int p = 0; p < pixelcount; p++) {
-          pixels[p] -= mean;
-        }
-      }
-
-      // optionally standardize to unit variance;
-      // note: we need to recompute the mean and standard deviation,
-      //       in case we've rescaled (above) using min-max scaling
-      if (m_variance) {
-        float x_sqr = 0;
-        float mean = 0;
-        for (int p = 1; p < 1+pixelcount; p++) {
-          mean += pixels[p];
-          x_sqr += (pixels[p] * pixels[p]);
-        }
-        mean /= pixelcount;
-        x_sqr /= pixelcount;
-        float std_dev = x_sqr - (mean*mean);
-        std_dev = sqrt(std_dev);
-
-        for (int p = 0; p < pixelcount; p++) {
-          pixels[p] /= std_dev;
-        }
-      }
-    }
 
     for (int p = 0; p < pixelcount; p++) {
       X.Set(p, k, pixels[p]);
     }
+
+    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
+    augment(pixel_col, m_image_height, m_image_width, 1);
+    normalize(pixel_col, 1);
   }
 
   return (n - CurrentPos);
@@ -338,10 +267,6 @@ lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNI
   this->m_image_height = source.m_image_height;
   this->m_num_labels = source.m_num_labels;
   this->m_num_labels = source.m_num_labels;
-  this->m_scale = source.m_scale;
-  this->m_variance = source.m_variance;
-  this->m_mean = source.m_mean;
-  this->m_z_score = source.m_z_score;
 
   clone_image_data(source);
   return *this;
