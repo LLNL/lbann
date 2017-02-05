@@ -213,7 +213,8 @@ if [ "${COMPILER}" == "gnu" ]; then
     MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
   else
     GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
-    GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
+    #GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
+    GFORTRAN_LIB=/opt/rh/devtoolset-3/root/usr/lib/gcc/x86_64-redhat-linux/4.9.2
     MPI_DIR=/usr/local/tools/mvapich2-gnu-2.1
   fi
   CMAKE_C_COMPILER=${GNU_DIR}/gcc
