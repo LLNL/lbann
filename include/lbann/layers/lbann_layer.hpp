@@ -47,18 +47,19 @@
 namespace lbann
 {
 
-// Forward-declare this.
-class regularizer;
-class model;
+  // Forward-declare this.
+  class regularizer;
+  class model;
+
+  // @todo: check list of layer types
+  enum class layer_type {fully_connected, softmax, convolutional, pooling,
+      input_distributed_minibatch, input_distributed_minibatch_parallel_io,
+      target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
+      INVALID};
+
 
   class Layer {
   public:
-
-    // @todo: check list of layer types
-    enum class layer_type {fully_connected, softmax, convolutional, pooling,
-        input_distributed_minibatch, input_distributed_minibatch_parallel_io,
-        target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
-        INVALID};
 
     Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
           uint mbsize, activation_type activation=activation_type::ID,

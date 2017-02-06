@@ -30,6 +30,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/layers/lbann_layer.hpp"
 
 namespace lbann
 {
@@ -105,7 +106,10 @@ namespace lbann
       virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
       /// Compute the object function -- Note that it is averaged across a mini-batch
       virtual double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {}
-      virtual void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat &error_signal_v) {}
+      virtual void compute_obj_fn_derivative(layer_type prev_layer_type,
+                                             ElMat &predictions_v,
+                                             ElMat &groundtruth_v,
+                                             ElMat &error_signal_v) {}
 
       statistics* get_statistics(execution_mode mode);
       double report_obj_fn(execution_mode mode);

@@ -59,6 +59,13 @@ void lbann::target_layer::setup(int num_prev_neurons) {
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 }
 
+/**
+ * Target layers are not able to return target matrices for forward propagation
+ */
+DistMat *lbann::target_layer::fp_output() {
+  return NULL;
+}
+
 lbann::DataReader *lbann::target_layer::set_training_data_reader(DataReader *data_reader, bool shared_data_reader) {
   m_shared_data_reader = shared_data_reader;
   return io_layer::set_training_data_reader(data_reader);

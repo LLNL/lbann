@@ -462,9 +462,9 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
   if(end_index <= 0) {
     end_index = m_layers.size();
   }
-  int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->NumNeurons : -1;
 
   // Setup each layer
+  int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->NumNeurons : -1;
   for (size_t l = start_index; l < end_index; ++l) {
     if (comm->am_model_master()) {
       cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;

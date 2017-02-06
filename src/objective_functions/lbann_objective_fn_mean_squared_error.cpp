@@ -50,7 +50,7 @@ void lbann::objective_functions::mean_squared_error::setup(int num_neurons, int 
 
 void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(m_errors_v, m_errors, IR(0, m_errors.Height()), IR(0, cur_mini_batch_size));
+  View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
 }
 
 /// Compute mean squared error
@@ -66,15 +66,16 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
 double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
   Int cur_mini_batch_size = groundtruth_v.Width();
 
-  DataType total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
+  double total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
 
-  DataType avg_error = total_error / cur_mini_batch_size;
+  double avg_error = total_error / cur_mini_batch_size;
 
   return avg_error;
 }
 
 /// Compute derivative of mean squared error objective function
-void lbann::objective_functions::mean_squared_error::compute_obj_fn_derivative(ElMat &predictions_v,
+void lbann::objective_functions::mean_squared_error::compute_obj_fn_derivative(layer_type prev_layer_type,
+                                                                               ElMat &predictions_v,
                                                                                ElMat &groundtruth_v,
                                                                                ElMat &error_signal_v) {
   Copy(predictions_v, error_signal_v);

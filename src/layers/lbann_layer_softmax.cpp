@@ -194,17 +194,12 @@ void lbann::SoftmaxLayer::bp_linearity()
   /// @todo Put softmax nonlinearity in bp_nonlinearity function
 
   // Compute error signal from nonlinearity (categorical cross entropy case)
-  // Note: with softmax output layer and categorical cross entropy
-  // objective function,
-  //   error_signal = predictions - groundtruth
+  // Note: error signal is already computed in objective function object
   if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
      && (m_next_layer_type == layer_type::target_distributed_minibatch
          || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
          // || m_next_layer_type == layer_type::target_unsupervised
-         )) {
-    Scale(DataType(-1), *m_prev_error_signal);
-    Axpy(DataType(1), *m_activations, *m_prev_error_signal);
-  }
+         )) {}
 
   // Compute error signal from nonlinearity (default case)
   // Note: error_signal = (prev_error_signal - prev_error_signal^T activations) * activations

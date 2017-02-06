@@ -43,7 +43,10 @@ namespace lbann
       void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
       double compute_categorical_cross_entropy(ElMat &predictions_v, ElMat &groundtruth_v);
       double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
-      void compute_obj_fn_derivative(ElMat &predictions_v, ElMat &groundtruth_v, ElMat& error_signal_v);
+      void compute_obj_fn_derivative(layer_type prev_layer_type,
+                                     ElMat &predictions_v,
+                                     ElMat &groundtruth_v,
+                                     ElMat& error_signal_v);
     };
   }
 }

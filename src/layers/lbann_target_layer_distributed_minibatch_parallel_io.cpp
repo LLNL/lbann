@@ -114,19 +114,11 @@ void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
 
 void lbann::target_layer_distributed_minibatch_parallel_io::bp_linearity() {
 
-  // Compute initial error signal (softmax output, categorical cross entropy objective case)
-  // Note: pass labels to previous layer, error signal is computed in softmax layer
-  if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
-     && m_prev_layer_type == layer_type::softmax) {
-    Copy(*m_activations, *m_error_signal);
-  }
-  
-  // Compute initial error signal (default case)
-  else {
-    neural_network_model->obj_fn->compute_obj_fn_derivative(*m_prev_activations_v,
-                                                            *m_activations_v,
-                                                            *m_error_signal);
-  }
+  // Compute initial error signal
+  neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
+                                                          *m_prev_activations_v,
+                                                          *m_activations_v,
+                                                          *m_error_signal_v);
 
 }
 
