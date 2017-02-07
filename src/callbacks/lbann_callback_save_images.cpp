@@ -41,9 +41,9 @@ void lbann_callback_save_images::on_phase_end(model* m) {
 void lbann_callback_save_images::save_images(ElMat* input, ElMat* output,int phase) {
 
   //check that num_images is less than minibatch size
-  size_t num_images = std::min(m_num_images,std::min(input->Width(),output->Width()));
+  Int num_images = std::min(m_num_images,std::min(input->Width(),output->Width()));
 
-  size_t num_neurons = std::min(input->Height(),output->Height());
+  Int num_neurons = std::min(input->Height(),output->Height());
 
   uint y_dim = floor(std::sqrt(num_neurons));
   uint x_dim = floor(std::sqrt(num_neurons));
