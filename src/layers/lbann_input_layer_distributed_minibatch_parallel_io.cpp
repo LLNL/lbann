@@ -42,10 +42,6 @@ lbann::input_layer_distributed_minibatch_parallel_io::input_layer_distributed_mi
 {
 
   m_type = layer_type::input_distributed_minibatch;
-
-  lbann_proto *pb = lbann_proto::get();
-  pb->Layer_InputDistributedMiniBatchParallelIO_ctor(num_parallel_readers, mini_batch_size);
-
 }
 
 void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {

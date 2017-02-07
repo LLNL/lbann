@@ -31,7 +31,6 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/proto/lbann_proto.hpp"
 #include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"

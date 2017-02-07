@@ -29,7 +29,6 @@
 #ifndef LBANN_DATA_READER_HPP
 #define LBANN_DATA_READER_HPP
 
-#include "lbann/proto/lbann_proto.hpp"
 #include "lbann/lbann_base.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
