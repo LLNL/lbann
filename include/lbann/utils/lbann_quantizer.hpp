@@ -44,20 +44,21 @@ namespace lbann
 {
 
 /**
- * Perform one-bit quantization of matrices (by column) with the quantization
- * threshold at 0. Optionally do thresholding and entropy coding.
+ * Support different kinds of quantization.
  * Relevant references:
  * "1-Bit Stochastic Gradient Descent and its Application to Data-Parallel
  * Distributed Training of Speech DNNs" by Frank Seide et al. (MSR)
  * "Scalable Distributed DNN Training Using Commodity GPU Cloud Computing"
  * by Nikko Strom. (Amazon)
+ * "Communication Quantization for Data-parallel Training of Deep Neural
+ * Networks" by Nikoli Dryden et al. (LLNL/UIUC)
  */
 class lbann_quantizer
 {
 public:
-  /** We require that sizeof(DataType) == sizeof(qtype) == sizeof(uqtype). */
-  typedef uint32_t uqtype;
-  typedef int32_t qtype;
+  /** We require that sizeof(DataType) <= sizeof(qtype) == sizeof(uqtype). */
+  typedef El::Unsigned uqtype;
+  typedef El::Int qtype;
   /**
    * This represents a quantized version of a matrix.
    * Each column is quantized separately. The first two entries are floats

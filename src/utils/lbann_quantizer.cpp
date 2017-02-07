@@ -163,9 +163,10 @@ void lbann_quantizer::quantize(
 
     // Store the averages.
     // Use memcpy so that we don't violate aliasing rules.
-    qtype tmp;
+    qtype tmp = 0;
     memcpy(&tmp, &avg_pos, sizeof(avg_pos));
     qmat.Set(0, col, tmp);
+    tmp = 0;
     memcpy(&tmp, &avg_neg, sizeof(avg_neg));
     qmat.Set(1, col, tmp);
 
@@ -557,9 +558,12 @@ void lbann_quantizer::adaptive_threshold_quantize(
       const adaptive_reconstructions recons =
         col_reconstruction(mat, qerror, col, threshes);
       // Store the averages for reconstruction.
+      q[header_loc + 1] = 0;
       memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
+      q[header_loc + 2] = 0;
       memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
 #if LBANN_QUANTIZER_TERNARY
+      q[header_loc + 3] = 0;
       memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
       const Int col_offset = col * ldim;
@@ -702,9 +706,12 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
       const adaptive_reconstructions recons =
         col_reconstruction(mat, qerror, col, threshes);
       // Store the averages for reconstruction.
+      q[header_loc + 1] = 0;
       memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
+      q[header_loc + 2] = 0;
       memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
 #if LBANN_QUANTIZER_TERNARY
+      q[header_loc + 3] = 0;
       memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
       const Int col_offset = col * ldim;
