@@ -80,13 +80,6 @@ FullyConnectedLayer(const uint index,
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;
     m_bias_term = 1.0;
-
-    lbann_proto *pb = lbann_proto::get();
-    pb->Layer_FullyConnected_ctor(
-        numPrevNeurons, numNeurons, miniBatchSize, 
-        Activation::activation_name(activationType),
-        Layer::weight_initialization_name(init),
-        optimizer->name());
 }
 
 lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
