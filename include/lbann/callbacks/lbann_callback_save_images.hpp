@@ -50,7 +50,7 @@ public:
 
 private:
   std::string m_image_dir; //directory to save image
-  int m_num_images; // num of images to save
+  Int m_num_images; // num of images to save
   void save_images(ElMat* input, ElMat* output,int phase);
 };
 
