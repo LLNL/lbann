@@ -1159,7 +1159,6 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
       poses[i] = pos;
     }
     for (unsigned i = 0; i < NUM_THRESHOLD_SAMPLES; ++i) {
-      //const unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
       const unsigned pos = poses[i];
       entries.emplace_back(mat_buf[pos] + qerror_buf[pos]);
     }
@@ -1206,10 +1205,13 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
 lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
   const Mat& mat, const Mat& qerror, int col,
   const adaptive_thresholds threshes, bool sample) {
-  std::vector<DataType> pos_entries;
-  std::vector<DataType> neg_entries;
+  DataType pos_sum = 0.0f;
+  unsigned pos_count = 0;
+  DataType neg_sum = 0.0f;
+  unsigned neg_count = 0;
 #if LBANN_QUANTIZER_TERNARY
-  std::vector<DataType> zero_entries;
+  DataType zero_sum = 0.0f;
+  unsigned zero_count = 0;
 #endif
   const Int height = mat.Height();
   const Int col_offset = col * mat.LDim();
@@ -1220,14 +1222,17 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
       const unsigned pos = row + col_offset;
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= threshes.pos_thresh) {
-        pos_entries.emplace_back(val);
+        pos_sum += val;
+        ++pos_count;
       } else {
         if (val <= threshes.neg_thresh) {
-          neg_entries.emplace_back(val);
+          neg_sum += val;
+          ++neg_count;
         } 
 #if LBANN_QUANTIZER_TERNARY
         else {
-          zero_entries.emplace_back(val);
+          zero_sum += val;
+          ++zero_count;
         }
 #endif
       }
@@ -1248,14 +1253,17 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
       const unsigned pos = poses[i];
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= threshes.pos_thresh) {
-        pos_entries.emplace_back(val);
+        pos_sum += val;
+        ++pos_count;
       } else {
         if (val <= threshes.neg_thresh) {
-          neg_entries.emplace_back(val);
+          neg_sum += val;
+          ++neg_count;
         }
 #if LBANN_QUANTIZER_TERNARY
         else {
-          zero_entries.emplace_back(val);
+          zero_sum += val;
+          ++zero_count;
         }
 #endif
       }
@@ -1268,18 +1276,15 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
 #if LBANN_QUANTIZER_TERNARY
   DataType zero_recon = 0.0f;
 #endif
-  if (pos_entries.size() > 0) {
-    pos_recon = std::accumulate(pos_entries.begin(), pos_entries.end(), 0.0f) /
-      pos_entries.size();
+  if (pos_count > 0) {
+    pos_recon = pos_sum / pos_count;
   }
-  if (neg_entries.size() > 0) {
-    neg_recon = std::accumulate(neg_entries.begin(), neg_entries.end(), 0.0f) /
-      neg_entries.size();
+  if (neg_count > 0) {
+    neg_recon = neg_sum / neg_count;
   }
 #if LBANN_QUANTIZER_TERNARY
-  if (zero_entries.size() > 0) {
-    zero_recon = std::accumulate(zero_entries.begin(), zero_entries.end(), 0.0f) /
-      zero_entries.size();
+  if (zero_count > 0) {
+    zero_recon = zero_sum / zero_count;
   }
   return { pos_recon, neg_recon, zero_recon };
 #else
