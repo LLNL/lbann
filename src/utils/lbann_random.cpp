@@ -123,8 +123,8 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
     mat.Reserve(m * n);
     auto& gen = get_generator();
     std::bernoulli_distribution dist(p);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen) ? 1.0f : 0.0f);
       }
     }
@@ -140,8 +140,8 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
                                                   center + radius);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen));
       }
     }
