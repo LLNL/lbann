@@ -1094,6 +1094,8 @@ void lbann_quantizer::uncompress_thresholds(
   uqtype cur = *cqstart;
   for (auto iter = cqstart; iter != cqend;) {
     // Decode the quotient by continuing until a 0 is found.
+    // TODO: Need to switch this depending on the size of El::Int.
+    // __builtin_ffs expects 32-bit ints; need __builtin_ffsll for 64-bit.
     int ffz;
     while ((ffz = __builtin_ffs(~cur)) == 0) {
       ++iter;

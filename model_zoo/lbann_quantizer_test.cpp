@@ -381,14 +381,14 @@ int main(int argc, char** argv) {
   test_quantize();
   test_2value_quantize();
   test_threshold_quantize();
-  test_compression();
-  test_threshold_compression();
+  //test_compression();
+  //test_threshold_compression();
   test_adaptive_threshold_quantize();
   //test_adaptive_threshold_compression();
   test_allreduce();
   test_quantize_allreduce();
   test_threshold_quantize_allreduce();
-  test_compressed_threshold_quantize_allreduce();
+  //test_compressed_threshold_quantize_allreduce();
   test_adaptive_threshold_quantize_allreduce();
   //test_compressed_adaptive_threshold_quantize_allreduce();
   El::Finalize();
