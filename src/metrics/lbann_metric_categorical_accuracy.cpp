@@ -84,10 +84,10 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
-  for(int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
+  for(Int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
     int mb_global_index = predictions_v.GlobalCol(mb_index);
     DataType sample_max = YsColMaxStar_v.GetLocal(mb_global_index, 0);
-    for(int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
+    for(Int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
       if(predictions_v.GetLocal(f_index, mb_index) == sample_max) {
         m_max_index_v.Set(mb_global_index, 0, predictions_v.GlobalRow(f_index));
       }

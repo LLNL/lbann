@@ -108,8 +108,8 @@ void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
     mat.Reserve(n * m);
     auto& gen = get_generator();
     std::normal_distribution<DataType> dist(mean, stddev);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen));
       }
     }

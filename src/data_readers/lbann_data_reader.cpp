@@ -57,7 +57,6 @@ void DataReader::setup() {
 }
 
 bool DataReader::update() {
-  int max_stride = std::max(m_stride, m_last_mini_batch_stride);
   /// Is the mini-batch that is about to finish equal to the second to last mini-batch
   if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
     CurrentPos += m_last_mini_batch_stride;
