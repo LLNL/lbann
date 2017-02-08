@@ -128,7 +128,7 @@ namespace lbann
       }
 
       // build name of the checkpoint file
-      sprintf(name, "L%d_sgd_%dx%d", Index, velocity.Height(), velocity.Width());
+      sprintf(name, "L%d_sgd_%lldx%lld", Index, velocity.Height(), velocity.Width());
       p.write_distmat(persist_type::train, name, (DistMat*)&velocity);
 
       return true;
@@ -145,7 +145,7 @@ namespace lbann
       MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
       // build name of the checkpoint file
-      sprintf(name, "L%d_sgd_%dx%d.bin", Index, velocity.Height(), velocity.Width());
+      sprintf(name, "L%d_sgd_%lldx%lld.bin", Index, velocity.Height(), velocity.Width());
       p.read_distmat(persist_type::train, name, (DistMat*)&velocity);
 
       return true;

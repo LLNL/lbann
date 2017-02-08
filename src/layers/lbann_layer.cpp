@@ -206,7 +206,7 @@ void lbann::Layer::set_next_layer_type(layer_type type)
 bool lbann::Layer::saveToFile(int fd, const char* dirname)
 {
     char filepath[512];
-    sprintf(filepath, "%s/weights_L%d_%03dx%03d", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
 
     uint64_t bytes;
     return lbann::write_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
@@ -215,7 +215,7 @@ bool lbann::Layer::saveToFile(int fd, const char* dirname)
 bool lbann::Layer::loadFromFile(int fd, const char* dirname)
 {
     char filepath[512];
-    sprintf(filepath, "%s/weights_L%d_%03dx%03d.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
 
     uint64_t bytes;
     return lbann::read_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
@@ -244,7 +244,7 @@ bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
 {
     // define name to store our parameters
     char name[512];
-    sprintf(name, "weights_L%d_%dx%d", Index, m_weights->Height(), m_weights->Width());
+    sprintf(name, "weights_L%d_%lldx%lld", Index, m_weights->Height(), m_weights->Width());
 
     // write out our weights to the model file
     p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
@@ -259,7 +259,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 {
     // define name to store our parameters
     char name[512];
-    sprintf(name, "weights_L%d_%dx%d.bin", Index, m_weights->Height(), m_weights->Width());
+    sprintf(name, "weights_L%d_%lldx%lld.bin", Index, m_weights->Height(), m_weights->Width());
 
     // read our weights from model file
     p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
@@ -352,7 +352,7 @@ std::string lbann::Layer::weight_initialization_name(weight_initialization id) {
          break;
     default:
       char b[1024];
-      sprintf(b, "%f %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
+      sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
       throw lbann_exception(b);
   }
 }
