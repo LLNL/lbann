@@ -21,8 +21,10 @@ else()
   if(NOT ELEMENTAL_TAG)
      # Deprecated - Commit from 9/11/2016
      # Deprecated - set(ELEMENTAL_TAG "d14e8f396cbafac8cf6b46da442ad3b7a1d42508")
-     # 0.8.7.6
-     set(ELEMENTAL_TAG "8a1a42c4391b73e1b7e9ea07736459cccb7d6b21")
+     # 0.87.6
+     # set(ELEMENTAL_TAG "8a1a42c4391b73e1b7e9ea07736459cccb7d6b21")
+     # 0.87.7
+     set(ELEMENTAL_TAG "477e503a7a840cc1a75173552711b980505a0b06")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
