@@ -53,6 +53,7 @@ GEN_DOC=0
 INSTALL_LBANN=0
 ALTERNATE_BUILD_DIR=none
 BUILD_SUFFIX=
+SEQ_INIT=OFF
 
 ################################################################
 # Help message
@@ -131,6 +132,7 @@ while :; do
     -d|--debug)
       # Debug mode
       BUILD_TYPE=Debug
+      SEQ_INIT=ON
       ;;
     --tbinf)
       # Tensorboard interface
@@ -317,6 +319,7 @@ cmake \
 -D VERBOSE=${VERBOSE} \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 -D LBANN_HOME=${ROOT_DIR} \
+-D SEQ_INIT=${SEQ_INIT} \
 ${ROOT_DIR}
 EOF
 )

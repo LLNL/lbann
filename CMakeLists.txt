@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8.12)
 # Check to see if we are in a git repo
 execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_REPO OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(${GIT_REPO})
+if(GIT_REPO)
   # Get the git version so that we can embed it into the executable
   execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
   set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
@@ -46,6 +46,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+if(NOT SEQ_INIT)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_PARALLEL_RANDOM_MATRICES")
+endif()
 
 # Special handling if we're compiling with Clang's address sanitizer
 execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CXX_VERSION)
