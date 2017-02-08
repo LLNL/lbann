@@ -242,7 +242,7 @@ public:
    * @return Adaptive reconstruction values.
    */
   adaptive_reconstructions col_reconstruction(
-    const Mat& mat, const Mat& qerror, int col,
+    const Mat& mat, const Mat& qerror, Int col,
     const adaptive_thresholds threshes, bool sample = true);
 
   /** Get the total number of bytes sent during quantization. */
@@ -310,11 +310,11 @@ private:
   /** log_2(GR_M). */
   static const uqtype GR_K = 7;
   /** Number of samples to use in proportion_threshold. */
-  static const int NUM_THRESHOLD_SAMPLES = 1024;
+  static const Int NUM_THRESHOLD_SAMPLES = 1024;
   /** Number of samples to use in col_reconstruction. */
-  static const int NUM_RECON_SAMPLES = 128;
+  static const Int NUM_RECON_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
-  static const int NUM_ONEBIT_SAMPLES = 128;
+  static const Int NUM_ONEBIT_SAMPLES = 128;
   /** Factor used when computing header lengths in adaptive quantization. */
 #if LBANN_QUANTIZER_TERNARY
   static const int HEADER_FACTOR = 4;
@@ -322,7 +322,7 @@ private:
   static const int HEADER_FACTOR = 3;
 #endif
   /** Max factor by which adaptive quantization can exceed optimal amount. */
-  static const int MAX_QUANTIZED_EXCESS = 4;
+  static const Int MAX_QUANTIZED_EXCESS = 4;
 
   /** Bytes sent in doing the reduce-scatter. */
   size_t rs_bytes_sent;
@@ -358,7 +358,7 @@ private:
   std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs2;
 
   /** Return the height of mat after quantization with quantize(). */
-  inline int get_quantized_matrix_height(const Mat& mat) const {
+  inline Int get_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
 
@@ -442,9 +442,9 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
   int nprocs = comm->get_num_models();
   // Compute the number of columns each processor sends.
   // The last processor handles the excess.
-  int cols_per_proc = mat.Width() / nprocs;
-  int cols_remainder = mat.Width() % nprocs;
-  int local_col_width = cols_per_proc;
+  Int cols_per_proc = mat.Width() / nprocs;
+  Int cols_remainder = mat.Width() % nprocs;
+  Int local_col_width = cols_per_proc;
   if (rank == nprocs - 1) local_col_width += cols_remainder;
   // Local view into which to accumulate our received data.
   auto accum_view = mat(IR(0, mat.Height()),
