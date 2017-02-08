@@ -45,23 +45,23 @@ void lbann_callback_save_images::save_images(ElMat* input, ElMat* output,int pha
 
   Int num_neurons = std::min(input->Height(),output->Height());
 
-  uint y_dim = floor(std::sqrt(num_neurons));
-  uint x_dim = floor(std::sqrt(num_neurons));
+  Int y_dim = floor(std::sqrt(num_neurons));
+  Int x_dim = floor(std::sqrt(num_neurons));
 
   uchar* pixels_gt = new uchar[x_dim * num_images * y_dim];
   uchar* pixels_rc = new uchar[x_dim * num_images * y_dim];
 
   //@todo: add depth
-  for (size_t n = 0; n < num_images; n++) {
+  for (Int n = 0; n < num_images; n++) {
     vector<uchar> in_pixels(num_neurons);
     vector<uchar> out_pixels(num_neurons);
-    for (uint m = 0; m < num_neurons; m++){
+    for (Int m = 0; m < num_neurons; m++){
       in_pixels[m] = input->Get(m,n) * 255;
       out_pixels[m] = output->Get(m,n) * 255;
     }
 
-    for (size_t y = 0; y < y_dim; y++) {
-      for (size_t x = 0; x < x_dim; x++) {
+    for (Int y = 0; y < y_dim; y++) {
+      for (Int x = 0; x < x_dim; x++) {
         pixels_gt[y * y_dim * num_images + x + x_dim * n] = in_pixels[y * y_dim + x]; //input/ground truth
         pixels_rc[y * y_dim * num_images + x + x_dim * n] = out_pixels[y * y_dim + x]; //output/reconstructed
       }

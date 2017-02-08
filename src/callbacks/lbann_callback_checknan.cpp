@@ -64,7 +64,7 @@ void lbann_callback_checknan::on_backward_prop_end(model* m, Layer* l) {
 void lbann_callback_checknan::on_batch_end(model* m) {
   std::vector<Layer*>& layers = m->get_layers();
   // Skip input/output layers-- they don't have weights.
-  for (int i = 1; i < layers.size() - 1; ++i) {
+  for (size_t i = 1; i < layers.size() - 1; ++i) {
     Layer* l = layers[i];
     DistMat& weights = (DistMat&) l->get_weights_biases();
     if (!is_good(weights)) {
@@ -81,8 +81,8 @@ bool lbann_callback_checknan::is_good(const DistMat& m) {
   const Mat& lm = m.LockedMatrix();
   const Int height = lm.Height();
   const Int width = lm.Width();
-  for (int col = 0; col < width; ++col) {
-    for (int row = 0; row < height; ++row) {
+  for (Int col = 0; col < width; ++col) {
+    for (Int row = 0; row < height; ++row) {
       const DataType val = lm(row, col);
       if (std::isnan(val)) {
         std::cout << "Found NaN at (" << row << ", " << col << ")!" << std::endl;
