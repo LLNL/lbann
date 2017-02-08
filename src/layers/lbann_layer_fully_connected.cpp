@@ -251,40 +251,40 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
     Copy(*m_weights, WB_E2);
 
     DataType sum_error = 0;
-    int prow = 0;
-    int pcol = 0;
+    Int prow = 0;
+    Int pcol = 0;
 
     if(WB_E1.IsLocal(prow, pcol)) {
-      int _prow = WB_E1.LocalRow(prow);
-      int _pcol = WB_E1.LocalCol(pcol);
+      Int _prow = WB_E1.LocalRow(prow);
+      Int _pcol = WB_E1.LocalCol(pcol);
       WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) + Epsilon);
     }
     if(WB_E2.IsLocal(prow, pcol)) {
-      int _prow = WB_E2.LocalRow(prow);
-      int _pcol = WB_E2.LocalCol(pcol);
+      Int _prow = WB_E2.LocalRow(prow);
+      Int _pcol = WB_E2.LocalCol(pcol);
       WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) - Epsilon);
     }
-    for (int row = 0; row < m_weights->Height(); row++) {
-        for (int col = 0; col < m_weights->Width(); col++) {
+    for (Int row = 0; row < m_weights->Height(); row++) {
+        for (Int col = 0; col < m_weights->Width(); col++) {
           //          printf("Updating %d: %d x %d\n", Index, row, col);
             if(WB_E1.IsLocal(prow, pcol)) {
-              int _prow = WB_E1.LocalRow(prow);
-              int _pcol = WB_E1.LocalCol(pcol);
+              Int _prow = WB_E1.LocalRow(prow);
+              Int _pcol = WB_E1.LocalCol(pcol);
               WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) - Epsilon);
             }
             if(WB_E2.IsLocal(prow, pcol)) {
-              int _prow = WB_E2.LocalRow(prow);
-              int _pcol = WB_E2.LocalCol(pcol);
+              Int _prow = WB_E2.LocalRow(prow);
+              Int _pcol = WB_E2.LocalCol(pcol);
               WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) + Epsilon);
             }
             if(WB_E1.IsLocal(row, col)) {
-              int _row = WB_E1.LocalRow(row);
-              int _col = WB_E1.LocalCol(col);
+              Int _row = WB_E1.LocalRow(row);
+              Int _col = WB_E1.LocalCol(col);
               WB_E1.SetLocal(_row,  _col,  WB_E1.GetLocal(_row, _col)   + Epsilon);
             }
             if(WB_E2.IsLocal(row, col)) {
-              int _row = WB_E2.LocalRow(row);
-              int _col = WB_E2.LocalCol(col);
+              Int _row = WB_E2.LocalRow(row);
+              Int _col = WB_E2.LocalCol(col);
               WB_E2.SetLocal(_row,  _col,  WB_E2.GetLocal(_row, _col)   - Epsilon);
             }
 
@@ -307,19 +307,19 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
             Axpy(-1.0, *m_activations, Acts_E2);
 
             bool bad_E1 = false, bad_E2 = false;
-            for(int r = 0; r < m_activations->Height(); r++) {
-              for(int c = 0; c < m_activations->Width(); c++) {
+            for(Int r = 0; r < m_activations->Height(); r++) {
+              for(Int c = 0; c < m_activations->Width(); c++) {
                 if(Acts_E1.IsLocal(r,c)) {
-                  int _r = Acts_E1.LocalRow(r);
-                  int _c = Acts_E1.LocalCol(c);
+                  Int _r = Acts_E1.LocalRow(r);
+                  Int _c = Acts_E1.LocalCol(c);
                   if((Acts_E1.GetLocal(_r,_c) > 1e-12 || Acts_E1.GetLocal(_r,_c) < -1e-12) && r != row) {
                     bad_E1 = true;
                     //                    cout << "Acts_E1=["<< r << "," << c << "]="<<Acts_E1.GetLocal(_r,_c)<<endl;
                   }
                 }
                 if(Acts_E2.IsLocal(r,c)) {
-                  int _r = Acts_E2.LocalRow(r);
-                  int _c = Acts_E2.LocalCol(c);
+                  Int _r = Acts_E2.LocalRow(r);
+                  Int _c = Acts_E2.LocalCol(c);
                   if((Acts_E2.GetLocal(_r,_c) > 1e-12 || Acts_E2.GetLocal(_r,_c) < -1e-12) && r != row) {
                     bad_E2 = true;
                     //                    cout << "Acts_E2=["<< r << "," << c << "]="<<Acts_E2.GetLocal(_r,_c)<<endl;
