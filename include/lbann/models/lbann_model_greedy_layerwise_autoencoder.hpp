@@ -66,7 +66,7 @@ namespace lbann
     bool train_mini_batch(size_t phase_index);
 
     /// Training step on one mini-batch
-    bool train_mini_batch() { }
+    bool train_mini_batch() {return false;}
 
 
     /// Evaluate neural network

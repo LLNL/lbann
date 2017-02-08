@@ -72,7 +72,7 @@ namespace lbann
     /// Evaluate neural network
     void evaluate(execution_mode mode=execution_mode::testing) { }
     /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch() { }
+    bool evaluate_mini_batch() {return false;}
 
     /// Reconstruction uses unsupervised target layer
     void reconstruction();

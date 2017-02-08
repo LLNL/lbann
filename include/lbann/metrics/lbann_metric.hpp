@@ -125,9 +125,9 @@ namespace lbann
 
       virtual void setup(int num_neurons, int mini_batch_size) {}
       virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
-      virtual double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {}
-      virtual double report_metric(execution_mode mode) {}
-      virtual double report_lifetime_metric(execution_mode mode) {}
+      virtual double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {return 0.0;}
+      virtual double report_metric(execution_mode mode) {return 0.0;}
+      virtual double report_lifetime_metric(execution_mode mode) {return 0.0;}
 
       statistics* get_statistics(execution_mode mode);
 

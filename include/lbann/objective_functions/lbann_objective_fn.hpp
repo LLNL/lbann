@@ -105,7 +105,7 @@ namespace lbann
       virtual void setup(int num_neurons, int mini_batch_size) {}
       virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
       /// Compute the object function -- Note that it is averaged across a mini-batch
-      virtual double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {}
+      virtual double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {return 0.0;}
       virtual void compute_obj_fn_derivative(layer_type prev_layer_type,
                                              ElMat &predictions_v,
                                              ElMat &groundtruth_v,
