@@ -57,7 +57,7 @@ void dropout::fp_activations() {
                          m_keep_prob);
   m_cur_mask *= 1.0 / m_keep_prob;
   if (acts->GlobalRow(local_height - 1) == global_height - 1) {
-    for (int col = 0; col < local_width; ++col) {
+    for (Int col = 0; col < local_width; ++col) {
       m_cur_mask.SetLocal(local_height - 1, col, 1.0f);
     }
   }
@@ -74,7 +74,7 @@ void dropout::fp_activations() {
   Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
   m_cur_mask *= 1.0 / m_keep_prob;
   if (acts->GlobalRow(local_height - 1) == global_height - 1) {
-    for (int col = 0; col < local_width; ++col) {
+    for (Int col = 0; col < local_width; ++col) {
       m_cur_mask.Set(local_height - 1, col, 1.0f);
     }
   }
