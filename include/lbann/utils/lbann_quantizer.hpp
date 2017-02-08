@@ -354,8 +354,8 @@ private:
   size_t quantized_count;
 
   /** Pre-allocated receive buffers for adaptive quantization. */
-  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs1;
-  std::unordered_map<int, ThreshQuantized> adaptive_recv_bufs2;
+  std::unordered_map<Int, ThreshQuantized> adaptive_recv_bufs1;
+  std::unordered_map<Int, ThreshQuantized> adaptive_recv_bufs2;
 
   /** Return the height of mat after quantization with quantize(). */
   inline Int get_quantized_matrix_height(const Mat& mat) const {
@@ -372,7 +372,7 @@ private:
    */
   void threshold_unquantize_apply(const ThreshQuantized& q, Mat& mat,
                                   DataType pos_thresh, DataType neg_thresh,
-                                  std::vector<unsigned>& positions,
+                                  std::vector<Unsigned>& positions,
                                   bool delta = false);
   /**
    * Quantize only the locations in mat in positions; the companion of
@@ -380,7 +380,7 @@ private:
    */
   void threshold_quantize_apply(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                                 DataType pos_thresh, DataType neg_thresh,
-                                std::vector<unsigned>& positions,
+                                std::vector<Unsigned>& positions,
                                 bool delta = false);
 
   /**
