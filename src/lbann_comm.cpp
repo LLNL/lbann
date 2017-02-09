@@ -52,7 +52,9 @@ lbann::lbann_comm::lbann_comm(int _procs_per_model) :
     throw lbann_exception("lbann_comm: Not enough processes to create one model");
   }
   if (world_size % procs_per_model != 0) {
-    throw lbann_exception("lbann_comm: Procs per model does not divide total number of procs");
+    stringstream err;
+    err << __FILE__ << " " __LINE__ << " :: Procs per model does not divide total number of procs; procs_per_model: " << procs_per_model << " total number of procs (world size): " << world_size;
+    throw lbann_exception(err.str());
   }
 
   // Initialize model and intermodel communicators
