@@ -29,6 +29,7 @@
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "mpi.h"
+#include <sstream>
 
 using namespace std;
 using namespace El;
@@ -49,10 +50,18 @@ lbann::lbann_comm::lbann_comm(int _procs_per_model) :
 
   // Check if parameters are valid
   if (procs_per_model > world_size) {
-    throw lbann_exception("lbann_comm: Not enough processes to create one model");
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: Not enough processes to create one model; procs_per_model: "
+        << procs_per_model << " is larger than world_size: " << world_size;
+    throw lbann_exception(err.str());
   }
   if (world_size % procs_per_model != 0) {
-    throw lbann_exception("lbann_comm: Procs per model does not divide total number of procs");
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ 
+        << " :: Procs per model does not divide total number of procs; procs_per_model: " 
+        << procs_per_model << " total number of procs (world size): " << world_size;
+    throw lbann_exception(err.str());
   }
 
   // Initialize model and intermodel communicators

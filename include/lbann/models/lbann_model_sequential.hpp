@@ -127,6 +127,10 @@ class sequential_model : public model
     virtual void evaluate(execution_mode mode) = 0;
     /// Evaluation step on one mini-batch
     virtual bool evaluate_mini_batch() = 0;
+
+    /// returns the number of neurons in the most recently added layer, or -1
+    /// if there is none
+    int num_previous_neurons();
 #if 0
     /// Prediction step on one mini-batch
     /** @todo This is old and likely broken */

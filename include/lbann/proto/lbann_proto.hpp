@@ -35,110 +35,133 @@
 
 //#include "lbann/lbann_params.hpp"
 #include "lbann/proto/lbann.pb.h"
+#include "lbann/lbann_params.hpp"
 #include <string>
-#include <iostream>
+#include <vector>
+#include <float.h>
+
+#if 0
+#define PB_FIX(a) (a == 0 ? -3 : a)
+#define PB_FIXD(a) (a == 0.0 ? -3 : a)
+
+#define PB_FIX_I(a) (a == -3 ? 0 : a)
+#define PB_FIXD_I(a) (a == -3 ? 0.0 : a)
+#endif
+#define PB_FIX(a) (a)
+#define PB_FIXD(a) (a)
+
+#define PB_FIX_I(a) (a)
+#define PB_FIXD_I(a) (a)
 
 namespace lbann
 {
 
+
 class lbann_proto {
 public :
+
+struct data_reader_params {
+  /// mnist, cifar10, imagenet, nci, nci_regression
+  std::string name;
+
+  /// train or test
+  std::string role;
+
+  std::string root_dir;
+  std::string data_filename;
+  std::string label_filename;
+
+  int mini_batch_size;
+  double percent_samples;
+  bool shuffle;
+};
+
+struct optimizer_params {
+  optimizer_params() : name("none"), learn_rate(-2), momentum(-2), nesterov(false) {}
+
+  //adagrad, rmsprop, adam, sgd
+  std::string name;
+  double learn_rate;
+  double momentum;
+  double decay;
+  bool nesterov;
+};
+
+struct model_params {
+  model_params() : name("none"), objective_function("none"), mini_batch_size(-2) {}
+  //dnn, greedy_layerwise_autoencoder, stacked_autoencoder
+  std::string name;
+  //categorical_cross_entropy, mean_squared_error
+  std::string objective_function;
+  int mini_batch_size;
+  int num_epochs;
+
+  std::vector<string> metrics;
+  void add_metric(std::string s) { metrics.push_back(s); }
+};
+
+
+struct regularizer_params {
+  //dropout
+  std::string name;
+  double dropout;
+};
+
+struct layer_params {
+  //input_distributed_minibatch_parallel_io, fully_connected, 
+  //target_distributed_minibatch_parallel_io, softmax
+  std::string name;
+  int mini_batch_size;
+  int num_prev_neurons;
+  int num_neurons;
+  activation_type activation;
+  weight_initialization weight_init;
+  std::string optimizer;
+  int num_parallel_readers;
+  bool shared_data_reader;
+  std::vector<regularizer_params> regularizers;
+  void add_regularizer(regularizer_params &p) { regularizers.push_back(p); }
+  bool for_regression;
+};
 
   /// returns a pointer to the lbann_proto singleton
   static lbann_proto * get() {
     return s_instance;
   }
 
-  /// for testing during development
   lbann_data::LbannPB & getLbannPB() { return m_pb; }
 
-  void init(const char *filename = 0);
+  //only the master will 
+  void set_master(bool m) { m_master = m; }
 
-  void test() {
-     std::cerr << "in test!\n\n";
-  }
+  void add_network_params(const NetworkParams &p);
+  void add_performance_params(const PerformanceParams &p);
+  void add_system_params(const SystemParams &p);
+  void add_training_params(const TrainingParams &p);
 
-  void writePrototextFile(const char *filename);
+  void add_data_reader(const data_reader_params &p);
+  void add_optimizer(const optimizer_params &p);
+  void add_model(const model_params &p);
+  void add_layer(const layer_params &p);
 
-  void DataReaderMNIST_ctor(
-    int batch_size, 
-    bool shuffle); 
-
-  void DataReaderMNIST_load(
-    std::string file_dir, 
-    std::string image_file, 
-    std::string label_file); 
-
-  void Model_ctor(
-    std::string name, 
-    std::string objective_function, 
-    std::string optimizer);
-
-  void Model_train(
-    int num_epochs, 
-    int evaluation_frequency);
-
-  void Layer_InputDistributedMiniBatchParallelIO_ctor(
-    int num_parallel_readers, 
-    int mini_batch_size); 
-
-  void Layer_FullyConnected_ctor(
-    int num_prev_neurons, 
-    int num_neurons, 
-    int mini_batch_size, 
-    std::string activation_type, 
-    std::string weight_initialization, 
-    std::string optimizer);
-
-
-
-  /// Returns a TrainingParam object. If init() was not called, the returned object
-  /// will contain whatever default values are defined in the TrainingParam ctor.
-  /// If init() was called, some or all defaults will be overriden by the contents
-  /// of the prototxt file
-  //TrainingParams & getTrainingParams();
-
-  //PerformanceParams & getPerformanceParams();
-
-  //NetworkParams & getNetworkParams();
-
-  //SystemParams & getSystemParams();
-
-  /// Sets internal prototcol buffer fields from the TrainingParams object.
-  /// You should call this prior to calling write()
-  /*
-  void load(const TrainingParams &training);
-
-  void load(const PerformanceParams &performance);
-
-  void load(const NetworkParams &network);
-
-  void load(const SystemParams &System);
-  
-
-  /// Writes a prototxt file that saves an lbann model. 
-  /// You should call the appropriate load() methods prior to calling write()
-  void write(const std::string &filename);
-  */
+  void readPrototextFile(const char *fn); 
+  bool writePrototextFile(const char *fn); 
 
 private:
-  static lbann_proto *s_instance;
 
   lbann_proto();
   ~lbann_proto();
   lbann_proto(lbann_proto &) {}
   lbann_proto operator=(lbann_proto&) { return *this; }
 
-  //bool m_init_from_prototxt;
+  static lbann_proto *s_instance;
 
   lbann_data::LbannPB m_pb;
-  lbann_data::DataReader *m_reader;
 
-  
-  void allocateDataReader();
+  bool m_master;
 };
 
-} //namespace lbann
+}
 
 #endif //LBANN_PROTO_HPP_INCLUDED
 

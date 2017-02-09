@@ -377,6 +377,14 @@ bool lbann::sequential_model::load_from_checkpoint_shared(lbann::persist& p)
     return true;
 }
 
+int lbann::sequential_model::num_previous_neurons() {
+  if (m_layers.size() == 0) {
+    return -1;
+  }
+  Layer* prev_layer = m_layers.back();
+  return prev_layer->NumNeurons;
+}
+
 uint lbann::sequential_model::add(const std::string layer_name,
                                   const int layer_dim,
                                   const activation_type activation,
