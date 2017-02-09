@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_quantizer .hpp .cpp - One-bit quantization of matrices
+// lbann_quantizer .hpp .cpp - Quantization of matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_QUANTIZER_HPP_INCLUDED
@@ -66,11 +66,11 @@ public:
    * dequantizion). The rest is one-bit quantized entries.
    * Quantization is by column to keep averages nice and because Elemental uses
    * column-major ordering.
-   * This is int32_t because Elemental matrices don't support unsigned or
-   * >32-bit types. It forces some type-casting annoyances.
    */
   typedef El::Matrix<qtype> QuantizedMatrix;
   typedef std::vector<uqtype> ThreshQuantized;
+  typedef std::vector<uint32_t> ThreshQuantized32;
+  typedef std::vector<uint64_t> ThreshQuantized64;
 
   /** Thresholds for use in adaptive quantization. */
   struct adaptive_thresholds {
@@ -177,17 +177,21 @@ public:
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
    */
-  void adaptive_threshold_quantize(const Mat& mat, ThreshQuantized& q, Mat& qerror,
+  template <typename T>
+  void adaptive_threshold_quantize(const Mat& mat, std::vector<T>& q, Mat& qerror,
                                    int proportion);
-  void adaptive_threshold_quantize(const DistMat& mat, ThreshQuantized& q,
+  template <typename T>
+  void adaptive_threshold_quantize(const DistMat& mat, std::vector<T>& q,
                                    Mat& qerror, int proportion);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
    */
-  void adaptive_threshold_unquantize(const ThreshQuantized& q, Mat& mat);
-  void adaptive_threshold_unquantize(const ThreshQuantized& q, DistMat& mat);
+  template <typename T>
+  void adaptive_threshold_unquantize(const std::vector<T>& q, Mat& mat);
+  template <typename T>
+  void adaptive_threshold_unquantize(const std::vector<T>& q, DistMat& mat);
 
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
@@ -354,8 +358,10 @@ private:
   size_t quantized_count;
 
   /** Pre-allocated receive buffers for adaptive quantization. */
-  std::unordered_map<Int, ThreshQuantized> adaptive_recv_bufs1;
-  std::unordered_map<Int, ThreshQuantized> adaptive_recv_bufs2;
+  std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs1;
+  std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs2;
+  std::unordered_map<Int, std::vector<uint64_t>> adaptive_recv64_bufs1;
+  std::unordered_map<Int, std::vector<uint64_t>> adaptive_recv64_bufs2;
 
   /** Return the height of mat after quantization with quantize(). */
   inline Int get_quantized_matrix_height(const Mat& mat) const {
@@ -386,7 +392,8 @@ private:
   /**
    * Variant of adaptive_threshold_unquantize that adds its entries.
    */
-  void adaptive_threshold_unquantize_add(const ThreshQuantized& q, Mat& mat);
+  template <typename T>
+  void adaptive_threshold_unquantize_add(const std::vector<T>& q, Mat& mat);
   /**
    * Variant of adaptive_threshold_quantize that also replaces entries in mat
    * with their quantized version. This is equivalent to:
@@ -394,14 +401,21 @@ private:
    * adaptive_threshold_unquantize(q, mat);
    * Note this does not (currently) support compression.
    */
-  void adaptive_threshold_quantize_replace(Mat& mat, ThreshQuantized& q,
+  template <typename T>
+  void adaptive_threshold_quantize_replace(Mat& mat, std::vector<T>& q,
                                            Mat& qerror, int proportion);
   /**
    * Ensure that q is no more than a factor of MAX_QUANTIZED_EXCESS larger
    * than optimal.
    */
-  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, ThreshQuantized& q,
+  template <typename T>
+  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, std::vector<T>& q,
                                 int proportion);
+  template <typename T>
+  void intermodel_sum_adaptive_threshold_quantized_impl(
+    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
+    std::unordered_map<Int, std::vector<T>>& adaptive_recv_bufs1,
+    std::unordered_map<Int, std::vector<T>>& adaptive_recv_bufs2);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,
@@ -431,135 +445,8 @@ private:
     std::function<void(T*, T*)> swap_bufs);
 };
 
-template <typename T>
-void lbann_quantizer::intermodel_ring_reduce_scatter(
-  lbann_comm* comm, Mat& mat, bool var_recv,
-  std::function<T*(Mat&, IR, IR, int&)> send_trans,
-  std::function<T*(Mat&, int&)> get_recv_buf,
-  std::function<void(T*, Mat&)> recv_trans) {
-  double rs_start = get_time();
-  int rank = comm->get_model_rank();
-  int nprocs = comm->get_num_models();
-  // Compute the number of columns each processor sends.
-  // The last processor handles the excess.
-  Int cols_per_proc = mat.Width() / nprocs;
-  Int cols_remainder = mat.Width() % nprocs;
-  Int local_col_width = cols_per_proc;
-  if (rank == nprocs - 1) local_col_width += cols_remainder;
-  // Local view into which to accumulate our received data.
-  auto accum_view = mat(IR(0, mat.Height()),
-                        IR(rank * cols_per_proc,
-                           rank * cols_per_proc + local_col_width));
-  // Do the reduce-scatter.
-  for (int step = 1; step < nprocs; ++step) {
-    // Compute the source/destination.
-    int dst = (rank + step) % nprocs;
-    int src = (rank - step) % nprocs;
-    if (src < 0) src += nprocs;
-    // Determine the number of columns to send.
-    int send_col_width = cols_per_proc;
-    if (dst == nprocs - 1) send_col_width += cols_remainder;
-    // Transform the portion to send.
-    int send_size;
-    double send_trans_start = get_time();
-    T* send_buf = send_trans(
-      mat, IR(0, mat.Height()),
-      IR(dst * cols_per_proc, dst * cols_per_proc + send_col_width), send_size);
-    rs_send_trans_time += get_time() - send_trans_start;
-    // Send.
-    mpi::Request<T> req;
-    comm->nb_send(send_buf, send_size, dst, req);
-    rs_bytes_sent += send_size * sizeof(T);
-    // Get receive buffer.
-    double recv_buf_start = get_time();
-    int recv_size = 0;
-    if (var_recv) {
-      recv_size = comm->get_count<T>(src);
-    }
-    T* recv_buf = get_recv_buf(accum_view, recv_size);
-    rs_recv_buf_time += get_time() - recv_buf_start;
-    // Receive.
-    comm->recv(recv_buf, recv_size, src);
-    rs_bytes_received += recv_size * sizeof(T);
-    // Transform the received portion.
-    double recv_trans_start = get_time();
-    recv_trans(recv_buf, accum_view);
-    rs_recv_trans_time += get_time() - recv_trans_start;
-    comm->wait<T>(req);
-  }
-  rs_time += get_time() - rs_start;
-}
-
-template <typename T>
-void lbann_quantizer::intermodel_ring_allgather(
-    lbann_comm* comm, Mat& mat, bool var_recv,
-    std::function<void(Mat&)> reduced_trans,
-    std::function<T*(int&)> get_send_buf,
-    std::function<T*(Mat&, int&)> get_recv_buf,
-    std::function<void(T*, Mat&)> recv_trans,
-    std::function<void(T*, T*)> swap_bufs) {
-  double ag_start = get_time();
-  int rank = comm->get_model_rank();
-  int nprocs = comm->get_num_models();
-  // Compute the number of columns each processor sends.
-  // The last processor handles the excess.
-  int cols_per_proc = mat.Width() / nprocs;
-  int cols_remainder = mat.Width() % nprocs;
-  int local_col_width = cols_per_proc;
-  if (rank == nprocs - 1) local_col_width += cols_remainder;
-  // Get the portion of mat that was reduced.
-  double reduced_start = get_time();
-  auto reduced = mat(IR(0, mat.Height()),
-                     IR(rank * cols_per_proc,
-                        rank * cols_per_proc + local_col_width));
-  // Transform the reduced data.
-  reduced_trans(reduced);
-  ag_reduced_trans_time += get_time() - reduced_start;
-  // Compute the previous/next ranks in the ring.
-  int src = rank - 1;
-  if (src < 0) src = nprocs - 1;
-  int dst = (rank + 1) % nprocs;
-  // Do the allgather.
-  for (int step = 0; step < nprocs - 1; ++step) {
-    // Send our data or forward received data.
-    mpi::Request<T> req;
-    int send_size;
-    T* send_buf = get_send_buf(send_size);
-    comm->nb_send(send_buf, send_size, dst, req);
-    ag_bytes_sent += send_size * sizeof(T);
-    // Compute the original rank that sent the data we're going to receive.
-    int data_src = (rank - step - 1) % nprocs;
-    if (data_src < 0) data_src += nprocs;
-    // Compute the amount of data we're receiving.
-    int recv_col_width = cols_per_proc;
-    if (data_src == nprocs - 1) recv_col_width += cols_remainder;
-    // Get the portion of mat to receive into.
-    auto recv_view = mat(IR(0, mat.Height()),
-                         IR(data_src * cols_per_proc,
-                            data_src * cols_per_proc + recv_col_width));
-    // Get receive buffer.
-    double recv_buf_start = get_time();
-    int recv_size = 0;
-    if (var_recv) {
-      recv_size = comm->get_count<T>(src);
-    }
-    T* recv_buf = get_recv_buf(recv_view, recv_size);
-    ag_recv_buf_time += get_time() - recv_buf_start;
-    // Receive data.
-    comm->recv(recv_buf, recv_size, src);
-    ag_bytes_received += recv_size * sizeof(T);
-    // Transform the received portion.
-    double recv_trans_start = get_time();
-    recv_trans(recv_buf, recv_view);
-    ag_recv_trans_time += get_time() - recv_trans_start;
-    comm->wait<T>(req);
-    // Swap so we forward the data we just received.
-    swap_bufs(send_buf, recv_buf);
-    send_size = recv_size;
-  }
-  ag_time += get_time() - ag_start;
-}
-
 }  // namespace lbann
+
+#include "lbann_quantizer_impl.hpp"
 
 #endif  // LBANN_QUANTIZER_HPP_INCLUDED

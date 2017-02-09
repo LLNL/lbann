@@ -142,7 +142,7 @@ void test_threshold_compression() {
 void test_adaptive_threshold_quantize() {
   Mat mat;
   El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::ThreshQuantized qmat;
+  std::vector<uint32_t> qmat;
   Mat qerror;
   El::Zeros(qerror, mat.Height(), mat.Width());
   lbann_quantizer quantizer;
