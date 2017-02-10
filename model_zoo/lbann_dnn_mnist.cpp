@@ -57,16 +57,16 @@ int main(int argc, char* argv[])
         // Get data files
         const string g_MNIST_TrainLabelFile = Input("--train-label-file",
                                                     "MNIST training set label file",
-                                                    "train-labels-idx1-ubyte");
+                                                    std::string("train-labels-idx1-ubyte"));
         const string g_MNIST_TrainImageFile = Input("--train-image-file",
                                                     "MNIST training set image file",
-                                                    "train-images-idx3-ubyte");
+                                                    std::string("train-images-idx3-ubyte"));
         const string g_MNIST_TestLabelFile = Input("--test-label-file",
                                                    "MNIST test set label file",
-                                                   "t10k-labels-idx1-ubyte");
+                                                   std::string("t10k-labels-idx1-ubyte"));
         const string g_MNIST_TestImageFile = Input("--test-image-file",
                                                    "MNIST test set image file",
-                                                   "t10k-images-idx3-ubyte");
+                                                   std::string("t10k-images-idx3-ubyte"));
 
         //determine if we're going to scale, subtract mean, etc;
         //scaling/standardization is on a per-example basis (computed independantly
