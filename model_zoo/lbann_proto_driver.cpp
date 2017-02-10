@@ -187,6 +187,9 @@ int main(int argc, char* argv[])
         lbann_callback_print print_cb;
         model->add_callback(&print_cb);
 
+        if (comm->am_world_master()) {
+          cout << endl << "Calling model->setup()\n";
+        }
         model->setup();
 
         // set checkpoint directory and checkpoint interval @TODO
@@ -390,10 +393,15 @@ void init_model(bool master, const lbann_data::LbannPB &p, sequential_model *&mo
     Optimizer_factory *optimizer;
     if (train_params.LearnRateMethod == 1) { // Adagrad
         optimizer = new Adagrad_factory(comm, train_params.LearnRate);
+        if (master) cout << "optimizer is: Adagrad; learnRate: " << train_params.LearnRate << "\n";
     } else if (train_params.LearnRateMethod == 2) { // RMSprop
         optimizer = new RMSprop_factory(comm/*, train_params.LearnRate*/);
+        if (master) cout << "optimizer is: RMSprop\n";
     } else {
         optimizer = new SGD_factory(comm, train_params.LearnRate, train_params.LrMomentum, train_params.LrDecayRate, true); 
+        if (master) cout << "optimizer is: SGD; learnRate: " << train_params.LearnRate
+                         << " momentum: " << train_params.LrMomentum
+                         << " decay: " << train_params.LrDecayRate << endl;
       //@TODO last param is 'bool nesterov' I've no idea what that is/means;
       //should probably be added to TrainingParams class
     }
@@ -548,15 +556,15 @@ void add_layers(
         int layer_count = 0;
         if (layer.has_input_distributed_minibatch_parallel_io()) {
             ++layer_count;
-
             input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, train_params.MBSize, data_readers);
             model->add(input_layer);
-            //add_input_distributed_minibatch_parallel_io(layer.input_distributed_minibatch_parallel_io(), model, master, comm, parallel_io, train_params, data_readers);
+            if (master) cout << "add_layers(): adding input_layer_distributed_minibatch_parallel_io\n";
         }
 
         if (layer.has_input_distributed_minibatch()) {
             ++layer_count;
             add_input_distributed_minibatch(layer.input_distributed_minibatch(), model, master, comm, train_params, data_readers);
+            if (master) cout << "add_layers(): adding input_layer_distributed_minibatch\n";
         }
 
         if (layer.has_fully_connected()) {
@@ -568,6 +576,7 @@ void add_layers(
                 get_activation_type(f.activation_type()),
                 get_weight_initialization_type(f.weight_initialization()),
             {new dropout(comm, train_params.DropOut)}); //@TODO - fix regularizers!
+            if (master) cout << "add_layers(): adding FullyConnected\n";
         }
 
         if (layer.has_pooling()) {
@@ -589,6 +598,7 @@ void add_layers(
                 activation_type::ID,
                 get_weight_initialization_type(f.weight_initialization()),
                 {});
+            if (master) cout << "add_layers(): adding Softmax\n";
         }
 
         if (layer.has_target_parallel()) {
@@ -605,7 +615,9 @@ void add_layers(
             ++layer_count;
             const lbann_data::TargetDistributedMinibatchParallelIO &f = layer.target_distributed_minibatch_parallel_io();
             target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int)train_params.MBSize, data_readers, true);
+            if (master) cout << "add_layers(): adding target_layer_distributed_minibatch_parallel_io\n";
             //@TODO last argument is "for_regression" - what to do???
+            model->add(target_layer);
         }
 
         if (layer_count != 1) {
