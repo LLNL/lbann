@@ -156,10 +156,10 @@ void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
   const Int width = mat.LockedMatrix().Width();
   const Int ldim = mat.LockedMatrix().LDim();
   const DataType* __restrict__ mat_buf = mat.LockedMatrix().LockedBuffer();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
+  for (Int row = 0; row < height; ++row) {
+    for (Int col = 0; col < width; ++col) {
       // Note: This could be optimized; upper_bound takes O(logn) time.
-      int bucket = std::upper_bound(
+      Int bucket = std::upper_bound(
         histogram_buckets.begin(), histogram_buckets.end(),
         mat_buf[row + col * ldim]) - histogram_buckets.begin();
       buckets[bucket] += 1.0f;
@@ -434,8 +434,8 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
   const Int width = mat.Width();
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
+  for (Int row = 0; row < height; ++row) {
+    for (Int col = 0; col < width; ++col) {
       sum += mat_buf[row + col * ldim];
     }
   }
@@ -449,9 +449,9 @@ DataType lbann_summary::local_sqsum(const Mat& mat) const {
   const Int width = mat.Width();
   const Int ldim = mat.LDim();
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      const int pos = row + col * ldim;
+  for (Int row = 0; row < height; ++row) {
+    for (Int col = 0; col < width; ++col) {
+      const Int pos = row + col * ldim;
       sqsum += mat_buf[pos] * mat_buf[pos];
     }
   }

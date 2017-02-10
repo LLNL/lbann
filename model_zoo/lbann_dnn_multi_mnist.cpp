@@ -48,16 +48,16 @@ int main(int argc, char* argv[])
     // Get data files.
     const string g_MNIST_TrainLabelFile = Input("--train-label-file",
                                                 "MNIST training set label file",
-                                                "train-labels-idx1-ubyte");
+                                                std::string("train-labels-idx1-ubyte"));
     const string g_MNIST_TrainImageFile = Input("--train-image-file",
                                                 "MNIST training set image file",
-                                                "train-images-idx3-ubyte");
+                                                std::string("train-images-idx3-ubyte"));
     const string g_MNIST_TestLabelFile = Input("--test-label-file",
                                                "MNIST test set label file",
-                                               "t10k-labels-idx1-ubyte");
+                                               std::string("t10k-labels-idx1-ubyte"));
     const string g_MNIST_TestImageFile = Input("--test-image-file",
                                                "MNIST test set image file",
-                                               "t10k-images-idx3-ubyte");
+                                               std::string("t10k-images-idx3-ubyte"));
 
     // Set up parameter defaults.
     TrainingParams trainParams;
@@ -231,8 +231,8 @@ int main(int argc, char* argv[])
     // dnn.add_callback(&io_cb);
     lbann_callback_debug debug_cb(execution_mode::training);
     //dnn.add_callback(&debug_cb);
-    lbann_callback_early_stopping stopping_cb(1);
-    dnn.add_callback(&stopping_cb);
+    //lbann_callback_early_stopping stopping_cb(1);
+    //dnn.add_callback(&stopping_cb);
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;

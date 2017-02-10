@@ -1,4 +1,13 @@
 # LBANN: Livermore Big Artificial Neural Network Toolkit
+
+## Building LBANN with Spack [for Users]
+
+   spack install lbann
+
+## Building LBANN with Spack [for Developers]
+
+   spack diy lbann@local %gcc@4.9.3
+   spack diy lbann@local %intel@17.0.0
  
 ## Using LBANN on LLNL LC clusters
 

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_quantizer .hpp .cpp - One-bit quantization of matrices
+// lbann_quantizer .hpp .cpp - Quantization of matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
@@ -122,8 +122,8 @@ void lbann_quantizer::quantize(
     // First compute the positive and negative column averages.
     DataType pos_sum = 0.0f;
     DataType neg_sum = 0.0f;
-    size_t num_pos = 0;
-    size_t num_neg = 0;
+    Unsigned num_pos = 0;
+    Unsigned num_neg = 0;
     if (height <= NUM_ONEBIT_SAMPLES || !sample) {
       for (Int row = 0; row < height; ++row) {
         const Int pos = row + col * ldim;
@@ -140,8 +140,8 @@ void lbann_quantizer::quantize(
       // Randomly sample NUM_ONEBIT_SAMPLES to approximate.
       std::uniform_int_distribution<int> row_dist(0, height - 1);
       rng_gen& gen = get_generator();
-      for (unsigned i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
-        const unsigned pos = row_dist(gen) + col * ldim;
+      for (Int i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
+        const Int pos = row_dist(gen) + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           pos_sum += val;
@@ -171,7 +171,7 @@ void lbann_quantizer::quantize(
     qmat.Set(1, col, tmp);
 
     // Now quantize the column, NUM_BITS entries at a time.
-    int qrow = 2;
+    Int qrow = 2;
     for (Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
       uqtype q = 0;
       for (unsigned bit = 0; bit < NUM_BITS; ++bit) {
@@ -207,8 +207,8 @@ void lbann_quantizer::unquantize(const QuantizedMatrix& qmat, Mat& mat) {
   const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
   DataType* __restrict__ mat_buf = mat.Buffer();
   #pragma omp parallel for schedule(static)
-  for (int col = 0; col < width; ++col) {
-    int qrow = 2;
+  for (Int col = 0; col < width; ++col) {
+    Int qrow = 2;
     // Extract the averages.
     qtype tmp = qmat.Get(0, col);
     DataType avg_pos;
@@ -369,10 +369,10 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   if (delta) {
-    unsigned prev_pos = 0;
+    Unsigned prev_pos = 0;
     for (Int col = 0; col < width; ++col) {
       for (Int row = 0; row < height; ++row) {
-        const unsigned pos = row + col * ldim;
+        const Unsigned pos = row + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= pos_thresh) {
           qerror_buf[pos] = val - pos_thresh;
@@ -395,7 +395,7 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
       #pragma omp for schedule(static)
       for (Int col = 0; col < width; ++col) {
         for (Int row = 0; row < height; ++row) {
-          const unsigned pos = row + col * ldim;
+          const Unsigned pos = row + col * ldim;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
           if (val >= pos_thresh) {
             qerror_buf[pos] = val - pos_thresh;
@@ -428,19 +428,19 @@ void lbann_quantizer::threshold_unquantize(
   DataType neg_thresh, bool delta) {
   DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
-    unsigned prev_pos = 0;
-    for (unsigned i = 0; i < quant.size(); ++i) {
+    Unsigned prev_pos = 0;
+    for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
-      const unsigned pos = (q >> 1) + prev_pos;
+      const Unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
       if (q & 1) buf[pos] = pos_thresh;
       else buf[pos] = neg_thresh;
     }
   } else {
     #pragma omp parallel for schedule(static)
-    for (unsigned i = 0; i < quant.size(); ++i) {
+    for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
-      const unsigned pos = q >> 1;
+      const Unsigned pos = q >> 1;
       if (q & 1) buf[pos] = pos_thresh;
       else buf[pos] = neg_thresh;
     }
@@ -455,7 +455,7 @@ void lbann_quantizer::threshold_unquantize(
 
 void lbann_quantizer::threshold_unquantize_apply(
   const ThreshQuantized& quant, Mat& mat, DataType pos_thresh,
-  DataType neg_thresh, std::vector<unsigned>& positions, bool delta) {
+  DataType neg_thresh, std::vector<Unsigned>& positions, bool delta) {
   // A general note on positions that I'm putting here because I'm not sure
   // where else to: Using a vector admits the possibility that we have
   // duplicate entries. This could be fixed by using an unordered_set, but when
@@ -467,19 +467,19 @@ void lbann_quantizer::threshold_unquantize_apply(
   // is small.
   DataType* __restrict__ buf = mat.Buffer();
   if (delta) {
-    unsigned prev_pos = 0;
-    for (unsigned i = 0; i < quant.size(); ++i) {
+    Unsigned prev_pos = 0;
+    for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
-      const unsigned pos = (q >> 1) + prev_pos;
+      const Unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
       positions.emplace_back(pos);
       if (q & 1) buf[pos] += pos_thresh;
       else buf[pos] += neg_thresh;
     }
   } else {
-    for (unsigned i = 0; i < quant.size(); ++i) {
+    for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
-      const unsigned pos = q >> 1;
+      const Unsigned pos = q >> 1;
       positions.emplace_back(pos);
       if (q & 1) buf[pos] += pos_thresh;
       else buf[pos] += neg_thresh;
@@ -489,14 +489,14 @@ void lbann_quantizer::threshold_unquantize_apply(
 
 void lbann_quantizer::threshold_quantize_apply(
   const Mat& mat, ThreshQuantized& quant, Mat& qerror, DataType pos_thresh,
-  DataType neg_thresh, std::vector<unsigned>& positions, bool delta) {
+  DataType neg_thresh, std::vector<Unsigned>& positions, bool delta) {
   const DataType* __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   if (delta) {
     // Need to sort so positions are in order, otherwise our delta encoding
     // doesn't work. (Could be solved by adding stops, but maybe not worth it.)
     std::sort(positions.begin(), positions.end());
-    unsigned prev_pos = 0;
+    Unsigned prev_pos = 0;
     for (const auto& pos : positions) {
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= pos_thresh) {
@@ -527,296 +527,6 @@ void lbann_quantizer::threshold_quantize_apply(
   }
 }
 
-void lbann_quantizer::adaptive_threshold_quantize(
-  const Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion) {
-  // This uses a header to store all information needed to do unquantization in
-  // one spot, which makes unquantization easier to multi-thread. The header has
-  // one entry for each column, consisting of the starting offset of the
-  // quantized data in the array (including the header) and the two/three
-  // reconstruction values. The number of quantized entries is included as a
-  // final entry to simplify unquantization.
-  const Int width = mat.Width();
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const Int header_len = HEADER_FACTOR * width + 1;
-  q.resize(header_len);  // Space for the header.
-  std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
-  std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
-  // Compute the thresholds.
-  const adaptive_thresholds threshes =
-    proportion_threshold(mat, qerror, proportion);
-  #pragma omp parallel
-  {
-    const int tid = omp_get_thread_num();
-    int num_quantized = header_len;
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      const Int header_loc = HEADER_FACTOR * col;
-      q[header_loc] = num_quantized;
-      const adaptive_reconstructions recons =
-        col_reconstruction(mat, qerror, col, threshes);
-      // Store the averages for reconstruction.
-      q[header_loc + 1] = 0;
-      memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
-      q[header_loc + 2] = 0;
-      memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-      q[header_loc + 3] = 0;
-      memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
-#endif
-      const Int col_offset = col * ldim;
-      for (Int row = 0; row < height; ++row) {
-        const unsigned pos = row + col_offset;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= threshes.pos_thresh) {
-          qerror_buf[pos] = val - recons.pos_recon;
-          thread_qs[tid].emplace_back((pos << 1) | 1);
-          ++num_quantized;
-        } else if (val <= threshes.neg_thresh) {
-          qerror_buf[pos] = val - recons.neg_recon;
-          thread_qs[tid].emplace_back(pos << 1);
-          ++num_quantized;
-        } else {
-#if LBANN_QUANTIZER_TERNARY
-          qerror_buf[pos] = val - recons.zero_recon;
-#else
-          qerror_buf[pos] = val;
-#endif
-        }
-      }
-    }
-    #pragma omp single
-    {
-      // Compute the amount to adjust header counts by. This is essentially
-      // a shifted prefix-sum.
-      quantized_sums[0] = 0;
-      for (int t = 1; t < omp_get_max_threads(); ++t) {
-        quantized_sums[t] = quantized_sums[t - 1] + thread_qs[t - 1].size();
-      }
-    }
-    // Have threads patch up the header counts.
-    // Static schedule guarantees threads are assigned the same way.
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      q[HEADER_FACTOR * col] += quantized_sums[tid];
-    }
-  }
-  for (auto&& thread_q : thread_qs) {
-    q.insert(q.end(), thread_q.begin(), thread_q.end());
-  }
-  // Store the final number of entries.
-  q[HEADER_FACTOR * width] = q.size();
-  quantized_count = q.size() - header_len;
-  adaptive_threshold_bound(mat, qerror, q, proportion);
-}
-
-void lbann_quantizer::adaptive_threshold_quantize(
-  const DistMat& mat, ThreshQuantized& q, Mat& qerror, int proportion) {
-  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion);
-}
-
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, Mat& mat) {
-  DataType* __restrict__ buf = mat.Buffer();
-  const unsigned header_len = mat.Width() * HEADER_FACTOR;
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(static)
-  for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-    // Extract averages.
-    DataType pos_recon, neg_recon;
-    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
-    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-    DataType zero_recon;
-    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
-    // Fill the column, then update with the other values.
-    std::fill_n(&buf[(header_loc / HEADER_FACTOR) * ldim], height, zero_recon);
-#endif
-    for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
-      const uqtype val = q[i];
-      const unsigned pos = val >> 1;
-      if (val & 1) buf[pos] = pos_recon;
-      else buf[pos] = neg_recon;
-    }
-  }
-}
-
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const ThreshQuantized& q, DistMat& mat) {
-  adaptive_threshold_unquantize(q, mat.Matrix());
-}
-
-void lbann_quantizer::adaptive_threshold_unquantize_add(
-  const ThreshQuantized& q, Mat& mat) {
-  DataType* __restrict__ buf = mat.Buffer();
-  const unsigned header_len = mat.Width() * HEADER_FACTOR;
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(static)
-  for (unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-    const unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
-    // Extract averages.
-    DataType pos_recon, neg_recon;
-    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
-    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-    DataType zero_recon;
-    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
-    // Add zero_recon to everything and adjust the other means.
-    for (unsigned row = 0; row < height; ++row) {
-      buf[row + col_offset] += zero_recon;
-    }
-    pos_recon -= zero_recon;
-    neg_recon += zero_recon;
-#endif
-    for (unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
-      const uqtype val = q[i];
-      const unsigned pos = val >> 1;
-      if (val & 1) buf[pos] += pos_recon;
-      else buf[pos] += neg_recon;
-    }
-  }
-}
-
-void lbann_quantizer::adaptive_threshold_quantize_replace(
-  Mat& mat, ThreshQuantized& q, Mat& qerror, int proportion) {
-  const Int width = mat.Width();
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  DataType* __restrict__ mat_buf = mat.Buffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const Int header_len = HEADER_FACTOR * width + 1;
-  q.resize(header_len);  // Space for the header.
-  std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
-  std::vector<unsigned> quantized_sums(omp_get_max_threads(), 0);
-  // Compute the thresholds.
-  const adaptive_thresholds threshes =
-    proportion_threshold(mat, qerror, proportion);
-  #pragma omp parallel
-  {
-    const int tid = omp_get_thread_num();
-    Int num_quantized = header_len;
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      const Int header_loc = HEADER_FACTOR * col;
-      q[header_loc] = num_quantized;
-      const adaptive_reconstructions recons =
-        col_reconstruction(mat, qerror, col, threshes);
-      // Store the averages for reconstruction.
-      q[header_loc + 1] = 0;
-      memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
-      q[header_loc + 2] = 0;
-      memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-      q[header_loc + 3] = 0;
-      memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
-#endif
-      const Int col_offset = col * ldim;
-      for (Int row = 0; row < height; ++row) {
-        const unsigned pos = row + col_offset;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= threshes.pos_thresh) {
-          qerror_buf[pos] = val - recons.pos_recon;
-          thread_qs[tid].emplace_back((pos << 1) | 1);
-          ++num_quantized;
-          mat_buf[pos] = recons.pos_recon;
-        } else if (val <= threshes.neg_thresh) {
-          qerror_buf[pos] = val - recons.neg_recon;
-          thread_qs[tid].emplace_back(pos << 1);
-          ++num_quantized;
-          mat_buf[pos] = recons.neg_recon;
-        } else {
-#if LBANN_QUANTIZER_TERNARY
-          qerror_buf[pos] = val - recons.zero_recon;
-          mat_buf[pos] = recons.zero_recon;
-#else
-          qerror_buf[pos] = val;
-#endif
-        }
-      }
-    }
-    #pragma omp single
-    {
-      // Compute the amount to adjust header counts by. This is essentially
-      // a shifted prefix-sum.
-      quantized_sums[0] = 0;
-      for (int t = 1; t < omp_get_max_threads(); ++t) {
-        quantized_sums[t] = quantized_sums[t - 1] + thread_qs[t - 1].size();
-      }
-    }
-    // Have threads patch up the header counts.
-    // Static schedule guarantees threads are assigned the same way.
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      q[HEADER_FACTOR * col] += quantized_sums[tid];
-    }
-  }
-  for (auto&& thread_q : thread_qs) {
-    q.insert(q.end(), thread_q.begin(), thread_q.end());
-  }
-  // Store the final number of entries.
-  q[HEADER_FACTOR * width] = q.size();
-  quantized_count = q.size() - header_len;
-  adaptive_threshold_bound(mat, qerror, q, proportion);
-}
-
-void lbann_quantizer::adaptive_threshold_bound(
-  const Mat& mat, Mat& qerror, ThreshQuantized& q, int proportion) {
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const Int width = mat.Width();
-  const Int height = mat.Height();
-  const Int num_quantized = q.size() - HEADER_FACTOR * width - 1;
-  if (num_quantized > MAX_QUANTIZED_EXCESS * width * height / proportion) {
-    // Ensure there is a maximum bound on the number of entries sent.
-    // This should only occur if the threshold sampling is really bad.
-    // As a simple recovery process, this just removes enough entries to fit
-    // within the appropriate size. Removals begin from the end to avoid copies
-    // when deleting entries.
-    Int excess = num_quantized -
-      (MAX_QUANTIZED_EXCESS * width * height / proportion);
-    std::vector<Int> remove_counts(width, 0);
-    for (unsigned header_loc = (width - 1) * HEADER_FACTOR;
-         header_loc >= 0 && excess > 0;
-         header_loc -= HEADER_FACTOR) {
-      Int num_in_col = q[header_loc + HEADER_FACTOR] - q[header_loc];
-      if (num_in_col == 0) continue;
-      Int num_remove = std::min(excess, num_in_col);
-      Int num_left = num_in_col - num_remove;
-      DataType pos_recon, neg_recon;
-      memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
-      memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
-      // Add the deleted portions to qerror.
-      for (unsigned i = q[header_loc] + num_left;
-           i < q[header_loc + HEADER_FACTOR]; ++i) {
-        const uqtype val = q[i];
-        const unsigned pos = val >> 1;
-        if (val & 1) {
-          qerror_buf[pos] += pos_recon;
-        } else {
-          qerror_buf[pos] += neg_recon;
-        }
-      }
-      // TODO: When this is called from quantize_replace, this does not update
-      // the local matrix.
-      q.erase(q.begin() + q[header_loc] + num_left, q.end());
-      excess -= num_remove;
-      remove_counts[header_loc / HEADER_FACTOR] = num_remove;
-    }
-    // Update all the header locations.
-    std::partial_sum(remove_counts.begin(), remove_counts.end(),
-                     remove_counts.begin());
-    for (unsigned header_loc = 0; header_loc < width * HEADER_FACTOR;
-         header_loc += HEADER_FACTOR) {
-      q[header_loc] -= remove_counts[header_loc / HEADER_FACTOR];
-    }
-    q[HEADER_FACTOR * width] = q.size();
-  }
-}
-
 void lbann_quantizer::intermodel_sum_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh, Mat& im_qerror, bool compress) {
@@ -826,7 +536,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
   }
   ThreshQuantized rs_quant;
   ThreshQuantized rs_recv;
-  std::vector<unsigned> positions;
+  std::vector<Unsigned> positions;
   auto rs_send_trans = 
     [&qerror, &rs_quant, compress, pos_thresh, neg_thresh, this]
     (Mat& mat, IR h, IR w, int& count) {
@@ -917,102 +627,19 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
 
 void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror) {
-  if (qerror.Height() == 0) {
-    qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
-    Zero(qerror);
+  // Select which algorithm to use based on the size of mat.
+  // Multiply at 64 bits to avoid overflows.
+  size_t mat_size = ((size_t) mat.Height()) * ((size_t) mat.Width());
+  // Check signed version because we need one bit for the quantized value.
+  if (mat_size > std::numeric_limits<int32_t>::max()) {
+    intermodel_sum_adaptive_threshold_quantized_impl<uint64_t>(
+      comm, mat, qerror, proportion, im_qerror, adaptive_recv64_bufs1,
+      adaptive_recv64_bufs2);
+  } else {
+    intermodel_sum_adaptive_threshold_quantized_impl<uint32_t>(
+      comm, mat, qerror, proportion, im_qerror, adaptive_recv32_bufs1,
+      adaptive_recv32_bufs2);
   }
-  const Int max_size = mat.Width() * HEADER_FACTOR + 1 +
-    MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion;
-  if (adaptive_recv_bufs1.find(max_size) == adaptive_recv_bufs1.end()) {
-    // Initialize receive buffers.
-    adaptive_recv_bufs1.emplace(std::make_pair(max_size, ThreshQuantized(max_size)));
-    adaptive_recv_bufs2.emplace(std::make_pair(max_size, ThreshQuantized(max_size)));
-  }
-  ThreshQuantized rs_quant;
-  ThreshQuantized& rs_recv = adaptive_recv_bufs1[max_size];
-  ThreshQuantized comp_buf;
-  ThreshQuantized uncomp_buf;
-  /* NOTE: std::vector::resize() initializes elements. This is unnecessary, but
-   * there is no way around it. You cannot use reserve() because that does not
-   * update the size or guarantee data() returns anything useful. As far as I
-   * can tell, the only way around this would be to either ensure the
-   * _implementation_ makes guarantees for reserve(), or implement a custom
-   * version of vector.
-   */
-  auto rs_send_trans = 
-    [&qerror, &rs_quant, proportion, this]
-    (Mat& mat, IR h, IR w, int& count) {
-      auto to_send = mat(h, w);
-      auto to_send_qerr = qerror(h, w);
-      rs_quant.clear();
-      adaptive_threshold_quantize(to_send, rs_quant, to_send_qerr, proportion);
-      count = rs_quant.size();
-      return rs_quant.data();
-    };
-  auto rs_get_recv_buf = 
-    [&rs_recv, max_size] (Mat& mat, int& count) {
-    //rs_recv.resize(count);
-      count = max_size;
-      return rs_recv.data();
-    };
-  auto rs_recv_trans = 
-    [&rs_recv, this]
-    (uqtype* buf, Mat& accum) {
-      adaptive_threshold_unquantize_add(rs_recv, accum);
-      // Fix the received bytes count.
-      rs_bytes_received -= rs_recv.size() * sizeof(uqtype);
-      rs_bytes_received += rs_recv[accum.Width() * HEADER_FACTOR];
-    };
-  intermodel_ring_reduce_scatter<uqtype>(comm, mat, false, rs_send_trans,
-                                         rs_get_recv_buf, rs_recv_trans);
-  ThreshQuantized local_send;
-  ThreshQuantized ag_send = adaptive_recv_bufs1[max_size];
-  ThreshQuantized ag_recv = adaptive_recv_bufs2[max_size];
-  int send_size = 0;
-  bool local_sent = false;
-  auto ag_reduced_trans =
-    [&im_qerror, &local_send, &send_size, proportion, this]
-    (Mat& reduced) {
-      if (im_qerror.Height() == 0) {
-        im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
-        Zero(im_qerror);
-      }
-      adaptive_threshold_quantize_replace(reduced, local_send, im_qerror,
-                                          proportion);
-      send_size = local_send.size();
-    };
-  auto ag_get_send_buf = [&ag_send, &local_send, &send_size, &local_sent]
-    (int& count) {
-      count = send_size;
-      if (!local_sent) {
-        local_sent = true;
-        return local_send.data();
-      } else {
-        return ag_send.data();
-      }
-    };
-  auto ag_get_recv_buf =
-    [&ag_recv, max_size] (Mat& recv_view, int& count) {
-    //ag_recv.resize(count);
-      count = max_size;
-      return ag_recv.data();
-    };
-  auto ag_recv_trans = 
-    [&ag_recv, &send_size, proportion, this]
-    (uqtype*, Mat& accum) {
-      adaptive_threshold_unquantize(ag_recv, accum);
-      send_size = ag_recv[accum.Width() * HEADER_FACTOR];
-      // Fix the received bytes count.
-      ag_bytes_received -= ag_recv.size() * sizeof(uqtype);
-      ag_bytes_received += ag_recv[accum.Width() * HEADER_FACTOR];
-    };
-  auto ag_swap_bufs =
-    [&ag_send, &ag_recv, max_size] (uqtype*, uqtype*) {
-      std::swap(ag_send, ag_recv);
-    };
-  intermodel_ring_allgather<uqtype>(comm, mat, false, ag_reduced_trans,
-                                    ag_get_send_buf, ag_get_recv_buf,
-                                    ag_recv_trans, ag_swap_bufs);
 }
 
 void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
@@ -1094,6 +721,8 @@ void lbann_quantizer::uncompress_thresholds(
   uqtype cur = *cqstart;
   for (auto iter = cqstart; iter != cqend;) {
     // Decode the quotient by continuing until a 0 is found.
+    // TODO: Need to switch this depending on the size of El::Int.
+    // __builtin_ffs expects 32-bit ints; need __builtin_ffsll for 64-bit.
     int ffz;
     while ((ffz = __builtin_ffs(~cur)) == 0) {
       ++iter;
@@ -1171,7 +800,7 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
     }
   }
   // Determine the number of entries to keep.
-  int num_to_keep = std::max(1, (int) entries.size() / proportion);
+  Int num_to_keep = std::max(1, (int) entries.size() / proportion);
   // Determine the threshold values.
   // This finds the num_to_keep'th value if sample were sorted by magnitude
   // and assigns it to the appropriate threshold, then checks the upper portion
@@ -1248,7 +877,7 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
     // Randomly sample entries to approximate the means.
     std::uniform_int_distribution<Int> row_dist(0, height - 1);
     rng_gen& gen = get_generator();
-    std::vector<unsigned> poses(NUM_RECON_SAMPLES);
+    std::vector<Unsigned> poses(NUM_RECON_SAMPLES);
     for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
       const Unsigned pos = row_dist(gen) + col_offset;
       __builtin_prefetch(&mat_buf[pos]);
@@ -1257,7 +886,7 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
     }
     for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
       //const unsigned pos = row_dist(gen) + col_offset;
-      const unsigned pos = poses[i];
+      const Unsigned pos = poses[i];
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= threshes.pos_thresh) {
         pos_sum += val;

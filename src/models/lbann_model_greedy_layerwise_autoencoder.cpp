@@ -168,7 +168,6 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  DataType L2NormSum = 0;
   //@todo; optimize this? change start index from 0 to phase_index
   for (size_t l = 0; l <= phase_end; ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
@@ -227,7 +226,6 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
 bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch()
 {
   // forward propagation (mini-batch)
-  DataType L2NormSum = 0;
   for (size_t l = 0; l < m_layers.size(); l++) {
     m_layers[l]->forwardProp();
   }
