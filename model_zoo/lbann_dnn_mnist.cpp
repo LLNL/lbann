@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
     try {
 
-        const string prototext_fn = Input("--prototext_fn", "filename for writing a prototext file; default is 'none,' in which case no file will be written", "none");
+      const string prototext_fn = Input("--prototext_fn", "filename for writing a prototext file; default is 'none,' in which case no file will be written", std::string("none"));
 
         // Get data files
         const string g_MNIST_TrainLabelFile = Input("--train-label-file",
