@@ -57,14 +57,15 @@ void lbann_quantizer::adaptive_threshold_quantize(
   // Compute the thresholds.
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
-  #pragma omp parallel
+  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf)
   {
     const int tid = omp_get_thread_num();
-    Int num_quantized = header_len;
+    Int num_quantized = 0;
+    std::vector<T>& thread_q = thread_qs[tid];
     #pragma omp for schedule(static)
     for (Int col = 0; col < width; ++col) {
       const Int header_loc = HEADER_FACTOR * col;
-      q[header_loc] = num_quantized;
+      q[header_loc] = num_quantized + header_len;
       const adaptive_reconstructions recons =
         col_reconstruction(mat, qerror, col, threshes);
       // Store the averages for reconstruction.
@@ -77,25 +78,29 @@ void lbann_quantizer::adaptive_threshold_quantize(
       memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
       const Int col_offset = col * ldim;
+      const DataType* __restrict__ mat_col = &mat_buf[col_offset];
+      DataType* __restrict__ qerror_col = &qerror_buf[col_offset];
       for (Int row = 0; row < height; ++row) {
         const T pos = row + col_offset;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
+        //const DataType val = mat_buf[pos] + qerror_buf[pos];
+        const DataType val = mat_col[row] + qerror_col[row];
         if (val >= threshes.pos_thresh) {
-          qerror_buf[pos] = val - recons.pos_recon;
-          thread_qs[tid].emplace_back((pos << 1) | 1);
-          ++num_quantized;
+          qerror_col[row] = val - recons.pos_recon;
+          thread_q.emplace_back((pos << 1) | 1);
+          //++num_quantized;
         } else if (val <= threshes.neg_thresh) {
-          qerror_buf[pos] = val - recons.neg_recon;
-          thread_qs[tid].emplace_back(pos << 1);
-          ++num_quantized;
+          qerror_col[row] = val - recons.neg_recon;
+          thread_q.emplace_back(pos << 1);
+          //++num_quantized;
         } else {
 #if LBANN_QUANTIZER_TERNARY
-          qerror_buf[pos] = val - recons.zero_recon;
+          qerror_col[row] = val - recons.zero_recon;
 #else
-          qerror_buf[pos] = val;
+          qerror_col[row] = val;
 #endif
         }
       }
+      num_quantized = thread_qs[tid].size();
     }
     #pragma omp single
     {
@@ -139,7 +144,7 @@ void lbann_quantizer::adaptive_threshold_unquantize(
   const Unsigned header_len = mat.Width() * HEADER_FACTOR;
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(dynamic)
   for (Unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     // Extract averages.
     DataType pos_recon, neg_recon;
@@ -177,14 +182,14 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
   const Unsigned header_len = mat.Width() * HEADER_FACTOR;
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(dynamic), firstprivate(header_len, buf)
   for (Unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-    const Unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
     DataType pos_recon, neg_recon;
     memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
     memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
 #if LBANN_QUANTIZER_TERNARY
+    const Unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
     DataType zero_recon;
     memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
     // Add zero_recon to everything and adjust the other means.
