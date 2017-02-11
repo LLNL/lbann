@@ -45,10 +45,179 @@ void lbann_quantizer::adaptive_threshold_quantize(
   // quantized data in the array (including the header) and the two/three
   // reconstruction values. The number of quantized entries is included as a
   // final entry to simplify unquantization.
+  const T width = mat.Width();
+  const T height = mat.Height();
+  const T ldim = mat.LDim();
+  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ qerror_buf = qerror.Buffer();
+  const T header_len = HEADER_FACTOR * width + 1;
+  q.resize(header_len);  // Space for the header.
+  std::vector<std::vector<T>> thread_qs(omp_get_max_threads());
+  std::vector<T> quantized_sums(omp_get_max_threads(), 0);
+  // Compute the thresholds.
+  const adaptive_thresholds threshes =
+    proportion_threshold(mat, qerror, proportion);
+  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf)
+  {
+    const int tid = omp_get_thread_num();
+    T num_quantized = 0;
+    std::vector<T>& thread_q = thread_qs[tid];
+    #pragma omp for schedule(static)
+    for (T col = 0; col < width; ++col) {
+      const T header_loc = HEADER_FACTOR * col;
+      q[header_loc] = num_quantized + header_len;
+      const adaptive_reconstructions recons =
+        col_reconstruction(mat, qerror, col, threshes);
+      // Store the averages for reconstruction.
+      q[header_loc + 1] = 0;
+      memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
+      q[header_loc + 2] = 0;
+      memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
+#if LBANN_QUANTIZER_TERNARY
+      q[header_loc + 3] = 0;
+      memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
+#endif
+      const T col_offset = col * ldim;
+      const DataType* __restrict__ mat_col = &mat_buf[col_offset];
+      DataType* __restrict__ qerror_col = &qerror_buf[col_offset];
+      for (T row = 0; row < height; ++row) {
+        const DataType val = mat_col[row] + qerror_col[row];
+        if (val >= threshes.pos_thresh) {
+          qerror_col[row] = val - recons.pos_recon;
+          thread_q.emplace_back((row << 1) | 1);
+        } else if (val <= threshes.neg_thresh) {
+          qerror_col[row] = val - recons.neg_recon;
+          thread_q.emplace_back(row << 1);
+        } else {
+#if LBANN_QUANTIZER_TERNARY
+          qerror_col[row] = val - recons.zero_recon;
+#else
+          qerror_col[row] = val;
+#endif
+        }
+      }
+      num_quantized = thread_q.size();
+    }
+    #pragma omp single
+    {
+      // Compute the amount to adjust header counts by. This is essentially
+      // a shifted prefix-sum.
+      quantized_sums[0] = 0;
+      for (int t = 1; t < omp_get_max_threads(); ++t) {
+        quantized_sums[t] = quantized_sums[t - 1] + thread_qs[t - 1].size();
+      }
+    }
+    // Have threads patch up the header counts.
+    // Static schedule guarantees threads are assigned the same way.
+    #pragma omp for schedule(static)
+    for (T col = 0; col < width; ++col) {
+      q[HEADER_FACTOR * col] += quantized_sums[tid];
+    }
+  }
+  for (auto&& thread_q : thread_qs) {
+    q.insert(q.end(), thread_q.begin(), thread_q.end());
+  }
+  // Store the final number of entries.
+  q[HEADER_FACTOR * width] = q.size();
+  quantized_count = q.size() - header_len;
+  adaptive_threshold_bound(mat, qerror, q, proportion);
+}
+
+template <typename T>
+void lbann_quantizer::adaptive_threshold_quantize(
+  const DistMat& mat, std::vector<T>& q, Mat& qerror, int proportion) {
+  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion);
+}
+
+template <typename T>
+void lbann_quantizer::adaptive_threshold_unquantize(
+  const std::vector<T>& q, Mat& mat) {
+  // Ensure T is reasonable.
+  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
+                (sizeof(T) == 4 || sizeof(T) == 8),
+                "Quantization only works with unsigned 32- or 64-bit integers");
+  DataType* __restrict__ buf = mat.Buffer();
+  const T header_len = mat.Width() * HEADER_FACTOR;
+  const T height = mat.Height();
+  const T ldim = mat.LDim();
+  #pragma omp parallel for schedule(dynamic, 8)
+  for (T header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
+    const T col_offset = (header_loc / HEADER_FACTOR) * ldim;
+    // Extract averages.
+    DataType pos_recon, neg_recon;
+    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
+#if LBANN_QUANTIZER_TERNARY
+    DataType zero_recon;
+    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
+    // Fill the column, then update with the other values.
+    std::fill_n(&buf[(header_loc / HEADER_FACTOR) * ldim], height, zero_recon);
+#endif
+    DataType* __restrict__ buf_col = &buf[col_offset];
+    for (T i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
+      const T val = q[i];
+      const T row = val >> 1;
+      buf_col[row] = val & 0x1 ? pos_recon : neg_recon;
+    }
+  }
+}
+
+template <typename T>
+void lbann_quantizer::adaptive_threshold_unquantize(
+  const std::vector<T>& q, DistMat& mat) {
+  adaptive_threshold_unquantize(q, mat.Matrix());
+}
+
+template <typename T>
+void lbann_quantizer::adaptive_threshold_unquantize_add(
+  const std::vector<T>& q, Mat& mat) {
+  // Ensure T is reasonable.
+  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
+                (sizeof(T) == 4 || sizeof(T) == 8),
+                "Quantization only works with unsigned 32- or 64-bit integers");
+  DataType* __restrict__ buf = mat.Buffer();
+  const T header_len = mat.Width() * HEADER_FACTOR;
+  const T height = mat.Height();
+  const T ldim = mat.LDim();
+  #pragma omp parallel for schedule(dynamic, 8), firstprivate(header_len, buf)
+  for (T header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
+    const T col_offset = (header_loc / HEADER_FACTOR) * ldim;
+    // Extract averages.
+    DataType pos_recon, neg_recon;
+    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
+    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
+#if LBANN_QUANTIZER_TERNARY
+    DataType zero_recon;
+    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
+    // Add zero_recon to everything and adjust the other means.
+    for (T row = 0; row < height; ++row) {
+      buf[row + col_offset] += zero_recon;
+    }
+    pos_recon -= zero_recon;
+    neg_recon += zero_recon;
+#endif
+    DataType* __restrict__ buf_col = &buf[col_offset];
+    const T chunk_end = q[header_loc + HEADER_FACTOR] - q[header_loc];
+    const T* const __restrict__ q_ = &(q.data()[q[header_loc]]);
+    for (T i = 0; i < chunk_end; ++i) {
+      const T val = q_[i];
+      const T row = val >> 1;
+      buf_col[row] += val & 0x1 ? pos_recon : neg_recon;
+    }
+  }
+}
+
+template <typename T>
+void lbann_quantizer::adaptive_threshold_quantize_replace(
+  Mat& mat, std::vector<T>& q, Mat& qerror, int proportion) {
+  // Ensure T is reasonable.
+  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
+                (sizeof(T) == 4 || sizeof(T) == 8),
+                "Quantization only works with unsigned 32- or 64-bit integers");
   const Int width = mat.Width();
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  DataType* __restrict__ mat_buf = mat.Buffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   const Int header_len = HEADER_FACTOR * width + 1;
   q.resize(header_len);  // Space for the header.
@@ -78,197 +247,28 @@ void lbann_quantizer::adaptive_threshold_quantize(
       memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
 #endif
       const Int col_offset = col * ldim;
-      const DataType* __restrict__ mat_col = &mat_buf[col_offset];
+      DataType* __restrict__ mat_col = &mat_buf[col_offset];
       DataType* __restrict__ qerror_col = &qerror_buf[col_offset];
       for (Int row = 0; row < height; ++row) {
-        const T pos = row + col_offset;
-        //const DataType val = mat_buf[pos] + qerror_buf[pos];
         const DataType val = mat_col[row] + qerror_col[row];
         if (val >= threshes.pos_thresh) {
           qerror_col[row] = val - recons.pos_recon;
-          thread_q.emplace_back((pos << 1) | 1);
-          //++num_quantized;
+          thread_q.emplace_back((row << 1) | 1);
+          mat_col[row] = recons.pos_recon;
         } else if (val <= threshes.neg_thresh) {
           qerror_col[row] = val - recons.neg_recon;
-          thread_q.emplace_back(pos << 1);
-          //++num_quantized;
+          thread_q.emplace_back(row << 1);
+          mat_col[row] = recons.neg_recon;
         } else {
 #if LBANN_QUANTIZER_TERNARY
           qerror_col[row] = val - recons.zero_recon;
+          mat_col[row] = recons.zero_recon;
 #else
           qerror_col[row] = val;
 #endif
         }
       }
-      num_quantized = thread_qs[tid].size();
-    }
-    #pragma omp single
-    {
-      // Compute the amount to adjust header counts by. This is essentially
-      // a shifted prefix-sum.
-      quantized_sums[0] = 0;
-      for (int t = 1; t < omp_get_max_threads(); ++t) {
-        quantized_sums[t] = quantized_sums[t - 1] + thread_qs[t - 1].size();
-      }
-    }
-    // Have threads patch up the header counts.
-    // Static schedule guarantees threads are assigned the same way.
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      q[HEADER_FACTOR * col] += quantized_sums[tid];
-    }
-  }
-  for (auto&& thread_q : thread_qs) {
-    q.insert(q.end(), thread_q.begin(), thread_q.end());
-  }
-  // Store the final number of entries.
-  q[HEADER_FACTOR * width] = q.size();
-  quantized_count = q.size() - header_len;
-  adaptive_threshold_bound(mat, qerror, q, proportion);
-}
-
-template <typename T>
-void lbann_quantizer::adaptive_threshold_quantize(
-  const DistMat& mat, std::vector<T>& q, Mat& qerror, int proportion) {
-  adaptive_threshold_quantize(mat.LockedMatrix(), q, qerror, proportion);
-}
-
-template <typename T>
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const std::vector<T>& q, Mat& mat) {
-  // Ensure T is reasonable.
-  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
-                (sizeof(T) == 4 || sizeof(T) == 8),
-                "Quantization only works with unsigned 32- or 64-bit integers");
-  DataType* __restrict__ buf = mat.Buffer();
-  const Unsigned header_len = mat.Width() * HEADER_FACTOR;
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(dynamic)
-  for (Unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-    // Extract averages.
-    DataType pos_recon, neg_recon;
-    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
-    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-    DataType zero_recon;
-    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
-    // Fill the column, then update with the other values.
-    std::fill_n(&buf[(header_loc / HEADER_FACTOR) * ldim], height, zero_recon);
-#endif
-    for (Unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
-      const T val = q[i];
-      const T pos = val >> 1;
-      if (val & 1) buf[pos] = pos_recon;
-      else buf[pos] = neg_recon;
-    }
-  }
-}
-
-template <typename T>
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const std::vector<T>& q, DistMat& mat) {
-  adaptive_threshold_unquantize(q, mat.Matrix());
-}
-
-template <typename T>
-void lbann_quantizer::adaptive_threshold_unquantize_add(
-  const std::vector<T>& q, Mat& mat) {
-  // Ensure T is reasonable.
-  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
-                (sizeof(T) == 4 || sizeof(T) == 8),
-                "Quantization only works with unsigned 32- or 64-bit integers");
-  DataType* __restrict__ buf = mat.Buffer();
-  const Unsigned header_len = mat.Width() * HEADER_FACTOR;
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  #pragma omp parallel for schedule(dynamic), firstprivate(header_len, buf)
-  for (Unsigned header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
-    // Extract averages.
-    DataType pos_recon, neg_recon;
-    memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
-    memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-    const Unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
-    DataType zero_recon;
-    memcpy(&zero_recon, &q[header_loc + 3], sizeof(zero_recon));
-    // Add zero_recon to everything and adjust the other means.
-    for (Unsigned row = 0; row < height; ++row) {
-      buf[row + col_offset] += zero_recon;
-    }
-    pos_recon -= zero_recon;
-    neg_recon += zero_recon;
-#endif
-    for (Unsigned i = q[header_loc]; i < q[header_loc + HEADER_FACTOR]; ++i) {
-      const T val = q[i];
-      const T pos = val >> 1;
-      if (val & 1) buf[pos] += pos_recon;
-      else buf[pos] += neg_recon;
-    }
-  }
-}
-
-template <typename T>
-void lbann_quantizer::adaptive_threshold_quantize_replace(
-  Mat& mat, std::vector<T>& q, Mat& qerror, int proportion) {
-  // Ensure T is reasonable.
-  static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value &&
-                (sizeof(T) == 4 || sizeof(T) == 8),
-                "Quantization only works with unsigned 32- or 64-bit integers");
-  const Int width = mat.Width();
-  const Int height = mat.Height();
-  const Int ldim = mat.LDim();
-  DataType* __restrict__ mat_buf = mat.Buffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const Int header_len = HEADER_FACTOR * width + 1;
-  q.resize(header_len);  // Space for the header.
-  std::vector<std::vector<T>> thread_qs(omp_get_max_threads());
-  std::vector<T> quantized_sums(omp_get_max_threads(), 0);
-  // Compute the thresholds.
-  const adaptive_thresholds threshes =
-    proportion_threshold(mat, qerror, proportion);
-  #pragma omp parallel
-  {
-    const int tid = omp_get_thread_num();
-    Int num_quantized = header_len;
-    #pragma omp for schedule(static)
-    for (Int col = 0; col < width; ++col) {
-      const Int header_loc = HEADER_FACTOR * col;
-      q[header_loc] = num_quantized;
-      const adaptive_reconstructions recons =
-        col_reconstruction(mat, qerror, col, threshes);
-      // Store the averages for reconstruction.
-      q[header_loc + 1] = 0;
-      memcpy(&q[header_loc + 1], &recons.pos_recon, sizeof(recons.pos_recon));
-      q[header_loc + 2] = 0;
-      memcpy(&q[header_loc + 2], &recons.neg_recon, sizeof(recons.neg_recon));
-#if LBANN_QUANTIZER_TERNARY
-      q[header_loc + 3] = 0;
-      memcpy(&q[header_loc + 3], &recons.zero_recon, sizeof(recons.zero_recon));
-#endif
-      const Int col_offset = col * ldim;
-      for (Int row = 0; row < height; ++row) {
-        const T pos = row + col_offset;
-        const DataType val = mat_buf[pos] + qerror_buf[pos];
-        if (val >= threshes.pos_thresh) {
-          qerror_buf[pos] = val - recons.pos_recon;
-          thread_qs[tid].emplace_back((pos << 1) | 1);
-          ++num_quantized;
-          mat_buf[pos] = recons.pos_recon;
-        } else if (val <= threshes.neg_thresh) {
-          qerror_buf[pos] = val - recons.neg_recon;
-          thread_qs[tid].emplace_back(pos << 1);
-          ++num_quantized;
-          mat_buf[pos] = recons.neg_recon;
-        } else {
-#if LBANN_QUANTIZER_TERNARY
-          qerror_buf[pos] = val - recons.zero_recon;
-          mat_buf[pos] = recons.zero_recon;
-#else
-          qerror_buf[pos] = val;
-#endif
-        }
-      }
+      num_quantized = thread_q.size();
     }
     #pragma omp single
     {
@@ -306,6 +306,7 @@ void lbann_quantizer::adaptive_threshold_bound(
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   const Int width = mat.Width();
   const Int height = mat.Height();
+  const Int ldim = mat.LDim();
   const Int num_quantized = q.size() - HEADER_FACTOR * width - 1;
   if (num_quantized > MAX_QUANTIZED_EXCESS * width * height / proportion) {
     // Ensure there is a maximum bound on the number of entries sent.
@@ -321,20 +322,22 @@ void lbann_quantizer::adaptive_threshold_bound(
          header_loc -= HEADER_FACTOR) {
       Int num_in_col = q[header_loc + HEADER_FACTOR] - q[header_loc];
       if (num_in_col == 0) continue;
+      const Unsigned col_offset = (header_loc / HEADER_FACTOR) * ldim;
       Int num_remove = std::min(excess, num_in_col);
       Int num_left = num_in_col - num_remove;
       DataType pos_recon, neg_recon;
       memcpy(&pos_recon, &q[header_loc + 1], sizeof(pos_recon));
       memcpy(&neg_recon, &q[header_loc + 2], sizeof(neg_recon));
+      DataType* __restrict__ qerror_col = &qerror_buf[col_offset];
       // Add the deleted portions to qerror.
       for (Unsigned i = q[header_loc] + num_left;
            i < q[header_loc + HEADER_FACTOR]; ++i) {
         const T val = q[i];
-        const T pos = val >> 1;
+        const T row = val >> 1;
         if (val & 1) {
-          qerror_buf[pos] += pos_recon;
+          qerror_col[row] += pos_recon;
         } else {
-          qerror_buf[pos] += neg_recon;
+          qerror_col[row] += neg_recon;
         }
       }
       // TODO: When this is called from quantize_replace, this does not update
