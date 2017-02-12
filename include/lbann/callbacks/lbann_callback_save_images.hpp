@@ -40,7 +40,7 @@ namespace lbann {
 class lbann_callback_save_images : public lbann_callback {
 public:
   /**
-   * @note  this will be deprecate 
+   * @note  this will be deprecated 
    * @param image_dir directory to save images
    * @param num_images number of images to save
    */

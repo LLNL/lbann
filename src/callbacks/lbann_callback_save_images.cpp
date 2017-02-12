@@ -65,13 +65,13 @@ void lbann_callback_save_images::save_images(ElMat* input, ElMat* output,int pha
 
   //@todo: add depth
   for (Int n = 0; n < num_images; n++) {
-  DistMat in_col,out_col;
-  View(in_col,*input, ALL, IR(n));
-  View(out_col,*output, ALL, IR(n));
-  CircMat in_pixel_circ = in_col;
-  CircMat out_pixel_circ = out_col;
-  Mat in_pixels = in_pixel_circ.Matrix();
-  Mat out_pixels = out_pixel_circ.Matrix();
+    DistMat in_col,out_col;
+    View(in_col,*input, ALL, IR(n));
+    View(out_col,*output, ALL, IR(n));
+    CircMat in_pixel_circ = in_col;
+    CircMat out_pixel_circ = out_col;
+    Mat in_pixels = in_pixel_circ.Matrix();
+    Mat out_pixels = out_pixel_circ.Matrix();
 
     for (Int y = 0; y < y_dim; y++) {
       for (Int x = 0; x < x_dim; x++) {
