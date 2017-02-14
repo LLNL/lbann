@@ -1,0 +1,25 @@
+modelBuilder.py is an interactive script that lets you either
+construct prototext files from scratch, or edit existing files.
+
+As always, run with no params for usage:
+
+ $./modelBuilder.py
+ usage: ./modelBuilder.py outputFilename [inputFilename]
+
+  if inputFilename is given, it should be an existing prototext
+  file, which you can then edit. Otherwise you'll be building
+  a model from a template.
+
+This is very much a work in progress! If you're building or
+editing a prototext file and the program dumps you out with
+an error, don't panic. Any time you edit a field the file
+is written, so you can simply restart (and mail Dave Hysom
+an explanation of what happened so he can fix it). 
+
+Example: editing an existing file but giving it a new name:
+
+  $./modelBuilder.py mnist_modified.prototext mnist_prototext
+  ...
+  #oops, something went wrong: CRASH!!!
+  #so restart:
+  $./modelBuilder.py mnist_modified.prototext mnist_modified.prototext
