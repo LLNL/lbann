@@ -13,10 +13,10 @@ branches:
 # Environment variables
 env:
   global:
-    - GH_REPO_NAME: lbann
-    - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
+    - GH_REPO_NAME: LLNL/lbann
+    - DOXYFILE: $TRAVIS_BUILD_DIR/$GH_REPO_NAME/doc/Doxyfile
     - GH_REPO_REF: github.com/LLNL/lbann.git
-    - DOXYCONFIG: $GH_REPO_NAME/doc/Doxyfile.in
+    - DOXYCONFIG: $TRAVIS_BUILD_DIR/$GH_REPO_NAME/doc/Doxyfile.in
     - SCRIPT_DIR: code_docs
 
 # Install dependencies
@@ -31,13 +31,16 @@ addons:
 
 # Build your code e.g. by calling make
 script:
-  - mkdir -p $TRAVIS_BUILD_DIR/doc
   - cp $DOXYCONFIG $DOXYFILE
-  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
-  - sed -ie 's#@DOXYGEN_OUTPUT_DIR@#$TRAVIS_BUILD_DIR/$SCRIPT_DIR#g' $DOXYFILE
-  - sed -ie 's#@LBANN_MAJOR_VERSION@.@LBANN_MINOR_VERSION@#$TRAVIS_JOB_ID#g'  $DOXYFILE
+  - chmod +x config/config-doxygen.sh
+  - ./config/config-doxygen.sh
   - diff $DOXYCONFIG $DOXYFILE
   - cat $DOXYFILE
+
+#  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
+#  - sed -ie 's#@DOXYGEN_OUTPUT_DIR@#$TRAVIS_BUILD_DIR/$SCRIPT_DIR#g' $DOXYFILE
+#  - sed -ie 's#@LBANN_MAJOR_VERSION@.@LBANN_MINOR_VERSION@#$TRAVIS_JOB_ID#g'  $DOXYFILE
+#  - mkdir -p $TRAVIS_BUILD_DIR/$GH_REPO_NAME/doc
 
 # Generate and deploy documentation
 after_success:
