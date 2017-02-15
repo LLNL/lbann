@@ -13,7 +13,7 @@ fi
 # Detect the cuda toolkit version loaded or use default
 if [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
   # use default
-  CUDATOOLKIT_VERSION=7.0
+  CUDATOOLKIT_VERSION=8.0
   module load cudatoolkit/$CUDATOOLKIT_VERSION
   if [ -d /opt/cudatoolkit/$CUDATOOLKIT_VERSION ] ; then
       CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit/$CUDATOOLKIT_VERSION

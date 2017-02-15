@@ -148,6 +148,9 @@ namespace cudnn
     /// cuDNN datatype
     const cudnnDataType_t m_cudnn_data_type;
 
+    /// Number of data samples per GPU
+    int m_samples_per_gpu;
+
     /// Input tensor descriptor
     cudnnTensorDescriptor_t m_src_desc;
     /// Output tensor descriptor

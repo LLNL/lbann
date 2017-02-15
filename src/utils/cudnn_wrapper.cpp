@@ -185,11 +185,16 @@ cudnn_convolutional_layer
 {
 
   // Get number of GPUs
-  int num_gpus = m_cudnn->m_num_gpus;
+  const int num_gpus = m_cudnn->m_num_gpus;
+
+  // Get number of samples per GPU
+  const int num_processes = m_cudnn->comm->get_procs_per_model();
+  const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
+  m_samples_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
   // Get input tensor dimensions
   m_src_dims.resize(m_num_dims+2);
-  m_src_dims[0] = (mini_batch_size + num_gpus - 1) / num_gpus;
+  m_src_dims[0] = m_samples_per_gpu;
   m_src_dims[1] = src_channels;
   for(int i=0; i<m_num_dims; ++i)
     m_src_dims[i+2] = src_dims[i];
@@ -353,25 +358,11 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 {
 
   // Useful constants
-  const DataType one = 1.0;
-  const DataType zero = 0.0;
+  const DataType one = 1;
+  const DataType zero = 0;
 
-  // Adjust input and output tensor dimensions to match input
+  // Get number of GPUs
   const int num_gpus = m_cudnn->m_num_gpus;
-  const int mini_batch_size = src.Width();
-  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
-  m_src_dims[0] = samples_per_gpu;
-  m_dst_dims[0] = samples_per_gpu;
-  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
-                                        m_cudnn_data_type,
-                                        m_num_dims+2,
-                                        m_src_dims.data(),
-                                        m_src_strides.data()));
-  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
-                                        m_cudnn_data_type,
-                                        m_num_dims+2,
-                                        m_dst_dims.data(),
-                                        m_dst_strides.data()));
 
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);
@@ -386,7 +377,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_src[i],
-                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_filter[i],
@@ -398,7 +389,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_dst[i],
-                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     if(m_forward_work_space_size > 0) {
       checkCUDA(gpu_memory.DeviceAllocate(gpu,
@@ -408,7 +399,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
     }
   }
 
-  // Iterate through GPUs
+  // Perform convolution with each GPU
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
@@ -416,8 +407,8 @@ void cudnn_convolutional_layer::forward(const Mat& src,
     cudnnHandle_t& handle = m_cudnn->m_handles[i];
 
     // Data samples assigned to GPU
-    const int first_pos = i * samples_per_gpu;
-    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
+    const int first_pos = i * m_samples_per_gpu;
+    const int last_pos = Min((i+1) * m_samples_per_gpu, src.Width());
     if(first_pos >= last_pos) {
       continue;
     }
@@ -511,32 +502,23 @@ void cudnn_convolutional_layer::backward(const Mat& src,
 {
 
   // Useful constants
-  const DataType one = 1.0;
-  const DataType zero = 0.0;
+  const DataType one = 1;
+  const DataType zero = 0;
 
-  // Adjust input and output tensor dimensions to match input
+  // Get number of GPUs
   const int num_gpus = m_cudnn->m_num_gpus;
-  const int mini_batch_size = src.Width();
-  const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
-  const DataType samples_per_gpu_float = samples_per_gpu;
-  m_src_dims[0] = samples_per_gpu;
-  m_dst_dims[0] = samples_per_gpu;
-  checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
-                                        m_cudnn_data_type,
-                                        m_num_dims+2,
-                                        m_src_dims.data(),
-                                        m_src_strides.data()));
-  checkCUDNN(cudnnSetTensorNdDescriptor(m_dst_desc,
-                                        m_cudnn_data_type,
-                                        m_num_dims+2,
-                                        m_dst_dims.data(),
-                                        m_dst_strides.data()));
+
+  // Number of samples per GPU
+  const DataType samples_per_gpu_float = m_samples_per_gpu;
+
+  // Initialize filter gradient
+  El::Zero(filter_gradient);
 
   // Compute bias gradient
   Mat ones;
   El::Ones(ones, prev_error_signal.Width(), El::Int(1));
-  El::Gemv(El::NORMAL, DataType(1.0), prev_error_signal, ones,
-           DataType(0.0), bias_gradient);
+  El::Gemv(El::NORMAL, DataType(1), prev_error_signal, ones,
+           DataType(0), bias_gradient);
 
   // Allocate memory on GPUs
   std::vector<DataType*> d_src(num_gpus, NULL);
@@ -553,7 +535,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_src[i],
-                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_filter[i],
@@ -561,7 +543,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_prev_error_signal[i],
-                                        m_dst_size*samples_per_gpu*sizeof(DataType),
+                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_filter_gradient[i],
@@ -569,7 +551,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_error_signal[i],
-                                        m_src_size*samples_per_gpu*sizeof(DataType),
+                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     if(m_backward_filter_work_space_size > 0) {
       checkCUDA(gpu_memory.DeviceAllocate(gpu,
@@ -585,7 +567,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
     }
   }
 
-  // Iterate through GPUs
+  // Perform back propagation on each GPU
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
@@ -593,8 +575,8 @@ void cudnn_convolutional_layer::backward(const Mat& src,
     cudnnHandle_t& handle = m_cudnn->m_handles[i];
 
     // Data samples assigned to GPU
-    const int first_pos = i * samples_per_gpu;
-    const int last_pos = Min((i+1) * samples_per_gpu, mini_batch_size);
+    const int first_pos = Min(i * m_samples_per_gpu, src.Width());
+    const int last_pos = Min((i+1) * m_samples_per_gpu, src.Width());
     if(first_pos >= last_pos) {
       continue;
     }
@@ -623,10 +605,10 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                 last_pos - first_pos,
                                 cudaMemcpyHostToDevice,
                                 stream));
-    if(last_pos - first_pos < samples_per_gpu) {
+    if(last_pos - first_pos < m_samples_per_gpu) {
       checkCUDA(cudaMemsetAsync(d_prev_error_signal[i] + (last_pos-first_pos)*m_dst_size,
                                 0,
-                                m_dst_size*(samples_per_gpu-(last_pos-first_pos))*sizeof(DataType),
+                                m_dst_size*(m_samples_per_gpu-(last_pos-first_pos))*sizeof(DataType),
                                 stream));
     }
 
@@ -674,9 +656,11 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   
   // Transfer and accumulate filter gradients from GPUs
   Mat temp(filter_gradient.Height(), filter_gradient.Width());
-  El::Zero(filter_gradient);
   El::Zero(temp);
   for(int i=0; i<num_gpus; ++i) {
+    if(i*m_samples_per_gpu >= src.Width()) {
+      break;
+    }
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
     checkCUDA(cudaMemcpy(temp.Buffer(),
                          d_filter_gradient[i],
@@ -809,12 +793,17 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
 {
 
   // Useful constants
-  const DataType one = 1.0;
-  const DataType zero = 0.0;
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Return immediately if mini-batch size is zero
+  const int mini_batch_size = src.Width();
+  if(mini_batch_size <= 0) {
+    return;
+  }
 
   // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
-  const int mini_batch_size = src.Width();
   const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
   m_src_dims[0] = samples_per_gpu;
   m_dst_dims[0] = samples_per_gpu;
@@ -918,12 +907,17 @@ void cudnn_pooling_layer::backward(const Mat& src,
 {
 
   // Useful constants
-  const DataType one = 1.0;
-  const DataType zero = 0.0;
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Return immediately if mini-batch size is zero
+  const int mini_batch_size = src.Width();
+  if(mini_batch_size <= 0) {
+    return;
+  }
 
   // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
-  const int mini_batch_size = src.Width();
   const int samples_per_gpu = (mini_batch_size + num_gpus - 1) / num_gpus;
   m_src_dims[0] = samples_per_gpu;
   m_dst_dims[0] = samples_per_gpu;
