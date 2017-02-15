@@ -30,6 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
 #include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/data_readers/lbann_data_reader.hpp"
 
 namespace lbann {
 
@@ -39,6 +40,7 @@ namespace lbann {
 class lbann_callback_save_images : public lbann_callback {
 public:
   /**
+   * @note  this will be deprecated 
    * @param image_dir directory to save images
    * @param num_images number of images to save
    */
@@ -46,12 +48,25 @@ public:
     lbann_callback(), m_image_dir(image_dir), m_num_images(num_images) {
       set_name("save_images");
     }
+  /**
+   * @note This uses data reader, previous (above) will be deprecated
+   * @param data reader type e.g., imagenet, mnist, cifar10....
+   * @param image_dir directory to save image
+   * @param image extension e.g., jpg, png, pgm......
+   */
+  lbann_callback_save_images(DataReader* reader,std::string image_dir,std::string extension="jpg") :
+    lbann_callback(), m_reader(reader),m_image_dir(image_dir),m_extension(extension) {
+      set_name("save_images");
+    }
   void on_phase_end(model* m);
 
 private:
   std::string m_image_dir; //directory to save image
+  std::string m_extension; //image extension; pgm, jpg, png etc
   Int m_num_images; // num of images to save
+  DataReader* m_reader;
   void save_images(ElMat* input, ElMat* output,int phase);
+  void save_image(ElMat* input, ElMat* output); //this version uses data reader
 };
 
 }  // namespace lbann

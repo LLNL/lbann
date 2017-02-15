@@ -86,6 +86,8 @@ public:
   virtual int fetch_label(Mat& Y) { return 0; }
   virtual int fetch_response(Mat& Y) { return 0; }
 
+  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) { }
+
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps

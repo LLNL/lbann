@@ -29,6 +29,8 @@
 #ifndef LBANN_QUANTIZER_IMPL_HPP_INCLUDED
 #define LBANN_QUANTIZER_IMPL_HPP_INCLUDED
 
+#include <omp.h>
+
 namespace lbann
 {
 
