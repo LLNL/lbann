@@ -40,11 +40,11 @@ echo 'Setting up the script...'
 set -e
 
 # Create a clean working directory for this script.
-mkdir code_docs
-cd code_docs
+mkdir $SCRIPT_DIR
+cd $SCRIPT_DIR
 
 # Get the current gh-pages branch
-git clone -b gh-pages https://git@$GH_REPO_REF
+git clone -b gh-pages https://git@$GH_REPO_REF --single-branch
 cd $GH_REPO_NAME
 
 ##### Configure git.
