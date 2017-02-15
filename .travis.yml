@@ -1,5 +1,7 @@
 # This will run on Travis' 'new' container-based infrastructure
 sudo: false
+# The Trusty beta Build Environment
+dist: trusty
 
 language: cpp
 
