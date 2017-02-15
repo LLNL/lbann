@@ -35,7 +35,7 @@ script:
   - chmod +x config/config-doxygen.sh
   - ./config/config-doxygen.sh
   - diff $DOXYCONFIG $DOXYFILE
-  - cat $DOXYFILE
+#  - cat $DOXYFILE
 
 #  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
 #  - sed -ie 's#@DOXYGEN_OUTPUT_DIR@#$TRAVIS_BUILD_DIR/$SCRIPT_DIR#g' $DOXYFILE
