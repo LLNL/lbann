@@ -1,6 +1,8 @@
 # This will run on Travis' 'new' container-based infrastructure
 sudo: false
 
+language: cpp
+
 # Blacklist
 branches:
   except:
@@ -25,7 +27,9 @@ addons:
 
 # Build your code e.g. by calling make
 script:
-  - make
+  - mkdir build-travis
+  - cd build-travis
+  - cmake .. && make doc
 
 # Generate and deploy documentation
 after_success:
