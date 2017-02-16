@@ -34,7 +34,7 @@ script:
   - cp $DOXYCONFIG $DOXYFILE
   - chmod +x config/config-doxygen.sh
   - ./config/config-doxygen.sh
-  - diff $DOXYCONFIG $DOXYFILE
+#  - diff $DOXYCONFIG $DOXYFILE
 #  - cat $DOXYFILE
 
 #  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
