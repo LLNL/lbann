@@ -13,7 +13,7 @@ branches:
 # Environment variables
 env:
   global:
-    - GH_REPO_NAME: LLNL/lbann
+    - GH_REPO_NAME: lbann
     - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
     - GH_REPO_REF: github.com/LLNL/lbann.git
     - DOXYCONFIG: $TRAVIS_BUILD_DIR/doc/Doxyfile.in

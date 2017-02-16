@@ -38,6 +38,8 @@ __AUTHOR__="Brian Van Essen"
 echo 'Setting up the script...'
 # Exit with nonzero exit code if anything fails
 set -e
+# Echo on
+set -x
 
 # Create a clean working directory for this script.
 mkdir $SCRIPT_DIR
