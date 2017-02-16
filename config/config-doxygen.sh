@@ -2,7 +2,7 @@
 # Exit with nonzero exit code if anything fails
 set -e
 # Echo on
-set -x
+#set -x
 
 GIT_VER=`git --git-dir .git describe --abbrev=7 --dirty --always --tags`
 

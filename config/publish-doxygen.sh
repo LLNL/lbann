@@ -39,7 +39,7 @@ echo 'Setting up the script...'
 # Exit with nonzero exit code if anything fails
 set -e
 # Echo on
-set -x
+#set -x
 
 # Create a clean working directory for this script.
 mkdir $SCRIPT_DIR
@@ -96,7 +96,7 @@ if [ -d "html" ] && [ -f "html/index.html" ]; then
     # Force push to the remote gh-pages branch.
     # The ouput is redirected to /dev/null to hide any sensitive credential data
     # that might otherwise be exposed.
-    git push --force "https://${GH_REPO_TOKEN}@${GH_REPO_REF}" > /dev/null 2>&1
+    git push --force origin > /dev/null 2>&1
 else
     echo '' >&2
     echo 'Warning: No documentation (html) files have been found!' >&2
