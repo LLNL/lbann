@@ -4,6 +4,8 @@ set -e
 # Echo on
 set -x
 
+`git --version`
+
 GIT_VER=`git --git-dir .git describe --abbrev=7 --dirty --always --tags`
 
 echo "$GIT_VER"
