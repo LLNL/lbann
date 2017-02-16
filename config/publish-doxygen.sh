@@ -46,7 +46,7 @@ mkdir $SCRIPT_DIR
 cd $SCRIPT_DIR
 
 # Get the current gh-pages branch
-git clone -b gh-pages https://git@$GH_REPO_REF --single-branch
+git clone -b gh-pages git@$GH_REPO_REF --single-branch
 cd $GH_REPO_NAME
 
 ##### Configure git.

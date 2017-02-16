@@ -15,7 +15,7 @@ env:
   global:
     - GH_REPO_NAME: lbann
     - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
-    - GH_REPO_REF: github.com/LLNL/lbann.git
+    - GH_REPO_REF: github.com:LLNL/lbann.git
     - DOXYCONFIG: $TRAVIS_BUILD_DIR/doc/Doxyfile.in
     - SCRIPT_DIR: code_docs
 
