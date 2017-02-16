@@ -34,13 +34,6 @@ script:
   - cp $DOXYCONFIG $DOXYFILE
   - chmod +x config/config-doxygen.sh
   - ./config/config-doxygen.sh
-#  - diff $DOXYCONFIG $DOXYFILE
-#  - cat $DOXYFILE
-
-#  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
-#  - sed -ie 's#@DOXYGEN_OUTPUT_DIR@#$TRAVIS_BUILD_DIR/$SCRIPT_DIR#g' $DOXYFILE
-#  - sed -ie 's#@LBANN_MAJOR_VERSION@.@LBANN_MINOR_VERSION@#$TRAVIS_JOB_ID#g'  $DOXYFILE
-#  - mkdir -p $TRAVIS_BUILD_DIR/$GH_REPO_NAME/doc
 
 # Generate and deploy documentation
 after_success:
