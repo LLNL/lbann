@@ -632,13 +632,20 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
   size_t mat_size = ((size_t) mat.Height()) * ((size_t) mat.Width());
   // Check signed version because we need one bit for the quantized value.
   if (mat_size > std::numeric_limits<int32_t>::max()) {
-    intermodel_sum_adaptive_threshold_quantized_impl<uint64_t>(
+    intermodel_sum_adaptive_threshold_quantized_impl<uint64_t, uint64_t>(
       comm, mat, qerror, proportion, im_qerror, adaptive_recv64_bufs1,
       adaptive_recv64_bufs2);
   } else {
-    intermodel_sum_adaptive_threshold_quantized_impl<uint32_t>(
-      comm, mat, qerror, proportion, im_qerror, adaptive_recv32_bufs1,
-      adaptive_recv32_bufs2);
+    // Check whether we can use 16-bit row indices.
+    if (mat.Height() > std::numeric_limits<int16_t>::max()) {
+      intermodel_sum_adaptive_threshold_quantized_impl<uint32_t, uint32_t>(
+        comm, mat, qerror, proportion, im_qerror, adaptive_recv32_bufs1,
+        adaptive_recv32_bufs2);
+    } else {
+      intermodel_sum_adaptive_threshold_quantized_impl<uint32_t, uint16_t>(
+        comm, mat, qerror, proportion, im_qerror, adaptive_recv16_bufs1,
+        adaptive_recv16_bufs2);
+    }
   }
 }
 

@@ -86,7 +86,7 @@ void test_threshold_quantize() {
   lbann_quantizer quantizer;
   quantizer.threshold_quantize(mat, qmat, qerror, 2.0f, -2.0f);
   Mat uqmat;
-  El::Zeros(uqmat, mat.Width(), mat.Height());
+  El::Zeros(uqmat, mat.Height(), mat.Width());
   quantizer.threshold_unquantize(qmat, uqmat, 2.0f, -2.0f);
   // Ensure there's some quantization error.
   Mat z;
@@ -125,7 +125,7 @@ void test_threshold_compression() {
   quantizer.uncompress_thresholds(compressed_qmat, uncompressed_qmat);
   ASSERT_VECTOR_EQ(qmat, uncompressed_qmat);
   Mat uqmat;
-  El::Zeros(uqmat, mat.Width(), mat.Height());
+  El::Zeros(uqmat, mat.Height(), mat.Width());
   quantizer.threshold_unquantize(qmat, uqmat, 2.0f, -2.0f);
   // Ensure there's some quantization error.
   Mat z;
@@ -142,14 +142,14 @@ void test_threshold_compression() {
 void test_adaptive_threshold_quantize() {
   Mat mat;
   El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  std::vector<uint32_t> qmat;
+  std::vector<uint16_t> qmat;
   Mat qerror;
   El::Zeros(qerror, mat.Height(), mat.Width());
   lbann_quantizer quantizer;
-  quantizer.adaptive_threshold_quantize(mat, qmat, qerror, 3);
+  quantizer.adaptive_threshold_quantize<uint32_t, uint16_t>(mat, qmat, qerror, 3);
   Mat uqmat;
-  El::Zeros(uqmat, mat.Width(), mat.Height());
-  quantizer.adaptive_threshold_unquantize(qmat, uqmat);
+  El::Zeros(uqmat, mat.Height(), mat.Width());
+  quantizer.adaptive_threshold_unquantize<uint32_t, uint16_t>(qmat, uqmat);
   // Ensure there's some quantization error.
   Mat z;
   El::Zeros(z, mat.Height(), mat.Width());
@@ -171,7 +171,7 @@ void test_adaptive_threshold_quantize() {
   lbann_quantizer quantizer;
   quantizer.adaptive_threshold_quantize(mat, comp_qmat, qerror, 3, true);
   Mat uqmat;
-  El::Zeros(uqmat, mat.Width(), mat.Height());
+  El::Zeros(uqmat, mat.Height(), mat.Width());
   quantizer.adaptive_threshold_unquantize(comp_qmat, uqmat, true);
   // Ensure there's some quantization error.
   Mat z;
