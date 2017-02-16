@@ -364,7 +364,7 @@ EOF
   fi
 
   # Generate documentation with make
-  if [ ${CLEAN_BUILD} -ne 0 ]; then
+  if [ ${GEN_DOC} -ne 0 ]; then
     DOC_COMMAND="make doc"
     if [ ${VERBOSE} -ne 0 ]; then
       echo "${DOC_COMMAND}"

@@ -223,13 +223,16 @@ void convolutional_layer::setup(const int num_prev_neurons)
 }
 
 void lbann::convolutional_layer::fp_linearity() {
-  
+
   // Get local matrices
-  const Mat filters_local = (m_weights->LockedMatrix())(IR(0,m_filter_size),ALL);
-  const Mat bias_local = (m_weights->LockedMatrix())(IR(m_filter_size,END),ALL);
-  const Mat prev_activations_local = m_prev_activations_v->LockedMatrix();
-  Mat weighted_sum_local = m_weighted_sum_v->Matrix();
-  Mat activations_local = m_activations_v->Matrix();
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  const Mat& weights_local = m_weights->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& activations_local = m_activations_v->Matrix();
+  
+  // Get filters and bias
+  const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
+  const Mat bias_local = weights_local(IR(m_filter_size,END), ALL);
 
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
@@ -358,12 +361,16 @@ void lbann::convolutional_layer::fp_linearity() {
 void lbann::convolutional_layer::bp_linearity() {
 
   // Get local matrices
-  const Mat input_local = m_prev_activations_v->LockedMatrix();
-  const Mat filters_local = m_weights->LockedMatrix()(IR(0,m_filter_size),ALL);
-  const Mat prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-  Mat filters_gradient_local = m_weights_gradient->Matrix()(IR(0,m_filter_size),ALL);
-  Mat bias_gradient_local = m_weights_gradient->Matrix()(IR(m_filter_size,END),ALL);
-  Mat error_signal_local = m_error_signal_v->Matrix();
+  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  const Mat& weights_local = m_weights->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
+  Mat& weights_gradient_local = m_weights_gradient->Matrix();
+  Mat& error_signal_local = m_error_signal_v->Matrix();
+  
+  // Get filters and bias
+  const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
+  Mat filters_gradient_local = weights_gradient_local(IR(0,m_filter_size), ALL);
+  Mat bias_gradient_local = weights_gradient_local(IR(m_filter_size,END), ALL);
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {

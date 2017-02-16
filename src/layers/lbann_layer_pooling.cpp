@@ -158,9 +158,9 @@ void pooling_layer::setup(const int num_prev_neurons)
 void lbann::pooling_layer::fp_linearity() {
   
   // Get local matrices
-  const Mat input_local = m_prev_activations_v->LockedMatrix();
-  Mat weighted_sum_local = m_weighted_sum_v->Matrix();
-  Mat output_local = m_activations_v->Matrix();
+  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& output_local = m_activations_v->Matrix();
 
   // Apply pooling on local data samples
   if(m_cudnn_layer) {
@@ -276,10 +276,10 @@ void lbann::pooling_layer::fp_linearity() {
 void lbann::pooling_layer::bp_linearity() {
 
   // Get local matrices
-  const Mat input_local = m_prev_activations_v->LockedMatrix();
-  const Mat output_local = m_activations_v->LockedMatrix();
-  const Mat prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-  Mat error_signal_local = m_error_signal_v->Matrix();
+  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  const Mat& output_local = m_activations_v->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
+  Mat& error_signal_local = m_error_signal_v->Matrix();
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {

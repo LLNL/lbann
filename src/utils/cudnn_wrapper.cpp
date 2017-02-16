@@ -508,7 +508,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   // Get number of GPUs
   const int num_gpus = m_cudnn->m_num_gpus;
 
-  // Number of samples per GPU
+  // Get number of samples per GPU
   const DataType samples_per_gpu_float = m_samples_per_gpu;
 
   // Initialize filter gradient
