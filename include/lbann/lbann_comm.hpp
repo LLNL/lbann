@@ -368,6 +368,19 @@ namespace lbann
       bytes_sent = 0;
       bytes_received = 0;
     }
+
+    /** Return true if mat can be transmitted. */
+    static inline bool is_sendable(const Mat& mat) {
+      // This assumes we do not transmit mat with a datatype smaller than
+      // DataType.
+      // MPI uses "int" as its count type; do calculations with larger ints.
+      size_t count = (size_t) mat.Height() * (size_t) mat.Width();
+      return count <= (size_t) std::numeric_limits<int>::max();
+    }
+    /** Return true if the local portion of dist_mat can be transmitted. */
+    static inline bool is_sendable(const ElMat& dist_mat) {
+      return is_sendable(dist_mat.LockedMatrix());
+    }
   private:
     /** Communicator for every process in this model. */
     mpi::Comm model_comm;

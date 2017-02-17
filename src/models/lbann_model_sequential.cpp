@@ -479,6 +479,7 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
     }
     m_layers[l]->neural_network_model = this; /// Provide a reverse point from each layer to the model
     m_layers[l]->setup(prev_layer_dim);
+    m_layers[l]->check_setup();
     prev_layer_dim = m_layers[l]->NumNeurons;
     m_layers[l]->Index = l;
   }

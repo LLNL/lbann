@@ -88,6 +88,8 @@ namespace lbann
     };
 
     virtual void setup(int);
+    /** Validate that the setup is reasonable. */
+    virtual void check_setup();
 
     /** Return the index of this layer. */
     inline uint get_index() const { return Index; }

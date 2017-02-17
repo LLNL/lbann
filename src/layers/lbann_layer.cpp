@@ -175,6 +175,16 @@ void lbann::Layer::setup(int) {
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 
+void lbann::Layer::check_setup() {
+  // If these two are sendable, the other matrices should be fine.
+  if (!lbann::lbann_comm::is_sendable(*m_weights)) {
+    throw lbann::lbann_exception("Weights too large to send");
+  }
+  if (!lbann::lbann_comm::is_sendable(*m_activations)) {
+    throw lbann::lbann_exception("Activations too large to send");
+  }
+}
+
 ElMat *lbann::Layer::fp_output() {
   return m_activations;
 }
