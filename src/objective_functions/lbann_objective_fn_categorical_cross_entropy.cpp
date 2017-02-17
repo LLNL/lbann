@@ -105,6 +105,4 @@ void lbann::objective_functions::categorical_cross_entropy::compute_obj_fn_deriv
                        }));
   }
 
-  // Compute derivative of categorical cross entropy
-
 }

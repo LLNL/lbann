@@ -57,9 +57,10 @@ void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int6
 /** MSE = (predictions-groundtruth)^T (predictions-groundtruth)
  */
 double lbann::objective_functions::mean_squared_error::compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v) {
+  const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
-  return Pow(FrobeniusNorm(m_errors_v), 2);
+  return Pow(FrobeniusNorm(m_errors_v), 2) / num_neurons;
 }
 
 /// Compute the average mean squared error over the mini-batch
@@ -78,7 +79,8 @@ void lbann::objective_functions::mean_squared_error::compute_obj_fn_derivative(l
                                                                                ElMat &predictions_v,
                                                                                ElMat &groundtruth_v,
                                                                                ElMat &error_signal_v) {
+  const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, error_signal_v);
   Axpy(DataType(-1), groundtruth_v, error_signal_v);
-  Scale(DataType(2), error_signal_v);
+  Scale(DataType(2)/num_neurons, error_signal_v);
 }

@@ -271,25 +271,28 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 }
 
 void lbann::Layer::fp_set_std_matrix_view() {
-  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  if(m_prev_activations != NULL/* && m_prev_activations->Height() != 0 && m_prev_activations->Width() != 0*/) { // Input layers will not have a valid fp_input
-    View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
+  // Input layers will not have a valid fp_input
+  if(fp_input != NULL) {
+    View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   }
-  View(*m_weighted_sum_v, *m_weighted_sum, IR(0, m_weighted_sum->Height()), IR(0, cur_mini_batch_size));
   // Target layers will not have a valid bp_input
-  if(m_prev_error_signal != NULL && m_prev_error_signal->Height() != 0 && m_prev_error_signal->Width() != 0) {
-    View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  if(bp_input != NULL) {
+    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
   }
-  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
+  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
-  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
-    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
-    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+  if(cur_mini_batch_size != m_mini_batch_size) {
+    // When the current mini-batch is partial, check with the other
+    // models to figure out the entire size of the complete mini-batch
+    Int total_mini_batch_size = comm->intermodel_allreduce((Int) cur_mini_batch_size);
     set_effective_minibatch_size(total_mini_batch_size);
-  }else {
+  }
+  else {
     set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
   }
 }
