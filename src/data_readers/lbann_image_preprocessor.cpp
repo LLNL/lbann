@@ -307,7 +307,7 @@ void lbann_image_preprocessor::internal_save_image(
   } else if (num_channels == 3) {
     dst_type = CV_8UC3;
   }  // cv_pixels ensures no other case happens.
-  sqpixels.convertTo(converted_pixels, dst_type, scale ? 1.0f / 255.0f : 1.0f);
+  sqpixels.convertTo(converted_pixels, dst_type, scale ? 255.0f : 1.0f);
   cv::imwrite(filename, converted_pixels);
 }
 
