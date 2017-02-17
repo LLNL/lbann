@@ -46,15 +46,16 @@ mkdir $SCRIPT_DIR
 cd $SCRIPT_DIR
 
 # Get the current gh-pages branch
-git clone -b gh-pages git@$GH_REPO_REF --single-branch
+git clone -b gh-pages git@$GH_REPO_REF --single-branch $GH_REPO_NAME
 cd $GH_REPO_NAME
 
 ##### Configure git.
+COMMIT_USER="Travis CI - Documentation Builder"
+COMMIT_EMAIL="vanessen1@llnl.gov"
 # Set the push default to simple i.e. push only the current branch.
 git config --global push.default simple
-# Pretend to be an user called Travis CI.
-git config user.name "Travis CI"
-git config user.email "travis@travis-ci.org"
+git config user.name "${COMMIT_USER}"
+git config user.email "${COMMIT_EMAIL}"
 
 # Remove everything currently in the gh-pages branch.
 # GitHub is smart enough to know which files have changed and which files have
@@ -69,6 +70,9 @@ rm -rf *
 # to NO, which it is by default. So creating the file just in case.
 echo "" > .nojekyll
 
+# Go back to the parent directory
+cd -
+
 ################################################################################
 ##### Generate the Doxygen code documentation and log the output.          #####
 echo 'Generating Doxygen code documentation...'
@@ -81,6 +85,9 @@ doxygen $DOXYFILE 2>&1 | tee doxygen.log
 # Check this by verifying that the html directory and the file html/index.html
 # both exist. This is a good indication that Doxygen did it's work.
 if [ -d "html" ] && [ -f "html/index.html" ]; then
+
+    # Go back into the repo
+    cd $GH_REPO_NAME
 
     echo 'Uploading documentation to the gh-pages branch...'
     # Add everything in this directory (the Doxygen code documentation) to the

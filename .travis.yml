@@ -10,10 +10,10 @@ branches:
   except:
     - gh-pages
 
-# Environment variables
+# Environment variables (Set the gh-pages repo dir to html to match with doxygen)
 env:
   global:
-    - GH_REPO_NAME: lbann
+    - GH_REPO_NAME: html
     - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
     - GH_REPO_REF: github.com:LLNL/lbann.git
     - DOXYCONFIG: $TRAVIS_BUILD_DIR/doc/Doxyfile.in
