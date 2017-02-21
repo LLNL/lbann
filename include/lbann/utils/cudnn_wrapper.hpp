@@ -251,6 +251,7 @@ namespace cudnn
     std::vector<DataType*> d_dst;
     std::vector<DataType*> d_work_space;
 
+    std::vector<DataType*> d_prev_error_signal;
     std::vector<DataType*> d_filter_gradient;
     std::vector<DataType*> d_error_signal;
     std::vector<DataType*> d_filter_work_space;
