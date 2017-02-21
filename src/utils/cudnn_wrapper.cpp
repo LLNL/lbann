@@ -531,7 +531,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
     cudnnHandle_t& handle = m_cudnn->m_handles[i];
 
     // Data samples assigned to GPU
-    const int first_pos = i * m_samples_per_gpu;
+    const int first_pos = Min(i * m_samples_per_gpu, src.Width());
     const int last_pos = Min((i+1) * m_samples_per_gpu, src.Width());
     if(first_pos >= last_pos) {
       continue;
