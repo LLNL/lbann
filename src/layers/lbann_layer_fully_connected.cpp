@@ -98,7 +98,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     /// Given that we don't include the bias term here does that mean that we are setting it to zero to start with
     // Initialize weights
     DistMat weights;
-    View(weights, *m_weights, IR(0,NumNeurons), IR(0,numPrevNeurons));
+    View(weights, *m_weights, ALL, IR(0,numPrevNeurons));
     switch(m_weight_initialization) {
     case weight_initialization::uniform:
       uniform_fill(weights, weights.Height(), weights.Width(),
@@ -147,12 +147,12 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
 
     /// Setup independent views of the weight matrix for the activations and bias terms
-    View(m_activation_weights_v, *m_weights, IR(0, m_weights->Height()), IR(0, m_weights->Width()-1));
-    View(m_bias_weights_v, *m_weights, IR(0, m_weights->Height()), IR(m_weights->Width()-1, m_weights->Width()));
+    View(m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
+    View(m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
 
     /// Setup independent views of the weights gradient matrix for the activations and bias terms
-    View(m_activation_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(0, m_weights_gradient->Width()-1));
-    View(m_bias_weights_gradient_v, *m_weights_gradient, IR(0, m_weights_gradient->Height()), IR(m_weights_gradient->Width()-1, m_weights_gradient->Width()));
+    View(m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
+    View(m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(m_bias_bp_t, m_mini_batch_size, 1);
@@ -171,31 +171,35 @@ void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
 void lbann::FullyConnectedLayer::fp_linearity()
 {
   // Apply forward prop linearity
-  // Note that this is done on the entire matrix, regardless of if there is a partial mini-batch
-  // Given that only the last mini-batch in an epoch could be smaller, it is not necessary to operate only on the sub-matrix
 
-  StarMat local_bias_weights(comm->get_model_grid());
-  Copy(m_bias_weights_v, local_bias_weights);
-  IndexDependentFill(*m_weighted_sum, (std::function<DataType(El::Int,El::Int)>)
-                     ([this, local_bias_weights](El::Int r, El::Int c)->DataType { 
-                       El::Int rL = local_bias_weights.LocalRow(r);
-                       if(!local_bias_weights.IsLocal(r,0)) { throw lbann_exception("Bad fill");}
-                       return local_bias_weights.GetLocal(rL,0) * m_bias_term;
+  // Apply bias
+  DistMatrix<DataType,MC,STAR> bias_weights_mc_star(m_bias_weights_v);
+  const Mat& local_bias_weights = bias_weights_mc_star.Matrix();
+  IndexDependentFill(m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
+                     ([&local_bias_weights](El::Int r, El::Int c)->DataType {
+                       return local_bias_weights.Get(r);
                      }));
-  Gemm(NORMAL, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_activations, (DataType) 1., *m_weighted_sum);
+  Scale(m_bias_term, *m_weighted_sum_v);
+
+  // Apply weight matrix
+  Gemm(NORMAL, NORMAL, DataType(1), m_activation_weights_v, *m_prev_activations_v,
+       DataType(1), *m_weighted_sum_v);
+
+  // Copy result to output matrix
   Copy(*m_weighted_sum_v, *m_activations_v);
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
   // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, (DataType) 1., m_activation_weights_v, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+  Gemm(TRANSPOSE, NORMAL, DataType(1), m_activation_weights_v, *m_prev_error_signal_v,
+       DataType(0), *m_error_signal_v);
   // Compute update for activation weights
-  Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, (DataType) 0., m_activation_weights_gradient_v);
+  Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       *m_prev_activations_v, DataType(0), m_activation_weights_gradient_v);
   // Compute update for bias terms
-  Gemv(NORMAL, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       m_bias_bp_t_v, (DataType) 0., m_bias_weights_gradient_v);
+  Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       m_bias_bp_t_v, DataType(0), m_bias_weights_gradient_v);
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {

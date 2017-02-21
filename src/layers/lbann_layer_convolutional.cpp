@@ -123,6 +123,8 @@ convolutional_layer::convolutional_layer(const uint index,
                                              conv_strides,
                                              m_mini_batch_size,
                                              cudnn);
+  is_pinned_fwd = false;
+  is_pinned_bwd = false;
 #endif // __LIB_CUDNN
 
 }
@@ -214,29 +216,77 @@ void convolutional_layer::setup(const int num_prev_neurons)
   
   // Initialize matrices
   Zeros(*m_weights_gradient, m_filter_size+NumNeurons, 1);
-  Ones(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
-  Ones(*m_activations, NumNeurons, m_mini_batch_size);
+}
 
+static void pin_memory_block(cudnn::cudnn_manager* cudnn_mgr, ElMat *mat)
+{
+    const int w = (mat->Matrix()).Width();
+    const int h = (mat->Matrix()).Height();
+    const int sz = w*h*sizeof(DataType);
+    void* ptr = (void*) (mat->Matrix()).Buffer();
+    cudnn_mgr->pin_ptr(ptr, w*h*sizeof(DataType));
+}
+
+void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
+{
+  if (!m_cudnn_layer) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
+  if (!cudnn_mgr) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  pin_memory_block(cudnn_mgr, m_weights);
+  pin_memory_block(cudnn_mgr, m_weighted_sum);
+  pin_memory_block(cudnn_mgr, m_activations);
+  pin_memory_block(cudnn_mgr, m_prev_activations);
+
+  is_pinned_fwd = true;
+}
+
+void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
+{
+  if (!m_cudnn_layer) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
+  if (!cudnn_mgr) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  pin_memory_block(cudnn_mgr, m_error_signal);
+  pin_memory_block(cudnn_mgr, m_prev_error_signal);
+  pin_memory_block(cudnn_mgr, m_weights_gradient);
+
+  is_pinned_bwd = true;
 }
 
 void lbann::convolutional_layer::fp_linearity() {
-  
+
   // Get local matrices
-  /// @todo Rename variables to something more descriptive
-  const Mat& WBLocal = m_weights->LockedMatrix();
-  const Mat& XLocal = m_prev_activations_v->LockedMatrix();
-  Mat& ZLocal = m_weighted_sum_v->Matrix();
-  Mat& YLocal = m_activations_v->Matrix();
-  Mat filters = WBLocal(IR(0,m_filter_size),ALL);
-  Mat bias = WBLocal(IR(m_filter_size,END),ALL);
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  const Mat& weights_local = m_weights->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& activations_local = m_activations_v->Matrix();
+
+  // Get filters and bias
+  const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
+  const Mat bias_local = weights_local(IR(m_filter_size,END), ALL);
 
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
+    if (!is_pinned_fwd) pin_memory_blocks_fwd();
     // cuDNN convolutional layer forward pass
-    m_cudnn_layer->forward(XLocal, filters, bias, ZLocal);
+    m_cudnn_layer->forward(prev_activations_local, filters_local, bias_local, weighted_sum_local);
 #else
     throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
@@ -250,14 +300,14 @@ void lbann::convolutional_layer::fp_linearity() {
     ////////////////////////////////////////////////////////////
 
     // Apply bias to each sample in mini-batch
-    for(int sample = 0; sample < XLocal.Width(); ++sample) {
-      Mat output_sample = ZLocal(IR(0,NumNeurons), IR(sample));
-      Copy(bias, output_sample);
-    }
+    IndexDependentFill(weighted_sum_local, (std::function<DataType(El::Int,El::Int)>)
+                       ([this, &bias_local](El::Int r, El::Int c)->DataType {
+                         return bias_local.Get(r,0); 
+                       }));
 
     // Initialize convolution matrix
     Mat convolution_matrix;
-    Zeros(convolution_matrix, NumNeurons, XLocal.Height());
+    Zeros(convolution_matrix, NumNeurons, prev_activations_local.Height());
 
     // Iterate through filters
     int row = 0;
@@ -265,9 +315,9 @@ void lbann::convolutional_layer::fp_linearity() {
         output_channel < m_num_output_channels;
         ++output_channel) {
       const int current_filter_size = m_filter_size / m_num_output_channels;
-      const Mat filter = filters(IR(output_channel*current_filter_size,
-                                    (output_channel+1)*current_filter_size),
-                                 ALL);
+      const Mat filter = filters_local(IR(output_channel*current_filter_size,
+                                          (output_channel+1)*current_filter_size),
+                                       ALL);
 
       // Iterate through filter offsets
       // Note: each offset corresponds to a row of the convolution matrix
@@ -310,7 +360,7 @@ void lbann::convolutional_layer::fp_linearity() {
               convolution_matrix.Set(row, col, w);
 
               // Move to next convolution matrix entry
-              col += XLocal.Height() / m_num_input_channels;
+              col += prev_activations_local.Height() / m_num_input_channels;
               filter_flat_pos += current_filter_size / m_num_input_channels;
 
             }
@@ -346,13 +396,13 @@ void lbann::convolutional_layer::fp_linearity() {
 
     // Apply convolution matrix
     Gemm(NORMAL, NORMAL,
-         DataType(1), convolution_matrix, XLocal,
-         DataType(1), ZLocal);
+         DataType(1), convolution_matrix, prev_activations_local,
+         DataType(1), weighted_sum_local);
 
   }
 
   // Z and Y are identical after fp linearity step
-  Copy(ZLocal, YLocal);
+  Copy(weighted_sum_local, activations_local);
 
 }
 
@@ -360,15 +410,20 @@ void lbann::convolutional_layer::bp_linearity() {
 
   // Get local matrices
   const Mat& input_local = m_prev_activations_v->LockedMatrix();
-  const Mat& filters_local = m_weights->LockedMatrix()(IR(0,m_filter_size),ALL);
+  const Mat& weights_local = m_weights->LockedMatrix();
   const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-  Mat filters_gradient_local = m_weights_gradient->Matrix()(IR(0,m_filter_size),ALL);
-  Mat bias_gradient_local = m_weights_gradient->Matrix()(IR(m_filter_size,END),ALL);
+  Mat& weights_gradient_local = m_weights_gradient->Matrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
+
+  // Get filters and bias
+  const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
+  Mat filters_gradient_local = weights_gradient_local(IR(0,m_filter_size), ALL);
+  Mat bias_gradient_local = weights_gradient_local(IR(m_filter_size,END), ALL);
 
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
+    if (!is_pinned_bwd) pin_memory_blocks_bwd();
     m_cudnn_layer->backward(input_local,
                             filters_local,
                             prev_error_signal_local,
@@ -595,7 +650,7 @@ void lbann::convolutional_layer::bp_linearity() {
 
   // Obtain filter gradient with reduction and scaling
   AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
-  *m_weights_gradient *= 1.0/get_effective_minibatch_size();
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
 
 }
 

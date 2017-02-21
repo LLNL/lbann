@@ -10,12 +10,12 @@ branches:
   except:
     - gh-pages
 
-# Environment variables
+# Environment variables (Set the gh-pages repo dir to html to match with doxygen)
 env:
   global:
-    - GH_REPO_NAME: LLNL/lbann
+    - GH_REPO_NAME: html
     - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
-    - GH_REPO_REF: github.com/LLNL/lbann.git
+    - GH_REPO_REF: github.com:LLNL/lbann.git
     - DOXYCONFIG: $TRAVIS_BUILD_DIR/doc/Doxyfile.in
     - SCRIPT_DIR: code_docs
 
@@ -34,13 +34,6 @@ script:
   - cp $DOXYCONFIG $DOXYFILE
   - chmod +x config/config-doxygen.sh
   - ./config/config-doxygen.sh
-  - diff $DOXYCONFIG $DOXYFILE
-#  - cat $DOXYFILE
-
-#  - sed -ie 's#@PROJECT_SOURCE_DIR@#$TRAVIS_BUILD_DIR#g' $DOXYFILE
-#  - sed -ie 's#@DOXYGEN_OUTPUT_DIR@#$TRAVIS_BUILD_DIR/$SCRIPT_DIR#g' $DOXYFILE
-#  - sed -ie 's#@LBANN_MAJOR_VERSION@.@LBANN_MINOR_VERSION@#$TRAVIS_JOB_ID#g'  $DOXYFILE
-#  - mkdir -p $TRAVIS_BUILD_DIR/$GH_REPO_NAME/doc
 
 # Generate and deploy documentation
 after_success:
@@ -51,3 +44,5 @@ after_success:
 before_install:
   - openssl aes-256-cbc -K $encrypted_b9b32342f7d0_key -iv $encrypted_b9b32342f7d0_iv
     -in config/travisci_rsa.enc -out config/travisci_rsa -d
+  - chmod 0600 config/travisci_rsa
+  - cp config/travisci_rsa ~/.ssh/id_rsa

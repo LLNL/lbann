@@ -177,21 +177,21 @@ public:
    * @param qerror Running quantization error.
    * @param proportion Quantize one in proportion of the values.
    */
-  template <typename T>
-  void adaptive_threshold_quantize(const Mat& mat, std::vector<T>& q, Mat& qerror,
+  template <typename colT, typename rowT>
+  void adaptive_threshold_quantize(const Mat& mat, std::vector<rowT>& q, Mat& qerror,
                                    int proportion);
-  template <typename T>
-  void adaptive_threshold_quantize(const DistMat& mat, std::vector<T>& q,
+  template <typename colT, typename rowT>
+  void adaptive_threshold_quantize(const DistMat& mat, std::vector<rowT>& q,
                                    Mat& qerror, int proportion);
   /**
    * Unquantize an adaptively-thresholded-and-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
    */
-  template <typename T>
-  void adaptive_threshold_unquantize(const std::vector<T>& q, Mat& mat);
-  template <typename T>
-  void adaptive_threshold_unquantize(const std::vector<T>& q, DistMat& mat);
+  template <typename colT, typename rowT>
+  void adaptive_threshold_unquantize(const std::vector<rowT>& q, Mat& mat);
+  template <typename colT, typename rowT>
+  void adaptive_threshold_unquantize(const std::vector<rowT>& q, DistMat& mat);
 
   /**
    * As with intermodel_sum_quantized, but use threshold quantization.
@@ -358,6 +358,8 @@ private:
   size_t quantized_count;
 
   /** Pre-allocated receive buffers for adaptive quantization. */
+  std::unordered_map<Int, std::vector<uint16_t>> adaptive_recv16_bufs1;
+  std::unordered_map<Int, std::vector<uint16_t>> adaptive_recv16_bufs2;
   std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs1;
   std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs2;
   std::unordered_map<Int, std::vector<uint64_t>> adaptive_recv64_bufs1;
@@ -392,8 +394,8 @@ private:
   /**
    * Variant of adaptive_threshold_unquantize that adds its entries.
    */
-  template <typename T>
-  void adaptive_threshold_unquantize_add(const std::vector<T>& q, Mat& mat);
+  template <typename colT, typename rowT>
+  void adaptive_threshold_unquantize_add(const std::vector<rowT>& q, Mat& mat);
   /**
    * Variant of adaptive_threshold_quantize that also replaces entries in mat
    * with their quantized version. This is equivalent to:
@@ -401,21 +403,21 @@ private:
    * adaptive_threshold_unquantize(q, mat);
    * Note this does not (currently) support compression.
    */
-  template <typename T>
-  void adaptive_threshold_quantize_replace(Mat& mat, std::vector<T>& q,
+  template <typename colT, typename rowT>
+  void adaptive_threshold_quantize_replace(Mat& mat, std::vector<rowT>& q,
                                            Mat& qerror, int proportion);
   /**
    * Ensure that q is no more than a factor of MAX_QUANTIZED_EXCESS larger
    * than optimal.
    */
-  template <typename T>
-  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, std::vector<T>& q,
+  template <typename colT, typename rowT>
+  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, std::vector<rowT>& q,
                                 int proportion);
-  template <typename T>
+  template <typename colT, typename rowT>
   void intermodel_sum_adaptive_threshold_quantized_impl(
     lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
-    std::unordered_map<Int, std::vector<T>>& adaptive_recv_bufs1,
-    std::unordered_map<Int, std::vector<T>>& adaptive_recv_bufs2);
+    std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs1,
+    std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs2);
 
   /** Handle compression starting from arbitrary locations. */
   void compress_thresholds(const ThreshQuantized& q,

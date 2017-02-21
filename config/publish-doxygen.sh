@@ -38,34 +38,40 @@ __AUTHOR__="Brian Van Essen"
 echo 'Setting up the script...'
 # Exit with nonzero exit code if anything fails
 set -e
+# Echo on
+#set -x
 
 # Create a clean working directory for this script.
 mkdir $SCRIPT_DIR
 cd $SCRIPT_DIR
 
 # Get the current gh-pages branch
-git clone -b gh-pages https://git@$GH_REPO_REF --single-branch
+git clone -b gh-pages git@$GH_REPO_REF --single-branch $GH_REPO_NAME
 cd $GH_REPO_NAME
 
 ##### Configure git.
+COMMIT_USER="Travis CI - Documentation Builder"
+COMMIT_EMAIL="vanessen1@llnl.gov"
 # Set the push default to simple i.e. push only the current branch.
 git config --global push.default simple
-# Pretend to be an user called Travis CI.
-git config user.name "Travis CI"
-git config user.email "travis@travis-ci.org"
+git config user.name "${COMMIT_USER}"
+git config user.email "${COMMIT_EMAIL}"
 
 # Remove everything currently in the gh-pages branch.
 # GitHub is smart enough to know which files have changed and which files have
 # stayed the same and will only update the changed files. So the gh-pages branch
 # can be safely cleaned, and it is sure that everything pushed later is the new
 # documentation.
-#rm -rf *
+rm -rf *
 
 # Need to create a .nojekyll file to allow filenames starting with an underscore
 # to be seen on the gh-pages site. Therefore creating an empty .nojekyll file.
 # Presumably this is only needed when the SHORT_NAMES option in Doxygen is set
 # to NO, which it is by default. So creating the file just in case.
 echo "" > .nojekyll
+
+# Go back to the parent directory
+cd -
 
 ################################################################################
 ##### Generate the Doxygen code documentation and log the output.          #####
@@ -80,21 +86,24 @@ doxygen $DOXYFILE 2>&1 | tee doxygen.log
 # both exist. This is a good indication that Doxygen did it's work.
 if [ -d "html" ] && [ -f "html/index.html" ]; then
 
+    # Go back into the repo
+    cd $GH_REPO_NAME
+
     echo 'Uploading documentation to the gh-pages branch...'
     # Add everything in this directory (the Doxygen code documentation) to the
     # gh-pages branch.
     # GitHub is smart enough to know which files have changed and which files have
     # stayed the same and will only update the changed files.
-#    git add --all
+    git add --all
 
     # Commit the added files with a title and description containing the Travis CI
     # build number and the GitHub commit reference that issued this build.
-#    git commit -m "Deploy code docs to GitHub Pages Travis build: ${TRAVIS_BUILD_NUMBER}" -m "Commit: ${TRAVIS_COMMIT}"
+    git commit -m "Deploy code docs to GitHub Pages Travis build: ${TRAVIS_BUILD_NUMBER}" -m "Commit: ${TRAVIS_COMMIT}"
 
     # Force push to the remote gh-pages branch.
     # The ouput is redirected to /dev/null to hide any sensitive credential data
     # that might otherwise be exposed.
-#    git push --force "https://${GH_REPO_TOKEN}@${GH_REPO_REF}" > /dev/null 2>&1
+    git push --force origin > /dev/null 2>&1
 else
     echo '' >&2
     echo 'Warning: No documentation (html) files have been found!' >&2
