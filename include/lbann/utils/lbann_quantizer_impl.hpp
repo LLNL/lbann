@@ -59,8 +59,9 @@ void lbann_quantizer::adaptive_threshold_quantize(
   const colT ldim = mat.LDim();
   const DataType* const __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const colT row_header_factor = HEADER_FACTOR * (sizeof(rowT) == 2 ? 2 : 1);
-  const colT header_len = row_header_factor * (width + 1);
+  const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
+  const colT header_len = row_header_factor * HEADER_FACTOR * width +
+    row_header_factor;
   q.resize(header_len);  // Space for the header.
   std::vector<std::vector<rowT>> thread_qs(omp_get_max_threads());
   std::vector<colT> quantized_sums(omp_get_max_threads(), 0);
@@ -75,7 +76,9 @@ void lbann_quantizer::adaptive_threshold_quantize(
     const int tid = omp_get_thread_num();
     colT num_quantized = 0;
     std::vector<rowT>& thread_q = thread_qs[tid];
-    thread_q.resize(2 * height * width / proportion / omp_get_max_threads());
+    thread_q.resize(std::max(
+      2 * height * width / proportion / omp_get_max_threads(),
+      (colT) 4));
     colT size = thread_q.size();
     #pragma omp for schedule(static)
     for (colT col = 0; col < width; ++col) {
@@ -280,8 +283,9 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   const colT ldim = mat.LDim();
   DataType* __restrict__ mat_buf = mat.Buffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
-  const colT row_header_factor = HEADER_FACTOR * (sizeof(rowT) == 2 ? 2 : 1);
-  const colT header_len = row_header_factor * (width + 1);
+  const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
+  const colT header_len = row_header_factor * HEADER_FACTOR * width +
+    row_header_factor;
   q.resize(header_len);  // Space for the header.
   std::vector<std::vector<rowT>> thread_qs(omp_get_max_threads());
   std::vector<colT> quantized_sums(omp_get_max_threads(), 0);
@@ -295,7 +299,9 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
     const int tid = omp_get_thread_num();
     colT num_quantized = 0;
     std::vector<rowT>& thread_q = thread_qs[tid];
-    thread_q.resize(2 * height * width / proportion / omp_get_max_threads());
+    thread_q.resize(std::max(
+      2 * height * width / proportion / omp_get_max_threads(),
+      (colT) 4));
     colT size = thread_q.size();
     #pragma omp for schedule(static)
     for (colT col = 0; col < width; ++col) {
@@ -399,8 +405,10 @@ void lbann_quantizer::adaptive_threshold_bound(
   const colT width = mat.Width();
   const colT height = mat.Height();
   const colT ldim = mat.LDim();
-  const colT row_header_factor = HEADER_FACTOR * (sizeof(rowT) == 2 ? 2 : 1);
-  const colT num_quantized = q.size() - row_header_factor * (width + 1);
+  const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
+  const colT header_len = row_header_factor * HEADER_FACTOR * width +
+    row_header_factor;
+  const colT num_quantized = q.size() - header_len;
   colT* q_col = (colT*) q.data();
   if (num_quantized > MAX_QUANTIZED_EXCESS * width * height / proportion) {
     // Ensure there is a maximum bound on the number of entries sent.
@@ -445,9 +453,8 @@ void lbann_quantizer::adaptive_threshold_bound(
                      remove_counts.begin());
     for (colT header_loc = 0; header_loc < width * HEADER_FACTOR;
          header_loc += HEADER_FACTOR) {
-      q_col[header_loc] -= remove_counts[header_loc / HEADER_FACTOR];
+      q_col[header_loc + HEADER_FACTOR] -= remove_counts[header_loc / HEADER_FACTOR];
     }
-    q_col[HEADER_FACTOR * width] = (colT) q.size();
   }
 }
 
@@ -474,8 +481,10 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zero(qerror);
   }
-  const colT row_header_factor = HEADER_FACTOR * (sizeof(rowT) == 2? 2 : 1);
-  const Int max_size = mat.Width() * row_header_factor + 1 +
+  const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
+  const colT header_len = row_header_factor * HEADER_FACTOR * mat.Width() +
+    row_header_factor;
+  const Int max_size = header_len +
     MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion;
   if (adaptive_recv_bufs1.find(max_size) == adaptive_recv_bufs1.end()) {
     // Initialize receive buffers.
@@ -553,7 +562,8 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
     [&ag_recv, &send_size, proportion, this]
     (mpi_rowT*, Mat& accum) {
       adaptive_threshold_unquantize<colT, rowT>(ag_recv, accum);
-      send_size = sizeof(rowT) * ((colT*) ag_recv.data())[accum.Width() * HEADER_FACTOR];
+      const colT* q_col = (const colT*) ag_recv.data();
+      send_size = sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
       // Fix the received bytes count.
       ag_bytes_received -= ag_recv.size() * sizeof(rowT);
       ag_bytes_received += send_size;

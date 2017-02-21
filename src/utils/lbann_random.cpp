@@ -55,7 +55,7 @@ void init_random(int seed) {
     get_generator().seed(seed);
 #endif
 #ifdef LBANN_SET_EL_RNG
-    El::Generator().seed(seed);
+    El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
 #endif
   } else {
     // Seed with a random value.

@@ -38,6 +38,18 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 
+
+// moved to make it visible from lbann_layer_convolution
+#include "lbann/utils/lbann_exception.hpp"
+#define checkCUDA(status) {                                             \
+    if (status != cudaSuccess) {                                        \
+      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
+      cudaDeviceReset();                                                \
+      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
+    }                                                                   \
+  }
+
 namespace cudnn
 {
 
@@ -59,6 +71,13 @@ namespace cudnn
     /** Print cuDNN version information to standard output */
     void print_version() const;
 
+    /// Register a block of memory to pin
+    void pin_ptr(void* ptr, size_t sz);
+    /// Unregister a block of pinnedmemory
+    void unpin_ptr(void* ptr);
+    /// Unregister all the memories registered to pin
+    void unpin_ptrs(void);
+
   public:
 
     /** LBANN communicator */
@@ -79,8 +98,45 @@ namespace cudnn
     std::vector<cudaStream_t> m_streams;
     /** cuDNN handles for current MPI rank */
     std::vector<cudnnHandle_t> m_handles;
+    /// pinned memory addresses
+    std::map<void*, size_t> pinned_ptr;
 
   };
+
+  inline void cudnn_manager::pin_ptr(void* ptr, size_t sz)
+  {
+    if (__builtin_expect(!ptr, false)) return;
+    std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
+    if (it == pinned_ptr.end()) {
+      //std::cout << "adding a new ptr " << reinterpret_cast<unsigned long long>(ptr) << std::endl;
+      pinned_ptr[ptr] = sz;
+      checkCUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
+    } else {
+      // TODO: We can check here if the block defined by (ptr,sz) overlaps with an existing one.
+    }
+  }
+
+  inline void cudnn_manager::unpin_ptr(void* const ptr)
+  {
+    std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
+    if (it != pinned_ptr.end()) {
+      checkCUDA(cudaHostUnregister(it->first));
+      pinned_ptr.erase(it);
+    }
+  }
+
+  inline void cudnn_manager::unpin_ptrs(void)
+  {
+    std::cout << "unpinning " << pinned_ptr.size() << " addresses" << std::endl;
+    std::map<void*, size_t>::iterator it = pinned_ptr.begin();
+    std::map<void*, size_t>::iterator itend = pinned_ptr.end();
+
+    for(; it != itend; ++it) {
+      checkCUDA(cudaHostUnregister(it->first));
+    }
+    pinned_ptr.clear();
+  }
+
 
   /// cuDNN convolutional layer
   class cudnn_convolutional_layer
@@ -112,6 +168,8 @@ namespace cudnn
     /** @todo Handle case where GPU can't hold entire mini-batch. */
     void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
                   Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
+
+    cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
 
   public:
       
@@ -148,6 +206,9 @@ namespace cudnn
     /// cuDNN datatype
     const cudnnDataType_t m_cudnn_data_type;
 
+    /// Number of data samples per GPU
+    int m_samples_per_gpu;
+
     /// Input tensor descriptor
     cudnnTensorDescriptor_t m_src_desc;
     /// Output tensor descriptor
@@ -180,6 +241,29 @@ namespace cudnn
     std::vector<int> m_src_strides;
     /// Output tensor strides
     std::vector<int> m_dst_strides;
+
+
+    const int m_mini_batch_size;
+
+    std::vector<DataType*> d_src;
+    std::vector<DataType*> d_filter;
+    std::vector<DataType*> d_bias;
+    std::vector<DataType*> d_dst;
+    std::vector<DataType*> d_work_space;
+
+    std::vector<DataType*> d_filter_gradient;
+    std::vector<DataType*> d_error_signal;
+    std::vector<DataType*> d_filter_work_space;
+    std::vector<DataType*> d_data_work_space;
+
+    void device_allocate(void);
+    void device_deallocate(void);
+    void device_allocate_for_forward(void);
+    void device_allocate_for_backward(void);
+    void device_deallocate_for_forward(void);
+    void device_deallocate_for_backward(void);
+
+    Mat temp;
 
   };
 

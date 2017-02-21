@@ -158,15 +158,15 @@ void pooling_layer::setup(const int num_prev_neurons)
 void lbann::pooling_layer::fp_linearity() {
   
   // Get local matrices
-  /// @todo More descriptive variable names
-  const Mat& XLocal = m_prev_activations_v->LockedMatrix();
-  Mat& ZLocal = m_weighted_sum_v->Matrix();
-  Mat& YLocal = m_activations_v->Matrix();
+  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& output_local = m_activations_v->Matrix();
 
   // Apply pooling on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    m_cudnn_layer->forward(XLocal, ZLocal);
+    // cuDNN pooling layer forward pass
+    m_cudnn_layer->forward(input_local, weighted_sum_local);
 #else
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
 #endif
@@ -184,9 +184,9 @@ void lbann::pooling_layer::fp_linearity() {
     }
 
     // Iterate through data samples in mini-batch
-    for(int sample = 0; sample < XLocal.Width(); ++sample) {
-      const Mat input_sample = XLocal(ALL, IR(sample));
-      Mat output_sample = ZLocal(ALL, IR(sample));
+    for(int sample = 0; sample < input_local.Width(); ++sample) {
+      const Mat input_sample = input_local(ALL, IR(sample));
+      Mat output_sample = weighted_sum_local(ALL, IR(sample));
 
       // Iterate through channels
       for(int channel = 0; channel < m_num_channels; ++channel) {
@@ -268,8 +268,8 @@ void lbann::pooling_layer::fp_linearity() {
 
   }
 
-  // Z and Y are identical after fp linearity step
-  Copy(ZLocal, YLocal);
+  // weighted_sum and output are identical after fp linearity step
+  Copy(weighted_sum_local, output_local);
 
 }
 
