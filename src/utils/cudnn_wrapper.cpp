@@ -37,7 +37,7 @@
 
 using namespace cudnn;
 
-#define _ALLOC_DEV_ONCE_
+#define _ALLOC_DEVICE_MEM_ONCE_
 
 // Error utility macros
 #define checkCUDNN(status) {                                            \
@@ -176,10 +176,8 @@ cudnn_convolutional_layer
   : m_num_dims(num_dims), m_cudnn(cudnn),
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
     m_src_desc(NULL), m_dst_desc(NULL),
-    m_filter_desc(NULL), m_conv_desc(NULL)
-#ifdef _ALLOC_DEV_ONCE_
-    , m_mini_batch_size(mini_batch_size)
-#endif
+    m_filter_desc(NULL), m_conv_desc(NULL),
+    m_mini_batch_size(mini_batch_size)
 {
 
   // Get number of GPUs
@@ -230,7 +228,7 @@ cudnn_convolutional_layer
 
 cudnn_convolutional_layer::~cudnn_convolutional_layer()
 {
-#ifdef _ALLOC_DEV_ONCE_
+#ifdef _ALLOC_DEVICE_MEM_ONCE_
   device_deallocate();
 #endif
   if(m_src_desc)    checkCUDNN(cudnnDestroyTensorDescriptor(m_src_desc));
@@ -284,7 +282,7 @@ void cudnn_convolutional_layer::setup()
                                                    m_filter_desc,
                                                    m_num_dims+2,
                                                    m_dst_dims.data()));
-#ifdef _ALLOC_DEV_ONCE_
+#ifdef _ALLOC_DEVICE_MEM_ONCE_
   const int num_gpus = m_cudnn->m_num_gpus;
   m_dst_dims[0] = m_samples_per_gpu;
 #endif
@@ -354,7 +352,7 @@ void cudnn_convolutional_layer::setup()
                                                           m_src_desc,
                                                           m_backward_data_algo,
                                                           &m_backward_data_work_space_size));
-#ifdef _ALLOC_DEV_ONCE_
+#ifdef _ALLOC_DEVICE_MEM_ONCE_
   device_allocate();
 #endif
   temp.Resize(m_filter_size, m_cudnn->m_num_gpus);
@@ -414,9 +412,13 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
   // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
 
-  //d_src.assign(num_gpus, NULL);
-  //d_filter.assign(num_gpus, NULL);
-  //d_prev_error_signal.assign(num_gpus, NULL);
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
+  d_src.assign(num_gpus, NULL);
+  d_filter.assign(num_gpus, NULL);
+  d_prev_error_signal.assign(num_gpus, NULL);
+#else // Otherwise reuse those blocks allocated for forward()
+  d_prev_error_signal = d_dst;
+#endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_filter_gradient.assign(num_gpus, NULL);
   d_error_signal.assign(num_gpus, NULL);
   d_filter_work_space.assign(num_gpus, NULL);
@@ -427,7 +429,7 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
     const int gpu = m_cudnn->m_gpus[i];
     cudaStream_t& stream = m_cudnn->m_streams[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-/* // Reuse those blocks allocated for forward()
+  #ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_src[i],
                                         m_src_size*m_samples_per_gpu*sizeof(DataType),
@@ -440,7 +442,7 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
                                         (void**) &d_prev_error_signal[i],
                                         m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
-*/
+  #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_filter_gradient[i],
                                         m_filter_size*sizeof(DataType),
@@ -477,10 +479,12 @@ void cudnn_convolutional_layer::device_deallocate_for_forward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+  #ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+  #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
     if(d_work_space[i]) {
       checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
     }
@@ -495,6 +499,9 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
     if(d_filter_work_space[i]) {
@@ -519,7 +526,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
   // Get number of GPUs
   const int num_gpus = m_cudnn->m_num_gpus;
 
-#ifndef _ALLOC_DEV_ONCE_
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
   device_allocate_for_forward();
 #endif
 
@@ -595,7 +602,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 
   }
 
-#ifndef _ALLOC_DEV_ONCE_
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
   device_deallocate_for_forward();
 #endif
 
@@ -634,11 +641,9 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   El::Gemv(El::NORMAL, DataType(1), prev_error_signal, ones,
            DataType(0), bias_gradient);
 
-#ifdef _ALLOC_DEV_ONCE_
-  std::vector<DataType*>& d_prev_error_signal = d_dst;
-#else
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
   device_allocate_for_backward();
-#endif // _ALLOC_DEV_ONCE_
+#endif // _ALLOC_DEVICE_MEM_ONCE_
 
   // Perform back propagation on each GPU
 #pragma omp parallel for
@@ -750,7 +755,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
     filter_gradient += temp(ALL, IR(i,i+1));
   }
 
-#ifndef _ALLOC_DEV_ONCE_
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
   device_deallocate_for_backward();
 #endif
 
