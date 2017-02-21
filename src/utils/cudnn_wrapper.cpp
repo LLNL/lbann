@@ -37,15 +37,9 @@
 
 using namespace cudnn;
 
+#define _ALLOC_DEV_ONCE_
+
 // Error utility macros
-#define checkCUDA(status) {                                             \
-    if (status != cudaSuccess) {                                        \
-      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
-    }                                                                   \
-  }
 #define checkCUDNN(status) {                                            \
     if (status != CUDNN_STATUS_SUCCESS) {                               \
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
@@ -160,6 +154,7 @@ cudnn_manager::~cudnn_manager()
       checkCUDNN(cudnnDestroy(m_handles[i]));
     }
   }
+  unpin_ptrs();
 }
 
 void cudnn_manager::print_version() const {
@@ -182,6 +177,9 @@ cudnn_convolutional_layer
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
     m_src_desc(NULL), m_dst_desc(NULL),
     m_filter_desc(NULL), m_conv_desc(NULL)
+#ifdef _ALLOC_DEV_ONCE_
+    , m_mini_batch_size(mini_batch_size)
+#endif
 {
 
   // Get number of GPUs
@@ -232,6 +230,9 @@ cudnn_convolutional_layer
 
 cudnn_convolutional_layer::~cudnn_convolutional_layer()
 {
+#ifdef _ALLOC_DEV_ONCE_
+  device_deallocate();
+#endif
   if(m_src_desc)    checkCUDNN(cudnnDestroyTensorDescriptor(m_src_desc));
   if(m_dst_desc)    checkCUDNN(cudnnDestroyTensorDescriptor(m_dst_desc));
   if(m_filter_desc) checkCUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
@@ -283,6 +284,11 @@ void cudnn_convolutional_layer::setup()
                                                    m_filter_desc,
                                                    m_num_dims+2,
                                                    m_dst_dims.data()));
+#ifdef _ALLOC_DEV_ONCE_
+  const int num_gpus = m_cudnn->m_num_gpus;
+  m_dst_dims[0] = m_samples_per_gpu;
+#endif
+
   m_dst_size = 1;
   for(int i=1; i<m_dst_dims.size(); ++i)
     m_dst_size *= m_dst_dims[i];
@@ -348,28 +354,31 @@ void cudnn_convolutional_layer::setup()
                                                           m_src_desc,
                                                           m_backward_data_algo,
                                                           &m_backward_data_work_space_size));
-
+#ifdef _ALLOC_DEV_ONCE_
+  device_allocate();
+#endif
+  temp.Resize(m_filter_size, m_cudnn->m_num_gpus);
+  m_cudnn->pin_ptr((void*) temp.Buffer(), temp.Height()*temp.Width()*sizeof(DataType));
 }
 
-void cudnn_convolutional_layer::forward(const Mat& src,
-                                        const Mat& filter,
-                                        const Mat& bias,
-                                        Mat& dst)
+void cudnn_convolutional_layer::device_allocate(void)
 {
+    device_allocate_for_forward();
+    device_allocate_for_backward();
+}
 
-  // Useful constants
-  const DataType one = 1;
-  const DataType zero = 0;
-
-  // Get number of GPUs
+void cudnn_convolutional_layer::device_allocate_for_forward(void)
+{
+  // Adjust input and output tensor dimensions to match input
   const int num_gpus = m_cudnn->m_num_gpus;
 
   // Allocate memory on GPUs
-  std::vector<DataType*> d_src(num_gpus, NULL);
-  std::vector<DataType*> d_filter(num_gpus, NULL);
-  std::vector<DataType*> d_bias(num_gpus, NULL);
-  std::vector<DataType*> d_dst(num_gpus, NULL);
-  std::vector<DataType*> d_work_space(num_gpus, NULL);
+  d_src.assign(num_gpus, NULL);
+  d_filter.assign(num_gpus, NULL);
+  d_bias.assign(num_gpus, NULL);
+  d_dst.assign(num_gpus, NULL);
+  d_work_space.assign(num_gpus, NULL);
+
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
@@ -398,6 +407,121 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                                           stream));
     }
   }
+}
+
+void cudnn_convolutional_layer::device_allocate_for_backward(void)
+{
+  // Adjust input and output tensor dimensions to match input
+  const int num_gpus = m_cudnn->m_num_gpus;
+
+  //d_src.assign(num_gpus, NULL);
+  //d_filter.assign(num_gpus, NULL);
+  //d_prev_error_signal.assign(num_gpus, NULL);
+  d_filter_gradient.assign(num_gpus, NULL);
+  d_error_signal.assign(num_gpus, NULL);
+  d_filter_work_space.assign(num_gpus, NULL);
+  d_data_work_space.assign(num_gpus, NULL);
+
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    const int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+/* // Reuse those blocks allocated for forward()
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_src[i],
+                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_filter[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_prev_error_signal[i],
+                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
+                                        stream));
+*/
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_filter_gradient[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_error_signal[i],
+                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
+                                        stream));
+    if(m_backward_filter_work_space_size > 0) {
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &d_filter_work_space[i],
+                                          m_backward_filter_work_space_size,
+                                          stream));
+    }
+    if(m_backward_data_work_space_size > 0) {
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &d_data_work_space[i],
+                                          m_backward_data_work_space_size,
+                                          stream));
+    }
+  }
+}
+
+void cudnn_convolutional_layer::device_deallocate(void)
+{
+  device_deallocate_for_forward();
+  device_deallocate_for_backward();
+}
+
+void cudnn_convolutional_layer::device_deallocate_for_forward(void)
+{
+  const int num_gpus = m_cudnn->m_num_gpus;
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    if(d_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
+    }
+  }
+
+}
+
+void cudnn_convolutional_layer::device_deallocate_for_backward(void)
+{
+  const int num_gpus = m_cudnn->m_num_gpus;
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    const int gpu = m_cudnn->m_gpus[i];
+    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
+    if(d_filter_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_work_space[i]));
+    }
+    if(d_data_work_space[i]) {
+      checkCUDA(gpu_memory.DeviceFree(gpu, d_data_work_space[i]));
+    }
+  }
+}
+
+void cudnn_convolutional_layer::forward(const Mat& src,
+                                        const Mat& filter,
+                                        const Mat& bias,
+                                        Mat& dst)
+{
+
+  // Useful constants
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Get number of GPUs
+  const int num_gpus = m_cudnn->m_num_gpus;
+
+#ifndef _ALLOC_DEV_ONCE_
+  device_allocate_for_forward();
+#endif
 
   // Perform convolution with each GPU
 #pragma omp parallel for
@@ -471,19 +595,9 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 
   }
 
-  // Free memory on GPU
-#pragma omp parallel for
-  for(int i=0; i<num_gpus; ++i) {
-    const int gpu = m_cudnn->m_gpus[i];
-    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
-    if(d_work_space[i]) {
-      checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
-    }
-  }
+#ifndef _ALLOC_DEV_ONCE_
+  device_deallocate_for_forward();
+#endif
 
   // Synchronize CUDA streams
 #pragma omp parallel for
@@ -520,52 +634,11 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   El::Gemv(El::NORMAL, DataType(1), prev_error_signal, ones,
            DataType(0), bias_gradient);
 
-  // Allocate memory on GPUs
-  std::vector<DataType*> d_src(num_gpus, NULL);
-  std::vector<DataType*> d_filter(num_gpus, NULL);
-  std::vector<DataType*> d_prev_error_signal(num_gpus, NULL);
-  std::vector<DataType*> d_filter_gradient(num_gpus, NULL);
-  std::vector<DataType*> d_error_signal(num_gpus, NULL);
-  std::vector<DataType*> d_filter_work_space(num_gpus, NULL);
-  std::vector<DataType*> d_data_work_space(num_gpus, NULL);
-#pragma omp parallel for
-  for(int i=0; i<num_gpus; ++i) {
-    const int gpu = m_cudnn->m_gpus[i];
-    cudaStream_t& stream = m_cudnn->m_streams[i];
-    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_src[i],
-                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_filter[i],
-                                        m_filter_size*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_prev_error_signal[i],
-                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_filter_gradient[i],
-                                        m_filter_size*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_error_signal[i],
-                                        m_src_size*m_samples_per_gpu*sizeof(DataType),
-                                        stream));
-    if(m_backward_filter_work_space_size > 0) {
-      checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                          (void**) &d_filter_work_space[i],
-                                          m_backward_filter_work_space_size,
-                                          stream));
-    }
-    if(m_backward_data_work_space_size > 0) {
-      checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                          (void**) &d_data_work_space[i],
-                                          m_backward_data_work_space_size,
-                                          stream));
-    }
-  }
+#ifdef _ALLOC_DEV_ONCE_
+  std::vector<DataType*>& d_prev_error_signal = d_dst;
+#else
+  device_allocate_for_backward();
+#endif // _ALLOC_DEV_ONCE_
 
   // Perform back propagation on each GPU
 #pragma omp parallel for
@@ -641,7 +714,7 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                             &zero,
                                             m_src_desc,
                                             d_error_signal[i]));
-    
+
     // Transfer data from GPU
     checkCUDA(cudaMemcpy2DAsync(error_signal.Buffer(0,first_pos),
                                 error_signal.LDim()*sizeof(DataType),
@@ -655,43 +728,31 @@ void cudnn_convolutional_layer::backward(const Mat& src,
   }
   
   // Transfer and accumulate filter gradients from GPUs
-  Mat temp(filter_gradient.Height(), filter_gradient.Width());
+  El::Zero(filter_gradient);
   El::Zero(temp);
+
   for(int i=0; i<num_gpus; ++i) {
     if(i*m_samples_per_gpu >= src.Width()) {
       break;
     }
     checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaMemcpy(temp.Buffer(),
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    checkCUDA(cudaMemcpyAsync(temp(ALL, IR(i,i+1)).Buffer(), // assuming 1 column otherwise filter_gradient.Width()*i with 2DAsync
                          d_filter_gradient[i],
                          m_filter_size*sizeof(DataType),
-                         cudaMemcpyDeviceToHost));
-    filter_gradient += temp;
-  }
-
-  // Free memory on GPU
-#pragma omp parallel for
-  for(int i=0; i<num_gpus; ++i) {
-    const int gpu = m_cudnn->m_gpus[i];
-    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
-    if(d_filter_work_space[i]) {
-      checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_work_space[i]));
-    }
-    if(d_data_work_space[i]) {
-      checkCUDA(gpu_memory.DeviceFree(gpu, d_data_work_space[i]));
-    }
+                         cudaMemcpyDeviceToHost,
+                         stream));
   }
 
   // Synchronize CUDA streams
-#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
+    filter_gradient += temp(ALL, IR(i,i+1));
   }
+
+#ifndef _ALLOC_DEV_ONCE_
+  device_deallocate_for_backward();
+#endif
 
 }
 
