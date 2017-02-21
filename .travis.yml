@@ -44,3 +44,5 @@ after_success:
 before_install:
   - openssl aes-256-cbc -K $encrypted_b9b32342f7d0_key -iv $encrypted_b9b32342f7d0_iv
     -in config/travisci_rsa.enc -out config/travisci_rsa -d
+  - chmod 0600 config/travisci_rsa
+  - cp config/travisci_rsa ~/.ssh/id_rsa
