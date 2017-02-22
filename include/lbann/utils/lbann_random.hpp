@@ -28,6 +28,7 @@
 #define LBANN_UTILS_RNG_HPP
 
 #include "lbann/lbann_base.hpp"
+#include "lbann/lbann_comm.hpp"
 #include <random>
 
 namespace lbann {
@@ -42,11 +43,13 @@ rng_gen& get_generator();
 
 /**
  * Initialize the random number generator (with optional seed).
+ * @param comm If present, mixes the process's rank within the model into the
+ * seed; if not, uses the MPI world rank.
  * @todo Support saving/restoring the generator's state. This is directly
  * supported via the >> and << operators on the generator (reading/writing
  * from/to a stream).
  */
-void init_random(int seed = -1);
+void init_random(int seed = -1, lbann_comm* comm = nullptr);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from

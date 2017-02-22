@@ -42,7 +42,7 @@ rng_gen& get_generator() {
   return ::generator;
 }
 
-void init_random(int seed) {
+void init_random(int seed, lbann_comm* comm) {
   if (seed != -1) {
     // Seed every OpenMP thread, if present.
     // Note: Threadprivate OMP variables don't work with dynamic threads.
@@ -55,7 +55,11 @@ void init_random(int seed) {
     get_generator().seed(seed);
 #endif
 #ifdef LBANN_SET_EL_RNG
-    El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
+    if (comm != nullptr) {
+      El::Generator().seed(seed ^ comm->get_rank_in_model());
+    } else {
+      El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
+    }
 #endif
   } else {
     // Seed with a random value.
