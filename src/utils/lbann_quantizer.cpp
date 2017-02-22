@@ -138,10 +138,9 @@ void lbann_quantizer::quantize(
       }
     } else {
       // Randomly sample NUM_ONEBIT_SAMPLES to approximate.
-      std::uniform_int_distribution<int> row_dist(0, height - 1);
-      rng_gen& gen = get_generator();
+      fast_rng_gen& gen = get_fast_generator();
       for (Int i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
-        const Int pos = row_dist(gen) + col * ldim;
+        const Int pos = fast_rand_int(gen, height);
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           pos_sum += val;
@@ -791,12 +790,10 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   } else {
     // Randomly sample entries to approximate everything.
     entries.reserve(NUM_THRESHOLD_SAMPLES);
-    std::uniform_int_distribution<Int> row_dist(0, height - 1);
-    std::uniform_int_distribution<Int> col_dist(0, width - 1);
-    rng_gen& gen = get_generator();
+    fast_rng_gen& gen = get_fast_generator();
     std::vector<Unsigned> poses(NUM_THRESHOLD_SAMPLES);
     for (Unsigned i = 0; i < NUM_THRESHOLD_SAMPLES; ++i) {
-      const Unsigned pos = row_dist(gen) + col_dist(gen) * ldim;
+      const Unsigned pos = fast_rand_int(gen, height) + fast_rand_int(gen, width) * ldim;
       __builtin_prefetch(&mat_buf[pos]);
       __builtin_prefetch(&qerror_buf[pos]);
       poses[i] = pos;
@@ -882,11 +879,10 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
     }
   } else {
     // Randomly sample entries to approximate the means.
-    std::uniform_int_distribution<Int> row_dist(0, height - 1);
-    rng_gen& gen = get_generator();
+    fast_rng_gen& gen = get_fast_generator();
     std::vector<Unsigned> poses(NUM_RECON_SAMPLES);
     for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
-      const Unsigned pos = row_dist(gen) + col_offset;
+      const Unsigned pos = fast_rand_int(gen, height) + col_offset;
       __builtin_prefetch(&mat_buf[pos]);
       __builtin_prefetch(&qerror_buf[pos]);
       poses[i] = pos;
