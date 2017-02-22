@@ -34,12 +34,37 @@
 namespace lbann {
 
 typedef std::mt19937 rng_gen;  // Mersenne Twister
+typedef std::minstd_rand fast_rng_gen;  // Minimum standard, LC
 
 /**
  * Return a reference to the global LBANN random number generator.
  * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 rng_gen& get_generator();
+
+/**
+ * Return a reference to a possibly-faster global LBANN random number generator.
+ * Compared to get_generator, this should be slightly faster.
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ */
+fast_rng_gen& get_fast_generator();
+
+/**
+ * Return random integers uniformly distributed in [0, max).
+ * @param g C++ uniform random bit generator.
+ * @param max Upper bound on the distribution.
+ * @note It turns out that the GCC std::uniform_int_distribution is really
+ * slow. That implementation is used by most compilers. This implementation
+ * is roughly five times faster than that one.
+ */
+template <typename Generator, typename T>
+inline T fast_rand_int(Generator& g, T max) {
+  typename Generator::result_type x;
+  do {
+    x = g();
+  } while (x >= (Generator::max() - Generator::max() % max));
+  return x % max;
+}
 
 /**
  * Initialize the random number generator (with optional seed).

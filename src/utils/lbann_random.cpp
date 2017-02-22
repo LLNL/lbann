@@ -34,12 +34,20 @@ namespace {
 extern lbann::rng_gen generator;
 #pragma omp threadprivate(generator)
 lbann::rng_gen generator;
+
+extern lbann::fast_rng_gen fast_generator;
+#pragma omp threadprivate(fast_generator)
+lbann::fast_rng_gen fast_generator;
 }
 
 namespace lbann {
 
 rng_gen& get_generator() {
   return ::generator;
+}
+
+fast_rng_gen& get_fast_generator() {
+  return ::fast_generator;
 }
 
 void init_random(int seed, lbann_comm* comm) {
@@ -50,9 +58,11 @@ void init_random(int seed, lbann_comm* comm) {
     #pragma omp parallel
     {
       get_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+      get_fast_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
     }
 #else
     get_generator().seed(seed);
+    get_fast_generator().seed(seed);
 #endif
 #ifdef LBANN_SET_EL_RNG
     if (comm != nullptr) {
@@ -69,9 +79,11 @@ void init_random(int seed, lbann_comm* comm) {
     #pragma omp parallel
     {
       get_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+      get_fast_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
     }
 #else
     get_generator().seed(rand_val);
+    get_fast_generator().seed(rand_val);
 #endif
 #ifdef LBANN_SET_EL_RNG
     El::Generator().seed(rand_val);
