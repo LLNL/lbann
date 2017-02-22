@@ -151,7 +151,7 @@ namespace cudnn
                               const int* filter_dims,
                               const int* conv_pads,
                               const int* conv_strides,
-                              int mini_batch_size,
+                              const uint mini_batch_size,
                               cudnn_manager* cudnn);
     
     /// Destructor
@@ -243,7 +243,7 @@ namespace cudnn
     std::vector<int> m_dst_strides;
 
 
-    const int m_mini_batch_size;
+    const uint m_mini_batch_size;
 
     std::vector<DataType*> d_src;
     std::vector<DataType*> d_filter;
@@ -257,13 +257,20 @@ namespace cudnn
     std::vector<DataType*> d_filter_work_space;
     std::vector<DataType*> d_data_work_space;
 
+    /// Allocate memory on GPUs once and for all for the entire execution
     void device_allocate(void);
+    /// Deallocate all the memory blocked on GPUs
     void device_deallocate(void);
+    /// Allocate memory on GPUs for the forward path
     void device_allocate_for_forward(void);
+    /// Allocate memory on GPUs for the backward path
     void device_allocate_for_backward(void);
+    /// Deallocate memory on GPUs for the forward path
     void device_deallocate_for_forward(void);
+    /// Deallocate memory on GPUs for the backward path
     void device_deallocate_for_backward(void);
 
+    /// A temporary matrix used to collect data from each GPU during reduction
     Mat temp;
 
   };
@@ -282,6 +289,7 @@ namespace cudnn
                         const int* pool_dims,
                         const int* pool_pads,
                         const int* pool_strides,
+                        const uint mini_batch_size,
                         cudnn_manager* cudnn);
     
     /// Destructor
@@ -335,6 +343,9 @@ namespace cudnn
     /// cuDNN datatype
     const cudnnDataType_t m_cudnn_data_type;
 
+    /// Number of data samples per GPU
+    int m_samples_per_gpu;
+
     /// Input tensor descriptor
     cudnnTensorDescriptor_t m_src_desc;
     /// Output tensor descriptor
@@ -346,6 +357,27 @@ namespace cudnn
     std::vector<int> m_src_strides;
     /// Output tensor strides
     std::vector<int> m_dst_strides;
+
+    const uint m_mini_batch_size;
+
+    std::vector<DataType*> d_src;
+    std::vector<DataType*> d_dst;
+
+    std::vector<DataType*> d_prev_error_signal;
+    std::vector<DataType*> d_error_signal;
+
+    /// Allocate memory on GPUs once and for all for the entire execution
+    void device_allocate(void);
+    /// Deallocate all the memory blocked on GPUs
+    void device_deallocate(void);
+    /// Allocate memory on GPUs for the forward path
+    void device_allocate_for_forward(void);
+    /// Allocate memory on GPUs for the backward path
+    void device_allocate_for_backward(void);
+    /// Deallocate memory on GPUs for the forward path
+    void device_deallocate_for_forward(void);
+    /// Deallocate memory on GPUs for the backward path
+    void device_deallocate_for_backward(void);
 
   };
 

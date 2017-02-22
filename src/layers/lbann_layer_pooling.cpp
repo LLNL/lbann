@@ -109,6 +109,7 @@ pooling_layer::pooling_layer(const uint index,
                                                    pool_dims,
                                                    pool_pads,
                                                    pool_strides,
+                                                   m_mini_batch_size,
                                                    cudnn);
 #endif // __LIB_CUDNN
 
