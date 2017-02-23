@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   lbann_comm* comm = new lbann_comm(1);
   for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
     DistMat mat(comm->get_model_grid());
-    El::Uniform(mat, mat_size, mat_size, 0.0f, 4.0f);
+    El::Uniform(mat, mat_size, mat_size, (DataType) 0.0, (DataType) 4.0);
     test_mat(comm, mat);
   }
   El::Finalize();
