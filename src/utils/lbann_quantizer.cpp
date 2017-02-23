@@ -880,12 +880,22 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
   } else {
     // Randomly sample entries to approximate the means.
     fast_rng_gen& gen = get_fast_generator();
+    bool is_pow2 = !(height & (height - 1));  // Assumes height != 0.
     std::vector<Unsigned> poses(NUM_RECON_SAMPLES);
-    for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
-      const Unsigned pos = fast_rand_int(gen, height) + col_offset;
-      __builtin_prefetch(&mat_buf[pos]);
-      __builtin_prefetch(&qerror_buf[pos]);
-      poses[i] = pos;
+    if (is_pow2) {
+      for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
+        const Unsigned pos = fast_rand_int_pow2(gen, height) + col_offset;
+        __builtin_prefetch(&mat_buf[pos]);
+        __builtin_prefetch(&qerror_buf[pos]);
+        poses[i] = pos;
+      }
+    } else {
+      for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
+        const Unsigned pos = fast_rand_int(gen, height) + col_offset;
+        __builtin_prefetch(&mat_buf[pos]);
+        __builtin_prefetch(&qerror_buf[pos]);
+        poses[i] = pos;
+      }
     }
     for (Unsigned i = 0; i < NUM_RECON_SAMPLES; ++i) {
       //const unsigned pos = row_dist(gen) + col_offset;

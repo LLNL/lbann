@@ -67,6 +67,22 @@ inline T fast_rand_int(Generator& g, T max) {
 }
 
 /**
+ * Faster variant of fast_rand_int in the case that max is a power of 2.
+ * Do not call this if max is not a power of 2.
+ */
+template <typename Generator, typename T>
+inline T fast_rand_int_pow2(Generator& g, T max) {
+  typename Generator::result_type x;
+  max -= 1;
+  const typename Generator::result_type upper = Generator::max() -
+    (Generator::max() & (typename Generator::result_type) max);
+  do {
+    x = g();
+  } while (x >= upper);
+  return x & ((typename Generator::result_type) max);
+}
+
+/**
  * Initialize the random number generator (with optional seed).
  * @param comm If present, mixes the process's rank within the model into the
  * seed; if not, uses the MPI world rank.
