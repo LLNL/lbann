@@ -127,8 +127,10 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     // Compute the final transformation.
     Mat affine_mat_tmp(3, 3);
     Mat affine_mat(3, 3);
-    El::Gemm(NORMAL, NORMAL, 1.0f, trans_mat, shear_mat, 0.0f, affine_mat_tmp);
-    El::Gemm(NORMAL, NORMAL, 1.0f, affine_mat_tmp, rot_mat, 0.0f, affine_mat);
+    El::Gemm(NORMAL, NORMAL, (DataType) 1.0, trans_mat, shear_mat,
+             (DataType) 0.0, affine_mat_tmp);
+    El::Gemm(NORMAL, NORMAL, (DataType) 1.0, affine_mat_tmp, rot_mat,
+             (DataType) 0.0, affine_mat);
     affine_trans(sqpixels, affine_mat);
     col_pixels(sqpixels, pixels, num_channels);
   }

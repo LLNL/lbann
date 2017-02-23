@@ -636,12 +636,14 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized(
       adaptive_recv64_bufs2);
   } else {
     // Check whether we can use 16-bit row indices.
+    // Determine the column type (at compile time) based upon DataType.
+    typedef std::conditional<sizeof(DataType) <= 4, uint32_t, uint64_t>::type colT;
     if (mat.Height() > std::numeric_limits<int16_t>::max()) {
-      intermodel_sum_adaptive_threshold_quantized_impl<uint32_t, uint32_t>(
+      intermodel_sum_adaptive_threshold_quantized_impl<colT, uint32_t>(
         comm, mat, qerror, proportion, im_qerror, adaptive_recv32_bufs1,
         adaptive_recv32_bufs2);
     } else {
-      intermodel_sum_adaptive_threshold_quantized_impl<uint32_t, uint16_t>(
+      intermodel_sum_adaptive_threshold_quantized_impl<colT, uint16_t>(
         comm, mat, qerror, proportion, im_qerror, adaptive_recv16_bufs1,
         adaptive_recv16_bufs2);
     }
