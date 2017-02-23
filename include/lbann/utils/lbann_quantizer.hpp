@@ -430,6 +430,26 @@ private:
                              ThreshQuantized::const_iterator cqend,
                              ThreshQuantized& q);
 
+  /**
+   * Return the number of threads adaptive quantization should use for a matrix
+   * with the given width.
+   * This number of threads is empirically determined.
+   * @todo Make this configurable at compile time.
+   */
+  inline int get_adaptive_quantization_threads(El::Int width) {
+    int num_threads = omp_get_max_threads();
+    if (width <= 64) {
+      num_threads = 2;
+    } else if (width <= 128) {
+      num_threads = 8;
+    } else if (width <= 256) {
+      num_threads = 12;
+    } else if (width <= 1024) {
+      num_threads = 24;
+    }
+    return std::min(omp_get_max_threads(), num_threads);
+  }
+
   template <typename T>
   void intermodel_ring_reduce_scatter(
     lbann_comm* comm, Mat& mat, bool var_recv,
