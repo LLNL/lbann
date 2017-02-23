@@ -96,6 +96,10 @@ namespace lbann
     /// cuDNN pooling layer
     cudnn::cudnn_pooling_layer* m_cudnn_layer;
   
+    bool is_pinned_fwd;
+    bool is_pinned_bwd;
+    void pin_memory_blocks_fwd(void);
+    void pin_memory_blocks_bwd(void);
   };
 
 }
