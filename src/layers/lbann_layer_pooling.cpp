@@ -111,6 +111,8 @@ pooling_layer::pooling_layer(const uint index,
                                                    pool_strides,
                                                    m_mini_batch_size,
                                                    cudnn);
+  is_pinned_fwd = false;
+  is_pinned_bwd = false;
 #endif // __LIB_CUDNN
 
 }
@@ -149,11 +151,53 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
   Ones(*m_weighted_sum, NumNeurons, m_mini_batch_size);
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
   Ones(*m_activations, NumNeurons, m_mini_batch_size);
 
+}
+
+void lbann::pooling_layer::pin_memory_blocks_fwd(void)
+{
+  if (!m_cudnn_layer) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
+  if (!cudnn_mgr) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  cudnn_mgr->pin_memory_block(m_prev_activations);
+  cudnn_mgr->pin_memory_block(m_weighted_sum);
+  cudnn_mgr->pin_memory_block(m_activations);
+
+  is_pinned_fwd = true;
+#endif
+}
+
+void lbann::pooling_layer::pin_memory_blocks_bwd(void)
+{
+  if (!m_cudnn_layer) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
+  if (!cudnn_mgr) {
+    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
+    return;
+  }
+  cudnn_mgr->pin_memory_block(m_prev_error_signal);
+  //cudnn_mgr->pin_memory_block(m_error_signal);
+
+  is_pinned_bwd = true;
+#endif
 }
 
 void lbann::pooling_layer::fp_linearity() {
@@ -166,6 +210,7 @@ void lbann::pooling_layer::fp_linearity() {
   // Apply pooling on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
+    if (!is_pinned_fwd) pin_memory_blocks_fwd();
     // cuDNN pooling layer forward pass
     m_cudnn_layer->forward(input_local, weighted_sum_local);
 #else
@@ -285,6 +330,7 @@ void lbann::pooling_layer::bp_linearity() {
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
+    if (!is_pinned_bwd) pin_memory_blocks_bwd();
     m_cudnn_layer->backward(input_local,
                             output_local,
                             prev_error_signal_local,

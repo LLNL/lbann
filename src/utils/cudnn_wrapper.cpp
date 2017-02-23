@@ -157,6 +157,49 @@ cudnn_manager::~cudnn_manager()
   unpin_ptrs();
 }
 
+void cudnn_manager::cudnn_manager::pin_ptr(void* ptr, size_t sz)
+{
+  if (!ptr) return;
+  std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
+  if (it == pinned_ptr.end()) {
+    //std::cout << "adding a new ptr " << reinterpret_cast<unsigned long long>(ptr) << std::endl;
+    pinned_ptr[ptr] = sz;
+    checkCUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
+  } else {
+    // TODO: We can check here if the block defined by (ptr,sz) overlaps with an existing one.
+  }
+}
+
+void cudnn_manager::pin_memory_block(ElMat *mat)
+{
+    if (!mat) return;
+    const int w = (mat->Matrix()).Width();
+    const int h = (mat->Matrix()).Height();
+    const int sz = w*h*sizeof(DataType);
+    void* ptr = (void*) (mat->Matrix()).Buffer();
+    pin_ptr(ptr, w*h*sizeof(DataType));
+}
+
+void cudnn_manager::cudnn_manager::unpin_ptr(void* const ptr)
+{
+  std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
+  if (it != pinned_ptr.end()) {
+    checkCUDA(cudaHostUnregister(it->first));
+    pinned_ptr.erase(it);
+  }
+}
+
+void cudnn_manager::cudnn_manager::unpin_ptrs(void)
+{
+  std::map<void*, size_t>::iterator it = pinned_ptr.begin();
+  std::map<void*, size_t>::iterator itend = pinned_ptr.end();
+
+  for(; it != itend; ++it) {
+    checkCUDA(cudaHostUnregister(it->first));
+  }
+  pinned_ptr.clear();
+}
+
 void cudnn_manager::print_version() const {
   std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION

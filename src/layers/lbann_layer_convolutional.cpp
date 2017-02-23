@@ -223,17 +223,6 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
 }
 
-#ifdef __LIB_CUDNN
-static void pin_memory_block(cudnn::cudnn_manager* cudnn_mgr, ElMat *mat)
-{
-    const int w = (mat->Matrix()).Width();
-    const int h = (mat->Matrix()).Height();
-    const int sz = w*h*sizeof(DataType);
-    void* ptr = (void*) (mat->Matrix()).Buffer();
-    cudnn_mgr->pin_ptr(ptr, w*h*sizeof(DataType));
-}
-#endif
-
 void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 {
   if (!m_cudnn_layer) {
@@ -247,10 +236,10 @@ void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
-  pin_memory_block(cudnn_mgr, m_weights);
-  pin_memory_block(cudnn_mgr, m_weighted_sum);
-  pin_memory_block(cudnn_mgr, m_activations);
-  pin_memory_block(cudnn_mgr, m_prev_activations);
+  cudnn_mgr->pin_memory_block(m_weights);
+  cudnn_mgr->pin_memory_block(m_weighted_sum);
+  cudnn_mgr->pin_memory_block(m_activations);
+  cudnn_mgr->pin_memory_block(m_prev_activations);
 
   is_pinned_fwd = true;
 #endif
@@ -269,9 +258,9 @@ void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
-  pin_memory_block(cudnn_mgr, m_error_signal);
-  pin_memory_block(cudnn_mgr, m_prev_error_signal);
-  pin_memory_block(cudnn_mgr, m_weights_gradient);
+  cudnn_mgr->pin_memory_block(m_error_signal);
+  cudnn_mgr->pin_memory_block(m_prev_error_signal);
+  cudnn_mgr->pin_memory_block(m_weights_gradient);
 
   is_pinned_bwd = true;
 #endif

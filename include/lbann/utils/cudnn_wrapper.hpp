@@ -73,6 +73,8 @@ namespace cudnn
 
     /// Register a block of memory to pin
     void pin_ptr(void* ptr, size_t sz);
+    /// Pin the memory block of a matrix
+    void pin_memory_block(ElMat *mat);
     /// Unregister a block of pinnedmemory
     void unpin_ptr(void* ptr);
     /// Unregister all the memories registered to pin
@@ -102,40 +104,6 @@ namespace cudnn
     std::map<void*, size_t> pinned_ptr;
 
   };
-
-  inline void cudnn_manager::pin_ptr(void* ptr, size_t sz)
-  {
-    if (__builtin_expect(!ptr, false)) return;
-    std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
-    if (it == pinned_ptr.end()) {
-      //std::cout << "adding a new ptr " << reinterpret_cast<unsigned long long>(ptr) << std::endl;
-      pinned_ptr[ptr] = sz;
-      checkCUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
-    } else {
-      // TODO: We can check here if the block defined by (ptr,sz) overlaps with an existing one.
-    }
-  }
-
-  inline void cudnn_manager::unpin_ptr(void* const ptr)
-  {
-    std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
-    if (it != pinned_ptr.end()) {
-      checkCUDA(cudaHostUnregister(it->first));
-      pinned_ptr.erase(it);
-    }
-  }
-
-  inline void cudnn_manager::unpin_ptrs(void)
-  {
-    std::cout << "unpinning " << pinned_ptr.size() << " addresses" << std::endl;
-    std::map<void*, size_t>::iterator it = pinned_ptr.begin();
-    std::map<void*, size_t>::iterator itend = pinned_ptr.end();
-
-    for(; it != itend; ++it) {
-      checkCUDA(cudaHostUnregister(it->first));
-    }
-    pinned_ptr.clear();
-  }
 
 
   /// cuDNN convolutional layer
@@ -169,6 +137,7 @@ namespace cudnn
     void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
                   Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
 
+    /// Return the pointer to the associated cudnn_manager
     cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
 
   public:
@@ -304,6 +273,9 @@ namespace cudnn
     /// Convolutional layer backward pass
     void backward(const Mat& src, const Mat& dst,
                   const Mat& grad_dst, Mat& grad_src);
+
+    /// Return the pointer to the associated cudnn_manager
+    cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
 
   public:
       
