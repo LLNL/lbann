@@ -39,16 +39,6 @@ using namespace cudnn;
 
 #define _ALLOC_DEVICE_MEM_ONCE_
 
-// Error utility macros
-#define checkCUDNN(status) {                                            \
-    if (status != CUDNN_STATUS_SUCCESS) {                               \
-      std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n"; /* TODO: remove */ \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cudnn_wrapper: cuDNN error");       \
-    }                                                                   \
-  }
-
 /// Get cuDNN data type associated with C++ data type
 /** Half-, single-, and double-precision floating point data types */
 template <typename T>

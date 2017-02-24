@@ -37,18 +37,30 @@
 #include <cub/util_allocator.cuh>
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-
-
-// moved to make it visible from lbann_layer_convolution
 #include "lbann/utils/lbann_exception.hpp"
+
+// Error utility macros
+#ifdef LBANN_DEBUG
 #define checkCUDA(status) {                                             \
     if (status != cudaSuccess) {                                        \
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
     }                                                                   \
   }
+#define checkCUDNN(status) {                                            \
+    if (status != CUDNN_STATUS_SUCCESS) {                               \
+      std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
+      cudaDeviceReset();                                                \
+      throw lbann::lbann_exception("cudnn_wrapper: cuDNN error");       \
+    }                                                                   \
+  }
+#else
+#define checkCUDA(status)  status
+#define checkCUDNN(status) status
+#endif
 
 namespace cudnn
 {
