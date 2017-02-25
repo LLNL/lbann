@@ -93,7 +93,7 @@ function HELP {
   exit 1
 }
 
-while getopts ":a:b:cde:f:hi:j:k:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
+while getopts ":a:b:cde:f:hi:j:k:K:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
   case $opt in
     a)
       ACT=$OPTARG

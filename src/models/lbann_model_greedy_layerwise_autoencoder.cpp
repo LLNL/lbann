@@ -39,9 +39,60 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
                                                 objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac) {}
+  : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
+    m_have_mirror(0) {}
 
 lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
+
+struct lbann_model_greedy_layerwise_autoencoder_header {
+    uint32_t phase_index;
+    uint32_t have_mirror;
+};
+
+bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persist& p)
+{
+    // have rank 0 write record whether we have a mirror layer inserted
+    // we do this first, because we need to insert it again when reading back
+    if (p.m_rank == 0) {
+        p.write_uint32(persist_type::train, "gla_phase_index", (uint32_t) m_current_phase);
+        p.write_uint32(persist_type::train, "gla_have_mirror", (uint32_t) m_have_mirror);
+    }
+
+    // write parameters from base class first
+    sequential_model::save_to_checkpoint_shared(p);
+
+    return true;
+}
+
+bool lbann::greedy_layerwise_autoencoder::load_from_checkpoint_shared(lbann::persist& p)
+{
+    // have rank 0 read whether we have a mirror layer inserted
+    struct lbann_model_greedy_layerwise_autoencoder_header header;
+    if (p.m_rank == 0) {
+        p.read_uint32(persist_type::train, "gla_phase_index", &header.phase_index);
+        p.read_uint32(persist_type::train, "gla_have_mirror", &header.have_mirror);
+    }
+
+    // TODO: this assumes homogeneous processors
+    // broadcast state from rank 0
+    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    // insert the mirror layer if needed
+    uint32_t phase_index = header.phase_index;
+    uint32_t have_mirror = header.have_mirror;
+    if (have_mirror) {
+      // note that this calls setup on the layers,
+      // and setup reinitializes a bunch of values like data reader positions
+      // and optimization layer cache values that we'll overwrite
+      // in load_from_checkpoint_shared below
+      insert_mirror(phase_index);
+    }
+
+    // read parameters from base class first
+    sequential_model::load_from_checkpoint_shared(p);
+
+    return true;
+}
 
 void lbann::greedy_layerwise_autoencoder::summarize(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
@@ -49,37 +100,81 @@ void lbann::greedy_layerwise_autoencoder::summarize(lbann_summary& summarizer) {
   }
 }
 
+// inserts a mirror layer for specified layer index
+void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index)
+{
+  // compute layer index for mirrror
+  size_t mirror_index = layer_index + 2;
+
+  // build mirror layer
+  Layer* original_layer = m_layers[layer_index];
+  Optimizer *optimizer = optimizer_fac->create_optimizer();
+  target_layer_unsupervised* mirror_layer = new target_layer_unsupervised(mirror_index, comm, optimizer, m_mini_batch_size, original_layer);
+
+  // insert mirror layer into model
+  insert(mirror_index, mirror_layer);
+
+  //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
+  //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
+  setup(layer_index, mirror_index+1);  //set up  all active layers
+
+  // set flag to indicate that we have a mirror layer inserted
+  m_have_mirror = 1;
+}
+
+// removes a mirror layer for specified layer index
+void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index)
+{
+  if (m_have_mirror) {
+    // compute layer index for mirrror
+    size_t mirror_index = layer_index + 2;
+
+    // drop the mirror layer from the model
+    remove(mirror_index); ///any delete on heap, vector resize?
+
+    // call base model setup again to reindex and set appropriate fp and bp input
+    if (comm->am_world_master()) {
+      std::cout << "Phase [" << mirror_index << "] Done, Reset Layers " << std::endl;
+      for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
+    }
+    setup();
+
+    // set flag to indicate we've deleted our mirror laer
+    m_have_mirror = 0;
+  }
+}
 
 void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency)
 {
-  size_t num_phases = m_layers.size()-1;
-  for(size_t phase_index=0; phase_index < num_phases; ++phase_index){
-    m_current_phase = phase_index;
-    size_t phase_end = phase_index+2;
-    Layer* original_layer = m_layers[phase_index];
-    Optimizer *optimizer = optimizer_fac->create_optimizer();
-    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(phase_end, comm, optimizer, m_mini_batch_size,original_layer);
-    insert(phase_end,mirror_layer);
-    //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
-    //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
-    setup(phase_index,phase_end+1);  //set up  all active layers
+  // compute number of layers we need to train
+  size_t num_phases = m_layers.size() - 1;
+  if (m_have_mirror) {
+    // already have a mirror layer loaded, subtract that off
+    num_phases--;
+  }
+
+  // get to training, layer by layer
+  while(m_current_phase < num_phases){
+    // add mirror layer for training
+    // (may already have this after loading checkpoint)
+    if (! m_have_mirror) {
+      insert_mirror(m_current_phase);
+    }
+
     //debug
-    train_phase(phase_index, num_epochs,evaluation_frequency);
+    train_phase(m_current_phase, num_epochs, evaluation_frequency);
 
     if (comm->am_world_master()) {
       //end of phase cbs e.g., save a number of image to file
       do_phase_end_cbs();
     }
-    remove(phase_end); ///any delete on heap, vector resize?
-    //call base model setup again to reindex and set appropriate fp and bp input
-    if (comm->am_world_master()) {
-      std::cout << "Phase [" << phase_index << "] Done, Reset Layers " << std::endl;
-      for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
-    }
-    setup();
 
+    // drop mirror layer
+    remove_mirror(m_current_phase);
+
+    // move on to the next phase
+    m_current_phase++;
   }
-
 }
 
 void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int num_epochs, int evaluation_frequency)
@@ -88,17 +183,21 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
   do_train_begin_cbs();
 
   // Epoch main loop
-  for (int epoch = 0; epoch < num_epochs; ++epoch) {
-
+  while (get_cur_epoch() < num_epochs) {
     // Check if training has been terminated
     if (get_terminate_training()) break;
 
-    ++m_current_epoch;
-    do_epoch_begin_cbs(); // needed for selected callback e.g., dump matrices
+    // due to restart, may not always be at start of epoch
+    // use mini batch index in data reader to signify start of epoch
+    if (at_epoch_start()) {
+      ++m_current_epoch;
+      do_epoch_begin_cbs(); // needed for selected callback e.g., dump matrices
+    }
+
     //Overide default print callback
     if (comm->am_world_master()) {
       std::cout << "-----------------------------------------------------------" << std::endl;
-      std::cout << "Phase [" << phase_index  << "] Epoch [" << epoch << "]" <<  std::endl;
+      std::cout << "Phase [" << phase_index  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
       std::cout << "-----------------------------------------------------------" << std::endl;
     }
 
@@ -114,8 +213,12 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     bool finished_epoch;
     do {
       finished_epoch = train_mini_batch(phase_index);
-    } while(!finished_epoch);
 
+      // save a checkpoint if needed
+      if (need_checkpoint()) {
+        checkpointShared();
+      }
+    } while(!finished_epoch);
 
     //Is training and testing enough? Do we need validation? val/test look similar!
     /*if(evaluation_frequency > 0
@@ -139,6 +242,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     }*/
 
     do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
+
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     } // train epoch end, this reset cost
@@ -148,16 +252,24 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     //print testing reconstruction cost (somewhat validation)
     if (comm->am_world_master()) std::cout << "Testing ";
     m_layers[phase_end]->epoch_print();
+
     //Reset cost again
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     } // train epoch
+
     // Reset execution mode back to training
     m_execution_mode = execution_mode::training;
     for (Layer* layer : m_layers) {
       layer->m_execution_mode = execution_mode::training;
     }
+
+    // save checkpoint after epoch
+    if (need_checkpoint()) {
+      checkpointShared();
+    }
   }
+
   do_train_end_cbs();
 }
 

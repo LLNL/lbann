@@ -417,8 +417,8 @@ bool lbann::model::checkpointShared()
         if (secs > 0.0) {
             bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
         }
-        printf("Checkpoint complete: epoch %d (%f secs, %llu bytes, %f MB/sec)\n",
-            epoch, secs, (unsigned long long) bytes_count, bw
+        printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+            epoch, step, secs, (unsigned long long) bytes_count, bw
         );
         fflush(stdout);
     }
@@ -440,12 +440,12 @@ bool lbann::model::restartShared()
     const char* dir = m_checkpoint_dir.c_str();
 
     // read epoch number from current file
-    int epoch, train;
+    int epoch, step;
     if (m_rank == 0) {
-        read_latest(dir, "shared.last", &epoch, &train);
+        read_latest(dir, "shared.last", &epoch, &step);
     }
     MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&train, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // if we couldn't find the latest epoch, just return
     if (epoch < 0) {
@@ -465,7 +465,7 @@ bool lbann::model::restartShared()
 
     // get subdirectory for this epoch
     char epochdir[1024];
-    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, train);
+    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
 
     // open our checkpoint
     lbann::persist p;
@@ -487,8 +487,8 @@ bool lbann::model::restartShared()
         if (secs > 0.0) {
             bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
         }
-        printf("Restart complete: %d, trainOffset %d (%f secs, %llu bytes, %f MB/sec)\n",
-            epoch, train, secs, (unsigned long long) bytes_count, bw
+        printf("Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+            epoch, step, secs, (unsigned long long) bytes_count, bw
         );
         fflush(stdout);
     }
@@ -502,6 +502,7 @@ struct lbann_model_header {
     uint32_t terminate_training;
     uint64_t current_epoch;
     uint64_t current_step;
+    uint32_t current_phase;
 };
 
 bool lbann::model::save_to_checkpoint_shared(lbann::persist& p)
@@ -512,6 +513,7 @@ bool lbann::model::save_to_checkpoint_shared(lbann::persist& p)
         p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
         p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
         p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+        p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
     }
     
     return true;
@@ -527,17 +529,19 @@ bool lbann::model::load_from_checkpoint_shared(lbann::persist& p)
         p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
         p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
         p.read_uint64(persist_type::train, "current_step",       &header.current_step);
+        p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
     }
 
     // TODO: this assumes homogeneous processors
     // broadcast state from rank 0
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-    // fill the structure to write to disk
+    // set our member params from values read from disk
     m_execution_mode     = (execution_mode) header.execution_mode;
     m_terminate_training = (bool)           header.terminate_training;
     m_current_epoch      = (int64_t)        header.current_epoch;
     m_current_step       = (int64_t)        header.current_step;
+    m_current_phase      =                  header.current_phase;
 
     return true;
 }
