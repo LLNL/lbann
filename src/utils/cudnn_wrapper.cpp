@@ -29,6 +29,8 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
+#define DEBUGLINE {if(El::Rank(El::COMM_WORLD) == 0) std::cerr << "==== DEBUGLINE (" << __FILE__ << ":" << __LINE__ << ") ====\n"}
+
 #include <iostream>
 
 #include "El.hpp"
@@ -36,6 +38,7 @@
 #ifdef __LIB_CUDNN
 
 using namespace cudnn;
+using namespace lbann;
 
 #define _ALLOC_DEVICE_MEM_ONCE_
 
@@ -196,6 +199,22 @@ void cudnn_manager::print_version() const {
             << std::endl;
 }
 
+int cudnn_manager::get_num_gpus() const {
+  return m_num_gpus;
+}
+
+int cudnn_manager::get_num_total_gpus() const {
+  return m_num_total_gpus;
+}
+
+cub::CachingDeviceAllocator* cudnn_manager::get_gpu_memory() {
+  return m_gpu_memory;
+}
+
+std::vector<cudaStream_t>* cudnn_manager::get_streams() {
+  return &m_streams;
+}
+
 cudnn_convolutional_layer
 ::cudnn_convolutional_layer(const int num_dims,
                             const int src_channels,
@@ -205,6 +224,7 @@ cudnn_convolutional_layer
                             const int* conv_pads,
                             const int* conv_strides,
                             const uint mini_batch_size,
+                            activation_type activation,
                             cudnn_manager* cudnn)
   : m_num_dims(num_dims), m_cudnn(cudnn),
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
@@ -272,6 +292,8 @@ cudnn_convolutional_layer::~cudnn_convolutional_layer()
 
 void cudnn_convolutional_layer::setup()
 {
+
+  
 
   // Initialize descriptors
   checkCUDNN(cudnnCreateTensorDescriptor(&m_src_desc));
@@ -385,6 +407,31 @@ void cudnn_convolutional_layer::setup()
                                                           m_src_desc,
                                                           m_backward_data_algo,
                                                           &m_backward_data_work_space_size));
+
+  checkCUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
+  switch(m_activation_type) {
+  case activation_type::SIGMOID:
+    checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+                                            CUDNN_ACTIVATION_SIGMOID,
+                                            CUDNN_PROPAGATE_NAN,
+                                            0.0));
+    break;
+  case activation_type::RELU:
+    checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+                                            CUDNN_ACTIVATION_RELU,
+                                            CUDNN_PROPAGATE_NAN,
+                                            0.0));
+    break;
+  case activation_type::TANH:
+    checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+                                            CUDNN_ACTIVATION_TANH,
+                                            CUDNN_PROPAGATE_NAN,
+                                            0.0));
+    break;
+  default:
+    throw lbann_exception("cudnn_wrapper: invalid activation type");
+  }
+
 #ifdef _ALLOC_DEVICE_MEM_ONCE_
   device_allocate();
 #endif
@@ -402,14 +449,16 @@ void cudnn_convolutional_layer::device_allocate_for_forward(void)
 {
   const int num_gpus = m_cudnn->m_num_gpus;
 
-  d_src.clear();
-  d_src.assign(num_gpus, NULL);
+  d_prev_activations.clear();
+  d_prev_activations.assign(num_gpus, NULL);
   d_filter.clear();
   d_filter.assign(num_gpus, NULL);
   d_bias.clear();
   d_bias.assign(num_gpus, NULL);
-  d_dst.clear();
-  d_dst.assign(num_gpus, NULL);
+  d_weighted_sum.clear();
+  d_weighted_sum.assign(num_gpus, NULL);
+  d_activations.clear();
+  d_activations.assign(num_gpus, NULL);
   d_work_space.clear();
   d_work_space.assign(num_gpus, NULL);
 
@@ -419,7 +468,7 @@ void cudnn_convolutional_layer::device_allocate_for_forward(void)
     cudaStream_t& stream = m_cudnn->m_streams[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_src[i],
+                                        (void**) &d_prev_activations[i],
                                         m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
@@ -431,7 +480,11 @@ void cudnn_convolutional_layer::device_allocate_for_forward(void)
                                         m_dst_size*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_dst[i],
+                                        (void**) &d_weighted_sum[i],
+                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_activations[i],
                                         m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     if(m_forward_work_space_size > 0) {
@@ -448,14 +501,14 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
   const int num_gpus = m_cudnn->m_num_gpus;
 
 #ifndef _ALLOC_DEVICE_MEM_ONCE_
-  d_src.clear();
-  d_src.assign(num_gpus, NULL);
+  d_prev_activations.clear();
+  d_prev_activations.assign(num_gpus, NULL);
   d_filter.clear();
   d_filter.assign(num_gpus, NULL);
   d_prev_error_signal.clear();
   d_prev_error_signal.assign(num_gpus, NULL);
 #else // Otherwise reuse those blocks allocated for forward()
-  d_prev_error_signal = d_dst;
+  d_prev_error_signal = d_activations;
 #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_filter_gradient.clear();
   d_filter_gradient.assign(num_gpus, NULL);
@@ -473,7 +526,7 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
   #ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_src[i],
+                                        (void**) &d_prev_activations[i],
                                         m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
@@ -523,20 +576,22 @@ void cudnn_convolutional_layer::device_deallocate_for_forward(void)
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
   #ifndef _ALLOC_DEVICE_MEM_ONCE_
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_weighted_sum[i]));
   #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
     if(d_work_space[i]) {
       checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
     }
   }
   #ifndef _ALLOC_DEVICE_MEM_ONCE_
-  d_src.clear();
+  d_prev_activations.clear();
   d_filter.clear();
-  d_dst.clear();
+  d_weighted_sum.clear();
   #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
+  d_activations.clear();
   d_bias.clear();
   d_work_space.clear();
 }
@@ -549,8 +604,9 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_weighted_sum[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
@@ -561,8 +617,9 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
       checkCUDA(gpu_memory.DeviceFree(gpu, d_data_work_space[i]));
     }
   }
-  d_src.clear();
+  d_prev_activations.clear();
   d_filter.clear();
+  d_weighted_sum.clear();
   d_prev_error_signal.clear();
   d_filter_gradient.clear();
   d_error_signal.clear();
@@ -571,6 +628,7 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
 void cudnn_convolutional_layer::forward(const Mat& src,
                                         const Mat& filter,
                                         const Mat& bias,
+                                        Mat& weighted_sum,
                                         Mat& dst)
 {
 
@@ -607,7 +665,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                               stream));
 
     // Transfer inputs to GPU
-    checkCUDA(cudaMemcpy2DAsync(d_src[i],
+    checkCUDA(cudaMemcpy2DAsync(d_prev_activations[i],
                                 m_src_size*sizeof(DataType),
                                 src.LockedBuffer(0,first_pos),
                                 src.LDim()*sizeof(DataType),
@@ -623,7 +681,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                               cudaMemcpyHostToDevice,
                               stream));
     for(int pos=first_pos; pos<last_pos; ++pos) {
-      checkCUDA(cudaMemcpyAsync(d_dst[i] + (pos-first_pos)*m_dst_size,
+      checkCUDA(cudaMemcpyAsync(d_weighted_sum[i] + (pos-first_pos)*m_dst_size,
                                 d_bias[i],
                                 m_dst_size*sizeof(DataType),
                                 cudaMemcpyDeviceToDevice,
@@ -634,7 +692,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
     checkCUDNN(cudnnConvolutionForward(handle,
                                        &one,
                                        m_src_desc,
-                                       d_src[i],
+                                       d_prev_activations[i],
                                        m_filter_desc,
                                        d_filter[i],
                                        m_conv_desc,
@@ -643,12 +701,30 @@ void cudnn_convolutional_layer::forward(const Mat& src,
                                        m_forward_work_space_size,
                                        &one,
                                        m_dst_desc,
-                                       d_dst[i]));
+                                       d_weighted_sum[i]));
+
+    // Apply activation function
+    checkCUDNN(cudnnActivationForward(handle,
+                                      m_activation_desc,
+                                      &one,
+                                      m_dst_desc,
+                                      d_weighted_sum[i],
+                                      &zero,
+                                      m_dst_desc,
+                                      d_activations[i]));
     
     // Transfer outputs from GPU
+    checkCUDA(cudaMemcpy2DAsync(weighted_sum.Buffer(0,first_pos),
+                                weighted_sum.LDim()*sizeof(DataType),
+                                d_weighted_sum[i],
+                                m_dst_size*sizeof(DataType),
+                                m_dst_size*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
     checkCUDA(cudaMemcpy2DAsync(dst.Buffer(0,first_pos),
                                 dst.LDim()*sizeof(DataType),
-                                d_dst[i],
+                                d_activations[i],
                                 m_dst_size*sizeof(DataType),
                                 m_dst_size*sizeof(DataType),
                                 last_pos - first_pos,
@@ -671,6 +747,7 @@ void cudnn_convolutional_layer::forward(const Mat& src,
 
 void cudnn_convolutional_layer::backward(const Mat& src,
                                          const Mat& filter,
+                                         const Mat& weighted_sum,
                                          const Mat& prev_error_signal,
                                          Mat& filter_gradient,
                                          Mat& bias_gradient,
@@ -722,11 +799,19 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                               stream));
 
     // Transfer inputs and error signal to GPU
-    checkCUDA(cudaMemcpy2DAsync(d_src[i],
+    checkCUDA(cudaMemcpy2DAsync(d_prev_activations[i],
                                 m_src_size*sizeof(DataType),
                                 src.LockedBuffer(0,first_pos),
                                 src.LDim()*sizeof(DataType),
                                 m_src_size*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(d_weighted_sum[i],
+                                m_dst_size*sizeof(DataType),
+                                weighted_sum.LockedBuffer(0,first_pos),
+                                weighted_sum.LDim()*sizeof(DataType),
+                                m_dst_size*sizeof(DataType),
                                 last_pos - first_pos,
                                 cudaMemcpyHostToDevice,
                                 stream));
@@ -744,12 +829,26 @@ void cudnn_convolutional_layer::backward(const Mat& src,
                                 m_dst_size*(m_samples_per_gpu-(last_pos-first_pos))*sizeof(DataType),
                                 stream));
     }
+    
+    // Perform backward propagation on activation function
+    checkCUDNN(cudnnActivationBackward(handle,
+                                       m_activation_desc,
+                                       &one,
+                                       m_dst_desc,
+                                       d_weighted_sum[i],
+                                       m_dst_desc,
+                                       d_prev_error_signal[i],
+                                       m_dst_desc,
+                                       d_activations[i],
+                                       &zero,
+                                       m_dst_desc,
+                                       d_prev_error_signal[i]));
 
     // Compute filter gradient
     checkCUDNN(cudnnConvolutionBackwardFilter(handle,
                                               &samples_per_gpu_float,
                                               m_src_desc,
-                                              d_src[i],
+                                              d_prev_activations[i],
                                               m_dst_desc,
                                               d_prev_error_signal[i],
                                               m_conv_desc,
@@ -937,10 +1036,10 @@ void cudnn_pooling_layer::device_allocate(void)
 void cudnn_pooling_layer::device_allocate_for_forward(void)
 {
   const int num_gpus = m_cudnn->m_num_gpus;
-  d_src.clear();
-  d_src.assign(num_gpus, NULL);
-  d_dst.clear();
-  d_dst.assign(num_gpus, NULL);
+  d_prev_activations.clear();
+  d_prev_activations.assign(num_gpus, NULL);
+  d_activations.clear();
+  d_activations.assign(num_gpus, NULL);
 
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
@@ -948,11 +1047,11 @@ void cudnn_pooling_layer::device_allocate_for_forward(void)
     cudaStream_t& stream = m_cudnn->m_streams[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_src[i],
+                                        (void**) &d_prev_activations[i],
                                         m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_dst[i],
+                                        (void**) &d_activations[i],
                                         m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
   }
@@ -962,10 +1061,10 @@ void cudnn_pooling_layer::device_allocate_for_backward(void)
 {
   const int num_gpus = m_cudnn->m_num_gpus;
 #ifndef _ALLOC_DEVICE_MEM_ONCE_ // Otherwise reuse the blocks allocated for forward path
-  d_src.clear();
-  d_src.assign(num_gpus, NULL);
-  d_dst.clear();
-  d_dst.assign(num_gpus, NULL);
+  d_prev_activations.clear();
+  d_prev_activations.assign(num_gpus, NULL);
+  d_activations.clear();
+  d_activations.assign(num_gpus, NULL);
 #endif // ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_prev_error_signal.clear();
   d_prev_error_signal.assign(num_gpus, NULL);
@@ -979,11 +1078,11 @@ void cudnn_pooling_layer::device_allocate_for_backward(void)
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
 #ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_src[i],
+                                        (void**) &d_prev_activations[i],
                                         m_src_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_dst[i],
+                                        (void**) &d_activations[i],
                                         m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
 #endif // ifndef _ALLOC_DEVICE_MEM_ONCE_
@@ -1013,11 +1112,11 @@ void cudnn_pooling_layer::device_deallocate_for_forward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_activations[i]));
   }
-  d_src.clear();
-  d_dst.clear();
+  d_prev_activations.clear();
+  d_activations.clear();
 #endif // ifndef _ALLOC_DEVICE_MEM_ONCE_
 }
 
@@ -1029,14 +1128,14 @@ void cudnn_pooling_layer::device_deallocate_for_backward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_src[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_dst[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
   }
 
-  d_src.clear();
-  d_dst.clear();
+  d_prev_activations.clear();
+  d_activations.clear();
   d_prev_error_signal.clear();
   d_error_signal.clear();
 }
@@ -1088,7 +1187,7 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
     }
 
     // Transfer inputs to GPU
-    checkCUDA(cudaMemcpy2DAsync(d_src[i],
+    checkCUDA(cudaMemcpy2DAsync(d_prev_activations[i],
                                 m_src_size*sizeof(DataType),
                                 src.LockedBuffer(0,first_pos),
                                 src.LDim()*sizeof(DataType),
@@ -1102,15 +1201,15 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
                                    m_pool_desc,
                                    &one,
                                    m_src_desc,
-                                   d_src[i],
+                                   d_prev_activations[i],
                                    &zero,
                                    m_dst_desc,
-                                   d_dst[i]));
+                                   d_activations[i]));
 
     // Transfer outputs from GPU
     checkCUDA(cudaMemcpy2DAsync(dst.Buffer(0,first_pos),
                                 dst.LDim()*sizeof(DataType),
-                                d_dst[i],
+                                d_activations[i],
                                 m_dst_size*sizeof(DataType),
                                 m_dst_size*sizeof(DataType),
                                 last_pos - first_pos,
@@ -1181,7 +1280,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
     }
 
     // Transfer data to GPU
-    checkCUDA(cudaMemcpy2DAsync(d_src[i],
+    checkCUDA(cudaMemcpy2DAsync(d_prev_activations[i],
                                 m_src_size*sizeof(DataType),
                                 src.LockedBuffer(0,first_pos),
                                 src.LDim()*sizeof(DataType),
@@ -1189,7 +1288,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
                                 last_pos - first_pos,
                                 cudaMemcpyHostToDevice,
                                 stream));
-    checkCUDA(cudaMemcpy2DAsync(d_dst[i],
+    checkCUDA(cudaMemcpy2DAsync(d_activations[i],
                                 m_dst_size*sizeof(DataType),
                                 dst.LockedBuffer(0,first_pos),
                                 dst.LDim()*sizeof(DataType),
@@ -1217,11 +1316,11 @@ void cudnn_pooling_layer::backward(const Mat& src,
                                     m_pool_desc,
                                     &one,
                                     m_dst_desc,
-                                    d_dst[i],
+                                    d_activations[i],
                                     m_dst_desc,
                                     d_prev_error_signal[i],
                                     m_src_desc,
-                                    d_src[i],
+                                    d_prev_activations[i],
                                     &zero,
                                     m_src_desc,
                                     d_error_signal[i]));

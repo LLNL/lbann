@@ -38,6 +38,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/layers/lbann_layer_activations.hpp"
 
 // Error utility macros
 #ifdef LBANN_DEBUG
@@ -46,7 +47,7 @@
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
+      throw lbann::lbann_exception("CUDA error");        \
     }                                                                   \
   }
 #define checkCUDNN(status) {                                            \
@@ -54,7 +55,7 @@
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cudnn_wrapper: cuDNN error");       \
+      throw lbann::lbann_exception("cuDNN error");       \
     }                                                                   \
   }
 #else
@@ -80,8 +81,17 @@ namespace cudnn
     /** Destructor */
     ~cudnn_manager();
 
-    /** Print cuDNN version information to standard output */
+    /** Print cuDNN version information to standard output. */
     void print_version() const;
+
+    /** Get number of GPUs assigned to current MPI rank. */
+    int get_num_gpus() const;
+    /** Get number of GPUs on current node. */
+    int get_num_total_gpus() const;
+    /** Get GPU memory allocator. */
+    cub::CachingDeviceAllocator* get_gpu_memory();
+    /** Get CUDA streams for current MPI rank. */
+    std::vector<cudaStream_t>* get_streams();
 
     /// Register a block of memory to pin
     void pin_ptr(void* ptr, size_t sz);
@@ -132,6 +142,7 @@ namespace cudnn
                               const int* conv_pads,
                               const int* conv_strides,
                               const uint mini_batch_size,
+                              lbann::activation_type activation,
                               cudnn_manager* cudnn);
     
     /// Destructor
@@ -142,12 +153,21 @@ namespace cudnn
 
     /// Convolutional layer forward pass
     /** @todo Handle case where GPU can't hold entire mini-batch. */
-    void forward(const Mat& src, const Mat& filter, const Mat& bias, Mat& dst);
+    void forward(const Mat& src,
+                 const Mat& filter,
+                 const Mat& bias,
+                 Mat& weighted_sum,
+                 Mat& dst);
     
     /// Convolutional layer backward pass
     /** @todo Handle case where GPU can't hold entire mini-batch. */
-    void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
-                  Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
+    void backward(const Mat& src,
+                  const Mat& filter,
+                  const Mat& weighted_sum,
+                  const Mat& prev_error_signal,
+                  Mat& filter_gradient,
+                  Mat& bias_gradient,
+                  Mat& error_signal);
 
     /// Return the pointer to the associated cudnn_manager
     cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
@@ -187,6 +207,9 @@ namespace cudnn
     /// cuDNN datatype
     const cudnnDataType_t m_cudnn_data_type;
 
+    /// Activation type
+    lbann::activation_type m_activation_type;
+
     /// Number of data samples per GPU
     int m_samples_per_gpu;
 
@@ -198,6 +221,8 @@ namespace cudnn
     cudnnFilterDescriptor_t m_filter_desc;
     /// Convolution descriptor
     cudnnConvolutionDescriptor_t m_conv_desc;
+    /// Activation descriptor
+    cudnnActivationDescriptor_t m_activation_desc;
 
     /// Forward pass algorithm
     cudnnConvolutionFwdAlgo_t m_forward_algo;
@@ -226,10 +251,11 @@ namespace cudnn
 
     const uint m_mini_batch_size;
 
-    std::vector<DataType*> d_src;
+    std::vector<DataType*> d_prev_activations;
     std::vector<DataType*> d_filter;
     std::vector<DataType*> d_bias;
-    std::vector<DataType*> d_dst;
+    std::vector<DataType*> d_weighted_sum;
+    std::vector<DataType*> d_activations;
     std::vector<DataType*> d_work_space;
 
     std::vector<DataType*> d_prev_error_signal;
@@ -344,8 +370,8 @@ namespace cudnn
 
     const uint m_mini_batch_size;
 
-    std::vector<DataType*> d_src;
-    std::vector<DataType*> d_dst;
+    std::vector<DataType*> d_prev_activations;
+    std::vector<DataType*> d_activations;
 
     std::vector<DataType*> d_prev_error_signal;
     std::vector<DataType*> d_error_signal;

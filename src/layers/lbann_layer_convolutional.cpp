@@ -47,9 +47,8 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const weight_initialization init,
                                          lbann_comm* comm,
                                          Optimizer* optimizer,
-                                         std::vector<regularizer*> regs,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, optimizer, mini_batch_size, activation, regs),
+  : Layer(index, comm, optimizer, mini_batch_size, activation, {}),
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
@@ -112,7 +111,8 @@ convolutional_layer::convolutional_layer(const uint index,
   // Initialize cuDNN convolutional layer
   m_cudnn_layer = NULL;
 #ifdef __LIB_CUDNN
-  if(cudnn)
+  if(cudnn) {
+    m_using_gpu = true;
     m_cudnn_layer
       = new cudnn::cudnn_convolutional_layer(num_dims,
                                              num_input_channels,
@@ -122,7 +122,9 @@ convolutional_layer::convolutional_layer(const uint index,
                                              conv_pads,
                                              conv_strides,
                                              m_mini_batch_size,
+                                             m_activation_type,
                                              cudnn);
+  }
   is_pinned_fwd = false;
   is_pinned_bwd = false;
 #endif // __LIB_CUDNN
@@ -132,7 +134,8 @@ convolutional_layer::convolutional_layer(const uint index,
 convolutional_layer::~convolutional_layer()
 {
 #ifdef __LIB_CUDNN
-  delete m_cudnn_layer;
+  if(m_cudnn_layer != NULL)
+    delete m_cudnn_layer;
 #endif // __LIB_CUDNN
 }
 
@@ -141,7 +144,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
-  if(m_cudnn_layer) {
+  if(m_using_gpu) {
     // Setup cuDNN convolutional layer
     m_cudnn_layer->setup();
 
@@ -279,11 +282,15 @@ void lbann::convolutional_layer::fp_linearity() {
   const Mat bias_local = weights_local(IR(m_filter_size,END), ALL);
 
   // Apply convolution on local data samples
-  if(m_cudnn_layer) {
+  if(m_using_gpu) {
 #ifdef __LIB_CUDNN
     if (!is_pinned_fwd) pin_memory_blocks_fwd();
     // cuDNN convolutional layer forward pass
-    m_cudnn_layer->forward(prev_activations_local, filters_local, bias_local, weighted_sum_local);
+    m_cudnn_layer->forward(prev_activations_local, 
+                           filters_local,
+                           bias_local,
+                           weighted_sum_local,
+                           activations_local);
 #else
     throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #endif
@@ -396,11 +403,19 @@ void lbann::convolutional_layer::fp_linearity() {
          DataType(1), convolution_matrix, prev_activations_local,
          DataType(1), weighted_sum_local);
 
+    // Z and Y are identical after fp linearity step
+    Copy(weighted_sum_local, activations_local);
+
   }
 
-  // Z and Y are identical after fp linearity step
-  Copy(weighted_sum_local, activations_local);
+}
 
+void lbann::convolutional_layer::fp_nonlinearity() {
+  /// @todo CPU implementation
+}
+
+void lbann::convolutional_layer::bp_nonlinearity() {
+  /// @todo CPU implementation
 }
 
 void lbann::convolutional_layer::bp_linearity() {
@@ -408,6 +423,7 @@ void lbann::convolutional_layer::bp_linearity() {
   // Get local matrices
   const Mat& input_local = m_prev_activations_v->LockedMatrix();
   const Mat& weights_local = m_weights->LockedMatrix();
+  const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
   const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
   Mat& weights_gradient_local = m_weights_gradient->Matrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
@@ -423,6 +439,7 @@ void lbann::convolutional_layer::bp_linearity() {
     if (!is_pinned_bwd) pin_memory_blocks_bwd();
     m_cudnn_layer->backward(input_local,
                             filters_local,
+                            weighted_sum_local,
                             prev_error_signal_local,
                             filters_gradient_local,
                             bias_gradient_local,

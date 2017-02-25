@@ -34,6 +34,7 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
+#define DEBUGLINE do{if(El::mpi::Rank(El::mpi::COMM_WORLD) == 0) std::cerr << "==== DEBUGLINE (" << __FILE__ << ":" << __LINE__ << ") ====\n";} while(0)
 
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
@@ -226,6 +227,7 @@ int main(int argc, char* argv[])
           int filterDims[] = {3, 3};
           int convPads[] = {0, 0};
           int convStrides[] = {1, 1};
+
           convolutional_layer* layer
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
@@ -234,7 +236,7 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer, 
-                                      {}, cudnn);
+                                      cudnn);
           dnn.add(layer);
         }
 
@@ -256,7 +258,6 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer,
-                                      {},
                                       cudnn);
           dnn.add(layer);
         }
@@ -273,9 +274,8 @@ int main(int argc, char* argv[])
           pooling_layer* layer
             = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, activation_type::ID,
+                                trainParams.MBSize,
                                 comm,
-                                {new dropout(comm, 0.75)},
                                 cudnn);
           dnn.add(layer);
         }

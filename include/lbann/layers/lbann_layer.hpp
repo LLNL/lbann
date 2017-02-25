@@ -129,12 +129,16 @@ namespace lbann
     ElMat *bp_output();
     void setup_fp_input(ElMat *fp_input);
     void setup_bp_input(ElMat *bp_input);
+
+    /// @todo Setup GPU pointers for fp and bp
+    std::vector<DataType*> *fp_output_d();
+    std::vector<DataType*> *bp_output_d();
+    void setup_fp_input_d(std::vector<DataType*> *fp_input_d);
+    void setup_bp_input_d(std::vector<DataType*> *bp_input_d);
     void set_prev_layer_type(layer_type type);
     void set_next_layer_type(layer_type type);
-
-    /* void updateMB(const float LearnRate); */
-    //    virtual double computeCost(DistMat &deltas) = 0;
-    //    { return 0.0;}
+    void set_prev_layer_using_gpu(bool using_gpu);
+    void set_next_layer_using_gpu(bool using_gpu);
 
     bool saveToFile(int fd, const char* filename);
     bool loadFromFile(int fd, const char* filename);
@@ -199,6 +203,28 @@ namespace lbann
     virtual void fp_nonlinearity();
     /** Handle the layer's nonlinearity in backward propagation. */
     virtual void bp_nonlinearity();
+
+    /** Current layer is using GPU. */
+    bool m_using_gpu;
+    /** Previous layer is using GPU. */
+    bool m_prev_layer_using_gpu;
+    /** Next layer is using GPU. */
+    bool m_next_layer_using_gpu;
+
+    /** GPU memory for activations from "previous" layer. */
+    std::vector<DataType*> m_prev_activations_d;
+    /** GPU memory for activations. */
+    std::vector<DataType*> m_activations_d;
+    /** GPU memory for output of forward pass linear transformation. */
+    std::vector<DataType*> m_weighted_sum_d;
+    /** GPU memory for error signal from "next" layer. */
+    std::vector<DataType*> m_prev_error_signal_d;
+    /** GPU memory for error signal. */
+    std::vector<DataType*> m_error_signal_d;
+    /** GPU memory for forward propagation input. */
+    std::vector<DataType*> *fp_input_d;
+    /** GPU memory for backward propagation input. */
+    std::vector<DataType*> *bp_input_d;
 
     /** Activation function */
     Activation* m_activation_fn;

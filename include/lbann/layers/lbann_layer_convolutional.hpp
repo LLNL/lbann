@@ -55,7 +55,6 @@ namespace lbann
                         activation_type activation,
                         weight_initialization init,
                         lbann_comm* comm, Optimizer* optimizer,
-                        std::vector<regularizer*> regs,
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor
@@ -69,6 +68,8 @@ namespace lbann
     
     void fp_linearity();
     void bp_linearity();
+    void fp_nonlinearity();
+    void bp_nonlinearity();
 
   private:
     /// Weight initialization scheme

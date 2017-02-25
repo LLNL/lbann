@@ -33,20 +33,18 @@ using namespace std;
 using namespace El;
 using namespace lbann;
 
-pooling_layer::pooling_layer(const uint index,
-                             const int num_dims,
-                             const int num_channels,
+pooling_layer::pooling_layer(uint index,
+                             int num_dims,
+                             int num_channels,
                              const int* input_dims,
                              const int* pool_dims,
                              const int* pool_pads,
                              const int* pool_strides,
-                             const pool_mode _pool_mode,
-                             const uint mini_batch_size,
-                             activation_type activation,
+                             pool_mode _pool_mode,
+                             uint mini_batch_size,
                              lbann_comm* comm,
-                             std::vector<regularizer*> regs,
                              cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, NULL, mini_batch_size, activation, regs),
+  : Layer(index, comm, NULL, mini_batch_size, activation_type::ID, {}),
     m_pool_mode(_pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels)
 {

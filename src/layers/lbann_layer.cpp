@@ -59,6 +59,12 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     bp_input = NULL;
     neural_network_model = NULL;
 
+    m_using_gpu = false;
+    m_prev_layer_using_gpu = false;
+    m_next_layer_using_gpu = false;
+    fp_input_d = NULL;
+    bp_input_d = NULL;
+
     // Most layers use standard elemental matrix distribution
     m_weights             = new DistMat(comm->get_model_grid());
     m_weights_gradient    = new DistMat(comm->get_model_grid());
@@ -203,6 +209,30 @@ void lbann::Layer::setup_bp_input(ElMat *bp_input)
   this->bp_input = bp_input;
 }
 
+std::vector<DataType*> *lbann::Layer::fp_output_d() {
+  if(m_using_gpu)
+    return &m_activations_d;
+  else
+    return NULL;
+}
+
+std::vector<DataType*> *lbann::Layer::bp_output_d() {
+  if(m_using_gpu)
+    return &m_error_signal_d;
+  else
+    return NULL;
+}
+
+void lbann::Layer::setup_fp_input_d(std::vector<DataType*> *fp_input_d)
+{
+  this->fp_input_d = fp_input_d;
+}
+
+void lbann::Layer::setup_bp_input_d(std::vector<DataType*> *bp_input_d)
+{
+  this->bp_input_d = bp_input_d;
+}
+
 void lbann::Layer::set_prev_layer_type(layer_type type)
 {
   this->m_prev_layer_type = type;
@@ -211,6 +241,16 @@ void lbann::Layer::set_prev_layer_type(layer_type type)
 void lbann::Layer::set_next_layer_type(layer_type type)
 {
   this->m_next_layer_type = type;
+}
+
+void lbann::Layer::set_prev_layer_using_gpu(bool using_gpu)
+{
+  this->m_prev_layer_using_gpu = using_gpu;
+}
+
+void lbann::Layer::set_next_layer_using_gpu(bool using_gpu)
+{
+  this->m_next_layer_using_gpu = using_gpu;
 }
 
 bool lbann::Layer::saveToFile(int fd, const char* dirname)
