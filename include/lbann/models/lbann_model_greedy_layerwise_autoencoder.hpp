@@ -49,6 +49,12 @@ namespace lbann
     /// Destructor
     ~greedy_layerwise_autoencoder();
 
+    /// Save model to shared checkpoint
+    bool save_to_checkpoint_shared(persist& p);
+
+    /// Restore model from shared checkpoint
+    bool load_from_checkpoint_shared(persist& p);
+
     /// Compute layer summaries
     void summarize(lbann_summary& summarizer);
 
@@ -68,7 +74,6 @@ namespace lbann
     /// Training step on one mini-batch
     bool train_mini_batch() {return false;}
 
-
     /// Evaluate neural network
     void evaluate(execution_mode mode=execution_mode::testing);
     /// Evaluation step on one mini-batch
@@ -79,8 +84,18 @@ namespace lbann
   protected:
     /// Model's name
     std::string m_name;
+
+    /// Flag recording whether we have a mirror layer inserted in model for training
+    uint32_t m_have_mirror;
+
   /*private:
     void rewire_index();*/
+
+    /// Inserts a mirror layer for specified layer index
+    void insert_mirror(uint32_t layer_index);
+
+    /// Removes mirror for specified layer index
+    void remove_mirror(uint32_t layer_index);
   };
 }
 

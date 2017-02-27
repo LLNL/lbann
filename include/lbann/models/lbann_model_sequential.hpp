@@ -68,9 +68,7 @@ class sequential_model : public model
     /** @todo This is old and likely broken */
     bool load_from_checkpoint(int fd, const char* filename, uint64_t* bytes);
 
-    /** @todo This is old and likely broken */
     bool save_to_checkpoint_shared(persist& p);
-    /** @todo This is old and likely broken */
     bool load_from_checkpoint_shared(persist& p);
 
     /// Get mini-batch size
