@@ -145,9 +145,6 @@ void lbann_quantizer::adaptive_threshold_quantize(
   colT total_quantized = std::accumulate(quantized_counts.begin(),
     quantized_counts.end(), 0);
   q.resize(header_len + total_quantized);
-  // Only use half the threads here for two reasons:
-  // - Diminishing returns on memory bandwidth.
-  // - Helps avoid load imbalance.
   const int num_copy_threads =
     get_adaptive_quantization_copy_threads(width);
   #pragma omp parallel for schedule(dynamic, 1) num_threads(num_copy_threads)
@@ -189,7 +186,8 @@ void lbann_quantizer::adaptive_threshold_unquantize(
   const colT height = mat.Height();
   const colT ldim = mat.LDim();
   const colT* q_col = (const colT*) q.data();
-  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf)
+  const int num_threads = get_adaptive_quantization_threads(mat.Width());
+  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -239,7 +237,8 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
   const colT height = mat.Height();
   const colT ldim = mat.LDim();
   const colT* q_col = (const colT*) q.data();
-  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf)
+  const int num_threads = get_adaptive_quantization_threads(mat.Width());
+  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -291,20 +290,22 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   const colT header_len = row_header_factor * HEADER_FACTOR * width +
     row_header_factor;
   q.resize(header_len);  // Space for the header.
-  std::vector<std::vector<rowT>> thread_qs(omp_get_max_threads());
-  std::vector<colT> quantized_sums(omp_get_max_threads(), 0);
-  std::vector<colT> quantized_counts(omp_get_max_threads(), 0);
+  // Select the appropriate number of threads.
+  const int num_threads = get_adaptive_quantization_threads(width);
+  std::vector<std::vector<rowT>> thread_qs(num_threads);
+  std::vector<colT> quantized_sums(num_threads, 0);
+  std::vector<colT> quantized_counts(num_threads, 0);
   // Compute the thresholds.
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
   colT* q_col = (colT*) q.data();
-  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf)
+  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads)
   {
     const int tid = omp_get_thread_num();
     colT num_quantized = 0;
     std::vector<rowT>& thread_q = thread_qs[tid];
     thread_q.resize(std::max(
-      2 * height * width / proportion / omp_get_max_threads(),
+      2 * height * width / proportion / num_threads,
       (colT) 4));
     colT size = thread_q.size();
     #pragma omp for schedule(static)
@@ -359,7 +360,7 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
     {
       // Compute the amount to adjust header counts by. This is essentially
       // a shifted prefix-sum.
-      for (int t = 1; t < omp_get_max_threads(); ++t) {
+      for (int t = 1; t < num_threads; ++t) {
         quantized_sums[t] = quantized_sums[t - 1] + quantized_counts[t - 1];
       }
     }
@@ -373,10 +374,9 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   colT total_quantized = std::accumulate(quantized_counts.begin(),
     quantized_counts.end(), 0);
   q.resize(header_len + total_quantized);
-  // Only use half the threads here for two reasons:
-  // - Diminishing returns on memory bandwidth.
-  // - Helps avoid load imbalance.
-#pragma omp parallel for schedule(dynamic, 1) num_threads(omp_get_max_threads() / 2)
+  const int num_copy_threads =
+    get_adaptive_quantization_copy_threads(width);
+  #pragma omp parallel for schedule(dynamic, 1) num_threads(num_copy_threads)
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],
