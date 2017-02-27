@@ -29,8 +29,6 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-#define DEBUGLINE {if(El::Rank(El::COMM_WORLD) == 0) std::cerr << "==== DEBUGLINE (" << __FILE__ << ":" << __LINE__ << ") ====\n"}
-
 #include <iostream>
 
 #include "El.hpp"
@@ -230,7 +228,8 @@ cudnn_convolutional_layer
     m_cudnn_data_type(get_cudnn_data_type<DataType>()),
     m_src_desc(NULL), m_dst_desc(NULL),
     m_filter_desc(NULL), m_conv_desc(NULL),
-    m_mini_batch_size(mini_batch_size)
+    m_mini_batch_size(mini_batch_size),
+    m_activation_type(activation)
 {
 
   // Get number of GPUs
@@ -288,12 +287,11 @@ cudnn_convolutional_layer::~cudnn_convolutional_layer()
   if(m_dst_desc)    checkCUDNN(cudnnDestroyTensorDescriptor(m_dst_desc));
   if(m_filter_desc) checkCUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
   if(m_conv_desc)   checkCUDNN(cudnnDestroyConvolutionDescriptor(m_conv_desc));
+  if(m_activation_desc) checkCUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
 }
 
 void cudnn_convolutional_layer::setup()
 {
-
-  
 
   // Initialize descriptors
   checkCUDNN(cudnnCreateTensorDescriptor(&m_src_desc));
@@ -345,7 +343,7 @@ void cudnn_convolutional_layer::setup()
   m_dst_size = 1;
   for(int i=1; i<m_dst_dims.size(); ++i)
     m_dst_size *= m_dst_dims[i];
-                                 
+
   // Set output tensor descriptor
   m_dst_strides = std::vector<int>(m_num_dims+2);
   m_dst_strides[m_num_dims + 1]  = 1;
@@ -430,6 +428,7 @@ void cudnn_convolutional_layer::setup()
     break;
   default:
     throw lbann_exception("cudnn_wrapper: invalid activation type");
+    break;
   }
 
 #ifdef _ALLOC_DEVICE_MEM_ONCE_
@@ -437,6 +436,7 @@ void cudnn_convolutional_layer::setup()
 #endif
   temp.Resize(m_filter_size, m_cudnn->m_num_gpus);
   m_cudnn->pin_ptr((void*) temp.Buffer(), temp.Height()*temp.Width()*sizeof(DataType));
+
 }
 
 void cudnn_convolutional_layer::device_allocate(void)
@@ -505,11 +505,11 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
   d_prev_activations.assign(num_gpus, NULL);
   d_filter.clear();
   d_filter.assign(num_gpus, NULL);
+  d_weighted_sum.clear();
+  d_weighted_sum.assign(num_gpus, NULL);
+#endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_prev_error_signal.clear();
   d_prev_error_signal.assign(num_gpus, NULL);
-#else // Otherwise reuse those blocks allocated for forward()
-  d_prev_error_signal = d_activations;
-#endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_filter_gradient.clear();
   d_filter_gradient.assign(num_gpus, NULL);
   d_error_signal.clear();
@@ -534,10 +534,14 @@ void cudnn_convolutional_layer::device_allocate_for_backward(void)
                                         m_filter_size*sizeof(DataType),
                                         stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &d_prev_error_signal[i],
+                                        (void**) &d_weighted_sum[i],
                                         m_dst_size*m_samples_per_gpu*sizeof(DataType),
                                         stream));
   #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &d_prev_error_signal[i],
+                                        m_dst_size*m_samples_per_gpu*sizeof(DataType),
+                                        stream));
     checkCUDA(gpu_memory.DeviceAllocate(gpu,
                                         (void**) &d_filter_gradient[i],
                                         m_filter_size*sizeof(DataType),
@@ -575,24 +579,20 @@ void cudnn_convolutional_layer::device_deallocate_for_forward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-  #ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_weighted_sum[i]));
-  #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
-    checkCUDA(gpu_memory.DeviceFree(gpu, d_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_bias[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_weighted_sum[i]));
+    checkCUDA(gpu_memory.DeviceFree(gpu, d_activations[i]));
     if(d_work_space[i]) {
       checkCUDA(gpu_memory.DeviceFree(gpu, d_work_space[i]));
     }
   }
-  #ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_prev_activations.clear();
   d_filter.clear();
-  d_weighted_sum.clear();
-  #endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
-  d_activations.clear();
   d_bias.clear();
+  d_weighted_sum.clear();
+  d_activations.clear();
   d_work_space.clear();
 }
 
@@ -604,9 +604,11 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
   for(int i=0; i<num_gpus; ++i) {
     const int gpu = m_cudnn->m_gpus[i];
     cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_activations[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_weighted_sum[i]));
+#endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
     checkCUDA(gpu_memory.DeviceFree(gpu, d_prev_error_signal[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_filter_gradient[i]));
     checkCUDA(gpu_memory.DeviceFree(gpu, d_error_signal[i]));
@@ -617,12 +619,16 @@ void cudnn_convolutional_layer::device_deallocate_for_backward(void)
       checkCUDA(gpu_memory.DeviceFree(gpu, d_data_work_space[i]));
     }
   }
+#ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_prev_activations.clear();
   d_filter.clear();
   d_weighted_sum.clear();
+#endif // end of ifndef _ALLOC_DEVICE_MEM_ONCE_
   d_prev_error_signal.clear();
   d_filter_gradient.clear();
   d_error_signal.clear();
+  d_filter_work_space.clear();
+  d_data_work_space.clear();
 }
 
 void cudnn_convolutional_layer::forward(const Mat& src,

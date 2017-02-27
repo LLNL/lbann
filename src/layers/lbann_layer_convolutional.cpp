@@ -79,7 +79,7 @@ convolutional_layer::convolutional_layer(const uint index,
     m_output_dims[i] = (m_output_dims[i]+conv_strides[i]-1)/conv_strides[i];
     NumNeurons *= m_output_dims[i];
   }
-  
+
   // Matrices should be in Star,Star and Star,VC distributions
   delete m_weights;
   delete m_weights_gradient;
@@ -224,6 +224,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Zeros(*m_activations, NumNeurons, m_mini_batch_size);
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+
 }
 
 void lbann::convolutional_layer::pin_memory_blocks_fwd(void)

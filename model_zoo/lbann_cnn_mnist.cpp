@@ -34,8 +34,6 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-#define DEBUGLINE do{if(El::mpi::Rank(El::mpi::COMM_WORLD) == 0) std::cerr << "==== DEBUGLINE (" << __FILE__ << ":" << __LINE__ << ") ====\n";} while(0)
-
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
