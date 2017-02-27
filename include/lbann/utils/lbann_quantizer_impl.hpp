@@ -148,7 +148,9 @@ void lbann_quantizer::adaptive_threshold_quantize(
   // Only use half the threads here for two reasons:
   // - Diminishing returns on memory bandwidth.
   // - Helps avoid load imbalance.
-  #pragma omp parallel for schedule(dynamic, 1) num_threads(num_threads / 2)
+  const int num_copy_threads =
+    get_adaptive_quantization_copy_threads(width);
+  #pragma omp parallel for schedule(dynamic, 1) num_threads(num_copy_threads)
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],

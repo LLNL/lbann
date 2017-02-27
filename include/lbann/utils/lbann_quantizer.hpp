@@ -450,6 +450,23 @@ private:
     return std::min(omp_get_max_threads(), num_threads);
   }
 
+  /**
+   * Return the number of threads adaptive quantization uses in its copy loop.
+   * This is empirically determined.
+   * @param width The width of the matrix being quantized.
+   * @todo Make this configurable at compile time.
+   * @note If this and get_adaptive_quantization_threads return different values
+   * for the same width, OpenMP may reap its threads and add additional overhead
+   * when invoking a parallel region with more threads.
+   */
+  inline int get_adaptive_quantization_copy_threads(El::Int width) {
+    int num_threads = get_adaptive_quantization_threads(width);
+    if (width >= 16384) {
+      num_threads /= 2;
+    }
+    return num_threads;
+  }
+
   template <typename T>
   void intermodel_ring_reduce_scatter(
     lbann_comm* comm, Mat& mat, bool var_recv,
