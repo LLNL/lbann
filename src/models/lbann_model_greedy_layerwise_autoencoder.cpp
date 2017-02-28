@@ -134,12 +134,12 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index)
 
     // call base model setup again to reindex and set appropriate fp and bp input
     if (comm->am_world_master()) {
-      std::cout << "Phase [" << mirror_index << "] Done, Reset Layers " << std::endl;
+      std::cout << "Phase [" << layer_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
     }
     setup();
 
-    // set flag to indicate we've deleted our mirror laer
+    // set flag to indicate we've deleted our mirror layer
     m_have_mirror = 0;
   }
 }
@@ -271,6 +271,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
   }
 
   do_train_end_cbs();
+  m_current_epoch = 0; //reset epoch counter
 }
 
 bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
