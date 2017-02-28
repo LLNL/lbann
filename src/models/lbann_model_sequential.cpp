@@ -465,6 +465,26 @@ lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
   return tmp;
 }
 
+void lbann::sequential_model::set_fp_input(size_t start_index, size_t end_index)
+{
+  // Establish the forward pass input pointers
+  // Note: the first layer doesn't require input
+  for (size_t l = Max(start_index,1); l < end_index; ++l) {
+    m_layers[l]->set_prev_layer_type(m_layers[l-1]->m_type);
+    m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
+  }
+}
+
+void lbann::sequential_model::set_bp_input(size_t start_index, size_t end_index)
+{
+  // Establish the backward pass input pointers
+  // Note: the last layer doens't require input
+  for (size_t l = end_index-1; l --> Max(start_index-1,0) ;) { // Cute decrement loop for unsigned int
+    m_layers[l]->set_next_layer_type(m_layers[l+1]->m_type);
+    m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
+  }
+}
+
 void lbann::sequential_model::setup(size_t start_index,size_t end_index)
 {
   if(end_index <= 0) {
@@ -484,20 +504,8 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
     m_layers[l]->Index = l;
   }
 
-  // Establish the forward pass input pointers
-  // Note: the first layer doesn't require input
-  for (size_t l = Max(start_index,1); l < end_index; ++l) {
-    m_layers[l]->set_prev_layer_type(m_layers[l-1]->m_type);
-    m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
-  }
-
-  // Establish the backward pass input pointers
-  // Note: the last layer doens't require input
-  for (size_t l = end_index-1; l --> Max(start_index-1,0) ;) { // Cute decrement loop for unsigned int
-    m_layers[l]->set_next_layer_type(m_layers[l+1]->m_type);
-    m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
-  }
-
+  set_fp_input(start_index, end_index);
+  set_bp_input(start_index, end_index);
   // Set up callbacks
   setup_callbacks();
 }

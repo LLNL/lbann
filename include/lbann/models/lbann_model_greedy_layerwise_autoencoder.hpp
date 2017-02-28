@@ -66,16 +66,18 @@ namespace lbann
     void train(int num_epochs, int evaluation_frequency=0);
 
     // Train each phase ( a set of (original) input, hidden and mirror layers (output))
-    void train_phase(size_t phase_index,int num_epochs, int evaluation_frequency);
+    void train_phase(int num_epochs, int evaluation_frequency);
 
     /// Training step on one mini-batch
-    bool train_mini_batch(size_t phase_index);
+    bool train_mini_batch();
 
     /// Training step on one mini-batch
-    bool train_mini_batch() {return false;}
+    //bool train_mini_batch() {return false;}
 
-    /// Evaluate neural network
+    ///Global evaluation (testing), provide overall cost relative to original input
     void evaluate(execution_mode mode=execution_mode::testing);
+    /// Evaluate (validation) per phase
+    void evaluate_phase(execution_mode mode=execution_mode::validation);
     /// Evaluation step on one mini-batch
     bool evaluate_mini_batch();
 
@@ -84,12 +86,13 @@ namespace lbann
   protected:
     /// Model's name
     std::string m_name;
+    /// index of last layer in a phase
+    size_t m_phase_end;
+    /// containers for  mirror layers
+    std::vector<Layer*> m_reconstruction_layers;
 
     /// Flag recording whether we have a mirror layer inserted in model for training
     uint32_t m_have_mirror;
-
-  /*private:
-    void rewire_index();*/
 
     /// Inserts a mirror layer for specified layer index
     void insert_mirror(uint32_t layer_index);
