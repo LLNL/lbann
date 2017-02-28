@@ -170,10 +170,6 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     m_reconstruction_layers.insert(m_reconstruction_layers.begin(),mirror_layer);
     //swap back
     if(m_current_phase < num_phases-1) swap(m_phase_end,tmp);
-    if (comm->am_world_master()) {
-      std::cout << "Phase [" << m_current_phase<< "] Done, Reset Layers " << std::endl;
-      for(auto& l:m_layers) std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
-    }
 
     // move on to the next phase
     m_current_phase++;
@@ -387,15 +383,11 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
   for(size_t l = mrs_index; l < mls; ++l) m_layers[l]->Index = l;
   set_fp_input(mrs_index,mls);
   
-  if (comm->am_world_master()) {
-      for(auto& l:m_layers) std::cout << " Evaluate global layers [ #" << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
-  }
-
   //@todo loop for epochs??
   m_phase_end = mls-1;
   evaluate_phase(mode);
   
-  if (comm->am_world_master()) std::cout << "Global (i.e., rel. to L0) testing ";
+  if (comm->am_world_master()) std::cout << "Global (rel. to all (in + hidden) layers) testing ";
     m_layers[m_phase_end]->epoch_print();
 
   for (Layer* layer : m_layers) {
