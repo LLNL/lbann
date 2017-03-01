@@ -414,6 +414,11 @@ private:
   void adaptive_threshold_bound(const Mat& mat, Mat& qerror, std::vector<rowT>& q,
                                 int proportion);
   template <typename colT, typename rowT>
+  void adaptive_threshold_quantize_slice(const std::vector<rowT>& q,
+                                         const Mat& mat, Mat& qerror,
+                                         std::vector<rowT>& slice, colT start,
+                                         colT end, int proportion);
+  template <typename colT, typename rowT>
   void intermodel_sum_adaptive_threshold_quantized_impl(
     lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
     std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs1,

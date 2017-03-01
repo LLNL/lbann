@@ -158,7 +158,7 @@ void lbann_quantizer::adaptive_threshold_quantize(
   q_col = (colT*) q.data();
   q_col[HEADER_FACTOR * width] = (colT) q.size();
   quantized_count = q.size() - header_len;
-  adaptive_threshold_bound<colT, rowT>(mat, qerror, q, proportion);
+  //adaptive_threshold_bound<colT, rowT>(mat, qerror, q, proportion);
 }
 
 template <typename colT, typename rowT>
@@ -463,6 +463,32 @@ void lbann_quantizer::adaptive_threshold_bound(
 }
 
 template <typename colT, typename rowT>
+void lbann_quantizer::adaptive_threshold_quantize_slice(
+  const std::vector<rowT>& q, const Mat& mat, Mat& qerror,
+  std::vector<rowT>& slice, colT start, colT end, int proportion) {
+  const colT width = end - start;
+  const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
+  const colT header_len = row_header_factor * width * HEADER_FACTOR +
+    row_header_factor;
+  // Copy the header over. Locations will need to be adjusted later.
+  const colT* q_col = (const colT*) q.data();
+  const colT total_len = header_len + q_col[HEADER_FACTOR * end] - q_col[HEADER_FACTOR * start];
+  slice.resize(total_len);
+  colT* slice_col = (colT*) slice.data();
+  std::copy(&q_col[HEADER_FACTOR*start], &q_col[HEADER_FACTOR*end + 1],
+    slice_col);
+  // Copy data over.
+  std::copy(q.begin() + slice_col[0], q.begin() + slice_col[HEADER_FACTOR * width],
+    slice.begin() + header_len);
+  // Adjust locations.
+  const colT adjust = slice_col[0] - header_len;
+  for (colT header_loc = 0; header_loc <= HEADER_FACTOR * width; header_loc += HEADER_FACTOR) {
+    slice_col[header_loc] -= adjust;
+  }
+  adaptive_threshold_bound<colT, rowT>(mat, qerror, slice, proportion);
+}
+
+template <typename colT, typename rowT>
 void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
   lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
   std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs1,
@@ -496,6 +522,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
     adaptive_recv_bufs2.emplace(std::make_pair(max_size, std::vector<rowT>(max_size)));
   }
   std::vector<rowT> rs_quant;
+  std::vector<rowT> rs_to_send;
   std::vector<rowT>& rs_recv = adaptive_recv_bufs1[max_size];
   /* NOTE: std::vector::resize() initializes elements. This is unnecessary, but
    * there is no way around it. You cannot use reserve() because that does not
@@ -504,16 +531,16 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
    * _implementation_ makes guarantees for reserve(), or implement a custom
    * version of vector.
    */
+  adaptive_threshold_quantize<colT, rowT>(mat, rs_quant, qerror, proportion);
   auto rs_send_trans = 
-    [&qerror, &rs_quant, proportion, this]
+    [&qerror, &rs_quant, &rs_to_send, proportion, this]
     (Mat& mat, IR h, IR w, int& count) {
       auto to_send = mat(h, w);
       auto to_send_qerr = qerror(h, w);
-      rs_quant.clear();
-      adaptive_threshold_quantize<colT, rowT>(to_send, rs_quant, to_send_qerr,
-                                              proportion);
-      count = sizeof(rowT) * rs_quant.size();
-      return (mpi_rowT*) rs_quant.data();
+      rs_to_send.clear();
+      adaptive_threshold_quantize_slice<colT, rowT>(rs_quant, to_send, to_send_qerr, rs_to_send, w.beg, w.end, proportion);
+      count = sizeof(rowT) * rs_to_send.size();
+      return (mpi_rowT*) rs_to_send.data();
     };
   auto rs_get_recv_buf = 
     [&rs_recv, max_size] (Mat& mat, int& count) {
