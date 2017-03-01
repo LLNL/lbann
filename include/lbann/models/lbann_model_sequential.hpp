@@ -105,6 +105,12 @@ class sequential_model : public model
 
     /// Replace layer in sequential model
     virtual Layer* swap(int index, Layer *new_layer);
+    
+    /// Establish model layers' forward pass input pointers
+    virtual void set_fp_input(size_t start_index,size_t end_index);
+    
+    /// Establish model layers' backward pass input pointers
+    virtual void set_bp_input(size_t start_index,size_t end_index);
 
     /// Setup sequential model
     virtual void setup(size_t start_index=0,size_t end_index=0);

@@ -206,6 +206,17 @@ int main(int argc, char* argv[])
 
 
       gla.setup();
+
+      // set checkpoint directory and checkpoint interval
+      // @TODO: add to lbann_proto
+      gla.set_checkpoint_dir(trainParams.ParameterDir);
+      gla.set_checkpoint_epochs(trainParams.CkptEpochs);
+      gla.set_checkpoint_steps(trainParams.CkptSteps);
+      gla.set_checkpoint_secs(trainParams.CkptSecs);
+
+      // restart model from checkpoint if we have one
+      gla.restartShared();
+
       if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
       gla.train(trainParams.EpochCount,true);
 

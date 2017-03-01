@@ -38,6 +38,8 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
+CKPT_EPOCHS=0
+CKPT_STEPS=0
 TASKS_PER_NODE=8
 
 if [ "${CLUSTER}" = "catalyst" ]; then
@@ -71,6 +73,8 @@ function HELP {
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."
+  echo "${REV}-k${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} steps Default is ${BOLD}${CKPT_STEPS}${NORM}."
+  echo "${REV}-K${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} epochs. Default is ${BOLD}${CKPT_EPOCHS}${NORM}."
   echo "${REV}-m${NORM} <val> --Sets the ${BOLD}mode${NORM}. Default is ${BOLD}${MODE}${NORM}."
   echo "${REV}-n${NORM} <val> --Sets the ${BOLD}network topology${NORM}. Default is ${BOLD}${NETWORK}${NORM}."
   echo "${REV}-o${NORM} <val> --Sets the ${BOLD}output directory${NORM}. Default is ${BOLD}${OUTPUT_DIR}${NORM}."
@@ -121,6 +125,12 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:x:y:z:" opt; do
       ;;
     l)
       LOAD_MODEL=$OPTARG
+      ;;
+    k)
+      CKPT_STEPS=$OPTARG
+      ;;
+    K)
+      CKPT_EPOCHS=$OPTARG
       ;;
     m)
       MODE=$OPTARG
@@ -217,6 +227,6 @@ done
 
 fi
 
-CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_greedy_layerwise_autoencoder_nci  --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/ --train-file ${TRAIN_FILE} --test-file ${TEST_FILE}"
+CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_greedy_layerwise_autoencoder_nci  --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/ --train-file ${TRAIN_FILE} --test-file ${TEST_FILE} --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
 echo ${CMD}
 ${CMD}

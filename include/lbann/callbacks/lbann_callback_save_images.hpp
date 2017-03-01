@@ -40,16 +40,6 @@ namespace lbann {
 class lbann_callback_save_images : public lbann_callback {
 public:
   /**
-   * @note  this will be deprecated 
-   * @param image_dir directory to save images
-   * @param num_images number of images to save
-   */
-  lbann_callback_save_images(std::string image_dir, size_t num_images=10) :
-    lbann_callback(), m_image_dir(image_dir), m_num_images(num_images) {
-      set_name("save_images");
-    }
-  /**
-   * @note This uses data reader, previous (above) will be deprecated
    * @param data reader type e.g., imagenet, mnist, cifar10....
    * @param image_dir directory to save image
    * @param image extension e.g., jpg, png, pgm......
@@ -63,10 +53,8 @@ public:
 private:
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc
-  Int m_num_images; // num of images to save
   DataReader* m_reader;
-  void save_images(ElMat* input, ElMat* output,int phase);
-  void save_image(ElMat* input, ElMat* output); //this version uses data reader
+  void save_image(ElMat* input, ElMat* output); 
 };
 
 }  // namespace lbann

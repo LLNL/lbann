@@ -40,12 +40,12 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
                                                 layer_factory* _layer_fac,
                                                 Optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
-    m_have_mirror(0) {}
+    m_have_mirror(0),m_phase_end(2) {}
 
 lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 
 struct lbann_model_greedy_layerwise_autoencoder_header {
-    uint32_t phase_index;
+    uint32_t phase_index; //should be m_current_phase??
     uint32_t have_mirror;
 };
 
@@ -146,6 +146,41 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index)
 
 void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency)
 {
+  size_t num_phases = m_layers.size()-1;
+  // get to training, layer by layer
+  while(m_current_phase < num_phases){
+    //m_current_phase = phase_index;
+    m_phase_end = m_current_phase+2;
+    Layer* original_layer = m_layers[m_current_phase];
+    Optimizer *optimizer = optimizer_fac->create_optimizer();
+    target_layer_unsupervised*  mirror_layer = new target_layer_unsupervised(m_phase_end, comm, optimizer, m_mini_batch_size,original_layer);
+    Layer* tmp;
+    //if not at the last layer/phase, swap otherwise insert new
+    if(m_current_phase < num_phases-1) tmp = swap(m_phase_end,mirror_layer);
+    else  insert(m_phase_end,mirror_layer);
+    //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
+    //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
+    setup(m_phase_end,m_phase_end+1);  //set up just the added (new) layers
+    train_phase(num_epochs,evaluation_frequency);
+
+    if (comm->am_world_master()) {
+      //end of phase cbs e.g., save a number of image to file
+      do_phase_end_cbs();
+    }
+    m_reconstruction_layers.insert(m_reconstruction_layers.begin(),mirror_layer);
+    //swap back
+    if(m_current_phase < num_phases-1) swap(m_phase_end,tmp);
+
+    // move on to the next phase
+    m_current_phase++;
+  }
+  //evaluate and save all layers for i.e., (1) global cost (2) image reconstruction
+  evaluate(execution_mode::testing);
+
+}
+
+/*void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency)
+{
   // compute number of layers we need to train
   size_t num_phases = m_layers.size() - 1;
   if (m_have_mirror) {
@@ -175,11 +210,10 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     // move on to the next phase
     m_current_phase++;
   }
-}
+}*/
 
-void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int num_epochs, int evaluation_frequency)
+void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_frequency)
 {
-  size_t phase_end = phase_index+2;
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -197,7 +231,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     //Overide default print callback
     if (comm->am_world_master()) {
       std::cout << "-----------------------------------------------------------" << std::endl;
-      std::cout << "Phase [" << phase_index  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
+      std::cout << "Phase [" << m_current_phase  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
       std::cout << "-----------------------------------------------------------" << std::endl;
     }
 
@@ -212,7 +246,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
     for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(phase_index);
+      finished_epoch = train_mini_batch();
 
       // save a checkpoint if needed
       if (need_checkpoint()) {
@@ -220,26 +254,11 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
       }
     } while(!finished_epoch);
 
-    //Is training and testing enough? Do we need validation? val/test look similar!
-    /*if(evaluation_frequency > 0
-       && (epoch + 1) % evaluation_frequency == 0) {
-      m_validation_accuracy = evaluate(execution_mode::validation);
-
-      // Set execution mode back to training
-      m_execution_mode = execution_mode::training;
-      for (Layer* layer : m_layers) {
-        layer->m_execution_mode = execution_mode::training;
-      }
-    }*/
 
     //print training reconstruction cost
-    if (comm->am_world_master()) std::cout << "Training ";
-    m_layers[phase_end]->epoch_print();
+    if (comm->am_world_master()) std::cout << "Layer-wise training ";
+    m_layers[m_phase_end]->epoch_print();
 
-    /*if (comm->am_world_master()) {
-      int img_index = phase_index*10 + epoch;
-      save_image(m_layers[phase_index]->m_activations, m_layers[phase_end]->m_activations,img_index);
-    }*/
 
     do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
 
@@ -247,11 +266,11 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
       layer->epoch_reset();
     } // train epoch end, this reset cost
 
-    evaluate(execution_mode::testing);
+    evaluate_phase(execution_mode::validation);
 
-    //print testing reconstruction cost (somewhat validation)
-    if (comm->am_world_master()) std::cout << "Testing ";
-    m_layers[phase_end]->epoch_print();
+    //print validation reconstruction cost 
+    if (comm->am_world_master()) std::cout << "Layer-wise validation ";
+    m_layers[m_phase_end]->epoch_print();
 
     //Reset cost again
     for (Layer* layer : m_layers) {
@@ -274,15 +293,14 @@ void lbann::greedy_layerwise_autoencoder::train_phase(size_t phase_index, int nu
   m_current_epoch = 0; //reset epoch counter
 }
 
-bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
+bool lbann::greedy_layerwise_autoencoder::train_mini_batch()
 {
-  size_t phase_end = phase_index+2;
   do_batch_begin_cbs();
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
   //@todo; optimize this? change start index from 0 to phase_index
-  for (size_t l = 0; l <= phase_end; ++l) {
+  for (size_t l = 0; l <= m_phase_end; ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
@@ -294,7 +312,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
   // Backward propagation
   do_model_backward_prop_begin_cbs();
   //@todo; optimize to backprop up to phase_index and not 0
-  for (size_t l = phase_end+1; l-- > 0;) {
+  for (size_t l = m_phase_end+1; l-- > 0;) {
     do_layer_backward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->backProp();
     do_layer_backward_prop_end_cbs(m_layers[l]);
@@ -303,7 +321,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
 
   /// Update (active) layers
   ///Freeze inactive layers
-  for (size_t l = phase_end; l > phase_index; --l) {
+  for (size_t l = m_phase_end; l > m_current_phase; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
@@ -312,7 +330,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch(size_t phase_index)
   return data_set_processed;
 }
 
-void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
+void lbann::greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode)
 {
   // Set the execution mode
   m_execution_mode = mode;
@@ -344,10 +362,40 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch()
   }
 
   // Update layers
-  // Note: should only affect the input and target layers
-  for (size_t l = m_layers.size() - 1; l > 0; --l) {
+  // Note: should only affect the input and target 
+  // @todo: delete after check with input layer
+  for (size_t l = m_phase_end; l > m_current_phase; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
   return data_set_processed;
+}
+
+
+void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
+{
+  //concatenate original layers with mirror layers 
+  m_layers.insert(std::end(m_layers), std::begin(m_reconstruction_layers)+1,std::end(m_reconstruction_layers));
+  
+  //Set appropriate layer indices and fp_input
+  size_t mls = m_layers.size();
+  size_t mrs_index = mls-m_reconstruction_layers.size()+1; //reconstruction layers start index
+  for(size_t l = mrs_index; l < mls; ++l) m_layers[l]->Index = l;
+  set_fp_input(mrs_index,mls);
+  
+  //@todo loop for epochs??
+  m_phase_end = mls-1;
+  evaluate_phase(mode);
+  
+  if (comm->am_world_master()) std::cout << "Global (rel. to all (in + hidden) layers) testing ";
+    m_layers[m_phase_end]->epoch_print();
+
+  for (Layer* layer : m_layers) {
+    layer->epoch_reset();
+  }
+  
+  //@todo: finetune only up to the true layers skipping the reconstruction layers
+  //m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
+
+  return;
 }
