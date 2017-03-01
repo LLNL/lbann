@@ -299,7 +299,7 @@ namespace lbann
     }
     template <typename T> void nb_recv(T* data, int count, int model,
                                        mpi::Request<T>& req) {
-      recv(data, count, model, rank_in_model, req);
+      nb_recv(data, count, model, rank_in_model, req);
     }
     void nb_recv(Mat& mat, int model, int rank, mpi::Request<DataType>& req);
     void nb_recv(DistMat& mat, int model, int rank, mpi::Request<DataType>& req);
