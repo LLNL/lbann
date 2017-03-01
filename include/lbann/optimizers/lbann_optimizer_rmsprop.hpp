@@ -29,7 +29,6 @@
 /// Stochastic gradient descent with RMSprop.
 ///  lr: float >= 0. Learning rate.
 ///  rho: float >= 0.
-///  epsilon: float >= 0. Fuzz factor.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_RMSPROP_HPP
@@ -47,7 +46,6 @@ namespace lbann
     float LearnRate;
     //    float lr;
     float rho;
-    float epsilon;
 
     lbann_comm* comm;
     _DistMat     WB_D_Cache;     // Cache of Weights and Bias Gradient (current time t - 1)
@@ -59,14 +57,14 @@ namespace lbann
     static inline DataType _sqrt(const DataType& x) { return (1 / sqrt(x + 1e-8)); }
 
   public:
-    RMSprop(lbann_comm* comm, float lr, float rho, float epsilon)
-      : LearnRate(lr), rho(rho), epsilon(epsilon), comm(comm),
+    RMSprop(lbann_comm* comm, float lr, float rho)
+      : LearnRate(lr), rho(rho), comm(comm),
         WB_D_Cache(comm->get_model_grid()),
         WB_D_Temp(comm->get_model_grid()),
         WB_D_Temp2(comm->get_model_grid()) {
       set_name("rmsprop");
       if (comm->am_model_master()) {
-        printf("Initializing RMSprop optimizer with lr=%f, rho=%f, and epsilon=%f\n", lr, rho, epsilon);
+        printf("Initializing RMSprop optimizer with lr=%f, rho=%f\n", lr, rho);
       }
     }
 
@@ -160,7 +158,7 @@ namespace lbann
   class RMSprop_factory : public Optimizer_factory {
   public:
     // Default values from Keras - it is recommended that they are left at their default values
-    RMSprop_factory(lbann_comm* comm, float lr=0.001, float rho=0.9, float epsilon=1e-6);
+    RMSprop_factory(lbann_comm* comm, float lr=0.001, float rho=0.9);
     ~RMSprop_factory();
     Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
     const string name() { return "rmsprop"; }
@@ -169,7 +167,6 @@ namespace lbann
     lbann_comm* comm;
     float lr;
     float rho;
-    float epsilon;
   };
 
 }

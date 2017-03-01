@@ -28,7 +28,6 @@
 // Inspired by Kera.io implementation
 // Stochastic gradient descent with Adagrad.
 //  lr: float >= 0. Learning rate.
-//  epsilon: float >= 0.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
@@ -39,8 +38,8 @@
 using namespace std;
 using namespace El;
 
-lbann::Adagrad_factory::Adagrad_factory(lbann_comm* comm, float lr, float epsilon)
-  : comm(comm), lr(lr), epsilon(epsilon)
+lbann::Adagrad_factory::Adagrad_factory(lbann_comm* comm, float lr)
+  : comm(comm), lr(lr) 
 {
 }
 
@@ -51,13 +50,13 @@ lbann::Adagrad_factory::~Adagrad_factory()
 lbann::Optimizer *lbann::Adagrad_factory::create_optimizer(matrix_format format) {
   switch(format) {
   case matrix_format::MC_MR:
-    return new Adagrad<DistMat>(this->comm, this->lr, this->epsilon);
+    return new Adagrad<DistMat>(this->comm, this->lr);
   case matrix_format::CIRC_CIRC:
-    return new Adagrad<CircMat>(this->comm, this->lr, this->epsilon);
+    return new Adagrad<CircMat>(this->comm, this->lr);
   case matrix_format::STAR_STAR:
-    return new Adagrad<StarMat>(this->comm, this->lr, this->epsilon);
+    return new Adagrad<StarMat>(this->comm, this->lr);
   case matrix_format::STAR_VC:
-    return new Adagrad<StarVCMat>(this->comm, this->lr, this->epsilon);
+    return new Adagrad<StarVCMat>(this->comm, this->lr);
   default:
     // TODO: throw an exception
     printf("LBANN Error: unknown matrix distribution for Adagrad optimizer\n");

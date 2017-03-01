@@ -29,7 +29,6 @@
 //
 /// Stochastic gradient descent with Adagrad.
 ///  lr: float >= 0. Learning rate.
-///  epsilon: float >= 0.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_ADAGRAD_HPP
@@ -46,8 +45,6 @@ namespace lbann
   public:
     float lr;
 
-    float epsilon;
-
     lbann_comm* comm;
     _DistMat     WB_D_Cache;     // Cache of Weights and Bias Gradient (current time t - 1)
     _DistMat     WB_D_Temp;      // Temporary for Weights and Bias Gradient computation
@@ -60,14 +57,14 @@ namespace lbann
   public:
 
     /// Constructor
-    Adagrad(lbann_comm* comm, float lr, float epsilon)
-      : lr(lr), epsilon(epsilon), comm(comm),
+    Adagrad(lbann_comm* comm, float lr)
+      : lr(lr), comm(comm),
         WB_D_Cache(comm->get_model_grid()),
         WB_D_Temp(comm->get_model_grid()),
         WB_D_Temp2(comm->get_model_grid()) {
       set_name("adagrad");
       if (comm->am_model_master()) {
-        printf("Initializing Adagrad optimizer with lr=%f and epsilon=%f\n", lr, epsilon);
+        printf("Initializing Adagrad optimizer with lr=%f\n", lr);
       }
     }
 
@@ -159,7 +156,7 @@ namespace lbann
 
   class Adagrad_factory : public Optimizer_factory {
   public:
-    Adagrad_factory(lbann_comm* comm, float lr=0.01, float epsilon=1e-6);
+    Adagrad_factory(lbann_comm* comm, float lr=0.01);
     ~Adagrad_factory();
     Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
     const string name() { return "adagrad"; }
@@ -167,7 +164,6 @@ namespace lbann
   public:
     lbann_comm* comm;
     float lr;
-    float epsilon;
   };
 
 }

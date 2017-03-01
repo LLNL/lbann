@@ -29,7 +29,6 @@
 // Stochastic gradient descent with RMSprop.
 //  lr: float >= 0. Learning rate.
 //  rho: float >= 0.
-//  epsilon: float >= 0. Fuzz factor.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
@@ -39,8 +38,8 @@
 using namespace std;
 using namespace El;
 
-lbann::RMSprop_factory::RMSprop_factory(lbann_comm* comm, float lr, float rho, float epsilon)
-  : comm(comm), lr(lr), rho(rho), epsilon(epsilon)
+lbann::RMSprop_factory::RMSprop_factory(lbann_comm* comm, float lr, float rho)
+  : comm(comm), lr(lr), rho(rho)
 {
 }
 
@@ -51,13 +50,13 @@ lbann::RMSprop_factory::~RMSprop_factory()
 lbann::Optimizer *lbann::RMSprop_factory::create_optimizer(matrix_format format) {
   switch(format) {
   case matrix_format::MC_MR:
-    return new RMSprop<DistMat>(this->comm, this->lr, this->rho, this->epsilon);
+    return new RMSprop<DistMat>(this->comm, this->lr, this->rho);
   case matrix_format::CIRC_CIRC:
-    return new RMSprop<CircMat>(this->comm, this->lr, this->rho, this->epsilon);
+    return new RMSprop<CircMat>(this->comm, this->lr, this->rho);
   case matrix_format::STAR_STAR:
-    return new RMSprop<StarMat>(this->comm, this->lr, this->rho, this->epsilon);
+    return new RMSprop<StarMat>(this->comm, this->lr, this->rho);
   case matrix_format::STAR_VC:
-    return new RMSprop<StarVCMat>(this->comm, this->lr, this->rho, this->epsilon);
+    return new RMSprop<StarVCMat>(this->comm, this->lr, this->rho);
   default:
     // TODO: throw an exception
     printf("LBANN Error: unknown matrix distribution for RMSprop optimizer\n");
