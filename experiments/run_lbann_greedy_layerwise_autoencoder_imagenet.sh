@@ -34,7 +34,8 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
-CKPT=10
+CKPT_EPOCHS=0
+CKPT_STEPS=0
 
 # need this in an mxterm
 export SLURM_NNODES=$SLURM_JOB_NUM_NODES
@@ -80,7 +81,8 @@ function HELP {
   echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."  
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
-  echo "${REV}-k${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} epochs. Default is ${BOLD}${CKPT}${NORM}."
+  echo "${REV}-k${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} steps Default is ${BOLD}${CKPT_STEPS}${NORM}."
+  echo "${REV}-K${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} epochs. Default is ${BOLD}${CKPT_EPOCHS}${NORM}."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."
   echo "${REV}-m${NORM} <val> --Sets the ${BOLD}mode${NORM}. Default is ${BOLD}${MODE}${NORM}."
   echo "${REV}-n${NORM} <val> --Sets the ${BOLD}network topology${NORM}. Default is ${BOLD}${NETWORK}${NORM}."
@@ -131,7 +133,10 @@ while getopts ":a:b:cde:f:hi:j:k:l:m:n:o:p:q:r:s:t:uv:w:x:y:z:" opt; do
       LR_DECAY=$OPTARG
       ;;
     k)
-      CKPT=$OPTARG
+      CKPT_STEPS=$OPTARG
+      ;;
+    K)
+      CKPT_EPOCHS=$OPTARG
       ;;
     l)
       LOAD_MODEL=$OPTARG
@@ -265,6 +270,6 @@ fi
 
 fi
 
-CMD="${RUN} -N${NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${BINDIR}/lbann_greedy_layerwise_autoencoder_imagenet --hostname ${CLUSTER} --num-nodes ${NNODES} --num-cores $((${NNODES}*${CORES_PER_NODE})) --tasks-per-node ${TASKS_PER_NODE} --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --checkpoint ${CKPT} --lr-decay-rate ${LR_DECAY} --random-training-samples ${SHUFFLE_TRAINING}"
+CMD="${RUN} -N${NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${BINDIR}/lbann_greedy_layerwise_autoencoder_imagenet --hostname ${CLUSTER} --num-nodes ${NNODES} --num-cores $((${NNODES}*${CORES_PER_NODE})) --tasks-per-node ${TASKS_PER_NODE} --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS} --lr-decay-rate ${LR_DECAY} --random-training-samples ${SHUFFLE_TRAINING}"
 echo ${CMD}
 ${CMD}
