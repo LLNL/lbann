@@ -12,6 +12,7 @@ add_subdirectory(metrics)
 
 add_sources(
   lbann_Elemental_extensions.cpp 
+  lbann_base.cpp
   lbann_params.cpp
   lbann_comm.cpp
 )

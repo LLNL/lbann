@@ -50,7 +50,6 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
-    init_random(42);
     lbann_comm* comm = NULL;
 
     lbann_proto *pb = lbann_proto::get();
@@ -130,6 +129,10 @@ int main(int argc, char* argv[])
           cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
           cout << endl;
         }
+
+        // Initialize lbann with the communicator.
+        lbann::initialize(comm);
+        init_random(42);
 
         //tell the lbann_proto class who is the master
         if (comm->am_world_master()) {

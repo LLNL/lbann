@@ -83,15 +83,30 @@ enum class pool_mode {max, average, average_no_pad};
 
 namespace lbann
 {
-    class CUtility
-    {
-    public:
-        static void convolveMat(StarMat* Kernels, BlockMat& InputMat, BlockMat& OutputMat,
-                                uint InputWidth, uint InputHeight);
-    };
-    
-    
-}
+
+// Forward-declaration.
+class lbann_comm;
+
+/**
+ * Initialize LBANN.
+ * This should handle all LBANN initialization that doesn't need per-model
+ * configuration.
+ * @param comm An lbann_comm instance for all the processes involved.
+ */
+void initialize(lbann_comm* comm);
+/**
+ * Perform finalization.
+ */
+void finalize();
+
+class CUtility
+{
+public:
+  static void convolveMat(StarMat* Kernels, BlockMat& InputMat, BlockMat& OutputMat,
+                          uint InputWidth, uint InputHeight);
+};
+
+}  // namespace lbann
 
 /// Print the dimensions and name of a Elemental matrix
 static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
