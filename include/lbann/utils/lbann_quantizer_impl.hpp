@@ -643,26 +643,41 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
       mat, IR(0, mat.Height()),
       IR(dst * cols_per_proc, dst * cols_per_proc + send_col_width), send_size);
     rs_send_trans_time += get_time() - send_trans_start;
-    // Send.
-    mpi::Request<T> req;
-    comm->nb_send(send_buf, send_size, dst, req);
     rs_bytes_sent += send_size * sizeof(T);
-    // Get receive buffer.
-    double recv_buf_start = get_time();
-    int recv_size = 0;
+    mpi::Request<T> req;
     if (var_recv) {
-      recv_size = comm->get_count<T>(src);
+      // Send.
+      comm->nb_send(send_buf, send_size, dst, req);
+      // Get receive buffer.
+      double recv_buf_start = get_time();
+      int recv_size = comm->get_count<T>(src);
+      T* recv_buf = get_recv_buf(accum_view, recv_size);
+      rs_recv_buf_time += get_time() - recv_buf_start;
+      // Receive.
+      comm->recv(recv_buf, recv_size, src);
+      rs_bytes_received += recv_size * sizeof(T);
+      // Transform the received portion.
+      double recv_trans_start = get_time();
+      recv_trans(recv_buf, accum_view);
+      rs_recv_trans_time += get_time() - recv_trans_start;
+      comm->wait<T>(req);
+    } else {
+      // Get receive buffer.
+      double recv_buf_start = get_time();
+      int recv_size = 0;
+      T* recv_buf = get_recv_buf(accum_view, recv_size);
+      rs_recv_buf_time += get_time() - recv_buf_start;
+      // Post the receive first.
+      comm->nb_recv(recv_buf, recv_size, src, req);
+      rs_bytes_received += recv_size * sizeof(T);
+      // Do the send.
+      comm->send(send_buf, send_size, dst);
+      // Complete the receive and transform.
+      comm->wait<T>(req);
+      double recv_trans_start = get_time();
+      recv_trans(recv_buf, accum_view);
+      rs_recv_trans_time += get_time() - recv_trans_start;
     }
-    T* recv_buf = get_recv_buf(accum_view, recv_size);
-    rs_recv_buf_time += get_time() - recv_buf_start;
-    // Receive.
-    comm->recv(recv_buf, recv_size, src);
-    rs_bytes_received += recv_size * sizeof(T);
-    // Transform the received portion.
-    double recv_trans_start = get_time();
-    recv_trans(recv_buf, accum_view);
-    rs_recv_trans_time += get_time() - recv_trans_start;
-    comm->wait<T>(req);
   }
   rs_time += get_time() - rs_start;
 }
@@ -701,9 +716,6 @@ void lbann_quantizer::intermodel_ring_allgather(
     // Send our data or forward received data.
     mpi::Request<T> req;
     int send_size;
-    T* send_buf = get_send_buf(send_size);
-    comm->nb_send(send_buf, send_size, dst, req);
-    ag_bytes_sent += send_size * sizeof(T);
     // Compute the original rank that sent the data we're going to receive.
     int data_src = (rank - step - 1) % nprocs;
     if (data_src < 0) data_src += nprocs;
@@ -714,25 +726,46 @@ void lbann_quantizer::intermodel_ring_allgather(
     auto recv_view = mat(IR(0, mat.Height()),
                          IR(data_src * cols_per_proc,
                             data_src * cols_per_proc + recv_col_width));
-    // Get receive buffer.
-    double recv_buf_start = get_time();
-    int recv_size = 0;
+    T* send_buf;
+    T* recv_buf;
     if (var_recv) {
-      recv_size = comm->get_count<T>(src);
+      send_buf = get_send_buf(send_size);
+      comm->nb_send(send_buf, send_size, dst, req);
+      ag_bytes_sent += send_size * sizeof(T);
+      // Get receive buffer.
+      double recv_buf_start = get_time();
+      int recv_size = comm->get_count<T>(src);
+      recv_buf = get_recv_buf(recv_view, recv_size);
+      ag_recv_buf_time += get_time() - recv_buf_start;
+      // Receive data.
+      comm->recv(recv_buf, recv_size, src);
+      ag_bytes_received += recv_size * sizeof(T);
+      // Transform the received portion.
+      double recv_trans_start = get_time();
+      recv_trans(recv_buf, recv_view);
+      ag_recv_trans_time += get_time() - recv_trans_start;
+      comm->wait<T>(req);
+    } else {
+      // Get receive buffer.
+      double recv_buf_start = get_time();
+      int recv_size = 0;
+      recv_buf = get_recv_buf(recv_view, recv_size);
+      ag_recv_buf_time += get_time() - recv_buf_start;
+      // Post the receive first.
+      comm->nb_recv(recv_buf, recv_size, src, req);
+      ag_bytes_received += recv_size * sizeof(T);
+      // Do the send.
+      send_buf = get_send_buf(send_size);
+      comm->send(send_buf, send_size, dst);
+      ag_bytes_sent += send_size * sizeof(T);
+      // Complete the receive and transform.
+      comm->wait<T>(req);
+      double recv_trans_start = get_time();
+      recv_trans(recv_buf, recv_view);
+      ag_recv_trans_time += get_time() - recv_trans_start;
     }
-    T* recv_buf = get_recv_buf(recv_view, recv_size);
-    ag_recv_buf_time += get_time() - recv_buf_start;
-    // Receive data.
-    comm->recv(recv_buf, recv_size, src);
-    ag_bytes_received += recv_size * sizeof(T);
-    // Transform the received portion.
-    double recv_trans_start = get_time();
-    recv_trans(recv_buf, recv_view);
-    ag_recv_trans_time += get_time() - recv_trans_start;
-    comm->wait<T>(req);
     // Swap so we forward the data we just received.
     swap_bufs(send_buf, recv_buf);
-    send_size = recv_size;
   }
   ag_time += get_time() - ag_start;
 }
