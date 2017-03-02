@@ -436,7 +436,7 @@ void lbann_quantizer::adaptive_threshold_bound(
       memcpy(&neg_recon, &q_col[header_loc + 2], sizeof(neg_recon));
       DataType* __restrict__ qerror_col = &qerror_buf[col_offset];
       // Add the deleted portions to qerror.
-      for (rowT i = q_col[header_loc] + num_left;
+      for (colT i = q_col[header_loc] + num_left;
            i < q_col[header_loc + HEADER_FACTOR]; ++i) {
         const rowT val = q[i];
         const rowT row = val >> 1;
