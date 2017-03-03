@@ -172,12 +172,18 @@ void cudnn_manager::cudnn_manager::pin_ptr(void* ptr, size_t sz)
 
 void cudnn_manager::pin_memory_block(ElMat *mat)
 {
-    if (!mat) return;
-    const int w = (mat->Matrix()).Width();
-    const int h = (mat->Matrix()).Height();
-    const int sz = w*h*sizeof(DataType);
-    void* ptr = (void*) (mat->Matrix()).Buffer();
-    pin_ptr(ptr, w*h*sizeof(DataType));
+  if (!mat) return;
+  const int w = (mat->Matrix()).Width();
+  const int h = (mat->Matrix()).Height();
+  const int sz = w*h*sizeof(DataType);
+  void* ptr = (void*) (mat->Matrix()).Buffer();
+  pin_ptr(ptr, w*h*sizeof(DataType));
+}
+
+void cudnn_manager::unpin_memory_block(ElMat *mat)
+{
+  if (!mat) return;
+  unpin_ptr(reinterpret_cast<void*>((mat->Matrix()).Buffer()));
 }
 
 void cudnn_manager::cudnn_manager::unpin_ptr(void* const ptr)
@@ -1065,8 +1071,8 @@ void cudnn_pooling_layer::forward(const Mat& src, Mat& dst)
 
   const int num_gpus = m_cudnn->m_num_gpus;
 
-  m_src_dims[0] = m_samples_per_gpu;
-  m_dst_dims[0] = m_samples_per_gpu;
+//  m_src_dims[0] = m_samples_per_gpu;
+//  m_dst_dims[0] = m_samples_per_gpu;
   checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
                                         m_cudnn_data_type,
                                         m_num_dims+2,
@@ -1158,6 +1164,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
 
   const int num_gpus = m_cudnn->m_num_gpus;
 
+/*
   m_src_dims[0] = m_samples_per_gpu;
   m_dst_dims[0] = m_samples_per_gpu;
   checkCUDNN(cudnnSetTensorNdDescriptor(m_src_desc,
@@ -1170,6 +1177,7 @@ void cudnn_pooling_layer::backward(const Mat& src,
                                         m_num_dims+2,
                                         m_dst_dims.data(),
                                         m_dst_strides.data()));
+*/
 
 
 #ifndef _ALLOC_DEVICE_MEM_ONCE_

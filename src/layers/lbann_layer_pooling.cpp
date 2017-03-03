@@ -100,6 +100,12 @@ pooling_layer::pooling_layer(const uint index,
 
   // Initialize cuDNN pooling layer
   m_cudnn_layer = NULL;
+
+  to_pin_fwd = false;
+  to_pin_bwd = false;
+  is_pinned_fwd = false;
+  is_pinned_bwd = false;
+
 #ifdef __LIB_CUDNN
   if(cudnn)
     m_cudnn_layer = new cudnn::cudnn_pooling_layer(num_dims,
@@ -111,8 +117,7 @@ pooling_layer::pooling_layer(const uint index,
                                                    pool_strides,
                                                    m_mini_batch_size,
                                                    cudnn);
-  is_pinned_fwd = false;
-  is_pinned_bwd = false;
+  pin_mem(); // default behavior set to pin memory blocks used by cudnn
 #endif // __LIB_CUDNN
 
 }
@@ -159,19 +164,61 @@ void pooling_layer::setup(const int num_prev_neurons)
 
 }
 
-void lbann::pooling_layer::pin_memory_blocks_fwd(void)
+/**
+ * \brief Set to pin the memory blocks used by cudnn.
+ * \details The actual pinning occurs at the beginning of next fp_linearity() call.
+ *          No effect when cudnn is not employed.
+ */
+// TODO: JY - Eventually, this needs to move up to the parent class
+// in case that there are more gpu wrapper classes coming to existences
+void lbann::pooling_layer::pin_mem(void) {
+#ifdef __LIB_CUDNN
+  to_pin_fwd = true;
+  to_pin_bwd = true;
+#endif
+}
+
+/**
+ * \brief unpin the memory blocks pinned for cudnn
+ * \details The effect is immediate.
+ */
+// TODO: JY - Eventually, this needs to move up to the parent class
+void lbann::pooling_layer::unpin_mem(void) {
+#ifdef __LIB_CUDNN
+  to_pin_fwd = false;
+  to_pin_bwd = false;
+  unpin_memory_blocks_fwd();
+  unpin_memory_blocks_bwd();
+#endif
+}
+
+void* lbann::pooling_layer::get_cudnn_manager(void)
 {
   if (!m_cudnn_layer) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
+    std::cout << "no offloading with pooling_layer " << get_index() << std::endl;
+    return NULL;
   }
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
   if (!cudnn_mgr) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
+    std::cout << "no offloading with pooling_layer " << get_index() << std::endl;
+    return NULL;
   }
+  return static_cast<void*>(cudnn_mgr);
+#else
+  return NULL;
+#endif
+}
+
+// TODO: JY - Eventually, this needs to a virtual member function of the parent class
+void lbann::pooling_layer::pin_memory_blocks_fwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
   cudnn_mgr->pin_memory_block(m_prev_activations);
   cudnn_mgr->pin_memory_block(m_weighted_sum);
   cudnn_mgr->pin_memory_block(m_activations);
@@ -182,21 +229,44 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 
 void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 {
-  if (!m_cudnn_layer) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
 
 #ifdef __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
-  if (!cudnn_mgr) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
   cudnn_mgr->pin_memory_block(m_prev_error_signal);
   //cudnn_mgr->pin_memory_block(m_error_signal);
 
   is_pinned_bwd = true;
+#endif
+}
+
+void lbann::pooling_layer::unpin_memory_blocks_fwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
+  cudnn_mgr->unpin_memory_block(m_prev_activations);
+  cudnn_mgr->unpin_memory_block(m_weighted_sum);
+  cudnn_mgr->unpin_memory_block(m_activations);
+
+  is_pinned_fwd = false;
+#endif
+}
+
+void lbann::pooling_layer::unpin_memory_blocks_bwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
+  cudnn_mgr->unpin_memory_block(m_prev_error_signal);
+  //cudnn_mgr->pin_memory_block(m_error_signal);
+
+  is_pinned_bwd = false;
 #endif
 }
 
@@ -210,7 +280,7 @@ void lbann::pooling_layer::fp_linearity() {
   // Apply pooling on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    if (!is_pinned_fwd) pin_memory_blocks_fwd();
+    if (to_pin_fwd && !is_pinned_fwd) pin_memory_blocks_fwd();
     // cuDNN pooling layer forward pass
     m_cudnn_layer->forward(input_local, weighted_sum_local);
 #else
@@ -330,7 +400,7 @@ void lbann::pooling_layer::bp_linearity() {
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    if (!is_pinned_bwd) pin_memory_blocks_bwd();
+    if (to_pin_bwd && !is_pinned_bwd) pin_memory_blocks_bwd();
     m_cudnn_layer->backward(input_local,
                             output_local,
                             prev_error_signal_local,
