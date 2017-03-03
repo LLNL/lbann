@@ -44,17 +44,19 @@ namespace lbann
   public:
 
     /// Constructor
-    convolutional_layer(uint index, int num_dims,
-                        int num_input_channels,
-                        const int* input_dims,
-                        int num_output_channels,
-                        const int* filter_dims,
-                        const int* conv_pads,
-                        const int* conv_strides,
-                        uint mini_batch_size,
+    convolutional_layer(uint index,
+                        Int num_dims,
+                        Int num_input_channels,
+                        const Int* input_dims,
+                        Int num_output_channels,
+                        const Int* filter_dims,
+                        const Int* conv_pads,
+                        const Int* conv_strides,
+                        Int mini_batch_size,
                         activation_type activation,
                         weight_initialization init,
-                        lbann_comm* comm, Optimizer* optimizer,
+                        lbann_comm* comm,
+                        Optimizer* optimizer,
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor
@@ -65,10 +67,10 @@ namespace lbann
     bool update();
 
   protected:
-    
+
     void fp_linearity();
-    void bp_linearity();
     void fp_nonlinearity();
+    void bp_linearity();
     void bp_nonlinearity();
 
   private:
@@ -80,22 +82,70 @@ namespace lbann
     const int m_num_input_channels;
     /// Input dimensions
     /** In HW or DHW format */
-    std::vector<int> m_input_dims;
+    std::vector<Int> m_input_dims;
     /// Number of output channels
     const int m_num_output_channels;
     /// Output dimensions
-    std::vector<int> m_output_dims;
+    std::vector<Int> m_output_dims;
     /// Filter dimensions
-    std::vector<int> m_filter_dims;
+    std::vector<Int> m_filter_dims;
     /// Number of filter weights
     int m_filter_size;
     /// Convolution padding
-    std::vector<int> m_conv_pads;
+    std::vector<Int> m_conv_pads;
     /// Convolution strides
-    std::vector<int> m_conv_strides;
+    std::vector<Int> m_conv_strides;
 
-    /// cuDNN convolutional layer
-    cudnn::cudnn_convolutional_layer* m_cudnn_layer;
+    cudnn::cudnn_manager* m_cudnn;
+
+#ifdef __LIB_CUDNN
+
+    /// Number of mini-batch samples per GPU
+    Int m_mini_batch_size_per_gpu;
+    
+    /// Input tensor descriptor
+    cudnnTensorDescriptor_t m_input_desc;
+    /// Output tensor descriptor
+    cudnnTensorDescriptor_t m_output_desc;
+    /// Filter descriptor
+    cudnnFilterDescriptor_t m_filter_desc;
+    /// Convolution descriptor
+    cudnnConvolutionDescriptor_t m_convolution_desc;
+    /// Activation descriptor
+    cudnnActivationDescriptor_t m_activation_desc;
+
+    /// Forward pass algorithm
+    cudnnConvolutionFwdAlgo_t m_forward_algo;
+    /// Backward pass filter algorithm
+    /** Compute gradient w.r.t. filter. */
+    cudnnConvolutionBwdFilterAlgo_t m_backward_filter_algo;
+    /// Backward pass data algorithm
+    /** Compute gradient w.r.t. data, which is passed to previous layer. */
+    cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
+
+    /// GPU memory for convolution filters
+    std::vector<DataType*> m_filter_d;
+    /// GPU memory for convolution filter gradient
+    std::vector<DataType*> m_filter_gradient_d;
+    /// GPU memory for convolution bias
+    std::vector<DataType*> m_bias_d;
+    /// GPU memory for convolution bias gradient
+    std::vector<DataType*> m_bias_gradient_d;
+    /// GPU memory for work space
+    std::vector<DataType*> m_work_space_d;
+    /// Size of work space in bytes
+    size_t m_work_space_size;
+
+#endif // __LIB_CUDNN
+
+    void setup_gpu();
+
+    void fp_linearity_cpu();
+    void fp_linearity_gpu();
+    void fp_nonlinearity_gpu();
+    void bp_linearity_cpu();
+    void bp_linearity_gpu();
+    void bp_nonlinearity_gpu();
 
     bool is_pinned_fwd;
     bool is_pinned_bwd;

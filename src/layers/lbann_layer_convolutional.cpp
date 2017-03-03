@@ -29,20 +29,33 @@
 #include "lbann/layers/lbann_layer_convolutional.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/lbann_timer.hpp"
 
 using namespace std;
 using namespace El;
 using namespace lbann;
 
+#ifdef __LIB_CUDNN
+cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
+  switch(type) {
+  case activation_type::SIGMOID: return CUDNN_ACTIVATION_SIGMOID;
+  case activation_type::RELU: return CUDNN_ACTIVATION_RELU;
+  case activation_type::TANH: return CUDNN_ACTIVATION_TANH;
+  default:
+    throw lbann_exception("convolutional_layer: invalid activation type");
+  }
+}
+#endif // #ifdef __LIB_CUDNN
+
 convolutional_layer::convolutional_layer(const uint index,
-                                         const int num_dims,
-                                         const int num_input_channels,
-                                         const int* input_dims,
-                                         const int num_output_channels,
-                                         const int* filter_dims,
-                                         const int* conv_pads,
-                                         const int* conv_strides,
-                                         const uint mini_batch_size,
+                                         const Int num_dims,
+                                         const Int num_input_channels,
+                                         const Int* input_dims,
+                                         const Int num_output_channels,
+                                         const Int* filter_dims,
+                                         const Int* conv_pads,
+                                         const Int* conv_strides,
+                                         const Int mini_batch_size,
                                          const activation_type activation,
                                          const weight_initialization init,
                                          lbann_comm* comm,
@@ -52,15 +65,15 @@ convolutional_layer::convolutional_layer(const uint index,
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
-    m_num_output_channels(num_output_channels)
+    m_num_output_channels(num_output_channels),
+    m_cudnn(cudnn)
 {
-
-  m_type = layer_type::convolutional;
+  m_type = layer_type::convolution;
 
   // Initialize input dimensions and convolution parameters
-  m_input_dims.resize(num_dims);
-  m_filter_dims.resize(num_dims);
-  m_filter_size = num_input_channels*num_output_channels;
+  m_input_dims.resize(m_num_dims);
+  m_filter_dims.resize(m_num_dims);
+  m_filter_size = m_num_input_channels*m_num_output_channels;
   m_conv_pads.resize(num_dims);
   m_conv_strides.resize(num_dims);
   for(int i=0; i<num_dims; ++i) {
@@ -108,35 +121,89 @@ convolutional_layer::convolutional_layer(const uint index,
   m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
   m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 
-  // Initialize cuDNN convolutional layer
-  m_cudnn_layer = NULL;
 #ifdef __LIB_CUDNN
+
+  // Initialize cuDNN objects
+  m_input_desc = NULL;
+  m_output_desc = NULL;
+  m_filter_desc = NULL;
+  m_convolution_desc = NULL;
+  m_activation_desc = NULL;
+  m_forward_algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+  m_backward_filter_algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+  m_backward_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+  m_work_space_size = 0;
+
+  // Initialize GPU memory if using GPU
   if(cudnn) {
     m_using_gpu = true;
-    m_cudnn_layer
-      = new cudnn::cudnn_convolutional_layer(num_dims,
-                                             num_input_channels,
-                                             num_output_channels,
-                                             input_dims,
-                                             filter_dims,
-                                             conv_pads,
-                                             conv_strides,
-                                             m_mini_batch_size,
-                                             m_activation_type,
-                                             cudnn);
+
+    // Get number of GPUs
+    const int num_gpus = m_cudnn->m_num_gpus;
+
+    // Get number of columns per GPU
+    const int num_processes = m_cudnn->comm->get_procs_per_model();
+    const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
+    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+
+    // Initialize pointers to memory in each GPU
+    m_prev_activations_d.assign(num_gpus, NULL);
+    m_filter_d.assign(num_gpus, NULL);
+    m_bias_d.assign(num_gpus, NULL);
+    m_weighted_sum_d.assign(num_gpus, NULL);
+    m_activations_d.assign(num_gpus, NULL);
+    m_prev_error_signal_d.assign(num_gpus, NULL);
+    m_filter_gradient_d.assign(num_gpus, NULL);
+    m_bias_gradient_d.assign(num_gpus, NULL);
+    m_error_signal_d.assign(num_gpus, NULL);
+    m_work_space_d.assign(num_gpus, NULL);
   }
   is_pinned_fwd = false;
   is_pinned_bwd = false;
-#endif // __LIB_CUDNN
+#endif // #ifdef __LIB_CUDNN
 
 }
 
 convolutional_layer::~convolutional_layer()
 {
 #ifdef __LIB_CUDNN
-  if(m_cudnn_layer != NULL)
-    delete m_cudnn_layer;
-#endif // __LIB_CUDNN
+  if(m_using_gpu) {
+    if(m_input_desc)
+      checkCUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
+    if(m_output_desc)
+      checkCUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
+    if(m_filter_desc)
+      checkCUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
+    if(m_convolution_desc)
+      checkCUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
+    if(m_activation_desc)
+      checkCUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
+    for(int i=0; i<m_cudnn->m_num_gpus; ++i) {
+      const int gpu = m_cudnn->m_gpus[i];
+      cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+      if(m_prev_activations_d.size() > i && m_prev_activations_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_prev_activations_d[i]));
+      if(m_filter_d.size() > i && m_filter_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_filter_d[i]));
+      if(m_bias_d.size() > i && m_bias_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_bias_d[i]));
+      if(m_weighted_sum_d.size() > i && m_weighted_sum_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_weighted_sum_d[i]));
+      if(m_activations_d.size() > i && m_activations_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_activations_d[i]));
+      if(m_prev_error_signal_d.size() > i && m_prev_error_signal_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_prev_error_signal_d[i]));
+      if(m_filter_gradient_d.size() > i && m_filter_gradient_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_filter_gradient_d[i]));
+      if(m_bias_gradient_d.size() > i && m_bias_gradient_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_bias_gradient_d[i]));
+      if(m_error_signal_d.size() > i && m_error_signal_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_error_signal_d[i]));
+      if(m_work_space_d.size() > i && m_work_space_d[i] != NULL )
+        checkCUDA(gpu_memory.DeviceFree(gpu, m_work_space_d[i]));
+    }
+  }
+#endif // #ifdef __LIB_CUDNN
 }
 
 void convolutional_layer::setup(const int num_prev_neurons)
@@ -144,34 +211,30 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
+  // Setup cuDNN objects
   if(m_using_gpu) {
-    // Setup cuDNN convolutional layer
-    m_cudnn_layer->setup();
-
-    // Check for errors
-    if(NumNeurons != m_cudnn_layer->m_dst_size)
-      throw lbann_exception("lbann_layer_convolutional: unexpected number of neurons");
-
-    // Get output dimensions
-    for(int i=0; i<m_num_dims; ++i)
-      m_output_dims[i] = m_cudnn_layer->m_dst_dims[i+2];
+    setup_gpu();
   }
-#endif // __LIB_CUDNN
+#endif // #ifdef __LIB_CUDNN
 
+#ifdef LBANN_DEBUG
   // Check if input dimensions are valid
   int num_inputs = m_num_input_channels;
   for(int i=0; i<m_num_dims; ++i)
     num_inputs *= m_input_dims[i];
-  if(num_inputs != num_prev_neurons) {
+  if(num_inputs != m_num_prev_neurons) {
     throw lbann_exception("lbann_layer_convolutional: unexpected number of input neurons");
   }
+#endif // #ifdef LBANN_DEBUG
 
-  // Initialize optimizer
-  if(optimizer)
-    optimizer->setup(1, m_filter_size+NumNeurons);
-
-  // Initialize weight-bias matrix
+  // Initialize matrices
+  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
   Zeros(*m_weights, m_filter_size+NumNeurons, 1);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weights_gradient, m_filter_size+NumNeurons, 1);
+  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
 
   // Initialize filters
   StarMat filters;
@@ -217,60 +280,479 @@ void convolutional_layer::setup(const int num_prev_neurons)
     break;
   }
   
-  // Initialize matrices
-  Zeros(*m_weights_gradient, m_filter_size+NumNeurons, 1);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  // Initialize optimizer
+  optimizer->setup(1, m_filter_size+NumNeurons);
+  
+}
 
+void lbann::convolutional_layer::setup_gpu()
+{
+#ifndef __LIB_CUDNN
+  throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
+#else
+
+  // Initialize descriptors
+  checkCUDNN(cudnnCreateTensorDescriptor(&m_input_desc));
+  checkCUDNN(cudnnCreateTensorDescriptor(&m_output_desc));
+  checkCUDNN(cudnnCreateFilterDescriptor(&m_filter_desc));
+  checkCUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_desc));
+  checkCUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
+
+  // Set input tensor descriptor
+  std::vector<int> input_dims(m_num_dims+2);
+  input_dims[0] = m_mini_batch_size_per_gpu;
+  input_dims[1] = m_num_input_channels;
+  for(Int i=0; i<m_num_dims; ++i)
+    input_dims[i+2] = m_input_dims[i];
+  std::vector<int> input_strides(m_num_dims+2);
+  input_strides[m_num_dims + 1]  = 1;
+  for(Int i=m_num_dims; i>=0; --i)
+    input_strides[i] = input_strides[i+1] * input_dims[i+1];
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
+                                        m_cudnn->get_cudnn_data_type(),
+                                        m_num_dims+2,
+                                        input_dims.data(),
+                                        input_strides.data()));
+
+  // Set filter descriptor
+  std::vector<int> filter_dims(m_num_dims+2);
+  filter_dims[0] = m_num_output_channels;
+  filter_dims[1] = m_num_input_channels;
+  for(Int i=0; i<m_num_dims; ++i)
+    filter_dims[i+2] = m_filter_dims[i];
+  checkCUDNN(cudnnSetFilterNdDescriptor(m_filter_desc,
+                                        m_cudnn->get_cudnn_data_type(),
+                                        CUDNN_TENSOR_NCHW,
+                                        m_num_dims+2,
+                                        filter_dims.data()));
+
+  // Set convolution descriptor
+  // Note: upscales are not supported as of cuDNN v5.1
+  std::vector<int> conv_upscales(m_num_dims, 1);
+  std::vector<int> conv_pads(m_num_dims);
+  for(Int i=0; i<m_num_dims; ++i)
+    conv_pads[i] = m_conv_pads[i];
+  std::vector<int> conv_strides(m_num_dims);
+  for(Int i=0; i<m_num_dims; ++i)
+    conv_strides[i] = m_conv_strides[i];
+  checkCUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_desc,
+                                             m_num_dims,
+                                             conv_pads.data(),
+                                             conv_strides.data(),
+                                             conv_upscales.data(),
+                                             CUDNN_CONVOLUTION,
+                                             m_cudnn->get_cudnn_data_type()));
+
+  // Set output tensor descriptor
+  std::vector<int> output_dims(m_num_dims+2);
+#ifdef LBANN_DEBUG
+  checkCUDNN(cudnnGetConvolutionNdForwardOutputDim(m_convolution_desc,
+                                                   m_input_desc,
+                                                   m_filter_desc,
+                                                   m_num_dims+2,
+                                                   output_dims.data()));
+  if(output_dims[0] != m_mini_batch_size_per_gpu)
+    throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
+  if(output_dims[1] != m_num_output_channels)
+    throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
+  for(Int i=0; i<m_num_dims; ++i) {
+    if(output_dims[i+2] != m_output_dims[i]) {
+      throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
+    }
+  }
+#else
+  output_dims[0] = m_mini_batch_size_per_gpu;
+  output_dims[1] = m_num_output_channels;
+  for(Int i=0; i<m_num_dims; ++i)
+    output_dims[i+2] = m_output_dims[i];
+#endif // #ifdef LBANN_DEBUG
+  std::vector<int> output_strides(m_num_dims+2);
+  output_strides[m_num_dims + 1]  = 1;
+  for(Int i=m_num_dims; i>=0; --i)
+    output_strides[i] = output_strides[i+1] * output_dims[i+1];
+  checkCUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
+                                        m_cudnn->get_cudnn_data_type(),
+                                        m_num_dims+2,
+                                        output_dims.data(),
+                                        output_strides.data()));
+  
+  // Choose algorithms
+  checkCUDNN(cudnnGetConvolutionForwardAlgorithm(m_cudnn->m_handles[0],
+                                                 m_input_desc,
+                                                 m_filter_desc,
+                                                 m_convolution_desc,
+                                                 m_output_desc,
+                                                 CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+                                                 0,
+                                                 &m_forward_algo));
+  checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(m_cudnn->m_handles[0],
+                                                        m_input_desc,
+                                                        m_output_desc,
+                                                        m_convolution_desc,
+                                                        m_filter_desc,
+                                                        CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+                                                        0,
+                                                        &m_backward_filter_algo));
+  checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(m_cudnn->m_handles[0],
+                                                      m_filter_desc,
+                                                      m_output_desc,
+                                                      m_convolution_desc,
+                                                      m_input_desc,
+                                                      CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+                                                      0,
+                                                      &m_backward_data_algo));
+
+  // Choose workspace size
+  m_work_space_size = 0;
+  size_t required_work_space;
+  checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(m_cudnn->m_handles[0],
+                                                     m_input_desc,
+                                                     m_filter_desc,
+                                                     m_convolution_desc,
+                                                     m_output_desc,
+                                                     m_forward_algo,
+                                                     &required_work_space));
+  m_work_space_size = Max(m_work_space_size, required_work_space);
+  checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(m_cudnn->m_handles[0],
+                                                            m_input_desc,
+                                                            m_output_desc,
+                                                            m_convolution_desc,
+                                                            m_filter_desc,
+                                                            m_backward_filter_algo,
+                                                            &required_work_space));
+  m_work_space_size = Max(m_work_space_size, required_work_space);
+  checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(m_cudnn->m_handles[0],
+                                                          m_filter_desc,
+                                                          m_output_desc,
+                                                          m_convolution_desc,
+                                                          m_input_desc,
+                                                          m_backward_data_algo,
+                                                          &required_work_space));
+  m_work_space_size = Max(m_work_space_size, required_work_space);
+
+  // Set activation descriptor
+  checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+                                          get_cudnn_activation_mode(m_activation_type),
+                                          CUDNN_PROPAGATE_NAN,
+                                          0.0));
+
+  // Allocate GPU memory
+  const int num_gpus = m_cudnn->m_num_gpus;
+#pragma omp parallel for
+  for(Int i=0; i<num_gpus; ++i) {
+    const Int gpu = m_cudnn->m_gpus[i];
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_prev_activations_d[i],
+                                        m_num_prev_neurons*m_mini_batch_size_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_filter_d[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_bias_d[i],
+                                        NumNeurons*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_weighted_sum_d[i],
+                                        NumNeurons*m_mini_batch_size_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_activations_d[i],
+                                        NumNeurons*m_mini_batch_size_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_prev_error_signal_d[i],
+                                        NumNeurons*m_mini_batch_size_per_gpu*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_filter_gradient_d[i],
+                                        m_filter_size*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_bias_gradient_d[i],
+                                        NumNeurons*sizeof(DataType),
+                                        stream));
+    checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                        (void**) &m_error_signal_d[i],
+                                        m_num_prev_neurons*m_mini_batch_size_per_gpu*sizeof(DataType),
+                                        stream));
+    if(m_work_space_size > 0)
+      checkCUDA(gpu_memory.DeviceAllocate(gpu,
+                                          (void**) &m_work_space_d[i],
+                                          m_work_space_size,
+                                          stream));
+  }
+
+#endif // #ifdef __LIB_CUDNN
 }
 
 void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 {
-  if (!m_cudnn_layer) {
+  if (!m_using_gpu) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
 
 #ifdef __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
-  if (!cudnn_mgr) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
-  cudnn_mgr->pin_memory_block(m_weights);
-  cudnn_mgr->pin_memory_block(m_weighted_sum);
-  cudnn_mgr->pin_memory_block(m_activations);
-  cudnn_mgr->pin_memory_block(m_prev_activations);
+  m_cudnn->pin_memory_block(m_weights);
+  m_cudnn->pin_memory_block(m_weighted_sum);
+  m_cudnn->pin_memory_block(m_activations);
+  m_cudnn->pin_memory_block(m_prev_activations);
 
   is_pinned_fwd = true;
-#endif
+#endif // #ifdef __LIB_CUDNN
 }
 
 void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
 {
-  if (!m_cudnn_layer) {
+  if (!m_using_gpu) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
 
 #ifdef __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
-  if (!cudnn_mgr) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
-  cudnn_mgr->pin_memory_block(m_error_signal);
-  cudnn_mgr->pin_memory_block(m_prev_error_signal);
-  cudnn_mgr->pin_memory_block(m_weights_gradient);
+  m_cudnn->pin_memory_block(m_error_signal);
+  m_cudnn->pin_memory_block(m_prev_error_signal);
+  m_cudnn->pin_memory_block(m_weights_gradient);
 
   is_pinned_bwd = true;
-#endif
+#endif // #ifdef __LIB_CUDNN
 }
 
 void lbann::convolutional_layer::fp_linearity() {
+  if(m_using_gpu) {
+    fp_linearity_gpu();
+  }
+  else {
+    fp_linearity_cpu();
+  }
+}
+
+void lbann::convolutional_layer::bp_linearity() {
+  if(m_using_gpu) {
+    bp_linearity_gpu();
+  }
+  else {
+    bp_linearity_cpu();
+  }
+}
+
+void lbann::convolutional_layer::fp_nonlinearity() {
+  if(m_using_gpu) {
+    fp_nonlinearity_gpu();
+  }
+  else {
+    Layer::fp_nonlinearity();
+  }
+}
+
+void lbann::convolutional_layer::bp_nonlinearity() {
+  if(m_using_gpu) {
+    bp_nonlinearity_gpu();
+  }
+  else {
+    Layer::bp_nonlinearity();
+  }
+}
+
+void lbann::convolutional_layer::fp_linearity_gpu() {
+#ifndef __LIB_CUDNN
+  throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
+#else
+
+  // Useful constants
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Get number of GPUs
+  const Int num_gpus = m_cudnn->m_num_gpus;
+
+  // Get local matrices
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  const Mat& weights_local = m_weights->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& activations_local = m_activations_v->Matrix();
+
+  // Get filters and bias
+  const Mat filter_local = weights_local(IR(0,m_filter_size), ALL);
+  const Mat bias_local = weights_local(IR(m_filter_size,END), ALL);
+
+  // Perform convolution with each GPU
+#pragma omp parallel for
+  for(Int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cudnnHandle_t& handle = m_cudnn->m_handles[i];
+
+    // Data samples assigned to GPU
+    const Int local_mini_batch = m_prev_activations_v->LocalWidth();
+    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
+    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
+    if(first_pos >= last_pos) {
+      continue;
+    }
+
+    // Transfer filters to GPU
+    checkCUDA(cudaMemcpyAsync(m_filter_d[i],
+                              filter_local.LockedBuffer(),
+                              m_filter_size*sizeof(DataType),
+                              cudaMemcpyHostToDevice,
+                              stream));
+
+    // Transfer inputs to GPU
+    checkCUDA(cudaMemcpy2DAsync(m_prev_activations_d[i],
+                                m_num_prev_neurons*sizeof(DataType),
+                                prev_activations_local.LockedBuffer(0,first_pos),
+                                prev_activations_local.LDim()*sizeof(DataType),
+                                m_num_prev_neurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+
+    // Transfer biases to GPU
+    checkCUDA(cudaMemcpyAsync(m_bias_d[i],
+                              bias_local.LockedBuffer(),
+                              NumNeurons*sizeof(DataType),
+                              cudaMemcpyHostToDevice,
+                              stream));
+    for(int pos=first_pos; pos<last_pos; ++pos) {
+      checkCUDA(cudaMemcpyAsync(m_weighted_sum_d[i] + (pos-first_pos)*NumNeurons,
+                                m_bias_d[i],
+                                NumNeurons*sizeof(DataType),
+                                cudaMemcpyDeviceToDevice,
+                                stream));
+    }
+
+    // Perform convolution
+    checkCUDNN(cudnnConvolutionForward(handle,
+                                       &one,
+                                       m_input_desc,
+                                       m_prev_activations_d[i],
+                                       m_filter_desc,
+                                       m_filter_d[i],
+                                       m_convolution_desc,
+                                       m_forward_algo,
+                                       m_work_space_d[i],
+                                       m_work_space_size,
+                                       &one,
+                                       m_output_desc,
+                                       m_weighted_sum_d[i]));
+
+    // Transfer outputs from GPU
+    checkCUDA(cudaMemcpy2DAsync(m_activations_d[i],
+                                NumNeurons*sizeof(DataType),
+                                m_weighted_sum_d[i],
+                                NumNeurons*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(weighted_sum_local.Buffer(0,first_pos),
+                                weighted_sum_local.LDim()*sizeof(DataType),
+                                m_weighted_sum_d[i],
+                                NumNeurons*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(activations_local.Buffer(0,first_pos),
+                                activations_local.LDim()*sizeof(DataType),
+                                m_activations_d[i],
+                                NumNeurons*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
+    
+  }
+
+  // Synchronize GPUs
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
+  }
+
+#endif // #ifndef __LIB_CUDNN
+}
+
+void lbann::convolutional_layer::fp_nonlinearity_gpu() {
+#ifndef __LIB_CUDNN
+  throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
+#else
+
+  // Useful constants
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Get number of GPUs
+  const Int num_gpus = m_cudnn->m_num_gpus;
+
+  // Get local matrices
+  Mat& activations_local = m_activations_v->Matrix();
+
+  // Perform convolution with each GPU
+#pragma omp parallel for
+  for(Int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cudnnHandle_t& handle = m_cudnn->m_handles[i];
+
+    // Data samples assigned to GPU
+    const Int local_mini_batch = m_prev_activations_v->LocalWidth();
+    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
+    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
+    if(first_pos >= last_pos) {
+      continue;
+    }
+
+    // Transfer inputs to GPU
+    checkCUDA(cudaMemcpy2DAsync(m_activations_d[i],
+                                NumNeurons*sizeof(DataType),
+                                activations_local.LockedBuffer(0,first_pos),
+                                activations_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+
+    // Apply activation function
+    checkCUDNN(cudnnActivationForward(handle,
+                                      m_activation_desc,
+                                      &one,
+                                      m_output_desc,
+                                      m_activations_d[i],
+                                      &zero,
+                                      m_output_desc,
+                                      m_activations_d[i]));
+
+    // Transfer outputs from GPU
+    checkCUDA(cudaMemcpy2DAsync(activations_local.Buffer(0,first_pos),
+                                activations_local.LDim()*sizeof(DataType),
+                                m_activations_d[i],
+                                NumNeurons*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
+    
+  }
+
+  // Synchronize GPUs
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
+  }
+
+#endif // #ifndef __LIB_CUDNN
+}  
+
+/// @todo Write a more efficient implementation
+void lbann::convolutional_layer::fp_linearity_cpu() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -282,147 +764,375 @@ void lbann::convolutional_layer::fp_linearity() {
   const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
   const Mat bias_local = weights_local(IR(m_filter_size,END), ALL);
 
-  // Apply convolution on local data samples
-  if(m_using_gpu) {
-#ifdef __LIB_CUDNN
-    if (!is_pinned_fwd) pin_memory_blocks_fwd();
-    // cuDNN convolutional layer forward pass
-    m_cudnn_layer->forward(prev_activations_local, 
-                           filters_local,
-                           bias_local,
-                           weighted_sum_local,
-                           activations_local);
-#else
-    throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
-#endif
-  }
-  else {
+  // Apply bias to each sample in mini-batch
+  IndexDependentFill(weighted_sum_local, (std::function<DataType(El::Int,El::Int)>)
+                     ([this, &bias_local](El::Int r, El::Int c)->DataType {
+                       return bias_local.Get(r,0); 
+                     }));
 
-    ////////////////////////////////////////////////////////////
-    // CPU implementation of convolutional layer forward pass
-    // Note: explicitly constructs a dense convolution matrix
-    /// @todo Write a more efficient implementation
-    ////////////////////////////////////////////////////////////
+  // Initialize convolution matrix
+  Mat convolution_matrix;
+  Zeros(convolution_matrix, NumNeurons, m_num_prev_neurons);
 
-    // Apply bias to each sample in mini-batch
-    IndexDependentFill(weighted_sum_local, (std::function<DataType(El::Int,El::Int)>)
-                       ([this, &bias_local](El::Int r, El::Int c)->DataType {
-                         return bias_local.Get(r,0); 
-                       }));
+  // Iterate through filters
+  int row = 0;
+  for(int output_channel = 0;
+      output_channel < m_num_output_channels;
+      ++output_channel) {
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const Mat filter = filters_local(IR(output_channel*current_filter_size,
+                                        (output_channel+1)*current_filter_size),
+                                     ALL);
 
-    // Initialize convolution matrix
-    Mat convolution_matrix;
-    Zeros(convolution_matrix, NumNeurons, prev_activations_local.Height());
-
-    // Iterate through filters
-    int row = 0;
-    for(int output_channel = 0;
-        output_channel < m_num_output_channels;
-        ++output_channel) {
-      const int current_filter_size = m_filter_size / m_num_output_channels;
-      const Mat filter = filters_local(IR(output_channel*current_filter_size,
-                                          (output_channel+1)*current_filter_size),
-                                       ALL);
-
-      // Iterate through filter offsets
-      // Note: each offset corresponds to a row of the convolution matrix
-      std::vector<int> filter_offset(m_num_dims);
-      for(int d = 0; d < m_num_dims; ++d) {
-        filter_offset[d] = -m_conv_pads[d];
-      }
-      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
-
-        // Iterate through filter entries
-        // Note: each filter entry corresponds to entry of convolution matrix
-        std::vector<int> filter_pos(m_num_dims, 0);
-        while(filter_pos[0] < m_filter_dims[0]) {
-
-          // Get convolution matrix entry corresponding to filter entry
-          int col = 0;
-          int filter_flat_pos = 0;
-          bool valid_pos = true;
-          for(int d = 0; d < m_num_dims; ++d) {
-            if(filter_offset[d] + filter_pos[d] < 0
-               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
-              valid_pos = false;
-              break;
-            }
-            col *= m_input_dims[d];
-            col += filter_offset[d] + filter_pos[d];
-            filter_flat_pos *= m_filter_dims[d];
-            filter_flat_pos += filter_pos[d];
-          }
-
-          if(valid_pos) {
-
-            // Iterate through input channels
-            for(int input_channel = 0;
-                input_channel < m_num_input_channels;
-                ++input_channel) {
-
-              // Set convolution matrix entry
-              const DataType w = filter.Get(filter_flat_pos, 0);
-              convolution_matrix.Set(row, col, w);
-
-              // Move to next convolution matrix entry
-              col += prev_activations_local.Height() / m_num_input_channels;
-              filter_flat_pos += current_filter_size / m_num_input_channels;
-
-            }
-
-          }
-          
-          // Move to next position in filter
-          ++filter_pos[m_num_dims-1];
-          for(int d = m_num_dims - 1; d > 0; --d) {
-            if(filter_pos[d] >= m_filter_dims[d]) {
-              filter_pos[d] = 0;
-              ++filter_pos[d-1];
-            }
-          }
-          
-        }
-
-        // Move to next filter offset
-        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-        for(int d = m_num_dims - 1; d > 0; --d) {
-          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            filter_offset[d] = -m_conv_pads[d];
-            filter_offset[d-1] += m_conv_strides[d-1];
-          }
-        }
-
-        // Move to next row in convolution matrix
-        ++row;
-
-      }
-      
+    // Iterate through filter offsets
+    // Note: each offset corresponds to a row of the convolution matrix
+    std::vector<int> filter_offset(m_num_dims);
+    for(int d = 0; d < m_num_dims; ++d) {
+      filter_offset[d] = -m_conv_pads[d];
     }
+    while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
 
-    // Apply convolution matrix
-    Gemm(NORMAL, NORMAL,
-         DataType(1), convolution_matrix, prev_activations_local,
-         DataType(1), weighted_sum_local);
+      // Iterate through filter entries
+      // Note: each filter entry corresponds to entry of convolution matrix
+      std::vector<int> filter_pos(m_num_dims, 0);
+      while(filter_pos[0] < m_filter_dims[0]) {
 
-    // Z and Y are identical after fp linearity step
-    Copy(weighted_sum_local, activations_local);
+        // Get convolution matrix entry corresponding to filter entry
+        int col = 0;
+        int filter_flat_pos = 0;
+        bool valid_pos = true;
+        for(int d = 0; d < m_num_dims; ++d) {
+          if(filter_offset[d] + filter_pos[d] < 0
+             || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
+            valid_pos = false;
+            break;
+          }
+          col *= m_input_dims[d];
+          col += filter_offset[d] + filter_pos[d];
+          filter_flat_pos *= m_filter_dims[d];
+          filter_flat_pos += filter_pos[d];
+        }
 
+        if(valid_pos) {
+
+          // Iterate through input channels
+          for(int input_channel = 0;
+              input_channel < m_num_input_channels;
+              ++input_channel) {
+
+            // Set convolution matrix entry
+            const DataType w = filter.Get(filter_flat_pos, 0);
+            convolution_matrix.Set(row, col, w);
+
+            // Move to next convolution matrix entry
+            col += prev_activations_local.Height() / m_num_input_channels;
+            filter_flat_pos += current_filter_size / m_num_input_channels;
+
+          }
+
+        }
+          
+        // Move to next position in filter
+        ++filter_pos[m_num_dims-1];
+        for(int d = m_num_dims - 1; d > 0; --d) {
+          if(filter_pos[d] >= m_filter_dims[d]) {
+            filter_pos[d] = 0;
+            ++filter_pos[d-1];
+          }
+        }
+          
+      }
+
+      // Move to next filter offset
+      filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+      for(int d = m_num_dims - 1; d > 0; --d) {
+        if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+          filter_offset[d] = -m_conv_pads[d];
+          filter_offset[d-1] += m_conv_strides[d-1];
+        }
+      }
+
+      // Move to next row in convolution matrix
+      ++row;
+
+    }
+      
   }
 
+  // Apply convolution matrix
+  Gemm(NORMAL, NORMAL,
+       DataType(1), convolution_matrix, prev_activations_local,
+       DataType(1), weighted_sum_local);
+
+  // Z and Y are identical after fp linearity step
+  Copy(weighted_sum_local, activations_local);
+
 }
 
-void lbann::convolutional_layer::fp_nonlinearity() {
-  /// @todo CPU implementation
-}
+void lbann::convolutional_layer::bp_linearity_gpu() {
+#ifndef __LIB_CUDNN
+  throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
+#else
 
-void lbann::convolutional_layer::bp_nonlinearity() {
-  /// @todo CPU implementation
-}
+  // Useful constants
+  const DataType one = 1;
+  const DataType zero = 0;
 
-void lbann::convolutional_layer::bp_linearity() {
+  // Get number of GPUs
+  const Int num_gpus = m_cudnn->m_num_gpus;
 
   // Get local matrices
-  const Mat& input_local = m_prev_activations_v->LockedMatrix();
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  const Mat& weights_local = m_weights->LockedMatrix();
+  const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
+  Mat& weights_gradient_local = m_weights_gradient->Matrix();
+  Mat& error_signal_local = m_error_signal_v->Matrix();
+
+  // Get filters and bias
+  const Mat filters_local = weights_local(IR(0,m_filter_size), ALL);
+  Mat filter_gradient_local = weights_gradient_local(IR(0,m_filter_size), ALL);
+  Mat bias_gradient_local = weights_gradient_local(IR(m_filter_size,END), ALL);
+  
+  // Get number of samples per GPU
+  const DataType mini_batch_per_gpu_float = m_mini_batch_size_per_gpu;
+
+  // Compute bias gradient
+  Mat ones;
+  Ones(ones, prev_error_signal_local.Width(), Int(1));
+  Gemv(NORMAL, one, prev_error_signal_local, ones, zero, bias_gradient_local);
+
+  // Perform back propagation on each GPU
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cudnnHandle_t& handle = m_cudnn->m_handles[i];
+
+    // Data samples assigned to GPU
+    const Int local_mini_batch = prev_activations_local.Width();
+    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
+    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
+    if(first_pos >= last_pos) {
+      continue;
+    }
+
+    // Transfer filters to GPU
+    checkCUDA(cudaMemcpyAsync(m_filter_d[i],
+                              filters_local.LockedBuffer(),
+                              m_filter_size*sizeof(DataType),
+                              cudaMemcpyHostToDevice,
+                              stream));
+
+    // Transfer inputs and error signal to GPU
+    checkCUDA(cudaMemcpy2DAsync(m_prev_activations_d[i],
+                                m_num_prev_neurons*sizeof(DataType),
+                                prev_activations_local.LockedBuffer(0,first_pos),
+                                prev_activations_local.LDim()*sizeof(DataType),
+                                m_num_prev_neurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(m_weighted_sum_d[i],
+                                NumNeurons*sizeof(DataType),
+                                weighted_sum_local.LockedBuffer(0,first_pos),
+                                weighted_sum_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(m_prev_error_signal_d[i],
+                                NumNeurons*sizeof(DataType),
+                                prev_error_signal_local.LockedBuffer(0,first_pos),
+                                prev_error_signal_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    if(last_pos - first_pos < m_mini_batch_size_per_gpu) {
+      checkCUDA(cudaMemsetAsync(m_prev_error_signal_d[i] + (last_pos-first_pos)*NumNeurons,
+                                0,
+                                NumNeurons*(m_mini_batch_size_per_gpu-(last_pos-first_pos))*sizeof(DataType),
+                                stream));
+    }
+    
+    // Compute filter gradient
+    checkCUDNN(cudnnConvolutionBackwardFilter(handle,
+                                              &mini_batch_per_gpu_float,
+                                              m_input_desc,
+                                              m_prev_activations_d[i],
+                                              m_output_desc,
+                                              m_prev_error_signal_d[i],
+                                              m_convolution_desc,
+                                              m_backward_filter_algo,
+                                              m_work_space_d[i],
+                                              m_work_space_size,
+                                              &zero,
+                                              m_filter_desc,
+                                              m_filter_gradient_d[i]));
+
+    // Compute error signal to "next" layer
+    checkCUDNN(cudnnConvolutionBackwardData(handle,
+                                            &one,
+                                            m_filter_desc,
+                                            m_filter_d[i],
+                                            m_output_desc,
+                                            m_prev_error_signal_d[i],
+                                            m_convolution_desc,
+                                            m_backward_data_algo,
+                                            m_work_space_d[i],
+                                            m_work_space_size,
+                                            &zero,
+                                            m_input_desc,
+                                            m_error_signal_d[i]));
+
+    // Transfer data from GPU
+    checkCUDA(cudaMemcpy2DAsync(error_signal_local.Buffer(0,first_pos),
+                                error_signal_local.LDim()*sizeof(DataType),
+                                m_error_signal_d[i],
+                                m_num_prev_neurons*sizeof(DataType),
+                                m_num_prev_neurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
+
+  }
+  
+  // Transfer and accumulate filter gradients from GPUs
+  Mat temp(m_filter_size, num_gpus);
+#pragma omp parallel for
+  for(Int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    checkCUDA(cudaMemcpyAsync(temp.Buffer(0,i),
+                              m_filter_gradient_d[i],
+                              m_filter_size*sizeof(DataType),
+                              cudaMemcpyDeviceToHost,
+                              stream));
+  }
+
+  // Synchronize CUDA streams
+  Zero(filter_gradient_local);
+  for(Int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
+    filter_gradient_local += temp(ALL, IR(i));
+  }
+
+  // Obtain filter gradient with reduction and scaling
+  AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+
+#endif // #ifndef __LIB_CUDNN
+}
+
+void lbann::convolutional_layer::bp_nonlinearity_gpu() {
+#ifndef __LIB_CUDNN
+  throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
+#else
+
+  // Useful constants
+  const DataType one = 1;
+  const DataType zero = 0;
+
+  // Get number of GPUs
+  const Int num_gpus = m_cudnn->m_num_gpus;
+
+  // Get local matrices
+  const Mat& activations_local = m_activations_v->LockedMatrix();
+  const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
+  Mat& prev_error_signal_local = m_prev_error_signal_v->Matrix();
+
+  // Get number of samples per GPU
+  const DataType mini_batch_per_gpu_float = m_mini_batch_size_per_gpu;
+
+  // Perform back propagation on each GPU
+#pragma omp parallel for
+  for(int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    cudaStream_t& stream = m_cudnn->m_streams[i];
+    cudnnHandle_t& handle = m_cudnn->m_handles[i];
+
+    // Data samples assigned to GPU
+    const Int local_mini_batch = activations_local.Width();
+    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
+    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
+    if(first_pos >= last_pos) {
+      continue;
+    }
+
+    // Transfer inputs and error signal to GPU
+    checkCUDA(cudaMemcpy2DAsync(m_weighted_sum_d[i],
+                                NumNeurons*sizeof(DataType),
+                                weighted_sum_local.LockedBuffer(0,first_pos),
+                                weighted_sum_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(m_activations_d[i],
+                                NumNeurons*sizeof(DataType),
+                                activations_local.LockedBuffer(0,first_pos),
+                                activations_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    checkCUDA(cudaMemcpy2DAsync(m_prev_error_signal_d[i],
+                                NumNeurons*sizeof(DataType),
+                                prev_error_signal_local.LockedBuffer(0,first_pos),
+                                prev_error_signal_local.LDim()*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyHostToDevice,
+                                stream));
+    
+    // Perform backward propagation on activation function
+    checkCUDNN(cudnnActivationBackward(handle,
+                                       m_activation_desc,
+                                       &one,
+                                       m_output_desc,
+                                       m_weighted_sum_d[i],
+                                       m_output_desc,
+                                       m_prev_error_signal_d[i],
+                                       m_output_desc,
+                                       m_activations_d[i],
+                                       &zero,
+                                       m_output_desc,
+                                       m_prev_error_signal_d[i]));
+
+    // Transfer data from GPU
+    checkCUDA(cudaMemcpy2DAsync(prev_error_signal_local.Buffer(0,first_pos),
+                                prev_error_signal_local.LDim()*sizeof(DataType),
+                                m_prev_error_signal_d[i],
+                                NumNeurons*sizeof(DataType),
+                                NumNeurons*sizeof(DataType),
+                                last_pos - first_pos,
+                                cudaMemcpyDeviceToHost,
+                                stream));
+
+  }
+  
+  // Synchronize CUDA streams
+  for(Int i=0; i<num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
+    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
+  }
+
+#endif // #ifndef __LIB_CUDNN
+}
+
+/// @todo Write a more efficient implementation
+void lbann::convolutional_layer::bp_linearity_cpu() {
+
+  // Non-linearity forward pass
+  m_activation_fn->backwardProp(*m_weighted_sum_v);
+  if (m_activation_type != activation_type::ID) {
+    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
+  }
+  
+  // Get local matrices
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
   const Mat& weights_local = m_weights->LockedMatrix();
   const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
   const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
@@ -434,233 +1144,208 @@ void lbann::convolutional_layer::bp_linearity() {
   Mat filters_gradient_local = weights_gradient_local(IR(0,m_filter_size), ALL);
   Mat bias_gradient_local = weights_gradient_local(IR(m_filter_size,END), ALL);
 
-  // Compute gradients on local data samples
-  if(m_cudnn_layer) {
-#ifdef __LIB_CUDNN
-    if (!is_pinned_bwd) pin_memory_blocks_bwd();
-    m_cudnn_layer->backward(input_local,
-                            filters_local,
-                            weighted_sum_local,
-                            prev_error_signal_local,
-                            filters_gradient_local,
-                            bias_gradient_local,
-                            error_signal_local);
-#else
-    throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
-#endif
+  //////////////////////////////////////////////
+  // Construct convolution matrix
+  //////////////////////////////////////////////
+
+  // Initialize convolution matrix
+  Mat convolution_matrix;
+  Zeros(convolution_matrix, NumNeurons, prev_activations_local.Height());
+
+  // Iterate through filters
+  int row = 0;
+  for(int output_channel = 0;
+      output_channel < m_num_output_channels;
+      ++output_channel) {
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const Mat filter = filters_local(IR(output_channel*current_filter_size,
+                                        (output_channel+1)*current_filter_size),
+                                     ALL);
+
+    // Iterate through filter offsets
+    // Note: each offset corresponds to a row of the convolution matrix
+    std::vector<int> filter_offset(m_num_dims);
+    for(int d = 0; d < m_num_dims; ++d) {
+      filter_offset[d] = -m_conv_pads[d];
+    }
+    while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+
+      // Iterate through filter entries
+      // Note: each filter entry corresponds to entry of convolution matrix
+      std::vector<int> filter_pos(m_num_dims, 0);
+      while(filter_pos[0] < m_filter_dims[0]) {
+
+        // Get convolution matrix entry corresponding to filter entry
+        int col = 0;
+        int filter_flat_pos = 0;
+        bool valid_pos = true;
+        for(int d = 0; d < m_num_dims; ++d) {
+          if(filter_offset[d] + filter_pos[d] < 0
+             || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
+            valid_pos = false;
+            break;
+          }
+          col *= m_input_dims[d];
+          col += filter_offset[d] + filter_pos[d];
+          filter_flat_pos *= m_filter_dims[d];
+          filter_flat_pos += filter_pos[d];
+        }
+
+        if(valid_pos) {
+
+          // Iterate through input channels
+          for(int input_channel = 0;
+              input_channel < m_num_input_channels;
+              ++input_channel) {
+
+            // Set convolution matrix entry
+            const DataType w = filter.Get(filter_flat_pos, 0);
+            convolution_matrix.Set(row, col, w);
+
+            // Move to next convolution matrix entry
+            col += prev_activations_local.Height()  / m_num_input_channels;
+            filter_flat_pos += current_filter_size / m_num_input_channels;
+
+          }
+
+        }
+          
+        // Move to next position in filter
+        ++filter_pos[m_num_dims-1];
+        for(int d = m_num_dims - 1; d > 0; --d) {
+          if(filter_pos[d] >= m_filter_dims[d]) {
+            filter_pos[d] = 0;
+            ++filter_pos[d-1];
+          }
+        }
+          
+      }
+
+      // Move filter to next position
+      filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+      for(int d = m_num_dims - 1; d > 0; --d) {
+        if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+          filter_offset[d] = -m_conv_pads[d];
+          filter_offset[d-1] += m_conv_strides[d-1];
+        }
+      }
+
+      // Move to next row in convolution matrix
+      ++row;
+
+    }
+      
   }
-  else {
 
-    ////////////////////////////////////////////////////////////
-    // CPU implementation of convolutional layer backward pass
-    // Note: explicitly constructs a dense convolution matrix
-    /// @todo Write a more efficient implementation
-    ////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////
+  // Compute error signal
+  //////////////////////////////////////////////
 
-    //////////////////////////////////////////////
-    // Construct convolution matrix
-    //////////////////////////////////////////////
+  // Compute error signal
+  Gemm(TRANSPOSE, NORMAL,
+       DataType(1), convolution_matrix, prev_error_signal_local,
+       DataType(0), error_signal_local);
 
-    // Initialize convolution matrix
-    Mat convolution_matrix;
-    Zeros(convolution_matrix, NumNeurons, input_local.Height());
+  // Compute bias gradient
+  Mat ones;
+  Ones(ones, prev_activations_local.Width(), Int(1));
+  Gemv(NORMAL, DataType(1), prev_error_signal_local, ones,
+       DataType(0), bias_gradient_local);
 
-    // Iterate through filters
-    int row = 0;
-    for(int output_channel = 0;
-        output_channel < m_num_output_channels;
-        ++output_channel) {
-      const int current_filter_size = m_filter_size / m_num_output_channels;
-      const Mat filter = filters_local(IR(output_channel*current_filter_size,
-                                          (output_channel+1)*current_filter_size),
-                                       ALL);
+  // Compute error signal w.r.t. convolution matrix
+  Mat conv_error_signal(convolution_matrix.Height(),
+                        convolution_matrix.Width());
+  Gemm(NORMAL, TRANSPOSE,
+       DataType(1), prev_error_signal_local, prev_activations_local,
+       DataType(0), conv_error_signal);
 
-      // Iterate through filter offsets
-      // Note: each offset corresponds to a row of the convolution matrix
-      std::vector<int> filter_offset(m_num_dims);
-      for(int d = 0; d < m_num_dims; ++d) {
-        filter_offset[d] = -m_conv_pads[d];
-      }
-      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
+  // Initialize filter gradient
+  Zero(filters_gradient_local);
 
-        // Iterate through filter entries
-        // Note: each filter entry corresponds to entry of convolution matrix
-        std::vector<int> filter_pos(m_num_dims, 0);
-        while(filter_pos[0] < m_filter_dims[0]) {
+  // Iterate through filters
+  row = 0;
+  for(int output_channel = 0;
+      output_channel < m_num_output_channels;
+      ++output_channel) {
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    Mat filter_gradient
+      = filters_gradient_local(IR(output_channel*current_filter_size,
+                                  (output_channel+1)*current_filter_size),
+                               ALL);
 
-          // Get convolution matrix entry corresponding to filter entry
-          int col = 0;
-          int filter_flat_pos = 0;
-          bool valid_pos = true;
-          for(int d = 0; d < m_num_dims; ++d) {
-            if(filter_offset[d] + filter_pos[d] < 0
-               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
-              valid_pos = false;
-              break;
-            }
-            col *= m_input_dims[d];
-            col += filter_offset[d] + filter_pos[d];
-            filter_flat_pos *= m_filter_dims[d];
-            filter_flat_pos += filter_pos[d];
-          }
-
-          if(valid_pos) {
-
-            // Iterate through input channels
-            for(int input_channel = 0;
-                input_channel < m_num_input_channels;
-                ++input_channel) {
-
-              // Set convolution matrix entry
-              const DataType w = filter.Get(filter_flat_pos, 0);
-              convolution_matrix.Set(row, col, w);
-
-              // Move to next convolution matrix entry
-              col += input_local.Height()  / m_num_input_channels;
-              filter_flat_pos += current_filter_size / m_num_input_channels;
-
-            }
-
-          }
-          
-          // Move to next position in filter
-          ++filter_pos[m_num_dims-1];
-          for(int d = m_num_dims - 1; d > 0; --d) {
-            if(filter_pos[d] >= m_filter_dims[d]) {
-              filter_pos[d] = 0;
-              ++filter_pos[d-1];
-            }
-          }
-          
-        }
-
-        // Move filter to next position
-        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-        for(int d = m_num_dims - 1; d > 0; --d) {
-          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            filter_offset[d] = -m_conv_pads[d];
-            filter_offset[d-1] += m_conv_strides[d-1];
-          }
-        }
-
-        // Move to next row in convolution matrix
-        ++row;
-
-      }
-      
+    // Iterate through filter offsets
+    // Note: each offset corresponds to a row of the convolution matrix
+    std::vector<int> filter_offset(m_num_dims);
+    for(int d = 0; d < m_num_dims; ++d) {
+      filter_offset[d] = -m_conv_pads[d];
     }
+    while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
 
-    //////////////////////////////////////////////
-    // Compute error signal
-    //////////////////////////////////////////////
+      // Iterate through filter entries
+      // Note: each filter entry corresponds to entry of convolution matrix
+      std::vector<int> filter_pos(m_num_dims, 0);
+      while(filter_pos[0] < m_filter_dims[0]) {
 
-    // Compute error signal
-    Gemm(TRANSPOSE, NORMAL,
-         DataType(1), convolution_matrix, prev_error_signal_local,
-         DataType(0), error_signal_local);
-
-    // Compute bias gradient
-    Mat ones;
-    Ones(ones, input_local.Width(), Int(1));
-    Gemv(NORMAL, DataType(1.0), prev_error_signal_local, ones,
-         DataType(0.0), bias_gradient_local);
-
-    // Compute error signal w.r.t. convolution matrix
-    Mat conv_error_signal(convolution_matrix.Height(),
-                          convolution_matrix.Width());
-    Gemm(NORMAL, TRANSPOSE,
-         DataType(1), prev_error_signal_local, input_local,
-         DataType(0), conv_error_signal);
-
-    // Initialize filter gradient
-    Zero(filters_gradient_local);
-
-    // Iterate through filters
-    row = 0;
-    for(int output_channel = 0;
-        output_channel < m_num_output_channels;
-        ++output_channel) {
-      const int current_filter_size = m_filter_size / m_num_output_channels;
-      Mat filter_gradient
-        = filters_gradient_local(IR(output_channel*current_filter_size,
-                                    (output_channel+1)*current_filter_size),
-                                 ALL);
-
-      // Iterate through filter offsets
-      // Note: each offset corresponds to a row of the convolution matrix
-      std::vector<int> filter_offset(m_num_dims);
-      for(int d = 0; d < m_num_dims; ++d) {
-        filter_offset[d] = -m_conv_pads[d];
-      }
-      while(filter_offset[0] + m_filter_dims[0] <= m_input_dims[0] + m_conv_pads[0]) {
-
-        // Iterate through filter entries
-        // Note: each filter entry corresponds to entry of convolution matrix
-        std::vector<int> filter_pos(m_num_dims, 0);
-        while(filter_pos[0] < m_filter_dims[0]) {
-
-          // Get convolution matrix entry corresponding to filter entry
-          int col = 0;
-          int filter_flat_pos = 0;
-          bool valid_pos = true;
-          for(int d = 0; d < m_num_dims; ++d) {
-            if(filter_offset[d] + filter_pos[d] < 0
-               || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
-              valid_pos = false;
-              break;
-            }
-            col *= m_input_dims[d];
-            col += filter_offset[d] + filter_pos[d];
-            filter_flat_pos *= m_filter_dims[d];
-            filter_flat_pos += filter_pos[d];
+        // Get convolution matrix entry corresponding to filter entry
+        int col = 0;
+        int filter_flat_pos = 0;
+        bool valid_pos = true;
+        for(int d = 0; d < m_num_dims; ++d) {
+          if(filter_offset[d] + filter_pos[d] < 0
+             || filter_offset[d] + filter_pos[d] >= m_input_dims[d]) {
+            valid_pos = false;
+            break;
           }
-
-          if(valid_pos) {
-
-            // Iterate through input channels
-            for(int input_channel = 0;
-                input_channel < m_num_input_channels;
-                ++input_channel) {
-
-              // Get error signal for convolution matrix entry
-              filter_gradient.Update(filter_flat_pos, 0,
-                                     conv_error_signal.Get(row, col));
-
-              // Move to next convolution matrix entry
-              col += input_local.Height() / m_num_input_channels;
-              filter_flat_pos += current_filter_size / m_num_input_channels;
-
-            }
-
-          }
-          
-          // Move to next position in filter
-          ++filter_pos[m_num_dims-1];
-          for(int d = m_num_dims - 1; d > 0; --d) {
-            if(filter_pos[d] >= m_filter_dims[d]) {
-              filter_pos[d] = 0;
-              ++filter_pos[d-1];
-            }
-          }
-          
+          col *= m_input_dims[d];
+          col += filter_offset[d] + filter_pos[d];
+          filter_flat_pos *= m_filter_dims[d];
+          filter_flat_pos += filter_pos[d];
         }
 
-        // Move filter to next position
-        filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+        if(valid_pos) {
+
+          // Iterate through input channels
+          for(int input_channel = 0;
+              input_channel < m_num_input_channels;
+              ++input_channel) {
+
+            // Get error signal for convolution matrix entry
+            filter_gradient.Update(filter_flat_pos, 0,
+                                   conv_error_signal.Get(row, col));
+
+            // Move to next convolution matrix entry
+            col += prev_activations_local.Height() / m_num_input_channels;
+            filter_flat_pos += current_filter_size / m_num_input_channels;
+
+          }
+
+        }
+          
+        // Move to next position in filter
+        ++filter_pos[m_num_dims-1];
         for(int d = m_num_dims - 1; d > 0; --d) {
-          if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            filter_offset[d] = -m_conv_pads[d];
-            filter_offset[d-1] += m_conv_strides[d-1];
+          if(filter_pos[d] >= m_filter_dims[d]) {
+            filter_pos[d] = 0;
+            ++filter_pos[d-1];
           }
         }
-
-        // Move to next row in convolution matrix
-        ++row;
-
+          
       }
-      
-    }
 
+      // Move filter to next position
+      filter_offset[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+      for(int d = m_num_dims - 1; d > 0; --d) {
+        if(filter_offset[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+          filter_offset[d] = -m_conv_pads[d];
+          filter_offset[d-1] += m_conv_strides[d-1];
+        }
+      }
+
+      // Move to next row in convolution matrix
+      ++row;
+
+    }
+      
   }
 
   // Obtain filter gradient with reduction and scaling

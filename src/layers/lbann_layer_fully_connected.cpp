@@ -85,7 +85,7 @@ FullyConnectedLayer(const uint index,
 lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
-  Layer::setup(numPrevNeurons);
+    Layer::setup(numPrevNeurons);
     if(optimizer != NULL) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }

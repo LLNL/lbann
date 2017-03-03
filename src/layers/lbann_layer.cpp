@@ -177,7 +177,8 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   reset_counters();
 }
 
-void lbann::Layer::setup(int) {
+void lbann::Layer::setup(int num_prev_neurons) {
+  m_num_prev_neurons = num_prev_neurons;
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 

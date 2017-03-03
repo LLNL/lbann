@@ -51,7 +51,7 @@ namespace lbann
   class model;
 
   // @todo: check list of layer types
-  enum class layer_type {fully_connected, softmax, convolutional, pooling,
+  enum class layer_type {fully_connected, softmax, convolution, pooling,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
       target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
       INVALID};
@@ -158,8 +158,9 @@ namespace lbann
     /// Type of next layer
     layer_type m_next_layer_type;
 
-    uint               Index;                  // Layer index (start with 0)
-    uint 		NumNeurons; 	// # neurons
+    uint Index;      // Layer index (start with 0)
+    uint NumNeurons; // # neurons
+    Int m_num_prev_neurons; /// Number of neurons in previous layer
     execution_mode  m_execution_mode;
     activation_type m_activation_type;
 

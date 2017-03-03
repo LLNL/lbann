@@ -218,13 +218,13 @@ int main(int argc, char* argv[])
         // First convolution layer
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
-          int inputChannels = 1;
-          int inputDims[] = {28, 28};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          Int numDims = 2;
+          Int inputChannels = 1;
+          Int inputDims[] = {28, 28};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
 
           convolutional_layer* layer
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
@@ -241,13 +241,13 @@ int main(int argc, char* argv[])
         // Second convolution layer
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
+          Int numDims = 2;
           int inputChannels = 32;
-          int inputDims[] = {26, 26};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          Int inputDims[] = {26, 26};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
           convolutional_layer* layer
             = new convolutional_layer(2, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
