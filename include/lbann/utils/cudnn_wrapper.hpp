@@ -73,14 +73,16 @@ namespace cudnn
 
     /// Register a block of memory to pin
     void pin_ptr(void* ptr, size_t sz);
-    /// Pin the memory block of a matrix
-    void pin_memory_block(ElMat *mat);
+    /// Pin the memory block of a matrix and return the block size
+    size_t pin_memory_block(ElMat *mat);
     /// Unpin the memory block of a matrix
     void unpin_memory_block(ElMat *mat);
     /// Unregister a block of pinnedmemory
     void unpin_ptr(void* ptr);
     /// Unregister all the memories registered to pin
     void unpin_ptrs(void);
+    /// report the total size of memory blocks pinned
+    size_t get_total_size_of_pinned_blocks(void) const;
 
   public:
 

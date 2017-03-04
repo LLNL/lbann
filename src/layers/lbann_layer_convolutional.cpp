@@ -279,10 +279,13 @@ void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
-  cudnn_mgr->pin_memory_block(m_weights);
-  cudnn_mgr->pin_memory_block(m_weighted_sum);
-  cudnn_mgr->pin_memory_block(m_activations);
-  cudnn_mgr->pin_memory_block(m_prev_activations);
+  size_t total_size = 0u;
+  total_size += cudnn_mgr->pin_memory_block(m_weights);
+  total_size += cudnn_mgr->pin_memory_block(m_weighted_sum);
+  total_size += cudnn_mgr->pin_memory_block(m_activations);
+  total_size += cudnn_mgr->pin_memory_block(m_prev_activations);
+  //std::cout << total_size << " bytes pinned by convolutional layer " 
+  //          << get_index() << " forward " << std::endl;
 
   is_pinned_fwd = true;
 #endif
@@ -295,9 +298,12 @@ void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
-  cudnn_mgr->pin_memory_block(m_error_signal);
-  cudnn_mgr->pin_memory_block(m_prev_error_signal);
-  cudnn_mgr->pin_memory_block(m_weights_gradient);
+  size_t total_size = 0u;
+  total_size += cudnn_mgr->pin_memory_block(m_error_signal);
+  total_size += cudnn_mgr->pin_memory_block(m_prev_error_signal);
+  total_size += cudnn_mgr->pin_memory_block(m_weights_gradient);
+  //std::cout << total_size << " bytes pinned by convolutional layer " 
+  //          << get_index() << " backward " << std::endl;
 
   is_pinned_bwd = true;
 #endif

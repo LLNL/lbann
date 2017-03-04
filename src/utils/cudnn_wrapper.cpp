@@ -157,7 +157,7 @@ cudnn_manager::~cudnn_manager()
   unpin_ptrs();
 }
 
-void cudnn_manager::cudnn_manager::pin_ptr(void* ptr, size_t sz)
+void cudnn_manager::pin_ptr(void* ptr, size_t sz)
 {
   if (!ptr) return;
   std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
@@ -170,14 +170,15 @@ void cudnn_manager::cudnn_manager::pin_ptr(void* ptr, size_t sz)
   }
 }
 
-void cudnn_manager::pin_memory_block(ElMat *mat)
+size_t cudnn_manager::pin_memory_block(ElMat *mat)
 {
-  if (!mat) return;
+  if (!mat) return static_cast<size_t>(0u);
   const int w = (mat->Matrix()).Width();
   const int h = (mat->Matrix()).Height();
   const int sz = w*h*sizeof(DataType);
   void* ptr = (void*) (mat->Matrix()).Buffer();
-  pin_ptr(ptr, w*h*sizeof(DataType));
+  pin_ptr(ptr, sz);
+  return static_cast<size_t>(sz);
 }
 
 void cudnn_manager::unpin_memory_block(ElMat *mat)
@@ -186,7 +187,7 @@ void cudnn_manager::unpin_memory_block(ElMat *mat)
   unpin_ptr(reinterpret_cast<void*>((mat->Matrix()).Buffer()));
 }
 
-void cudnn_manager::cudnn_manager::unpin_ptr(void* const ptr)
+void cudnn_manager::unpin_ptr(void* const ptr)
 {
   std::map<void*, size_t>::iterator it = pinned_ptr.find(ptr);
   if (it != pinned_ptr.end()) {
@@ -195,7 +196,7 @@ void cudnn_manager::cudnn_manager::unpin_ptr(void* const ptr)
   }
 }
 
-void cudnn_manager::cudnn_manager::unpin_ptrs(void)
+void cudnn_manager::unpin_ptrs(void)
 {
   std::map<void*, size_t>::iterator it = pinned_ptr.begin();
   std::map<void*, size_t>::iterator itend = pinned_ptr.end();
@@ -204,6 +205,16 @@ void cudnn_manager::cudnn_manager::unpin_ptrs(void)
     checkCUDA(cudaHostUnregister(it->first));
   }
   pinned_ptr.clear();
+}
+
+size_t cudnn_manager::get_total_size_of_pinned_blocks(void) const
+{
+  std::map<void*, size_t>::const_iterator it = pinned_ptr.begin();
+  std::map<void*, size_t>::const_iterator itend = pinned_ptr.end();
+
+  size_t total = 0u;
+  for(; it != itend; ++it) total += it->second;
+  return total;
 }
 
 void cudnn_manager::print_version() const {

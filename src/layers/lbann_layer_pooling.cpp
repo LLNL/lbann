@@ -219,9 +219,12 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
-  cudnn_mgr->pin_memory_block(m_prev_activations);
-  cudnn_mgr->pin_memory_block(m_weighted_sum);
-  cudnn_mgr->pin_memory_block(m_activations);
+  size_t total_size = 0u;
+  total_size += cudnn_mgr->pin_memory_block(m_prev_activations);
+  total_size += cudnn_mgr->pin_memory_block(m_weighted_sum);
+  total_size += cudnn_mgr->pin_memory_block(m_activations);
+  //std::cout << total_size << " bytes pinned by pooling layer " 
+  //          << get_index() << " forward " << std::endl;
 
   is_pinned_fwd = true;
 #endif
@@ -234,8 +237,11 @@ void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
-  cudnn_mgr->pin_memory_block(m_prev_error_signal);
+  size_t total_size = 0u;
+  total_size += cudnn_mgr->pin_memory_block(m_prev_error_signal);
   //cudnn_mgr->pin_memory_block(m_error_signal);
+  //std::cout << total_size << " bytes pinned by pooling layer " 
+  //          << get_index() << " backward " << std::endl;
 
   is_pinned_bwd = true;
 #endif
