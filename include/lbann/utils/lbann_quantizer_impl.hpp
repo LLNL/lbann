@@ -531,7 +531,11 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
    * _implementation_ makes guarantees for reserve(), or implement a custom
    * version of vector.
    */
+  double quant_time_start = get_time();
   adaptive_threshold_quantize<colT, rowT>(mat, rs_quant, qerror, proportion);
+  double quant_tot = get_time() - quant_time_start;
+  rs_time += quant_tot;
+  rs_send_trans_time += quant_tot;
   auto rs_send_trans = 
     [&qerror, &rs_quant, &rs_to_send, proportion, this]
     (Mat& mat, IR h, IR w, int& count) {
@@ -668,12 +672,18 @@ void lbann_quantizer::intermodel_ring_reduce_scatter(
       T* recv_buf = get_recv_buf(accum_view, recv_size);
       rs_recv_buf_time += get_time() - recv_buf_start;
       // Post the receive first.
+      double recv_start = get_time();
       comm->nb_recv(recv_buf, recv_size, src, req);
+      double recv_tot = get_time() - recv_start;
       rs_bytes_received += recv_size * sizeof(T);
       // Do the send.
+      double send_start = get_time();
       comm->send(send_buf, send_size, dst);
+      rs_send_time += get_time() - send_start;
       // Complete the receive and transform.
+      recv_start = get_time();
       comm->wait<T>(req);
+      rs_recv_wait_time += recv_tot + get_time() - recv_start;
       double recv_trans_start = get_time();
       recv_trans(recv_buf, accum_view);
       rs_recv_trans_time += get_time() - recv_trans_start;
@@ -752,14 +762,20 @@ void lbann_quantizer::intermodel_ring_allgather(
       recv_buf = get_recv_buf(recv_view, recv_size);
       ag_recv_buf_time += get_time() - recv_buf_start;
       // Post the receive first.
+      double recv_start = get_time();
       comm->nb_recv(recv_buf, recv_size, src, req);
+      double recv_tot = get_time() - recv_start;
       ag_bytes_received += recv_size * sizeof(T);
       // Do the send.
+      double send_start = get_time();
       send_buf = get_send_buf(send_size);
       comm->send(send_buf, send_size, dst);
+      ag_send_time += get_time() - send_start;
       ag_bytes_sent += send_size * sizeof(T);
       // Complete the receive and transform.
+      recv_start = get_time();
       comm->wait<T>(req);
+      ag_recv_wait_time += recv_tot + get_time() - recv_start;
       double recv_trans_start = get_time();
       recv_trans(recv_buf, recv_view);
       ag_recv_trans_time += get_time() - recv_trans_start;

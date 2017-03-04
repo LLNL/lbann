@@ -280,12 +280,20 @@ public:
   double get_rs_recv_buf_time() const { return rs_recv_buf_time; }
   /** Get the time spent in the reduce-scatter recv_trans. */
   double get_rs_recv_trans_time() const { return rs_recv_trans_time; }
+  /** Get the time spent in sends in the reduce-scatter. */
+  double get_rs_send_time() const { return rs_send_time; }
+  /** Get the time spent in recvs/waiting for recvs in the reduce-scatter. */
+  double get_rs_recv_wait_time() const { return rs_recv_wait_time; }
   /** Get the time spent in the allgather reduce_trans. */
   double get_ag_reduced_trans_time() const { return ag_reduced_trans_time; }
   /** Get the time spent in the allgather get_recv_buf. */
   double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
   /** Get the time spent in the all-gather send_trans. */
   double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
+  /** Get the time spent in sends in the allgather. */
+  double get_ag_send_time() const { return ag_send_time; }
+  /** Get the time spent in recvs/waiting for recvs in the allgather. */
+  double get_ag_recv_wait_time() const { return ag_recv_wait_time; }
   /** Get the time spent in proportion_threshold. */
   double get_proportion_time() const { return proportion_time; }
   /** Reset recorded time counters. */
@@ -295,9 +303,13 @@ public:
     rs_send_trans_time = 0.0;
     rs_recv_buf_time = 0.0;
     rs_recv_trans_time = 0.0;
+    rs_send_time = 0.0;
+    rs_recv_wait_time = 0.0;
     ag_reduced_trans_time = 0.0;
     ag_recv_buf_time = 0.0;
     ag_recv_trans_time = 0.0;
+    ag_send_time = 0.0;
+    ag_recv_wait_time = 0.0;
     proportion_time = 0.0;
   }
   /** Return the most recent number of quantized entries. */
@@ -346,12 +358,20 @@ private:
   double rs_recv_buf_time;
   /** Time spent in the reduce-scatter recv_trans. */
   double rs_recv_trans_time;
+  /** Time spent in the reduce-scatter sending. */
+  double rs_send_time;
+  /** Time spent in the reduce-scatter receiving/waiting for the receive. */
+  double rs_recv_wait_time;
   /** Time spent in the allgather reduced_trans. */
   double ag_reduced_trans_time;
   /** Time spent in the allgather get_recv_buf. */
   double ag_recv_buf_time;
   /** Time spent in the all-gather recv_trans. */
   double ag_recv_trans_time;
+  /** Time spent in the allgather sending. */
+  double ag_send_time;
+  /** Time spent in the allgather receiving/waiting for the receive. */
+  double ag_recv_wait_time;
   /** Time spent in proportion_threshold. */
   double proportion_time;
   /** Most recent number of quantized entries. */
