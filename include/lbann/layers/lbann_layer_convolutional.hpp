@@ -64,6 +64,8 @@ namespace lbann
     void setup(int num_prev_neurons);
 
     bool update();
+    void pin_mem(void);
+    void unpin_mem(void);
 
   protected:
     
@@ -96,10 +98,15 @@ namespace lbann
     /// cuDNN convolutional layer
     cudnn::cudnn_convolutional_layer* m_cudnn_layer;
 
-    bool is_pinned_fwd;
-    bool is_pinned_bwd;
-    void pin_memory_blocks_fwd(void);
-    void pin_memory_blocks_bwd(void);
+    bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
+    bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path
+    bool is_pinned_fwd; ///< indicate if the memory blocks for cudnn forward path are pinned
+    bool is_pinned_bwd; ///< indicate if the memory blocks for cudnn backward path are pinned
+    void pin_memory_blocks_fwd(void); ///< pin the memory used by cudnn forward path
+    void pin_memory_blocks_bwd(void); ///< pin the memory used by cudnn backward path
+    void unpin_memory_blocks_fwd(void); ///< unpin the memory used by cudnn forward path
+    void unpin_memory_blocks_bwd(void); ///< unpin the memory used by cudnn backward path
+    void* get_cudnn_manager(void); ///< returns the pointer to cudnn_manager if available, otherwise NULL
   };
 
 }

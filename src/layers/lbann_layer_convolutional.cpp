@@ -111,6 +111,12 @@ convolutional_layer::convolutional_layer(const uint index,
 
   // Initialize cuDNN convolutional layer
   m_cudnn_layer = NULL;
+
+  to_pin_fwd = false;
+  to_pin_bwd = false;
+  is_pinned_fwd = false;
+  is_pinned_bwd = false;
+
 #ifdef __LIB_CUDNN
   if(cudnn)
     m_cudnn_layer
@@ -123,8 +129,7 @@ convolutional_layer::convolutional_layer(const uint index,
                                              conv_strides,
                                              m_mini_batch_size,
                                              cudnn);
-  is_pinned_fwd = false;
-  is_pinned_bwd = false;
+  pin_mem(); // default behavior set to pin memory blocks used by cudnn
 #endif // __LIB_CUDNN
 
 }
@@ -223,19 +228,57 @@ void convolutional_layer::setup(const int num_prev_neurons)
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
 }
 
-void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
+/**
+ * \brief Set to pin the memory blocks used by cudnn.
+ * \details The actual pinning occurs at the beginning of next fp_linearity() call.
+ *          No effect when cudnn is not employed.
+ */
+void lbann::convolutional_layer::pin_mem(void) {
+#ifdef __LIB_CUDNN
+  to_pin_fwd = true;
+  to_pin_bwd = true;
+#endif
+}
+
+/**
+ * \brief unpin the memory blocks pinned for cudnn
+ * \details The effect is immediate.
+ */
+void lbann::convolutional_layer::unpin_mem(void) {
+#ifdef __LIB_CUDNN
+  to_pin_fwd = false;
+  to_pin_bwd = false;
+  unpin_memory_blocks_fwd();
+  unpin_memory_blocks_bwd();
+#endif
+}
+
+void* lbann::convolutional_layer::get_cudnn_manager(void)
 {
   if (!m_cudnn_layer) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
+    return NULL;
   }
 
 #ifdef __LIB_CUDNN
   cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
   if (!cudnn_mgr) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
+    return NULL;
   }
+  return static_cast<void*>(cudnn_mgr);
+#else
+  return NULL;
+#endif
+}
+
+void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
   cudnn_mgr->pin_memory_block(m_weights);
   cudnn_mgr->pin_memory_block(m_weighted_sum);
   cudnn_mgr->pin_memory_block(m_activations);
@@ -247,22 +290,47 @@ void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 
 void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
 {
-  if (!m_cudnn_layer) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
 
 #ifdef __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn_mgr = m_cudnn_layer->get_cudnn_manager();
-  if (!cudnn_mgr) {
-    std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
-    return;
-  }
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
   cudnn_mgr->pin_memory_block(m_error_signal);
   cudnn_mgr->pin_memory_block(m_prev_error_signal);
   cudnn_mgr->pin_memory_block(m_weights_gradient);
 
   is_pinned_bwd = true;
+#endif
+}
+
+void lbann::convolutional_layer::unpin_memory_blocks_fwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
+  cudnn_mgr->unpin_memory_block(m_weights);
+  cudnn_mgr->unpin_memory_block(m_weighted_sum);
+  cudnn_mgr->unpin_memory_block(m_activations);
+  cudnn_mgr->unpin_memory_block(m_prev_activations);
+
+  is_pinned_fwd = false;
+#endif
+}
+
+void lbann::convolutional_layer::unpin_memory_blocks_bwd(void)
+{
+  void* ptr = get_cudnn_manager();
+  if (ptr == NULL) return;
+
+#ifdef __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn_mgr = static_cast<cudnn::cudnn_manager*>(ptr);
+  cudnn_mgr->unpin_memory_block(m_error_signal);
+  cudnn_mgr->unpin_memory_block(m_prev_error_signal);
+  cudnn_mgr->unpin_memory_block(m_weights_gradient);
+
+  is_pinned_bwd = false;
 #endif
 }
 
@@ -281,7 +349,7 @@ void lbann::convolutional_layer::fp_linearity() {
   // Apply convolution on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    if (!is_pinned_fwd) pin_memory_blocks_fwd();
+    if (to_pin_fwd && !is_pinned_fwd) pin_memory_blocks_fwd();
     // cuDNN convolutional layer forward pass
     m_cudnn_layer->forward(prev_activations_local, filters_local, bias_local, weighted_sum_local);
 #else
@@ -420,7 +488,7 @@ void lbann::convolutional_layer::bp_linearity() {
   // Compute gradients on local data samples
   if(m_cudnn_layer) {
 #ifdef __LIB_CUDNN
-    if (!is_pinned_bwd) pin_memory_blocks_bwd();
+    if (to_pin_bwd && !is_pinned_bwd) pin_memory_blocks_bwd();
     m_cudnn_layer->backward(input_local,
                             filters_local,
                             prev_error_signal_local,
