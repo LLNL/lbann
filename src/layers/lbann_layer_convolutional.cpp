@@ -36,11 +36,12 @@ using namespace El;
 using namespace lbann;
 
 #ifdef __LIB_CUDNN
+/// Get cuDNN activation mode
 cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
   switch(type) {
   case activation_type::SIGMOID: return CUDNN_ACTIVATION_SIGMOID;
-  case activation_type::RELU: return CUDNN_ACTIVATION_RELU;
-  case activation_type::TANH: return CUDNN_ACTIVATION_TANH;
+  case activation_type::RELU:    return CUDNN_ACTIVATION_RELU;
+  case activation_type::TANH:    return CUDNN_ACTIVATION_TANH;
   default:
     throw lbann_exception("convolutional_layer: invalid activation type");
   }
@@ -139,14 +140,14 @@ convolutional_layer::convolutional_layer(const uint index,
     m_using_gpu = true;
 
     // Get number of GPUs
-    const int num_gpus = m_cudnn->m_num_gpus;
+    const int num_gpus = m_cudnn->get_num_gpus();
 
     // Get number of columns per GPU
     const int num_processes = m_cudnn->comm->get_procs_per_model();
     const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
-    // Initialize pointers to memory in each GPU
+    // Initialize GPU memory pointers
     m_prev_activations_d.assign(num_gpus, NULL);
     m_filter_d.assign(num_gpus, NULL);
     m_bias_d.assign(num_gpus, NULL);
@@ -178,7 +179,7 @@ convolutional_layer::~convolutional_layer()
       checkCUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
     if(m_activation_desc)
       checkCUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
-    for(int i=0; i<m_cudnn->m_num_gpus; ++i) {
+    for(int i=0; i<m_cudnn->get_num_gpus(); ++i) {
       const int gpu = m_cudnn->m_gpus[i];
       cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
       if(m_prev_activations_d.size() > i && m_prev_activations_d[i] != NULL )
@@ -437,7 +438,7 @@ void lbann::convolutional_layer::setup_gpu()
                                           0.0));
 
   // Allocate GPU memory
-  const int num_gpus = m_cudnn->m_num_gpus;
+  const int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
     const Int gpu = m_cudnn->m_gpus[i];
@@ -568,7 +569,7 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
   const DataType zero = 0;
 
   // Get number of GPUs
-  const Int num_gpus = m_cudnn->m_num_gpus;
+  const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -689,7 +690,7 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
   const DataType zero = 0;
 
   // Get number of GPUs
-  const Int num_gpus = m_cudnn->m_num_gpus;
+  const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Get local matrices
   Mat& activations_local = m_activations_v->Matrix();
@@ -879,7 +880,7 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   const DataType zero = 0;
 
   // Get number of GPUs
-  const Int num_gpus = m_cudnn->m_num_gpus;
+  const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -1036,7 +1037,7 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
   const DataType zero = 0;
 
   // Get number of GPUs
-  const Int num_gpus = m_cudnn->m_num_gpus;
+  const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Get local matrices
   const Mat& activations_local = m_activations_v->LockedMatrix();

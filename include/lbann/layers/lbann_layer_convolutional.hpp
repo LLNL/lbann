@@ -74,28 +74,30 @@ namespace lbann
     void bp_nonlinearity();
 
   private:
+
     /// Weight initialization scheme
     const weight_initialization m_weight_initialization;
     /// Number of data dimensions
-    const int m_num_dims;
+    const Int m_num_dims;
     /// Number of input channels
-    const int m_num_input_channels;
+    const Int m_num_input_channels;
     /// Input dimensions
     /** In HW or DHW format */
     std::vector<Int> m_input_dims;
     /// Number of output channels
-    const int m_num_output_channels;
+    const Int m_num_output_channels;
     /// Output dimensions
     std::vector<Int> m_output_dims;
     /// Filter dimensions
     std::vector<Int> m_filter_dims;
     /// Number of filter weights
-    int m_filter_size;
+    Int m_filter_size;
     /// Convolution padding
     std::vector<Int> m_conv_pads;
     /// Convolution strides
     std::vector<Int> m_conv_strides;
 
+    /// cuDNN manager
     cudnn::cudnn_manager* m_cudnn;
 
 #ifdef __LIB_CUDNN
@@ -138,13 +140,20 @@ namespace lbann
 
 #endif // __LIB_CUDNN
 
+    /// Initialize GPU objects
     void setup_gpu();
 
+    /// CPU implementation of forward propagation linearity
     void fp_linearity_cpu();
+    /// GPU implementation of forward propagation linearity
     void fp_linearity_gpu();
+    /// GPU implementation of forward propagation nonlinearity
     void fp_nonlinearity_gpu();
+    /// CPU implementation of backward propagation linearity
     void bp_linearity_cpu();
+    /// GPU implementation of backward propagation linearity
     void bp_linearity_gpu();
+    /// GPU implementation of backward propagation nonlinearity
     void bp_nonlinearity_gpu();
 
     bool is_pinned_fwd;

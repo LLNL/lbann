@@ -29,18 +29,20 @@
 #ifndef CUDNN_WRAPPER_HPP_INCLUDED
 #define CUDNN_WRAPPER_HPP_INCLUDED
 
-#ifdef __LIB_CUDNN
-
 #include <vector>
-#include <cuda.h>
-#include <cudnn.h>
-#include <cub/util_allocator.cuh>
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/layers/lbann_layer_activations.hpp"
 
+#ifdef __LIB_CUDNN
+#include <cuda.h>
+#include <cudnn.h>
+#include <cub/util_allocator.cuh>
+#endif // #ifdef __LIB_CUDNN
+
 // Error utility macros
+#ifdef __LIB_CUDNN
 #ifdef LBANN_DEBUG
 #define checkCUDA(status) {                                             \
     if (status != cudaSuccess) {                                        \
@@ -61,7 +63,8 @@
 #else
 #define checkCUDA(status)  status
 #define checkCUDNN(status) status
-#endif
+#endif // #ifdef LBANN_DEBUG
+#endif // #ifdef __LIB_CUDNN
 
 namespace cudnn
 {
@@ -69,6 +72,7 @@ namespace cudnn
   /** cuDNN manager class */
   class cudnn_manager
   {
+#ifdef __LIB_CUDNN
 
   public:
     /** Constructor
@@ -127,128 +131,9 @@ namespace cudnn
     /// pinned memory addresses
     std::map<void*, size_t> pinned_ptr;
 
-  };
-
-  /// cuDNN pooling layer
-  class cudnn_pooling_layer
-  {
-
-  public:
-
-    /// Constructor
-    cudnn_pooling_layer(int num_dims,
-                        int channels,
-                        const int* src_dims,
-                        pool_mode _pool_mode,
-                        const int* pool_dims,
-                        const int* pool_pads,
-                        const int* pool_strides,
-                        const uint mini_batch_size,
-                        cudnn_manager* cudnn);
-    
-    /// Destructor
-    ~cudnn_pooling_layer();
-    
-    /// Setup pooling layer
-    void setup();
-
-    /// Convolutional layer forward pass
-    void forward(const Mat& src, Mat& dst);
-    
-    /// Convolutional layer backward pass
-    void backward(const Mat& src, const Mat& dst,
-                  const Mat& grad_dst, Mat& grad_src);
-
-    /// Return the pointer to the associated cudnn_manager
-    cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
-
-  public:
-      
-    /// Number of dimensions
-    const int m_num_dims;
-
-    /// Input tensor size
-    int m_src_size;
-    /// Output tensor size
-    int m_dst_size;
-
-    /// Input tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_src_dims;
-    /// Output tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_dst_dims;
-
-    /// Pooling mode
-    const cudnnPoolingMode_t m_pool_mode;
-
-    /// Pooling dimensions
-    /** HW or DHW format */
-    std::vector<int> m_pool_dims;
-    /// Pooling padding
-    /** HW or DHW format */
-    std::vector<int> m_pool_pads;
-    /// Pooling strides
-    /** HW or DHW format */
-    std::vector<int> m_pool_strides;
-  
-  private:
-
-    /// cuDNN manager
-    cudnn_manager* m_cudnn;
-
-    /// cuDNN datatype
-    const cudnnDataType_t m_cudnn_data_type;
-
-    /// Number of data samples per GPU
-    int m_samples_per_gpu;
-
-    /// Input tensor descriptor
-    cudnnTensorDescriptor_t m_src_desc;
-    /// Output tensor descriptor
-    cudnnTensorDescriptor_t m_dst_desc;
-    /// Pooling descriptor
-    cudnnPoolingDescriptor_t m_pool_desc;
-
-    /// Input tensor strides
-    std::vector<int> m_src_strides;
-    /// Output tensor strides
-    std::vector<int> m_dst_strides;
-
-    const uint m_mini_batch_size;
-
-    std::vector<DataType*> d_prev_activations;
-    std::vector<DataType*> d_activations;
-
-    std::vector<DataType*> d_prev_error_signal;
-    std::vector<DataType*> d_error_signal;
-
-    /// Allocate memory on GPUs once and for all for the entire execution
-    void device_allocate(void);
-    /// Deallocate all the memory blocked on GPUs
-    void device_deallocate(void);
-    /// Allocate memory on GPUs for the forward path
-    void device_allocate_for_forward(void);
-    /// Allocate memory on GPUs for the backward path
-    void device_allocate_for_backward(void);
-    /// Deallocate memory on GPUs for the forward path
-    void device_deallocate_for_forward(void);
-    /// Deallocate memory on GPUs for the backward path
-    void device_deallocate_for_backward(void);
-
+#endif // #ifdef __LIB_CUDNN
   };
 
 }
-
-#else  // __LIB_CUDNN
-
-namespace cudnn
-{
-  class cudnn_manager {};
-  class cudnn_convolutional_layer {};
-  class cudnn_pooling_layer {};
-}
-
-#endif  // __LIB_CUDNN
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

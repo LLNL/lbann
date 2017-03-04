@@ -68,31 +68,55 @@ namespace lbann
     void fp_linearity();
     void bp_linearity();
 
-  public:
+  private:
 
     /// Pooling mode
     const pool_mode m_pool_mode;
 
     /// Number of data dimensions
-    const int m_num_dims;
+    const Int m_num_dims;
     /// Number of channels
-    const int m_num_channels;
+    const Int m_num_channels;
     /// Input dimensions
     /** In HW or DHW format */
-    std::vector<int> m_input_dims;
+    std::vector<Int> m_input_dims;
     /// Output dimensions
-    std::vector<int> m_output_dims;
+    std::vector<Int> m_output_dims;
     /// Pooling padding
     std::vector<int> m_pool_dims;
     /// Pooling padding
-    std::vector<int> m_pool_pads;
+    std::vector<Int> m_pool_pads;
     /// Pooling strides
-    std::vector<int> m_pool_strides;
+    std::vector<Int> m_pool_strides;
 
-  private:
+    /// cuDNN manager
+    cudnn::cudnn_manager* m_cudnn;
 
-    /// cuDNN pooling layer
-    cudnn::cudnn_pooling_layer* m_cudnn_layer;
+#ifdef __LIB_CUDNN
+
+    /// Number of mini-batch samples per GPU
+    Int m_mini_batch_size_per_gpu;
+    
+    /// Input tensor descriptor
+    cudnnTensorDescriptor_t m_input_desc;
+    /// Output tensor descriptor
+    cudnnTensorDescriptor_t m_output_desc;
+    /// Pooling descriptor
+    cudnnPoolingDescriptor_t m_pooling_desc;
+
+#endif // __LIB_CUDNN
+
+    /// Initialize GPU objects
+    void setup_gpu();
+
+    /// CPU implementation of forward propagation linearity
+    void fp_linearity_cpu();
+    /// GPU implementation of forward propagation linearity
+    void fp_linearity_gpu();
+    /// CPU implementation of backward propagation linearity
+    void bp_linearity_cpu();
+    /// GPU implementation of backward propagation linearity
+    void bp_linearity_gpu();
   
     bool is_pinned_fwd;
     bool is_pinned_bwd;
