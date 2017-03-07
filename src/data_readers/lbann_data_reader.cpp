@@ -148,7 +148,6 @@ DataReader& DataReader::operator=(const DataReader& source) {
   // Vectors implement a deep copy
   this->ShuffledIndices = source.ShuffledIndices;
   this->m_unused_indices = source.m_unused_indices;
-  this->m_name = source.m_name;
   return *this;
 }
 
@@ -305,5 +304,99 @@ bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char* name)
 
     return true;
 }
+
+void DataReader::set_file_dir(std::string s) { 
+  m_file_dir = s; 
+}
+
+std::string DataReader::get_file_dir() { 
+  return m_file_dir; 
+}
+
+void DataReader::set_data_filename(std::string s) { 
+  m_data_fn = s; 
+}
+
+std::string DataReader::get_data_filename() { 
+    if (m_data_fn == "") {
+      std::stringstream s;
+      s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
+        << "set_data_filename; this is an error!";
+      throw lbann_exception(s.str());
+    }
+    return m_data_fn; 
+}
+
+void DataReader::set_label_filename(std::string s) { 
+  m_label_fn = s; 
+}
+
+string DataReader::get_label_filename() { 
+    if (m_label_fn == "") {
+      std::stringstream s;
+      s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
+        << "set_label_filename; this is an error!";
+      throw lbann_exception(s.str());
+    }
+    return m_label_fn; 
+}
+
+void DataReader::set_max_sample_count(size_t s) {
+  m_max_sample_count = s;
+  m_max_sample_count_was_set = true;
+}
+
+size_t DataReader::get_max_sample_count() {
+  return m_max_sample_count;
+}
+
+bool DataReader::has_max_sample_count() {
+  return m_max_sample_count_was_set;
+}
+
+void DataReader::set_firstN(bool b) {
+  m_first_n = b;
+}
+
+bool DataReader::get_firstN() {
+  return m_first_n;
+}
+
+void DataReader::set_validation_percent(double s) {
+  if (s < 0 or s > 1.0) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
+    throw lbann_exception(err.str());
+  }
+  m_validation_percent = s;
+}
+
+bool DataReader::has_validation_percent() {
+  if (m_validation_percent == -1) return false;
+  return true;
+}
+
+double DataReader::get_validation_percent() {
+  return m_validation_percent;
+}
+
+void DataReader::set_use_percent(double s) {
+  if (s < 0 or s > 1.0) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
+    throw lbann_exception(err.str());
+  }
+  m_use_percent = s;
+}
+
+bool DataReader::has_use_percent() {
+  if (m_use_percent == -1) return false;
+  return true;
+}
+
+double DataReader::get_use_percent() {
+  return m_use_percent;
+}
+
 
 }  // namespace lbann

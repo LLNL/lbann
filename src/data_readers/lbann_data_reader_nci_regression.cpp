@@ -42,26 +42,23 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize, boo
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_responses = 1;
-  setName("nci_regression");
 }
 
-lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize)
-  : data_reader_nci_regression(batchSize, true) {}
 
 //copy constructor
+/*
 lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_nci_regression& source)
   : DataReader((const DataReader&) source),
   m_num_responses(source.m_num_responses), m_num_samples(source.m_num_samples),
   m_num_features(source.m_num_features),m_responses(source.m_responses),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
 {
-  setName("nci_regression");
 }
+*/
 
 lbann::data_reader_nci_regression::~data_reader_nci_regression()
 {
 }
-
 
 
 int lbann::data_reader_nci_regression::fetch_data(Mat& X)
@@ -136,10 +133,16 @@ int lbann::data_reader_nci_regression::fetch_response(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-bool lbann::data_reader_nci_regression::load(const std::string infile)
+void lbann::data_reader_nci_regression::load()
 {
+  string infile = get_data_filename();
   ifstream ifs(infile.c_str());
-  if (!ifs) { std::cout << "\n In load: can't open file : " << infile;  exit(1); }
+  if (!ifs) { 
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << "\n In load: can't open file : " << infile;
+    throw lbann_exception(err.str());
+  }
   m_infile = infile;
   string line;
   int i;
@@ -186,34 +189,44 @@ bool lbann::data_reader_nci_regression::load(const std::string infile)
   for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
     ShuffledIndices[n] = n;
   }
-  return true;
+
+  if (has_max_sample_count()) {
+    size_t max_sample_count = get_max_sample_count();
+    bool firstN = get_firstN();
+    load(max_sample_count, firstN);
+  } 
+  
+  else if (has_use_percent()) {
+    double use_percent = get_use_percent();
+    bool firstN = get_firstN();
+    load(use_percent, firstN);
+  }
 }
 
-bool lbann::data_reader_nci_regression::load(const std::string infile, size_t max_sample_count, bool firstN)
+void lbann::data_reader_nci_regression::load(size_t max_sample_count, bool firstN)
 {
-  const bool load_successful = load(infile);
-
   if(max_sample_count > getNumData() || (max_sample_count < static_cast<size_t>(0))) {
-    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        <<"NCI: data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
-bool lbann::data_reader_nci_regression::load(const std::string infile, double use_percentage, bool firstN) {
-  const bool load_successful = load(infile);
-
+void lbann::data_reader_nci_regression::load(double use_percentage, bool firstN) {
   size_t max_sample_count = static_cast<size_t>(rint(getNumData()*use_percentage));
 
   if(max_sample_count > getNumData() || (max_sample_count < static_cast<size_t>(0))) {
-    throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << "NCI: data reader load error: invalid number of samples selected";
+    throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
+#if 0
 lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(const data_reader_nci_regression& source)
 {
 
@@ -234,3 +247,4 @@ lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(
 
   return *this;
 }
+#endif

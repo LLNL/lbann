@@ -48,25 +48,24 @@ namespace lbann
       std::string m_infile; //input file name
 
     public:
-      data_reader_nci_regression(int batchSize, bool shuffle);
-      data_reader_nci_regression(int batchSize);
-      data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
-      data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
+      data_reader_nci_regression(int batchSize, bool shuffle=true);
+      //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
+      //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
       ~data_reader_nci_regression();
 
       int fetch_data(Mat& X);
       int fetch_response(Mat& Y);
       int getNumLabels() { return m_num_responses; } //@todo; check if used
 
-      bool load(const std::string infile);
-      bool load(const std::string infile,size_t max_sample_count, bool firstN=false);
-      bool load(const std::string infile, double validation_percent, bool firstN=false);
+      void load();
 
       size_t get_num_samples() {return m_num_samples;}
       size_t get_num_features() {return m_num_features;}
 
       int get_linearized_data_size() { return m_num_features; }
       int get_linearized_response_size(void) const { return m_num_responses; }
+      void load(size_t max_sample_count, bool firstN);
+      void load(double validation_percent, bool firstN);
   };
 
 }

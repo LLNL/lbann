@@ -42,7 +42,6 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   m_num_labels = 1000;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
-  setName("ImageNet");
 }
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
@@ -55,7 +54,6 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& sourc
     m_image_depth(source.m_image_depth),  
     m_num_labels(source.m_num_labels)
 {
-  setName("ImageNet");
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
 }
@@ -130,8 +128,11 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
   return (n - CurrentPos);
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile)
+void lbann::DataReader_ImageNet::load()
 {
+  string imageDir = get_file_dir();
+  string imageListFile = get_data_filename();
+
   m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
   ImageList.clear();
 
@@ -157,31 +158,32 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile)
     ShuffledIndices[n] = n;
   }
 
-  return true;
+  if (has_max_sample_count()) {
+    size_t max_sample_count = get_max_sample_count();
+    bool firstN = get_firstN();
+    load(max_sample_count, firstN);
+  } 
+  
+  else if (has_use_percent()) {
+    double use_percent = get_use_percent();
+    bool firstN = get_firstN();
+    load(use_percent, firstN);
+  }
+
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, size_t max_sample_count, bool firstN)
+void lbann::DataReader_ImageNet::load(size_t max_sample_count, bool firstN)
 {
-  bool load_successful = false;
-
-  load_successful = load(imageDir, imageListFile);
-
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: ImageNet: data reader load error: invalid number of samples selected";
     throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
-bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, double use_percentage, bool firstN)
+void lbann::DataReader_ImageNet::load(double use_percentage, bool firstN)
 {
-  bool load_successful = false;
-
-  load_successful = load(imageDir, imageListFile);
-
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
@@ -190,8 +192,6 @@ bool lbann::DataReader_ImageNet::load(string imageDir, string imageListFile, dou
     throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
 void lbann::DataReader_ImageNet::free()

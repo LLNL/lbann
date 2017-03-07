@@ -49,9 +49,7 @@ namespace lbann
       int fetch_label(Mat& Y);
       int getNumLabels() { return m_num_labels; } //@todo; check if used
 
-      bool load(const std::string infile);
-      bool load(const std::string infile,size_t max_sample_count, bool firstN=false);
-      bool load(const std::string infile, double validation_percent, bool firstN=false);
+      void load();
 
       size_t get_num_samples() {return m_num_samples;}
       size_t get_num_features() {return m_num_features;}
@@ -68,6 +66,9 @@ namespace lbann
       std::vector<int> m_labels;
       std::map<int,double> m_index_map;
       std::string m_infile; //input file name
+
+      void load(size_t max_sample_count, bool firstN=false);
+      void load(double validation_percent, bool firstN=false);
   };
 
 }
