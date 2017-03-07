@@ -32,6 +32,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto.hpp"
 
+#if 0
 
 // for read/write
 //#include <unistd.h>
@@ -627,3 +628,4 @@ void add_layers(
         }
     }
 }
+#endif
