@@ -108,12 +108,9 @@ int main(int argc, char* argv[])
         //data_reader_nci nci_dataset(g_MBSize, true, grid.Rank()*g_MBSize, parallel_io*g_MBSize);
       clock_t load_time = clock();
       data_reader_nci nci_trainset(trainParams.MBSize, true);
-      if (!nci_trainset.load(train_data,trainParams.PercentageTrainingSamples)) {
-        if (comm->am_world_master()) {
-          cout << "NCI train data error" << endl;
-        }
-        return -1;
-      }
+      nci_trainset.set_data_filename(train_data);
+      nci_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+      nci_trainset.load();
 
       if (comm->am_world_master()) {
         cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << nci_trainset.getNumData() << " samples." << endl;
@@ -147,12 +144,8 @@ int main(int argc, char* argv[])
         // load testing data (MNIST)
         ///////////////////////////////////////////////////////////////////
       data_reader_nci nci_testset(trainParams.MBSize, true);
-      if (!nci_testset.load(test_data)) {
-        if (comm->am_world_master()) {
-          cout << "NCI Test data error" << endl;
-        }
-        return -1;
-      }
+      nci_testset.set_data_filename(test_data);
+      nci_testset.load();
 
       if (comm->am_world_master()) cout << "Load Time " << ((double)clock() - load_time) / CLOCKS_PER_SEC << endl;
 

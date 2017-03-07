@@ -169,14 +169,11 @@ int main(int argc, char* argv[])
         pb->add_data_reader(d1);
 
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
-        if (!mnist_trainset.load(trainParams.DatasetRootDir,
-                                 g_MNIST_TrainImageFile,
-                                 g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " MNIST train data error" << endl;
-          }
-          return -1;
-        }
+        mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
+        mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
+        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
+        mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+        mnist_trainset.load();
 
         mnist_trainset.scale(scale);
         mnist_trainset.subtract_mean(subtract_mean);
@@ -225,15 +222,12 @@ int main(int argc, char* argv[])
         pb->add_data_reader(d2);
 
         DataReader_MNIST mnist_testset(trainParams.MBSize, true);
-        if (!mnist_testset.load(trainParams.DatasetRootDir,
-                                g_MNIST_TestImageFile,
-                                g_MNIST_TestLabelFile,
-                                trainParams.PercentageTestingSamples)) {
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " MNIST Test data error" << endl;
-          }
-          return -1;
-        }
+        mnist_testset.set_file_dir(trainParams.DatasetRootDir);
+        mnist_testset.set_data_filename(g_MNIST_TestImageFile);
+        mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
+        mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
+        mnist_testset.load();
+
 
         //@TODO: add to lbann_proto.hpp
         mnist_testset.scale(scale);
