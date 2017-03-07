@@ -109,6 +109,8 @@ namespace lbann
     cudnnTensorDescriptor_t m_input_desc;
     /// Output tensor descriptor
     cudnnTensorDescriptor_t m_output_desc;
+    /// Bias tensor descriptor
+    cudnnTensorDescriptor_t m_bias_desc;
     /// Filter descriptor
     cudnnFilterDescriptor_t m_filter_desc;
     /// Convolution descriptor

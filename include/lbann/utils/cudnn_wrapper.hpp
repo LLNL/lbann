@@ -99,6 +99,31 @@ namespace cudnn
     /** Get CUDA streams for current MPI rank. */
     std::vector<cudaStream_t>* get_streams();
 
+    /** Copy data from CPU to GPUs.
+     *  Matrix columns are split up amongst GPUs.
+     */
+    void copy_to_gpus(std::vector<DataType*>& gpu_data,
+                      const Mat& cpu_data,
+                      Int width_per_gpu);
+    /** Copy data from GPUs to CPU.
+     *  Matrix columns are assumed to be split up amongst GPUs.
+     */
+    void copy_from_gpus(Mat& cpu_data,
+                        const std::vector<DataType*>& gpu_data,
+                        Int width_per_gpu);
+    /** Copy data from CPU to GPUs.
+     *  Data is duplicated across GPUs.
+     */
+    void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
+                           const Mat& cpu_data);
+    /** Copy data from GPUs to CPU and reduce.
+     */
+    void reduce_from_gpus(Mat& cpu_data,
+                          const std::vector<DataType*>& gpu_data);
+
+    /** Synchronize GPUs. */
+    void synchronize();
+
     /// Register a block of memory to pin
     void pin_ptr(void* ptr, size_t sz);
     /// Pin the memory block of a matrix
