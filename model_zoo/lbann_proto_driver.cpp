@@ -32,6 +32,8 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto.hpp"
 
+int main(int argc, char* argv[])
+{}
 #if 0
 
 // for read/write
