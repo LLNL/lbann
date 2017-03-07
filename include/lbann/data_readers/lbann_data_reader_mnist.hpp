@@ -39,7 +39,6 @@ class DataReader_MNIST : public DataReader, public lbann_image_preprocessor
 public:
   DataReader_MNIST(int batchSize, bool shuffle);
   DataReader_MNIST(int batchSize);
-  DataReader_MNIST(const DataReader_MNIST& source);
   ~DataReader_MNIST();
 
   int fetch_data(Mat& X);
@@ -47,18 +46,16 @@ public:
   int getNumLabels() { return m_num_labels; }
 
   // MNIST-specific functions
-  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, size_t max_sample_count, bool firstN=false);
-  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, double validation_percent, bool firstN=false);
-  bool load(std::string FileDir, std::string ImageFile, std::string LabelFile, int *index_set);
-  void free();
+  void load();
 
   int getImageWidth() { return m_image_width; }
   int getImageHeight() { return m_image_height; }
   int get_linearized_data_size() { return m_image_width * m_image_height; }
   int get_linearized_label_size() { return m_num_labels; }
 
-  DataReader_MNIST& operator=(const DataReader_MNIST& source);
+  //don't need this, since default ctor is adequate; eliminating
+  //explict implementation reduces possible bugs
+  //DataReader_MNIST& operator=(const DataReader_MNIST& source);
 
   void save_image(Mat& pixels, const std::string filename, bool scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width, 1,
@@ -66,12 +63,14 @@ public:
   }
 
 private:
-  void clone_image_data(const DataReader_MNIST& source);
 
-  std::vector<unsigned char*> m_image_data;
+  std::vector<std::vector<unsigned char> > m_image_data;
   int m_image_width;
   int m_image_height;
   int m_num_labels;
+
+  void load(size_t max_sample_count, bool firstN);
+  void load(double validation_percent, bool firstN=false);
 };
 
 }  // namespace lbann

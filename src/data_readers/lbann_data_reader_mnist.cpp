@@ -40,32 +40,33 @@ inline void __swapEndianInt(unsigned int& ui)
 
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle), lbann_image_preprocessor()
+  : DataReader(batchSize, shuffle)
+  //, lbann_image_preprocessor()
 {
   m_image_width = 28;
   m_image_height = 28;
   m_num_labels = 10;
-  setName("MNIST");
 }
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
   : DataReader_MNIST(batchSize, true) {}
 
+/*
 lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
   : DataReader((const DataReader&) source),
-    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
+    //lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_width(source.m_image_width), m_image_height(source.m_image_height),
     m_num_labels(source.m_num_labels)
 {
   // No need to deallocate data on a copy constuctor
 
   clone_image_data(source);
-  setName("MNIST");
 }
+*/
 
 lbann::DataReader_MNIST::~DataReader_MNIST()
 {
-  this->free();
+  //this->free();
 }
 
 int lbann::DataReader_MNIST::fetch_data(Mat& X)
@@ -87,12 +88,10 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    unsigned char* data = m_image_data[index];
-    unsigned char* pixels = &data[1];
-    unsigned char label = data[0];
+    vector<unsigned char> &tmp = m_image_data[index];
 
     for (int p = 0; p < pixelcount; p++) {
-      X.Set(p, k, pixels[p]);
+      X.Set(p, k, tmp[p+1]);
     }
 
     auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
@@ -119,8 +118,7 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    unsigned char* data = m_image_data[index];
-    unsigned char label = data[0];
+    unsigned char label = m_image_data[index][0];
 
     Y.Set(label, k, 1);
   }
@@ -128,9 +126,73 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
   return (n - CurrentPos);
 }
 
-bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile)
+
+/*
+void lbann::DataReader_MNIST::free()
 {
-  this->free();
+  for (size_t n = 0; n < m_image_data.size(); n++) {
+    unsigned char* data = m_image_data[n];
+    delete [] data;
+  }
+  m_image_data.clear();
+}
+*/
+
+// Assignment operator
+#if 0
+lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNIST& source)
+{
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader::operator=(source);
+
+  // first we need to deallocate any data that this data reader is holding!
+  for (size_t n = 0; n < m_image_data.size(); n++) {
+    unsigned char* data = m_image_data[n];
+    delete [] data;
+  }
+  m_image_data.clear();
+
+  this->m_image_width = source.m_image_width;
+  this->m_image_height = source.m_image_height;
+  this->m_num_labels = source.m_num_labels;
+  this->m_num_labels = source.m_num_labels;
+
+  clone_image_data(source);
+  return *this;
+}
+#endif
+
+/*
+void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source)
+{
+  // m_image_data has pointers, so we need to deep copy them
+  for (size_t n = 0; n < source.m_image_data.size(); n++) {
+    unsigned char* data = new unsigned char[1 + m_image_width * m_image_height];
+    unsigned char* src_data = source.m_image_data[n];
+
+    for (size_t i = 0; i < 1 + m_image_width * m_image_height; i++) {
+      data[i] = src_data[i];
+    }
+    m_image_data.push_back(data);
+  }
+  return;
+}
+*/
+
+//===================================================
+
+void lbann::DataReader_MNIST::load()
+{
+  //this->free();
+  m_image_data.clear();
+
+  string FileDir = get_file_dir();
+  string ImageFile = get_data_filename();
+  string LabelFile = get_label_filename();
 
   // set filepath
   string imagepath = FileDir + __DIR_DELIMITER + ImageFile;
@@ -177,12 +239,11 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
   }
 
   // set to array
+  m_image_data.resize(numitems1);
   for (int n = 0; n < numitems1; n++) {
-    unsigned char* data = new unsigned char[1 + imgwidth * imgheight];
-    fread(&data[0], 1, 1, fplbl);
-    fread(&data[1], imgwidth * imgheight, 1, fpimg);
-
-    m_image_data.push_back(data);
+    m_image_data[n].resize(1+(imgwidth * imgheight));
+    fread(&m_image_data[n][0], 1, 1, fplbl);
+    fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg);
   }
   fclose(fpimg);
   fclose(fplbl);
@@ -194,31 +255,31 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
     ShuffledIndices[n] = n;
   }
 
-  return true;
+  if (has_max_sample_count()) {
+    size_t max_sample_count = get_max_sample_count();
+    bool firstN = get_firstN();
+    load(max_sample_count, firstN);
+  } 
+  
+  else if (has_use_percent()) {
+    double use_percent = get_use_percent();
+    bool firstN = get_firstN();
+    load(use_percent, firstN);
+  }
 }
 
-bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, size_t max_sample_count, bool firstN)
+void lbann::DataReader_MNIST::load(size_t max_sample_count, bool firstN)
 {
-  bool load_successful = false;
-
-  load_successful = load(FileDir, ImageFile, LabelFile);
-
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: invalid number of samples selected";
     throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
-bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string LabelFile, double use_percentage, bool firstN)
+void lbann::DataReader_MNIST::load(double use_percentage, bool firstN)
 {
-  bool load_successful = false;
-
-  load_successful = load(FileDir, ImageFile, LabelFile);
-
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
@@ -227,56 +288,4 @@ bool lbann::DataReader_MNIST::load(string FileDir, string ImageFile, string Labe
     throw lbann_exception(err.str());
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
-}
-
-void lbann::DataReader_MNIST::free()
-{
-  for (size_t n = 0; n < m_image_data.size(); n++) {
-    unsigned char* data = m_image_data[n];
-    delete [] data;
-  }
-  m_image_data.clear();
-}
-
-// Assignment operator
-lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNIST& source)
-{
-  // check for self-assignment
-  if (this == &source)
-    return *this;
-
-  // Call the parent operator= function
-  DataReader::operator=(source);
-
-  // first we need to deallocate any data that this data reader is holding!
-  for (size_t n = 0; n < m_image_data.size(); n++) {
-    unsigned char* data = m_image_data[n];
-    delete [] data;
-  }
-  m_image_data.clear();
-
-  this->m_image_width = source.m_image_width;
-  this->m_image_height = source.m_image_height;
-  this->m_num_labels = source.m_num_labels;
-  this->m_num_labels = source.m_num_labels;
-
-  clone_image_data(source);
-  return *this;
-}
-
-void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source)
-{
-  // m_image_data has pointers, so we need to deep copy them
-  for (size_t n = 0; n < source.m_image_data.size(); n++) {
-    unsigned char* data = new unsigned char[1 + m_image_width * m_image_height];
-    unsigned char* src_data = source.m_image_data[n];
-
-    for (size_t i = 0; i < 1 + m_image_width * m_image_height; i++) {
-      data[i] = src_data[i];
-    }
-    m_image_data.push_back(data);
-  }
-  return;
 }

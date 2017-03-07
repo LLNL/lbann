@@ -103,8 +103,11 @@ for (int h=0; h<6; h++) cout << h << " " << v[h] << endl;
 
         DataReader_ImageNet imagenet_trainset(0);
         cout << "calling load ...\n";
-        imagenet_trainset.load(root_dir + train_dir,
-                               root_dir + label_dir + label_file);
+        imagenet_trainset.set_file_dir(root_dir + train_dir);
+        imagenet_trainset.set_data_filename(root_dir + label_dir + label_file);
+        imagenet_trainset.load();
+        //imagenet_trainset.load(root_dir + train_dir,
+        //                       root_dir + label_dir + label_file);
         std::vector<vector<unsigned char> > data;
         cout << "calling fetch_data ...\n";
         imagenet_trainset.fetch_data(data, num_to_process);

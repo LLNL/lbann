@@ -29,7 +29,6 @@
  * for reading/writing lbann models and associated data to/from
  * protocol buffers
  */
-
 #ifndef LBANN_PROTO_HPP_INCLUDED
 #define LBANN_PROTO_HPP_INCLUDED
 
@@ -164,4 +163,3 @@ private:
 }
 
 #endif //LBANN_PROTO_HPP_INCLUDED
-

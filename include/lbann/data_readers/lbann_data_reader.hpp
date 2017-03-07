@@ -42,6 +42,11 @@
 #include <unistd.h>
 
 
+#define NOT_IMPLEMENTED(n) { \
+  std::stringstream s; \
+  s << "the method " << n << " has not been implemented"; \
+  throw lbann_exception(s.str()); }
+
 /**
  * @todo - add support for save and restore
  */
@@ -51,27 +56,100 @@ namespace lbann
 class DataReader
 {
 public:
-  DataReader(int batchSize, bool shuffle) :
+  DataReader(int batchSize, bool shuffle = true) :
     BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
     m_stride(batchSize), m_base_offset(0), m_model_offset(0), 
     m_use_alt_last_mini_batch_size(false),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
-    m_last_mini_batch_stride(batchSize) 
+    m_last_mini_batch_stride(batchSize),
+    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
+    m_max_sample_count_was_set(false), m_use_percent(-1)
   {}
     
-  DataReader(int batchSize) :
-    DataReader(batchSize, true) {}
-    
-  DataReader(const DataReader& source) :
-    BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
-    m_stride(source.m_stride), m_base_offset(source.m_base_offset), m_model_offset(source.m_model_offset),
-    m_use_alt_last_mini_batch_size(source.m_use_alt_last_mini_batch_size),
-    m_last_mini_batch_threshold(source.m_last_mini_batch_threshold), m_last_mini_batch_size(source.m_last_mini_batch_size), m_last_mini_batch_stride(source.m_last_mini_batch_stride),
-    ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices),
-    m_name(source.m_name)
-  {}
+  //developer's note: I eliminated the copy ctor, since the
+  //default does everything we need; eliminating our explicit
+  //code helps minimize sources of error -dHysom
 
   virtual ~DataReader() {}
+
+  /** @name Methods related to construction and loading
+   *  These methods are used in drivers (front ends) to construct data readers,
+   *  tell them were to find data, how much to load, etc.
+   *  These are all non-virtual methods.
+   */
+
+  /** 
+   * Set base directory for your data. Optional: if given,
+   * then get_data_filename will concatenate the value passed
+   * to this method with the value passed to set_data_filename,
+   * and similarly for get_label_filename
+   */
+  void set_file_dir(std::string s);
+
+  /**
+   * Returns the base directory for your data. 
+   * If set_file_dir was not called, returns the empty string
+   */
+  std::string get_file_dir();
+
+  /**
+   * Set the filename for your data (images, etc).
+   * This may either be a complete filepath, or a subdirectory;
+   * see note for set_file_dir(). Also, use this method
+   * for cases where the file contains a list of files (e.g, imagenet)
+   */ 
+  void set_data_filename(std::string s);
+
+  /**
+   * Returns the complete filepath to you data file.
+   * See not for set_file_dir()
+   */
+  std::string get_data_filename(); 
+
+  /**
+   * Set the filename for your data (images, etc).
+   * This may either be a complete filepath, or a subdirectory;
+   * see note for set_file_dir()
+   */ 
+  void set_label_filename(std::string s);
+
+  /**
+   * Returns the complete filepath to you data file.
+   * See not for set_file_dir(). Note: some pipelines (autoencoders)
+   * will not make use of this method.
+   */
+  std::string get_label_filename(); 
+
+  /**
+   * Use the first N data entries, without shuffling;
+   * default is: false
+   */
+  void set_firstN(bool b);
+  bool get_firstN();
+
+  void set_max_sample_count(size_t s);
+  bool has_max_sample_count();
+  size_t get_max_sample_count();
+
+  void set_use_percent(double s);
+  bool has_use_percent();
+  double get_use_percent();
+
+  void set_validation_percent(double s);
+  bool has_validation_percent();
+  double get_validation_percent();
+
+  /**
+   * Pure abstract virtual function; all DataReaders *must* implement.
+   */
+  virtual void load() = 0;
+
+  ///@}
+
+
+
+
 
   /**
    * Prepare to start processing an epoch of data.
@@ -82,11 +160,24 @@ public:
   void setup(int base_offset, int stride, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
-  virtual int fetch_data(Mat& X) { return 0; }
-  virtual int fetch_label(Mat& Y) { return 0; }
-  virtual int fetch_response(Mat& Y) { return 0; }
+  virtual int fetch_data(Mat& X) { 
+    NOT_IMPLEMENTED("fetch_data");
+    return 0; 
+  }
 
-  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) { }
+  virtual int fetch_label(Mat& Y) { 
+    NOT_IMPLEMENTED("fetch_label");
+    return 0; 
+  }
+
+  virtual int fetch_response(Mat& Y) { 
+    NOT_IMPLEMENTED("fetch_response");
+    return 0; 
+  }
+
+  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) { 
+   NOT_IMPLEMENTED("save_image"); 
+  }
 
   /**
    * During the network's update phase, the data reader will
@@ -127,12 +218,6 @@ public:
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char* name);
 
-  /** \brief Returns this class's name **/
-  const std::string & name() { return m_name; }
-
-  /** \brief Sets this class's name **/
-  void setName(std::string name) { m_name = name; }
-
 protected:
   int BatchSize;
   int CurrentPos;
@@ -158,7 +243,14 @@ protected:
   /// Record of the indicies that are not being used for training
   std::vector<int> m_unused_indices;
 
-  std::string m_name;
+  std::string m_file_dir;
+  std::string m_data_fn;
+  std::string m_label_fn;
+  bool m_first_n;
+  size_t m_max_sample_count;
+  double m_validation_percent;
+  size_t m_max_sample_count_was_set;
+  double m_use_percent;
 };
 
 }  // namespace lbann

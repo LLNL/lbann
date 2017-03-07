@@ -141,16 +141,11 @@ int main(int argc, char* argv[])
         // load training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true);
-        bool training_set_loaded = false;
-        training_set_loaded = imagenet_trainset.load(trainParams.DatasetRootDir + g_ImageNet_TrainDir, 
-                                                     trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile,
-                                                     trainParams.PercentageTrainingSamples);
-        if (!training_set_loaded) {
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " ImageNet train data error" << endl;
-          }
-          return -1;
-        }
+        imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
+        imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
+        imagenet_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+        imagenet_trainset.load();
+
         if (comm->am_world_master()) {
           cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl;
         }
@@ -187,16 +182,11 @@ int main(int argc, char* argv[])
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_testset(trainParams.MBSize, true);
-        bool testing_set_loaded = false;
-        testing_set_loaded = imagenet_testset.load(trainParams.DatasetRootDir + g_ImageNet_TestDir,  
-                                                   trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile, 
-                                                   trainParams.PercentageTestingSamples);
-        if (!testing_set_loaded) {
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " ImageNet Test data error" << endl;
-          }
-          return -1;
-        }
+        imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
+        imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
+        imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
+        imagenet_testset.load();
+
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
         }

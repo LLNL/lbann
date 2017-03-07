@@ -42,7 +42,6 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
-  setName("nci");
 }
 
 lbann::data_reader_nci::data_reader_nci(int batchSize)
@@ -54,9 +53,7 @@ lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
   m_num_labels(source.m_num_labels), m_num_samples(source.m_num_samples),
   m_num_features(source.m_num_features),m_labels(source.m_labels),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
-  {
-    setName("nci");
-  }
+  { }
 
 lbann::data_reader_nci::~data_reader_nci()
 {
@@ -150,8 +147,9 @@ int lbann::data_reader_nci::fetch_label(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-bool lbann::data_reader_nci::load(const std::string infile)
+void lbann::data_reader_nci::load()
 {
+  string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) { 
     cerr << endl << __FILE__ << " " << __LINE__ 
@@ -185,36 +183,35 @@ bool lbann::data_reader_nci::load(const std::string infile)
   for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
     ShuffledIndices[n] = n;
   }
-  return true;
+
+  if (has_max_sample_count()) {
+    size_t max_sample_count = get_max_sample_count();
+    bool firstN = get_firstN();
+    load(max_sample_count, firstN);
+  } 
+  
+  else if (has_use_percent()) {
+    double use_percent = get_use_percent();
+    bool firstN = get_firstN();
+    load(use_percent, firstN);
+  }
 }
 
-bool lbann::data_reader_nci::load(const std::string infile, size_t max_sample_count, bool firstN)
+void lbann::data_reader_nci::load(size_t max_sample_count, bool firstN)
 {
-  bool load_successful = false;
-
-  load_successful = load(infile);
-
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
-bool lbann::data_reader_nci::load(const std::string infile, double use_percentage, bool firstN) {
-  bool load_successful = false;
-
-  load_successful = load(infile);
-
+void lbann::data_reader_nci::load(double use_percentage, bool firstN) {
   size_t max_sample_count = rint(getNumData()*use_percentage);
 
   if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
     throw lbann_exception("NCI: data reader load error: invalid number of samples selected");
   }
   select_subset_of_data(max_sample_count, firstN);
-
-  return load_successful;
 }
 
 lbann::data_reader_nci& lbann::data_reader_nci::operator=(const data_reader_nci& source)
