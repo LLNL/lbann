@@ -106,7 +106,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE
 include(OpenMP)
 include(MPI)
 include(Elemental)
-include(OpenCV)
+include(OpenCVSimple)
 include(protobuf)
 
 # Optional dependencies
@@ -176,7 +176,6 @@ endmacro()
 # Add LBANN source files
 add_subdirectory(src)
 add_subdirectory(model_zoo)
-add_subdirectory(utility)
 
 # Build LBANN source files
 add_library(src OBJECT ${SRCS})
