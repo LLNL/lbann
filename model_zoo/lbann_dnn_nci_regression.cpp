@@ -106,6 +106,7 @@ int main(int argc, char* argv[])
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
     init_random(42);
+    init_data_seq_random(42);
 
     try {
 

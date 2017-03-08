@@ -133,6 +133,7 @@ int main(int argc, char* argv[])
         // Initialize lbann with the communicator.
         lbann::initialize(comm);
         init_random(42);
+        init_data_seq_random(42);
 
         //tell the lbann_proto class who is the master
         if (comm->am_world_master()) {

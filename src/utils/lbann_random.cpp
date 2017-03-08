@@ -38,6 +38,10 @@ lbann::rng_gen generator;
 extern lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
 lbann::fast_rng_gen fast_generator;
+
+extern lbann::rng_gen data_seq_generator;
+#pragma omp threadprivate(data_seq_generator)
+lbann::rng_gen data_seq_generator;
 }
 
 namespace lbann {
@@ -48,6 +52,10 @@ rng_gen& get_generator() {
 
 fast_rng_gen& get_fast_generator() {
   return ::fast_generator;
+}
+
+rng_gen& get_data_seq_generator() {
+  return ::data_seq_generator;
 }
 
 void init_random(int seed, lbann_comm* comm) {
@@ -89,6 +97,26 @@ void init_random(int seed, lbann_comm* comm) {
     El::Generator().seed(rand_val);
 #endif
   }
+}
+
+void init_data_seq_random(int seed) {
+  unsigned rand_val = seed;
+  if (seed == -1) {
+    // Seed with a random value.
+    std::random_device rd;
+    rand_val = rd();
+  }
+
+  // Seed every OpenMP thread, if present.
+  // Note: Threadprivate OMP variables don't work with dynamic threads.
+#ifdef _OPENMP
+#pragma omp parallel
+  {
+    get_data_seq_generator().seed(seed);
+  }
+#else
+  get_data_seq_generator().seed(seed);
+#endif
 }
 
 void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,

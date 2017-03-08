@@ -50,6 +50,13 @@ rng_gen& get_generator();
 fast_rng_gen& get_fast_generator();
 
 /**
+ * Return a reference to the global LBANN random number generator used
+ * for shuffling the data samples within each mini-bathc
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ */
+rng_gen& get_data_seq_generator();
+
+/**
  * Return random integers uniformly distributed in [0, max).
  * @param g C++ uniform random bit generator.
  * @param max Upper bound on the distribution.
@@ -91,6 +98,18 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
  * from/to a stream).
  */
 void init_random(int seed = -1, lbann_comm* comm = nullptr);
+
+/**
+ * Initialize a random number generator (with optional seed) that is
+ * specifically used for sequencing the training / testing data
+ * samples.  Using a separate RNG for the data sequences helps provide
+ * a stable training result that does not vary with how much I/O
+ * parallelism is applied.
+ * @todo Support saving/restoring the generator's state. This is directly
+ * supported via the >> and << operators on the generator (reading/writing
+ * from/to a stream).
+ */
+void init_data_seq_random(int seed = -1);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from

@@ -23,7 +23,7 @@ if [ ! -z "$SLURM_SUBMIT_DIR" ] ; then
   fi
 fi
 
-EPOCHS=1
+EPOCHS=5
 #NET="5000,4000,3000,1000"
 NET="25000,1000"
 

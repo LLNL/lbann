@@ -48,7 +48,7 @@ void DataReader::setup(int base_offset, int stride, int model_offset,
   CurrentPos = m_base_offset + m_model_offset;
   if (m_shuffle) {
     std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
-                 get_generator());
+                 get_data_seq_generator());
   }
 }
 
@@ -69,7 +69,7 @@ bool DataReader::update() {
   } else {
     if (m_shuffle) {
       std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
-                   get_generator());
+                   get_data_seq_generator());
     }
     m_current_mini_batch_idx = 0;
     CurrentPos = m_base_offset + m_model_offset;
@@ -104,7 +104,7 @@ void DataReader::select_subset_of_data(size_t max_sample_count, bool firstN) {
   if (max_sample_count != 0) {
     max_sample_count = __MIN(max_sample_count, num_data_samples);
     if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
+      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_data_seq_generator());
     }
     m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
     ShuffledIndices.resize(max_sample_count);
