@@ -40,15 +40,17 @@ using namespace lbann;
 
 #define _ALLOC_DEVICE_MEM_ONCE_
 
-cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
+cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, Int max_num_gpus)
   : comm(_comm)
 {
 
-  // Initialize GPU memory pool
+  // Initialize memory pool
   m_gpu_memory = new cub::CachingDeviceAllocator(8u, 3u);
 
   // Determine number of available GPUs
-  checkCUDA(cudaGetDeviceCount(&m_num_total_gpus));
+  int num_total_gpus;
+  checkCUDA(cudaGetDeviceCount(&num_total_gpus));
+  m_num_total_gpus = num_total_gpus;
   if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
     m_num_total_gpus = max_num_gpus;
   }
@@ -57,8 +59,8 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
   }
 
   // Determine number of MPI ranks on current compute node
-  const int rank_in_node = comm->get_rank_in_node();
-  const int procs_per_node = comm->get_procs_per_node();
+  const Int rank_in_node = comm->get_rank_in_node();
+  const Int procs_per_node = comm->get_procs_per_node();
   
   // Case where compute node has more GPUs than MPI ranks
   if(m_num_total_gpus >= procs_per_node) {
@@ -99,12 +101,11 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus)
 cudnn_manager::~cudnn_manager()
 {
   // Destroy GPU memory pool
-  if(m_gpu_memory) {
-    delete m_gpu_memory;
-  }
+  m_gpu_memory->FreeAllCached();
+  delete m_gpu_memory;
 
   // Destroy cuDNN handles
-  for(int i=0; i<m_gpus.size(); ++i) {
+  for(Int i=0; i<m_gpus.size(); ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
     if(m_streams[i])
       checkCUDA(cudaStreamDestroy(m_streams[i]));
@@ -112,6 +113,81 @@ cudnn_manager::~cudnn_manager()
       checkCUDNN(cudnnDestroy(m_handles[i]));
   }
   unpin_ptrs();
+}
+
+void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType*>& gpu_data,
+                                                    Int height,
+                                                    Int width_per_gpu) {
+
+#ifdef LBANN_DEBUG
+  if(gpu_data.size() != 0) {
+    // Check that list of pointers has valid number of entries
+    if(gpu_data.size() != m_num_gpus) {
+      throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
+    }
+    // Check that list of pointers only contains null pointers
+    for(Int i=0; i<m_num_gpus; ++i) {
+      if(gpu_data[i] != NULL) {
+        throw lbann_exception("cudnn_wrapper: overwriting non-null pointer with newly allocated GPU memory");
+      }
+    }
+  }
+#endif // #ifdef LBANN_DEBUG
+
+  // Allocate GPU memory
+  gpu_data.resize(m_num_gpus, NULL);
+  for(Int i=0; i<m_num_gpus; ++i) {
+    if(height*width_per_gpu > 0) {
+      checkCUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
+                                             (void**) &gpu_data[i],
+                                             height*width_per_gpu*sizeof(DataType),
+                                             m_streams[i]));
+    }
+  }
+
+}
+
+void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType*>& gpu_data) {
+
+  // Stop if list of pointers is empty
+  if(gpu_data.size() == 0)
+    return;
+
+#ifdef LBANN_DEBUG
+  // Ensure that gpu_data has right dimensions
+  if(gpu_data.size() != m_num_gpus) {
+      throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
+  }
+#endif // #ifdef LBANN_DEBUG
+
+  // Deallocate GPU memory
+  for(Int i=0; i<m_num_gpus; ++i) {
+    if(gpu_data[i] != NULL) {
+      checkCUDA(m_gpu_memory->DeviceFree(m_gpus[i], gpu_data[i]));
+    }
+  }  
+
+  // Clear list of GPU memory pointers
+  gpu_data.clear();
+  
+}
+
+void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
+                                                const std::vector<DataType*>& gpu_src_data,
+                                                Int height,
+                                                Int width_per_gpu) {
+
+  // Perform memory transfer on each GPU
+#pragma omp parallel for
+  for(Int i=0; i<m_num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_gpus[i]));
+    checkCUDA(cudaMemcpyAsync(gpu_dst_data[i],
+                              gpu_src_data[i],
+                              height*width_per_gpu*sizeof(DataType),
+                              cudaMemcpyDeviceToDevice,
+                              m_streams[i]));
+  }
+  
 }
 
 void cudnn_manager::cudnn_manager::copy_to_gpus(std::vector<DataType*>& gpu_data,
@@ -158,7 +234,7 @@ void cudnn_manager::cudnn_manager::copy_to_gpus(std::vector<DataType*>& gpu_data
     if(current_width < width_per_gpu) {
       checkCUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
                                 0,
-                                height*(width_per_gpu-current_width),
+                                height*(width_per_gpu-current_width)*sizeof(DataType),
                                 m_streams[i]));
     }
     
@@ -286,7 +362,7 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
       }
     }
     else {
-      checkCUDA(cudaMemcpyAsync(temp.Buffer(0,(i+1)*width),
+      checkCUDA(cudaMemcpyAsync(temp.Buffer(0,(i-1)*width),
                                 gpu_data[i],
                                 height*width*sizeof(DataType),
                                 cudaMemcpyDeviceToHost,
@@ -368,20 +444,64 @@ cudnnDataType_t cudnn_manager::get_cudnn_data_type() const {
   }
 }
 
-int cudnn_manager::get_num_gpus() const {
+Int cudnn_manager::get_num_gpus() const {
   return m_num_gpus;
 }
 
-int cudnn_manager::get_num_total_gpus() const {
+Int cudnn_manager::get_num_total_gpus() const {
   return m_num_total_gpus;
 }
 
-cub::CachingDeviceAllocator* cudnn_manager::get_gpu_memory() {
-  return m_gpu_memory;
+std::vector<int>& cudnn_manager::get_gpus() {
+  return m_gpus;
 }
 
-std::vector<cudaStream_t>* cudnn_manager::get_streams() {
-  return &m_streams;
+const std::vector<int>& cudnn_manager::get_gpus() const {
+  return m_gpus;
+}
+
+int cudnn_manager::get_gpu(Int i) const {
+  return m_gpus[i];
+}
+
+cub::CachingDeviceAllocator& cudnn_manager::get_gpu_memory() {
+  return *m_gpu_memory;
+}
+
+const cub::CachingDeviceAllocator& cudnn_manager::get_gpu_memory() const {
+  return *m_gpu_memory;
+}
+
+std::vector<cudaStream_t>& cudnn_manager::get_streams() {
+  return m_streams;
+}
+
+const std::vector<cudaStream_t>& cudnn_manager::get_streams() const {
+  return m_streams;
+}
+
+cudaStream_t& cudnn_manager::get_stream(Int i) {
+  return m_streams[i];
+}
+
+const cudaStream_t& cudnn_manager::get_stream(Int i) const {
+  return m_streams[i];
+}
+
+std::vector<cudnnHandle_t>& cudnn_manager::get_handles() {
+  return m_handles;
+}
+
+const std::vector<cudnnHandle_t>& cudnn_manager::get_handles() const {
+  return m_handles;
+}
+
+cudnnHandle_t& cudnn_manager::get_handle(Int i) {
+  return m_handles[i];
+}
+
+const cudnnHandle_t& cudnn_manager::get_handle(Int i) const {
+  return m_handles[i];
 }
 
 #endif // #ifdef __LIB_CUDNN

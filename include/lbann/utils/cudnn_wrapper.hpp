@@ -80,7 +80,7 @@ namespace cudnn
      *  @param max_num_gpus  Maximum Number of available GPUs. If
      *                       negative, then use all available GPUs.
      */
-    cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus = -1);
+    cudnn_manager(lbann::lbann_comm* _comm, Int max_num_gpus = -1);
 
     /** Destructor */
     ~cudnn_manager();
@@ -90,15 +90,50 @@ namespace cudnn
     /** Get cuDNN data type associated with C++ data type. */
     cudnnDataType_t get_cudnn_data_type() const;
 
-    /** Get number of GPUs assigned to current MPI rank. */
-    int get_num_gpus() const;
+    /** Get number of GPUs assigned to current process. */
+    Int get_num_gpus() const;
     /** Get number of GPUs on current node. */
-    int get_num_total_gpus() const;
+    Int get_num_total_gpus() const;
+    /** Get GPUs for current process. */
+    std::vector<int>& get_gpus();
+    /** Get GPUs for current process (const). */
+    const std::vector<int>& get_gpus() const;
+    /** Get ith GPU for current process. */
+    int get_gpu(Int i=0) const;
     /** Get GPU memory allocator. */
-    cub::CachingDeviceAllocator* get_gpu_memory();
-    /** Get CUDA streams for current MPI rank. */
-    std::vector<cudaStream_t>* get_streams();
+    cub::CachingDeviceAllocator& get_gpu_memory();
+    /** Get GPU memory allocator (const). */
+    const cub::CachingDeviceAllocator& get_gpu_memory() const;
+    /** Get CUDA streams for current process. */
+    std::vector<cudaStream_t>& get_streams();
+    /** Get CUDA streams for current process (const). */
+    const std::vector<cudaStream_t>& get_streams() const;
+    /** Get ith CUDA stream for current process. */
+    cudaStream_t& get_stream(Int i=0);
+    /** Get ith CUDA stream for current process (const). */
+    const cudaStream_t& get_stream(Int i=0) const;
+    /** Get cuDNN handles for current process. */
+    std::vector<cudnnHandle_t>& get_handles();
+    /** Get cuDNN handles for current process (const). */
+    const std::vector<cudnnHandle_t>& get_handles() const;
+    /** Get ith cuDNN handle for current process. */
+    cudnnHandle_t& get_handle(Int i=0);
+    /** Get ith cuDNN handle for current process (const). */
+    const cudnnHandle_t& get_handle(Int i=0) const;
+    
 
+    /** Allocate memory on GPUs. */
+    void allocate_on_gpus(std::vector<DataType*>& gpu_data,
+                          Int height,
+                          Int width_per_gpu);
+    /** Deallocate memory on GPUs. */
+    void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
+
+    /** Copy data on GPUs. */
+    void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
+                      const std::vector<DataType*>& gpu_src_data,
+                      Int height,
+                      Int width_per_gpu);
     /** Copy data from CPU to GPUs.
      *  Matrix columns are split up amongst GPUs.
      */
@@ -133,27 +168,27 @@ namespace cudnn
     /// Unregister all the memories registered to pin
     void unpin_ptrs(void);
 
-  public:
+  private:
 
-    /** LBANN communicator */
+    /** LBANN communicator. */
     lbann::lbann_comm* comm;
 
-    /** Number of GPUs for current MPI rank */
-    int m_num_gpus;
-    /** Number of available GPUs */
-    int m_num_total_gpus;
+    /** Number of GPUs for current process. */
+    Int m_num_gpus;
+    /** Number of available GPUs. */
+    Int m_num_total_gpus;
 
-    /** GPU memory allocator
-     *  Faster than cudaMalloc/cudaFree since it uses a memory pool */
+    /** GPU memory allocator.
+     *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
     cub::CachingDeviceAllocator* m_gpu_memory;
 
-    /** GPUs for current MPI rank */
+    /** GPUs for current process. */
     std::vector<int> m_gpus;
-    /** CUDA streams for current MPI rank */
+    /** CUDA streams for current process. */
     std::vector<cudaStream_t> m_streams;
-    /** cuDNN handles for current MPI rank */
+    /** cuDNN handles for current process. */
     std::vector<cudnnHandle_t> m_handles;
-    /// pinned memory addresses
+    /** Pinned memory addresses. */
     std::map<void*, size_t> pinned_ptr;
 
 #endif // #ifdef __LIB_CUDNN

@@ -128,15 +128,9 @@ pooling_layer::pooling_layer(uint index,
     const int num_gpus = m_cudnn->get_num_gpus();
 
     // Get number of columns per GPU
-    const int num_processes = m_cudnn->comm->get_procs_per_model();
+    const int num_processes = comm->get_procs_per_model();
     const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-    // Initialize GPU memory pointers
-    m_prev_activations_d.assign(num_gpus, NULL);
-    m_activations_d.assign(num_gpus, NULL);
-    m_prev_error_signal_d.assign(num_gpus, NULL);
-    m_error_signal_d.assign(num_gpus, NULL);
 
   }
   is_pinned_fwd = false;
@@ -155,18 +149,6 @@ pooling_layer::~pooling_layer()
       checkCUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
     if(m_pooling_desc)
       checkCUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
-    for(int i=0; i<m_cudnn->get_num_gpus(); ++i) {
-      const int gpu = m_cudnn->m_gpus[i];
-      cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-      if(m_prev_activations_d.size() > i && m_prev_activations_d[i] != NULL )
-        checkCUDA(gpu_memory.DeviceFree(gpu, m_prev_activations_d[i]));
-      if(m_activations_d.size() > i && m_activations_d[i] != NULL )
-        checkCUDA(gpu_memory.DeviceFree(gpu, m_activations_d[i]));
-      if(m_prev_error_signal_d.size() > i && m_prev_error_signal_d[i] != NULL )
-        checkCUDA(gpu_memory.DeviceFree(gpu, m_prev_error_signal_d[i]));
-      if(m_error_signal_d.size() > i && m_error_signal_d[i] != NULL )
-        checkCUDA(gpu_memory.DeviceFree(gpu, m_error_signal_d[i]));
-    }
   }
 #endif // __LIB_CUDNN
 }
@@ -193,9 +175,9 @@ void pooling_layer::setup(const int num_prev_neurons)
   // Initialize matrices
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -274,31 +256,6 @@ void lbann::pooling_layer::setup_gpu() {
                                         output_dims.data(),
                                         output_strides.data()));
 
-  // Allocate GPU memory
-  const int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
-  for(Int i=0; i<num_gpus; ++i) {
-    const Int gpu = m_cudnn->m_gpus[i];
-    cudaStream_t& stream = m_cudnn->m_streams[i];
-    cub::CachingDeviceAllocator& gpu_memory = *(m_cudnn->m_gpu_memory);
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &m_prev_activations_d[i],
-                                        m_num_prev_neurons*m_mini_batch_size_per_gpu*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &m_activations_d[i],
-                                        NumNeurons*m_mini_batch_size_per_gpu*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &m_prev_error_signal_d[i],
-                                        NumNeurons*m_mini_batch_size_per_gpu*sizeof(DataType),
-                                        stream));
-    checkCUDA(gpu_memory.DeviceAllocate(gpu,
-                                        (void**) &m_error_signal_d[i],
-                                        m_num_prev_neurons*m_mini_batch_size_per_gpu*sizeof(DataType),
-                                        stream));
-  }
-
 #endif // #ifndef __LIB_CUDNN
 }
 
@@ -360,76 +317,56 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Get number of GPUs
-  const Int num_gpus = m_cudnn->get_num_gpus();
+  // Allocate GPU memory
+  m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_weighted_sum_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_activations_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
 
-  // Get local matrices
-  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-  const Mat& weights_local = m_weights->LockedMatrix();
-  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-  Mat& activations_local = m_activations_v->Matrix();
+  // Transfer data from CPU to GPUs
+  m_cudnn->copy_to_gpus(m_prev_activations_d,
+                        m_prev_activations_v->LockedMatrix(),
+                        m_mini_batch_size_per_gpu);
 
   // Perform pooling with each GPU
+  const Int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    cudaStream_t& stream = m_cudnn->m_streams[i];
-    cudnnHandle_t& handle = m_cudnn->m_handles[i];
-
-    // Data samples assigned to GPU
-    const Int local_mini_batch = m_prev_activations_v->LocalWidth();
-    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
-    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
-    if(first_pos >= last_pos) {
-      continue;
-    }
-
-    // Transfer inputs to GPU
-    checkCUDA(cudaMemcpy2DAsync(m_prev_activations_d[i],
-                                m_num_prev_neurons*sizeof(DataType),
-                                prev_activations_local.LockedBuffer(0,first_pos),
-                                prev_activations_local.LDim()*sizeof(DataType),
-                                m_num_prev_neurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyHostToDevice,
-                                stream));
-
-    // Perform pooling
-    checkCUDNN(cudnnPoolingForward(handle,
+    checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnPoolingForward(m_cudnn->get_handle(i),
                                    m_pooling_desc,
                                    &one,
                                    m_input_desc,
                                    m_prev_activations_d[i],
                                    &zero,
                                    m_output_desc,
-                                   m_activations_d[i]));
-
-    // Transfer outputs from GPU
-    checkCUDA(cudaMemcpy2DAsync(weighted_sum_local.Buffer(0,first_pos),
-                                weighted_sum_local.LDim()*sizeof(DataType),
-                                m_activations_d[i],
-                                NumNeurons*sizeof(DataType),
-                                NumNeurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyDeviceToHost,
-                                stream));
-    checkCUDA(cudaMemcpy2DAsync(activations_local.Buffer(0,first_pos),
-                                activations_local.LDim()*sizeof(DataType),
-                                m_activations_d[i],
-                                NumNeurons*sizeof(DataType),
-                                NumNeurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyDeviceToHost,
-                                stream));
-    
+                                   m_weighted_sum_d[i]));
   }
 
-  // Synchronize GPUs
-#pragma omp parallel for
-  for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
-  }
+  // Copy result to output matrix
+  m_cudnn->copy_on_gpus(m_activations_d,
+                        m_weighted_sum_d,
+                        NumNeurons,
+                        m_mini_batch_size_per_gpu);
+
+  // Transfer data from GPUs to CPU
+  m_cudnn->copy_from_gpus(m_weighted_sum_v->Matrix(),
+                          m_weighted_sum_d,
+                          m_mini_batch_size_per_gpu);
+  m_cudnn->copy_from_gpus(m_activations_v->Matrix(),
+                          m_activations_d,
+                          m_mini_batch_size_per_gpu);
+  m_cudnn->synchronize();
+
+  // Deallocate GPU memory
+  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+  m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
+  m_cudnn->deallocate_on_gpus(m_activations_d);
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -546,60 +483,40 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   // Get number of GPUs
   const Int num_gpus = m_cudnn->get_num_gpus();
 
-  // Get local matrices
-  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-  const Mat& activations_local = m_activations_v->LockedMatrix();
-  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-  Mat& weights_gradient_local = m_weights_gradient->Matrix();
-  Mat& error_signal_local = m_error_signal_v->Matrix();
+  // Allocate GPU memory
+  m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_weighted_sum_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_error_signal_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+
+  // Transfer data from CPU to GPUs
+  m_cudnn->copy_to_gpus(m_prev_activations_d,
+                        m_prev_activations_v->LockedMatrix(),
+                        m_mini_batch_size_per_gpu);
+  m_cudnn->copy_to_gpus(m_weighted_sum_d,
+                        m_weighted_sum_v->LockedMatrix(),
+                        m_mini_batch_size_per_gpu);
+  m_cudnn->copy_to_gpus(m_prev_error_signal_d,
+                        m_prev_error_signal_v->LockedMatrix(),
+                        m_mini_batch_size_per_gpu);
 
   // Perform back propagation on each GPU
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    cudaStream_t& stream = m_cudnn->m_streams[i];
-    cudnnHandle_t& handle = m_cudnn->m_handles[i];
-
-    // Data samples assigned to GPU
-    const Int local_mini_batch = prev_activations_local.Width();
-    const Int first_pos = Min(i * m_mini_batch_size_per_gpu, local_mini_batch);
-    const Int last_pos = Min((i+1) * m_mini_batch_size_per_gpu, local_mini_batch);
-    if(first_pos >= last_pos) {
-      continue;
-    }
-
-    // Transfer inputs and error signal to GPU
-    checkCUDA(cudaMemcpy2DAsync(m_prev_activations_d[i],
-                                m_num_prev_neurons*sizeof(DataType),
-                                prev_activations_local.LockedBuffer(0,first_pos),
-                                prev_activations_local.LDim()*sizeof(DataType),
-                                m_num_prev_neurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyHostToDevice,
-                                stream));
-    checkCUDA(cudaMemcpy2DAsync(m_activations_d[i],
-                                NumNeurons*sizeof(DataType),
-                                activations_local.LockedBuffer(0,first_pos),
-                                activations_local.LDim()*sizeof(DataType),
-                                NumNeurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyHostToDevice,
-                                stream));
-    checkCUDA(cudaMemcpy2DAsync(m_prev_error_signal_d[i],
-                                NumNeurons*sizeof(DataType),
-                                prev_error_signal_local.LockedBuffer(0,first_pos),
-                                prev_error_signal_local.LDim()*sizeof(DataType),
-                                NumNeurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyHostToDevice,
-                                stream));
-    
-    // Compute error signal to "next" layer
-    checkCUDNN(cudnnPoolingBackward(handle,
+    checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnPoolingBackward(m_cudnn->get_handle(i),
                                     m_pooling_desc,
                                     &one,
                                     m_output_desc,
-                                    m_activations_d[i],
+                                    m_weighted_sum_d[i],
                                     m_output_desc,
                                     m_prev_error_signal_d[i],
                                     m_input_desc,
@@ -607,24 +524,19 @@ void lbann::pooling_layer::bp_linearity_gpu() {
                                     &zero,
                                     m_input_desc,
                                     m_error_signal_d[i]));
-
-    // Transfer data from GPU
-    checkCUDA(cudaMemcpy2DAsync(error_signal_local.Buffer(0,first_pos),
-                                error_signal_local.LDim()*sizeof(DataType),
-                                m_error_signal_d[i],
-                                m_num_prev_neurons*sizeof(DataType),
-                                m_num_prev_neurons*sizeof(DataType),
-                                last_pos - first_pos,
-                                cudaMemcpyDeviceToHost,
-                                stream));
-
   }
 
-  // Synchronize CUDA streams
-  for(Int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->m_gpus[i]));
-    checkCUDA(cudaStreamSynchronize(m_cudnn->m_streams[i]));
-  }
+  // Transfer outputs from GPUs to CPU
+  m_cudnn->copy_from_gpus(m_error_signal_v->Matrix(),
+                          m_error_signal_d,
+                          m_mini_batch_size_per_gpu);
+  m_cudnn->synchronize();
+
+  // Deallocate GPU memory
+  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+  m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
+  m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+  m_cudnn->deallocate_on_gpus(m_error_signal_d);
 
 #endif // #ifndef __LIB_CUDNN
 }
