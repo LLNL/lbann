@@ -97,14 +97,8 @@ namespace lbann
     /// Convolution strides
     std::vector<Int> m_conv_strides;
 
-    /// cuDNN manager
-    cudnn::cudnn_manager* m_cudnn;
-
 #ifdef __LIB_CUDNN
 
-    /// Number of mini-batch samples per GPU
-    Int m_mini_batch_size_per_gpu;
-    
     /// Input tensor descriptor
     cudnnTensorDescriptor_t m_input_desc;
     /// Output tensor descriptor
@@ -135,6 +129,9 @@ namespace lbann
     std::vector<DataType*> m_work_space_d;
     /// Size of work space in bytes
     size_t m_work_space_size;
+
+    /// Filter and bias gradients computed on each GPU
+    StarMat m_weights_gradient_per_gpu;
 
 #endif // __LIB_CUDNN
 

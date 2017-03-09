@@ -63,8 +63,7 @@ pooling_layer::pooling_layer(uint index,
                              cudnn::cudnn_manager* cudnn)
   : Layer(index, comm, NULL, mini_batch_size, activation_type::ID, {}),
     m_pool_mode(_pool_mode),
-    m_num_dims(num_dims), m_num_channels(num_channels),
-    m_cudnn(cudnn)
+    m_num_dims(num_dims), m_num_channels(num_channels)
 {
   m_type = layer_type::pooling;
 
@@ -122,7 +121,8 @@ pooling_layer::pooling_layer(uint index,
 
   // Initialize GPU memory if using GPU
   if(cudnn) {
-    m_using_gpu = true;
+    m_using_gpus = true;
+    m_cudnn = cudnn;
 
     // Get number of GPUs
     const int num_gpus = m_cudnn->get_num_gpus();
@@ -142,7 +142,7 @@ pooling_layer::pooling_layer(uint index,
 pooling_layer::~pooling_layer()
 {
 #ifdef __LIB_CUDNN
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     if(m_input_desc)
       checkCUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
     if(m_output_desc)
@@ -151,11 +151,13 @@ pooling_layer::~pooling_layer()
       checkCUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
 
     // Deallocate GPU memory
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
     m_cudnn->deallocate_on_gpus(m_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
+    if(!m_prev_layer_using_gpus)
+      m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    if(!m_next_layer_using_gpus)
+      m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
 
   }
 #endif // __LIB_CUDNN
@@ -167,7 +169,7 @@ void pooling_layer::setup(const int num_prev_neurons)
 
 #ifdef __LIB_CUDNN
   // Setup cuDNN objects
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     setup_gpu();
   }
 #endif // __LIB_CUDNN
@@ -181,11 +183,17 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
-  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  if(!m_using_gpus || !m_prev_layer_using_gpus) {
+    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  }
+  if(!m_using_gpus || !m_next_layer_using_gpus) {
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  }
+  if(!m_using_gpus) {
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  }
 
 }
 
@@ -265,28 +273,32 @@ void lbann::pooling_layer::setup_gpu() {
                                         output_strides.data()));
 
   // Allocate GPU memory
-  m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                            m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_weighted_sum_d,
                             NumNeurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_activations_d,
                             NumNeurons,
                             m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
                             m_mini_batch_size_per_gpu);
+  if(!m_prev_layer_using_gpus) {
+    m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                              m_num_prev_neurons,
+                              m_mini_batch_size_per_gpu);
+  }
+  if(!m_next_layer_using_gpus) {
+    m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                              NumNeurons,
+                              m_mini_batch_size_per_gpu);
+  }
 
 #endif // #ifndef __LIB_CUDNN
 }
 
 void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 {
-  if (!m_using_gpu) {
+  if (!m_using_gpus) {
     std::cout << "no offloading with pooling_layer " << get_index() << std::endl;
     return;
   }
@@ -302,7 +314,7 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 
 void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 {
-  if (!m_using_gpu) {
+  if (!m_using_gpus) {
     std::cout << "no offloading with pooling_layer " << get_index() << std::endl;
     return;
   }
@@ -316,7 +328,7 @@ void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 }
 
 void lbann::pooling_layer::fp_linearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     fp_linearity_gpu();
   }
   else {
@@ -325,7 +337,7 @@ void lbann::pooling_layer::fp_linearity() {
 }
 
 void lbann::pooling_layer::bp_linearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     bp_linearity_gpu();
   }
   else {
@@ -341,11 +353,6 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   // Useful constants
   const DataType one = 1;
   const DataType zero = 0;
-
-  // Transfer data from CPU to GPUs
-  m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                           m_prev_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
 
   // Perform pooling with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -367,15 +374,6 @@ void lbann::pooling_layer::fp_linearity_gpu() {
                         m_weighted_sum_d,
                         NumNeurons,
                         m_mini_batch_size_per_gpu);
-
-  // Transfer data from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_weighted_sum_v->Matrix(),
-                            m_weighted_sum_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                            m_activations_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->synchronize();
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -492,17 +490,6 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   // Get number of GPUs
   const Int num_gpus = m_cudnn->get_num_gpus();
 
-  // Transfer data from CPU to GPUs
-  m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                           m_prev_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
-                           m_weighted_sum_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                           m_prev_error_signal_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-
   // Perform back propagation on each GPU
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
@@ -520,12 +507,6 @@ void lbann::pooling_layer::bp_linearity_gpu() {
                                     m_input_desc,
                                     m_error_signal_d[i]));
   }
-
-  // Transfer outputs from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
-                            m_error_signal_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->synchronize();
 
 #endif // #ifndef __LIB_CUDNN
 }

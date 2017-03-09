@@ -89,21 +89,13 @@ namespace lbann
     /// Pooling strides
     std::vector<Int> m_pool_strides;
 
-    /// cuDNN manager
-    cudnn::cudnn_manager* m_cudnn;
-
 #ifdef __LIB_CUDNN
-
-    /// Number of mini-batch samples per GPU
-    Int m_mini_batch_size_per_gpu;
-    
     /// Input tensor descriptor
     cudnnTensorDescriptor_t m_input_desc;
     /// Output tensor descriptor
     cudnnTensorDescriptor_t m_output_desc;
     /// Pooling descriptor
     cudnnPoolingDescriptor_t m_pooling_desc;
-
 #endif // __LIB_CUDNN
 
     /// Initialize GPU objects

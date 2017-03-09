@@ -39,6 +39,7 @@
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <vector>
@@ -130,15 +131,17 @@ namespace lbann
     void setup_fp_input(ElMat *fp_input);
     void setup_bp_input(ElMat *bp_input);
 
-    /// @todo Setup GPU pointers for fp and bp
+    void set_prev_layer_type(layer_type type);
+    void set_next_layer_type(layer_type type);
+    bool using_gpus() const;
+    void set_prev_layer_using_gpus(bool using_gpus);
+    void set_next_layer_using_gpus(bool using_gpus);
+#ifdef __LIB_CUDNN
     std::vector<DataType*> *fp_output_d();
     std::vector<DataType*> *bp_output_d();
     void setup_fp_input_d(std::vector<DataType*> *fp_input_d);
     void setup_bp_input_d(std::vector<DataType*> *bp_input_d);
-    void set_prev_layer_type(layer_type type);
-    void set_next_layer_type(layer_type type);
-    void set_prev_layer_using_gpu(bool using_gpu);
-    void set_next_layer_using_gpu(bool using_gpu);
+#endif
 
     bool saveToFile(int fd, const char* filename);
     bool loadFromFile(int fd, const char* filename);
@@ -205,12 +208,20 @@ namespace lbann
     /** Handle the layer's nonlinearity in backward propagation. */
     virtual void bp_nonlinearity();
 
-    /** Current layer is using GPU. */
-    bool m_using_gpu;
-    /** Previous layer is using GPU. */
-    bool m_prev_layer_using_gpu;
-    /** Next layer is using GPU. */
-    bool m_next_layer_using_gpu;
+    /** Current layer is using GPUs. */
+    bool m_using_gpus;
+    /** Previous layer is using GPUs. */
+    bool m_prev_layer_using_gpus;
+    /** Next layer is using GPUs. */
+    bool m_next_layer_using_gpus;
+
+    /// cuDNN manager
+    cudnn::cudnn_manager* m_cudnn;
+
+#ifdef __LIB_CUDNN
+
+    /// Number of mini-batch samples per GPU
+    Int m_mini_batch_size_per_gpu;
 
     /** GPU memory for activations from "previous" layer. */
     std::vector<DataType*> m_prev_activations_d;
@@ -226,6 +237,8 @@ namespace lbann
     std::vector<DataType*> *fp_input_d;
     /** GPU memory for backward propagation input. */
     std::vector<DataType*> *bp_input_d;
+
+#endif
 
     /** Activation function */
     Activation* m_activation_fn;

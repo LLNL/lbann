@@ -43,7 +43,7 @@ cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
   case activation_type::RELU:    return CUDNN_ACTIVATION_RELU;
   case activation_type::TANH:    return CUDNN_ACTIVATION_TANH;
   default:
-    throw lbann_exception("convolutional_layer: invalid activation type");
+    throw lbann_exception("convolutional_layer: invalid activation type for cuDNN");
   }
 }
 #endif // #ifdef __LIB_CUDNN
@@ -66,8 +66,7 @@ convolutional_layer::convolutional_layer(const uint index,
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
-    m_num_output_channels(num_output_channels),
-    m_cudnn(cudnn)
+    m_num_output_channels(num_output_channels)
 {
   m_type = layer_type::convolution;
 
@@ -109,6 +108,7 @@ convolutional_layer::convolutional_layer(const uint index,
   m_activations         = new StarVCMat(comm->get_model_grid());
   m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
   m_error_signal        = new StarVCMat(comm->get_model_grid());
+  m_weights_gradient_per_gpu = StarMat(comm->get_model_grid());
 
   // Matrix views should be in Star,Star and Star,VC distributions
   delete m_weighted_sum_v;
@@ -136,21 +136,16 @@ convolutional_layer::convolutional_layer(const uint index,
   m_backward_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
   m_work_space_size = 0;
 
-  // Initialize GPU memory if using GPU
+  // Set parameters for GPU implementation
   if(cudnn) {
-    m_using_gpu = true;
-
-    // Get number of GPUs
+    m_using_gpus = true;
+    m_cudnn = cudnn;
     const int num_gpus = m_cudnn->get_num_gpus();
-
-    // Get number of columns per GPU
     const int num_processes = comm->get_procs_per_model();
     const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-    
-
   }
+  
   is_pinned_fwd = false;
   is_pinned_bwd = false;
 #endif // #ifdef __LIB_CUDNN
@@ -160,7 +155,7 @@ convolutional_layer::convolutional_layer(const uint index,
 convolutional_layer::~convolutional_layer()
 {
 #ifdef __LIB_CUDNN
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     if(m_input_desc)
       checkCUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
     if(m_output_desc)
@@ -176,13 +171,15 @@ convolutional_layer::~convolutional_layer()
 
     // Deallocate GPU memory
     m_cudnn->deallocate_on_gpus(m_weights_d);
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_work_space_d);
+    if(!m_prev_layer_using_gpus)
+      m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    if(!m_next_layer_using_gpus)
+      m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
 
   }
 #endif // #ifdef __LIB_CUDNN
@@ -194,7 +191,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
 
 #ifdef __LIB_CUDNN
   // Setup cuDNN objects
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     setup_gpu();
   }
 #endif // #ifdef __LIB_CUDNN
@@ -210,13 +207,27 @@ void convolutional_layer::setup(const int num_prev_neurons)
 #endif // #ifdef LBANN_DEBUG
 
   // Initialize matrices
-  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
   Zeros(*m_weights, m_filter_size+m_num_output_channels, 1);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_weights_gradient, m_filter_size+m_num_output_channels, 1);
-  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  if(m_using_gpus) {
+    Zeros(m_weights_gradient_per_gpu,
+          m_filter_size+m_num_output_channels,
+          m_cudnn->get_num_gpus());
+    View(*m_weights_gradient, m_weights_gradient_per_gpu, ALL, IR(0));
+  }
+  else {
+    Zeros(*m_weights_gradient, m_filter_size+m_num_output_channels, 1);
+  }
+  if(!m_using_gpus || !m_prev_layer_using_gpus) {
+    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  }
+  if(!m_using_gpus || !m_next_layer_using_gpus) {
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  }
+  if(!m_using_gpus) {
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  }
 
   // Initialize filters
   StarMat filter;
@@ -425,28 +436,24 @@ void lbann::convolutional_layer::setup_gpu()
   m_work_space_size = Max(m_work_space_size, required_work_space);
 
   // Set activation descriptor
-  checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
-                                          get_cudnn_activation_mode(m_activation_type),
-                                          CUDNN_PROPAGATE_NAN,
-                                          0.0));
+  if(m_activation_type != activation_type::ID) {
+    checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+                                            get_cudnn_activation_mode(m_activation_type),
+                                            CUDNN_PROPAGATE_NAN,
+                                            0.0));
+  }
 
   // Allocate GPU memory
   m_cudnn->allocate_on_gpus(m_weights_d,
                             m_filter_size+m_num_output_channels,
                             1);
-  m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                            m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_weights_gradient_d,
+                            m_filter_size+m_num_output_channels,
+                            1);
   m_cudnn->allocate_on_gpus(m_weighted_sum_d,
                             NumNeurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_activations_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_weights_gradient_d,
-                            m_filter_size+m_num_output_channels,
-                            1);
-  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
                             NumNeurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
@@ -455,13 +462,23 @@ void lbann::convolutional_layer::setup_gpu()
   m_cudnn->allocate_on_gpus(m_work_space_d,
                             (m_work_space_size+sizeof(DataType)-1)/sizeof(DataType),
                             1);
+  if(!m_prev_layer_using_gpus) {
+    m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                              m_num_prev_neurons,
+                              m_mini_batch_size_per_gpu);
+  }
+  if(!m_next_layer_using_gpus) {
+    m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                              NumNeurons,
+                              m_mini_batch_size_per_gpu);
+  }
 
 #endif // #ifdef __LIB_CUDNN
 }
 
 void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 {
-  if (!m_using_gpu) {
+  if (!m_using_gpus) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
@@ -478,7 +495,7 @@ void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
 
 void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
 {
-  if (!m_using_gpu) {
+  if (!m_using_gpus) {
     std::cout << "no offloading with convolutional_layer " << get_index() << std::endl;
     return;
   }
@@ -493,7 +510,7 @@ void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
 }
 
 void lbann::convolutional_layer::fp_linearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     fp_linearity_gpu();
   }
   else {
@@ -502,7 +519,7 @@ void lbann::convolutional_layer::fp_linearity() {
 }
 
 void lbann::convolutional_layer::bp_linearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     bp_linearity_gpu();
   }
   else {
@@ -511,7 +528,7 @@ void lbann::convolutional_layer::bp_linearity() {
 }
 
 void lbann::convolutional_layer::fp_nonlinearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     fp_nonlinearity_gpu();
   }
   else {
@@ -520,7 +537,7 @@ void lbann::convolutional_layer::fp_nonlinearity() {
 }
 
 void lbann::convolutional_layer::bp_nonlinearity() {
-  if(m_using_gpu) {
+  if(m_using_gpus) {
     bp_nonlinearity_gpu();
   }
   else {
@@ -537,11 +554,8 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Transfer data from CPU to GPUs
+  // Transfer filters and bias from CPU to GPUs
   m_cudnn->broadcast_to_gpus(m_weights_d, m_weights->LockedMatrix());
-  m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                           m_prev_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
 
   // Perform convolution on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -576,15 +590,6 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
                         NumNeurons,
                         m_mini_batch_size_per_gpu);
 
-  // Transfer data from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_weighted_sum_v->Matrix(),
-                            m_weighted_sum_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                            m_activations_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->synchronize();
-
 #endif // #ifndef __LIB_CUDNN
 }
 
@@ -597,32 +602,22 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Transfer inputs from CPU to GPUs
-  m_cudnn->scatter_to_gpus(m_activations_d,
-                           m_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-
   // Perform activation with each GPU
-  const Int num_gpus = m_cudnn->get_num_gpus();
+  if(m_activation_type != activation_type::ID) {
+    const Int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
-  for(Int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-    checkCUDNN(cudnnActivationForward(m_cudnn->get_handle(i),
-                                      m_activation_desc,
-                                      &one,
-                                      m_output_desc,
-                                      m_activations_d[i],
-                                      &zero,
-                                      m_output_desc,
-                                      m_activations_d[i]));
-
+    for(Int i=0; i<num_gpus; ++i) {
+      checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      checkCUDNN(cudnnActivationForward(m_cudnn->get_handle(i),
+                                        m_activation_desc,
+                                        &one,
+                                        m_output_desc,
+                                        m_activations_d[i],
+                                        &zero,
+                                        m_output_desc,
+                                        m_activations_d[i]));
+    }
   }
-
-  // Transfer outputs from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                            m_activations_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->synchronize();
 
 #endif // #ifndef __LIB_CUDNN
 }  
@@ -759,18 +754,6 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   // Get number of samples per GPU
   const DataType mini_batch_size_per_gpu_float = m_mini_batch_size_per_gpu;
 
-  // Transfer data from CPU to GPUs
-  m_cudnn->broadcast_to_gpus(m_weights_d, m_weights->LockedMatrix());
-  m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                           m_prev_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
-                           m_weighted_sum_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                           m_prev_error_signal_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
@@ -813,15 +796,9 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
-                            m_error_signal_d,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->reduce_from_gpus(m_weights_gradient->Matrix(),
-                            m_weights_gradient_d);
-
-  // Obtain filter and bias gradients with reduction and scaling
-  AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
-  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  m_cudnn->gather_from_gpus(m_weights_gradient_per_gpu.Matrix(),
+                            m_weights_gradient_d,
+                            1);
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -835,54 +812,33 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Transfer data from CPU to GPUs
-  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
-                           m_weighted_sum_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_activations_d,
-                           m_activations_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);
-  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                           m_prev_error_signal_v->LockedMatrix(),
-                           m_mini_batch_size_per_gpu);  
-
   // Perform back propagation on each GPU
-  const Int num_gpus = m_cudnn->get_num_gpus();
+  if(m_activation_type != activation_type::ID) {
+    const Int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
-  for(int i=0; i<num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-    checkCUDNN(cudnnActivationBackward(m_cudnn->get_handle(i),
-                                       m_activation_desc,
-                                       &one,
-                                       m_output_desc,
-                                       m_weighted_sum_d[i],
-                                       m_output_desc,
-                                       m_prev_error_signal_d[i],
-                                       m_output_desc,
-                                       m_activations_d[i],
-                                       &zero,
-                                       m_output_desc,
-                                       m_prev_error_signal_d[i]));
+    for(int i=0; i<num_gpus; ++i) {
+      checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      checkCUDNN(cudnnActivationBackward(m_cudnn->get_handle(i),
+                                         m_activation_desc,
+                                         &one,
+                                         m_output_desc,
+                                         m_weighted_sum_d[i],
+                                         m_output_desc,
+                                         m_prev_error_signal_d[i],
+                                         m_output_desc,
+                                         m_activations_d[i],
+                                         &zero,
+                                         m_output_desc,
+                                         m_prev_error_signal_d[i]));
 
+    }
   }
-
-  // Transfer data from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_prev_error_signal_v->Matrix(),
-                            m_prev_error_signal_d,
-                            m_mini_batch_size_per_gpu);  
-  m_cudnn->synchronize();
 
 #endif // #ifndef __LIB_CUDNN
 }
 
 /// @todo Write a more efficient implementation
 void lbann::convolutional_layer::bp_linearity_cpu() {
-
-  // Non-linearity forward pass
-  m_activation_fn->backwardProp(*m_weighted_sum_v);
-  if (m_activation_type != activation_type::ID) {
-    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
-  }
   
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -903,7 +859,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 
   // Initialize convolution matrix
   Mat convolution_matrix;
-  Zeros(convolution_matrix, NumNeurons, prev_activations_local.Height());
+  Zeros(convolution_matrix, NumNeurons, m_num_prev_neurons);
 
   // Iterate through filters
   int row = 0;
@@ -1106,14 +1062,24 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
       
   }
 
-  // Obtain filter gradient with reduction and scaling
-  AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
-  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
-
 }
 
 bool convolutional_layer::update()
 {
+
+  // Obtain filter gradient with reduction and scaling
+#ifdef __LIB_CUDNN
+  const Int num_gpus = m_cudnn->get_num_gpus();
+  if(m_using_gpus) {
+    for(Int i=1; i<num_gpus; ++i) {
+      *m_weights_gradient += m_weights_gradient_per_gpu(ALL, IR(i));
+    }
+  }
+#endif // #ifdef __LIB_CUDNN  
+  AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+
+  // Apply optimizer
   if(m_execution_mode == execution_mode::training) {
     optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
   }
