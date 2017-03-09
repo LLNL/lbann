@@ -135,17 +135,17 @@ namespace cudnn
                       Int height,
                       Int width_per_gpu);
     /** Copy data from CPU to GPUs.
-     *  Matrix columns are split up amongst GPUs.
+     *  Matrix columns are scattered amongst GPUs.
      */
-    void copy_to_gpus(std::vector<DataType*>& gpu_data,
-                      const Mat& cpu_data,
-                      Int width_per_gpu);
+    void scatter_to_gpus(std::vector<DataType*>& gpu_data,
+                         const Mat& cpu_data,
+                         Int width_per_gpu);
     /** Copy data from GPUs to CPU.
-     *  Matrix columns are assumed to be split up amongst GPUs.
+     *  Matrix columns are gathered from GPUs.
      */
-    void copy_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType*>& gpu_data,
-                        Int width_per_gpu);
+    void gather_from_gpus(Mat& cpu_data,
+                          const std::vector<DataType*>& gpu_data,
+                          Int width_per_gpu);
     /** Copy data from CPU to GPUs.
      *  Data is duplicated across GPUs.
      */

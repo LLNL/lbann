@@ -522,9 +522,9 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
   // Transfer data from CPU to GPUs
   m_cudnn->broadcast_to_gpus(m_filter_d, filter_local);
   m_cudnn->broadcast_to_gpus(m_bias_d, bias_local);
-  m_cudnn->copy_to_gpus(m_prev_activations_d,
-                        m_prev_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                           m_prev_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
 
   // Perform convolution on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -560,12 +560,12 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
                         m_mini_batch_size_per_gpu);
 
   // Transfer data from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_weighted_sum_v->Matrix(),
-                          m_weighted_sum_d,
-                          m_mini_batch_size_per_gpu);
-  m_cudnn->copy_from_gpus(m_activations_v->Matrix(),
-                          m_activations_d,
-                          m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_weighted_sum_v->Matrix(),
+                            m_weighted_sum_d,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                            m_activations_d,
+                            m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
 
   // Deallocate GPU memory
@@ -594,9 +594,9 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
                             m_mini_batch_size_per_gpu);
 
   // Transfer inputs from CPU to GPUs
-  m_cudnn->copy_to_gpus(m_activations_d,
-                        m_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_activations_d,
+                           m_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
 
   // Perform activation with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -615,9 +615,9 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_activations_v->Matrix(),
-                          m_activations_d,
-                          m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                            m_activations_d,
+                            m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
 
   // Deallocate GPU memory
@@ -787,15 +787,15 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
 
   // Transfer data from CPU to GPUs
   m_cudnn->broadcast_to_gpus(m_filter_d, filter_local);
-  m_cudnn->copy_to_gpus(m_prev_activations_d,
-                        m_prev_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_weighted_sum_d,
-                        m_weighted_sum_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_prev_error_signal_d,
-                        m_prev_error_signal_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                           m_prev_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
+                           m_weighted_sum_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
+                           m_prev_error_signal_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
 
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -839,9 +839,9 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_error_signal_v->Matrix(),
-                          m_error_signal_d,
-                          m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
+                            m_error_signal_d,
+                            m_mini_batch_size_per_gpu);
   m_cudnn->reduce_from_gpus(filter_gradient_local,
                             m_filter_gradient_d);
   m_cudnn->reduce_from_gpus(bias_gradient_local,
@@ -885,15 +885,15 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
                             m_mini_batch_size_per_gpu);
 
   // Transfer data from CPU to GPUs
-  m_cudnn->copy_to_gpus(m_weighted_sum_d,
-                        m_weighted_sum_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_activations_d,
-                        m_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_prev_error_signal_d,
-                        m_prev_error_signal_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);  
+  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
+                           m_weighted_sum_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_activations_d,
+                           m_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
+                           m_prev_error_signal_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);  
 
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -916,9 +916,9 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
   }
 
   // Transfer data from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_prev_error_signal_v->Matrix(),
-                          m_prev_error_signal_d,
-                          m_mini_batch_size_per_gpu);  
+  m_cudnn->gather_from_gpus(m_prev_error_signal_v->Matrix(),
+                            m_prev_error_signal_d,
+                            m_mini_batch_size_per_gpu);  
   m_cudnn->synchronize();
 
   // Deallocate GPU memory

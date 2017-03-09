@@ -190,9 +190,9 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType*>& gpu_dst_
   
 }
 
-void cudnn_manager::cudnn_manager::copy_to_gpus(std::vector<DataType*>& gpu_data,
-                                                const Mat& cpu_data,
-                                                Int width_per_gpu) {
+void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType*>& gpu_data,
+                                                   const Mat& cpu_data,
+                                                   Int width_per_gpu) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -242,9 +242,9 @@ void cudnn_manager::cudnn_manager::copy_to_gpus(std::vector<DataType*>& gpu_data
 
 }
 
-void cudnn_manager::cudnn_manager::copy_from_gpus(Mat& cpu_data,
-                                                  const std::vector<DataType*>& gpu_data,
-                                                  Int width_per_gpu) {
+void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
+                                                    const std::vector<DataType*>& gpu_data,
+                                                    Int width_per_gpu) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -328,53 +328,18 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
   // Get matrix properties
   const Int height = cpu_data.Height();
   const Int width = cpu_data.Width();
-  const Int cpu_ldim = cpu_data.LDim();
 
-  // Initialize temporary matrix
+  // Copy data from GPUs to CPU
   Mat temp;
-  if(m_num_gpus > 1) {
-    Zeros(temp, height, (m_num_gpus-1)*width);
-  }
+  Zeros(temp, height, m_num_gpus*width);
+  gather_from_gpus(temp, gpu_data, width);
 
-  // Perform memory transfer on each GPU
-#pragma omp parallel for
-  for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
-
-    // Transfer data from current GPU
-    if(i == 0) {
-      if(cpu_ldim > height) {
-        checkCUDA(cudaMemcpy2DAsync(cpu_data.Buffer(),
-                                    cpu_ldim*sizeof(DataType),
-                                    gpu_data[i],
-                                    height*sizeof(DataType),
-                                    height*sizeof(DataType),
-                                    width,
-                                    cudaMemcpyDeviceToHost,
-                                    m_streams[i]));
-      }
-      else {
-        checkCUDA(cudaMemcpyAsync(cpu_data.Buffer(),
-                                  gpu_data[i],
-                                  height*width*sizeof(DataType),
-                                  cudaMemcpyDeviceToHost,
-                                  m_streams[i]));
-      }
-    }
-    else {
-      checkCUDA(cudaMemcpyAsync(temp.Buffer(0,(i-1)*width),
-                                gpu_data[i],
-                                height*width*sizeof(DataType),
-                                cudaMemcpyDeviceToHost,
-                                m_streams[i]));
-    }
-  }
- 
   // Reduce data from different GPUs
   synchronize();
-  for(Int i=0; i<m_num_gpus-1; ++i) {
-    cpu_data += temp(ALL, IR(i*width, (i+1)*width));
+  for(Int i=1; i<m_num_gpus; ++i) {
+    temp(ALL, IR(0,width)) += temp(ALL, IR(i*width, (i+1)*width));
   }
+  Copy(temp(ALL,IR(0,width)), cpu_data);
 
 }
 

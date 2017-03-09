@@ -329,9 +329,9 @@ void lbann::pooling_layer::fp_linearity_gpu() {
                             m_mini_batch_size_per_gpu);
 
   // Transfer data from CPU to GPUs
-  m_cudnn->copy_to_gpus(m_prev_activations_d,
-                        m_prev_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                           m_prev_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
 
   // Perform pooling with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
@@ -355,12 +355,12 @@ void lbann::pooling_layer::fp_linearity_gpu() {
                         m_mini_batch_size_per_gpu);
 
   // Transfer data from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_weighted_sum_v->Matrix(),
-                          m_weighted_sum_d,
-                          m_mini_batch_size_per_gpu);
-  m_cudnn->copy_from_gpus(m_activations_v->Matrix(),
-                          m_activations_d,
-                          m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_weighted_sum_v->Matrix(),
+                            m_weighted_sum_d,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                            m_activations_d,
+                            m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
 
   // Deallocate GPU memory
@@ -498,15 +498,15 @@ void lbann::pooling_layer::bp_linearity_gpu() {
                             m_mini_batch_size_per_gpu);
 
   // Transfer data from CPU to GPUs
-  m_cudnn->copy_to_gpus(m_prev_activations_d,
-                        m_prev_activations_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_weighted_sum_d,
-                        m_weighted_sum_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
-  m_cudnn->copy_to_gpus(m_prev_error_signal_d,
-                        m_prev_error_signal_v->LockedMatrix(),
-                        m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                           m_prev_activations_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_weighted_sum_d,
+                           m_weighted_sum_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
+  m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
+                           m_prev_error_signal_v->LockedMatrix(),
+                           m_mini_batch_size_per_gpu);
 
   // Perform back propagation on each GPU
 #pragma omp parallel for
@@ -527,9 +527,9 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->copy_from_gpus(m_error_signal_v->Matrix(),
-                          m_error_signal_d,
-                          m_mini_batch_size_per_gpu);
+  m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
+                            m_error_signal_d,
+                            m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
 
   // Deallocate GPU memory
