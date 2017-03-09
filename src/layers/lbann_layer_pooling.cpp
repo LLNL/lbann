@@ -149,6 +149,14 @@ pooling_layer::~pooling_layer()
       checkCUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
     if(m_pooling_desc)
       checkCUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
+
+    // Deallocate GPU memory
+    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
+    m_cudnn->deallocate_on_gpus(m_activations_d);
+    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    m_cudnn->deallocate_on_gpus(m_error_signal_d);
+
   }
 #endif // __LIB_CUDNN
 }
@@ -256,6 +264,23 @@ void lbann::pooling_layer::setup_gpu() {
                                         output_dims.data(),
                                         output_strides.data()));
 
+  // Allocate GPU memory
+  m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_weighted_sum_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_activations_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                            NumNeurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_error_signal_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+
 #endif // #ifndef __LIB_CUDNN
 }
 
@@ -317,17 +342,6 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Allocate GPU memory
-  m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                            m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_activations_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
-
   // Transfer data from CPU to GPUs
   m_cudnn->scatter_to_gpus(m_prev_activations_d,
                            m_prev_activations_v->LockedMatrix(),
@@ -362,11 +376,6 @@ void lbann::pooling_layer::fp_linearity_gpu() {
                             m_activations_d,
                             m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
-
-  // Deallocate GPU memory
-  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-  m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
-  m_cudnn->deallocate_on_gpus(m_activations_d);
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -483,20 +492,6 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   // Get number of GPUs
   const Int num_gpus = m_cudnn->get_num_gpus();
 
-  // Allocate GPU memory
-  m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                            m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                            NumNeurons,
-                            m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_error_signal_d,
-                            m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
-
   // Transfer data from CPU to GPUs
   m_cudnn->scatter_to_gpus(m_prev_activations_d,
                            m_prev_activations_v->LockedMatrix(),
@@ -531,12 +526,6 @@ void lbann::pooling_layer::bp_linearity_gpu() {
                             m_error_signal_d,
                             m_mini_batch_size_per_gpu);
   m_cudnn->synchronize();
-
-  // Deallocate GPU memory
-  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-  m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
-  m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-  m_cudnn->deallocate_on_gpus(m_error_signal_d);
 
 #endif // #ifndef __LIB_CUDNN
 }

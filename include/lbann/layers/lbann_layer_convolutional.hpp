@@ -127,14 +127,10 @@ namespace lbann
     /** Compute gradient w.r.t. data, which is passed to previous layer. */
     cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
 
-    /// GPU memory for convolution filters
-    std::vector<DataType*> m_filter_d;
-    /// GPU memory for convolution filter gradient
-    std::vector<DataType*> m_filter_gradient_d;
-    /// GPU memory for convolution bias
-    std::vector<DataType*> m_bias_d;
-    /// GPU memory for convolution bias gradient
-    std::vector<DataType*> m_bias_gradient_d;
+    /// GPU memory for convolution filters and bias
+    std::vector<DataType*> m_weights_d;
+    /// GPU memory for convolution filters gradient and bias gradient
+    std::vector<DataType*> m_weights_gradient_d;
     /// GPU memory for work space
     std::vector<DataType*> m_work_space_d;
     /// Size of work space in bytes
