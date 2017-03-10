@@ -108,18 +108,17 @@ lbann::Layer::~Layer() {
 void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
-  // Set the view for all of the standard matrices based on the
-  // current mini-batch size
-  fp_set_std_matrix_view();
-
   // Get incoming activations and convert matrix distribution if necessary
   // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
     *m_prev_activations = *fp_input;
   }
 
+  // Set matrix views based on current mini-batch size
+  fp_set_std_matrix_view();
+
 #ifdef __LIB_CUDNN
-  // Transfer inputs from CPU to GPUs
+  // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
     if(!m_prev_layer_using_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
@@ -148,7 +147,7 @@ void lbann::Layer::forwardProp() {
   for (regularizer* reg : regularizers) reg->fp_activations();
 
 #ifdef __LIB_CUDNN
-  // Transfer outputs from GPUs to CPU
+  // Transfer outputs from GPUs to CPU if needed
   if(m_using_gpus && !m_next_layer_using_gpus) {
     m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
                               m_activations_d,

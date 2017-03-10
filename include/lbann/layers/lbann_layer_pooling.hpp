@@ -61,6 +61,9 @@ namespace lbann
 
     void setup(int num_prev_neurons);
 
+    void forwardProp();
+    void backProp();
+
     bool update();
     void pin_mem(void);
     void unpin_mem(void);

@@ -149,12 +149,17 @@ pooling_layer::~pooling_layer()
 {
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
+
+    // Destroy cuDNN objects
     if(m_input_desc)
       checkCUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
     if(m_output_desc)
       checkCUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
     if(m_pooling_desc)
       checkCUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
+
+    // Unpin pinned memory
+    unpin_mem();
 
     // Deallocate GPU memory
     m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
@@ -335,8 +340,10 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 {
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
-  if(!m_prev_layer_using_gpus)
+  if(!m_prev_layer_using_gpus) {
+    *m_prev_activations = *fp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_activations);
+  }
   if(!m_next_layer_using_gpus)
     total_size += m_cudnn->pin_memory_block(m_activations);
   //std::cout << total_size << " bytes pinned by pooling layer " 
@@ -350,8 +357,10 @@ void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 {
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
-  if(!m_next_layer_using_gpus)
+  if(!m_next_layer_using_gpus) {
+    *m_prev_error_signal = *bp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_error_signal);
+  }
   if(!m_prev_layer_using_gpus)
     total_size += m_cudnn->pin_memory_block(m_error_signal);
   
@@ -385,6 +394,32 @@ void lbann::pooling_layer::unpin_memory_blocks_bwd(void)
 
   is_pinned_bwd = false;
 #endif
+}
+
+void lbann::pooling_layer::forwardProp() {
+
+#ifdef __LIB_CUDNN
+  // Pin memory blocks at the first step
+  if(to_pin_fwd && !is_pinned_fwd)
+    pin_memory_blocks_fwd();
+#endif // #ifdef __LIB_CUDNN
+
+  // Perform forward propagation
+  Layer::forwardProp();
+
+}
+
+void lbann::pooling_layer::backProp() {
+
+#ifdef __LIB_CUDNN
+  // Pin memory blocks at the first step
+  if(to_pin_bwd && !is_pinned_bwd)
+    pin_memory_blocks_bwd();
+#endif // #ifdef __LIB_CUDNN
+
+  // Perform backward propagation
+  Layer::backProp();
+
 }
 
 void lbann::pooling_layer::fp_linearity() {
