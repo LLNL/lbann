@@ -34,6 +34,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include <omp.h>
 using namespace El;
 
 #ifndef LBANN_QUANTIZER_TERNARY
