@@ -29,26 +29,42 @@
 #ifndef CUDNN_WRAPPER_HPP_INCLUDED
 #define CUDNN_WRAPPER_HPP_INCLUDED
 
-#ifdef __LIB_CUDNN
-
 #include <vector>
+#include "lbann/lbann_base.hpp"
+#include "lbann/lbann_comm.hpp"
+#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/layers/lbann_layer_activations.hpp"
+
+#ifdef __LIB_CUDNN
 #include <cuda.h>
 #include <cudnn.h>
 #include <cub/util_allocator.cuh>
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#endif // #ifdef __LIB_CUDNN
 
-
-// moved to make it visible from lbann_layer_convolution
-#include "lbann/utils/lbann_exception.hpp"
+// Error utility macros
+#ifdef __LIB_CUDNN
+#ifdef LBANN_DEBUG
 #define checkCUDA(status) {                                             \
     if (status != cudaSuccess) {                                        \
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  /* TODO: remove */ \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cudnn_wrapper: CUDA error");        \
+      throw lbann::lbann_exception("CUDA error");                       \
     }                                                                   \
   }
+#define checkCUDNN(status) {                                            \
+    if (status != CUDNN_STATUS_SUCCESS) {                               \
+      std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
+      cudaDeviceReset();                                                \
+      throw lbann::lbann_exception("cuDNN error");                      \
+    }                                                                   \
+  }
+#else
+#define checkCUDA(status)  status
+#define checkCUDNN(status) status
+#endif // #ifdef LBANN_DEBUG
+#endif // #ifdef __LIB_CUDNN
 
 namespace cudnn
 {
@@ -56,6 +72,7 @@ namespace cudnn
   /** cuDNN manager class */
   class cudnn_manager
   {
+#ifdef __LIB_CUDNN
 
   public:
     /** Constructor
@@ -63,13 +80,84 @@ namespace cudnn
      *  @param max_num_gpus  Maximum Number of available GPUs. If
      *                       negative, then use all available GPUs.
      */
-    cudnn_manager(lbann::lbann_comm* _comm, int max_num_gpus = -1);
+    cudnn_manager(lbann::lbann_comm* _comm, Int max_num_gpus = -1);
 
     /** Destructor */
     ~cudnn_manager();
 
-    /** Print cuDNN version information to standard output */
+    /** Print cuDNN version information to standard output. */
     void print_version() const;
+    /** Get cuDNN data type associated with C++ data type. */
+    cudnnDataType_t get_cudnn_data_type() const;
+
+    /** Get number of GPUs assigned to current process. */
+    Int get_num_gpus() const;
+    /** Get number of GPUs on current node. */
+    Int get_num_total_gpus() const;
+    /** Get GPUs for current process. */
+    std::vector<int>& get_gpus();
+    /** Get GPUs for current process (const). */
+    const std::vector<int>& get_gpus() const;
+    /** Get ith GPU for current process. */
+    int get_gpu(Int i=0) const;
+    /** Get GPU memory allocator. */
+    cub::CachingDeviceAllocator& get_gpu_memory();
+    /** Get GPU memory allocator (const). */
+    const cub::CachingDeviceAllocator& get_gpu_memory() const;
+    /** Get CUDA streams for current process. */
+    std::vector<cudaStream_t>& get_streams();
+    /** Get CUDA streams for current process (const). */
+    const std::vector<cudaStream_t>& get_streams() const;
+    /** Get ith CUDA stream for current process. */
+    cudaStream_t& get_stream(Int i=0);
+    /** Get ith CUDA stream for current process (const). */
+    const cudaStream_t& get_stream(Int i=0) const;
+    /** Get cuDNN handles for current process. */
+    std::vector<cudnnHandle_t>& get_handles();
+    /** Get cuDNN handles for current process (const). */
+    const std::vector<cudnnHandle_t>& get_handles() const;
+    /** Get ith cuDNN handle for current process. */
+    cudnnHandle_t& get_handle(Int i=0);
+    /** Get ith cuDNN handle for current process (const). */
+    const cudnnHandle_t& get_handle(Int i=0) const;
+    
+
+    /** Allocate memory on GPUs. */
+    void allocate_on_gpus(std::vector<DataType*>& gpu_data,
+                          Int height,
+                          Int width_per_gpu);
+    /** Deallocate memory on GPUs. */
+    void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
+
+    /** Copy data on GPUs. */
+    void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
+                      const std::vector<DataType*>& gpu_src_data,
+                      Int height,
+                      Int width_per_gpu);
+    /** Copy data from CPU to GPUs.
+     *  Matrix columns are scattered amongst GPUs.
+     */
+    void scatter_to_gpus(std::vector<DataType*>& gpu_data,
+                         const Mat& cpu_data,
+                         Int width_per_gpu);
+    /** Copy data from GPUs to CPU.
+     *  Matrix columns are gathered from GPUs.
+     */
+    void gather_from_gpus(Mat& cpu_data,
+                          const std::vector<DataType*>& gpu_data,
+                          Int width_per_gpu);
+    /** Copy data from CPU to GPUs.
+     *  Data is duplicated across GPUs.
+     */
+    void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
+                           const Mat& cpu_data);
+    /** Copy data from GPUs to CPU and reduce.
+     */
+    void reduce_from_gpus(Mat& cpu_data,
+                          const std::vector<DataType*>& gpu_data);
+
+    /** Synchronize GPUs. */
+    void synchronize();
 
     /// Register a block of memory to pin
     void pin_ptr(void* ptr, size_t sz);
@@ -84,290 +172,32 @@ namespace cudnn
     /// report the total size of memory blocks pinned
     size_t get_total_size_of_pinned_blocks(void) const;
 
-  public:
+  private:
 
-    /** LBANN communicator */
+    /** LBANN communicator. */
     lbann::lbann_comm* comm;
 
-    /** Number of GPUs for current MPI rank */
-    int m_num_gpus;
-    /** Number of available GPUs */
-    int m_num_total_gpus;
+    /** Number of GPUs for current process. */
+    Int m_num_gpus;
+    /** Number of available GPUs. */
+    Int m_num_total_gpus;
 
-    /** GPU memory allocator
-     *  Faster than cudaMalloc/cudaFree since it uses a memory pool */
+    /** GPU memory allocator.
+     *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
     cub::CachingDeviceAllocator* m_gpu_memory;
 
-    /** GPUs for current MPI rank */
+    /** GPUs for current process. */
     std::vector<int> m_gpus;
-    /** CUDA streams for current MPI rank */
+    /** CUDA streams for current process. */
     std::vector<cudaStream_t> m_streams;
-    /** cuDNN handles for current MPI rank */
+    /** cuDNN handles for current process. */
     std::vector<cudnnHandle_t> m_handles;
-    /// pinned memory addresses
+    /** Pinned memory addresses. */
     std::map<void*, size_t> pinned_ptr;
 
-  };
-
-
-  /// cuDNN convolutional layer
-  class cudnn_convolutional_layer
-  {
-  public:
-
-    /// Constructor
-    cudnn_convolutional_layer(int num_dims,
-                              int src_channels,
-                              int dst_channels,
-                              const int* src_dims,
-                              const int* filter_dims,
-                              const int* conv_pads,
-                              const int* conv_strides,
-                              const uint mini_batch_size,
-                              cudnn_manager* cudnn);
-    
-    /// Destructor
-    ~cudnn_convolutional_layer();
-    
-    /// Setup convolutional layer
-    void setup();
-
-    /// Convolutional layer forward pass
-    /** @todo Handle case where GPU can't hold entire mini-batch. */
-    void forward(const Mat& src, const Mat& filter, const Mat& bias, Mat& dst);
-    
-    /// Convolutional layer backward pass
-    /** @todo Handle case where GPU can't hold entire mini-batch. */
-    void backward(const Mat& src, const Mat& filter, const Mat& grad_dst,
-                  Mat& grad_filter, Mat& grad_bias, Mat& grad_src);
-
-    /// Return the pointer to the associated cudnn_manager
-    cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
-
-  public:
-      
-    /// Number of dimensions
-    const int m_num_dims;
-
-    /// Input tensor size
-    int m_src_size;
-    /// Output tensor size
-    int m_dst_size;
-    /// Filter size
-    int m_filter_size;
-
-    /// Input tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_src_dims;
-    /// Output tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_dst_dims;
-    /// Filter dimensions
-    /** cuDNN's KCHW or KCDHW format */
-    std::vector<int> m_filter_dims;
-
-    /// Convolution padding
-    std::vector<int> m_conv_pads;
-    /// Convolution strides
-    std::vector<int> m_conv_strides;
-  
-  private:
-
-    /// cuDNN manager
-    cudnn_manager* m_cudnn;
-
-    /// cuDNN datatype
-    const cudnnDataType_t m_cudnn_data_type;
-
-    /// Number of data samples per GPU
-    int m_samples_per_gpu;
-
-    /// Input tensor descriptor
-    cudnnTensorDescriptor_t m_src_desc;
-    /// Output tensor descriptor
-    cudnnTensorDescriptor_t m_dst_desc;
-    /// Filter descriptor
-    cudnnFilterDescriptor_t m_filter_desc;
-    /// Convolution descriptor
-    cudnnConvolutionDescriptor_t m_conv_desc;
-
-    /// Forward pass algorithm
-    cudnnConvolutionFwdAlgo_t m_forward_algo;
-    /// Forward pass algorithm work space size (in bytes)
-    size_t m_forward_work_space_size;
-
-    /// Backward pass filter algorithm
-    /** Compute gradient w.r.t. filter. */
-    cudnnConvolutionBwdFilterAlgo_t m_backward_filter_algo;
-    /// Backward pass filter algorithm work space size (in bytes)
-    /** Compute gradient w.r.t. filter. */
-    size_t m_backward_filter_work_space_size;
-
-    /// Backward pass data algorithm
-    /** Compute gradient w.r.t. data, which is passed to previous layer. */
-    cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
-    /// Backward pass data algorithm work space size (in bytes)
-    /** Compute gradient w.r.t. data, which is passed to previous layer. */
-    size_t m_backward_data_work_space_size;
-
-    /// Input tensor strides
-    std::vector<int> m_src_strides;
-    /// Output tensor strides
-    std::vector<int> m_dst_strides;
-
-
-    const uint m_mini_batch_size;
-
-    std::vector<DataType*> d_src;
-    std::vector<DataType*> d_filter;
-    std::vector<DataType*> d_bias;
-    std::vector<DataType*> d_dst;
-    std::vector<DataType*> d_work_space;
-
-    std::vector<DataType*> d_prev_error_signal;
-    std::vector<DataType*> d_filter_gradient;
-    std::vector<DataType*> d_error_signal;
-    std::vector<DataType*> d_filter_work_space;
-    std::vector<DataType*> d_data_work_space;
-
-    /// Allocate memory on GPUs once and for all for the entire execution
-    void device_allocate(void);
-    /// Deallocate all the memory blocked on GPUs
-    void device_deallocate(void);
-    /// Allocate memory on GPUs for the forward path
-    void device_allocate_for_forward(void);
-    /// Allocate memory on GPUs for the backward path
-    void device_allocate_for_backward(void);
-    /// Deallocate memory on GPUs for the forward path
-    void device_deallocate_for_forward(void);
-    /// Deallocate memory on GPUs for the backward path
-    void device_deallocate_for_backward(void);
-
-    /// A temporary matrix used to collect data from each GPU during reduction
-    Mat temp;
-
-  };
-
-  /// cuDNN pooling layer
-  class cudnn_pooling_layer
-  {
-
-  public:
-
-    /// Constructor
-    cudnn_pooling_layer(int num_dims,
-                        int channels,
-                        const int* src_dims,
-                        pool_mode _pool_mode,
-                        const int* pool_dims,
-                        const int* pool_pads,
-                        const int* pool_strides,
-                        const uint mini_batch_size,
-                        cudnn_manager* cudnn);
-    
-    /// Destructor
-    ~cudnn_pooling_layer();
-    
-    /// Setup pooling layer
-    void setup();
-
-    /// Convolutional layer forward pass
-    void forward(const Mat& src, Mat& dst);
-    
-    /// Convolutional layer backward pass
-    void backward(const Mat& src, const Mat& dst,
-                  const Mat& grad_dst, Mat& grad_src);
-
-    /// Return the pointer to the associated cudnn_manager
-    cudnn_manager* get_cudnn_manager(void) { return m_cudnn; }
-
-  public:
-      
-    /// Number of dimensions
-    const int m_num_dims;
-
-    /// Input tensor size
-    int m_src_size;
-    /// Output tensor size
-    int m_dst_size;
-
-    /// Input tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_src_dims;
-    /// Output tensor dimensions
-    /** cuDNN's NCHW or NCDHW format */
-    std::vector<int> m_dst_dims;
-
-    /// Pooling mode
-    const cudnnPoolingMode_t m_pool_mode;
-
-    /// Pooling dimensions
-    /** HW or DHW format */
-    std::vector<int> m_pool_dims;
-    /// Pooling padding
-    /** HW or DHW format */
-    std::vector<int> m_pool_pads;
-    /// Pooling strides
-    /** HW or DHW format */
-    std::vector<int> m_pool_strides;
-  
-  private:
-
-    /// cuDNN manager
-    cudnn_manager* m_cudnn;
-
-    /// cuDNN datatype
-    const cudnnDataType_t m_cudnn_data_type;
-
-    /// Number of data samples per GPU
-    int m_samples_per_gpu;
-
-    /// Input tensor descriptor
-    cudnnTensorDescriptor_t m_src_desc;
-    /// Output tensor descriptor
-    cudnnTensorDescriptor_t m_dst_desc;
-    /// Pooling descriptor
-    cudnnPoolingDescriptor_t m_pool_desc;
-
-    /// Input tensor strides
-    std::vector<int> m_src_strides;
-    /// Output tensor strides
-    std::vector<int> m_dst_strides;
-
-    const uint m_mini_batch_size;
-
-    std::vector<DataType*> d_src;
-    std::vector<DataType*> d_dst;
-
-    std::vector<DataType*> d_prev_error_signal;
-    std::vector<DataType*> d_error_signal;
-
-    /// Allocate memory on GPUs once and for all for the entire execution
-    void device_allocate(void);
-    /// Deallocate all the memory blocked on GPUs
-    void device_deallocate(void);
-    /// Allocate memory on GPUs for the forward path
-    void device_allocate_for_forward(void);
-    /// Allocate memory on GPUs for the backward path
-    void device_allocate_for_backward(void);
-    /// Deallocate memory on GPUs for the forward path
-    void device_deallocate_for_forward(void);
-    /// Deallocate memory on GPUs for the backward path
-    void device_deallocate_for_backward(void);
-
+#endif // #ifdef __LIB_CUDNN
   };
 
 }
-
-#else  // __LIB_CUDNN
-
-namespace cudnn
-{
-  class cudnn_manager {};
-  class cudnn_convolutional_layer {};
-  class cudnn_pooling_layer {};
-}
-
-#endif  // __LIB_CUDNN
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

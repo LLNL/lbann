@@ -467,21 +467,29 @@ lbann::Layer* lbann::sequential_model::swap(int index, Layer *new_layer) {
 
 void lbann::sequential_model::set_fp_input(size_t start_index, size_t end_index)
 {
-  // Establish the forward pass input pointers
-  // Note: the first layer doesn't require input
-  for (size_t l = Max(start_index,1); l < end_index; ++l) {
+  // Get properties from previous layers
+  // Note: the first layer has no previous layer
+  for (Int l=Max(start_index,1); l<end_index; ++l) {
     m_layers[l]->set_prev_layer_type(m_layers[l-1]->m_type);
     m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
+#ifdef __LIB_CUDNN
+    m_layers[l]->setup_fp_input_d(m_layers[l-1]->fp_output_d());
+    m_layers[l]->set_prev_layer_using_gpus(m_layers[l-1]->using_gpus());
+#endif
   }
 }
 
 void lbann::sequential_model::set_bp_input(size_t start_index, size_t end_index)
 {
-  // Establish the backward pass input pointers
-  // Note: the last layer doens't require input
-  for (size_t l = end_index-1; l --> Max(start_index-1,0) ;) { // Cute decrement loop for unsigned int
+  // Get properties from next layers
+  // Note: the last layer has no next layer
+  for (Int l=end_index-2; l>=Max(start_index-1,0); --l) {
     m_layers[l]->set_next_layer_type(m_layers[l+1]->m_type);
     m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
+#ifdef __LIB_CUDNN
+    m_layers[l]->setup_bp_input_d(m_layers[l+1]->bp_output_d());
+    m_layers[l]->set_next_layer_using_gpus(m_layers[l+1]->using_gpus());
+#endif
   }
 }
 
@@ -491,9 +499,13 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
     end_index = m_layers.size();
   }
 
+  // Get properties from adjacent layers
+  set_fp_input(start_index, end_index);
+  set_bp_input(start_index, end_index);
+
   // Setup each layer
   int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->NumNeurons : -1;
-  for (size_t l = start_index; l < end_index; ++l) {
+  for (Int l=start_index; l<end_index; ++l) {
     if (comm->am_model_master()) {
       cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
     }
@@ -504,8 +516,6 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
     m_layers[l]->Index = l;
   }
 
-  set_fp_input(start_index, end_index);
-  set_bp_input(start_index, end_index);
   // Set up callbacks
   setup_callbacks();
 }

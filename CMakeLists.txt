@@ -45,8 +45,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLBANN_DEBUG")
 
+# Enable parallel random matrix generation
 if(NOT SEQ_INIT)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_PARALLEL_RANDOM_MATRICES")
 endif()
@@ -106,7 +107,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE
 include(OpenMP)
 include(MPI)
 include(Elemental)
-include(OpenCVSimple)
+include(OpenCV)
 include(protobuf)
 
 # Optional dependencies

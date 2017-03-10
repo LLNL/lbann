@@ -34,7 +34,6 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
@@ -214,13 +213,14 @@ int main(int argc, char* argv[])
         // First convolution layer
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
-          int inputChannels = 1;
-          int inputDims[] = {28, 28};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          Int numDims = 2;
+          Int inputChannels = 1;
+          Int inputDims[] = {28, 28};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
+
           convolutional_layer* layer
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
@@ -229,20 +229,20 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer, 
-                                      {}, cudnn);
+                                      cudnn);
           dnn.add(layer);
         }
 
         // Second convolution layer
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
+          Int numDims = 2;
           int inputChannels = 32;
-          int inputDims[] = {26, 26};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          Int inputDims[] = {26, 26};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
           convolutional_layer* layer
             = new convolutional_layer(2, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
@@ -251,7 +251,6 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer,
-                                      {},
                                       cudnn);
           dnn.add(layer);
         }
@@ -268,9 +267,8 @@ int main(int argc, char* argv[])
           pooling_layer* layer
             = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, activation_type::ID,
+                                trainParams.MBSize,
                                 comm,
-                                {new dropout(comm, 0.75)},
                                 cudnn);
           dnn.add(layer);
         }

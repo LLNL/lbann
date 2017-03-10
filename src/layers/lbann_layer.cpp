@@ -46,7 +46,8 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
   : m_activation_type(activation), optimizer(optimizer), comm(comm),
     regularizers(regs), m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize),
-    fp_time(0.0), bp_time(0.0)
+    fp_time(0.0), bp_time(0.0),
+    m_cudnn(NULL)
 {
 
     m_type = layer_type::INVALID;
@@ -58,6 +59,14 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     fp_input = NULL;
     bp_input = NULL;
     neural_network_model = NULL;
+
+    m_using_gpus = false;
+    m_prev_layer_using_gpus = false;
+    m_next_layer_using_gpus = false;
+#ifdef __LIB_CUDNN
+    fp_input_d = NULL;
+    bp_input_d = NULL;
+#endif
 
     // Most layers use standard elemental matrix distribution
     m_weights             = new DistMat(comm->get_model_grid());
@@ -99,49 +108,110 @@ lbann::Layer::~Layer() {
 void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  fp_set_std_matrix_view();
+
   // Get incoming activations and convert matrix distribution if necessary
   // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
     *m_prev_activations = *fp_input;
   }
-  // Set the view for all of the standard matrices based on the
-  // current mini-batch size
-  fp_set_std_matrix_view();
+
+#ifdef __LIB_CUDNN
+  // Transfer inputs from CPU to GPUs
+  if(m_using_gpus) {
+    if(!m_prev_layer_using_gpus) {
+      m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                               m_prev_activations_v->LockedMatrix(),
+                               m_mini_batch_size_per_gpu);
+    }
+    else {
+      m_prev_activations_d = *fp_input_d;
+    }
+  }
+#endif
+
   // Apply connection regularization. (e.g. DropConnect).
   for (regularizer* reg : regularizers) reg->fp_connections();
+
   // Layer layer's linearity.
   fp_linearity();
+
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
+
   // Apply activation function/nonlinearity.
   fp_nonlinearity();
+
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
+
+#ifdef __LIB_CUDNN
+  // Transfer outputs from GPUs to CPU
+  if(m_using_gpus && !m_next_layer_using_gpus) {
+    m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                              m_activations_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
+  }
+#endif
+
   fp_time += get_time() - fp_start;
-  return;
 }
 
 void lbann::Layer::backProp() {
   double bp_start = get_time();
+
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  //  bp_set_std_matrix_view();
 
   // Get incoming loss and convert matrix distribution if necessary
   // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
     *m_prev_error_signal = *bp_input;
   }
-  // Set the view for all of the standard matrices based on the
-  // current mini-batch size
-  //  bp_set_std_matrix_view();
+
+#ifdef __LIB_CUDNN
+  // Transfer inputs from CPU to GPUs
+  if(m_using_gpus) {
+    if(!m_next_layer_using_gpus) {
+      m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
+                               m_prev_error_signal_v->LockedMatrix(),
+                               m_mini_batch_size_per_gpu);
+    }
+    else {
+      m_prev_error_signal_d = *bp_input_d;
+    }
+  }
+#endif
+
   // Backprop activation regularization.
   for (regularizer* reg : regularizers) reg->bp_activations();
+
   // Backprop the activation function/nonlinearity.
   bp_nonlinearity();
+
   // Backprop weight regularization.
   for (regularizer* reg : regularizers) reg->bp_weights();
+
   // Backprop the layer's linearity.
   bp_linearity();
+
   // Backprop connection regularization.
   for (regularizer* reg : regularizers) reg->bp_connections();
+
+#ifdef __LIB_CUDNN
+  // Transfer outputs from GPUs to CPU
+  if(m_using_gpus && !m_prev_layer_using_gpus) {
+    m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
+                              m_error_signal_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
+  }
+#endif
+
   bp_time += get_time() - bp_start;
 }
 
@@ -171,7 +241,8 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   reset_counters();
 }
 
-void lbann::Layer::setup(int) {
+void lbann::Layer::setup(int num_prev_neurons) {
+  m_num_prev_neurons = num_prev_neurons;
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 
@@ -203,6 +274,32 @@ void lbann::Layer::setup_bp_input(ElMat *bp_input)
   this->bp_input = bp_input;
 }
 
+#ifdef __LIB_CUDNN
+std::vector<DataType*> *lbann::Layer::fp_output_d() {
+  if(m_using_gpus)
+    return &m_activations_d;
+  else
+    return NULL;
+}
+
+std::vector<DataType*> *lbann::Layer::bp_output_d() {
+  if(m_using_gpus)
+    return &m_error_signal_d;
+  else
+    return NULL;
+}
+
+void lbann::Layer::setup_fp_input_d(std::vector<DataType*> *fp_input_d)
+{
+  this->fp_input_d = fp_input_d;
+}
+
+void lbann::Layer::setup_bp_input_d(std::vector<DataType*> *bp_input_d)
+{
+  this->bp_input_d = bp_input_d;
+}
+#endif
+
 void lbann::Layer::set_prev_layer_type(layer_type type)
 {
   this->m_prev_layer_type = type;
@@ -211,6 +308,20 @@ void lbann::Layer::set_prev_layer_type(layer_type type)
 void lbann::Layer::set_next_layer_type(layer_type type)
 {
   this->m_next_layer_type = type;
+}
+
+bool lbann::Layer::using_gpus() const {
+  return m_using_gpus;
+}
+
+void lbann::Layer::set_prev_layer_using_gpus(bool using_gpus)
+{
+  m_prev_layer_using_gpus = using_gpus;
+}
+
+void lbann::Layer::set_next_layer_using_gpus(bool using_gpus)
+{
+  m_next_layer_using_gpus = using_gpus;
 }
 
 bool lbann::Layer::saveToFile(int fd, const char* dirname)
@@ -283,17 +394,16 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  // Input layers will not have a valid fp_input
-  if(fp_input != NULL) {
+  if(m_prev_activations->Width() != 0)
     View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  }
-  // Target layers will not have a valid bp_input
-  if(bp_input != NULL) {
+  if(m_prev_error_signal->Width() != 0)
     View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
-  }
-  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
-  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
+  if(m_weighted_sum->Width() != 0)
+    View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
+  if(m_error_signal->Width() != 0)
+    View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  if(m_activations->Width() != 0)
+    View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) {
