@@ -39,6 +39,7 @@
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <vector>
@@ -51,7 +52,7 @@ namespace lbann
   class model;
 
   // @todo: check list of layer types
-  enum class layer_type {fully_connected, softmax, convolutional, pooling,
+  enum class layer_type {fully_connected, softmax, convolution, pooling,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
       target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
       INVALID};
@@ -129,12 +130,18 @@ namespace lbann
     ElMat *bp_output();
     void setup_fp_input(ElMat *fp_input);
     void setup_bp_input(ElMat *bp_input);
+
     void set_prev_layer_type(layer_type type);
     void set_next_layer_type(layer_type type);
-
-    /* void updateMB(const float LearnRate); */
-    //    virtual double computeCost(DistMat &deltas) = 0;
-    //    { return 0.0;}
+    bool using_gpus() const;
+    void set_prev_layer_using_gpus(bool using_gpus);
+    void set_next_layer_using_gpus(bool using_gpus);
+#ifdef __LIB_CUDNN
+    std::vector<DataType*> *fp_output_d();
+    std::vector<DataType*> *bp_output_d();
+    void setup_fp_input_d(std::vector<DataType*> *fp_input_d);
+    void setup_bp_input_d(std::vector<DataType*> *bp_input_d);
+#endif
 
     bool saveToFile(int fd, const char* filename);
     bool loadFromFile(int fd, const char* filename);
@@ -154,8 +161,9 @@ namespace lbann
     /// Type of next layer
     layer_type m_next_layer_type;
 
-    uint               Index;                  // Layer index (start with 0)
-    uint 		NumNeurons; 	// # neurons
+    uint Index;      // Layer index (start with 0)
+    uint NumNeurons; // # neurons
+    Int m_num_prev_neurons; /// Number of neurons in previous layer
     execution_mode  m_execution_mode;
     activation_type m_activation_type;
 
@@ -199,6 +207,38 @@ namespace lbann
     virtual void fp_nonlinearity();
     /** Handle the layer's nonlinearity in backward propagation. */
     virtual void bp_nonlinearity();
+
+    /** Current layer is using GPUs. */
+    bool m_using_gpus;
+    /** Previous layer is using GPUs. */
+    bool m_prev_layer_using_gpus;
+    /** Next layer is using GPUs. */
+    bool m_next_layer_using_gpus;
+
+    /// cuDNN manager
+    cudnn::cudnn_manager* m_cudnn;
+
+#ifdef __LIB_CUDNN
+
+    /// Number of mini-batch samples per GPU
+    Int m_mini_batch_size_per_gpu;
+
+    /** GPU memory for activations from "previous" layer. */
+    std::vector<DataType*> m_prev_activations_d;
+    /** GPU memory for activations. */
+    std::vector<DataType*> m_activations_d;
+    /** GPU memory for output of forward pass linear transformation. */
+    std::vector<DataType*> m_weighted_sum_d;
+    /** GPU memory for error signal from "next" layer. */
+    std::vector<DataType*> m_prev_error_signal_d;
+    /** GPU memory for error signal. */
+    std::vector<DataType*> m_error_signal_d;
+    /** GPU memory for forward propagation input. */
+    std::vector<DataType*> *fp_input_d;
+    /** GPU memory for backward propagation input. */
+    std::vector<DataType*> *bp_input_d;
+
+#endif
 
     /** Activation function */
     Activation* m_activation_fn;
