@@ -2,9 +2,14 @@
 
 # Detect OS version
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
+ARCH=$(uname -m)
 
 if [ "${TOSS}" == "3.10.0" ]; then
-  module load cmake/3.5.2
+  if [ "${ARCH}" == "x86_64" ]; then
+    module load cmake/3.5.2
+  elif [ "${ARCH}" == "ppc64le" ]; then
+    module load cmake/3.7.2
+  fi
 else
   # need to initialize modules on earlier versions of TOSS
   . /usr/share/[mM]odules/init/bash
@@ -35,12 +40,20 @@ BUILD_TYPE=Release
 Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
   OpenCV_DIR=""
-  VTUNE_DIR=/usr/tce/packages/vtune/default
+  if [ "${ARCH}" == "x86_64" ]; then
+    VTUNE_DIR=/usr/tce/packages/vtune/default
+  elif [ "${ARCH}" == "ppc64le" ]; then
+    VTUNE_DIR=""
+  fi
 else
   OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
   VTUNE_DIR=/usr/local/tools/vtune
 fi
-cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+if [ "${ARCH}" == "x86_64" ]; then
+  cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+elif [ "${ARCH}" == "ppc64le" ]; then
+  cuDNN_DIR=""
+fi
 ELEMENTAL_MATH_LIBS=
 CMAKE_C_FLAGS=
 CMAKE_CXX_FLAGS=-DLBANN_SET_EL_RNG
@@ -210,9 +223,15 @@ mkdir -p ${INSTALL_DIR}
 if [ "${COMPILER}" == "gnu" ]; then
   # GNU compilers
   if [ "${TOSS}" == "3.10.0" ]; then
-    GNU_DIR=/usr/tce/packages/gcc/gcc-4.9.3/bin
-    GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+    if [ "${ARCH}" == "x86_64" ]; then
+      GNU_DIR=/usr/tce/packages/gcc/gcc-4.9.3/bin
+      GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
+      MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+    elif [ "${ARCH}" == "ppc64le" ]; then
+      GNU_DIR=/usr/tcetmp/packages/gcc/gcc-4.9.3/bin
+      GFORTRAN_LIB=/usr/tcetmp/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
+      MPI_DIR=/opt/ibm/spectrum_mpi
+    fi
   else
     GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
     #GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so

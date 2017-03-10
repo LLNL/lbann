@@ -106,7 +106,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE
 include(OpenMP)
 include(MPI)
 include(Elemental)
-include(OpenCVSimple)
+include(OpenCV)
 include(protobuf)
 
 # Optional dependencies
