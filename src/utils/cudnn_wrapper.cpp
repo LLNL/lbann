@@ -179,7 +179,6 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType*>& gpu_dst_
                                                 Int width_per_gpu) {
 
   // Perform memory transfer on each GPU
-#pragma omp parallel for
   for(Int i=0; i<m_num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
     checkCUDA(cudaMemcpyAsync(gpu_dst_data[i],
@@ -202,7 +201,6 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType*>& gpu_d
   const Int cpu_ldim = cpu_data.LDim();
 
   // Perform memory transfer on each GPU
-#pragma omp parallel for
   for(Int i=0; i<m_num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
 
@@ -254,7 +252,6 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
   const Int cpu_ldim = cpu_data.LDim();
 
   // Perform memory transfer on each GPU
-#pragma omp parallel for
   for(Int i=0; i<m_num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
 
@@ -297,7 +294,6 @@ void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType*>& gpu
   const Int cpu_ldim = cpu_data.LDim();
 
   // Perform memory transfer on each GPU
-#pragma omp parallel for
   for(Int i=0; i<m_num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
 
