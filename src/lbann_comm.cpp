@@ -224,6 +224,7 @@ void lbann::lbann_comm::setup_node_comm() {
   std::string node_string = "hXFgQFNrqyL1mIsq";
   node_string += node_name;
   int hash = std::hash<std::string>()(node_string);
+  hash = hash & 0x7fffffff; // Make sure that this is a positive int to avoid crashing MPI
   mpi::Comm hash_comm;
   mpi::Split(mpi::COMM_WORLD, hash, mpi::Rank(mpi::COMM_WORLD), hash_comm);
 
@@ -232,6 +233,7 @@ void lbann::lbann_comm::setup_node_comm() {
   node_string = "BGqXbNZqxuXBV5lm";
   node_string += node_name;
   hash = std::hash<std::string>()(node_string);
+  hash = hash & 0x7fffffff; // Make sure that this is a positive int to avoid crashing MPI
   mpi::Split(hash_comm, hash, mpi::Rank(mpi::COMM_WORLD), node_comm);
 
 }
