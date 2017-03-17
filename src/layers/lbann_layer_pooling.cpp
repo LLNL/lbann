@@ -485,59 +485,57 @@ void lbann::pooling_layer::fp_linearity_cpu() {
     throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max pooling");
   }
 
+  // Input, output, and filter entries are divided amongst channels
+  const Int num_per_output_channel = NumNeurons / m_num_channels;
+  const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
+
   // Iterate through data samples in mini-batch
-  for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-    const Mat input_sample = prev_activations_local(ALL, IR(sample));
-    Mat output_sample = weighted_sum_local(ALL, IR(sample));
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
     // Iterate through channels
-    for(int channel = 0; channel < m_num_channels; ++channel) {
-      const int input_channel_size
-        = input_sample.Height() / m_num_channels;
-      const int output_channel_size = NumNeurons / m_num_channels;
-      const Mat input_channel
-        = input_sample(IR(channel*input_channel_size,
-                          (channel+1)*input_channel_size),
-                       ALL);
-      Mat output_channel
-        = output_sample(IR(channel*output_channel_size,
-                           (channel+1)*output_channel_size),
-                        ALL);
+    for(Int channel = 0; channel < m_num_channels; ++channel) {
 
-      // Iterate through pool offsets
-      // Note: each offset corresponds to an output entry
-      int output_pos = 0;
-      std::vector<int> pool_offset(m_num_dims);
+      // Iterate through output entries in current channel
+      // Note: each output entry corresponds to a different offset of
+      //   the pool kernel
+      std::vector<Int> pool_offsets(m_num_dims);
       for(int d = 0; d < m_num_dims; ++d) {
-        pool_offset[d] = -m_pool_pads[d];
+        pool_offsets[d] = -m_pool_pads[d];
       }
-      while(pool_offset[0] + m_pool_dims[0] <= m_input_dims[0] + m_pool_pads[0]) {
+      const Int start_output_index = channel*num_per_output_channel;
+      const Int end_output_index = (channel+1)*num_per_output_channel;
+      for(Int output_index = start_output_index;
+          output_index < end_output_index;
+          ++output_index) {
 
         // Iterate through pool entries and find maximum
-        std::vector<int> pool_pos(m_num_dims, 0);
+        std::vector<Int> pool_pos(m_num_dims, 0);
         DataType max_value = -INFINITY;
         while(pool_pos[0] < m_pool_dims[0]) {
 
-          // Get position of pool entry
-          int input_pos = 0;
-          bool valid_pos = true;
-          for(int d = 0; d < m_num_dims; ++d) {
-            if(pool_offset[d] + pool_pos[d] < 0
-               || pool_offset[d] + pool_pos[d] >= m_input_dims[d]) {
-              valid_pos = false;
+          // Get input entry corresponding to pool entry
+          Int input_index = 0;
+          bool valid_input_entry = true;
+          for(Int d = 0; d < m_num_dims; ++d) {
+            if(pool_offsets[d] + pool_pos[d] < 0
+               || pool_offsets[d] + pool_pos[d] >= m_input_dims[d]) {
+              valid_input_entry = false;
               break;
             }
-            input_pos *= m_input_dims[d];
-            input_pos += pool_offset[d] + pool_pos[d];
+            input_index *= m_input_dims[d];
+            input_index += pool_offsets[d] + pool_pos[d];
           }
+          input_index += channel * num_per_input_channel;
 
-          // Check if pool entry is larger than previous
-          DataType value = valid_pos ? input_channel.Get(input_pos, 0) : DataType(0);
-          max_value = value > max_value ? value : max_value;
+          // Check if pool entry is largest encountered
+          if(valid_input_entry) {
+            const DataType value = prev_activations_local.Get(input_index, sample);
+            max_value = Max(value, max_value);
+          }
 
           // Move to next pool entry
           ++pool_pos[m_num_dims-1];
-          for(int d = m_num_dims - 1; d > 0; --d) {
+          for(Int d = m_num_dims - 1; d > 0; --d) {
             if(pool_pos[d] >= m_pool_dims[d]) {
               pool_pos[d] = 0;
               ++pool_pos[d-1];
@@ -547,19 +545,15 @@ void lbann::pooling_layer::fp_linearity_cpu() {
         }
 
         // Set output entry
-        output_channel.Set(output_pos, 0, max_value);
-
-        // Move to next output entry
-        ++output_pos;
+        weighted_sum_local.Set(output_index, sample, max_value);
 
         // Move to next pool offset
-        pool_offset[m_num_dims-1] += m_pool_strides[m_num_dims-1];
-        for(int d = m_num_dims - 1; d > 0; --d) {
-          if(pool_offset[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
-            pool_offset[d] = -m_pool_pads[d];
-            pool_offset[d-1] += m_pool_strides[d-1];
+        pool_offsets[m_num_dims-1] += m_pool_strides[m_num_dims-1];
+        for(Int d = m_num_dims - 1; d > 0; --d) {
+          if(pool_offsets[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
+            pool_offsets[d] = -m_pool_pads[d];
+            pool_offsets[d-1] += m_pool_strides[d-1];
           }
-            
         }
 
       }
@@ -614,77 +608,72 @@ void lbann::pooling_layer::bp_linearity_cpu() {
   const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
+  // Initialize error signal to zero
+  Zero(error_signal_local);
+
   // Throw exception if pooling mode is not max pooling
   if(m_pool_mode != pool_mode::max) {
     throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max pooling");
   }
 
+  // Input and output entries are divided amongst channels
+  const Int num_per_output_channel = NumNeurons / m_num_channels;
+  const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
+
   // Iterate through data samples in mini-batch
-  for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-    const Mat input_sample = prev_activations_local(ALL, IR(sample));
-    const Mat prev_error_signal_sample = prev_error_signal_local(ALL, IR(sample));
-    Mat error_signal_sample = error_signal_local(ALL, IR(sample));
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
     // Iterate through channels
-    for(int channel = 0; channel < m_num_channels; ++channel) {
-      const int input_channel_size = input_sample.Height() / m_num_channels;
-      const int output_channel_size = NumNeurons / m_num_channels;
-      const Mat input_channel
-        = input_sample(IR(channel*input_channel_size,
-                          (channel+1)*input_channel_size),
-                       ALL);
-      const Mat prev_error_signal_channel
-        = prev_error_signal_sample(IR(channel*output_channel_size,
-                                      (channel+1)*output_channel_size),
-                                   ALL);
-      Mat error_signal_channel
-        = error_signal_sample(IR(channel*input_channel_size,
-                                 (channel+1)*input_channel_size),
-                              ALL);
+    for(Int channel = 0; channel < m_num_channels; ++channel) {
 
-      // Iterate through pool offsets
-      // Note: each offset corresponds to an output entry
-      int output_pos = 0;
-      std::vector<int> pool_offset(m_num_dims);
+      // Iterate through output entries in current channel
+      // Note: each output entry corresponds to a different offset of
+      //   the pool kernel
+      std::vector<Int> pool_offsets(m_num_dims);
       for(int d = 0; d < m_num_dims; ++d) {
-        pool_offset[d] = -m_pool_pads[d];
+        pool_offsets[d] = -m_pool_pads[d];
       }
-      while(pool_offset[0] + m_pool_dims[0] <= m_input_dims[0] + m_pool_pads[0]) {
+      const Int start_output_index = channel*num_per_output_channel;
+      const Int end_output_index = (channel+1)*num_per_output_channel;
+      for(Int output_index = start_output_index;
+          output_index < end_output_index;
+          ++output_index) {
 
         // Iterate through pool entries and find maximum
-        std::vector<int> pool_pos(m_num_dims, 0);
-        int max_input_pos = -1;
+        std::vector<Int> pool_pos(m_num_dims, 0);
+        std::vector<Int> max_input_indices;
         DataType max_value = -INFINITY;
         while(pool_pos[0] < m_pool_dims[0]) {
 
-          // Get position of pool entry
-          int input_pos = 0;
-          bool valid_pos = true;
-          for(int d = 0; d < m_num_dims; ++d) {
-            if(pool_offset[d] + pool_pos[d] < 0
-               || pool_offset[d] + pool_pos[d] >= m_input_dims[d]) {
-              valid_pos = false;
+          // Get input entry corresponding to pool entry
+          Int input_index = 0;
+          bool valid_input_entry = true;
+          for(Int d = 0; d < m_num_dims; ++d) {
+            if(pool_offsets[d] + pool_pos[d] < 0
+               || pool_offsets[d] + pool_pos[d] >= m_input_dims[d]) {
+              valid_input_entry = false;
               break;
             }
-            input_pos *= m_input_dims[d];
-            input_pos += pool_offset[d] + pool_pos[d];
+            input_index *= m_input_dims[d];
+            input_index += pool_offsets[d] + pool_pos[d];
           }
+          input_index += channel * num_per_input_channel;
 
-          // Check if pool entry is larger than previous
-          DataType value = valid_pos ? input_channel.Get(input_pos, 0) : 0.0;
-          if(value > max_value) {
-            if(valid_pos) {
-              max_value = value;
-              max_input_pos = input_pos;
-            }
-            else {
-              max_input_pos = -1;
+          // Check if pool entry is largest encountered
+          if(valid_input_entry) {
+            const DataType value = prev_activations_local.Get(input_index, sample);
+            if(value >= max_value) {
+              if(value == max_value) {
+                max_value = value;
+                max_input_indices.clear();
+              }
+              max_input_indices.push_back(input_index);
             }
           }
 
           // Move to next pool entry
           ++pool_pos[m_num_dims-1];
-          for(int d = m_num_dims - 1; d > 0; --d) {
+          for(Int d = m_num_dims - 1; d > 0; --d) {
             if(pool_pos[d] >= m_pool_dims[d]) {
               pool_pos[d] = 0;
               ++pool_pos[d-1];
@@ -694,23 +683,24 @@ void lbann::pooling_layer::bp_linearity_cpu() {
         }
 
         // Propagate error signal
-        if(max_input_pos >= 0) {
-          error_signal_channel.Set(max_input_pos, 0,
-                                   prev_error_signal_channel.Get(output_pos,
-                                                                 0));
+        // Note: error signal is normalized if multiple entries are the largest
+        if(max_input_indices.size() > 0) {
+          DataType error_signal_entry = prev_error_signal_local.Get(output_index, sample);
+          if(max_input_indices.size() > 1) {
+            error_signal_entry /= max_input_indices.size();
+          }
+          for(Int i=0; i<max_input_indices.size(); ++i) {
+            error_signal_local.Set(max_input_indices[i], sample, error_signal_entry);
+          }
         }
 
-        // Move to next output entry
-        ++output_pos;
-
         // Move to next pool offset
-        pool_offset[m_num_dims-1] += m_pool_strides[m_num_dims-1];
-        for(int d = m_num_dims - 1; d > 0; --d) {
-          if(pool_offset[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
-            pool_offset[d] = -m_pool_pads[d];
-            pool_offset[d-1] += m_pool_strides[d-1];
+        pool_offsets[m_num_dims-1] += m_pool_strides[m_num_dims-1];
+        for(Int d = m_num_dims - 1; d > 0; --d) {
+          if(pool_offsets[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
+            pool_offsets[d] = -m_pool_pads[d];
+            pool_offsets[d-1] += m_pool_strides[d-1];
           }
-            
         }
 
       }
