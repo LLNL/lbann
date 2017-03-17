@@ -34,6 +34,23 @@
 using namespace std;
 using namespace El;
 
+// Error utility macro
+#ifdef LBANN_DEBUG
+#define checkMPI(mpi_call) {                                            \
+    const int status = mpi_call;                                        \
+    if(status != MPI_SUCCESS) {                                         \
+      char error_string[MPI_MAX_ERROR_STRING];                          \
+      int error_string_len;                                             \
+      MPI_Error_string(status, error_string, &error_string_len);        \
+      std::cerr << "MPI error: " << std::string(error_string, error_string_len) << "\n"; \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
+      throw lbann::lbann_exception("MPI error");                        \
+    }                                                                   \
+  }
+#else
+#define checkMPI(status) status
+#endif // #ifdef LBANN_DEBUG
+
 lbann::lbann_comm::lbann_comm(int _procs_per_model) :
   procs_per_model(_procs_per_model), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
@@ -214,26 +231,30 @@ void lbann::lbann_comm::setup_node_comm() {
   // Get string specifying compute node
   char node_name[MPI_MAX_PROCESSOR_NAME];
   int node_name_len;
-  int status = MPI_Get_processor_name(node_name, &node_name_len);
-  if(status != MPI_SUCCESS) {
-    throw lbann_exception("lbann_comm: error in MPI_Get_processor_name");
-  }
+  checkMPI(MPI_Get_processor_name(node_name, &node_name_len));
+  const std::string node_string(node_name);
 
-  // Hash the node names and split MPI processes
-  // TODO: Generate random salt. The salt must be shared across all ranks.
-  std::string node_string = "hXFgQFNrqyL1mIsq";
-  node_string += node_name;
+  // Hash node names and split MPI processes
   int hash = std::hash<std::string>()(node_string);
-  hash = hash & 0x7fffffff; // Make sure that this is a positive int to avoid crashing MPI
+  hash = hash >= 0 ? hash : -hash; // Make sure hash is non-negative
   mpi::Comm hash_comm;
   mpi::Split(mpi::COMM_WORLD, hash, mpi::Rank(mpi::COMM_WORLD), hash_comm);
+  const int hash_comm_size = mpi::Size(hash_comm);
 
-  // Hash the node names again and split MPI processes
-  // TODO: Generate random salt. The salt must be shared across all ranks.
-  node_string = "BGqXbNZqxuXBV5lm";
-  node_string += node_name;
-  hash = std::hash<std::string>()(node_string);
-  hash = hash & 0x7fffffff; // Make sure that this is a positive int to avoid crashing MPI
-  mpi::Split(hash_comm, hash, mpi::Rank(mpi::COMM_WORLD), node_comm);
+  // Compare node names and split MPI processes
+  char* node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
+  checkMPI(MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
+                         node_name_list, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
+                         hash_comm.comm));
+  int node_num = mpi::Rank(hash_comm);
+  for(int i=0; i<hash_comm_size; ++i) {
+    const std::string other_node_string(node_name_list + i*MPI_MAX_PROCESSOR_NAME);
+    if(node_string == other_node_string) {
+      node_num = i;
+      break;
+    }
+  }
+  delete[] node_name_list;
+  mpi::Split(hash_comm, node_num, mpi::Rank(mpi::COMM_WORLD), node_comm);
 
 }
