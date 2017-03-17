@@ -743,8 +743,7 @@ void lbann::convolutional_layer::fp_linearity_cpu() {
       = View(weighted_sum_local,
              IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
              ALL);
-    // Fill(weighted_sum_channel, bias_local.Get(i,0));
-    Fill(weighted_sum_channel, DataType(0));
+    Fill(weighted_sum_channel, bias_local.Get(i,0));
   }
 
   ////////////////////////////////////////////////////////////////
@@ -798,7 +797,7 @@ void lbann::convolutional_layer::fp_linearity_cpu() {
             input_index *= m_input_dims[d];
             input_index += filter_offsets[d] + filter_pos[d];
           }
-          input_index += input_channel * num_per_input_channel;
+          input_index += input_channel*num_per_input_channel;
 
           // Update output entry
           if(valid_input_entry) {
@@ -1023,7 +1022,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
             input_index *= m_input_dims[d];
             input_index += filter_offsets[d] + filter_pos[d];
           }
-          input_index += input_channel * num_per_input_channel;
+          input_index += input_channel*num_per_input_channel;
 
           if(valid_input_entry) {
 
