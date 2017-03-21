@@ -59,13 +59,28 @@ else()
   set(ELEMENTAL_SOURCE_DIR ${PROJECT_BINARY_DIR}/download/elemental/source)
   set(ELEMENTAL_BINARY_DIR ${PROJECT_BINARY_DIR}/download/elemental/build)
 
+  if(ELEMENTAL_USE_CUBLAS)
+     set(EL_CUBLAS_FLAGS "-DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS}")
+  endif()
+  #set(EL_CUBLAS_FLAGS "${CMAKE_CXX_FLAGS} ${EL_CUBLAS_FLAGS}")
+  set(EL_CUBLAS_LINK "${CMAKE_EXE_LINKER_FLAGS} -L${CUDA_TOOLKIT_ROOT_DIR}/lib64 -lcublas")  
+
   # Get Elemental from Git repository and build
   ExternalProject_Add(project_Elemental
     PREFIX          ${CMAKE_INSTALL_PREFIX}
     TMP_DIR         ${ELEMENTAL_BINARY_DIR}/tmp
     STAMP_DIR       ${ELEMENTAL_BINARY_DIR}/stamp
+    #--Download step--------------
     GIT_REPOSITORY  ${ELEMENTAL_URL}
     GIT_TAG         ${ELEMENTAL_TAG}
+    #--Update/Patch step----------
+    PATCH_COMMAND ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp  ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp.ori &&
+                  ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp.ori &&
+                  ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp.ori &&
+                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/Gemm.cpp  ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp &&
+                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/Gemm.hpp ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp &&
+                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/blas.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp
+    #--Configure step-------------
     SOURCE_DIR      ${ELEMENTAL_SOURCE_DIR}
     BINARY_DIR      ${ELEMENTAL_BINARY_DIR}
     BUILD_COMMAND   ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER}
@@ -96,6 +111,8 @@ else()
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=${CMAKE_INSTALL_RPATH_USE_LINK_PATH}
       -D CMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
       -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
+      -D CMAKE_CXX_FLAGS=${EL_CUBLAS_FLAGS}
+      -D CMAKE_EXE_LINKER_FLAGS=${EL_CUBLAS_LINK}
   )
 
   # Get install directory

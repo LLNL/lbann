@@ -72,6 +72,7 @@ INSTALL_LBANN=0
 ALTERNATE_BUILD_DIR=none
 BUILD_SUFFIX=
 SEQ_INIT=OFF
+ELEMENTAL_USE_CUBLAS=1
 
 ################################################################
 # Help message
@@ -367,6 +368,7 @@ cmake \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 -D LBANN_HOME=${ROOT_DIR} \
 -D SEQ_INIT=${SEQ_INIT} \
+-D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
 ${ROOT_DIR}
 EOF
 )
