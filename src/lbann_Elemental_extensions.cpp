@@ -70,45 +70,6 @@ void ColumnSum
     AllReduce( sums.Matrix(), A.ColComm(), mpi::SUM );
 }
 
-template<typename F>
-void ColumnMax( const Matrix<F>& X, Matrix<F>& norms )
-{
-//    DEBUG_ONLY(CSE cse("ColumnMax"))
-
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F* XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
-
-    // Initialize output
-    norms.Resize( n, 1 );
-    Fill( norms, F(-INFINITY) );
-    F* normsBuf = norms.Buffer();
-
-    // Compute maximum over each column
-    EL_PARALLEL_FOR
-    for( Int j=0; j<n; ++j )
-    {
-        for( Int i=0; i<m; ++i ) {
-            normsBuf[j] = Max(normsBuf[j], XBuf[i+j*XLDim]);
-        }
-    }
-
-}
-
-template<typename F,Dist U,Dist V>
-void ColumnMax
-( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& norms )
-{
-//    DEBUG_ONLY(CSE cse("ColumnMax"))
-    const Int n = A.Width();
-    norms.AlignWith( A );
-    norms.Resize( n, 1 );
-    ColumnMax( A.LockedMatrix(), norms.Matrix() );
-    AllReduce( norms.Matrix(), A.ColComm(), mpi::MAX );
-}
-
 LBANN_PROTO_FLOAT
 LBANN_PROTO_DOUBLE
 

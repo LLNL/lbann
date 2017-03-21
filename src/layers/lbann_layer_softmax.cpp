@@ -133,7 +133,7 @@ void lbann::SoftmaxLayer::fp_linearity()
 
   // For each minibatch (column) find the maximimum value
   Zeros(ZsColMax, m_mini_batch_size, 1); // Clear the entire matrix
-  ColumnMax((DistMat&) *m_weighted_sum_v, ZsColMax);
+  ColumnMaxNorms((DistMat) *m_weighted_sum_v, ZsColMax);
 
   // Redistribute the per-minibatch maximum values
   Copy(ZsColMax, ZsColMaxStar);

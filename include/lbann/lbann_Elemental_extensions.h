@@ -33,24 +33,13 @@ namespace El {
   template<typename F,Dist U,Dist V>
     void ColumnSum
     ( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& sums );
-  
-  template<typename F>
-    void ColumnMax( const Matrix<F>& X, Matrix<F>& norms );
-    
-  template<typename F,Dist U,Dist V>
-    void ColumnMax
-    ( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& norms );
 
 #define LBANN_PROTO_DIST(F,U,V) \
   template void ColumnSum \
-  ( const DistMatrix<F,U,V>& X, DistMatrix<F,V,STAR>& norms ); \
-  template void ColumnMax \
   ( const DistMatrix<F,U,V>& X, DistMatrix<F,V,STAR>& norms );
 
 #define LBANN_PROTO(F) \
   template void ColumnSum \
-  ( const Matrix<F>& X, Matrix<F>& norms ); \
-  template void ColumnMax \
   ( const Matrix<F>& X, Matrix<F>& norms ); \
   LBANN_PROTO_DIST(F,MC,  MR  ) \
   LBANN_PROTO_DIST(F,MC,  STAR) \
