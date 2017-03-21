@@ -28,46 +28,19 @@
 
 namespace El {
   template<typename F>
-    void ColumnSum( const Matrix<F>& X, Matrix<Base<F>>& sums );
+    void ColumnSum( const Matrix<F>& X, Matrix<F>& sums );
   
   template<typename F,Dist U,Dist V>
     void ColumnSum
-    ( const DistMatrix<F,U,V>& A, DistMatrix<Base<F>,V,STAR>& sums );
-  
-  template<typename F>
-    void ColumnMax( const Matrix<F>& X, Matrix<Base<F>>& norms );
-    
-  template<typename F,Dist U,Dist V>
-    void ColumnMax
-    ( const DistMatrix<F,U,V>& A, DistMatrix<Base<F>,V,STAR>& norms );
-
-  template<typename F>
-    void ColumnMax( const DistMultiVec<F>& X, Matrix<Base<F>>& norms );
-
-  template<typename F>
-    void ColumnMax( const SparseMatrix<F>& A, Matrix<Base<F>>& norms );
-
-  template<typename F>
-    void ColumnMax
-    ( const DistSparseMatrix<F>& A, DistMultiVec<Base<F>>& norms );
+    ( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& sums );
 
 #define LBANN_PROTO_DIST(F,U,V) \
   template void ColumnSum \
-  ( const DistMatrix<F,U,V>& X, DistMatrix<Base<F>,V,STAR>& norms ); \
-  template void ColumnMax \
-  ( const DistMatrix<F,U,V>& X, DistMatrix<Base<F>,V,STAR>& norms );
+  ( const DistMatrix<F,U,V>& X, DistMatrix<F,V,STAR>& norms );
 
 #define LBANN_PROTO(F) \
   template void ColumnSum \
-  ( const Matrix<F>& X, Matrix<Base<F>>& norms ); \
-  template void ColumnMax \
-  ( const Matrix<F>& X, Matrix<Base<F>>& norms ); \
-  template void ColumnMax \
-  ( const SparseMatrix<F>& A, Matrix<Base<F>>& norms ); \
-  template void ColumnMax \
-  ( const DistSparseMatrix<F>& A, DistMultiVec<Base<F>>& norms ); \
-  template void ColumnMax \
-  ( const DistMultiVec<F>& X, Matrix<Base<F>>& norms ); \
+  ( const Matrix<F>& X, Matrix<F>& norms ); \
   LBANN_PROTO_DIST(F,MC,  MR  ) \
   LBANN_PROTO_DIST(F,MC,  STAR) \
   LBANN_PROTO_DIST(F,MD,  STAR) \

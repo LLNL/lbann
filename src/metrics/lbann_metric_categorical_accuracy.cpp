@@ -78,7 +78,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   Zeros(YsColMaxStar, m_max_mini_batch_size, 1);
 
   /// Compute the error between the previous layers activations and the ground truth
-  ColumnMax((DistMat)predictions_v, YsColMax_v); /// For each minibatch (column) find the maximimum value
+  ColumnMaxNorms((DistMat) predictions_v, YsColMax_v); /// For each minibatch (column) find the maximimum value
   Copy(YsColMax_v, YsColMaxStar_v); /// Give every rank a copy so that they can find the max index locally
 
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix

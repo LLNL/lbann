@@ -35,6 +35,11 @@ fi
 ################################################################
 
 COMPILER=gnu
+if [ "${ARCH}" == "x86_64" ]; then
+  MPI=mvapich2
+elif [ "${ARCH}" == "ppc64le" ]; then
+  MPI=spectrum
+fi
 COMPILER_CC_NAME_VERSION=
 BUILD_TYPE=Release
 Elemental_DIR=
@@ -83,6 +88,7 @@ Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or 'clang').
+  ${C}--mpi${N} <val>             Specify MPI library ('mvapich2' or 'openmpi' or 'spectrum').
   ${C}--verbose${N}               Verbose output.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
@@ -131,6 +137,16 @@ while :; do
       # Choose compiler
       if [ -n "${2}" ]; then
         COMPILER=${2}
+        shift
+      else
+        echo "\"${1}\" option requires a non-empty option argument" >&2
+        exit 1
+      fi
+      ;;
+    --mpi)
+      # Choose mpi library
+      if [ -n "${2}" ]; then
+        MPI=${2}
         shift
       else
         echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -226,11 +242,23 @@ if [ "${COMPILER}" == "gnu" ]; then
     if [ "${ARCH}" == "x86_64" ]; then
       GNU_DIR=/usr/tce/packages/gcc/gcc-4.9.3/bin
       GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-      MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      if [ "${MPI}" == "mvapich2" ]; then
+        MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      elif [ "${MPI}" == "openmpi" ]; then
+        MPI_DIR=/usr/tce/packages/openmpi/openmpi-2.0.0-gcc-4.9.3
+      else
+        echo "Invalid MPI library selected ${MPI}"
+        exit 1
+      fi
     elif [ "${ARCH}" == "ppc64le" ]; then
       GNU_DIR=/usr/tcetmp/packages/gcc/gcc-4.9.3/bin
       GFORTRAN_LIB=/usr/tcetmp/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-      MPI_DIR=/opt/ibm/spectrum_mpi
+      if [ "${MPI}" == "spectrum" ]; then
+        MPI_DIR=/opt/ibm/spectrum_mpi
+      else
+        echo "Invalid MPI library selected ${MPI}"
+        exit 1
+      fi
     fi
   else
     GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
@@ -248,8 +276,8 @@ if [ "${COMPILER}" == "gnu" ]; then
 elif [ "${COMPILER}" == "intel" ]; then
   # Intel compilers
   if [ "${TOSS}" == "3.10.0" ]; then
-    INTEL_DIR=/usr/tce/packages/intel/intel-16.0.4/bin
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-intel-16.0.4
+    INTEL_DIR=/usr/tce/packages/intel/intel-17.0.2/bin
+    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.2
   else
     INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
     MPI_DIR=/usr/local/tools/mvapich2-intel-2.1
