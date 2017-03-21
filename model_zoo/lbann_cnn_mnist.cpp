@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           Int numDims = 2;
-          int inputChannels = 32;
+          Int inputChannels = 32;
           Int inputDims[] = {26, 26};
           Int outputChannels = 32;
           Int filterDims[] = {3, 3};
@@ -288,6 +288,8 @@ int main(int argc, char* argv[])
         dnn.add_callback(&print_cb);
         // lbann_callback_io io_cb({0,3});
         // dnn.add_callback(&io_cb);
+        lbann_callback_timer timer_cb(&summarizer);
+        dnn->add_callback(&timer_cb);
 
         // Summarize information to Tensorboard
         lbann_callback_summary summary_cb(&summarizer, 25);
