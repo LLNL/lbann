@@ -27,7 +27,7 @@ else()
     set(PROTOBUF_URL https://github.com/google/protobuf.git)
   endif()
   if(NOT PROTOBUF_TAG)
-     set(PROTOBUF_TAG "v3.0.2")
+     set(PROTOBUF_TAG "3.2.x")
   endif()
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
 
