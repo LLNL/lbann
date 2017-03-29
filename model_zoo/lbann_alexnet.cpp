@@ -51,11 +51,11 @@ const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/val/"; // "resized_256x256/test/";
+const string g_ImageNet_TestDir = "resized_256x256/test/"; // "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile = "train_c0-9.txt"; // "train.txt";
-const string g_ImageNet_ValLabelFile = "val_c0-9.txt"; // "val.txt";
-const string g_ImageNet_TestLabelFile = "val_c0-9.txt"; //"test.txt";
+const string g_ImageNet_TrainLabelFile =  "train.txt"; // "train_c0-9.txt";
+const string g_ImageNet_ValLabelFile = "val.txt"; // "val_c0-9.txt";
+const string g_ImageNet_TestLabelFile = "test.txt"; //"val_c0-9.txt";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
-        trainParams.DropOut = 0.1;
+        trainParams.DropOut = 0.5;
         trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
         trainParams.PercentageTrainingSamples = 0.80;
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_testset(trainParams.MBSize, true);
+        DataReader_ImageNet imagenet_testset(trainParams.MBSize);
         imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
         imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
         imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
           optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
         }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
         }
 
         // Initialize layer factory
