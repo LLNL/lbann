@@ -386,6 +386,7 @@ int lbann::sequential_model::num_previous_neurons() {
 }
 
 uint lbann::sequential_model::add(const std::string layer_name,
+                                  data_layout data_dist,
                                   const int layer_dim,
                                   const activation_type activation,
                                   const weight_initialization init,
@@ -412,6 +413,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
     if(layer_name.compare("FullyConnected") == 0) {
       Layer* new_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",
+                                                       data_dist,
                                                        layer_index,
                                                        prev_layer_dim,
                                                        layer_dim,
@@ -424,6 +426,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
     } else if(layer_name.compare("Softmax") == 0) {
       Layer* new_layer
         = layer_fac->create_layer<SoftmaxLayer>("Softmax",
+                                                data_dist,
                                                 layer_index,
                                                 prev_layer_dim,
                                                 layer_dim,

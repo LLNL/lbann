@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
         layer_2.add_regularizer(r1);
         pb->add_layer(layer_2);
 
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
         //third layer
         lbann_proto::layer_params layer_3;
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
         layer_3.activation = trainParams.ActivationType;
         layer_3.weight_init = weight_initialization::glorot_uniform;
         pb->add_layer(layer_3);
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
         //fourth layer
         lbann_proto::layer_params layer_4;
@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
         layer_4.activation = activation_type::ID;
         layer_4.weight_init = weight_initialization::glorot_uniform;
         pb->add_layer(layer_4);
-        dnn.add("Softmax", 10, activation_type::ID, weight_initialization::glorot_uniform, {});
+        dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
         //fifth layer
         lbann_proto::layer_params layer_5;

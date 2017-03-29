@@ -67,6 +67,7 @@ lbann::stacked_autoencoder::~stacked_autoencoder() {
 
 //This add hidden layers and their mirrors, input layer is added in base class?
 void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
+                               const data_layout data_dist,
                                const int layer_dim,
                                const activation_type activation,
                                const weight_initialization init,
@@ -86,7 +87,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     if(layer_name == "FullyConnected"){
       Optimizer *new_optimizer = optimizer_fac->create_optimizer();
       Layer* new_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
                                                        m_mini_batch_size, activation, init,
                                                        comm,new_optimizer, regularizers);
@@ -94,7 +95,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
       // create output/mirror layer
       Optimizer *mirror_optimizer = optimizer_fac->create_optimizer();
       Layer* mirror_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size+1,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
                                                        m_mini_batch_size,activation, init,
                                                        comm,mirror_optimizer,regularizers);
@@ -106,7 +107,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     if(layer_name == "FullyConnected"){
       Optimizer *hidden_optimizer = optimizer_fac->create_optimizer();
       Layer* hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
                                                        m_mini_batch_size, activation, init,
                                                        comm,hidden_optimizer, regularizers);
@@ -114,7 +115,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
       // create mirror layer
       Optimizer *mirror_hidden_optimizer = optimizer_fac->create_optimizer();
       Layer* mirror_hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size+1,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
                                                        m_mini_batch_size,activation, init,
                                                        comm,mirror_hidden_optimizer,regularizers);

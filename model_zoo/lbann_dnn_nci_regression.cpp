@@ -221,12 +221,12 @@ int main(int argc, char* argv[])
                                   (int) trainParams.MBSize, data_readers);
         dnn.add(ilayer);
 
-        dnn.add("FullyConnected", 4096, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", 1024, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", 256, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", 64, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", 16, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", 1, activation_type::ID, trainParams.WeightInitType, {});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 4096, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 1024, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 256, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 64, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 16, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 1, activation_type::ID, trainParams.WeightInitType, {});
 
 
         target_layer *tlayer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,

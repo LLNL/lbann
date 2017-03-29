@@ -395,6 +395,7 @@ int main(int argc, char* argv[])
 
         // Layer 9 (fully-connected)
         dnn->add("FullyConnected",
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
@@ -402,6 +403,7 @@ int main(int argc, char* argv[])
 
         // Layer 10 (fully-connected)
         dnn->add("FullyConnected",
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
@@ -409,6 +411,7 @@ int main(int argc, char* argv[])
 
         // Layer 11 (softmax)
         dnn->add("Softmax",
+                 data_layout::MODEL_PARALLEL, 
                  1000,
                  activation_type::ID,
                  weight_initialization::glorot_uniform,

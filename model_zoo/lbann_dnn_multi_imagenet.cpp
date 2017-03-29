@@ -232,13 +232,13 @@ int main(int argc, char* argv[])
     for (int l = 0; l < (int)NumLayers; l++) {
       uint idx;
       if (l < (int)NumLayers-1) {
-        idx = dnn.add("FullyConnected", netParams.Network[l],
+        idx = dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       trainParams.ActivationType,
                       weight_initialization::glorot_uniform,
                       {new dropout(comm, trainParams.DropOut)});
       } else {
         // Add a softmax layer to the end
-        idx = dnn.add("Softmax", netParams.Network[l],
+        idx = dnn.add("Softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       activation_type::ID,
                       weight_initialization::glorot_uniform,
                       {});

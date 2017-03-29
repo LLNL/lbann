@@ -41,7 +41,8 @@ namespace lbann
     class FullyConnectedLayer : public Layer
     {
     public:
-      FullyConnectedLayer(uint index,
+      FullyConnectedLayer(data_layout data_dist,
+                          uint index,
                           int numPrevNeurons,
                           uint numNeurons,
                           uint miniBatchSize,

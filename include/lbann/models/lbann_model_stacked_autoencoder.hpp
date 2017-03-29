@@ -51,6 +51,7 @@ namespace lbann
     ~stacked_autoencoder();
 
     void begin_stack(const std::string layer_name,
+                     data_layout data_dist,
                      int layer_dim,
                      activation_type activation=activation_type::RELU,
                      weight_initialization init=weight_initialization::glorot_uniform,

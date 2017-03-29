@@ -61,9 +61,9 @@ class layer_factory: private base_factory<Layer>
 
     //Access methods
   template <class Derived, class... Args>
-  Layer* create_layer(string layer_label, int layer_index, Args&&... args)
+  Layer* create_layer(string layer_label, data_layout data_dist, int layer_index, Args&&... args)
   {
-    Layer* in_ptr = new Derived(layer_index, std::forward<Args>(args)...);
+    Layer* in_ptr = new Derived(data_dist, layer_index, std::forward<Args>(args)...);
     layer_types::add_method(layer_label, layer_pointer(in_ptr),layer_index);
     return in_ptr;
   }

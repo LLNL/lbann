@@ -174,9 +174,9 @@ int main(int argc, char* argv[])
                                 (int) trainParams.MBSize, data_readers);
       dnn.add(input_layer);
 
-      dnn.add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-      dnn.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-      dnn.add("Softmax", 2, activation_type::ID, weight_initialization::glorot_uniform, {});
+      dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+      dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+      dnn.add("Softmax", data_layout::MODEL_PARALLEL, 2, activation_type::ID, weight_initialization::glorot_uniform, {});
 
 
       target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,

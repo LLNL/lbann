@@ -54,7 +54,8 @@ using namespace El;
 // Z, Zs, Act, Acts structure:
 // [Acts     ]
 
-lbann::FullyConnectedLayer::FullyConnectedLayer(const uint index,
+lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist, 
+                    const uint index,
                     const int numPrevNeurons,
                     const uint numNeurons,
                     const uint miniBatchSize,
@@ -63,7 +64,7 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(const uint index,
                     lbann_comm* comm,
                     Optimizer *optimizer,
                     std::vector<regularizer*> regs)
-  : Layer(data_layout::MODEL_PARALLEL,
+  : Layer(data_dist,
           index, comm, optimizer, miniBatchSize, activationType, regs),
     m_weight_initialization(init),
     m_activation_weights_v(comm->get_model_grid()),

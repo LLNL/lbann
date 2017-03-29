@@ -38,7 +38,8 @@ namespace lbann
     class SoftmaxLayer: public Layer
     {
     public:
-      SoftmaxLayer(uint index,
+      SoftmaxLayer(data_layout data_dist,
+                   uint index,
                    int numPrevNeurons,
                    uint numNeurons,
                    uint miniBatchSize,

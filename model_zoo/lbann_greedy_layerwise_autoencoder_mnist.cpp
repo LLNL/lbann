@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         gla.add(input_layer);
-        gla.add("FullyConnected", 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 
         if (comm->am_world_master()) {
           cout << "Parameter settings:" << endl;
