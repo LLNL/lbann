@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
         dnn.add_metric(new metrics::categorical_accuracy(comm));
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
 
         // First convolution layer
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
                 weight_initialization::glorot_uniform, {});
 
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);

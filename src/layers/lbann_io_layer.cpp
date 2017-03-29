@@ -34,9 +34,13 @@
 using namespace std;
 using namespace El;
 
-lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models, bool for_regression)
-  : Layer(0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
-    m_training_dataset(data_readers[execution_mode::training]),  m_testing_dataset(data_readers[execution_mode::testing]), m_validation_dataset(data_readers[execution_mode::validation]), m_data_sets_span_models(data_sets_span_models), m_for_regression(for_regression)
+lbann::io_layer::io_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models, bool for_regression)
+  : Layer(data_dist, 0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
+    m_training_dataset(data_readers[execution_mode::training]),  
+    m_testing_dataset(data_readers[execution_mode::testing]), 
+    m_validation_dataset(data_readers[execution_mode::validation]), 
+    m_data_sets_span_models(data_sets_span_models), 
+    m_for_regression(for_regression)
 {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();

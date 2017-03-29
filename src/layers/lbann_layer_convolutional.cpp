@@ -62,7 +62,7 @@ convolutional_layer::convolutional_layer(const uint index,
                                          lbann_comm* comm,
                                          Optimizer* optimizer,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, optimizer, mini_batch_size, activation, {}),
+  : Layer(data_layout::DATA_PARALLEL, index, comm, optimizer, mini_batch_size, activation, {}),
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
@@ -93,36 +93,9 @@ convolutional_layer::convolutional_layer(const uint index,
     NumNeurons *= m_output_dims[i];
   }
 
-  // Matrices should be in Star,Star and Star,VC distributions
-  delete m_weights;
-  delete m_weights_gradient;
-  delete m_weighted_sum;
-  delete m_prev_activations;
-  delete m_activations;
-  delete m_prev_error_signal;
-  delete m_error_signal;
-  m_weights             = new StarMat(comm->get_model_grid());
-  m_weights_gradient    = new StarMat(comm->get_model_grid());
-  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
-  m_prev_activations    = new StarVCMat(comm->get_model_grid());
-  m_activations         = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
-  m_error_signal        = new StarVCMat(comm->get_model_grid());
 #ifdef __LIB_CUDNN
   m_weights_gradient_per_gpu = StarMat(comm->get_model_grid());
 #endif // #ifdef __LIB_CUDNN
-
-  // Matrix views should be in Star,Star and Star,VC distributions
-  delete m_weighted_sum_v;
-  delete m_prev_activations_v;
-  delete m_activations_v;
-  delete m_prev_error_signal_v;
-  delete m_error_signal_v;
-  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
-  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
-  m_activations_v       = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 
 #ifdef __LIB_CUDNN
 

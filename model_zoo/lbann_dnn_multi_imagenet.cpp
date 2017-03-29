@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     int NumLayers = netParams.Network.size();
     // initalize neural network (layers)
@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
       layer_indices.insert(idx);
     }
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);

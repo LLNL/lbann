@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
                                                              std::make_pair(execution_mode::validation, &nci_validation_set),
                                                              std::make_pair(execution_mode::testing, &nci_testset)};
 
-      input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io,
+      input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io,
                                 (int) trainParams.MBSize, data_readers);
       gla.add(input_layer);
 

@@ -61,7 +61,7 @@ pooling_layer::pooling_layer(uint index,
                              uint mini_batch_size,
                              lbann_comm* comm,
                              cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, NULL, mini_batch_size, activation_type::ID, {}),
+  : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
     m_pool_mode(_pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels)
 {
@@ -87,30 +87,6 @@ pooling_layer::pooling_layer(uint index,
     m_output_dims[i] = (m_output_dims[i]+pool_strides[i]-1)/pool_strides[i];
     NumNeurons *= m_output_dims[i];
   }
-
-  // Matrices should be in Star,VC distribution
-  delete m_weighted_sum;
-  delete m_prev_activations;
-  delete m_activations;
-  delete m_prev_error_signal;
-  delete m_error_signal;
-  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
-  m_prev_activations    = new StarVCMat(comm->get_model_grid());
-  m_activations         = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
-  m_error_signal        = new StarVCMat(comm->get_model_grid());
-
-  // Matrix views should be in Star,VC distributions
-  delete m_weighted_sum_v;
-  delete m_prev_activations_v;
-  delete m_activations_v;
-  delete m_prev_error_signal_v;
-  delete m_error_signal_v;
-  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
-  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
-  m_activations_v       = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 
 #ifdef __LIB_CUDNN
 

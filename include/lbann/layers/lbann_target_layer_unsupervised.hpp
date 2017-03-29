@@ -34,7 +34,7 @@ namespace lbann
 {
   class target_layer_unsupervised : public target_layer{
   public:
-    target_layer_unsupervised(size_t index,lbann_comm* comm,
+    target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
                               Optimizer* optimizer,
                               const uint miniBatchSize,
                               Layer* original_layer,

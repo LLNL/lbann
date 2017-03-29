@@ -60,14 +60,16 @@ namespace lbann
 
   class Layer {
   public:
-
-    Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
+    Layer(data_layout data_dist, const uint index, lbann_comm* comm, Optimizer *optimizer,
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
 
     virtual ~Layer();
 
     static std::string weight_initialization_name(weight_initialization id);
+
+    void initialize_model_parallel_distribution();
+    void initialize_data_parallel_distribution();
 
     virtual void forwardProp();
     virtual void backProp();
@@ -166,6 +168,7 @@ namespace lbann
     Int m_num_prev_neurons; /// Number of neurons in previous layer
     execution_mode  m_execution_mode;
     activation_type m_activation_type;
+    data_layout m_data_layout;
 
     ElMat *m_weights;            /// Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
     ElMat *m_weights_gradient;   /// Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))

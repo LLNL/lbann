@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
                                                               std::make_pair(execution_mode::validation, &nci_validation_set),
                                                               std::make_pair(execution_mode::testing, &nci_testset)};
 
-        input_layer *ilayer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io,
+        input_layer *ilayer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
                                   (int) trainParams.MBSize, data_readers);
         dnn.add(ilayer);
 
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
         dnn.add("FullyConnected", 1, activation_type::ID, trainParams.WeightInitType, {});
 
 
-        target_layer *tlayer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io,
+        target_layer *tlayer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
                                    (int) trainParams.MBSize, data_readers, true, true);
         if (! tlayer->is_for_regression()) {
             if (comm->am_world_master()) cout << "Target layer is not set for regression" << endl;

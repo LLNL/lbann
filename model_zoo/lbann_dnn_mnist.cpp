@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
         layer_1.num_parallel_readers = parallel_io;
         pb->add_layer(layer_1);
 
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
         
         //second layer
@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
         layer_5.shared_data_reader = true;
         layer_5.for_regression = false;
         pb->add_layer(layer_5);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
         //callbacks @TODO: add to lbann_proto

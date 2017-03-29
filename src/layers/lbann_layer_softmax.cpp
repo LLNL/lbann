@@ -41,7 +41,7 @@ lbann::SoftmaxLayer::SoftmaxLayer(const uint index,
                                   const weight_initialization init,
                                   lbann_comm* comm,
                                   Optimizer *optimizer)
-  :  Layer(index, comm, optimizer, miniBatchSize),
+  :  Layer(data_layout::MODEL_PARALLEL, index, comm, optimizer, miniBatchSize),
      m_weight_initialization(init),
      ZsColMax(comm->get_model_grid()),
      ZsNormExpSum(comm->get_model_grid()),

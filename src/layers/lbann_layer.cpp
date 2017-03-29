@@ -40,10 +40,11 @@
 using namespace std;
 using namespace El;
 
-lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
+lbann::Layer::Layer(data_layout data_dist, const uint index, 
+                    lbann_comm* comm, Optimizer *optimizer,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
-  : m_activation_type(activation), optimizer(optimizer), comm(comm),
+  : m_activation_type(activation), m_data_layout(data_dist), optimizer(optimizer), comm(comm),
     regularizers(regs), m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0),
@@ -68,21 +69,18 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     bp_input_d = NULL;
 #endif
 
-    // Most layers use standard elemental matrix distribution
-    m_weights             = new DistMat(comm->get_model_grid());
-    m_weights_gradient    = new DistMat(comm->get_model_grid());
-    m_weighted_sum        = new DistMat(comm->get_model_grid());
-    m_prev_activations    = new DistMat(comm->get_model_grid());
-    m_activations         = new DistMat(comm->get_model_grid());
-    m_prev_error_signal   = new DistMat(comm->get_model_grid());
-    m_error_signal        = new DistMat(comm->get_model_grid());
-
-    /// Instantiate these view objects but do not allocate data for them
-    m_weighted_sum_v      = new DistMat(comm->get_model_grid());
-    m_prev_activations_v  = new DistMat(comm->get_model_grid());
-    m_activations_v       = new DistMat(comm->get_model_grid());
-    m_prev_error_signal_v = new DistMat(comm->get_model_grid());
-    m_error_signal_v      = new DistMat(comm->get_model_grid());
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      initialize_model_parallel_distribution();
+      break;
+    }
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
@@ -103,6 +101,42 @@ lbann::Layer::~Layer() {
   delete m_error_signal_v;
   delete m_activations_v;
   delete m_prev_activations_v;
+}
+
+/// Matrices should be in MC,MR distributions
+void lbann::Layer::initialize_model_parallel_distribution() {
+  m_weights             = new DistMat(comm->get_model_grid());
+  m_weights_gradient    = new DistMat(comm->get_model_grid());
+  m_weighted_sum        = new DistMat(comm->get_model_grid());
+  m_prev_activations    = new DistMat(comm->get_model_grid());
+  m_activations         = new DistMat(comm->get_model_grid());
+  m_prev_error_signal   = new DistMat(comm->get_model_grid());
+  m_error_signal        = new DistMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new DistMat(comm->get_model_grid());
+  m_prev_activations_v  = new DistMat(comm->get_model_grid());
+  m_activations_v       = new DistMat(comm->get_model_grid());
+  m_prev_error_signal_v = new DistMat(comm->get_model_grid());
+  m_error_signal_v      = new DistMat(comm->get_model_grid());
+}
+
+/// Matrices should be in Star,Star and Star,VC distributions
+void lbann::Layer::initialize_data_parallel_distribution() {
+  m_weights             = new StarMat(comm->get_model_grid());
+  m_weights_gradient    = new StarMat(comm->get_model_grid());
+  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(comm->get_model_grid());
+  m_activations         = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
+  m_error_signal        = new StarVCMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
+  m_activations_v       = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 }
 
 void lbann::Layer::forwardProp() {
@@ -242,6 +276,15 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
+
+#if 0
+  El::Dist U = m_weights->ColDist();
+  El::Dist V = m_weights->RowDist();
+  std::cout << "m_weights has dist " << U << " by " << V << std::endl;
+  U = m_activations->ColDist();
+  V = m_activations->RowDist();
+  std::cout << "m_activations has dist " << U << " by " << V << std::endl;
+#endif
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 

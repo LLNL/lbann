@@ -35,8 +35,8 @@ using namespace std;
 using namespace El;
 
 
-lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
-  : input_layer(comm, mini_batch_size, data_readers, regs), Xs(comm->get_model_grid())
+lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+  : input_layer(data_dist, comm, mini_batch_size, data_readers, regs), Xs(comm->get_model_grid())
 {
 
   m_type = layer_type::input_distributed_minibatch;

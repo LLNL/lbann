@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
 
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         gla.add(input_layer);
         gla.add("FullyConnected", 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
 

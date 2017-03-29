@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset),
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set),
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         gla->add(input_layer);
         gla->add("FullyConnected", 10000, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
         gla->add("FullyConnected", 5000, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm,trainParams.DropOut)});

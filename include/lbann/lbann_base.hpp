@@ -52,6 +52,9 @@ typedef El::ElementalMatrix<DataType> ElMat;
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, invalid};
 
+/// Data layout that is optimized for different modes of parallelism
+enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL};
+
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
 static const char* __attribute__((used)) _to_string(execution_mode m) { 
