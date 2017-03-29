@@ -27,16 +27,18 @@
 #include "El.hpp"
 
 namespace El {
-  template<typename F>
-    void ColumnSum( const Matrix<F>& X, Matrix<F>& sums );
+
+template<typename F>
+void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
   
-  template<typename F,Dist U,Dist V>
-    void ColumnSum
-    ( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& sums );
+template<typename F,Dist U,Dist V,DistWrap W>
+void ColumnSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums);
 
 #define LBANN_PROTO_DIST(F,U,V) \
   template void ColumnSum \
-  ( const DistMatrix<F,U,V>& X, DistMatrix<F,V,STAR>& norms );
+  (const DistMatrix<F,U,V,ELEMENT>& X, DistMatrix<F,V,STAR,ELEMENT>& norms); \
+  template void ColumnSum \
+  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,V,STAR,BLOCK>& norms);
 
 #define LBANN_PROTO(F) \
   template void ColumnSum \

@@ -58,9 +58,9 @@ void ColumnSum( const Matrix<F>& X, Matrix<F>& sums )
 
 }
 
-template<typename F,Dist U,Dist V>
+template<typename F,Dist U,Dist V,DistWrap W>
 void ColumnSum
-( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& sums )
+( const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums )
 {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
     const Int n = A.Width();
