@@ -193,5 +193,47 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
   mat.ProcessQueues();
 }
 
+
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out) {
+  switch(initialization) {
+  case weight_initialization::uniform:
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), DataType(1));
+    break;
+  case weight_initialization::normal:
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), DataType(1));
+    break;
+  case weight_initialization::glorot_normal: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::glorot_uniform: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::he_normal: {
+    const DataType var = 1.0 / fan_in;
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::he_uniform: {
+    const DataType var = 1.0 / fan_in;
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::zero: // Zero initialization is default
+  default:
+    Zero(matrix_v);
+    break;
+  }
+}
+
 }  // namespace lbann
 

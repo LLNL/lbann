@@ -52,6 +52,8 @@ namespace lbann
                           Optimizer *optimizer,
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
+      void initialize_model_parallel_distribution();
+      void initialize_data_parallel_distribution();
       void setup(int numPrevNeurons);
       void fp_set_std_matrix_view();
       bool update();
@@ -67,14 +69,14 @@ namespace lbann
       const weight_initialization m_weight_initialization;
 
       /// Views of the weight matrix that allow you to separate activation weights from bias weights
-      DistMat m_activation_weights_v;
-      DistMat m_bias_weights_v;
-      DistMat m_activation_weights_gradient_v;
-      DistMat m_bias_weights_gradient_v;
+      ElMat *m_activation_weights_v;
+      ElMat *m_bias_weights_v;
+      ElMat *m_activation_weights_gradient_v;
+      ElMat *m_bias_weights_gradient_v;
 
       /// Special matrices to allow backprop across the bias term
-      DistMat m_bias_bp_t;
-      DistMat m_bias_bp_t_v;
+      ElMat *m_bias_bp_t;
+      ElMat *m_bias_bp_t_v;
       DataType m_bias_term;
 
     public:

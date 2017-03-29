@@ -36,6 +36,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/io/lbann_persist.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include <vector>
 #include <string>
 
@@ -79,6 +80,7 @@ namespace lbann
     Optimizer_factory() {}
     virtual ~Optimizer_factory() {}
     virtual Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR) { return nullptr; };
+    virtual Optimizer *create_optimizer(data_layout format=data_layout::MODEL_PARALLEL) { return nullptr; };
     virtual const string name() = 0;
   };
 }

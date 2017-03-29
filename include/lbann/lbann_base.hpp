@@ -54,6 +54,20 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, invalid};
 
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL};
+static const matrix_format __attribute__((used)) data_layout_to_matrix_format(data_layout layout) {
+  matrix_format format;
+  switch(layout) {
+  case data_layout::MODEL_PARALLEL:
+    format = matrix_format::MC_MR;
+    break;
+  case data_layout::DATA_PARALLEL:
+    format = matrix_format::STAR_VC;
+    break;
+  default:
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + "Invalid data layout selected");
+  }
+  return format;
+}
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};

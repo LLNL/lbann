@@ -191,6 +191,9 @@ public:
                float rho2 = 0.999f, float eps = 1e-8f);
   ~Adam_factory();
   Optimizer* create_optimizer(matrix_format format = matrix_format::MC_MR);
+  Optimizer *create_optimizer(data_layout layout=data_layout::MODEL_PARALLEL) { 
+    return create_optimizer(data_layout_to_matrix_format(layout));
+  };
   const string name() { return "adam"; }
 private:
   lbann_comm* comm;

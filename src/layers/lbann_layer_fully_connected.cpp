@@ -66,13 +66,7 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist,
                     std::vector<regularizer*> regs)
   : Layer(data_dist,
           index, comm, optimizer, miniBatchSize, activationType, regs),
-    m_weight_initialization(init),
-    m_activation_weights_v(comm->get_model_grid()),
-    m_bias_weights_v(comm->get_model_grid()),
-    m_activation_weights_gradient_v(comm->get_model_grid()),
-    m_bias_weights_gradient_v(comm->get_model_grid()),
-    m_bias_bp_t(comm->get_model_grid()),
-    m_bias_bp_t_v(comm->get_model_grid())
+    m_weight_initialization(init)
 {
 
     m_type = layer_type::fully_connected;
@@ -81,9 +75,47 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist,
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;
     m_bias_term = 1.0;
+
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+    }
 }
 
 lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
+
+/// Matrices should be in MC,MR distributions
+void lbann::FullyConnectedLayer::initialize_model_parallel_distribution() {
+  m_bias_bp_t                       = new DistMat(comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new DistMat(comm->get_model_grid());
+  m_bias_weights_v                 = new DistMat(comm->get_model_grid());
+  m_activation_weights_gradient_v  = new DistMat(comm->get_model_grid());
+  m_bias_weights_gradient_v        = new DistMat(comm->get_model_grid());
+  m_bias_bp_t_v                    = new DistMat(comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void lbann::FullyConnectedLayer::initialize_data_parallel_distribution() {
+  m_bias_bp_t                       = new StarVCMat(comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new StarMat(comm->get_model_grid());
+  m_bias_weights_v                 = new StarMat(comm->get_model_grid());
+  m_activation_weights_gradient_v  = new StarMat(comm->get_model_grid());
+  m_bias_weights_gradient_v        = new StarMat(comm->get_model_grid());
+  m_bias_bp_t_v                    = new StarVCMat(comm->get_model_grid());
+}
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);
@@ -91,53 +123,17 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }
 
-    // Initialize weight-bias matrix
+    // Initialize (zero) weight-bias matrix
     // Note that the weight-bias matrix has an extra column so that it will include
     // the bias term from the previous layer's activations in the linear combination
     Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
 
-    /// Given that we don't include the bias term here does that mean that we are setting it to zero to start with
-    // Initialize weights
-    DistMat weights;
-    View(weights, *m_weights, ALL, IR(0,numPrevNeurons));
-    switch(m_weight_initialization) {
-    case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
-    case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
-    case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::he_normal: {
-      const DataType var = 1.0 / numPrevNeurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / numPrevNeurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
-    }
+    /// Setup independent views of the weight matrix for the activations and bias terms
+    View(*m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
+
+    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
 
     // Initialize other matrices
     Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
@@ -147,16 +143,12 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
 
-    /// Setup independent views of the weight matrix for the activations and bias terms
-    View(m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
-    View(m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
-
     /// Setup independent views of the weights gradient matrix for the activations and bias terms
-    View(m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
-    View(m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
+    View(*m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
 
     /// Create a "transposed" vector of the bias term for use in backprop
-    Ones(m_bias_bp_t, m_mini_batch_size, 1);
+    Ones(*m_bias_bp_t, m_mini_batch_size, 1);
 }
 
 void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
@@ -166,7 +158,7 @@ void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
 
   /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
   /// limit the height, not the width
-  View(m_bias_bp_t_v, m_bias_bp_t, IR(0, cur_mini_batch_size), IR(0, m_bias_bp_t.Width()));
+  View(*m_bias_bp_t_v, *m_bias_bp_t, IR(0, cur_mini_batch_size), IR(0, m_bias_bp_t->Width()));
 }
 
 void lbann::FullyConnectedLayer::fp_linearity()
@@ -174,8 +166,20 @@ void lbann::FullyConnectedLayer::fp_linearity()
   // Apply forward prop linearity
 
   // Apply bias
-  DistMatrix<DataType,MC,STAR> bias_weights_mc_star(m_bias_weights_v);
-  const Mat& local_bias_weights = bias_weights_mc_star.Matrix();
+  ElMat *bias_weights_repl;
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    bias_weights_repl = new DistMatrix<DataType,MC,STAR>(*m_bias_weights_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    bias_weights_repl = new StarMat(*m_bias_weights_v);
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
+  const Mat& local_bias_weights = bias_weights_repl->Matrix();
   IndexDependentFill(m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
                      ([&local_bias_weights](El::Int r, El::Int c)->DataType {
                        return local_bias_weights.Get(r);
@@ -183,7 +187,7 @@ void lbann::FullyConnectedLayer::fp_linearity()
   Scale(m_bias_term, *m_weighted_sum_v);
 
   // Apply weight matrix
-  Gemm(NORMAL, NORMAL, DataType(1), m_activation_weights_v, *m_prev_activations_v,
+  Gemm(NORMAL, NORMAL, DataType(1), *m_activation_weights_v, *m_prev_activations_v,
        DataType(1), *m_weighted_sum_v);
 
   // Copy result to output matrix
@@ -193,14 +197,14 @@ void lbann::FullyConnectedLayer::fp_linearity()
 void lbann::FullyConnectedLayer::bp_linearity()
 {
   // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, DataType(1), m_activation_weights_v, *m_prev_error_signal_v,
+  Gemm(TRANSPOSE, NORMAL, DataType(1), *m_activation_weights_v, *m_prev_error_signal_v,
        DataType(0), *m_error_signal_v);
   // Compute update for activation weights
   Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, DataType(0), m_activation_weights_gradient_v);
+       *m_prev_activations_v, DataType(0), *m_activation_weights_gradient_v);
   // Compute update for bias terms
   Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       m_bias_bp_t_v, DataType(0), m_bias_weights_gradient_v);
+       *m_bias_bp_t_v, DataType(0), *m_bias_weights_gradient_v);
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {

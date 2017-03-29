@@ -393,7 +393,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
                                   std::vector<regularizer*> regularizers)
 {
     const int layer_index = m_layers.size();
-    Optimizer *optimizer = optimizer_fac->create_optimizer();
+    Optimizer *optimizer = optimizer_fac->create_optimizer(data_dist);
 
     // Get properties of previous layer
     int prev_layer_dim = -1;

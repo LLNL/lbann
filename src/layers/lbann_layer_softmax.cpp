@@ -62,50 +62,11 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons, NumNeurons);
     }
 
-    // Initialize weight-bias matrix
+    // Zero the weight-bias matrix
     Zeros(*m_weights, NumNeurons, numPrevNeurons);
 
-    // Initialize weights
-    DistMat weights;
-    View(weights, *m_weights, IR(0,NumNeurons), IR(0,numPrevNeurons));
-    switch(m_weight_initialization) {
-    case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
-    case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
-    case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::he_normal: {
-      const DataType var = 1.0 / numPrevNeurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / numPrevNeurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
-    }
+    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, NumNeurons);
 
     // Initialize other matrices
     Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);

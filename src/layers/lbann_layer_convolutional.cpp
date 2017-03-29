@@ -223,45 +223,8 @@ void convolutional_layer::setup(const int num_prev_neurons)
   View(filter, *m_weights, IR(0,m_filter_size), ALL);
   const Int fan_in = m_filter_size / m_num_output_channels;
   const Int fan_out = m_filter_size / m_num_input_channels;
-  switch(m_weight_initialization) {
-  case weight_initialization::uniform:
-    uniform_fill(filter, filter.Height(), filter.Width(),
-                 DataType(0), DataType(1));
-    break;
-  case weight_initialization::normal:
-    gaussian_fill(filter, filter.Height(), filter.Width(),
-                  DataType(0), DataType(1));
-    break;
-  case weight_initialization::glorot_normal: {
-    const DataType var = 2.0 / (fan_in + fan_out);
-    gaussian_fill(filter, filter.Height(), filter.Width(),
-                  DataType(0), sqrt(var));
-    break;
-  }
-  case weight_initialization::glorot_uniform: {
-    const DataType var = 2.0 / (fan_in + fan_out);
-    uniform_fill(filter, filter.Height(), filter.Width(),
-                 DataType(0), sqrt(3*var));
-    break;
-  }
-  case weight_initialization::he_normal: {
-    const DataType var = 1.0 / fan_in;
-    gaussian_fill(filter, filter.Height(), filter.Width(),
-                  DataType(0), sqrt(var));
-    break;
-  }
-  case weight_initialization::he_uniform: {
-    const DataType var = 1.0 / fan_in;
-    uniform_fill(filter, filter.Height(), filter.Width(),
-                 DataType(0), sqrt(3*var));
-    break;
-  }
-  case weight_initialization::zero: // Zero initialization is default
-  default:
-    Zero(filter);
-    break;
-  }
-  
+  initialize_matrix(filter, m_weight_initialization, fan_in, fan_out);
+
   // Initialize optimizer
   optimizer->setup(1, m_filter_size+m_num_output_channels);
   

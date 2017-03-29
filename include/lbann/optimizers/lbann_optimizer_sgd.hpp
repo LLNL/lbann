@@ -158,6 +158,9 @@ namespace lbann
     SGD_factory(lbann_comm* comm, float lr=0.01, float momentum=0.3, float decay=0.0, bool nesterov=false);
     ~SGD_factory();
     Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR);
+    Optimizer *create_optimizer(data_layout layout=data_layout::MODEL_PARALLEL) { 
+      return create_optimizer(data_layout_to_matrix_format(layout));
+    };
     const string name() { return "sgd"; }
   public:
     lbann_comm* comm;

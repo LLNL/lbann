@@ -78,8 +78,9 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
       initialize_data_parallel_distribution();
       break;
     default:
-      initialize_model_parallel_distribution();
-      break;
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
     }
 
     // Initialize activation function
@@ -121,7 +122,7 @@ void lbann::Layer::initialize_model_parallel_distribution() {
   m_error_signal_v      = new DistMat(comm->get_model_grid());
 }
 
-/// Matrices should be in Star,Star and Star,VC distributions
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::Layer::initialize_data_parallel_distribution() {
   m_weights             = new StarMat(comm->get_model_grid());
   m_weights_gradient    = new StarMat(comm->get_model_grid());
