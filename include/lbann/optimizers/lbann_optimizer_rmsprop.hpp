@@ -54,7 +54,7 @@ namespace lbann
 
   private:
     static inline DataType _sq(const DataType& x) { return (x * x); }
-    static inline DataType _sqrt(const DataType& x) { return (1 / sqrt(x + 1e-8)); }
+    static inline DataType _sqrt(const DataType& x) { return (DataType(1) / sqrt(x + DataType(1e-8))); }
 
   public:
     RMSprop(lbann_comm* comm, float lr, float rho)
@@ -94,7 +94,7 @@ namespace lbann
       Copy(WB_D, WB_D_Temp);
       EntrywiseMap(WB_D_Temp, std::function<DataType(const DataType&)>(_sq));
       Scale(1 - rho /*DecayRate*/, WB_D_Temp);
-      Axpy(1., WB_D_Temp, WB_D_Cache);
+      Axpy((DataType) 1, WB_D_Temp, WB_D_Cache);
 
       // update parameters
       // KERAS: new_p = p - self.lr * g / K.sqrt(new_a + self.epsilon)
