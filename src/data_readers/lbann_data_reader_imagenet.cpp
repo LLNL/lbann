@@ -75,10 +75,9 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
   int pixelcount = m_image_width * m_image_height * m_image_depth;
   int current_batch_size = getBatchSize();
 
-  int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
-      break;
+  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+#pragma omp parallel for
+  for (int n = CurrentPos; n < end_pos; ++n) {
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
@@ -102,7 +101,7 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     normalize(pixel_col, m_image_depth);
   }
 
-  return (n - CurrentPos);
+  return end_pos - CurrentPos;
 }
 
 int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
