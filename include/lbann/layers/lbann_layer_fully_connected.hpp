@@ -77,6 +77,7 @@ namespace lbann
       /// Special matrices to allow backprop across the bias term
       ElMat *m_bias_bp_t;
       ElMat *m_bias_bp_t_v;
+      ElMat *m_bias_weights_repl;
       DataType m_bias_term;
 
     public:

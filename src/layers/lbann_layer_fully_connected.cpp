@@ -91,11 +91,20 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist,
     }
 }
 
-lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
+lbann::FullyConnectedLayer::~FullyConnectedLayer() {
+  delete m_bias_bp_t;
+  delete m_bias_weights_repl;
+  delete m_activation_weights_v;
+  delete m_bias_weights_v;
+  delete m_activation_weights_gradient_v;
+  delete m_bias_weights_gradient_v;
+  delete m_bias_bp_t_v;
+}
 
 /// Matrices should be in MC,MR distributions
 void lbann::FullyConnectedLayer::initialize_model_parallel_distribution() {
-  m_bias_bp_t                       = new DistMat(comm->get_model_grid());
+  m_bias_bp_t                      = new DistMat(comm->get_model_grid());
+  m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
   m_activation_weights_v           = new DistMat(comm->get_model_grid());
@@ -107,7 +116,8 @@ void lbann::FullyConnectedLayer::initialize_model_parallel_distribution() {
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::FullyConnectedLayer::initialize_data_parallel_distribution() {
-  m_bias_bp_t                       = new StarVCMat(comm->get_model_grid());
+  m_bias_bp_t                      = new StarVCMat(comm->get_model_grid());
+  m_bias_weights_repl              = new StarMat(comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
   m_activation_weights_v           = new StarMat(comm->get_model_grid());
@@ -166,20 +176,8 @@ void lbann::FullyConnectedLayer::fp_linearity()
   // Apply forward prop linearity
 
   // Apply bias
-  ElMat *bias_weights_repl;
-  switch(m_data_layout) {
-  case data_layout::MODEL_PARALLEL:
-    bias_weights_repl = new DistMatrix<DataType,MC,STAR>(*m_bias_weights_v);
-    break;
-  case data_layout::DATA_PARALLEL:
-    bias_weights_repl = new StarMat(*m_bias_weights_v);
-    break;
-  default:
-    throw lbann_exception(std::string{} + __FILE__ + " " +
-                          std::to_string(__LINE__) +
-                          "Invalid data layout selected");
-  }
-  const Mat& local_bias_weights = bias_weights_repl->Matrix();
+  Copy(*m_bias_weights_v, *m_bias_weights_repl);
+  const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
   IndexDependentFill(m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
                      ([&local_bias_weights](El::Int r, El::Int c)->DataType {
                        return local_bias_weights.Get(r);
