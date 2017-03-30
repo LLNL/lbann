@@ -34,46 +34,51 @@
 
 namespace lbann
 {
-    // CLayer : dense layer class
-    class SoftmaxLayer: public Layer
-    {
-    public:
-      SoftmaxLayer(data_layout data_dist,
-                   uint index,
-                   int numPrevNeurons,
-                   uint numNeurons,
-                   uint miniBatchSize,
-                   weight_initialization init,
-                   lbann_comm* comm,
-                   Optimizer *optimizer);
-        void setup(int numPrevNeurons);
-        bool update();
-        DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
-        //        void updateMB(const float LearnRate);
-        DataType WBL2norm();
+  class SoftmaxLayer: public Layer
+  {
+  public:
+    SoftmaxLayer(data_layout data_dist,
+                 uint index,
+                 int numPrevNeurons,
+                 uint numNeurons,
+                 uint miniBatchSize,
+                 weight_initialization init,
+                 lbann_comm* comm,
+                 Optimizer *optimizer);
+    ~SoftmaxLayer();
+    void initialize_model_parallel_distribution();
+    void initialize_data_parallel_distribution();
+    void setup(int numPrevNeurons);
+    bool update();
+    DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
+    //        void updateMB(const float LearnRate);
+    DataType WBL2norm();
 
-    protected:
-      void fp_linearity();
-      void bp_linearity();
-      void fp_nonlinearity() {}
-      void bp_nonlinearity() {}
+  protected:
+    void fp_linearity();
+    void bp_linearity();
+    void fp_nonlinearity() {}
+    void bp_nonlinearity() {}
 
-    public:
-        DataType   WBL2NormSum;
+  public:
+    DataType   WBL2NormSum;
 
-        bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
-        bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
-        bool saveToCheckpointShared(persist& p);
-        bool loadFromCheckpointShared(persist& p);
+    bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    bool saveToCheckpointShared(persist& p);
+    bool loadFromCheckpointShared(persist& p);
 
-    private:
-        weight_initialization m_weight_initialization;
-        ColSumMat ZsColMax;
-        ColSumMat ZsNormExpSum;
-        ColSumMat norms;
-        StarMat ZsColMaxStar;
-        StarMat ZsNormExpSumStar;
-    };
+  private:
+    weight_initialization m_weight_initialization;
+    ColSumMat ZsColMax;
+    ColSumMat ZsNormExpSum;
+    ColSumMat norms;
+    StarMat ZsColMaxStar;
+    StarMat ZsNormExpSumStar;
+
+    ElMat *m_curr_prev_error_signal_v;
+    ElMat *m_curr_activations_v;
+  };
 }
 
 

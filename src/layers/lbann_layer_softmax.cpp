@@ -54,6 +54,39 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
     Index = index;
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;
+
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+    }
+}
+
+lbann::SoftmaxLayer::~SoftmaxLayer() {
+  delete m_curr_prev_error_signal_v;
+  delete m_curr_activations_v;
+}
+
+/// Matrices should be in MC,MR distributions
+void lbann::SoftmaxLayer::initialize_model_parallel_distribution() {
+  /// Instantiate these view objects but do not allocate data for them
+  m_curr_prev_error_signal_v = new DistMat(comm->get_model_grid());
+  m_curr_activations_v       = new DistMat(comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void lbann::SoftmaxLayer::initialize_data_parallel_distribution() {
+  /// Instantiate these view objects but do not allocate data for them
+  m_curr_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
+  m_curr_activations_v       = new StarVCMat(comm->get_model_grid());
 }
 
 void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
@@ -167,12 +200,11 @@ void lbann::SoftmaxLayer::bp_linearity()
   // Note: error_signal = (prev_error_signal - prev_error_signal^T activations) * activations
   else {
     StarMat prev_error_signal_dot_activations(get_effective_minibatch_size(), 1);
-    DistMat curr_prev_error_signal, curr_activations;
     DataType curr_dot_product;
     for(Int c = 0; c < get_effective_minibatch_size(); c++) {
-      LockedView(curr_prev_error_signal, *m_prev_error_signal, ALL, IR(c));
-      LockedView(curr_activations, *m_activations, ALL, IR(c));
-      curr_dot_product = Dot(curr_prev_error_signal, curr_activations);
+      LockedView(*m_curr_prev_error_signal_v, *m_prev_error_signal, ALL, IR(c));
+      LockedView(*m_curr_activations_v, *m_activations, ALL, IR(c));
+      curr_dot_product = Dot(*m_curr_prev_error_signal_v, *m_curr_activations_v);
       prev_error_signal_dot_activations.SetLocal(c, 0, curr_dot_product);
     }
     IndexDependentMap(*m_prev_error_signal_v,
