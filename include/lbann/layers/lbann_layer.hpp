@@ -56,6 +56,33 @@ namespace lbann
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
       target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
       INVALID};
+  static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
+    switch(l) {
+    case layer_type::fully_connected:
+      return "fully_connected";
+    case layer_type::softmax:
+      return "softmax";
+    case layer_type::convolution:
+      return "convolution";
+    case layer_type::pooling:
+      return "pooling";
+    case layer_type::input_distributed_minibatch:
+      return "input_distributed_minibatch";
+    case layer_type::input_distributed_minibatch_parallel_io:
+      return "input_distributed_minibatch_parallel_io";
+    case layer_type::target_distributed_minibatch:
+      return "target_distributed_minibatch";
+    case layer_type::target_distributed_minibatch_parallel_io:
+      return "target_distributed_minibatch_parallel_io";
+    case layer_type::target_unsupervised:
+      return "target_unsupervised";
+    case layer_type::INVALID:
+      return "INVALID";
+    default:
+      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
+    }
+    return NULL;
+  }
 
 
   class Layer {
