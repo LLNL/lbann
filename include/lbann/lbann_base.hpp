@@ -61,10 +61,11 @@ static const matrix_format __attribute__((used)) data_layout_to_matrix_format(da
     format = matrix_format::MC_MR;
     break;
   case data_layout::DATA_PARALLEL:
-    format = matrix_format::STAR_VC;
+    /// Weights are stored in STAR_STAR and data in STAR_VC
+    format = matrix_format::STAR_STAR;
     break;
   default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + "Invalid data layout selected");
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid data layout selected");
   }
   return format;
 }
