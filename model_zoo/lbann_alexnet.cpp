@@ -399,7 +399,7 @@ int main(int argc, char* argv[])
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
-                 {new dropout(comm, 0.5)});
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
 
         // Layer 10 (fully-connected)
         dnn->add("FullyConnected",
@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
-                 {new dropout(comm, 0.5)});
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
 
         // Layer 11 (softmax)
         dnn->add("Softmax",

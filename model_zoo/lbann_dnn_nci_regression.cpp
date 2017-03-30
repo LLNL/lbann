@@ -221,11 +221,11 @@ int main(int argc, char* argv[])
                                   (int) trainParams.MBSize, data_readers);
         dnn.add(ilayer);
 
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 4096, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 1024, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 256, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 64, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 16, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 4096, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 1024, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 256, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 64, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 16, trainParams.ActivationType, trainParams.WeightInitType, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
         dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 1, activation_type::ID, trainParams.WeightInitType, {});
 
 
