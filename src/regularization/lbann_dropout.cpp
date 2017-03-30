@@ -99,18 +99,15 @@ void dropout::fp_activations() {
   Mat local_acts = acts->Matrix();
 
   // Construct dropout mask
-  // Note: Construct Bernoulli matrix and scale by
-  //   1/m_keep_prob. Entries corresponding to bias row are set to 1
-  //   to ensure that mask doesn't affect bias row. This
-  //   implementation assumes 'acts' is in MC,MR; Star,VC; Star,VR; or
-  //   similar format.
-  Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
-  *m_cur_mask *= 1.0 / m_keep_prob;
-  if (acts->GlobalRow(local_height - 1) == global_height - 1) {
-    for (Int col = 0; col < local_width; ++col) {
-      m_cur_mask->Set(local_height - 1, col, 1.0f);
-    }
-  }
+  // Note: Construct Bernoulli matrix and scale by 1/m_keep_prob.
+  m_cur_mask->Resize(local_height, local_width);
+  EntrywiseMap(*m_cur_mask,
+               (std::function<DataType(const DataType&)>)
+               ([this](const DataType& z)->DataType {
+                 auto& gen = get_fast_generator();
+                 std::bernoulli_distribution dist(m_keep_prob);
+                 return dist(gen) ? DataType(1) / m_keep_prob : DataType(0);
+               }));
   // Apply dropout mask to local activations
   Hadamard(local_acts, *m_cur_mask, local_acts);
 #endif  // LBANN_PROCDET_DROPOUT
