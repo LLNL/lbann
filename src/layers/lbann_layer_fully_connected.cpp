@@ -91,61 +91,15 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }
 
-    // Initialize weight-bias matrix
-    // Note that the weight-bias matrix has an extra column so that it will include
-    // the bias term from the previous layer's activations in the linear combination
+    // Initialize matrices
+    // Note: the weights matrix has an extra column so it includes bias term
     Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
-
-    /// Given that we don't include the bias term here does that mean that we are setting it to zero to start with
-    // Initialize weights
-    DistMat weights;
-    View(weights, *m_weights, ALL, IR(0,numPrevNeurons));
-    switch(m_weight_initialization) {
-    case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
-    case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
-    case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::he_normal: {
-      const DataType var = 1.0 / numPrevNeurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / numPrevNeurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
-    }
-
-    // Initialize other matrices
     Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
     Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations and bias terms
     View(m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
@@ -154,6 +108,50 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     /// Setup independent views of the weights gradient matrix for the activations and bias terms
     View(m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
     View(m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
+
+    /// Given that we don't include the bias term here does that mean that we are setting it to zero to start with
+    // Initialize weights
+    switch(m_weight_initialization) {
+    case weight_initialization::uniform:
+      uniform_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                   DataType(0), DataType(1));
+      break;
+    case weight_initialization::normal:
+      gaussian_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                    DataType(0), DataType(1));
+      break;
+    case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      gaussian_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                    DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
+      uniform_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::he_normal: {
+      const DataType var = 1.0 / numPrevNeurons;
+      gaussian_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                    DataType(0), sqrt(var));
+      break;
+    }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / numPrevNeurons;
+      uniform_fill(m_activation_weights_v, NumNeurons, numPrevNeurons,
+                   DataType(0), sqrt(3*var));
+      break;
+    }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(m_activation_weights_v);
+      break;
+    }
+
+    // Initialize bias to 1
+    Fill(m_bias_weights_v, DataType(1));
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(m_bias_bp_t, m_mini_batch_size, 1);
