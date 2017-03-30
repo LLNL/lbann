@@ -189,15 +189,15 @@ int main(int argc, char* argv[])
     uint fcidx1 = dnn.add(
       "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(comm, trainParams.DropOut)});
+      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     uint fcidx2 = dnn.add(
       "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(comm, trainParams.DropOut)});
+      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     uint fcidx3 = dnn.add(
       "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(comm, trainParams.DropOut)});
+      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     uint smidx = dnn.add(
       "Softmax", data_layout::MODEL_PARALLEL, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});

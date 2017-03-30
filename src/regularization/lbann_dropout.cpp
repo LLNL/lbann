@@ -34,12 +34,45 @@ using namespace El;
 
 namespace lbann {
 
-dropout::dropout(lbann_comm* comm, float keep_prob) :
+dropout::dropout(data_layout data_dist, lbann_comm* comm, float keep_prob) :
   comm(comm), m_keep_prob(keep_prob)
+{
+  // Setup the data distribution
+  switch(data_dist) {
+  case data_layout::MODEL_PARALLEL:
+    initialize_model_parallel_distribution();
+    break;
+  case data_layout::DATA_PARALLEL:
+    initialize_data_parallel_distribution();
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
+}
+
+dropout::~dropout() {
+  delete m_cur_mask;
+}
+
+/// Matrices should be in MC,MR distributions
+void dropout::initialize_model_parallel_distribution() {
 #ifdef LBANN_PROCDET_DROPOUT
-  , m_cur_mask(comm->get_model_grid())
+  m_cur_mask = new DistMat(comm->get_model_grid());
+#else
+  m_cur_mask = new Mat;
 #endif
-{}
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void dropout::initialize_data_parallel_distribution() {
+#ifdef LBANN_PROCDET_DROPOUT
+  m_cur_mask = new StarMat(comm->get_model_grid());
+#else
+  m_cur_mask = new Mat;
+#endif
+}
 
 void dropout::fp_activations() {
   // Terminate early if dropout is disabled
@@ -53,15 +86,15 @@ void dropout::fp_activations() {
   const Int global_height = acts->Height();
 
 #ifdef LBANN_PROCDET_DROPOUT
-  bernoulli_fill_procdet(m_cur_mask, acts->Height(), acts->Width(),
+  bernoulli_fill_procdet(*m_cur_mask, acts->Height(), acts->Width(),
                          m_keep_prob);
-  m_cur_mask *= 1.0 / m_keep_prob;
+  *m_cur_mask *= 1.0 / m_keep_prob;
   if (acts->GlobalRow(local_height - 1) == global_height - 1) {
     for (Int col = 0; col < local_width; ++col) {
-      m_cur_mask.SetLocal(local_height - 1, col, 1.0f);
+      m_cur_mask->SetLocal(local_height - 1, col, 1.0f);
     }
   }
-  Hadamard(*acts, m_cur_mask, *acts);
+  Hadamard(*acts, *m_cur_mask, *acts);
 #else
   Mat local_acts = acts->Matrix();
 
@@ -71,15 +104,15 @@ void dropout::fp_activations() {
   //   to ensure that mask doesn't affect bias row. This
   //   implementation assumes 'acts' is in MC,MR; Star,VC; Star,VR; or
   //   similar format.
-  Bernoulli(m_cur_mask, local_height, local_width, m_keep_prob);
-  m_cur_mask *= 1.0 / m_keep_prob;
+  Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
+  *m_cur_mask *= 1.0 / m_keep_prob;
   if (acts->GlobalRow(local_height - 1) == global_height - 1) {
     for (Int col = 0; col < local_width; ++col) {
-      m_cur_mask.Set(local_height - 1, col, 1.0f);
+      m_cur_mask->Set(local_height - 1, col, 1.0f);
     }
   }
   // Apply dropout mask to local activations
-  Hadamard(local_acts, m_cur_mask, local_acts);
+  Hadamard(local_acts, *m_cur_mask, local_acts);
 #endif  // LBANN_PROCDET_DROPOUT
 }
 
@@ -89,11 +122,11 @@ void dropout::bp_activations() {
       || m_keep_prob < 0.0f) return;
 
 #ifdef LBANN_PROCDET_DROPOUT
-  Hadamard(*(m_layer->m_prev_error_signal), m_cur_mask, *(m_layer->m_prev_error_signal));
+  Hadamard(*(m_layer->m_prev_error_signal), *m_cur_mask, *(m_layer->m_prev_error_signal));
 #else
   // Re-weight the incoming loss using dropout mask
   Mat local_prev_error_signal = m_layer->m_prev_error_signal->Matrix();
-  Hadamard(local_prev_error_signal, m_cur_mask, local_prev_error_signal);
+  Hadamard(local_prev_error_signal, *m_cur_mask, local_prev_error_signal);
 #endif  // LBANN_PROCDET_DROPOUT
 }
 
