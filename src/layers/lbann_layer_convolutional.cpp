@@ -731,6 +731,7 @@ void lbann::convolutional_layer::fp_linearity_cpu() {
   ////////////////////////////////////////////////////////////////
 
   // Iterate through output and input channels
+#pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
@@ -957,6 +958,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
   ////////////////////////////////////////////////////////////////
 
   // Iterate through output and input channels
+#pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
