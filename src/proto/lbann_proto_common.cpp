@@ -19,11 +19,12 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
 
   const lbann_data::DataReader &d_reader = p.data_reader();
   int size = d_reader.reader_size();
-  int mini_batch_size = 0;
 
+  int mini_batch_size = 0;
   if (mb_size != 0) {
     mini_batch_size = mb_size;
   }
+  cout << "mini_batch_size: " << mini_batch_size << " mb_size: " << mb_size << endl;
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader &readme = d_reader.reader(j);
@@ -33,7 +34,7 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
 
     if (mb_size == 0) {
       int this_mini_batch_size = readme.mini_batch_size();
-      if (this_mini_batch_size != mini_batch_size and mini_batch_size > 0 and mb_size != 0) {
+      if (this_mini_batch_size != mini_batch_size and mini_batch_size > 0) {
         stringstream err;
         err << __FILE__ << " " << __LINE__
             << " :: mini_batch sizes don't match; one reader has "
@@ -155,6 +156,9 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       }
       data_readers[execution_mode::validation] = reader_validation;
     }
+  }
+  if (mb_size == 0) {
+    mb_size = mini_batch_size;
   }
   return mini_batch_size;
 }
