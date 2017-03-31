@@ -34,7 +34,7 @@
 
 namespace lbann
 {
-class DataReader_MNIST : public DataReader, public lbann_image_preprocessor
+class DataReader_MNIST : public DataReader
 {
 public:
   DataReader_MNIST(int batchSize, bool shuffle);

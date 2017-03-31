@@ -12,7 +12,7 @@ message LbannPB {
   TrainingParams training_params = 6;
 
   //use cudnn_manager, if has_cudnn = true, and lbann was compiled with cudnn support
-  bool has_cudnn = 7;
+  bool has_cudnn = 8;
 
   //see note in Layer section below. This is the global optimzer, that is, as of
   //this writing, passed to all pertinent layers. However, in theory we could
@@ -32,35 +32,38 @@ message LbannPB {
 // start of DataReaders
 //========================================================================
 message DataReader {
-  repeated DataReaderMnist mnist = 1;
-  repeated DataReaderCifar10 cifar10 = 2;
-  repeated DataReaderImagenet imagenet = 3;
-  repeated DataReaderNci nci = 4;
-  repeated DataReaderNciRegression nci_regression = 5;
+  repeated Reader reader = 1;
 }
 
-
-message DataReaderMnist {
-  string role = 1; //train, test
-  int32 batch_size = 2;
-  bool shuffle = 3;
-  string file_dir = 4;
-  string image_file = 5;
-  string label_file = 6;
-  double percent_samples = 7;
+message Reader {
+  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet
+  int32 mini_batch_size = 2;
+  string role = 3; //train, test
+  bool shuffle = 4;
+  string data_filename = 6;
+  string label_filename = 7;
+  double train_or_test_percent = 8;
+  double validation_percent = 9;
+  bool firstN = 10;
+  int32 max_sample_count = 11;
+  double percent_of_data_to_use = 12;
+  ImagePreprocessor image_preprocessor = 13;
 }
 
-message DataReaderCifar10 {
+message ImagePreprocessor {
+  bool scale = 12;
+  bool subtract_mean = 13;
+  bool unit_variance = 14;
+  bool z_score = 15;
+  bool horizontal_flip = 16;
+  bool vertical_flip = 17;
+  double rotation = 18;
+  double horizontal_shift = 19;
+  double vertical_shift = 20;
+  double shear_range = 21;
+  bool disable_augmentation = 22;
 }
 
-message DataReaderImagenet {
-}
-
-message DataReaderNci {
-}
-
-message DataReaderNciRegression {
-}
 //========================================================================
 // end of DataReaders
 //========================================================================

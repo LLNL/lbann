@@ -34,7 +34,7 @@
 
 namespace lbann
 {
-class DataReader_ImageNet : public DataReader, public lbann_image_preprocessor
+class DataReader_ImageNet : public DataReader
 {
 public:
   DataReader_ImageNet(int batchSize, bool shuffle = true);

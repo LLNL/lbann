@@ -26,11 +26,11 @@
 // lbann_dnn_mnist.cpp - DNN application for mnist
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
+#include "lbann/proto/lbann_proto_common.hpp"
 
 using namespace std;
 using namespace lbann;
@@ -50,45 +50,20 @@ int main(int argc, char* argv[])
 
     try {
 
-
-        // Get data files
-        const string g_MNIST_TrainLabelFile = Input("--train-label-file",
-                                                    "MNIST training set label file",
-                                                    std::string("train-labels-idx1-ubyte"));
-        const string g_MNIST_TrainImageFile = Input("--train-image-file",
-                                                    "MNIST training set image file",
-                                                    std::string("train-images-idx3-ubyte"));
-        const string g_MNIST_TestLabelFile = Input("--test-label-file",
-                                                   "MNIST test set label file",
-                                                   std::string("t10k-labels-idx1-ubyte"));
-        const string g_MNIST_TestImageFile = Input("--test-image-file",
-                                                   "MNIST test set image file",
-                                                   std::string("t10k-images-idx3-ubyte"));
-
-        //determine if we're going to scale, subtract mean, etc;
-        //scaling/standardization is on a per-example basis (computed independantly
-        //for each image)
-        bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
-        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
-        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
-
-        //if set to true, above three settings have no effect
-        bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
-
         ///////////////////////////////////////////////////////////////////
         // initalize grid, block
         ///////////////////////////////////////////////////////////////////
 
         // Initialize parameter defaults
         TrainingParams trainParams;
-        trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
+        //trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
         trainParams.EpochCount = 20;
-        trainParams.MBSize = 128;
+        //trainParams.MBSize = 128;
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 0.90;
-        trainParams.PercentageValidationSamples = 1.00;
+        //trainParams.PercentageTrainingSamples = 0.90;
+        //trainParams.PercentageValidationSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -121,6 +96,24 @@ int main(int argc, char* argv[])
         init_random(42);
         init_data_seq_random(42);
 
+        //get input prototext filenames
+        //string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
+        string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
+        //if (prototext_model_fn == "none" or prototext_dr_fn == "none") {
+        if (prototext_dr_fn == "none") {
+          if (comm->am_world_master()) {
+            cerr << endl << __FILE__ << " " << __LINE__ << " :: error - you must use "
+                 << " --prototext_dr_fn to supply prototext filenames\n\n";
+                 //<< " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
+          }
+          Finalize();
+          return 9;
+        }
+        int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
+
+        lbann_data::LbannPB pb;
+        readPrototextFile(prototext_dr_fn.c_str(), pb);
+
 
         int parallel_io = perfParams.MaxParIOSize;
         if (parallel_io == 0) {
@@ -137,70 +130,15 @@ int main(int argc, char* argv[])
 
         ///////////////////////////////////////////////////////////////////
         // load training data (MNIST)
-        DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
-        mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
-        mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
-        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-        mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
-        mnist_trainset.load();
-
-        mnist_trainset.scale(scale);
-        mnist_trainset.subtract_mean(subtract_mean);
-        mnist_trainset.unit_variance(unit_variance);
-        mnist_trainset.z_score(z_score);
-
-        if (comm->am_world_master()) {
-          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
-        }
-
         ///////////////////////////////////////////////////////////////////
-        // create a validation set from the unused training data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " MNIST validation data error" << endl;
-          }
-          return -1;
-        }
-
-        if(trainParams.PercentageValidationSamples == 1.00) {
-          if (comm->am_world_master()) {
-            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-          }
-        }else {
-          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          if (comm->am_world_master()) {
-            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-          }
-        }
-
-        ///////////////////////////////////////////////////////////////////
-        // load testing data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        DataReader_MNIST mnist_testset(trainParams.MBSize, true);
-        mnist_testset.set_file_dir(trainParams.DatasetRootDir);
-        mnist_testset.set_data_filename(g_MNIST_TestImageFile);
-        mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
-        mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
-        mnist_testset.load();
-
-        mnist_testset.scale(scale);
-        mnist_testset.subtract_mean(subtract_mean);
-        mnist_testset.unit_variance(unit_variance);
-        mnist_testset.z_score(z_score);
-
-        if (comm->am_world_master()) {
-          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
-        }
+        std::map<execution_mode, DataReader*> data_readers;
+        init_data_readers(comm->am_world_master(), pb, data_readers, mini_batch_size);
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-
         Optimizer_factory *optimizer;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
           optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
@@ -214,16 +152,11 @@ int main(int argc, char* argv[])
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        deep_neural_network dnn(mini_batch_size, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
         dnn.add_metric(new metrics::categorical_accuracy(comm));
-        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
-                                                               std::make_pair(execution_mode::validation, &mnist_validation_set), 
-                                                               std::make_pair(execution_mode::testing, &mnist_testset)};
 
-        //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
-        
         //first layer
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers);
         dnn.add(input_layer);
         
         //second layer
@@ -236,7 +169,7 @@ int main(int argc, char* argv[])
         dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
         //fifth layer
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers, true);
         dnn.add(target_layer);
 
         lbann_callback_print print_cb;
@@ -276,9 +209,9 @@ int main(int argc, char* argv[])
 
         if (comm->am_world_master()) {
           cout << "Parameter settings:" << endl;
-          cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-          cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
-          cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+          cout << "\tMini-batch size: " << mini_batch_size << endl;
+          cout << "\tLearning rate: " << trainParams.LearnRate << endl;
+          cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
         }
 
         ///////////////////////////////////////////////////////////////////

@@ -35,6 +35,7 @@
 #include "lbann/lbann_comm.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/io/lbann_persist.hpp"
+#include "lbann/data_readers/lbann_image_preprocessor.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
@@ -53,7 +54,7 @@
 namespace lbann
 {
 
-class DataReader
+class DataReader : public lbann_image_preprocessor
 {
 public:
   DataReader(int batchSize, bool shuffle = true) :
@@ -139,6 +140,9 @@ public:
   void set_validation_percent(double s);
   bool has_validation_percent();
   double get_validation_percent();
+
+  void set_role(std::string role) { m_role = role; }
+  std::string get_role() { return m_role; }
 
   /**
    * Pure abstract virtual function; all DataReaders *must* implement.
@@ -251,6 +255,7 @@ protected:
   double m_validation_percent;
   size_t m_max_sample_count_was_set;
   double m_use_percent;
+  std::string m_role;
 };
 
 }  // namespace lbann

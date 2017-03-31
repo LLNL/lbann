@@ -36,24 +36,12 @@ extern ConvolutionDefaultTypeInternal _Convolution_default_instance_;
 class DataReader;
 class DataReaderDefaultTypeInternal;
 extern DataReaderDefaultTypeInternal _DataReader_default_instance_;
-class DataReaderCifar10;
-class DataReaderCifar10DefaultTypeInternal;
-extern DataReaderCifar10DefaultTypeInternal _DataReaderCifar10_default_instance_;
-class DataReaderImagenet;
-class DataReaderImagenetDefaultTypeInternal;
-extern DataReaderImagenetDefaultTypeInternal _DataReaderImagenet_default_instance_;
-class DataReaderMnist;
-class DataReaderMnistDefaultTypeInternal;
-extern DataReaderMnistDefaultTypeInternal _DataReaderMnist_default_instance_;
-class DataReaderNci;
-class DataReaderNciDefaultTypeInternal;
-extern DataReaderNciDefaultTypeInternal _DataReaderNci_default_instance_;
-class DataReaderNciRegression;
-class DataReaderNciRegressionDefaultTypeInternal;
-extern DataReaderNciRegressionDefaultTypeInternal _DataReaderNciRegression_default_instance_;
 class FullyConnected;
 class FullyConnectedDefaultTypeInternal;
 extern FullyConnectedDefaultTypeInternal _FullyConnected_default_instance_;
+class ImagePreprocessor;
+class ImagePreprocessorDefaultTypeInternal;
+extern ImagePreprocessorDefaultTypeInternal _ImagePreprocessor_default_instance_;
 class Input;
 class InputDefaultTypeInternal;
 extern InputDefaultTypeInternal _Input_default_instance_;
@@ -84,6 +72,9 @@ extern PerformanceParamsDefaultTypeInternal _PerformanceParams_default_instance_
 class Pooling;
 class PoolingDefaultTypeInternal;
 extern PoolingDefaultTypeInternal _Pooling_default_instance_;
+class Reader;
+class ReaderDefaultTypeInternal;
+extern ReaderDefaultTypeInternal _Reader_default_instance_;
 class Softmax;
 class SoftmaxDefaultTypeInternal;
 extern SoftmaxDefaultTypeInternal _Softmax_default_instance_;
@@ -271,9 +262,9 @@ class LbannPB : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::lbann_data::TrainingParams* release_training_params();
   void set_allocated_training_params(::lbann_data::TrainingParams* training_params);
 
-  // bool has_cudnn = 7;
+  // bool has_cudnn = 8;
   void clear_has_cudnn();
-  static const int kHasCudnnFieldNumber = 7;
+  static const int kHasCudnnFieldNumber = 8;
   bool has_cudnn() const;
   void set_has_cudnn(bool value);
 
@@ -369,111 +360,59 @@ class DataReader : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   // accessors -------------------------------------------------------
 
-  // repeated .lbann_data.DataReaderMnist mnist = 1;
-  int mnist_size() const;
-  void clear_mnist();
-  static const int kMnistFieldNumber = 1;
-  const ::lbann_data::DataReaderMnist& mnist(int index) const;
-  ::lbann_data::DataReaderMnist* mutable_mnist(int index);
-  ::lbann_data::DataReaderMnist* add_mnist();
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >*
-      mutable_mnist();
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >&
-      mnist() const;
-
-  // repeated .lbann_data.DataReaderCifar10 cifar10 = 2;
-  int cifar10_size() const;
-  void clear_cifar10();
-  static const int kCifar10FieldNumber = 2;
-  const ::lbann_data::DataReaderCifar10& cifar10(int index) const;
-  ::lbann_data::DataReaderCifar10* mutable_cifar10(int index);
-  ::lbann_data::DataReaderCifar10* add_cifar10();
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >*
-      mutable_cifar10();
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >&
-      cifar10() const;
-
-  // repeated .lbann_data.DataReaderImagenet imagenet = 3;
-  int imagenet_size() const;
-  void clear_imagenet();
-  static const int kImagenetFieldNumber = 3;
-  const ::lbann_data::DataReaderImagenet& imagenet(int index) const;
-  ::lbann_data::DataReaderImagenet* mutable_imagenet(int index);
-  ::lbann_data::DataReaderImagenet* add_imagenet();
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >*
-      mutable_imagenet();
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >&
-      imagenet() const;
-
-  // repeated .lbann_data.DataReaderNci nci = 4;
-  int nci_size() const;
-  void clear_nci();
-  static const int kNciFieldNumber = 4;
-  const ::lbann_data::DataReaderNci& nci(int index) const;
-  ::lbann_data::DataReaderNci* mutable_nci(int index);
-  ::lbann_data::DataReaderNci* add_nci();
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >*
-      mutable_nci();
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >&
-      nci() const;
-
-  // repeated .lbann_data.DataReaderNciRegression nci_regression = 5;
-  int nci_regression_size() const;
-  void clear_nci_regression();
-  static const int kNciRegressionFieldNumber = 5;
-  const ::lbann_data::DataReaderNciRegression& nci_regression(int index) const;
-  ::lbann_data::DataReaderNciRegression* mutable_nci_regression(int index);
-  ::lbann_data::DataReaderNciRegression* add_nci_regression();
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >*
-      mutable_nci_regression();
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >&
-      nci_regression() const;
+  // repeated .lbann_data.Reader reader = 1;
+  int reader_size() const;
+  void clear_reader();
+  static const int kReaderFieldNumber = 1;
+  const ::lbann_data::Reader& reader(int index) const;
+  ::lbann_data::Reader* mutable_reader(int index);
+  ::lbann_data::Reader* add_reader();
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::Reader >*
+      mutable_reader();
+  const ::google::protobuf::RepeatedPtrField< ::lbann_data::Reader >&
+      reader() const;
 
   // @@protoc_insertion_point(class_scope:lbann_data.DataReader)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist > mnist_;
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 > cifar10_;
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet > imagenet_;
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci > nci_;
-  ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression > nci_regression_;
+  ::google::protobuf::RepeatedPtrField< ::lbann_data::Reader > reader_;
   mutable int _cached_size_;
   friend struct  protobuf_lbann_2eproto::TableStruct;
 };
 // -------------------------------------------------------------------
 
-class DataReaderMnist : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderMnist) */ {
+class Reader : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.Reader) */ {
  public:
-  DataReaderMnist();
-  virtual ~DataReaderMnist();
+  Reader();
+  virtual ~Reader();
 
-  DataReaderMnist(const DataReaderMnist& from);
+  Reader(const Reader& from);
 
-  inline DataReaderMnist& operator=(const DataReaderMnist& from) {
+  inline Reader& operator=(const Reader& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const DataReaderMnist& default_instance();
+  static const Reader& default_instance();
 
-  static inline const DataReaderMnist* internal_default_instance() {
-    return reinterpret_cast<const DataReaderMnist*>(
-               &_DataReaderMnist_default_instance_);
+  static inline const Reader* internal_default_instance() {
+    return reinterpret_cast<const Reader*>(
+               &_Reader_default_instance_);
   }
 
-  void Swap(DataReaderMnist* other);
+  void Swap(Reader* other);
 
   // implements Message ----------------------------------------------
 
-  inline DataReaderMnist* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline Reader* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  DataReaderMnist* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  Reader* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const DataReaderMnist& from);
-  void MergeFrom(const DataReaderMnist& from);
+  void CopyFrom(const Reader& from);
+  void MergeFrom(const Reader& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -494,7 +433,7 @@ class DataReaderMnist : public ::google::protobuf::Message /* @@protoc_insertion
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(DataReaderMnist* other);
+  void InternalSwap(Reader* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -510,9 +449,23 @@ class DataReaderMnist : public ::google::protobuf::Message /* @@protoc_insertion
 
   // accessors -------------------------------------------------------
 
-  // string role = 1;
+  // string name = 1;
+  void clear_name();
+  static const int kNameFieldNumber = 1;
+  const ::std::string& name() const;
+  void set_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_name(::std::string&& value);
+  #endif
+  void set_name(const char* value);
+  void set_name(const char* value, size_t size);
+  ::std::string* mutable_name();
+  ::std::string* release_name();
+  void set_allocated_name(::std::string* name);
+
+  // string role = 3;
   void clear_role();
-  static const int kRoleFieldNumber = 1;
+  static const int kRoleFieldNumber = 3;
   const ::std::string& role() const;
   void set_role(const ::std::string& value);
   #if LANG_CXX11
@@ -524,113 +477,137 @@ class DataReaderMnist : public ::google::protobuf::Message /* @@protoc_insertion
   ::std::string* release_role();
   void set_allocated_role(::std::string* role);
 
-  // string file_dir = 4;
-  void clear_file_dir();
-  static const int kFileDirFieldNumber = 4;
-  const ::std::string& file_dir() const;
-  void set_file_dir(const ::std::string& value);
+  // string data_filename = 6;
+  void clear_data_filename();
+  static const int kDataFilenameFieldNumber = 6;
+  const ::std::string& data_filename() const;
+  void set_data_filename(const ::std::string& value);
   #if LANG_CXX11
-  void set_file_dir(::std::string&& value);
+  void set_data_filename(::std::string&& value);
   #endif
-  void set_file_dir(const char* value);
-  void set_file_dir(const char* value, size_t size);
-  ::std::string* mutable_file_dir();
-  ::std::string* release_file_dir();
-  void set_allocated_file_dir(::std::string* file_dir);
+  void set_data_filename(const char* value);
+  void set_data_filename(const char* value, size_t size);
+  ::std::string* mutable_data_filename();
+  ::std::string* release_data_filename();
+  void set_allocated_data_filename(::std::string* data_filename);
 
-  // string image_file = 5;
-  void clear_image_file();
-  static const int kImageFileFieldNumber = 5;
-  const ::std::string& image_file() const;
-  void set_image_file(const ::std::string& value);
+  // string label_filename = 7;
+  void clear_label_filename();
+  static const int kLabelFilenameFieldNumber = 7;
+  const ::std::string& label_filename() const;
+  void set_label_filename(const ::std::string& value);
   #if LANG_CXX11
-  void set_image_file(::std::string&& value);
+  void set_label_filename(::std::string&& value);
   #endif
-  void set_image_file(const char* value);
-  void set_image_file(const char* value, size_t size);
-  ::std::string* mutable_image_file();
-  ::std::string* release_image_file();
-  void set_allocated_image_file(::std::string* image_file);
+  void set_label_filename(const char* value);
+  void set_label_filename(const char* value, size_t size);
+  ::std::string* mutable_label_filename();
+  ::std::string* release_label_filename();
+  void set_allocated_label_filename(::std::string* label_filename);
 
-  // string label_file = 6;
-  void clear_label_file();
-  static const int kLabelFileFieldNumber = 6;
-  const ::std::string& label_file() const;
-  void set_label_file(const ::std::string& value);
-  #if LANG_CXX11
-  void set_label_file(::std::string&& value);
-  #endif
-  void set_label_file(const char* value);
-  void set_label_file(const char* value, size_t size);
-  ::std::string* mutable_label_file();
-  ::std::string* release_label_file();
-  void set_allocated_label_file(::std::string* label_file);
+  // .lbann_data.ImagePreprocessor image_preprocessor = 13;
+  bool has_image_preprocessor() const;
+  void clear_image_preprocessor();
+  static const int kImagePreprocessorFieldNumber = 13;
+  const ::lbann_data::ImagePreprocessor& image_preprocessor() const;
+  ::lbann_data::ImagePreprocessor* mutable_image_preprocessor();
+  ::lbann_data::ImagePreprocessor* release_image_preprocessor();
+  void set_allocated_image_preprocessor(::lbann_data::ImagePreprocessor* image_preprocessor);
 
-  // int32 batch_size = 2;
-  void clear_batch_size();
-  static const int kBatchSizeFieldNumber = 2;
-  ::google::protobuf::int32 batch_size() const;
-  void set_batch_size(::google::protobuf::int32 value);
+  // int32 mini_batch_size = 2;
+  void clear_mini_batch_size();
+  static const int kMiniBatchSizeFieldNumber = 2;
+  ::google::protobuf::int32 mini_batch_size() const;
+  void set_mini_batch_size(::google::protobuf::int32 value);
 
-  // bool shuffle = 3;
+  // bool shuffle = 4;
   void clear_shuffle();
-  static const int kShuffleFieldNumber = 3;
+  static const int kShuffleFieldNumber = 4;
   bool shuffle() const;
   void set_shuffle(bool value);
 
-  // double percent_samples = 7;
-  void clear_percent_samples();
-  static const int kPercentSamplesFieldNumber = 7;
-  double percent_samples() const;
-  void set_percent_samples(double value);
+  // bool firstN = 10;
+  void clear_firstn();
+  static const int kFirstNFieldNumber = 10;
+  bool firstn() const;
+  void set_firstn(bool value);
 
-  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderMnist)
+  // double train_or_test_percent = 8;
+  void clear_train_or_test_percent();
+  static const int kTrainOrTestPercentFieldNumber = 8;
+  double train_or_test_percent() const;
+  void set_train_or_test_percent(double value);
+
+  // double validation_percent = 9;
+  void clear_validation_percent();
+  static const int kValidationPercentFieldNumber = 9;
+  double validation_percent() const;
+  void set_validation_percent(double value);
+
+  // double percent_of_data_to_use = 12;
+  void clear_percent_of_data_to_use();
+  static const int kPercentOfDataToUseFieldNumber = 12;
+  double percent_of_data_to_use() const;
+  void set_percent_of_data_to_use(double value);
+
+  // int32 max_sample_count = 11;
+  void clear_max_sample_count();
+  static const int kMaxSampleCountFieldNumber = 11;
+  ::google::protobuf::int32 max_sample_count() const;
+  void set_max_sample_count(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:lbann_data.Reader)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr name_;
   ::google::protobuf::internal::ArenaStringPtr role_;
-  ::google::protobuf::internal::ArenaStringPtr file_dir_;
-  ::google::protobuf::internal::ArenaStringPtr image_file_;
-  ::google::protobuf::internal::ArenaStringPtr label_file_;
-  ::google::protobuf::int32 batch_size_;
+  ::google::protobuf::internal::ArenaStringPtr data_filename_;
+  ::google::protobuf::internal::ArenaStringPtr label_filename_;
+  ::lbann_data::ImagePreprocessor* image_preprocessor_;
+  ::google::protobuf::int32 mini_batch_size_;
   bool shuffle_;
-  double percent_samples_;
+  bool firstn_;
+  double train_or_test_percent_;
+  double validation_percent_;
+  double percent_of_data_to_use_;
+  ::google::protobuf::int32 max_sample_count_;
   mutable int _cached_size_;
   friend struct  protobuf_lbann_2eproto::TableStruct;
 };
 // -------------------------------------------------------------------
 
-class DataReaderCifar10 : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderCifar10) */ {
+class ImagePreprocessor : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.ImagePreprocessor) */ {
  public:
-  DataReaderCifar10();
-  virtual ~DataReaderCifar10();
+  ImagePreprocessor();
+  virtual ~ImagePreprocessor();
 
-  DataReaderCifar10(const DataReaderCifar10& from);
+  ImagePreprocessor(const ImagePreprocessor& from);
 
-  inline DataReaderCifar10& operator=(const DataReaderCifar10& from) {
+  inline ImagePreprocessor& operator=(const ImagePreprocessor& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const DataReaderCifar10& default_instance();
+  static const ImagePreprocessor& default_instance();
 
-  static inline const DataReaderCifar10* internal_default_instance() {
-    return reinterpret_cast<const DataReaderCifar10*>(
-               &_DataReaderCifar10_default_instance_);
+  static inline const ImagePreprocessor* internal_default_instance() {
+    return reinterpret_cast<const ImagePreprocessor*>(
+               &_ImagePreprocessor_default_instance_);
   }
 
-  void Swap(DataReaderCifar10* other);
+  void Swap(ImagePreprocessor* other);
 
   // implements Message ----------------------------------------------
 
-  inline DataReaderCifar10* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline ImagePreprocessor* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  DataReaderCifar10* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  ImagePreprocessor* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const DataReaderCifar10& from);
-  void MergeFrom(const DataReaderCifar10& from);
+  void CopyFrom(const ImagePreprocessor& from);
+  void MergeFrom(const ImagePreprocessor& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -651,7 +628,7 @@ class DataReaderCifar10 : public ::google::protobuf::Message /* @@protoc_inserti
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(DataReaderCifar10* other);
+  void InternalSwap(ImagePreprocessor* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -667,238 +644,87 @@ class DataReaderCifar10 : public ::google::protobuf::Message /* @@protoc_inserti
 
   // accessors -------------------------------------------------------
 
-  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderCifar10)
+  // bool scale = 12;
+  void clear_scale();
+  static const int kScaleFieldNumber = 12;
+  bool scale() const;
+  void set_scale(bool value);
+
+  // bool subtract_mean = 13;
+  void clear_subtract_mean();
+  static const int kSubtractMeanFieldNumber = 13;
+  bool subtract_mean() const;
+  void set_subtract_mean(bool value);
+
+  // bool unit_variance = 14;
+  void clear_unit_variance();
+  static const int kUnitVarianceFieldNumber = 14;
+  bool unit_variance() const;
+  void set_unit_variance(bool value);
+
+  // bool z_score = 15;
+  void clear_z_score();
+  static const int kZScoreFieldNumber = 15;
+  bool z_score() const;
+  void set_z_score(bool value);
+
+  // bool horizontal_flip = 16;
+  void clear_horizontal_flip();
+  static const int kHorizontalFlipFieldNumber = 16;
+  bool horizontal_flip() const;
+  void set_horizontal_flip(bool value);
+
+  // bool vertical_flip = 17;
+  void clear_vertical_flip();
+  static const int kVerticalFlipFieldNumber = 17;
+  bool vertical_flip() const;
+  void set_vertical_flip(bool value);
+
+  // bool disable_augmentation = 22;
+  void clear_disable_augmentation();
+  static const int kDisableAugmentationFieldNumber = 22;
+  bool disable_augmentation() const;
+  void set_disable_augmentation(bool value);
+
+  // double rotation = 18;
+  void clear_rotation();
+  static const int kRotationFieldNumber = 18;
+  double rotation() const;
+  void set_rotation(double value);
+
+  // double horizontal_shift = 19;
+  void clear_horizontal_shift();
+  static const int kHorizontalShiftFieldNumber = 19;
+  double horizontal_shift() const;
+  void set_horizontal_shift(double value);
+
+  // double vertical_shift = 20;
+  void clear_vertical_shift();
+  static const int kVerticalShiftFieldNumber = 20;
+  double vertical_shift() const;
+  void set_vertical_shift(double value);
+
+  // double shear_range = 21;
+  void clear_shear_range();
+  static const int kShearRangeFieldNumber = 21;
+  double shear_range() const;
+  void set_shear_range(double value);
+
+  // @@protoc_insertion_point(class_scope:lbann_data.ImagePreprocessor)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  mutable int _cached_size_;
-  friend struct  protobuf_lbann_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class DataReaderImagenet : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderImagenet) */ {
- public:
-  DataReaderImagenet();
-  virtual ~DataReaderImagenet();
-
-  DataReaderImagenet(const DataReaderImagenet& from);
-
-  inline DataReaderImagenet& operator=(const DataReaderImagenet& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const DataReaderImagenet& default_instance();
-
-  static inline const DataReaderImagenet* internal_default_instance() {
-    return reinterpret_cast<const DataReaderImagenet*>(
-               &_DataReaderImagenet_default_instance_);
-  }
-
-  void Swap(DataReaderImagenet* other);
-
-  // implements Message ----------------------------------------------
-
-  inline DataReaderImagenet* New() const PROTOBUF_FINAL { return New(NULL); }
-
-  DataReaderImagenet* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const DataReaderImagenet& from);
-  void MergeFrom(const DataReaderImagenet& from);
-  void Clear() PROTOBUF_FINAL;
-  bool IsInitialized() const PROTOBUF_FINAL;
-
-  size_t ByteSizeLong() const PROTOBUF_FINAL;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output)
-      const PROTOBUF_FINAL {
-    return InternalSerializeWithCachedSizesToArray(
-        ::google::protobuf::io::CodedOutputStream::IsDefaultSerializationDeterministic(), output);
-  }
-  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(DataReaderImagenet* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderImagenet)
- private:
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  mutable int _cached_size_;
-  friend struct  protobuf_lbann_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class DataReaderNci : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderNci) */ {
- public:
-  DataReaderNci();
-  virtual ~DataReaderNci();
-
-  DataReaderNci(const DataReaderNci& from);
-
-  inline DataReaderNci& operator=(const DataReaderNci& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const DataReaderNci& default_instance();
-
-  static inline const DataReaderNci* internal_default_instance() {
-    return reinterpret_cast<const DataReaderNci*>(
-               &_DataReaderNci_default_instance_);
-  }
-
-  void Swap(DataReaderNci* other);
-
-  // implements Message ----------------------------------------------
-
-  inline DataReaderNci* New() const PROTOBUF_FINAL { return New(NULL); }
-
-  DataReaderNci* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const DataReaderNci& from);
-  void MergeFrom(const DataReaderNci& from);
-  void Clear() PROTOBUF_FINAL;
-  bool IsInitialized() const PROTOBUF_FINAL;
-
-  size_t ByteSizeLong() const PROTOBUF_FINAL;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output)
-      const PROTOBUF_FINAL {
-    return InternalSerializeWithCachedSizesToArray(
-        ::google::protobuf::io::CodedOutputStream::IsDefaultSerializationDeterministic(), output);
-  }
-  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(DataReaderNci* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderNci)
- private:
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  mutable int _cached_size_;
-  friend struct  protobuf_lbann_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class DataReaderNciRegression : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:lbann_data.DataReaderNciRegression) */ {
- public:
-  DataReaderNciRegression();
-  virtual ~DataReaderNciRegression();
-
-  DataReaderNciRegression(const DataReaderNciRegression& from);
-
-  inline DataReaderNciRegression& operator=(const DataReaderNciRegression& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const DataReaderNciRegression& default_instance();
-
-  static inline const DataReaderNciRegression* internal_default_instance() {
-    return reinterpret_cast<const DataReaderNciRegression*>(
-               &_DataReaderNciRegression_default_instance_);
-  }
-
-  void Swap(DataReaderNciRegression* other);
-
-  // implements Message ----------------------------------------------
-
-  inline DataReaderNciRegression* New() const PROTOBUF_FINAL { return New(NULL); }
-
-  DataReaderNciRegression* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const DataReaderNciRegression& from);
-  void MergeFrom(const DataReaderNciRegression& from);
-  void Clear() PROTOBUF_FINAL;
-  bool IsInitialized() const PROTOBUF_FINAL;
-
-  size_t ByteSizeLong() const PROTOBUF_FINAL;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output)
-      const PROTOBUF_FINAL {
-    return InternalSerializeWithCachedSizesToArray(
-        ::google::protobuf::io::CodedOutputStream::IsDefaultSerializationDeterministic(), output);
-  }
-  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(DataReaderNciRegression* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // @@protoc_insertion_point(class_scope:lbann_data.DataReaderNciRegression)
- private:
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool scale_;
+  bool subtract_mean_;
+  bool unit_variance_;
+  bool z_score_;
+  bool horizontal_flip_;
+  bool vertical_flip_;
+  bool disable_augmentation_;
+  double rotation_;
+  double horizontal_shift_;
+  double vertical_shift_;
+  double shear_range_;
   mutable int _cached_size_;
   friend struct  protobuf_lbann_2eproto::TableStruct;
 };
@@ -3552,7 +3378,7 @@ inline void LbannPB::set_allocated_training_params(::lbann_data::TrainingParams*
   // @@protoc_insertion_point(field_set_allocated:lbann_data.LbannPB.training_params)
 }
 
-// bool has_cudnn = 7;
+// bool has_cudnn = 8;
 inline void LbannPB::clear_has_cudnn() {
   has_cudnn_ = false;
 }
@@ -3688,425 +3514,542 @@ inline void LbannPB::set_mini_batch_size(::google::protobuf::int32 value) {
 
 // DataReader
 
-// repeated .lbann_data.DataReaderMnist mnist = 1;
-inline int DataReader::mnist_size() const {
-  return mnist_.size();
+// repeated .lbann_data.Reader reader = 1;
+inline int DataReader::reader_size() const {
+  return reader_.size();
 }
-inline void DataReader::clear_mnist() {
-  mnist_.Clear();
+inline void DataReader::clear_reader() {
+  reader_.Clear();
 }
-inline const ::lbann_data::DataReaderMnist& DataReader::mnist(int index) const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReader.mnist)
-  return mnist_.Get(index);
+inline const ::lbann_data::Reader& DataReader::reader(int index) const {
+  // @@protoc_insertion_point(field_get:lbann_data.DataReader.reader)
+  return reader_.Get(index);
 }
-inline ::lbann_data::DataReaderMnist* DataReader::mutable_mnist(int index) {
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.mnist)
-  return mnist_.Mutable(index);
+inline ::lbann_data::Reader* DataReader::mutable_reader(int index) {
+  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.reader)
+  return reader_.Mutable(index);
 }
-inline ::lbann_data::DataReaderMnist* DataReader::add_mnist() {
-  // @@protoc_insertion_point(field_add:lbann_data.DataReader.mnist)
-  return mnist_.Add();
+inline ::lbann_data::Reader* DataReader::add_reader() {
+  // @@protoc_insertion_point(field_add:lbann_data.DataReader.reader)
+  return reader_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >*
-DataReader::mutable_mnist() {
-  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.mnist)
-  return &mnist_;
+inline ::google::protobuf::RepeatedPtrField< ::lbann_data::Reader >*
+DataReader::mutable_reader() {
+  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.reader)
+  return &reader_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderMnist >&
-DataReader::mnist() const {
-  // @@protoc_insertion_point(field_list:lbann_data.DataReader.mnist)
-  return mnist_;
-}
-
-// repeated .lbann_data.DataReaderCifar10 cifar10 = 2;
-inline int DataReader::cifar10_size() const {
-  return cifar10_.size();
-}
-inline void DataReader::clear_cifar10() {
-  cifar10_.Clear();
-}
-inline const ::lbann_data::DataReaderCifar10& DataReader::cifar10(int index) const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReader.cifar10)
-  return cifar10_.Get(index);
-}
-inline ::lbann_data::DataReaderCifar10* DataReader::mutable_cifar10(int index) {
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.cifar10)
-  return cifar10_.Mutable(index);
-}
-inline ::lbann_data::DataReaderCifar10* DataReader::add_cifar10() {
-  // @@protoc_insertion_point(field_add:lbann_data.DataReader.cifar10)
-  return cifar10_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >*
-DataReader::mutable_cifar10() {
-  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.cifar10)
-  return &cifar10_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderCifar10 >&
-DataReader::cifar10() const {
-  // @@protoc_insertion_point(field_list:lbann_data.DataReader.cifar10)
-  return cifar10_;
-}
-
-// repeated .lbann_data.DataReaderImagenet imagenet = 3;
-inline int DataReader::imagenet_size() const {
-  return imagenet_.size();
-}
-inline void DataReader::clear_imagenet() {
-  imagenet_.Clear();
-}
-inline const ::lbann_data::DataReaderImagenet& DataReader::imagenet(int index) const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReader.imagenet)
-  return imagenet_.Get(index);
-}
-inline ::lbann_data::DataReaderImagenet* DataReader::mutable_imagenet(int index) {
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.imagenet)
-  return imagenet_.Mutable(index);
-}
-inline ::lbann_data::DataReaderImagenet* DataReader::add_imagenet() {
-  // @@protoc_insertion_point(field_add:lbann_data.DataReader.imagenet)
-  return imagenet_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >*
-DataReader::mutable_imagenet() {
-  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.imagenet)
-  return &imagenet_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderImagenet >&
-DataReader::imagenet() const {
-  // @@protoc_insertion_point(field_list:lbann_data.DataReader.imagenet)
-  return imagenet_;
-}
-
-// repeated .lbann_data.DataReaderNci nci = 4;
-inline int DataReader::nci_size() const {
-  return nci_.size();
-}
-inline void DataReader::clear_nci() {
-  nci_.Clear();
-}
-inline const ::lbann_data::DataReaderNci& DataReader::nci(int index) const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReader.nci)
-  return nci_.Get(index);
-}
-inline ::lbann_data::DataReaderNci* DataReader::mutable_nci(int index) {
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.nci)
-  return nci_.Mutable(index);
-}
-inline ::lbann_data::DataReaderNci* DataReader::add_nci() {
-  // @@protoc_insertion_point(field_add:lbann_data.DataReader.nci)
-  return nci_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >*
-DataReader::mutable_nci() {
-  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.nci)
-  return &nci_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNci >&
-DataReader::nci() const {
-  // @@protoc_insertion_point(field_list:lbann_data.DataReader.nci)
-  return nci_;
-}
-
-// repeated .lbann_data.DataReaderNciRegression nci_regression = 5;
-inline int DataReader::nci_regression_size() const {
-  return nci_regression_.size();
-}
-inline void DataReader::clear_nci_regression() {
-  nci_regression_.Clear();
-}
-inline const ::lbann_data::DataReaderNciRegression& DataReader::nci_regression(int index) const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReader.nci_regression)
-  return nci_regression_.Get(index);
-}
-inline ::lbann_data::DataReaderNciRegression* DataReader::mutable_nci_regression(int index) {
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReader.nci_regression)
-  return nci_regression_.Mutable(index);
-}
-inline ::lbann_data::DataReaderNciRegression* DataReader::add_nci_regression() {
-  // @@protoc_insertion_point(field_add:lbann_data.DataReader.nci_regression)
-  return nci_regression_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >*
-DataReader::mutable_nci_regression() {
-  // @@protoc_insertion_point(field_mutable_list:lbann_data.DataReader.nci_regression)
-  return &nci_regression_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::DataReaderNciRegression >&
-DataReader::nci_regression() const {
-  // @@protoc_insertion_point(field_list:lbann_data.DataReader.nci_regression)
-  return nci_regression_;
+inline const ::google::protobuf::RepeatedPtrField< ::lbann_data::Reader >&
+DataReader::reader() const {
+  // @@protoc_insertion_point(field_list:lbann_data.DataReader.reader)
+  return reader_;
 }
 
 // -------------------------------------------------------------------
 
-// DataReaderMnist
+// Reader
 
-// string role = 1;
-inline void DataReaderMnist::clear_role() {
-  role_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// string name = 1;
+inline void Reader::clear_name() {
+  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& DataReaderMnist::role() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.role)
-  return role_.GetNoArena();
+inline const ::std::string& Reader::name() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.name)
+  return name_.GetNoArena();
 }
-inline void DataReaderMnist::set_role(const ::std::string& value) {
+inline void Reader::set_name(const ::std::string& value) {
   
-  role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.role)
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.name)
 }
 #if LANG_CXX11
-inline void DataReaderMnist::set_role(::std::string&& value) {
+inline void Reader::set_name(::std::string&& value) {
+  
+  name_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:lbann_data.Reader.name)
+}
+#endif
+inline void Reader::set_name(const char* value) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Reader.name)
+}
+inline void Reader::set_name(const char* value, size_t size) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Reader.name)
+}
+inline ::std::string* Reader::mutable_name() {
+  
+  // @@protoc_insertion_point(field_mutable:lbann_data.Reader.name)
+  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Reader::release_name() {
+  // @@protoc_insertion_point(field_release:lbann_data.Reader.name)
+  
+  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Reader::set_allocated_name(::std::string* name) {
+  if (name != NULL) {
+    
+  } else {
+    
+  }
+  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Reader.name)
+}
+
+// int32 mini_batch_size = 2;
+inline void Reader::clear_mini_batch_size() {
+  mini_batch_size_ = 0;
+}
+inline ::google::protobuf::int32 Reader::mini_batch_size() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.mini_batch_size)
+  return mini_batch_size_;
+}
+inline void Reader::set_mini_batch_size(::google::protobuf::int32 value) {
+  
+  mini_batch_size_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.mini_batch_size)
+}
+
+// string role = 3;
+inline void Reader::clear_role() {
+  role_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Reader::role() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.role)
+  return role_.GetNoArena();
+}
+inline void Reader::set_role(const ::std::string& value) {
+  
+  role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.role)
+}
+#if LANG_CXX11
+inline void Reader::set_role(::std::string&& value) {
   
   role_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:lbann_data.DataReaderMnist.role)
+  // @@protoc_insertion_point(field_set_rvalue:lbann_data.Reader.role)
 }
 #endif
-inline void DataReaderMnist::set_role(const char* value) {
+inline void Reader::set_role(const char* value) {
   
   role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.role)
+  // @@protoc_insertion_point(field_set_char:lbann_data.Reader.role)
 }
-inline void DataReaderMnist::set_role(const char* value, size_t size) {
+inline void Reader::set_role(const char* value, size_t size) {
   
   role_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.role)
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Reader.role)
 }
-inline ::std::string* DataReaderMnist::mutable_role() {
+inline ::std::string* Reader::mutable_role() {
   
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.role)
+  // @@protoc_insertion_point(field_mutable:lbann_data.Reader.role)
   return role_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DataReaderMnist::release_role() {
-  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.role)
+inline ::std::string* Reader::release_role() {
+  // @@protoc_insertion_point(field_release:lbann_data.Reader.role)
   
   return role_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DataReaderMnist::set_allocated_role(::std::string* role) {
+inline void Reader::set_allocated_role(::std::string* role) {
   if (role != NULL) {
     
   } else {
     
   }
   role_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), role);
-  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.role)
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Reader.role)
 }
 
-// int32 batch_size = 2;
-inline void DataReaderMnist::clear_batch_size() {
-  batch_size_ = 0;
-}
-inline ::google::protobuf::int32 DataReaderMnist::batch_size() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.batch_size)
-  return batch_size_;
-}
-inline void DataReaderMnist::set_batch_size(::google::protobuf::int32 value) {
-  
-  batch_size_ = value;
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.batch_size)
-}
-
-// bool shuffle = 3;
-inline void DataReaderMnist::clear_shuffle() {
+// bool shuffle = 4;
+inline void Reader::clear_shuffle() {
   shuffle_ = false;
 }
-inline bool DataReaderMnist::shuffle() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.shuffle)
+inline bool Reader::shuffle() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.shuffle)
   return shuffle_;
 }
-inline void DataReaderMnist::set_shuffle(bool value) {
+inline void Reader::set_shuffle(bool value) {
   
   shuffle_ = value;
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.shuffle)
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.shuffle)
 }
 
-// string file_dir = 4;
-inline void DataReaderMnist::clear_file_dir() {
-  file_dir_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// string data_filename = 6;
+inline void Reader::clear_data_filename() {
+  data_filename_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& DataReaderMnist::file_dir() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.file_dir)
-  return file_dir_.GetNoArena();
+inline const ::std::string& Reader::data_filename() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.data_filename)
+  return data_filename_.GetNoArena();
 }
-inline void DataReaderMnist::set_file_dir(const ::std::string& value) {
+inline void Reader::set_data_filename(const ::std::string& value) {
   
-  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.file_dir)
+  data_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.data_filename)
 }
 #if LANG_CXX11
-inline void DataReaderMnist::set_file_dir(::std::string&& value) {
+inline void Reader::set_data_filename(::std::string&& value) {
   
-  file_dir_.SetNoArena(
+  data_filename_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:lbann_data.DataReaderMnist.file_dir)
+  // @@protoc_insertion_point(field_set_rvalue:lbann_data.Reader.data_filename)
 }
 #endif
-inline void DataReaderMnist::set_file_dir(const char* value) {
+inline void Reader::set_data_filename(const char* value) {
   
-  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.file_dir)
+  data_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Reader.data_filename)
 }
-inline void DataReaderMnist::set_file_dir(const char* value, size_t size) {
+inline void Reader::set_data_filename(const char* value, size_t size) {
   
-  file_dir_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  data_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.file_dir)
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Reader.data_filename)
 }
-inline ::std::string* DataReaderMnist::mutable_file_dir() {
+inline ::std::string* Reader::mutable_data_filename() {
   
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.file_dir)
-  return file_dir_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  // @@protoc_insertion_point(field_mutable:lbann_data.Reader.data_filename)
+  return data_filename_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DataReaderMnist::release_file_dir() {
-  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.file_dir)
+inline ::std::string* Reader::release_data_filename() {
+  // @@protoc_insertion_point(field_release:lbann_data.Reader.data_filename)
   
-  return file_dir_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  return data_filename_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DataReaderMnist::set_allocated_file_dir(::std::string* file_dir) {
-  if (file_dir != NULL) {
+inline void Reader::set_allocated_data_filename(::std::string* data_filename) {
+  if (data_filename != NULL) {
     
   } else {
     
   }
-  file_dir_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), file_dir);
-  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.file_dir)
+  data_filename_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), data_filename);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Reader.data_filename)
 }
 
-// string image_file = 5;
-inline void DataReaderMnist::clear_image_file() {
-  image_file_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// string label_filename = 7;
+inline void Reader::clear_label_filename() {
+  label_filename_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& DataReaderMnist::image_file() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.image_file)
-  return image_file_.GetNoArena();
+inline const ::std::string& Reader::label_filename() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.label_filename)
+  return label_filename_.GetNoArena();
 }
-inline void DataReaderMnist::set_image_file(const ::std::string& value) {
+inline void Reader::set_label_filename(const ::std::string& value) {
   
-  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.image_file)
+  label_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.label_filename)
 }
 #if LANG_CXX11
-inline void DataReaderMnist::set_image_file(::std::string&& value) {
+inline void Reader::set_label_filename(::std::string&& value) {
   
-  image_file_.SetNoArena(
+  label_filename_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:lbann_data.DataReaderMnist.image_file)
+  // @@protoc_insertion_point(field_set_rvalue:lbann_data.Reader.label_filename)
 }
 #endif
-inline void DataReaderMnist::set_image_file(const char* value) {
+inline void Reader::set_label_filename(const char* value) {
   
-  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.image_file)
+  label_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:lbann_data.Reader.label_filename)
 }
-inline void DataReaderMnist::set_image_file(const char* value, size_t size) {
+inline void Reader::set_label_filename(const char* value, size_t size) {
   
-  image_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  label_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.image_file)
+  // @@protoc_insertion_point(field_set_pointer:lbann_data.Reader.label_filename)
 }
-inline ::std::string* DataReaderMnist::mutable_image_file() {
+inline ::std::string* Reader::mutable_label_filename() {
   
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.image_file)
-  return image_file_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  // @@protoc_insertion_point(field_mutable:lbann_data.Reader.label_filename)
+  return label_filename_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DataReaderMnist::release_image_file() {
-  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.image_file)
+inline ::std::string* Reader::release_label_filename() {
+  // @@protoc_insertion_point(field_release:lbann_data.Reader.label_filename)
   
-  return image_file_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  return label_filename_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DataReaderMnist::set_allocated_image_file(::std::string* image_file) {
-  if (image_file != NULL) {
+inline void Reader::set_allocated_label_filename(::std::string* label_filename) {
+  if (label_filename != NULL) {
     
   } else {
     
   }
-  image_file_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), image_file);
-  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.image_file)
+  label_filename_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), label_filename);
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Reader.label_filename)
 }
 
-// string label_file = 6;
-inline void DataReaderMnist::clear_label_file() {
-  label_file_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// double train_or_test_percent = 8;
+inline void Reader::clear_train_or_test_percent() {
+  train_or_test_percent_ = 0;
 }
-inline const ::std::string& DataReaderMnist::label_file() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.label_file)
-  return label_file_.GetNoArena();
+inline double Reader::train_or_test_percent() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.train_or_test_percent)
+  return train_or_test_percent_;
 }
-inline void DataReaderMnist::set_label_file(const ::std::string& value) {
+inline void Reader::set_train_or_test_percent(double value) {
   
-  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.label_file)
+  train_or_test_percent_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.train_or_test_percent)
 }
-#if LANG_CXX11
-inline void DataReaderMnist::set_label_file(::std::string&& value) {
+
+// double validation_percent = 9;
+inline void Reader::clear_validation_percent() {
+  validation_percent_ = 0;
+}
+inline double Reader::validation_percent() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.validation_percent)
+  return validation_percent_;
+}
+inline void Reader::set_validation_percent(double value) {
   
-  label_file_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:lbann_data.DataReaderMnist.label_file)
+  validation_percent_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.validation_percent)
 }
-#endif
-inline void DataReaderMnist::set_label_file(const char* value) {
+
+// bool firstN = 10;
+inline void Reader::clear_firstn() {
+  firstn_ = false;
+}
+inline bool Reader::firstn() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.firstN)
+  return firstn_;
+}
+inline void Reader::set_firstn(bool value) {
   
-  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:lbann_data.DataReaderMnist.label_file)
+  firstn_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.firstN)
 }
-inline void DataReaderMnist::set_label_file(const char* value, size_t size) {
+
+// int32 max_sample_count = 11;
+inline void Reader::clear_max_sample_count() {
+  max_sample_count_ = 0;
+}
+inline ::google::protobuf::int32 Reader::max_sample_count() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.max_sample_count)
+  return max_sample_count_;
+}
+inline void Reader::set_max_sample_count(::google::protobuf::int32 value) {
   
-  label_file_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:lbann_data.DataReaderMnist.label_file)
+  max_sample_count_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.max_sample_count)
 }
-inline ::std::string* DataReaderMnist::mutable_label_file() {
+
+// double percent_of_data_to_use = 12;
+inline void Reader::clear_percent_of_data_to_use() {
+  percent_of_data_to_use_ = 0;
+}
+inline double Reader::percent_of_data_to_use() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.percent_of_data_to_use)
+  return percent_of_data_to_use_;
+}
+inline void Reader::set_percent_of_data_to_use(double value) {
   
-  // @@protoc_insertion_point(field_mutable:lbann_data.DataReaderMnist.label_file)
-  return label_file_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  percent_of_data_to_use_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.Reader.percent_of_data_to_use)
 }
-inline ::std::string* DataReaderMnist::release_label_file() {
-  // @@protoc_insertion_point(field_release:lbann_data.DataReaderMnist.label_file)
+
+// .lbann_data.ImagePreprocessor image_preprocessor = 13;
+inline bool Reader::has_image_preprocessor() const {
+  return this != internal_default_instance() && image_preprocessor_ != NULL;
+}
+inline void Reader::clear_image_preprocessor() {
+  if (GetArenaNoVirtual() == NULL && image_preprocessor_ != NULL) delete image_preprocessor_;
+  image_preprocessor_ = NULL;
+}
+inline const ::lbann_data::ImagePreprocessor& Reader::image_preprocessor() const {
+  // @@protoc_insertion_point(field_get:lbann_data.Reader.image_preprocessor)
+  return image_preprocessor_ != NULL ? *image_preprocessor_
+                         : *::lbann_data::ImagePreprocessor::internal_default_instance();
+}
+inline ::lbann_data::ImagePreprocessor* Reader::mutable_image_preprocessor() {
   
-  return label_file_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (image_preprocessor_ == NULL) {
+    image_preprocessor_ = new ::lbann_data::ImagePreprocessor;
+  }
+  // @@protoc_insertion_point(field_mutable:lbann_data.Reader.image_preprocessor)
+  return image_preprocessor_;
 }
-inline void DataReaderMnist::set_allocated_label_file(::std::string* label_file) {
-  if (label_file != NULL) {
+inline ::lbann_data::ImagePreprocessor* Reader::release_image_preprocessor() {
+  // @@protoc_insertion_point(field_release:lbann_data.Reader.image_preprocessor)
+  
+  ::lbann_data::ImagePreprocessor* temp = image_preprocessor_;
+  image_preprocessor_ = NULL;
+  return temp;
+}
+inline void Reader::set_allocated_image_preprocessor(::lbann_data::ImagePreprocessor* image_preprocessor) {
+  delete image_preprocessor_;
+  image_preprocessor_ = image_preprocessor;
+  if (image_preprocessor) {
     
   } else {
     
   }
-  label_file_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), label_file);
-  // @@protoc_insertion_point(field_set_allocated:lbann_data.DataReaderMnist.label_file)
+  // @@protoc_insertion_point(field_set_allocated:lbann_data.Reader.image_preprocessor)
 }
 
-// double percent_samples = 7;
-inline void DataReaderMnist::clear_percent_samples() {
-  percent_samples_ = 0;
+// -------------------------------------------------------------------
+
+// ImagePreprocessor
+
+// bool scale = 12;
+inline void ImagePreprocessor::clear_scale() {
+  scale_ = false;
 }
-inline double DataReaderMnist::percent_samples() const {
-  // @@protoc_insertion_point(field_get:lbann_data.DataReaderMnist.percent_samples)
-  return percent_samples_;
+inline bool ImagePreprocessor::scale() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.scale)
+  return scale_;
 }
-inline void DataReaderMnist::set_percent_samples(double value) {
+inline void ImagePreprocessor::set_scale(bool value) {
   
-  percent_samples_ = value;
-  // @@protoc_insertion_point(field_set:lbann_data.DataReaderMnist.percent_samples)
+  scale_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.scale)
 }
 
-// -------------------------------------------------------------------
+// bool subtract_mean = 13;
+inline void ImagePreprocessor::clear_subtract_mean() {
+  subtract_mean_ = false;
+}
+inline bool ImagePreprocessor::subtract_mean() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.subtract_mean)
+  return subtract_mean_;
+}
+inline void ImagePreprocessor::set_subtract_mean(bool value) {
+  
+  subtract_mean_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.subtract_mean)
+}
 
-// DataReaderCifar10
+// bool unit_variance = 14;
+inline void ImagePreprocessor::clear_unit_variance() {
+  unit_variance_ = false;
+}
+inline bool ImagePreprocessor::unit_variance() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.unit_variance)
+  return unit_variance_;
+}
+inline void ImagePreprocessor::set_unit_variance(bool value) {
+  
+  unit_variance_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.unit_variance)
+}
 
-// -------------------------------------------------------------------
+// bool z_score = 15;
+inline void ImagePreprocessor::clear_z_score() {
+  z_score_ = false;
+}
+inline bool ImagePreprocessor::z_score() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.z_score)
+  return z_score_;
+}
+inline void ImagePreprocessor::set_z_score(bool value) {
+  
+  z_score_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.z_score)
+}
 
-// DataReaderImagenet
+// bool horizontal_flip = 16;
+inline void ImagePreprocessor::clear_horizontal_flip() {
+  horizontal_flip_ = false;
+}
+inline bool ImagePreprocessor::horizontal_flip() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.horizontal_flip)
+  return horizontal_flip_;
+}
+inline void ImagePreprocessor::set_horizontal_flip(bool value) {
+  
+  horizontal_flip_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.horizontal_flip)
+}
 
-// -------------------------------------------------------------------
+// bool vertical_flip = 17;
+inline void ImagePreprocessor::clear_vertical_flip() {
+  vertical_flip_ = false;
+}
+inline bool ImagePreprocessor::vertical_flip() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.vertical_flip)
+  return vertical_flip_;
+}
+inline void ImagePreprocessor::set_vertical_flip(bool value) {
+  
+  vertical_flip_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.vertical_flip)
+}
 
-// DataReaderNci
+// double rotation = 18;
+inline void ImagePreprocessor::clear_rotation() {
+  rotation_ = 0;
+}
+inline double ImagePreprocessor::rotation() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.rotation)
+  return rotation_;
+}
+inline void ImagePreprocessor::set_rotation(double value) {
+  
+  rotation_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.rotation)
+}
 
-// -------------------------------------------------------------------
+// double horizontal_shift = 19;
+inline void ImagePreprocessor::clear_horizontal_shift() {
+  horizontal_shift_ = 0;
+}
+inline double ImagePreprocessor::horizontal_shift() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.horizontal_shift)
+  return horizontal_shift_;
+}
+inline void ImagePreprocessor::set_horizontal_shift(double value) {
+  
+  horizontal_shift_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.horizontal_shift)
+}
 
-// DataReaderNciRegression
+// double vertical_shift = 20;
+inline void ImagePreprocessor::clear_vertical_shift() {
+  vertical_shift_ = 0;
+}
+inline double ImagePreprocessor::vertical_shift() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.vertical_shift)
+  return vertical_shift_;
+}
+inline void ImagePreprocessor::set_vertical_shift(double value) {
+  
+  vertical_shift_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.vertical_shift)
+}
+
+// double shear_range = 21;
+inline void ImagePreprocessor::clear_shear_range() {
+  shear_range_ = 0;
+}
+inline double ImagePreprocessor::shear_range() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.shear_range)
+  return shear_range_;
+}
+inline void ImagePreprocessor::set_shear_range(double value) {
+  
+  shear_range_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.shear_range)
+}
+
+// bool disable_augmentation = 22;
+inline void ImagePreprocessor::clear_disable_augmentation() {
+  disable_augmentation_ = false;
+}
+inline bool ImagePreprocessor::disable_augmentation() const {
+  // @@protoc_insertion_point(field_get:lbann_data.ImagePreprocessor.disable_augmentation)
+  return disable_augmentation_;
+}
+inline void ImagePreprocessor::set_disable_augmentation(bool value) {
+  
+  disable_augmentation_ = value;
+  // @@protoc_insertion_point(field_set:lbann_data.ImagePreprocessor.disable_augmentation)
+}
 
 // -------------------------------------------------------------------
 
@@ -7078,12 +7021,6 @@ inline void TrainingParams::set_procs_per_model(::google::protobuf::int32 value)
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

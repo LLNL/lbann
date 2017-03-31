@@ -34,7 +34,7 @@ using namespace std;
 using namespace El;
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle), lbann_image_preprocessor()
+  : DataReader(batchSize, shuffle)
 {
   m_image_width = 256;
   m_image_height = 256;
@@ -46,7 +46,6 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
-    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_dir(source.m_image_dir), 
     ImageList(source.ImageList),
     m_image_width(source.m_image_width), 
