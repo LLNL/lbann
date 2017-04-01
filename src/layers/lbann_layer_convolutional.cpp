@@ -262,10 +262,10 @@ void convolutional_layer::setup(const int num_prev_neurons)
     break;
   }
 
-  // Initialize filters
+  // Initialize bias to zero
   StarMat bias;
   View(bias, *m_weights, IR(m_filter_size,END), ALL);
-  Fill(bias, DataType(1));
+  Fill(bias, DataType(0));
     
   // Initialize optimizer
   optimizer->setup(1, m_filter_size+m_num_output_channels);

@@ -150,8 +150,8 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       break;
     }
 
-    // Initialize bias to 1
-    Fill(m_bias_weights_v, DataType(1));
+    // Initialize bias to 0
+    Fill(m_bias_weights_v, DataType(0));
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(m_bias_bp_t, m_mini_batch_size, 1);
@@ -186,6 +186,7 @@ void lbann::FullyConnectedLayer::fp_linearity()
 
   // Copy result to output matrix
   Copy(*m_weighted_sum_v, *m_activations_v);
+
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
