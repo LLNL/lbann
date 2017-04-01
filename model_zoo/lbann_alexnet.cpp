@@ -51,11 +51,11 @@ const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/test/"; // "resized_256x256/val/";
+const string g_ImageNet_TestDir = "resized_256x256/val/"; // "resized_256x256/test/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train.txt"; // "train_c0-9.txt";
-const string g_ImageNet_ValLabelFile = "val.txt"; // "val_c0-9.txt";
-const string g_ImageNet_TestLabelFile = "test.txt"; //"val_c0-9.txt";
+const string g_ImageNet_TrainLabelFile =  "train_c0-9.txt"; // "train.txt";
+const string g_ImageNet_ValLabelFile = "val_c0-9.txt"; // "val.txt";
+const string g_ImageNet_TestLabelFile = "val_c0-9.txt"; //"test.txt";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
+        trainParams.LearnRate = 5e-3;
         trainParams.DropOut = 0.5;
         trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
@@ -89,8 +90,8 @@ int main(int argc, char* argv[])
         int decayIterations = 1;
 
         bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
-        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
-        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
 
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
@@ -178,6 +179,11 @@ int main(int argc, char* argv[])
           }
         }
 
+        imagenet_validation_set.scale(scale);
+        imagenet_validation_set.subtract_mean(subtract_mean);
+        imagenet_validation_set.unit_variance(unit_variance);
+        imagenet_validation_set.z_score(z_score);
+
         ///////////////////////////////////////////////////////////////////
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
@@ -225,8 +231,8 @@ int main(int argc, char* argv[])
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set), 
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
         dnn->add_metric(new metrics::categorical_accuracy(comm));
-        input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
-        // input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn->add(input_layer);
 
         // Layer 1 (convolutional)
@@ -417,8 +423,8 @@ int main(int argc, char* argv[])
                  weight_initialization::glorot_uniform,
                  {});
 
-        target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-        // target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);

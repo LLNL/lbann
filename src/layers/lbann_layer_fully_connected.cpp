@@ -133,29 +133,26 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
       optimizer->setup(numPrevNeurons+1, NumNeurons);
     }
 
-    // Initialize (zero) weight-bias matrix
-    // Note that the weight-bias matrix has an extra column so that it will include
-    // the bias term from the previous layer's activations in the linear combination
+    // Initialize matrices
+    // Note: the weights-bias matrix has an extra column so it includes bias term
     Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
+    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
+    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations and bias terms
     View(*m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
     View(*m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
 
-    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
-
-    // Initialize other matrices
-    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
-
     /// Setup independent views of the weights gradient matrix for the activations and bias terms
     View(*m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
     View(*m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
+
+    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(*m_bias_bp_t, m_mini_batch_size, 1);
@@ -190,6 +187,7 @@ void lbann::FullyConnectedLayer::fp_linearity()
 
   // Copy result to output matrix
   Copy(*m_weighted_sum_v, *m_activations_v);
+
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()

@@ -466,6 +466,7 @@ void lbann::pooling_layer::fp_linearity_cpu() {
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
   // Iterate through data samples in mini-batch
+#pragma omp parallel for
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
     // Iterate through channels
@@ -597,6 +598,7 @@ void lbann::pooling_layer::bp_linearity_cpu() {
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
   // Iterate through data samples in mini-batch
+#pragma omp parallel for
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
     // Iterate through channels
@@ -639,7 +641,7 @@ void lbann::pooling_layer::bp_linearity_cpu() {
           if(valid_input_entry) {
             const DataType value = prev_activations_local.Get(input_index, sample);
             if(value >= max_value) {
-              if(value == max_value) {
+              if(value > max_value) {
                 max_value = value;
                 max_input_indices.clear();
               }
@@ -666,7 +668,9 @@ void lbann::pooling_layer::bp_linearity_cpu() {
             error_signal_entry /= max_input_indices.size();
           }
           for(Int i=0; i<max_input_indices.size(); ++i) {
-            error_signal_local.Set(max_input_indices[i], sample, error_signal_entry);
+            error_signal_local.Update(max_input_indices[i],
+                                      sample,
+                                      error_signal_entry);
           }
         }
 

@@ -57,7 +57,12 @@ double lbann::objective_functions::categorical_cross_entropy::compute_categorica
         const DataType true_val = groundtruth_v.GetLocal(r,c);
         if(true_val != DataType(0)) {
           double pred_val = predictions_v.GetLocal(r,c);
-          total_error += - true_val * Log(pred_val);
+          if(pred_val > DataType(0)) {
+            total_error += - true_val * Log(pred_val);
+          }
+          else {
+            total_error = INFINITY;
+          }
         }
       }
     }

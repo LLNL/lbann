@@ -128,11 +128,11 @@ bool lbann::image_utils::loadBMP(const char* Imagefile, int& Width, int& Height,
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            Pixels[offset * 3 + 0] = bits[y * bitrowsize + x * 3 + 2];
-            Pixels[offset * 3 + 1] = bits[y * bitrowsize + x * 3 + 1];
-            Pixels[offset * 3 + 2] = bits[y * bitrowsize + x * 3 + 0];
-		}
-	}
+            Pixels[offset] = bits[y * bitrowsize + x * 3 + 2];
+            Pixels[offset + Height*Width] = bits[y * bitrowsize + x * 3 + 1];
+            Pixels[offset + 2*Height*Width] = bits[y * bitrowsize + x * 3 + 0];
+        }
+    }
     
 	free(info);
 	free(bits);
@@ -222,11 +222,10 @@ bool lbann::image_utils::loadPNG(const char* Imagefile, int& Width, int& Height,
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             Vec3b pixel = image.at<Vec3b>(y, x);
-
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            Pixels[offset * 3 + 0] = pixel[0];
-            Pixels[offset * 3 + 1] = pixel[1];
-            Pixels[offset * 3 + 2] = pixel[2];
+            Pixels[offset] = pixel[0];
+            Pixels[offset + Height*Width] = pixel[1];
+            Pixels[offset + 2*Height*Width] = pixel[2];
         }
     }
 
@@ -244,12 +243,10 @@ bool lbann::image_utils::savePNG(const char* Imagefile, int Width, int Height, b
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             Vec3b pixel;
-
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            pixel[0] = Pixels[offset * 3 + 0];
-            pixel[1] = Pixels[offset * 3 + 1];
-            pixel[2] = Pixels[offset * 3 + 2];
-
+            pixel[0] = Pixels[offset];
+            pixel[1] = Pixels[offset + Height*Width];
+            pixel[2] = Pixels[offset + 2*Height*Width];
             image.at<Vec3b>(y, x) = pixel;
         }
     }
@@ -274,11 +271,10 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             Vec3b pixel = image.at<Vec3b>(y, x);
-
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            Pixels[offset * 3 + 0] = pixel[0];
-            Pixels[offset * 3 + 1] = pixel[1];
-            Pixels[offset * 3 + 2] = pixel[2];
+            Pixels[offset] = pixel[0];
+            Pixels[offset + Height*Width] = pixel[1];
+            Pixels[offset + 2*Height*Width] = pixel[2];
         }
     }
 
@@ -296,12 +292,10 @@ bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, b
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             Vec3b pixel;
-
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            pixel[0] = Pixels[offset * 3 + 0];
-            pixel[1] = Pixels[offset * 3 + 1];
-            pixel[2] = Pixels[offset * 3 + 2];
-
+            pixel[0] = Pixels[offset];
+            pixel[1] = Pixels[offset + Height*Width];
+            pixel[2] = Pixels[offset + 2*Height*Width];
             image.at<Vec3b>(y, x) = pixel;
         }
     }

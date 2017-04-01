@@ -85,22 +85,22 @@ namespace lbann
       // KERAS: lr = self.lr * (1.0 / (1.0 + self.decay * self.iterations))
       lr = lr * (1.0 / (1.0 + decay * iterations));
       iterations++;
-  
+
       // velocity
       // KERAS: v = self.momentum * m - lr * g  # velocity
       Scale(momentum, velocity);
       Scale(lr, WB_D); // step
-      Axpy(-1, WB_D.Matrix(), velocity.Matrix()); // Update // TODO
+      Axpy(DataType(-1), WB_D.Matrix(), velocity.Matrix()); // Update // TODO
 
       if(nesterov) {
         //KERAS: new_p = p + self.momentum * v - lr * g
         Copy(velocity, nesterov_ag);
         Scale(momentum, nesterov_ag);
-        Axpy(-1, WB_D.Matrix(), nesterov_ag.Matrix()); // TODO
-        Axpy(1., nesterov_ag.Matrix(), WB.Matrix()); // TODO
+        Axpy(DataType(-1), WB_D.Matrix(), nesterov_ag.Matrix()); // TODO
+        Axpy(DataType(1), nesterov_ag.Matrix(), WB.Matrix()); // TODO
       }else {
         //KERAS: new_p = p + v
-        Axpy(1., velocity.Matrix(), WB.Matrix()); // TODO
+        Axpy(DataType(1), velocity.Matrix(), WB.Matrix()); // TODO
       }
 
     }

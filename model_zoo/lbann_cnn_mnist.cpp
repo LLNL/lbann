@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
         trainParams.EpochCount = 20;
         trainParams.MBSize = 256;
         trainParams.LearnRate = 0.01;
+        trainParams.ActivationType = activation_type::RELU;
         trainParams.DropOut = 0.5;
         trainParams.SummaryDir = "./out";
         trainParams.ProcsPerModel = 0;
@@ -274,7 +275,7 @@ int main(int argc, char* argv[])
         }
 
         // Fully connected and output layers
-        dnn.add("FullyConnected", data_layout::DATA_PARALLEL, 128, trainParams.ActivationType,
+        dnn.add("FullyConnected", data_layout::DATA_PARALLEL, 128, activation_type::RELU,
                 weight_initialization::glorot_uniform, {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
         dnn.add("Softmax", data_layout::DATA_PARALLEL, 10, activation_type::ID,
                 weight_initialization::glorot_uniform, {});
