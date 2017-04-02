@@ -32,7 +32,7 @@ if(LBANN_HAS_PROTOBUF)
   include_directories(${TBinf_INCLUDE_DIRS})
 
   # Build library
-  add_library(TBinf STATIC ${TBINF_SOURCE_DIR}/TBinf.cpp ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc)
+  add_library(TBinf SHARED ${TBINF_SOURCE_DIR}/TBinf.cpp ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc)
   target_link_libraries(TBinf ${PROTOBUF_LIBRARIES})
 
   # Add preprocessor flag for Tensorboard interface
