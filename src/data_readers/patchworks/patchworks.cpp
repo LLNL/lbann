@@ -185,7 +185,7 @@ bool take_patch(const cv::Mat& img, const patch_descriptor& pi,
   return true;
 }
 
-bool extract_patches(const cv::Mat& img, patch_descriptor pi, std::vector<cv::Mat>& patches)
+bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::Mat>& patches)
 {
   if (img.data == NULL) return false;
 
@@ -194,7 +194,7 @@ bool extract_patches(const cv::Mat& img, patch_descriptor pi, std::vector<cv::Ma
   if (!ok) return false;
 
   take_patch(img, pi, roi_center, patches);
-  std::cout << "center patch: " << roi_center << std::endl;
+  //std::cout << "center patch: " << roi_center << std::endl;
 
   ROI roi;
   unsigned int i = 1u;

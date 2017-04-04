@@ -55,7 +55,7 @@ bool take_patch(const cv::Mat& img, const patch_descriptor& pi,
                 const ROI& roi, std::vector<cv::Mat>& patches);
 
 /// Extract patches according to the given patch description
-bool extract_patches(const cv::Mat& img, patch_descriptor pi, std::vector<cv::Mat>& patches);
+bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::Mat>& patches);
 
 } // end of namespace patchworks
 } // end of namespace lbann

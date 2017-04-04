@@ -154,8 +154,8 @@ bool patch_descriptor::get_first_patch(ROI& patch)
 
   m_patch_center = p;
   patch = p;
-  positions.clear();
-  positions.push_back(patch);
+  m_positions.clear();
+  m_positions.push_back(patch);
 
   return true;
 }
@@ -182,25 +182,31 @@ bool patch_descriptor::get_next_patch(ROI& patch)
     }
   } while (!got_one);
 
-  positions.push_back(patch);
+  m_positions.push_back(patch);
   return true;
 }
 
 std::ostream& patch_descriptor::print(std::ostream& os) const
 {
-  os << " m_width: " << m_width << std::endl
-     << " m_height: " << m_height << std::endl
-     << " m_gap: " << m_gap << std::endl
-     << " m_jitter: " << m_jitter << std::endl
-     << " m_mode_center: " << m_mode_center << std::endl
-     << " m_mode_chrom: " << m_mode_chrom << std::endl
-     << " m_ext: " << m_ext << std::endl
-     << " m_sample_area: " << m_sample_area << std::endl
-     << " m_cur_patch_idx: " << m_cur_patch_idx << std::endl;
+  os << "patch descriptor:" << std::endl
+     << '\t' << "m_width: " << m_width << std::endl
+     << '\t' << "m_height: " << m_height << std::endl
+     << '\t' << "m_gap: " << m_gap << std::endl
+     << '\t' << "m_jitter: " << m_jitter << std::endl
+     << '\t' << "m_mode_center: " << m_mode_center << std::endl
+     << '\t' << "m_mode_chrom: " << m_mode_chrom << std::endl
+     << '\t' << "m_ext: " << m_ext << std::endl
+     << '\t' << "m_sample_area: " << m_sample_area << std::endl
+     << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl;
 
-  os << "patch displacements from the center: " << std::endl;
+  os << std::endl << "patch displacements from the center: " << std::endl;
   for (unsigned int i=0u; i < m_displacements.size() ; ++i) {
-    os << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
+    os << '\t' << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
+  }
+
+  os << std::endl << "patch regions: " << std::endl;
+  for (unsigned int i=0u; i < m_positions.size() ; ++i) {
+    os << '\t' << i << '\t' << m_positions[i] << std::endl;
   }
 
   return os;

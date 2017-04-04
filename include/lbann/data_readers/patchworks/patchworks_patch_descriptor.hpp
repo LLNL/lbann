@@ -77,7 +77,7 @@ class patch_descriptor {
   /// The list of displacements to used to generate consecutive patches
   std::vector<displacement_type> m_displacements;
   /// The actual patch positions
-  std::vector<ROI> positions;
+  std::vector<ROI> m_positions;
 
  public:
   patch_descriptor(void) { init(0); } ///< Default constructor
@@ -126,7 +126,7 @@ class patch_descriptor {
   virtual bool get_next_patch(ROI& patch);
 
   /// Allow read-only access to the positions of the patches generated
-  const std::vector<ROI>& access_positions(void) const { return positions; }
+  const std::vector<ROI>& access_positions(void) const { return m_positions; }
   /// print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };
