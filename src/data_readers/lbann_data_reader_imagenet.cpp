@@ -214,7 +214,7 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->ImageList = source.ImageList;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
-  this->m_image_depth = source.m_image_height;
+  this->m_image_depth = source.m_image_depth;
   this->m_num_labels = source.m_num_labels;
 
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
