@@ -66,7 +66,7 @@ void patch_descriptor::set_size(const int width, const int height)
 
 bool patch_descriptor::set_sample_area(const ROI& area)
 {
-  if (!m_sample_area.is_valid()) return false;
+  if (!area.is_valid()) return false;
   m_sample_area = area;
   return true;
 }
