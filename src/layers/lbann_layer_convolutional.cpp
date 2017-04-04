@@ -688,84 +688,87 @@ void lbann::convolutional_layer::fp_linearity_cpu() {
   //   filter_entry is the (output_index, input_index) entry.
   ////////////////////////////////////////////////////////////////
 
-  // Iterate through output and input channels
+  // Iterate through samples, output channels, and input channels
 #pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
+    std::vector<Int> filter_offsets(m_num_dims);
+    std::vector<Int> filter_pos(m_num_dims);
     for(Int input_channel = 0;
         input_channel < m_num_input_channels;
         ++input_channel) {
+      for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
-      // Iterate through output entries in current output channel
-      // Note: each output entry corresponds to a different offset of
-      //   the convolutional kernel
-      std::vector<Int> filter_offsets(m_num_dims);
-      for(Int d = 0; d < m_num_dims; ++d) {
-        filter_offsets[d] = -m_conv_pads[d];
-      }
-      const Int start_output_index = output_channel*num_per_output_channel;
-      const Int end_output_index = (output_channel+1)*num_per_output_channel;
-      for(Int output_index = start_output_index;
-          output_index < end_output_index;
-          ++output_index) {
-        Mat output_entry = View(weighted_sum_local, IR(output_index), ALL);
+        // Iterate through output entries in current output channel
+        // Note: each output entry corresponds to a different offset
+        //   of the convolutional kernel
+        for(Int d = 0; d < m_num_dims; ++d) {
+          filter_offsets[d] = -m_conv_pads[d];
+        }
+        const Int start_output_index = output_channel*num_per_output_channel;
+        const Int end_output_index = (output_channel+1)*num_per_output_channel;
+        for(Int output_index = start_output_index;
+            output_index < end_output_index;
+            ++output_index) {
+          DataType& output_entry = weighted_sum_local(output_index, sample);
 
-        // Iterate through filter entries for current input and output channel
-        std::vector<Int> filter_pos(m_num_dims, 0);
-        const Int start_filter_index
-          = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-        const Int end_filter_index
-          = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
-        for(Int filter_index = start_filter_index;
-            filter_index < end_filter_index;
-            ++filter_index) {
-          const DataType filter_entry = filter_local.Get(filter_index,0);
-
-          // Get input entry corresponding to filter entry
-          Int input_index = 0;
-          bool valid_input_entry = true;
+          // Iterate through filter entries for current input and output channel
           for(Int d = 0; d < m_num_dims; ++d) {
-            if(filter_offsets[d] + filter_pos[d] < 0
-               || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
-              valid_input_entry = false;
-              break;
-            }
-            input_index *= m_input_dims[d];
-            input_index += filter_offsets[d] + filter_pos[d];
+            filter_pos[d] = 0;
           }
-          input_index += input_channel*num_per_input_channel;
+          const Int start_filter_index
+            = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
+          const Int end_filter_index
+            = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
+          for(Int filter_index = start_filter_index;
+              filter_index < end_filter_index;
+              ++filter_index) {
+            const DataType filter_entry = filter_local(filter_index,0);
 
-          // Update output entry
-          if(valid_input_entry) {
-            const Mat input_entry = LockedView(prev_activations_local,
-                                               IR(input_index),
-                                               ALL);
-            Axpy(filter_entry, input_entry, output_entry);
-          }
+            // Get input entry corresponding to filter entry
+            Int input_index = 0;
+            bool valid_input_entry = true;
+            for(Int d = 0; d < m_num_dims; ++d) {
+              if(filter_offsets[d] + filter_pos[d] < 0
+                 || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
+                valid_input_entry = false;
+                break;
+              }
+              input_index *= m_input_dims[d];
+              input_index += filter_offsets[d] + filter_pos[d];
+            }
+            input_index += input_channel*num_per_input_channel;
+
+            // Update output entry
+            if(valid_input_entry) {
+              const DataType input_entry = prev_activations_local(input_index, sample);
+              output_entry += filter_entry*input_entry;
+            }
           
-          // Move to next filter entry
-          ++filter_pos[m_num_dims-1];
+            // Move to next filter entry
+            ++filter_pos[m_num_dims-1];
+            for(Int d = m_num_dims - 1; d > 0; --d) {
+              if(filter_pos[d] >= m_filter_dims[d]) {
+                filter_pos[d] = 0;
+                ++filter_pos[d-1];
+              }
+            }
+          
+          }
+
+          // Move to next filter offset and output entry
+          filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
           for(Int d = m_num_dims - 1; d > 0; --d) {
-            if(filter_pos[d] >= m_filter_dims[d]) {
-              filter_pos[d] = 0;
-              ++filter_pos[d-1];
+            if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+              filter_offsets[d] = -m_conv_pads[d];
+              filter_offsets[d-1] += m_conv_strides[d-1];
             }
           }
-          
-        }
 
-        // Move to next filter offset and output entry
-        filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-        for(Int d = m_num_dims - 1; d > 0; --d) {
-          if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            filter_offsets[d] = -m_conv_pads[d];
-            filter_offsets[d-1] += m_conv_strides[d-1];
-          }
         }
 
       }
-
     }
   }
 
@@ -915,91 +918,97 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
   //   and the filter gradient.
   ////////////////////////////////////////////////////////////////
 
-  // Iterate through output and input channels
+  // Iterate through samples, output channels, and input channels
 #pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
+    std::vector<Int> filter_offsets(m_num_dims);
+    std::vector<Int> filter_pos(m_num_dims);
     for(Int input_channel = 0;
         input_channel < m_num_input_channels;
         ++input_channel) {
+      for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
-      // Iterate through output entries in current output channel
-      // Note: each output entry corresponds to a different offset of
-      //   the convolutional kernel
-      std::vector<Int> filter_offsets(m_num_dims);
-      for(Int d = 0; d < m_num_dims; ++d) {
-        filter_offsets[d] = -m_conv_pads[d];
-      }
-      const Int start_output_index = output_channel*num_per_output_channel;
-      const Int end_output_index = (output_channel+1)*num_per_output_channel;
-      for(Int output_index = start_output_index;
-          output_index < end_output_index;
-          ++output_index) {
+        // Iterate through output entries in current output channel
+        // Note: each output entry corresponds to a different offset
+        //   of the convolutional kernel
+        for(Int d = 0; d < m_num_dims; ++d) {
+          filter_offsets[d] = -m_conv_pads[d];
+        }
+        const Int start_output_index = output_channel*num_per_output_channel;
+        const Int end_output_index = (output_channel+1)*num_per_output_channel;
+        for(Int output_index = start_output_index;
+            output_index < end_output_index;
+            ++output_index) {
 
-        // Iterate through filter entries for current input and output channel
-        std::vector<Int> filter_pos(m_num_dims, 0);
-        const Int start_filter_index
-          = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-        const Int end_filter_index
-          = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
-        for(Int filter_index = start_filter_index;
-            filter_index < end_filter_index;
-            ++filter_index) {
-          const DataType filter_entry = filter_local.Get(filter_index,0);
-
-          // Get input entry corresponding to filter entry
-          Int input_index = 0;
-          bool valid_input_entry = true;
+          // Iterate through filter entries for current input and output channel
           for(Int d = 0; d < m_num_dims; ++d) {
-            if(filter_offsets[d] + filter_pos[d] < 0
-               || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
-              valid_input_entry = false;
-              break;
+            filter_pos[d] = 0;
+          }
+          const Int start_filter_index
+            = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
+          const Int end_filter_index
+            = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
+          for(Int filter_index = start_filter_index;
+              filter_index < end_filter_index;
+              ++filter_index) {
+            const DataType filter_entry = filter_local.Get(filter_index,0);
+
+            // Get input entry corresponding to filter entry
+            Int input_index = 0;
+            bool valid_input_entry = true;
+            for(Int d = 0; d < m_num_dims; ++d) {
+              if(filter_offsets[d] + filter_pos[d] < 0
+                 || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
+                valid_input_entry = false;
+                break;
+              }
+              input_index *= m_input_dims[d];
+              input_index += filter_offsets[d] + filter_pos[d];
             }
-            input_index *= m_input_dims[d];
-            input_index += filter_offsets[d] + filter_pos[d];
-          }
-          input_index += input_channel*num_per_input_channel;
+            input_index += input_channel*num_per_input_channel;
 
-          if(valid_input_entry) {
+            // Update output entry
+            if(valid_input_entry) {
 
-            // Update error signal
-            // Note: error_signal = conv_matrix^T * prev_error_signal
-            const Mat prev_error_signal_entry = LockedView(prev_error_signal_local, IR(output_index), ALL);
-            Mat error_signal_entry = View(error_signal_local, IR(input_index), ALL);
-            Axpy(filter_entry, prev_error_signal_entry, error_signal_entry);
+              // Update error signal
+              // Note: error_signal = conv_matrix^T * prev_error_signal
+              const DataType prev_error_signal_entry = prev_error_signal_local(output_index, sample);
+              DataType& error_signal_entry = error_signal_local(input_index, sample);
+              error_signal_entry += filter_entry * prev_error_signal_entry;
 
-            // Update filter gradient
-            // Note: conv_matrix_gradient = prev_error_signal * prev_activations^T
-            const Mat prev_activations_entry = LockedView(prev_activations_local, IR(input_index), ALL);
-            const DataType filter_gradient_update = Dot(prev_error_signal_entry, prev_activations_entry);
-            filter_gradient_local.Update(filter_index, Int(0), filter_gradient_update);
+              // Update filter gradient
+              // Note: conv_matrix_gradient = prev_error_signal * prev_activations^T
+              const DataType prev_activations_entry = prev_activations_local(input_index, sample);
+              DataType& filter_gradient_entry = filter_gradient_local(filter_index, Int(0));
+              filter_gradient_entry += prev_error_signal_entry * prev_activations_entry;
 
-          }
-
-          // Move to next filter entry
-          ++filter_pos[m_num_dims-1];
-          for(Int d = m_num_dims - 1; d > 0; --d) {
-            if(filter_pos[d] >= m_filter_dims[d]) {
-              filter_pos[d] = 0;
-              ++filter_pos[d-1];
             }
-          }
           
-        }
-
-        // Move to next filter offset and output entry
-        filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-        for(Int d = m_num_dims - 1; d > 0; --d) {
-          if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
-            filter_offsets[d] = -m_conv_pads[d];
-            filter_offsets[d-1] += m_conv_strides[d-1];
+            // Move to next filter entry
+            ++filter_pos[m_num_dims-1];
+            for(Int d = m_num_dims - 1; d > 0; --d) {
+              if(filter_pos[d] >= m_filter_dims[d]) {
+                filter_pos[d] = 0;
+                ++filter_pos[d-1];
+              }
+            }
+          
           }
+
+          // Move to next filter offset and output entry
+          filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
+          for(Int d = m_num_dims - 1; d > 0; --d) {
+            if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
+              filter_offsets[d] = -m_conv_pads[d];
+              filter_offsets[d-1] += m_conv_strides[d-1];
+            }
+          }
+
         }
 
       }
-
     }
   }
 
