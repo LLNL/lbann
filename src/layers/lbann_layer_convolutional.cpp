@@ -551,12 +551,14 @@ void lbann::convolutional_layer::fp_linearity() {
 }
 
 void lbann::convolutional_layer::bp_linearity() {
+
   if(m_using_gpus) {
     bp_linearity_gpu();
   }
   else {
     bp_linearity_cpu();
   }
+
 }
 
 void lbann::convolutional_layer::fp_nonlinearity() {
@@ -874,7 +876,7 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
 
 /// @todo Write a more efficient implementation
 void lbann::convolutional_layer::bp_linearity_cpu() {
-  
+
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
   const Mat& weights_local = m_weights->LockedMatrix();
@@ -897,7 +899,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
-  
+
   // Compute bias gradient
   Mat ones;
   Ones(ones, num_per_output_channel, prev_error_signal_local.Width());
@@ -920,14 +922,14 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 
   // Iterate through samples, output channels, and input channels
 #pragma omp parallel for
-  for(Int output_channel = 0;
-      output_channel < m_num_output_channels;
-      ++output_channel) {
+  for(Int input_channel = 0;
+      input_channel < m_num_input_channels;
+      ++input_channel) {
     std::vector<Int> filter_offsets(m_num_dims);
     std::vector<Int> filter_pos(m_num_dims);
-    for(Int input_channel = 0;
-        input_channel < m_num_input_channels;
-        ++input_channel) {
+    for(Int output_channel = 0;
+        output_channel < m_num_output_channels;
+        ++output_channel) {
       for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
         // Iterate through output entries in current output channel
@@ -994,7 +996,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
                 ++filter_pos[d-1];
               }
             }
-          
+
           }
 
           // Move to next filter offset and output entry

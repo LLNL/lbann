@@ -277,15 +277,6 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
-
-#if 1
-  El::Dist U = m_weights->ColDist();
-  El::Dist V = m_weights->RowDist();
-  std::cout << "m_weights has dist " << U << " by " << V << std::endl;
-  U = m_activations->ColDist();
-  V = m_activations->RowDist();
-  std::cout << "m_activations has dist " << U << " by " << V << std::endl;
-#endif
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 
