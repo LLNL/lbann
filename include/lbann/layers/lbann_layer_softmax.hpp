@@ -57,8 +57,9 @@ namespace lbann
   protected:
     void fp_linearity();
     void bp_linearity();
-    void fp_nonlinearity() {}
-    void bp_nonlinearity() {}
+    void fp_nonlinearity();
+    void bp_nonlinearity();
+    void fp_set_std_matrix_view();
 
   public:
     DataType   WBL2NormSum;
@@ -70,14 +71,8 @@ namespace lbann
 
   private:
     weight_initialization m_weight_initialization;
-    ColSumMat ZsColMax;
-    ColSumMat ZsNormExpSum;
-    ColSumMat norms;
-    StarMat ZsColMaxStar;
-    StarMat ZsNormExpSumStar;
-
-    ElMat *m_curr_prev_error_signal_v;
-    ElMat *m_curr_activations_v;
+    AbsDistMat *m_workspace;
+    AbsDistMat *m_workspace_v;
   };
 }
 

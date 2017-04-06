@@ -41,11 +41,12 @@ typedef El::Grid EGrid;
 typedef El::Grid Grid;
 typedef El::Matrix<DataType> Mat;
 typedef El::AbstractDistMatrix<DataType> AbsDistMat;
-typedef El::DistMatrix<DataType> DistMat;
+typedef El::DistMatrix<DataType, El::MC, El::MR> DistMat;
 typedef El::DistMatrix<DataType, El::CIRC, El::CIRC> CircMat;
 typedef El::DistMatrix<DataType, El::STAR, El::STAR> StarMat;
 typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix over columns */
 typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
+typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 

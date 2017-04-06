@@ -43,12 +43,7 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
                                   lbann_comm* comm,
                                   Optimizer *optimizer)
   :  Layer(data_dist, index, comm, optimizer, miniBatchSize),
-     m_weight_initialization(init),
-     ZsColMax(comm->get_model_grid()),
-     ZsNormExpSum(comm->get_model_grid()),
-     norms(comm->get_model_grid()),
-     ZsColMaxStar(comm->get_model_grid()),
-     ZsNormExpSumStar(comm->get_model_grid())
+     m_weight_initialization(init)
 {
     m_type = layer_type::softmax;
     Index = index;
@@ -71,22 +66,20 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
 }
 
 lbann::SoftmaxLayer::~SoftmaxLayer() {
-  delete m_curr_prev_error_signal_v;
-  delete m_curr_activations_v;
+  delete m_workspace;
+  delete m_workspace_v;
 }
 
 /// Matrices should be in MC,MR distributions
 void lbann::SoftmaxLayer::initialize_model_parallel_distribution() {
-  /// Instantiate these view objects but do not allocate data for them
-  m_curr_prev_error_signal_v = new DistMat(comm->get_model_grid());
-  m_curr_activations_v       = new DistMat(comm->get_model_grid());
+  m_workspace = new StarMRMat(comm->get_model_grid());
+  m_workspace_v = new StarMRMat(comm->get_model_grid());
 }
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::SoftmaxLayer::initialize_data_parallel_distribution() {
-  /// Instantiate these view objects but do not allocate data for them
-  m_curr_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
-  m_curr_activations_v       = new StarVCMat(comm->get_model_grid());
+  m_workspace = new StarVCMat(comm->get_model_grid());
+  m_workspace_v = new StarVCMat(comm->get_model_grid());
 }
 
 void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
@@ -108,119 +101,170 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
+    Zeros(*m_workspace, 1, m_mini_batch_size);
+
 }
 
-// template <typename Dtype>
-// void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-//     vector<Blob<Dtype>*>* top) {
+void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  Layer::fp_set_std_matrix_view();
+  View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
+}
 
 void lbann::SoftmaxLayer::fp_linearity()
 {
-  // _Z = m_weights * Xs                                               -- Xs is previous layer Activations
-  // ZsColMax[c,0] = max(_Z[0..numNeurons-1, c])                -- (m_mini_batch_size x 1)
-  // ZsNorm[r,c] = _Z[r,c] - ZsColMax[c,0]                      -- Column-wise normalized Zs matrix: _Z[r,c] - ZsColMax[1,c]
-  // ZsNormExp[r,c] = exp(ZsNorm[r,c])
-  // ZsNormExpSum[c,0] = sum(ZsNormExp[0..numNeurons-1, c])     -- Column-wise sum over normalized, exponentiated _Z
-  // _Y[r,c] = ZsNormExp[r,c] / ZsNormExpSum[c,0]               -- exp(norm(_Z[r,c])) = Sum(exp(norm(Zs[r,c])))
 
-  // Apply linear transform
-  Gemm(NORMAL, NORMAL, (DataType) 1.0, *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_weighted_sum_v);
+  // Apply weight matrix
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         *m_weights,
+         *m_prev_activations_v,
+         DataType(0),
+         *m_weighted_sum_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         m_weights->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(0),
+         m_weighted_sum_v->Matrix());
+    break;
+  }
 
-  // For each minibatch (column) find the maximimum value
-  Zeros(ZsColMax, m_mini_batch_size, 1); // Clear the entire matrix
-  ColumnMaxNorms((DistMat) *m_weighted_sum_v, ZsColMax);
-
-  // Redistribute the per-minibatch maximum values
-  Copy(ZsColMax, ZsColMaxStar);
-
-  /// @todo - BVE FIXME I believe that this should be put into a softmax non-linearity / activation function
-
-  // Compute exp(z) of each entry. Subtract the max of each column from its
-  // entries to prevent the exp from blowing up. Large negative values are
-  // expected to underflow to 0.
-  IndexDependentMap(
-    *m_weighted_sum_v,
-    (std::function<DataType(El::Int,El::Int,const DataType&)>)
-    ([this](El::Int r, El::Int c, const DataType& z)->DataType {
-      El::Int rL = this->ZsColMaxStar.LocalRow(c);
-      //      if(isnan(std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0)))) { cout << "[" << comm->get_rank_in_world() << "] has a nan "<<std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0)) << " at [" << r << ", " << c << "]="<<z<<endl;throw(new lbann_exception("Foo"));}
-      return std::exp(z - this->ZsColMaxStar.GetLocal(rL, 0));
-    }));
-
-  // For each minibatch (column) sum up the exponentiated values
-  Zeros(ZsNormExpSum, m_mini_batch_size, 1); // Clear the entire matrix
-  //  ColSumMat ZsNormExpSum;
-  ColumnSum((DistMat&) *m_weighted_sum_v, ZsNormExpSum);
-  Copy(ZsNormExpSum, ZsNormExpSumStar);
-
-  // Divide each entry: exp(x_ij) / Sum_i(exp(x_ij))
+  // Copy result to output matrix
   Copy(*m_weighted_sum_v, *m_activations_v);
 
-  IndexDependentMap(*m_activations_v,
-                    (std::function<DataType(Int,Int,const DataType&)>)([this /*ZsNormExpSum*/](Int r, Int c, const DataType& z)->
-                                                                DataType{Int rL = this->ZsNormExpSumStar.LocalRow(c); return z/this->ZsNormExpSumStar.GetLocal(rL,0);}));
+}
 
-#if 0
-  ColSumMat Ycheck(_Y.Grid());
-  Zeros(Ycheck, m_mini_batch_size, 1);
-  ColumnSum((DistMat&) _Y /*ZsNormExp*/, Ycheck);
-  StarMat YcheckStar(_Y.Grid());
-  Copy(Ycheck, YcheckStar);
-  DataType sum = 0.0;
-  for(int i = 0; i < YcheckStar.Height(); i++) {
-    Int l = YcheckStar.LocalRow(i);
-    sum = YcheckStar.GetLocal(l, 0);
-    //    sum += YcheckStar.GetLocal(l, 0);
-    //  }
-  if(YcheckStar.GetLocal(l, 0) < 0 || (sum >= 1.00001 || sum <= 0.99999)) {
-    if(_Y.Grid().Rank() == 0) {
-      printf("The softmax does not add up %lf\n", sum);
+void lbann::SoftmaxLayer::fp_nonlinearity()
+{
+
+  // Get local matrices and parameters
+  Mat& workspace_local = m_workspace_v->Matrix();
+  Mat& activations_local = m_activations_v->Matrix();
+  const Int local_height = activations_local.Height();
+  const Int local_width = activations_local.Width();
+
+  // Find maximum entry in each column
+#pragma omp parallel for
+  for(Int c=0; c<local_width; ++c) {
+    DataType max_entry = -INFINITY;
+    for(Int r=0; r<local_height; ++r) {
+      max_entry = Max(max_entry, activations_local.Get(r,c));
     }
-    Print(_Y);
-    Print(YcheckStar);
+    workspace_local.Set(Int(0), c, max_entry);
   }
+  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::MAX);
+
+  // Subtract column max and exponentiate activations
+  // Note: Subtracting the column max prevents activations from blowing
+  //   up. Large negative values underflow to 0.
+  IndexDependentMap(activations_local,
+                    (std::function<DataType(Int,Int,const DataType&)>)
+                    ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
+                      return Exp(z - workspace_local.Get(Int(0), c));
+                    }));
+
+  // Compute column sums
+#pragma omp parallel for
+  for(Int c=0; c<local_width; ++c) {
+    DataType sum = 0;
+    for(Int r=0; r<local_height; ++r) {
+      sum += activations_local.Get(r,c);
+    }
+    workspace_local.Set(Int(0), c, sum);
   }
-#endif
+  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::SUM);
+
+  // Divide activations by column sums
+  IndexDependentMap(activations_local,
+                    (std::function<DataType(Int,Int,const DataType&)>)
+                    ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
+                      return z / workspace_local.Get(Int(0), c);
+                    }));
+  
 }
 
 void lbann::SoftmaxLayer::bp_linearity()
 {
 
-  /// @todo Put softmax nonlinearity in bp_nonlinearity function
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    // Compute the partial delta update for the next lower layer
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         *m_weights,
+         *m_prev_error_signal_v,
+         DataType(0),
+         *m_error_signal_v);
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         *m_prev_error_signal_v,
+         *m_prev_activations_v,
+         DataType(0),
+         *m_weights_gradient);
+    break;
+  case data_layout::DATA_PARALLEL:
+    // Compute the partial delta update for the next lower layer
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         m_weights->LockedMatrix(),
+         m_prev_error_signal_v->LockedMatrix(),
+         DataType(0),
+         m_error_signal_v->Matrix());
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         m_prev_error_signal_v->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(0),
+         m_weights_gradient->Matrix());
+    // Add gradients from all processes
+    AllReduce(*m_weights_gradient,
+              m_weights_gradient->DistComm());
+    break;
+  }
 
-  // Compute error signal from nonlinearity (categorical cross entropy case)
+}
+
+void lbann::SoftmaxLayer::bp_nonlinearity()
+{
+
+  // Stop early if objective function is categorical cross entropy
   // Note: error signal is already computed in objective function object
   if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
      && (m_next_layer_type == layer_type::target_distributed_minibatch
          || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
          // || m_next_layer_type == layer_type::target_unsupervised
-         )) {}
-
-  // Compute error signal from nonlinearity (default case)
-  // Note: error_signal = (prev_error_signal - prev_error_signal^T activations) * activations
-  else {
-    StarMat prev_error_signal_dot_activations(get_effective_minibatch_size(), 1);
-    DataType curr_dot_product;
-    for(Int c = 0; c < get_effective_minibatch_size(); c++) {
-      LockedView(*m_curr_prev_error_signal_v, *m_prev_error_signal, ALL, IR(c));
-      LockedView(*m_curr_activations_v, *m_activations, ALL, IR(c));
-      curr_dot_product = Dot(*m_curr_prev_error_signal_v, *m_curr_activations_v);
-      prev_error_signal_dot_activations.SetLocal(c, 0, curr_dot_product);
-    }
-    IndexDependentMap(*m_prev_error_signal_v,
-                      (std::function<DataType(Int,Int,const DataType&)>)
-                      ([&prev_error_signal_dot_activations](Int r, Int c, const DataType& z)->DataType {
-                        return z - prev_error_signal_dot_activations.GetLocal(c,0);
-                      }));
-    Hadamard(*m_prev_error_signal_v, *m_activations_v, *m_prev_error_signal_v);
+         )) {
+    return;
   }
 
-  // Compute the partial delta update for the next lower layer (delta * activation_prev^T)
-  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
-  
-  // Compute update for weights - include division by mini-batch size
-  Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, (DataType) 0., *m_weights_gradient);
+  // Get local matrices and parameters
+  const Mat& activations_local = m_activations_v->LockedMatrix();
+  Mat& workspace_local = m_workspace_v->Matrix();
+  Mat& prev_error_signal_local = m_prev_error_signal_v->Matrix();
+  const Int local_height = activations_local.Height();
+  const Int local_width = activations_local.Width();
+
+  // Compute dot products
+  // Note: prev_error_signal^T activations
+  for(Int c=0; c<local_width; ++c) {
+    workspace_local.Set(Int(0), c,
+                        Dot(prev_error_signal_local(ALL,IR(c)),
+                            activations_local(ALL,IR(c))));
+  }
+  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::SUM);
+
+  // Update error signal
+  // Note: prev_error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
+  IndexDependentMap(prev_error_signal_local,
+                    (std::function<DataType(Int,Int,const DataType&)>)
+                    ([this,&activations_local,&workspace_local]
+                     (Int r, Int c, const DataType& z)->DataType {
+                      const DataType activations_entry = activations_local.Get(r,c);
+                      const DataType dot_product_entry = workspace_local.Get(Int(0),c);
+                      return activations_entry * (z - dot_product_entry);
+                    }));
+
 }
 
 DataType lbann::SoftmaxLayer::WBL2norm() {

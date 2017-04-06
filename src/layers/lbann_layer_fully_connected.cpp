@@ -155,7 +155,7 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
 
     /// Create a "transposed" vector of the bias term for use in backprop
-    Ones(*m_bias_bp_t, m_mini_batch_size, 1);
+    Ones(*m_bias_bp_t, 1, m_mini_batch_size);
 }
 
 void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
@@ -165,7 +165,7 @@ void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
 
   /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
   /// limit the height, not the width
-  View(*m_bias_bp_t_v, *m_bias_bp_t, IR(0, cur_mini_batch_size), IR(0, m_bias_bp_t->Width()));
+  View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
 }
 
 void lbann::FullyConnectedLayer::fp_linearity()
@@ -182,8 +182,22 @@ void lbann::FullyConnectedLayer::fp_linearity()
   Scale(m_bias_term, *m_weighted_sum_v);
 
   // Apply weight matrix
-  Gemm(NORMAL, NORMAL, DataType(1), *m_activation_weights_v, *m_prev_activations_v,
-       DataType(1), *m_weighted_sum_v);
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         *m_activation_weights_v,
+         *m_prev_activations_v,
+         DataType(1),
+         *m_weighted_sum_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         m_activation_weights_v->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(1),
+         m_weighted_sum_v->Matrix());
+    break;
+  }
 
   // Copy result to output matrix
   Copy(*m_weighted_sum_v, *m_activations_v);
@@ -192,15 +206,53 @@ void lbann::FullyConnectedLayer::fp_linearity()
 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
-  // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, DataType(1), *m_activation_weights_v, *m_prev_error_signal_v,
-       DataType(0), *m_error_signal_v);
-  // Compute update for activation weights
-  Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, DataType(0), *m_activation_weights_gradient_v);
-  // Compute update for bias terms
-  Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_bias_bp_t_v, DataType(0), *m_bias_weights_gradient_v);
+
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    // Compute the partial delta update for the next lower layer
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         *m_activation_weights_v,
+         *m_prev_error_signal_v,
+         DataType(0),
+         *m_error_signal_v);
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         *m_prev_error_signal_v,
+         *m_prev_activations_v,
+         DataType(0),
+         *m_activation_weights_gradient_v);
+    // Compute update for bias terms
+    Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
+         *m_prev_error_signal_v,
+         *m_bias_bp_t_v,
+         DataType(0),
+         *m_bias_weights_gradient_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    // Compute the partial delta update for the next lower layer
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         m_activation_weights_v->LockedMatrix(),
+         m_prev_error_signal_v->LockedMatrix(),
+         DataType(0),
+         m_error_signal_v->Matrix());
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         m_prev_error_signal_v->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(0),
+         m_activation_weights_gradient_v->Matrix());
+    // Compute update for bias terms
+    Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
+         m_prev_error_signal_v->LockedMatrix(),
+         m_bias_bp_t_v->LockedMatrix(),
+         DataType(0),
+         m_bias_weights_gradient_v->Matrix());
+    // Add gradients from all processes
+    AllReduce(*m_weights_gradient,
+              m_weights_gradient->DistComm());
+    break;
+  }
+
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
