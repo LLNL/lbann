@@ -33,7 +33,7 @@ lbann::TrainingParams::TrainingParams(void)
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
     PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
     PercentageTestingSamples(1.00), TestWithTrainData(0),
-    EpochStart(0), EpochCount(2), MBSize(192),
+    EpochStart(0), EpochCount(2), MBSize(192), TrainingSamples(1024), TestingSamples(256),
     LearnRate(0.3), LearnRateMethod(2),
     LrDecayRate(0.5), LrDecayCycles(5000),
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
@@ -59,6 +59,9 @@ void lbann::TrainingParams::parse_params(void) {
 
   EpochCount = Input("--num-epochs", "# of training epochs", EpochCount);
   MBSize = Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
+
+  TrainingSamples = Input("--training-samples", "# of samples to use in training", TrainingSamples);
+  TestingSamples = Input("--testing-samples", "# of samples to use in testing", TestingSamples);
 
   LearnRate = Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
   LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);

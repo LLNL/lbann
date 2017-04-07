@@ -60,7 +60,10 @@ namespace lbann
     double PercentageTestingSamples;
     /// Test with training data
     int TestWithTrainData;
-
+    /// Number of training samples- use in generating synthetic dataset
+    int TrainingSamples;
+    /// Number of testing samples- use in generating synthetic dataset
+    int TestingSamples;
     /// Starting epoch (initialized to 0, overridden from checkpoint)
     int EpochStart;
     /// Number of training epochs
