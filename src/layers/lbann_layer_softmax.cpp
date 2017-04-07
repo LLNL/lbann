@@ -219,7 +219,7 @@ void lbann::SoftmaxLayer::bp_linearity()
          m_weights_gradient->Matrix());
     // Add gradients from all processes
     AllReduce(*m_weights_gradient,
-              m_weights_gradient->DistComm());
+              m_weights_gradient->RedundantComm());
     break;
   }
 
@@ -277,6 +277,7 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
 bool lbann::SoftmaxLayer::update()
 {
+
   if(m_execution_mode == execution_mode::training) {
     optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
   }

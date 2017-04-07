@@ -199,7 +199,7 @@ void convolutional_layer::setup(const int num_prev_neurons)
     Zeros(m_weights_gradient_per_gpu,
           m_filter_size+m_num_output_channels,
           m_cudnn->get_num_gpus());
-    *m_weights_gradient = View(m_weights_gradient_per_gpu, ALL, IR(0));
+    View(*m_weights_gradient, m_weights_gradient_per_gpu, ALL, IR(0));
   }
   else
 #endif // #ifdef __LIB_CUDNN
@@ -905,23 +905,20 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
-  // Get number of samples per GPU
-  const DataType mini_batch_size_per_gpu_float = m_mini_batch_size_per_gpu;
-
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
 #pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnConvolutionBackwardBias(m_cudnn->get_handle(i),
-                                            &mini_batch_size_per_gpu_float,
+                                            &one,
                                             m_output_desc,
                                             m_prev_error_signal_d[i],
                                             &zero,
                                             m_bias_desc,
                                             m_weights_gradient_d[i] + m_filter_size));
     checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->get_handle(i),
-                                              &mini_batch_size_per_gpu_float,
+                                              &one,
                                               m_input_desc,
                                               m_prev_activations_d[i],
                                               m_output_desc,
@@ -1272,8 +1269,8 @@ bool convolutional_layer::update()
       }
     }
 #endif // #ifdef __LIB_CUDNN  
-    AllReduce(*m_weights_gradient, m_weights_gradient->DistComm());
     *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
 
     // Apply optimizer
     optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);

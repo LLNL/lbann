@@ -249,7 +249,7 @@ void lbann::FullyConnectedLayer::bp_linearity()
          m_bias_weights_gradient_v->Matrix());
     // Add gradients from all processes
     AllReduce(*m_weights_gradient,
-              m_weights_gradient->DistComm());
+              m_weights_gradient->RedundantComm());
     break;
   }
 
