@@ -23,35 +23,44 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
+// patchworks_common.hpp - LBANN PATCHWORKS header for common definitions
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include "lbann/callbacks/lbann_callback_save_images.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+/**
+ * LBANN PATCHWORKS common header
+ *  - includes commonly used macros, definitions and declarations
+ */
+
+#ifndef _PATCHWORKS_COMMON_H_
+#define _PATCHWORKS_COMMON_H_
+
+#include <utility> // std::pair
+#include <limits>
+#include <cstdint>
+#include <string>
+#include "patchworks_opencv.hpp"
 
 namespace lbann {
+namespace patchworks {
 
-void lbann_callback_save_images::on_phase_end(model* m) {
-  auto layers = m->get_layers();
-  auto phase = m->get_current_phase();
-  auto epoch = m->get_cur_epoch();
-  auto index = phase*epoch + epoch;
-  save_image(m,layers[phase]->m_activations, layers[phase+2]->m_activations,index);
-}
+/// Patch displacement type
+typedef std::pair<int, int> displacement_type;
 
-void lbann_callback_save_images::save_image(model* m, ElMat* input, ElMat* output,uint index){
-  DistMat in_col,out_col;
-  View(in_col,*input, ALL, IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
-  View(out_col,*output, ALL, IR(0));
-  CircMat in_pixel = in_col;
-  CircMat out_pixel = out_col;
-  if (m->get_comm()->am_world_master()) {
-    std::cout << "Saving images to " << m_image_dir << std::endl;
-    m_reader->save_image(in_pixel.Matrix(), m_image_dir+"gt_"+ std::to_string(index)+"."+m_extension);
-    m_reader->save_image(out_pixel.Matrix(), m_image_dir+"rc_"+ std::to_string(index)+"."+m_extension);
-  }
-}
+#if 0
+  // using 32-bit floating point for intermediate image data processing
+  typedef float pw_fp_t;
+  typedef cv::Vec3f pw_cv_vec3;
+  #define _PATCHWORKS_STAT_FLOAT_ 32
+  #define _PW_CV_FP_ CV_32FC3
+#else
+  // using 64-bit floating point for intermediate image data processing
+  typedef double pw_fp_t;
+  typedef cv::Vec3d pw_cv_vec3;
+  #define _PATCHWORKS_STAT_FLOAT_ 64
+  #define _PW_CV_FP_ CV_64FC3
+#endif
 
+} // end of namespace patchworks
+} // end of namespace lbann
 
-}  // namespace lbann
+#endif // _PATCHWORKS_COMMON_H_

@@ -23,35 +23,41 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
+// patchworks.hpp - LBANN PATCHWORKS main interface header
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * LBANN PATCHWORKS main interface header
+ *  - includes the main interface function declarations
+ */
+
+#ifndef _PATCHWORKS_H_INCLUDED_
+#define _PATCHWORKS_H_INCLUDED_
 #include <vector>
-#include "lbann/callbacks/lbann_callback_save_images.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "patchworks_common.hpp"
+#include "patchworks_patch_descriptor.hpp"
 
 namespace lbann {
+namespace patchworks {
 
-void lbann_callback_save_images::on_phase_end(model* m) {
-  auto layers = m->get_layers();
-  auto phase = m->get_current_phase();
-  auto epoch = m->get_cur_epoch();
-  auto index = phase*epoch + epoch;
-  save_image(m,layers[phase]->m_activations, layers[phase+2]->m_activations,index);
-}
+/// Compute the min and max value of pixels
+std::pair<double,double> check_min_max(const cv::Mat& _img);
 
-void lbann_callback_save_images::save_image(model* m, ElMat* input, ElMat* output,uint index){
-  DistMat in_col,out_col;
-  View(in_col,*input, ALL, IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
-  View(out_col,*output, ALL, IR(0));
-  CircMat in_pixel = in_col;
-  CircMat out_pixel = out_col;
-  if (m->get_comm()->am_world_master()) {
-    std::cout << "Saving images to " << m_image_dir << std::endl;
-    m_reader->save_image(in_pixel.Matrix(), m_image_dir+"gt_"+ std::to_string(index)+"."+m_extension);
-    m_reader->save_image(out_pixel.Matrix(), m_image_dir+"rc_"+ std::to_string(index)+"."+m_extension);
-  }
-}
+/// Adjust for reducing chromatic aberration
+cv::Mat correct_chromatic_aberration(const cv::Mat& _img);
+
+/// Drop 2 channels randomly
+cv::Mat drop_2channels(const cv::Mat& _img);
 
 
-}  // namespace lbann
+/// Take one patch
+bool take_patch(const cv::Mat& img, const patch_descriptor& pi, 
+                const ROI& roi, std::vector<cv::Mat>& patches);
+
+/// Extract patches according to the given patch description
+bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::Mat>& patches);
+
+} // end of namespace patchworks
+} // end of namespace lbann
+
+#endif //_PATCHWORKS_H_INCLUDED_

@@ -23,40 +23,29 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
+// patchworks_opencv.hpp - LBANN PATCHWORKS header for opencv
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
-
-#include "lbann/callbacks/lbann_callback.hpp"
-#include "lbann/data_readers/lbann_data_reader.hpp"
-
-namespace lbann {
-
 /**
- * Save images to file
+ * LBANN PATCHWORKS header for opencv
+ *  - includes opencv headers according to the version
  */
-class lbann_callback_save_images : public lbann_callback {
-public:
-  /**
-   * @param data reader type e.g., imagenet, mnist, cifar10....
-   * @param image_dir directory to save image
-   * @param image extension e.g., jpg, png, pgm......
-   */
-  lbann_callback_save_images(DataReader* reader,std::string image_dir,std::string extension="jpg") :
-    lbann_callback(), m_reader(reader),m_image_dir(image_dir),m_extension(extension) {
-      set_name("save_images");
-    }
-  void on_phase_end(model* m);
 
-private:
-  std::string m_image_dir; //directory to save image
-  std::string m_extension; //image extension; pgm, jpg, png etc
-  DataReader* m_reader;
-  void save_image(model* m, ElMat* input, ElMat* output,uint index); 
-};
+#ifndef _PATCHWORKS_OPENCV_H_INCLUDED_
+#define _PATCHWORKS_OPENCV_H_INCLUDED_
 
-}  // namespace lbann
+#include <opencv2/core/version.hpp>
+  #if (!defined(CV_VERSION_EPOCH) && (CV_VERSION_MAJOR >= 3))
+  #include <opencv2/core.hpp>
+  //#include <opencv2/highgui.hpp>
+  #include <opencv2/imgproc.hpp>
+  #define DEFAULT_CV_WINDOW_KEEPRATIO cv::WINDOW_KEEPRATIO
+#else
+  #include <opencv2/core/core.hpp>
+  #include <opencv2/core/core_c.h>
+  //#include <opencv2/highgui/highgui.hpp>
+  #include <opencv2/imgproc/imgproc.hpp>
+  #define DEFAULT_CV_WINDOW_KEEPRATIO CV_WINDOW_KEEPRATIO
+#endif
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#endif // _PATCHWORKS_OPENCV_H_INCLUDED_

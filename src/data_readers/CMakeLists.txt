@@ -9,3 +9,4 @@ add_sources(lbann_data_reader.cpp
             )
 
 #            lbann_data_reader_cifar10.cpp
+add_subdirectory(patchworks)
