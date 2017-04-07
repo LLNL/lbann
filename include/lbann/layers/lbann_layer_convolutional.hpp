@@ -143,13 +143,17 @@ namespace lbann
     /// Initialize GPU objects
     void setup_gpu();
 
-    /// CPU implementation of forward propagation linearity
+    /// CPU implementation of forward propagation linearity (2D case)
+    void fp_linearity_cpu_2d();
+    /// CPU implementation of forward propagation linearity (general case)
     void fp_linearity_cpu();
     /// GPU implementation of forward propagation linearity
     void fp_linearity_gpu();
     /// GPU implementation of forward propagation nonlinearity
     void fp_nonlinearity_gpu();
-    /// CPU implementation of backward propagation linearity
+    /// CPU implementation of backward propagation linearity (2D case)
+    void bp_linearity_cpu_2d();
+    /// CPU implementation of backward propagation linearity (general case)
     void bp_linearity_cpu();
     /// GPU implementation of backward propagation linearity
     void bp_linearity_gpu();
