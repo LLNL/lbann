@@ -30,7 +30,7 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
-#include "lbann/proto/lbann_proto.hpp"
+#include "lbann/proto/lbann_proto_common.hpp"
 
 int main(int argc, char* argv[])
 {}
