@@ -15,10 +15,13 @@ if(LBANN_HAS_PROTOBUF)
   file(MAKE_DIRECTORY ${TBINF_PROTO_DIR})
 
   # Generate source and header files with protocol buffer compiler
-  if(LBANN_BUILT_PROTOBUF)
-    add_custom_target(protobuf_built DEPENDS project_protobuf)
-  else()
-    add_custom_target(protobuf_built)
+  # Don't duplicate custom targets.
+  if (NOT TARGET protobuf_built)
+    if(LBANN_BUILT_PROTOBUF)
+      add_custom_target(protobuf_built DEPENDS project_protobuf)
+    else()
+      add_custom_target(protobuf_built)
+    endif()
   endif()
   add_custom_command(
     OUTPUT ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc
