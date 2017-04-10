@@ -155,7 +155,7 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
     }
     workspace_local.Set(Int(0), c, max_entry);
   }
-  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::MAX);
+  AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::MAX);
 
   // Subtract column max and exponentiate activations
   // Note: Subtracting the column max prevents activations from blowing
@@ -175,7 +175,7 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
     }
     workspace_local.Set(Int(0), c, sum);
   }
-  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::SUM);
+  AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::SUM);
 
   // Divide activations by column sums
   IndexDependentMap(activations_local,
@@ -252,7 +252,7 @@ void lbann::SoftmaxLayer::bp_nonlinearity()
                         Dot(prev_error_signal_local(ALL,IR(c)),
                             activations_local(ALL,IR(c))));
   }
-  AllReduce(*m_workspace_v, m_workspace_v->ColComm(), mpi::SUM);
+  AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::SUM);
 
   // Update error signal
   // Note: prev_error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
