@@ -623,6 +623,8 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    init_random(42);  // Deterministic initialization across every model.
+    init_data_seq_random(42);
     lbann_comm *comm = NULL;
 
     try {
@@ -631,7 +633,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
-        trainParams.DropOut = 0.1;
+        trainParams.DropOut = 0.9;
         trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
         trainParams.PercentageTrainingSamples = 0.80;
@@ -659,8 +661,8 @@ int main(int argc, char* argv[])
         int decayIterations = 1;
 
         bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
-        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
-        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
 
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
@@ -782,6 +784,8 @@ int main(int argc, char* argv[])
         layer_factory* lfac = new layer_factory();
         deep_neural_network *dnn = NULL;
         dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        metrics::categorical_accuracy acc(comm);
+        dnn->add_metric(&acc);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set), 
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
@@ -809,7 +813,7 @@ int main(int argc, char* argv[])
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
-        lbann_summary summarizer("/p/lscratche/hysom", comm);
+        lbann_summary summarizer(trainParams.SummaryDir, comm);
         // Print out information for each epoch.
         lbann_callback_print print_cb;
         dnn->add_callback(&print_cb);
@@ -821,6 +825,8 @@ int main(int argc, char* argv[])
         dnn->add_callback(&summary_cb);
         // lbann_callback_io io_cb({0});
         // dnn->add_callback(&io_cb);
+        lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
+        dnn->add_callback(&lrsched);
 
         dnn->setup();
 
@@ -942,7 +948,7 @@ int main(int argc, char* argv[])
 
             dnn->train(1, true);
 
-            dnn->evaluate();
+            dnn->evaluate(execution_mode::testing);
         }
 
         delete dnn;
