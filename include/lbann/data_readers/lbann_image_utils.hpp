@@ -51,29 +51,29 @@ namespace lbann
 
   #ifdef __LIB_OPENCV
     template<typename T = uint8_t, int NCh = 3>
-    bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
+    static bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
 
     template<typename T = uint8_t>
-    bool copy_cvMat_to_buf_with_known_type(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
+    static bool copy_cvMat_to_buf_with_known_type(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
 
     /** Copy a cv::Mat image into a serialized buffer.
      *  The argument vFlip specifies whether to vertically flip the image while
      *  coping. Returns true if successful.
      */ 
-    bool copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
+    static bool copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip);
 
     template<typename T = uint8_t, int NCh = 3>
-    cv::Mat copy_buf_to_cvMat_with_full_info(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip);
+    static cv::Mat copy_buf_to_cvMat_with_full_info(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip);
 
     template<typename T = uint8_t>
-    cv::Mat copy_buf_to_cvMat_with_known_type(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip);
+    static cv::Mat copy_buf_to_cvMat_with_known_type(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip);
 
     /** Reconstruct a cv::Mat image from a serialized buffer.
      *  The image size is specified by Width and Height. The last argument vFlip
      *  specifies whether to vertically flip the image while coping. Returns an
      *  emptyimage if unsuccessful.
      */ 
-    cv::Mat copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Depth, const bool vFlip);
+    static cv::Mat copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Depth, const bool vFlip);
   #endif // __LIB_OPENCV
   };
 

@@ -30,6 +30,7 @@
  * LBANN PATCHWORKS header for patch descriptor
  */
 
+#ifdef __LIB_OPENCV
 #ifndef _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
 #define _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
 
@@ -137,3 +138,4 @@ std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd);
 } // end of namespace patchworks
 } // end of namespace lbann
 #endif // _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
+#endif // __LIB_OPENCV

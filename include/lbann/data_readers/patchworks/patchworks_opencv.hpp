@@ -28,25 +28,13 @@
 
 /**
  * LBANN PATCHWORKS header for opencv
- *  - includes opencv headers according to the version
+ *  - cv::Mat pixel type handling mechanisms
  */
 
+#ifdef __LIB_OPENCV
 #ifndef _PATCHWORKS_OPENCV_H_INCLUDED_
 #define _PATCHWORKS_OPENCV_H_INCLUDED_
-
-#include <opencv2/core/version.hpp>
-  #if (!defined(CV_VERSION_EPOCH) && (CV_VERSION_MAJOR >= 3))
-  #include <opencv2/core.hpp>
-  //#include <opencv2/highgui.hpp>
-  #include <opencv2/imgproc.hpp>
-  #define DEFAULT_CV_WINDOW_KEEPRATIO cv::WINDOW_KEEPRATIO
-#else
-  #include <opencv2/core/core.hpp>
-  #include <opencv2/core/core_c.h>
-  //#include <opencv2/highgui/highgui.hpp>
-  #include <opencv2/imgproc/imgproc.hpp>
-  #define DEFAULT_CV_WINDOW_KEEPRATIO CV_WINDOW_KEEPRATIO
-#endif
+#include "lbann/data_readers/lbann_opencv.hpp"
 
 namespace lbann {
 namespace patchworks {
@@ -113,3 +101,4 @@ _def_cv_image_type_B_U(64, F, double)
 } // end of namespace lbann
 
 #endif // _PATCHWORKS_OPENCV_H_INCLUDED_
+#endif // __LIB_OPENCV

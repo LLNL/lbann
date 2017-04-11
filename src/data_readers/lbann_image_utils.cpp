@@ -31,9 +31,7 @@
 #include <stdio.h>
 
 #ifdef __LIB_OPENCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 using namespace cv;
 #endif
 
@@ -212,7 +210,7 @@ bool lbann::image_utils::savePGM(const char* Imagefile, int Width, int Height, i
 bool lbann::image_utils::loadPNG(const char* Imagefile, int& Width, int& Height, bool Flip, uchar*& Pixels)
 {
 #ifdef __LIB_OPENCV
-    Mat image = imread(Imagefile, CV_LOAD_IMAGE_COLOR);
+    cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
     if (image.empty())
         return false;
 
@@ -221,7 +219,7 @@ bool lbann::image_utils::loadPNG(const char* Imagefile, int& Width, int& Height,
 
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
-            Vec3b pixel = image.at<Vec3b>(y, x);
+            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
             Pixels[offset] = pixel[0];
             Pixels[offset + Height*Width] = pixel[1];
@@ -238,16 +236,16 @@ bool lbann::image_utils::loadPNG(const char* Imagefile, int& Width, int& Height,
 bool lbann::image_utils::savePNG(const char* Imagefile, int Width, int Height, bool Flip, uchar* Pixels)
 {
 #ifdef __LIB_OPENCV
-    Mat image = Mat(Height, Width, CV_8UC3);
+    cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
-            Vec3b pixel;
+            cv::Vec3b pixel;
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
             pixel[0] = Pixels[offset];
             pixel[1] = Pixels[offset + Height*Width];
             pixel[2] = Pixels[offset + 2*Height*Width];
-            image.at<Vec3b>(y, x) = pixel;
+            image.at<cv::Vec3b>(y, x) = pixel;
         }
     }
     imwrite(Imagefile, image);
@@ -261,7 +259,7 @@ bool lbann::image_utils::savePNG(const char* Imagefile, int Width, int Height, b
 bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height, bool Flip, unsigned char*& Pixels)
 {
 #ifdef __LIB_OPENCV
-    Mat image = imread(Imagefile, CV_LOAD_IMAGE_COLOR);
+    cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
     if (image.empty())
         return false;
 
@@ -270,7 +268,7 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
 
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
-            Vec3b pixel = image.at<Vec3b>(y, x);
+            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
             Pixels[offset] = pixel[0];
             Pixels[offset + Height*Width] = pixel[1];
@@ -287,16 +285,16 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
 bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels)
 {
 #ifdef __LIB_OPENCV
-    Mat image = Mat(Height, Width, CV_8UC3);
+    cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
-            Vec3b pixel;
+            cv::Vec3b pixel;
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
             pixel[0] = Pixels[offset];
             pixel[1] = Pixels[offset + Height*Width];
             pixel[2] = Pixels[offset + 2*Height*Width];
-            image.at<Vec3b>(y, x) = pixel;
+            image.at<cv::Vec3b>(y, x) = pixel;
         }
     }
     imwrite(Imagefile, image);

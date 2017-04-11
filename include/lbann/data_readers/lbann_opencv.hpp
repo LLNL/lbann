@@ -1,3 +1,4 @@
+
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
@@ -23,43 +24,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// patchworks.hpp - LBANN PATCHWORKS main interface header
+// patchworks_opencv.hpp - LBANN PATCHWORKS header for opencv
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * LBANN PATCHWORKS main interface header
- *  - includes the main interface function declarations
+ * LBANN header for opencv
+ *  - includes opencv headers according to the version
+ *  - use newer built-in variables in place of depricated ones for newer OpenCV
  */
 
 #ifdef __LIB_OPENCV
-#ifndef _PATCHWORKS_H_INCLUDED_
-#define _PATCHWORKS_H_INCLUDED_
-#include <vector>
-#include "patchworks_common.hpp"
-#include "patchworks_patch_descriptor.hpp"
+#ifndef _LBANN_OPENCV_H_INCLUDED_
+#define _LBANN_OPENCV_H_INCLUDED_
 
-namespace lbann {
-namespace patchworks {
+#include <opencv2/core/version.hpp>
+#if (!defined(CV_VERSION_EPOCH) && (CV_VERSION_MAJOR >= 3))
+  #include <opencv2/core.hpp>
+  #include <opencv2/highgui.hpp>
+  #include <opencv2/imgproc.hpp>
+  #define _LBANN_CV_UNCHANGED_ cv::IMREAD_UNCHANGED
+  #define _LBANN_CV_GRAYSCALE_ cv::IMREAD_GRAYSCALE
+  #define _LBANN_CV_COLOR_     cv::IMREAD_COLOR
+  #define _LBANN_CV_ANYDEPTH_  cv::IMREAD_ANYDEPTH
+  #define _LBANN_CV_ANYCOLOR_  cv::IMREAD_ANYCOLOR
+#else
+  #include <opencv2/core/core.hpp>
+  #include <opencv2/core/core_c.h>
+  #include <opencv2/highgui/highgui.hpp>
+  #include <opencv2/imgproc/imgproc.hpp>
+  #define _LBANN_CV_UNCHANGED_ CV_LOAD_IMAGE_UNCHANGED
+  #define _LBANN_CV_GRAYSCALE_ CV_LOAD_IMAGE_GRAYSCALE
+  #define _LBANN_CV_COLOR_     CV_LOAD_IMAGE_COLOR
+  #define _LBANN_CV_ANYDEPTH_  CV_LOAD_IMAGE_ANYDEPTH
+  #define _LBANN_CV_ANYCOLOR_  CV_LOAD_IMAGE_ANYCOLOR
+#endif
 
-/// Compute the min and max value of pixels
-std::pair<double,double> check_min_max(const cv::Mat& _img);
-
-/// Adjust for reducing chromatic aberration
-cv::Mat correct_chromatic_aberration(const cv::Mat& _img);
-
-/// Drop 2 channels randomly
-cv::Mat drop_2channels(const cv::Mat& _img);
-
-
-/// Take one patch
-bool take_patch(const cv::Mat& img, const patch_descriptor& pi, 
-                const ROI& roi, std::vector<cv::Mat>& patches);
-
-/// Extract patches according to the given patch description
-bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::Mat>& patches);
-
-} // end of namespace patchworks
-} // end of namespace lbann
-
-#endif //_PATCHWORKS_H_INCLUDED_
+#endif // _LBANN_OPENCV_H_INCLUDED_
 #endif // __LIB_OPENCV

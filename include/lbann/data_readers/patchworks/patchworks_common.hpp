@@ -31,6 +31,7 @@
  *  - includes commonly used macros, definitions and declarations
  */
 
+#ifdef __LIB_OPENCV
 #ifndef _PATCHWORKS_COMMON_H_
 #define _PATCHWORKS_COMMON_H_
 
@@ -64,3 +65,4 @@ typedef std::pair<int, int> displacement_type;
 } // end of namespace lbann
 
 #endif // _PATCHWORKS_COMMON_H_
+#endif // __LIB_OPENCV

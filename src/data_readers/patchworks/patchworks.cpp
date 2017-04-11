@@ -31,6 +31,7 @@
  *  - includes the main interface function definitions
  */
 
+#ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/data_readers/patchworks/patchworks_rand.hpp"
 #include "lbann/data_readers/patchworks/patchworks_stats.hpp"
@@ -210,3 +211,4 @@ bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::M
 
 } // end of namespace patchworks
 } // end of namespace lbann
+#endif // __LIB_OPENCV
