@@ -306,3 +306,33 @@ bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, b
     return false;
 #endif
 }
+
+#ifdef __LIB_OPENCV
+bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip)
+{
+  switch(image.depth()) {
+    case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, vFlip);
+    case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, vFlip);
+    case CV_16U: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16U)>(image, buf, vFlip);
+    case CV_16S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16S)>(image, buf, vFlip);
+    case CV_32S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32S)>(image, buf, vFlip);
+    case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, vFlip);
+    case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, vFlip);
+  }
+  return false;
+}
+
+cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Depth, const bool vFlip)
+{
+  switch(Depth) {
+    case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, vFlip);
+    case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, vFlip);
+    case CV_16U: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16U)>(buf, Width, Height, vFlip);
+    case CV_16S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16S)>(buf, Width, Height, vFlip);
+    case CV_32S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32S)>(buf, Width, Height, vFlip);
+    case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, vFlip);
+    case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, vFlip);
+  }
+  return cv::Mat();
+}
+#endif
