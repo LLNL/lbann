@@ -170,13 +170,17 @@ void lbann::Layer::forwardProp() {
   for (regularizer* reg : regularizers) reg->fp_connections();
 
   // Layer layer's linearity.
+  double fp_lin_start = get_time();
   fp_linearity();
+  fp_linearity_time += get_time() - fp_lin_start;
 
   // Apply weight regularization (e.g. L2 normalization).
   for (regularizer* reg : regularizers) reg->fp_weights();
 
   // Apply activation function/nonlinearity.
+  double fp_nonlin_start = get_time();
   fp_nonlinearity();
+  fp_nonlinearity_time += get_time() - fp_nonlin_start;
 
   // Apply activation regularization (e.g. Dropout).
   for (regularizer* reg : regularizers) reg->fp_activations();
@@ -225,13 +229,17 @@ void lbann::Layer::backProp() {
   for (regularizer* reg : regularizers) reg->bp_activations();
 
   // Backprop the activation function/nonlinearity.
+  double bp_nonlin_start = get_time();
   bp_nonlinearity();
+  bp_nonlinearity_time += get_time() - bp_nonlin_start;
 
   // Backprop weight regularization.
   for (regularizer* reg : regularizers) reg->bp_weights();
 
   // Backprop the layer's linearity.
+  double bp_lin_start = get_time();
   bp_linearity();
+  bp_linearity_time += get_time() - bp_lin_start;
 
   // Backprop connection regularization.
   for (regularizer* reg : regularizers) reg->bp_connections();
@@ -271,7 +279,11 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_stdev(prefix + "stdev", acts, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
+  summarizer.reduce_scalar(prefix + "fp_linearity_time", fp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "fp_nonlinearity_time", fp_nonlinearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
   reset_counters();
 }
 

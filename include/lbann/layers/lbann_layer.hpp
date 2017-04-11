@@ -134,7 +134,11 @@ namespace lbann
     /** Reset layer stat counters. */
     virtual void reset_counters() {
       fp_time = 0.0;
+      fp_linearity_time = 0.0;
+      fp_nonlinearity_time = 0.0;
       bp_time = 0.0;
+      bp_linearity_time = 0.0;
+      bp_nonlinearity_time = 0.0;
     }
 
     /** Return the size of mini-batch this layer uses. */
@@ -281,8 +285,16 @@ namespace lbann
 
     /** Time spent in forward propagation. */
     double fp_time;
+    /** Time spent in the forward propagation linearity. */
+    double fp_linearity_time;
+    /** Time spent in the forward propagation nonlinearity. */
+    double fp_nonlinearity_time;
     /** Time spent in backward propagation. */
     double bp_time;
+    /** Time spent in the backward propagation linearity. */
+    double bp_linearity_time;
+    /** Time spent in the backward propagation linearity. */
+    double bp_nonlinearity_time;
   };
 }
 
