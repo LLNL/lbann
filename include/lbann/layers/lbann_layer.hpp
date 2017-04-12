@@ -53,8 +53,10 @@ namespace lbann
 
   // @todo: check list of layer types
   enum class layer_type {fully_connected, softmax, convolution, pooling,
+      local_response_normalization,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
-      target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
+      target_distributed_minibatch, target_distributed_minibatch_parallel_io,
+      target_unsupervised,
       INVALID};
   static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
     switch(l) {
@@ -66,6 +68,8 @@ namespace lbann
       return "convolution";
     case layer_type::pooling:
       return "pooling";
+    case layer_type::local_response_normalization:
+      return "local_response_normalization";
     case layer_type::input_distributed_minibatch:
       return "input_distributed_minibatch";
     case layer_type::input_distributed_minibatch_parallel_io:

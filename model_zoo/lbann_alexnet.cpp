@@ -51,11 +51,11 @@ const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/val/"; // "resized_256x256/test/";
+const string g_ImageNet_TestDir = "resized_256x256/test/"; // "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train_c0-9.txt"; // "train.txt";
-const string g_ImageNet_ValLabelFile = "val_c0-9.txt"; // "val.txt";
-const string g_ImageNet_TestLabelFile = "val_c0-9.txt"; //"test.txt";
+const string g_ImageNet_TrainLabelFile =  "train.txt"; // "train_c0-9.txt";
+const string g_ImageNet_ValLabelFile = "val.txt"; // "val_c0-9.txt";
+const string g_ImageNet_TestLabelFile = "test.txt"; //"val_c0-9.txt";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -63,6 +63,8 @@ int main(int argc, char* argv[])
 {
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
+    init_random(42);
+    init_data_seq_random(42);
     lbann_comm *comm = NULL;
 
     try {
@@ -257,7 +259,23 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 2 (pooling)
+        // Layer 2 (LRN)
+        {
+          int numDims = 2;
+          int channels = 96;
+          int dims[] = {62, 62};
+          Int windowWidth = 5;
+          DataType alpha = 0.0001;
+          DataType beta = 0.75;
+          DataType k = 2;
+          local_response_normalization_layer* layer
+            = new local_response_normalization_layer(2, numDims, channels, dims, 
+                                                     windowWidth, alpha, beta, k,
+                                                     trainParams.MBSize, comm, cudnn);
+          dnn->add(layer);
+        }
+
+        // Layer 3 (pooling)
         {
           int numDims = 2;
           int channels = 96;
@@ -267,7 +285,7 @@ int main(int argc, char* argv[])
           int poolStrides[] = {2, 2};
           pool_mode poolMode = pool_mode::max;
           pooling_layer* layer
-            = new pooling_layer(2, numDims, channels, inputDim,
+            = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
                                 trainParams.MBSize,
                                 comm,
@@ -275,7 +293,7 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 3 (convolutional)
+        // Layer 4 (convolutional)
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           Int numDims = 2;
@@ -286,7 +304,7 @@ int main(int argc, char* argv[])
           Int convPads[] = {2, 2};
           Int convStrides[] = {1, 1};
           convolutional_layer* layer
-            = new convolutional_layer(3, numDims, inputChannels, inputDims,
+            = new convolutional_layer(4, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
                                       convPads, convStrides,
                                       trainParams.MBSize,
@@ -297,7 +315,23 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 4 (pooling)
+        // Layer 5 (LRN)
+        {
+          int numDims = 2;
+          int channels = 256;
+          int dims[] = {30, 30};
+          Int windowWidth = 5;
+          DataType alpha = 0.0001;
+          DataType beta = 0.75;
+          DataType k = 2;
+          local_response_normalization_layer* layer
+            = new local_response_normalization_layer(5, numDims, channels, dims, 
+                                                     windowWidth, alpha, beta, k,
+                                                     trainParams.MBSize, comm, cudnn);
+          dnn->add(layer);
+        }
+
+        // Layer 6 (pooling)
         {
           int numDims = 2;
           int channels = 256;
@@ -307,7 +341,7 @@ int main(int argc, char* argv[])
           int poolStrides[] = {2, 2};
           pool_mode poolMode = pool_mode::max;
           pooling_layer* layer
-            = new pooling_layer(4, numDims, channels, inputDim,
+            = new pooling_layer(6, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
                                 trainParams.MBSize,
                                 comm,
@@ -315,57 +349,13 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 5 (convolutional)
+        // Layer 7 (convolutional)
         {
           Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
           Int numDims = 2;
           Int inputChannels = 256;
           Int inputDims[] = {14, 14};
           Int outputChannels = 384;
-          Int filterDims[] = {3, 3};
-          Int convPads[] = {1, 1};
-          Int convStrides[] = {1, 1};
-          convolutional_layer* layer
-            = new convolutional_layer(5, numDims, inputChannels, inputDims,
-                                      outputChannels, filterDims,
-                                      convPads, convStrides,
-                                      trainParams.MBSize,
-                                      activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
-                                      comm, convolution_layer_optimizer, 
-                                      cudnn);
-          dnn->add(layer);
-        }
-
-        // Layer 6 (convolutional)
-        {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          Int numDims = 2;
-          Int inputChannels = 384;
-          Int inputDims[] = {14, 14};
-          Int outputChannels = 384;
-          Int filterDims[] = {3, 3};
-          Int convPads[] = {1, 1};
-          Int convStrides[] = {1, 1};
-          convolutional_layer* layer
-            = new convolutional_layer(6, numDims, inputChannels, inputDims,
-                                      outputChannels, filterDims,
-                                      convPads, convStrides,
-                                      trainParams.MBSize,
-                                      activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
-                                      comm, convolution_layer_optimizer, 
-                                      cudnn);
-          dnn->add(layer);
-        }
-
-        // Layer 7 (convolutional)
-        {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          Int numDims = 2;
-          Int inputChannels = 384;
-          Int inputDims[] = {14, 14};
-          Int outputChannels = 256;
           Int filterDims[] = {3, 3};
           Int convPads[] = {1, 1};
           Int convStrides[] = {1, 1};
@@ -381,7 +371,51 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 8 (pooling)
+        // Layer 8 (convolutional)
+        {
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          Int numDims = 2;
+          Int inputChannels = 384;
+          Int inputDims[] = {14, 14};
+          Int outputChannels = 384;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {1, 1};
+          Int convStrides[] = {1, 1};
+          convolutional_layer* layer
+            = new convolutional_layer(8, numDims, inputChannels, inputDims,
+                                      outputChannels, filterDims,
+                                      convPads, convStrides,
+                                      trainParams.MBSize,
+                                      activation_type::RELU,
+                                      weight_initialization::glorot_uniform,
+                                      comm, convolution_layer_optimizer, 
+                                      cudnn);
+          dnn->add(layer);
+        }
+
+        // Layer 9 (convolutional)
+        {
+          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          Int numDims = 2;
+          Int inputChannels = 384;
+          Int inputDims[] = {14, 14};
+          Int outputChannels = 256;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {1, 1};
+          Int convStrides[] = {1, 1};
+          convolutional_layer* layer
+            = new convolutional_layer(9, numDims, inputChannels, inputDims,
+                                      outputChannels, filterDims,
+                                      convPads, convStrides,
+                                      trainParams.MBSize,
+                                      activation_type::RELU,
+                                      weight_initialization::glorot_uniform,
+                                      comm, convolution_layer_optimizer, 
+                                      cudnn);
+          dnn->add(layer);
+        }
+
+        // Layer 10 (pooling)
         {
           int numDims = 2;
           int channels = 256;
@@ -391,7 +425,7 @@ int main(int argc, char* argv[])
           int poolStrides[] = {2, 2};
           pool_mode poolMode = pool_mode::max;
           pooling_layer* layer
-            = new pooling_layer(8, numDims, channels, inputDim,
+            = new pooling_layer(10, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
                                 trainParams.MBSize,
                                 comm,
@@ -399,7 +433,7 @@ int main(int argc, char* argv[])
           dnn->add(layer);
         }
 
-        // Layer 9 (fully-connected)
+        // Layer 11 (fully-connected)
         dnn->add("FullyConnected",
                  data_layout::MODEL_PARALLEL, 
                  4096,
@@ -407,7 +441,7 @@ int main(int argc, char* argv[])
                  weight_initialization::glorot_uniform,
                  {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
 
-        // Layer 10 (fully-connected)
+        // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
                  data_layout::MODEL_PARALLEL, 
                  4096,
@@ -415,7 +449,7 @@ int main(int argc, char* argv[])
                  weight_initialization::glorot_uniform,
                  {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
 
-        // Layer 11 (softmax)
+        // Layer 13 (softmax)
         dnn->add("Softmax",
                  data_layout::MODEL_PARALLEL, 
                  1000,
