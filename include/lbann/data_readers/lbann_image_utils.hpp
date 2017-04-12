@@ -69,12 +69,18 @@ namespace lbann
     static cv::Mat copy_buf_to_cvMat_with_known_type(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip);
 
     /** Reconstruct a cv::Mat image from a serialized buffer.
-     *  The image size is specified by Width and Height. The last argument vFlip
-     *  specifies whether to vertically flip the image while coping. Returns an
-     *  emptyimage if unsuccessful.
+     *  The image size is specified by Width and Height. Type indetifies the
+     *  OpenCV image type.The last argument vFlip specifies whether to 
+     *  vertically flip the image while coping. Returns an empty image if 
+     *  unsuccessful.
      */ 
-    static cv::Mat copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Depth, const bool vFlip);
+    static cv::Mat copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Type, const bool vFlip);
   #endif // __LIB_OPENCV
+
+    /// Load an image from a file and put it into a serialized buffer
+    static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const bool vFlip, std::vector<uint8_t>& buf);
+    /// Save an image from a serialized buffer into a file
+    static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const bool vFlip, const std::vector<uint8_t>& buf);
   };
 
 
@@ -126,7 +132,9 @@ inline bool image_utils::copy_cvMat_to_buf_with_known_type(const cv::Mat& image,
 {
   switch(image.channels()) {
     case 1: return copy_cvMat_to_buf_with_full_info<T,1>(image, buf, vFlip);
+    case 2: return copy_cvMat_to_buf_with_full_info<T,2>(image, buf, vFlip);
     case 3: return copy_cvMat_to_buf_with_full_info<T,3>(image, buf, vFlip);
+    case 4: return copy_cvMat_to_buf_with_full_info<T,4>(image, buf, vFlip);
   }
   return false;
 }
@@ -186,12 +194,14 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<
 
   switch(NCh) {
     case 1u: return copy_buf_to_cvMat_with_full_info<T,1>(buf, Width, Height, vFlip);
+    case 2u: return copy_buf_to_cvMat_with_full_info<T,2>(buf, Width, Height, vFlip);
     case 3u: return copy_buf_to_cvMat_with_full_info<T,3>(buf, Width, Height, vFlip);
+    case 4u: return copy_buf_to_cvMat_with_full_info<T,4>(buf, Width, Height, vFlip);
   }
   return cv::Mat();
 }
 #endif // __LIB_OPENCV
 
-}
+} // end of namespace lbann
 
 #endif // LBANN_IMAGE_UTILS_HPP

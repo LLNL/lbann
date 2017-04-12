@@ -308,6 +308,7 @@ bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, b
 #ifdef __LIB_OPENCV
 bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const bool vFlip)
 {
+  if (image.empty()) return false;
   switch(image.depth()) {
     case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, vFlip);
     case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, vFlip);
@@ -320,9 +321,12 @@ bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uin
   return false;
 }
 
-cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Depth, const bool vFlip)
+cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Type, const bool vFlip)
 {
-  switch(Depth) {
+  if (buf.size() != static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type))))
+    return cv::Mat();
+
+  switch(CV_MAT_DEPTH(Type)) {
     case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, vFlip);
     case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, vFlip);
     case CV_16U: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16U)>(buf, Width, Height, vFlip);
@@ -333,4 +337,28 @@ cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, c
   }
   return cv::Mat();
 }
-#endif
+#endif // __LIB_OPENCV
+
+bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const bool vFlip, std::vector<uint8_t>& buf)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+  return copy_cvMat_to_buf(image, buf, vFlip);
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const bool vFlip, const std::vector<uint8_t>& buf)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = copy_buf_to_cvMat(buf, Width, Height, Type, vFlip);
+  if (image.empty()) return false;
+  return cv::imwrite(filename, image);
+#else
+  return false;
+#endif // __LIB_OPENCV
+}

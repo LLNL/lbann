@@ -80,7 +80,9 @@ template<> struct cv_image_type< _T_ , _C_ > \
 /// Define cv_image_type<_T_,*> for various number of channels
 #define _def_cv_image_type_B_U(_B_,_S_,_T_) \
         _def_cv_image_type(_B_, _S_, _T_, 3); \
-        _def_cv_image_type(_B_, _S_, _T_, 1);
+        _def_cv_image_type(_B_, _S_, _T_, 1); \
+        _def_cv_image_type(_B_, _S_, _T_, 2); \
+        _def_cv_image_type(_B_, _S_, _T_, 4);
 
 /// Define cv_image_type<uint8_t, x>, of which T() returns CV_8UCx
 _def_cv_image_type_B_U(8,  U, uint8_t)
