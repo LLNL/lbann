@@ -64,7 +64,6 @@ lbann::DataReader_ImageNet::~DataReader_ImageNet()
 
 int lbann::DataReader_ImageNet::fetch_data(Mat& X)
 {
-  static bool testme = true;
   if(!DataReader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
@@ -83,7 +82,8 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     string imagepath = m_image_dir + ImageList[index].first;
 
     int width, height;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, m_pixels);
+    unsigned char* pixels = (unsigned char*) std::malloc(num_channel_values*sizeof(unsigned char));
+    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
     }
@@ -92,8 +92,9 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
     }
 
     for (int p = 0; p < num_channel_values; p++) {
-      X.Set(p, k, m_pixels[p]);
+      X.Set(p, k, pixels[p]);
     }
+    std::free(pixels);
 
     auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
     augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
