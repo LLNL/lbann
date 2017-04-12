@@ -226,12 +226,11 @@ target_link_libraries(lbann ${PROTOBUF_LIBRARIES})
 target_link_libraries(lbann ${CNPY_LIBRARIES})
 
 message("main CMakeFiles XXX LbannProto_LIBRARIES: ${LbannProto_LIBRARIES}")
-target_link_libraries(lbann ${LbannProto_LIBRARIES})
+# target_link_libraries(lbann ${LbannProto_LIBRARIES})
 
 if(LBANN_HAS_CUDA)
   target_link_libraries(lbann ${CUDA_LIBRARIES})
 endif()
-
 if(LBANN_HAS_CUDNN)
   target_link_libraries(lbann ${cuDNN_LIBRARIES})
 endif()
@@ -241,6 +240,9 @@ if(LBANN_HAS_VTUNE)
 endif()
 if(LBANN_HAS_TBINF)
   target_link_libraries(lbann TBinf)
+endif()
+if(LBANN_HAS_LBANN_PROTO)
+  target_link_libraries(lbann LbannProto)
 endif()
 
 ################################################################
