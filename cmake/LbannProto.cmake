@@ -31,18 +31,19 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
     WORKING_DIRECTORY ${LBANN_PROTO_DIR}
   )
 
-  # install header file
-  install(FILES lbann.pb.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+  # Install header file
+  install(FILES ${LBANN_PROTO_DIR}/lbann.pb.h DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
-  # Build library 
+  # Build and install library 
   add_library(LbannProto SHARED ${LBANN_PROTO_DIR}/lbann.pb.cc)
-  install(FILES ${CMAKE_INSTALL_PREFIX}/libLbannProto.so DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+  install(
+    TARGETS LbannProto
+    EXPORT LbannProto
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 
   set(LBANN_BUILT_LBANN_PROTO TRUE)
 
 endif()
-
-
-set(LbannProto_LIBRARIES ${CMAKE_INSTALL_PREFIX}/${CMAKE_SHARED_LIBRARY_PREFIX}LbannProto${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 set(LBANN_HAS_LBANN_PROTO TRUE)

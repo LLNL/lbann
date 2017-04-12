@@ -44,6 +44,7 @@
 #include "lbann/layers/lbann_layer_softmax.hpp"
 #include "lbann/layers/lbann_layer_convolutional.hpp"
 #include "lbann/layers/lbann_layer_pooling.hpp"
+#include "lbann/layers/lbann_layer_local_response_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/lbann_input_layer_distributed_minibatch.hpp"
