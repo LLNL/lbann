@@ -56,7 +56,7 @@ namespace lbann
       local_response_normalization,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
       target_distributed_minibatch, target_distributed_minibatch_parallel_io,
-      target_unsupervised,
+      reconstruction,
       INVALID};
   static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
     switch(l) {
@@ -78,8 +78,8 @@ namespace lbann
       return "target_distributed_minibatch";
     case layer_type::target_distributed_minibatch_parallel_io:
       return "target_distributed_minibatch_parallel_io";
-    case layer_type::target_unsupervised:
-      return "target_unsupervised";
+    case layer_type::reconstruction:
+      return "reconstruction";
     case layer_type::INVALID:
       return "INVALID";
     default:
