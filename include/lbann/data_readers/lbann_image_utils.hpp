@@ -187,6 +187,8 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<u
 template<typename T>
 inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<uint8_t>& buf, const int Width, const int Height, const bool vFlip)
 {
+  if (buf.size() == 0u || Width == 0 || Height == 0) return cv::Mat();
+
   const size_t S = static_cast<size_t>(Width*Height*sizeof(T));
   const size_t NCh = buf.size()/S;
 
