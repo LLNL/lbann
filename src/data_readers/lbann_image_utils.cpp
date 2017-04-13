@@ -221,9 +221,9 @@ bool lbann::image_utils::loadPNG(const char* Imagefile, int& Width, int& Height,
         for (int x = 0; x < Width; x++) {
             cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            Pixels[offset] = pixel[0];
-            Pixels[offset + Height*Width] = pixel[1];
-            Pixels[offset + 2*Height*Width] = pixel[2];
+            Pixels[offset]                  = pixel[_LBANN_CV_BLUE_];
+            Pixels[offset + Height*Width]   = pixel[_LBANN_CV_GREEN_];
+            Pixels[offset + 2*Height*Width] = pixel[_LBANN_CV_RED_];
         }
     }
 
@@ -242,9 +242,9 @@ bool lbann::image_utils::savePNG(const char* Imagefile, int Width, int Height, b
         for (int x = 0; x < Width; x++) {
             cv::Vec3b pixel;
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            pixel[0] = Pixels[offset];
-            pixel[1] = Pixels[offset + Height*Width];
-            pixel[2] = Pixels[offset + 2*Height*Width];
+            pixel[_LBANN_CV_BLUE_] = Pixels[offset];
+            pixel[_LBANN_CV_GREEN_] = Pixels[offset + Height*Width];
+            pixel[_LBANN_CV_RED_] = Pixels[offset + 2*Height*Width];
             image.at<cv::Vec3b>(y, x) = pixel;
         }
     }
@@ -270,9 +270,9 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
         for (int x = 0; x < Width; x++) {
             cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            Pixels[offset] = pixel[0];
-            Pixels[offset + Height*Width] = pixel[1];
-            Pixels[offset + 2*Height*Width] = pixel[2];
+            Pixels[offset]                  = pixel[_LBANN_CV_BLUE_];
+            Pixels[offset + Height*Width]   = pixel[_LBANN_CV_GREEN_];
+            Pixels[offset + 2*Height*Width] = pixel[_LBANN_CV_RED_];
         }
     }
 
@@ -291,9 +291,9 @@ bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, b
         for (int x = 0; x < Width; x++) {
             cv::Vec3b pixel;
             int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-            pixel[0] = Pixels[offset];
-            pixel[1] = Pixels[offset + Height*Width];
-            pixel[2] = Pixels[offset + 2*Height*Width];
+            pixel[_LBANN_CV_BLUE_]  = Pixels[offset];
+            pixel[_LBANN_CV_GREEN_] = Pixels[offset + Height*Width];
+            pixel[_LBANN_CV_RED_]   = Pixels[offset + 2*Height*Width];
             image.at<cv::Vec3b>(y, x) = pixel;
         }
     }

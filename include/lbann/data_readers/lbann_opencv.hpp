@@ -24,13 +24,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// patchworks_opencv.hpp - LBANN PATCHWORKS header for opencv
+// lbann_opencv.hpp - LBANN header for opencv
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
  * LBANN header for opencv
- *  - includes opencv headers according to the version
- *  - use newer built-in variables in place of depricated ones for newer OpenCV
+ *  - includes OpenCV headers according to the version
+ *  - use newer built-in variables in place of the deprecated ones for newer OpenCV
  */
 
 #ifdef __LIB_OPENCV
@@ -58,6 +58,10 @@
   #define _LBANN_CV_ANYDEPTH_  CV_LOAD_IMAGE_ANYDEPTH
   #define _LBANN_CV_ANYCOLOR_  CV_LOAD_IMAGE_ANYCOLOR
 #endif
+
+#define _LBANN_CV_BLUE_  0
+#define _LBANN_CV_GREEN_ 1
+#define _LBANN_CV_RED_   2
 
 #endif // _LBANN_OPENCV_H_INCLUDED_
 #endif // __LIB_OPENCV
