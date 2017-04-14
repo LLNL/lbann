@@ -39,7 +39,7 @@
 namespace lbann {
 namespace patchworks {
 
-/// A template structure to convert an OpenCV identifier of image depth to a standard C++ type
+/// A template structure to convert an OpenCV identifier of channel depth to a standard C++ type
 template<int T> struct cv_depth_type {};
 
 /// Convert CV_8U to uint8_t
@@ -61,7 +61,7 @@ template<> struct cv_depth_type<CV_64F> { typedef   double standard_type; };
 #define _depth_type(_cv_depth_) lbann::patchworks::cv_depth_type<_cv_depth_>::standard_type
 
 
-/** A template structure to map the type of pixel depth and the number of
+/** A template structure to map the type of channel and the number of
  * channels into the corresponding OpenCV type identifier of such an image.
  */
 template<typename T, int NCh> struct cv_image_type {};
