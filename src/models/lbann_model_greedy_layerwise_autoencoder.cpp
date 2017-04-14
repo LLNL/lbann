@@ -38,7 +38,7 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
                                                 lbann_comm* comm,
                                                 objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
-                                                Optimizer_factory* _optimizer_fac)
+                                                optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
     m_have_mirror(0),m_phase_end(2) {}
 
@@ -108,8 +108,8 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index)
 
   // build mirror layer
   Layer* original_layer = m_layers[layer_index];
-  Optimizer *optimizer = optimizer_fac->create_optimizer(original_layer->m_data_layout);
-  reconstruction_layer* mirror_layer = new reconstruction_layer(original_layer->m_data_layout, mirror_index, comm, optimizer, m_mini_batch_size, original_layer);
+  optimizer *opt = optimizer_fac->create_optimizer();
+  reconstruction_layer* mirror_layer = new reconstruction_layer(original_layer->m_data_layout, mirror_index, comm, opt, m_mini_batch_size, original_layer);
 
   // insert mirror layer into model
   insert(mirror_index, mirror_layer);
@@ -152,8 +152,8 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     //m_current_phase = phase_index;
     m_phase_end = m_current_phase+2;
     Layer* original_layer = m_layers[m_current_phase];
-    Optimizer *optimizer = optimizer_fac->create_optimizer(original_layer->m_data_layout);
-    reconstruction_layer*  mirror_layer = new reconstruction_layer(original_layer->m_data_layout, m_phase_end, comm, optimizer, m_mini_batch_size,original_layer);
+    optimizer *opt = optimizer_fac->create_optimizer();
+    reconstruction_layer*  mirror_layer = new reconstruction_layer(original_layer->m_data_layout, m_phase_end, comm, opt, m_mini_batch_size,original_layer);
     Layer* tmp;
     //if not at the last layer/phase, swap otherwise insert new
     if(m_current_phase < num_phases-1) tmp = swap(m_phase_end,mirror_layer);

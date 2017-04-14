@@ -200,21 +200,20 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
         } else if (trainParams.LearnRateMethod == 3) { // Adam
-          optimizer = new Adam_factory(comm, trainParams.LearnRate);
-        }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         dnn.add_metric(new metrics::categorical_accuracy(comm));
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
@@ -339,7 +338,7 @@ int main(int argc, char* argv[])
         if (trainParams.DumpGradients) {
           delete dump_gradients_cb;
         }
-        delete optimizer;
+        delete optimizer_fac;
         delete comm;
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }

@@ -62,10 +62,10 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist,
                     const activation_type activationType,
                     const weight_initialization init,
                     lbann_comm* comm,
-                    Optimizer *optimizer,
+                    optimizer *opt,
                     std::vector<regularizer*> regs)
   : Layer(data_dist,
-          index, comm, optimizer, miniBatchSize, activationType, regs),
+          index, comm, opt, miniBatchSize, activationType, regs),
     m_weight_initialization(init)
 {
 
@@ -129,9 +129,6 @@ void lbann::FullyConnectedLayer::initialize_data_parallel_distribution() {
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);
-    if(optimizer != NULL) {
-      optimizer->setup(numPrevNeurons+1, NumNeurons);
-    }
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
@@ -156,6 +153,12 @@ void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(*m_bias_bp_t, 1, m_mini_batch_size);
+
+    // Initialize optimizer
+    if(m_optimizer != NULL) {
+      m_optimizer->setup(m_weights);
+    }
+
 }
 
 void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
@@ -281,7 +284,7 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 bool lbann::FullyConnectedLayer::update()
 {
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
+    m_optimizer->update(m_weights_gradient);
   }
   return true;
 }

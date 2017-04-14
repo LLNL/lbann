@@ -41,8 +41,8 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
                                   const uint miniBatchSize,
                                   const weight_initialization init,
                                   lbann_comm* comm,
-                                  Optimizer *optimizer)
-  :  Layer(data_dist, index, comm, optimizer, miniBatchSize),
+                                  optimizer *opt)
+  :  Layer(data_dist, index, comm, opt, miniBatchSize),
      m_weight_initialization(init)
 {
     m_type = layer_type::softmax;
@@ -84,9 +84,6 @@ void lbann::SoftmaxLayer::initialize_data_parallel_distribution() {
 
 void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
   Layer::setup(numPrevNeurons);
-    if(optimizer != NULL) {
-      optimizer->setup(numPrevNeurons, NumNeurons);
-    }
 
     // Zero the weight-bias matrix
     Zeros(*m_weights, NumNeurons, numPrevNeurons);
@@ -102,6 +99,11 @@ void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
     Zeros(*m_activations, NumNeurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
     Zeros(*m_workspace, 1, m_mini_batch_size);
+
+    // Initialize optimizer
+    if(m_optimizer != NULL) {
+      m_optimizer->setup(m_weights);
+    }
 
 }
 
@@ -279,7 +281,7 @@ bool lbann::SoftmaxLayer::update()
 {
 
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
+    m_optimizer->update(m_weights_gradient);
   }
   return true;
 }

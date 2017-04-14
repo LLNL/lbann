@@ -34,7 +34,7 @@ using namespace std;
 using namespace El;
 
 lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
-                                                            Optimizer* optimizer,/*needed?*/
+                                                            optimizer* opt,/*needed?*/
                                                               const uint miniBatchSize,
                                                               Layer* original_layer,
                                                               const weight_initialization init)
@@ -45,7 +45,7 @@ lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dis
   m_type = layer_type::target_unsupervised;
   Index = index;
   NumNeurons = original_layer->NumNeurons;
-  this->optimizer = optimizer; // Manually assign the optimizer since target layers normally set this to NULL
+  this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
   num_forwardprop_steps = 0;
 }
@@ -53,9 +53,6 @@ lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dis
 void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
   target_layer::setup(num_prev_neurons);
   Layer::setup(num_prev_neurons);
-  if(optimizer != NULL) {
-    optimizer->setup(num_prev_neurons, NumNeurons);
-  }
   // Initialize weight-bias matrix
   Zeros(*m_weights, NumNeurons, num_prev_neurons);
 
@@ -107,6 +104,11 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
   Zeros(*m_weights_gradient, NumNeurons,num_prev_neurons); //clear up before filling with new results
   Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size); //clear up before filling with new results
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+
+  // Initialize optimizer
+  if(m_optimizer != NULL) {
+    m_optimizer->setup(m_weights);
+  }
 
 }
 
@@ -162,7 +164,7 @@ execution_mode lbann::target_layer_unsupervised::get_execution_mode() {
 bool lbann::target_layer_unsupervised::update()
 {
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
+    m_optimizer->update(m_weights_gradient);
   }
   return true;
 }

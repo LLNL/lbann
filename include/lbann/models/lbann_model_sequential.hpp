@@ -49,7 +49,7 @@ class sequential_model : public model
                      lbann_comm* comm,
                      objective_functions::objective_fn* obj_fn,
                      layer_factory* layer_fac,
-                     Optimizer_factory* optimizer_factory);
+                     optimizer_factory* optimizer_fac);
 
     /// Destructor
     ~sequential_model();
@@ -150,7 +150,7 @@ class sequential_model : public model
     /// Layer factory
     layer_factory* layer_fac;
     /// Optimizer factory
-    Optimizer_factory* optimizer_fac;
+    optimizer_factory* optimizer_fac;
 
   };
 }

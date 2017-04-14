@@ -60,9 +60,9 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const activation_type activation,
                                          const weight_initialization init,
                                          lbann_comm* comm,
-                                         Optimizer* optimizer,
+                                         optimizer* opt,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(data_layout::DATA_PARALLEL, index, comm, optimizer, mini_batch_size, activation, {}),
+  : Layer(data_layout::DATA_PARALLEL, index, comm, opt, mini_batch_size, activation, {}),
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
@@ -226,7 +226,8 @@ void convolutional_layer::setup(const int num_prev_neurons)
   initialize_matrix(filter, m_weight_initialization, fan_in, fan_out);
 
   // Initialize optimizer
-  optimizer->setup(1, m_filter_size+m_num_output_channels);
+  if(m_optimizer != NULL)
+    m_optimizer->setup(m_weights);
   
 }
 
@@ -1273,7 +1274,7 @@ bool convolutional_layer::update()
     AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
 
     // Apply optimizer
-    optimizer->update_weight_bias_matrix(*m_weights_gradient, *m_weights);
+    m_optimizer->update(m_weights_gradient);
 
   }
 

@@ -35,10 +35,10 @@ namespace lbann
   class reconstruction_layer : public target_layer{
   public:
     reconstruction_layer(data_layout data_dist, size_t index,lbann_comm* comm,
-                              Optimizer* optimizer,
-                              const uint miniBatchSize,
-                              Layer* original_layer,
-                              weight_initialization init=weight_initialization::glorot_uniform);
+                         optimizer* optimizer,
+                         const uint miniBatchSize,
+                         Layer* original_layer,
+                         weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
     bool update();

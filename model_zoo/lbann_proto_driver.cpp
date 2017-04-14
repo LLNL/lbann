@@ -394,15 +394,15 @@ void init_model(bool master, const lbann_data::LbannPB &p, sequential_model *&mo
     stringstream err;
 
     // Initialize optimizer factory
-    Optimizer_factory *optimizer;
+    optimizer_factory *optimizer_fac;
     if (train_params.LearnRateMethod == 1) { // Adagrad
-        optimizer = new Adagrad_factory(comm, train_params.LearnRate);
+        optimizer_fac = new adagrad_factory(comm, train_params.LearnRate);
         if (master) cout << "optimizer is: Adagrad; learnRate: " << train_params.LearnRate << "\n";
     } else if (train_params.LearnRateMethod == 2) { // RMSprop
-        optimizer = new RMSprop_factory(comm/*, train_params.LearnRate*/);
+        optimizer_fac = new rmsprop_factory(comm/*, train_params.LearnRate*/);
         if (master) cout << "optimizer is: RMSprop\n";
     } else {
-        optimizer = new SGD_factory(comm, train_params.LearnRate, train_params.LrMomentum, train_params.LrDecayRate, true); 
+        optimizer_fac = new sgd_factory(comm, train_params.LearnRate, train_params.LrMomentum, train_params.LrDecayRate, true); 
         if (master) cout << "optimizer is: SGD; learnRate: " << train_params.LearnRate
                          << " momentum: " << train_params.LrMomentum
                          << " decay: " << train_params.LrDecayRate << endl;
@@ -438,7 +438,7 @@ void init_model(bool master, const lbann_data::LbannPB &p, sequential_model *&mo
             comm,
             obj_fn,
             lfac,
-            optimizer);
+            optimizer_fac);
     } else {
         err << "unknown model name: " << name << " possibly the code to handle this hasn't been implemented, but should be";
         throw lbann_exception(err.str());

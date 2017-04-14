@@ -44,7 +44,7 @@ namespace lbann
                  uint miniBatchSize,
                  weight_initialization init,
                  lbann_comm* comm,
-                 Optimizer *optimizer);
+                 optimizer *opt);
     ~SoftmaxLayer();
     void initialize_model_parallel_distribution();
     void initialize_data_parallel_distribution();

@@ -52,7 +52,7 @@ lbann::sequential_model::sequential_model(const uint mini_batch_size,
                                           lbann_comm* comm,
                                           objective_functions::objective_fn* obj_fn,
                                           layer_factory* _layer_fac,
-                                          Optimizer_factory* _optimizer_fac)
+                                          optimizer_factory* _optimizer_fac)
   : model(comm, obj_fn),
     m_mini_batch_size(mini_batch_size),
     layer_fac(_layer_fac),
@@ -393,7 +393,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
                                   std::vector<regularizer*> regularizers)
 {
     const int layer_index = m_layers.size();
-    Optimizer *optimizer = optimizer_fac->create_optimizer(data_dist);
+    optimizer *opt = optimizer_fac->create_optimizer();
 
     // Get properties of previous layer
     int prev_layer_dim = -1;
@@ -420,7 +420,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
                                                        m_mini_batch_size,
                                                        activation, init,
                                                        comm,
-                                                       optimizer,
+                                                       opt,
                                                        regularizers);
       m_layers.push_back(new_layer);
     } else if(layer_name.compare("Softmax") == 0) {
@@ -433,7 +433,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
                                                 m_mini_batch_size,
                                                 init,
                                                 comm,
-                                                optimizer);
+                                                opt);
       m_layers.push_back(new_layer);
     } else {
       std::cout << "Unknown layer type " << layer_name << std::endl;

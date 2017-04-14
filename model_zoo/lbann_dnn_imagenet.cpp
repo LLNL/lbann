@@ -772,18 +772,20 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        }else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
         }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         layer_factory* lfac = new layer_factory();
         deep_neural_network *dnn = NULL;
-        dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         metrics::categorical_accuracy acc(comm);
         dnn->add_metric(&acc);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
@@ -1054,13 +1056,15 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(grid, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(grid, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(grid/*, trainParams.LearnRate*/);
+          optimizer_fac = new rmsprop_factory(grid, trainParams.LearnRate);
+        }else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(grid, trainParams.LearnRate);
         }else {
-          optimizer = new SGD_factory(grid, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer = new sgd_factory(grid, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         deep_neural_network *dnn = NULL;
@@ -1068,13 +1072,13 @@ int main(int argc, char* argv[])
         if (g_AutoEncoder) {
 			// need to fix later!!!!!!!!!!!!!!!!!!!!!!!  netParams.Network should be separated into encoder and decoder parts
 			//autoencoder = new AutoEncoder(netParams.Network, netParams.Network, false, trainParams.MBSize, trainParams.ActivationType, trainParams.DropOut, trainParams.Lambda, grid);
-            autoencoder = new AutoEncoder(optimizer, trainParams.MBSize, grid);
+            autoencoder = new AutoEncoder(optimizer_fac, trainParams.MBSize, grid);
           // autoencoder.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
           // autoencoder.add("FullyConnected", 100, g_ActivationType, g_DropOut, trainParams.Lambda);
           // autoencoder.add("FullyConnected", 30, g_ActivationType, g_DropOut, trainParams.Lambda);
           // autoencoder.add("Softmax", 10);
         }else {
-          dnn = new deep_neural_network(optimizer, trainParams.MBSize, grid);
+          dnn = new deep_neural_network(optimizer_fac, trainParams.MBSize, grid);
           int NumLayers = netParams.Network.size();
           // initalize neural network (layers)
           for (int l = 0; l < (int)NumLayers; l++) {

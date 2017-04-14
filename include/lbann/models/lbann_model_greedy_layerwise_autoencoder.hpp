@@ -44,7 +44,7 @@ namespace lbann
                         lbann_comm* comm,
                         objective_functions::objective_fn* obj_fn,
                         layer_factory* _layer_fac,
-                        Optimizer_factory* _optimizer_fac);
+                        optimizer_factory* _optimizer_fac);
 
     /// Destructor
     ~greedy_layerwise_autoencoder();
