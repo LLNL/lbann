@@ -55,7 +55,7 @@ const string g_ImageNet_TestDir = "resized_256x256/test/"; // "resized_256x256/v
 const string g_ImageNet_LabelDir = "labels/";
 const string g_ImageNet_TrainLabelFile =  "train.txt"; // "train_c0-9.txt";
 const string g_ImageNet_ValLabelFile = "val.txt"; // "val_c0-9.txt";
-const string g_ImageNet_TestLabelFile = "test.txt"; //"val_c0-9.txt";
+const string g_ImageNet_TestLabelFile = "val.txt"; //"val_c0-9.txt";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -208,13 +208,13 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer factory
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
         }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
         }
 
         // Initialize layer factory
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 #endif // __LIB_CUDNN
 
         deep_neural_network *dnn = NULL;
-        dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set), 
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
 
         // Layer 1 (convolutional)
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 3;
           Int inputDims[] = {256, 256};
@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
 
         // Layer 4 (convolutional)
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 96;
           Int inputDims[] = {30, 30};
@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
 
         // Layer 7 (convolutional)
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 256;
           Int inputDims[] = {14, 14};
@@ -373,7 +373,7 @@ int main(int argc, char* argv[])
 
         // Layer 8 (convolutional)
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 384;
           Int inputDims[] = {14, 14};
@@ -395,7 +395,7 @@ int main(int argc, char* argv[])
 
         // Layer 9 (convolutional)
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 384;
           Int inputDims[] = {14, 14};
@@ -435,30 +435,30 @@ int main(int argc, char* argv[])
 
         // Layer 11 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::MODEL_PARALLEL, 
+                 data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
-                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
 
         // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::MODEL_PARALLEL, 
+                 data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
                  weight_initialization::glorot_uniform,
-                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
 
         // Layer 13 (softmax)
         dnn->add("Softmax",
-                 data_layout::MODEL_PARALLEL, 
+                 data_layout::DATA_PARALLEL, 
                  1000,
                  activation_type::ID,
                  weight_initialization::glorot_uniform,
                  {});
 
-        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -680,18 +680,20 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(grid, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(grid/*, trainParams.LearnRate*/);
-        }else {
-          optimizer = new SGD_factory(grid, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new adagrad_factory(grid, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
+          optimizer_fac = new rmsprop_factory(grid, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(grid, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(grid, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         deep_neural_network *dnn = NULL;
         {
-          dnn = new deep_neural_network(optimizer, trainParams.MBSize, grid);
+          dnn = new deep_neural_network(optimizer_fac, trainParams.MBSize, grid);
           int NumLayers = netParams.Network.size();
           // initalize neural network (layers)
           for (int l = 0; l < (int)NumLayers; l++) {

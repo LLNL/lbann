@@ -186,13 +186,15 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm, trainParams.LearnRate);
-        }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         // Initialize network
@@ -202,7 +204,7 @@ int main(int argc, char* argv[])
 #else // __LIB_CUDNN
         cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
-        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
@@ -213,7 +215,7 @@ int main(int argc, char* argv[])
 
         // First convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 1;
           Int inputDims[] = {28, 28};
@@ -236,7 +238,7 @@ int main(int argc, char* argv[])
 
         // Second convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
           Int numDims = 2;
           Int inputChannels = 32;
           Int inputDims[] = {26, 26};
@@ -325,7 +327,7 @@ int main(int argc, char* argv[])
 
         // Free dynamically allocated memory
         // delete lfac;  // Causes segfault
-        delete optimizer;
+        delete optimizer_fac;
         // delete comm;  // Causes error
 
     }

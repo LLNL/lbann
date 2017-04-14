@@ -192,23 +192,20 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        Optimizer_factory *optimizer; //@todo replace with factory
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 3) { // Adam
-          optimizer = new Adam_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 4) { // SGD
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, trainParams.LrMomentum, trainParams.LrDecayRate, true);
-        }else {
-          cout << "undefined learning rate method" << endl;
-          return -1;
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
 
         metrics::mean_squared_error mse(comm);
         dnn.add_metric(&mse);
@@ -286,7 +283,7 @@ int main(int argc, char* argv[])
         if (comm->am_world_master()) {
           cout << "completing..." << endl;
         }
-        delete optimizer;
+        delete optimizer_fac;
         delete comm;
     }
     catch (exception& e) { ReportException(e); }

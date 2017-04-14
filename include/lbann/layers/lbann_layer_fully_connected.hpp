@@ -49,7 +49,7 @@ namespace lbann
                           activation_type activationType,
                           weight_initialization init,
                           lbann_comm* comm,
-                          Optimizer *optimizer,
+                          optimizer *opt,
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
       void initialize_model_parallel_distribution();

@@ -91,7 +91,7 @@ namespace lbann
 
   class Layer {
   public:
-    Layer(data_layout data_dist, const uint index, lbann_comm* comm, Optimizer *optimizer,
+    Layer(data_layout data_dist, const uint index, lbann_comm* comm, optimizer *opt,
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
 
@@ -134,7 +134,7 @@ namespace lbann
     /** Return (a view of) the activations matrix for this layer. */
     virtual ElMat& get_activations() { return *m_activations; }
     /** Return the layer's optimizer. */
-    virtual Optimizer* get_optimizer() const { return optimizer; }
+    virtual optimizer* get_optimizer() const { return m_optimizer; }
     /** Reset layer stat counters. */
     virtual void reset_counters() {
       fp_time = 0.0;
@@ -221,7 +221,7 @@ namespace lbann
     ElMat *m_activations_v;
     ElMat *m_prev_activations_v;
 
-    Optimizer *optimizer;
+    optimizer *m_optimizer;
 
     ElMat *fp_input;            /// Pointer to input for the forward propagation - no local storage
     ElMat *bp_input;            /// Pointer to the input for the backward propagation - no local storage

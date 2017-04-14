@@ -56,7 +56,7 @@ namespace lbann
                         activation_type activation,
                         weight_initialization init,
                         lbann_comm* comm,
-                        Optimizer* optimizer,
+                        optimizer* opt,
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor

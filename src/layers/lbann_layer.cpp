@@ -41,10 +41,10 @@ using namespace std;
 using namespace El;
 
 lbann::Layer::Layer(data_layout data_dist, const uint index, 
-                    lbann_comm* comm, Optimizer *optimizer,
+                    lbann_comm* comm, optimizer *opt,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
-  : m_activation_type(activation), m_data_layout(data_dist), optimizer(optimizer), comm(comm),
+  : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
     regularizers(regs), m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0),
@@ -393,7 +393,7 @@ bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* byte
     //writeDist(fd, filename, *m_weights, bytes);
 
     // Need to catch return value from function
-    optimizer->saveToCheckpoint(fd, filename, bytes);
+    // m_optimizer->saveToCheckpoint(fd, filename, bytes);
     return true;
 }
 
@@ -403,7 +403,7 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* by
     //readDist(fd, filename, (DistMat&) *m_weights, bytes);
 
     // Need to catch return value from function
-    optimizer->loadFromCheckpoint(fd, filename, bytes);
+    // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
     return true;
 }
 
@@ -417,7 +417,7 @@ bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
     p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if saving training state, also write out state of optimizer
-    optimizer->saveToCheckpointShared(p, Index);
+    // m_optimizer->saveToCheckpointShared(p, Index);
 
     return true;
 }
@@ -432,7 +432,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
     p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if loading training state, read in state of optimizer
-    optimizer->loadFromCheckpointShared(p, Index);
+    // m_optimizer->loadFromCheckpointShared(p, Index);
 
     return true;
 }

@@ -136,16 +136,18 @@ int main(int argc, char* argv[])
       ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
       ///////////////////////////////////////////////////////////////////
-      Optimizer_factory *optimizer; //@todo replace with factory
+      optimizer_factory *optimizer_fac;
       if (trainParams.LearnRateMethod == 1) { // Adagrad
-        optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+        optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
       }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-        optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
-      }else {
-        optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+        optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+      } else if (trainParams.LearnRateMethod == 3) { // Adam
+        optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+      } else {
+        optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
       }
       layer_factory* lfac = new layer_factory();
-      greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer);
+      greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
 
       std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
                                                              std::make_pair(execution_mode::validation, &synthetic_validation_set),
@@ -186,7 +188,7 @@ int main(int argc, char* argv[])
       if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
       gla.train(trainParams.EpochCount,true);
 
-      delete optimizer;
+      delete optimizer_fac;
       delete comm;
     }
     catch (exception& e) { ReportException(e); }
