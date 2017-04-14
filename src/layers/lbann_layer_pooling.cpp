@@ -317,7 +317,6 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   if(!m_prev_layer_using_gpus) {
-    *m_prev_activations = *fp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_activations);
   }
   if(!m_next_layer_using_gpus)
@@ -334,7 +333,6 @@ void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   if(!m_next_layer_using_gpus) {
-    *m_prev_error_signal = *bp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_error_signal);
   }
   if(!m_prev_layer_using_gpus)
@@ -374,27 +372,27 @@ void lbann::pooling_layer::unpin_memory_blocks_bwd(void)
 
 void lbann::pooling_layer::forwardProp() {
 
+  // Perform forward propagation
+  Layer::forwardProp();
+
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
   if(to_pin_fwd && !is_pinned_fwd)
     pin_memory_blocks_fwd();
 #endif // #ifdef __LIB_CUDNN
 
-  // Perform forward propagation
-  Layer::forwardProp();
-
 }
 
 void lbann::pooling_layer::backProp() {
+
+  // Perform backward propagation
+  Layer::backProp();
 
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
   if(to_pin_bwd && !is_pinned_bwd)
     pin_memory_blocks_bwd();
 #endif // #ifdef __LIB_CUDNN
-
-  // Perform backward propagation
-  Layer::backProp();
 
 }
 
