@@ -29,6 +29,10 @@
 #include <thread>
 #include <omp.h>
 #include <hwloc.h>
+#if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
+  #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#endif
+
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 
