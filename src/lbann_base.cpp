@@ -43,12 +43,7 @@ void initialize(lbann_comm* comm) {
   hwloc_topology_t topo;
   hwloc_topology_init(&topo);
   hwloc_topology_load(topo);
-#if HWLOC_API_VERSION >= 0x00011100
-  hwloc_obj_type_t numa_node = HWLOC_OBJ_NUMANODE;
-#else
-  hwloc_obj_type_t numa_node = HWLOC_OBJ_NODE;
-#endif
-  int numa_depth = hwloc_get_type_depth(topo, numa_node);
+  int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
   if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
     std::cout << comm->get_rank_in_world() <<
       ": cannot determine hwloc NUMA-node depth" << std::endl;
