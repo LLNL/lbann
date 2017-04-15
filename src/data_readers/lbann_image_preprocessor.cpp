@@ -138,7 +138,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
 }
 
 void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
-  if (m_z_score) {
+  if (m_z_score || (m_mean_subtraction && m_unit_variance)) {
     z_score(pixels, num_channels);
   } else {
     if (m_scale) {
@@ -155,42 +155,44 @@ void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
 
 void lbann_image_preprocessor::mean_subtraction(
   Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+  const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
     // Compute the mean.
-    DataType mean = 0.0f;
+    DataType mean = DataType(0);
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      mean += pixels(i, 0);
+      mean += pixels_buffer[i];
     }
     mean /= height_per_channel;
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      pixels(i, 0) -= mean;
+      pixels_buffer[i] -= mean;
     }
   }
 }
 
 void lbann_image_preprocessor::unit_variance(
   Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+  const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
-    DataType mean = 0.0f;
-    DataType sqsum = 0.0f;
+    DataType mean = DataType(0);
+    DataType sqsum = DataType(0);
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      mean += pixels(i, 0);
-      sqsum += pixels(i, 0) * pixels(i, 0);
+      mean += pixels_buffer[i];
+      sqsum += pixels_buffer[i] * pixels_buffer[i];
     }
     mean /= height_per_channel;
     sqsum /= height_per_channel;
-    DataType std = sqsum - (mean * mean);
-    std = std::sqrt(std) + DataType(1e-7);  // Avoid division by 0.
+    const DataType std = std::sqrt(sqsum - (mean * mean));
+    const DataType inv_std = 1 / (std + DataType(1e-7)); // Avoid division by 0
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      pixels(i, 0) /= std;
+      pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std + mean;
     }
   }
 }
@@ -198,32 +200,30 @@ void lbann_image_preprocessor::unit_variance(
 void lbann_image_preprocessor::unit_scale(Mat& pixels, unsigned num_channels) {
   // Pixels are in range [0, 255], normalize using that.
   // Channels are not relevant here.
-  const El::Int height = pixels.Height();
-  for (unsigned i = 0; i < height; ++i) {
-    pixels(i, 0) /= DataType(255);
-  }
+  pixels *= DataType(1) / 255;
 }
 
 void lbann_image_preprocessor::z_score(Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+  const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
     // Compute the mean and standard deviation.
-    DataType mean = 0.0f;
-    DataType sqsum = 0.0f;
+    DataType mean = DataType(0);
+    DataType sqsum = DataType(0);
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      mean += pixels(i, 0);
-      sqsum += pixels(i, 0) * pixels(i, 0);
+      mean += pixels_buffer[i];
+      sqsum += pixels_buffer[i] * pixels_buffer[i];
     }
     mean /= height_per_channel;
     sqsum /= height_per_channel;
-    DataType std = sqsum - (mean * mean);
-    std = std::sqrt(std) + DataType(1e-7);  // Avoid division by 0.
+    const DataType std = std::sqrt(sqsum - (mean * mean));
+    const DataType inv_std = 1 / (std + DataType(1e-7)); // Avoid division by 0
     // Z-score is (x - mean) / std.
     for (unsigned i = channel_start; i < channel_end; ++i) {
-      pixels(i, 0) = (pixels(i, 0) - mean) / std;
+      pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std;
     }
   }
 }
