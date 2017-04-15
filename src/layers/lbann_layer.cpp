@@ -144,9 +144,16 @@ void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
-  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
-    *m_prev_activations = *fp_input;
+    DistData curr_dist = m_prev_activations->DistData();
+    DistData prev_dist = fp_input->DistData();
+    if(curr_dist.colDist == prev_dist.colDist
+       && curr_dist.rowDist == prev_dist.rowDist) {
+      View(*m_prev_activations, *fp_input);
+    }
+    else {
+      *m_prev_activations = *fp_input;
+    }
   }
 
   // Set matrix views based on current mini-batch size
@@ -206,9 +213,20 @@ void lbann::Layer::backProp() {
   //  bp_set_std_matrix_view();
 
   // Get incoming loss and convert matrix distribution if necessary
-  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
-    *m_prev_error_signal = *bp_input;
+    DistData curr_dist = m_prev_error_signal->DistData();
+    DistData next_dist = bp_input->DistData();
+    if(curr_dist.colDist == next_dist.colDist
+       && curr_dist.rowDist == next_dist.rowDist) {
+      View(*m_prev_error_signal, *bp_input);
+      View(*m_prev_error_signal_v,
+           *m_prev_error_signal,
+           ALL,
+           IR(0, m_prev_error_signal_v->Width()));
+    }
+    else {
+      *m_prev_error_signal = *bp_input;
+    }
   }
 
 #ifdef __LIB_CUDNN

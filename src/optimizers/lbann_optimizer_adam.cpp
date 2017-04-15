@@ -85,22 +85,46 @@ void lbann::adam::update(const AbsDistMat* gradient)
   // Get local matrix data
   const Int local_height = m_parameters->LocalHeight();
   const Int local_width = m_parameters->LocalWidth();
-  DataType* parameter_buffer = m_parameters->Buffer();
+  DataType* parameters_buffer = m_parameters->Buffer();
+  const Int parameters_ldim = m_parameters->LDim();
   const DataType* gradient_buffer = gradient->LockedBuffer();
+  const Int gradient_ldim = gradient->LDim();
   DataType* moment1_buffer = m_moment1->Buffer();
+  const Int moment1_ldim = m_moment1->LDim();
   DataType* moment2_buffer = m_moment2->Buffer();
+  const Int moment2_ldim = m_moment2->LDim();
   
-  // Update parameters
-  // Note: we assume data is contiguous
+  // Check if matrix data is contiguous
+  if(parameters_ldim != local_height
+     || gradient_ldim != local_height
+     || moment1_ldim != local_height
+     || moment2_ldim != local_height) {
+    // Update with non-contiguous data
+#pragma omp parallel for collapse(2)
+    for(Int j=0; j<local_width; ++j) {
+      for(Int i=0; i<local_height; ++i) {
+        DataType& x = parameters_buffer[i+j*parameters_ldim];
+        const DataType g = gradient_buffer[i+j*gradient_ldim];
+        DataType& m1 = moment1_buffer[i+j*moment1_ldim];
+        DataType& m2 = moment2_buffer[i+j*moment2_ldim];
+        m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
+        m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
+        x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+      }
+    }
+  }
+  else {
+    // Update with contiguous data
 #pragma omp parallel for
-  for(Int i=0; i<local_height*local_width; ++i) {
-    const DataType g = gradient_buffer[i];
-    moment1_buffer[i] = ( m_beta1 * moment1_buffer[i] 
-                          + (DataType(1) - m_beta1) * g );
-    moment2_buffer[i] = ( m_beta2 * moment2_buffer[i] 
-                          + (DataType(1) - m_beta1) * g * g );
-    parameter_buffer[i] -= ( m_learning_rate * correction * moment1_buffer[i]
-                             / (Sqrt(moment2_buffer[i]) + m_eps) );
+    for(Int i=0; i<local_height*local_width; ++i) {
+      DataType& x = parameters_buffer[i];
+      const DataType g = gradient_buffer[i];
+      DataType& m1 = moment1_buffer[i];
+      DataType& m2 = moment2_buffer[i];
+      m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
+      m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
+      x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+    }
   }
 
 }
