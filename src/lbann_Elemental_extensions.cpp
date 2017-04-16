@@ -70,6 +70,32 @@ void ColumnSum
     AllReduce( sums.Matrix(), A.ColComm(), mpi::SUM );
 }
 
+template<typename F>
+void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F* XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
+  Zeros(sums, m, 1);
+  F* sumsBuf = sums.Buffer();
+  // Note: Iterating over columns helps cache locality for X but means we can't
+  // naively parallelize the outer loop (race conditions).
+  // Could probably do a local accumulation to avoid this.
+  for (Int j = 0; j < n; ++j) {
+    for (Int i = 0; i < m; ++i) {
+      sumsBuf[i] += XBuf[i+j*XLDim];
+    }
+  }
+}
+
+template <typename F,Dist U,Dist V,DistWrap W>
+void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums) {
+  sums.AlignWith(A);
+  sums.Resize(A.Height(), 1);
+  RowSum(A.LockedMatrix(), sums.Matrix());
+  AllReduce(sums, A.RowComm(), mpi::SUM);
+}
+
 LBANN_PROTO_FLOAT
 LBANN_PROTO_DOUBLE
 
