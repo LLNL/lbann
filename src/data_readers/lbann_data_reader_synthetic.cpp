@@ -80,34 +80,7 @@ void lbann::data_reader_synthetic::load()
   ShuffledIndices.clear();
   ShuffledIndices.resize(m_num_samples);
 
-  if (has_max_sample_count()) {
-    size_t max_sample_count = get_max_sample_count();
-    bool firstN = get_firstN();
-    load(max_sample_count, firstN);
-  } 
-  
-  else if (has_use_percent()) {
-    double use_percent = get_use_percent();
-    bool firstN = get_firstN();
-    load(use_percent, firstN);
-  }
-}
-
-void lbann::data_reader_synthetic::load(size_t max_sample_count, bool firstN)
-{
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("Synthetic: data reader load error: invalid number of samples selected");
-  }
-  select_subset_of_data(max_sample_count, firstN);
-}
-
-void lbann::data_reader_synthetic::load(double use_percentage, bool firstN) {
-  size_t max_sample_count = rint(getNumData()*use_percentage);
-
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("Synthetic: data reader load error: invalid number of samples selected");
-  }
-  select_subset_of_data(max_sample_count, firstN);
+  select_subset_of_data();
 }
 
 lbann::data_reader_synthetic& lbann::data_reader_synthetic::operator=(const data_reader_synthetic& source)

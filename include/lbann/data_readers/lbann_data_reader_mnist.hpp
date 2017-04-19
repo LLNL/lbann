@@ -68,9 +68,6 @@ private:
   int m_image_width;
   int m_image_height;
   int m_num_labels;
-
-  void load(size_t max_sample_count, bool firstN);
-  void load(double validation_percent, bool firstN=false);
 };
 
 }  // namespace lbann

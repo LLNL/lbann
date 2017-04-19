@@ -64,8 +64,6 @@ namespace lbann
 
       int get_linearized_data_size() { return m_num_features; }
       int get_linearized_response_size(void) const { return m_num_responses; }
-      void load(size_t max_sample_count, bool firstN);
-      void load(double validation_percent, bool firstN);
   };
 
 }

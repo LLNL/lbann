@@ -87,8 +87,8 @@ int main(int argc, char* argv[])
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 0.90;
-        trainParams.PercentageValidationSamples = 1.00;
+        trainParams.PercentageTrainingSamples = 1.0;
+        trainParams.PercentageValidationSamples = 0.1;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
         mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
         mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
         mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-        mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+        mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
         mnist_trainset.load();
 
         mnist_trainset.scale(scale);
@@ -149,31 +149,19 @@ int main(int argc, char* argv[])
         mnist_trainset.unit_variance(unit_variance);
         mnist_trainset.z_score(z_score);
 
-        if (comm->am_world_master()) {
-          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
-        }
-
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " MNIST validation data error" << endl;
-          }
-          return -1;
-        }
+        mnist_validation_set.swap_used_and_unused_index_sets();
 
-        if(trainParams.PercentageValidationSamples == 1.00) {
-          if (comm->am_world_master()) {
-            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-          }
-        }else {
-          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          if (comm->am_world_master()) {
-            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-          }
+        if (comm->am_world_master()) {
+          size_t num_train = mnist_trainset.getNumData();
+          size_t num_validate = mnist_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
         }
 
         ///////////////////////////////////////////////////////////////////

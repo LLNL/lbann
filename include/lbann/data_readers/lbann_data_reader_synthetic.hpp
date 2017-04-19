@@ -56,9 +56,6 @@ namespace lbann
     private:
       int  m_num_samples; //rows
       int  m_num_features; //cols
-
-      void load(size_t max_sample_count, bool firstN=false);
-      void load(double validation_percent, bool firstN=false);
   };
 
 }
