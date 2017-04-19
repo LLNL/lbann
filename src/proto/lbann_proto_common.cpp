@@ -24,7 +24,9 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
   if (mb_size != 0) {
     mini_batch_size = mb_size;
   }
-  cout << "mini_batch_size: " << mini_batch_size << " mb_size: " << mb_size << endl;
+  if (master) {
+    cout << "mini_batch_size: " << mini_batch_size << " mb_size: " << mb_size << endl;
+  }
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader &readme = d_reader.reader(j);
@@ -139,21 +141,16 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       }
       reader_validation->set_role("validate");
       reader_validation->swap_used_and_unused_index_sets();
-      if (validation_percent == 1.0) {
-        if (master) {
-          cout << "Validating training using " << ((1.00 - readme.train_or_test_percent())*100)
-               << "% of the training data set, which is " << reader_validation->getNumData()
-               << " samples." << endl;
-        }
-      } else {
-        size_t preliminary_validation_set_size = reader_validation->getNumData();
-        size_t final_validation_set_size = reader_validation->trim_data_set(validation_percent);
-        if (master) {
-          cout << "Trimmed the validation data set from " << preliminary_validation_set_size
-               << " samples to " << final_validation_set_size << " samples."
-               << endl;
-        }
+
+      if (master) {
+          size_t num_train = reader->getNumData();
+          size_t num_validate = reader_validation->getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << reader->getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->getNumData() << " samples." << endl;
       }
+
       data_readers[execution_mode::validation] = reader_validation;
     }
   }

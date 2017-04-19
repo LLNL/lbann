@@ -53,8 +53,6 @@ private:
   int m_num_features;
   int m_num_samples;
   cnpy::NpyArray m_data;
-  void load(double use_percentage, bool firstN);
-  void load(size_t max_sample_count, bool firstN);
 };
 
 }  // namespace lbann

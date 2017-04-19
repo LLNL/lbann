@@ -66,9 +66,6 @@ namespace lbann
       std::vector<int> m_labels;
       std::map<int,double> m_index_map;
       std::string m_infile; //input file name
-
-      void load(size_t max_sample_count, bool firstN=false);
-      void load(double validation_percent, bool firstN=false);
   };
 
 }

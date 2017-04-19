@@ -255,37 +255,6 @@ void lbann::DataReader_MNIST::load()
     ShuffledIndices[n] = n;
   }
 
-  if (has_max_sample_count()) {
-    size_t max_sample_count = get_max_sample_count();
-    bool firstN = get_firstN();
-    load(max_sample_count, firstN);
-  } 
-  
-  else if (has_use_percent()) {
-    double use_percent = get_use_percent();
-    bool firstN = get_firstN();
-    load(use_percent, firstN);
-  }
+  select_subset_of_data();
 }
 
-void lbann::DataReader_MNIST::load(size_t max_sample_count, bool firstN)
-{
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: invalid number of samples selected";
-    throw lbann_exception(err.str());
-  }
-  select_subset_of_data(max_sample_count, firstN);
-}
-
-void lbann::DataReader_MNIST::load(double use_percentage, bool firstN)
-{
-  size_t max_sample_count = rint(getNumData()*use_percentage);
-
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: invalid number of samples selected";
-    throw lbann_exception(err.str());
-  }
-  select_subset_of_data(max_sample_count, firstN);
-}

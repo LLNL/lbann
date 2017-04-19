@@ -53,7 +53,6 @@ public:
   int get_num_labels() { return m_num_labels; }
 
   // ImageNet specific functions
-  //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
   void load();
   void free();
 
@@ -78,9 +77,6 @@ private:
   int m_image_num_channels; // number of image channels
   int m_num_labels; // number of labels
   unsigned char* m_pixels;
-
-  void load(size_t max_sample_count, bool firstN);
-  void load(double validation_percent, bool firstN);
 };
 
 }  // namespace lbann

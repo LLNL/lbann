@@ -65,7 +65,7 @@ public:
     m_last_mini_batch_stride(batchSize),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
-    m_max_sample_count_was_set(false), m_use_percent(-1)
+    m_max_sample_count_was_set(false), m_use_percent(1.0)
   {}
     
   //developer's note: I eliminated the copy ctor, since the
@@ -123,25 +123,70 @@ public:
   std::string get_label_filename(); 
 
   /**
-   * Use the first N data entries, without shuffling;
-   * default is: false
+   * if set to true, indices (data samples) are not shuffled;
+   * default is 'false'
    */
   void set_firstN(bool b);
+
+  /** if 'true' is returned, indices (data samples) are not shuffled
+   */
   bool get_firstN();
 
+  /** sets the absolute number of data samples that will be used
+   *  for training or testing
+   */
   void set_max_sample_count(size_t s);
+
+  /** returns 'true' if set_max_sample_count() was called;
+   *  primarily for internal use; end users can ignore.
+   */
   bool has_max_sample_count();
+
+  /** returns the absolute number of data samples that will be used
+   *  for training or testing
+   */
   size_t get_max_sample_count();
 
+  /** set the percentage of the data set to use for training+validation;
+   *  or testing.  Exception is thrown if  1.0 < s < 0
+   */
   void set_use_percent(double s);
+
+  /** returns true if set_use_percent() was called */
   bool has_use_percent();
+
+  /** returns the percent of the data set that is to be used
+   *  for training or testing. If training, this is the total
+   *  for training+validation. Throws an exception if
+   *  set_use_percent() was not previously called.
+   */
   double get_use_percent();
 
+  /** sets the proportion of the data set that will be used for
+   *  validation;  0.0 <= s <= 1.0, else an exception is thrown
+   */
   void set_validation_percent(double s);
+
+  /** returns true if set_validation_percent was called;
+   *  this method will likely be deprecated in the future
+   */  
   bool has_validation_percent();
+
+  /** returns the percentage of the data set that is to be
+   *  used for validation
+   */
   double get_validation_percent();
 
+  /** set the identifyer for the data set; should be
+   *  "train" or "test." This is primarily for internal use:
+   *  end users can ignore.
+   */
   void set_role(std::string role) { m_role = role; }
+
+  /** returns the role ("train," "test," or "error"
+   *  This is primarily for internal use:
+   *  end users can ignore.
+   */
   std::string get_role() { return m_role; }
 
   /**
@@ -206,13 +251,11 @@ public:
   int get_num_unused_data() { return (int)m_unused_indices.size(); }
   int* get_unused_data() { return &m_unused_indices[0]; }
 
-  void select_subset_of_data(size_t max_sample_count, bool firstN);
+  void select_subset_of_data();
 
-  bool swap_used_and_unused_index_sets();
+  void swap_used_and_unused_index_sets();
 
   DataReader& operator=(const DataReader& source);
-
-  size_t trim_data_set(double use_percentage, bool firstN=false);
 
   void calculate_multi_model_data_distribution(lbann_comm *comm);
 

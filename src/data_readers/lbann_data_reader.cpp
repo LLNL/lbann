@@ -96,41 +96,48 @@ int DataReader::get_next_position() {
   }
 }
 
-void DataReader::select_subset_of_data(size_t max_sample_count, bool firstN) {
-  size_t num_data_samples = getNumData();
-      
-  /// If the user requested fewer than the total data set size, select
-  /// a random set from the entire data set.
-  if (max_sample_count != 0) {
-    max_sample_count = __MIN(max_sample_count, num_data_samples);
-    if(!firstN) {
-      std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_data_seq_generator());
+void DataReader::select_subset_of_data() {
+  if(!get_firstN()) {
+    std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_data_seq_generator());
+  }
+
+  if (not (has_max_sample_count() or has_use_percent() or has_validation_percent())) {
+    return;
+  }
+
+  if (has_max_sample_count()) {
+    size_t count = get_max_sample_count();
+    if(count > getNumData()) {
+      stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: DataReader::select_subset_of_data() - max_sample_count=" << count
+          << " is > getNumData=" << getNumData();
+      throw lbann_exception(err.str());
     }
-    m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
-    ShuffledIndices.resize(max_sample_count);
+    ShuffledIndices.resize(get_max_sample_count());
+  } else if (has_use_percent()) {
+    ShuffledIndices.resize(get_use_percent()*getNumData());
+  }
 
-    if(!firstN) {
-      std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-      std::sort(m_unused_indices.begin(), m_unused_indices.end());
-    }
+  if (has_validation_percent()) {
+    long unused = get_validation_percent()*getNumData(); //getNumData() = ShuffledIndices.size()
+    long use_me = getNumData() - unused;
+    if (unused > 0) {
+      m_unused_indices=std::vector<int>(ShuffledIndices.begin() + use_me, ShuffledIndices.end());
+      ShuffledIndices.resize(use_me);
+    }  
+  }
 
-    // std::cout << "shuffled indices ";
-    // for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
-    //   std::cout << *i << ' ';
-    // std::cout << std::endl;
-
-    // std::cout << "unused indices ";
-    // for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
-    //   std::cout << *i << ' ';
-    // std::cout << std::endl;
+  if(!get_firstN()) {
+    std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
+    std::sort(m_unused_indices.begin(), m_unused_indices.end());
   }
 }
 
-bool DataReader::swap_used_and_unused_index_sets() {
+void DataReader::swap_used_and_unused_index_sets() {
   std::vector<int> tmp_indices = ShuffledIndices;
   ShuffledIndices = m_unused_indices;
   m_unused_indices = tmp_indices;
-  return true;
 }
 
 DataReader& DataReader::operator=(const DataReader& source) {
@@ -151,16 +158,6 @@ DataReader& DataReader::operator=(const DataReader& source) {
   return *this;
 }
 
-size_t DataReader::trim_data_set(double use_percentage, bool firstN) {
-  size_t max_sample_count = rint(getNumData()*use_percentage);
-      
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    throw lbann_exception("data reader trim error: invalid number of samples selected");
-  }
-  select_subset_of_data(max_sample_count, firstN);
-
-  return getNumData();
-}
 
 void DataReader::calculate_multi_model_data_distribution(lbann_comm *comm) {
   int max_mini_batch_size = BatchSize;
@@ -395,8 +392,13 @@ bool DataReader::has_use_percent() {
 }
 
 double DataReader::get_use_percent() {
+  stringstream err;
+  if (not has_use_percent()) {
+    err << __FILE__ << " " << __LINE__ << " :: you must call set_use_percent()"
+        << " but apparently have not done so";
+    throw lbann_exception(err.str());
+  }  
   return m_use_percent;
 }
-
 
 }  // namespace lbann
