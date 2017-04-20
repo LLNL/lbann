@@ -66,6 +66,12 @@ void lbann::adam::setup(AbsDistMat* parameters)
     m_moment1 = new StarMat(comm->get_model_grid());
     m_moment2 = new StarMat(comm->get_model_grid());
     break;
+  case matrix_format::MC_STAR:
+    m_moment1 = new RowSumMat(comm->get_model_grid());
+    m_moment2 = new RowSumMat(comm->get_model_grid());
+  case matrix_format::STAR_VC:
+    m_moment1 = new StarVCMat(comm->get_model_grid());
+    m_moment2 = new StarVCMat(comm->get_model_grid());
   default:
     throw lbann_exception("lbann_optimizer_adam: invalid data layout");
   }

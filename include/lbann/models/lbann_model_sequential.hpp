@@ -149,8 +149,6 @@ class sequential_model : public model
     std::vector<Layer*> m_layers;
     /// Layer factory
     layer_factory* layer_fac;
-    /// Optimizer factory
-    optimizer_factory* optimizer_fac;
 
   };
 }

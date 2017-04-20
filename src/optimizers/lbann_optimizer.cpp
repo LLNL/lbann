@@ -51,6 +51,8 @@ void lbann::optimizer::setup(AbsDistMat* parameters)
     m_matrix_format = matrix_format::STAR_STAR;
   else if(dist.colDist == STAR && dist.rowDist == VC)
     m_matrix_format = matrix_format::STAR_VC;
+  else if(dist.colDist == MC && dist.rowDist == STAR)
+    m_matrix_format = matrix_format::MC_STAR;
   else
     m_matrix_format = matrix_format::invalid;
 }

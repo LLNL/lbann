@@ -85,7 +85,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
 	if (cur_size == 1) {
 		// create first hidden layer
     if(layer_name == "FullyConnected"){
-      optimizer *new_optimizer = optimizer_fac->create_optimizer();
+      optimizer *new_optimizer = create_optimizer();
       Layer* new_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
@@ -93,7 +93,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
                                                        comm,new_optimizer, regularizers);
       m_layers.push_back(new_layer);
       // create output/mirror layer
-      optimizer *mirror_optimizer = optimizer_fac->create_optimizer();
+      optimizer *mirror_optimizer = create_optimizer();
       Layer* mirror_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
@@ -105,7 +105,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
 	else {
 		// create hiden layer
     if(layer_name == "FullyConnected"){
-      optimizer *hidden_optimizer = optimizer_fac->create_optimizer();
+      optimizer *hidden_optimizer = create_optimizer();
       Layer* hidden_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
@@ -113,7 +113,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
                                                        comm,hidden_optimizer, regularizers);
       m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);
       // create mirror layer
-      optimizer *mirror_hidden_optimizer = optimizer_fac->create_optimizer();
+      optimizer *mirror_hidden_optimizer = create_optimizer();
       Layer* mirror_hidden_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
