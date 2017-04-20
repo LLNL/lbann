@@ -34,14 +34,26 @@ void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
 template<typename F,Dist U,Dist V,DistWrap W>
 void ColumnSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums);
 
+template<typename F>
+void RowSum(const Matrix<F>& X, Matrix<F>& sums);
+
+template <typename F,Dist U,Dist V,DistWrap W>
+void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums);
+
 #define LBANN_PROTO_DIST(F,U,V) \
   template void ColumnSum \
   (const DistMatrix<F,U,V,ELEMENT>& X, DistMatrix<F,V,STAR,ELEMENT>& norms); \
   template void ColumnSum \
-  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,V,STAR,BLOCK>& norms);
+  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,V,STAR,BLOCK>& norms); \
+  template void RowSum                                               \
+  (const DistMatrix<F,U,V,ELEMENT>& X, DistMatrix<F,U,STAR,ELEMENT>& norms); \
+  template void RowSum \
+  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,U,STAR,BLOCK>& norms);
 
 #define LBANN_PROTO(F) \
   template void ColumnSum \
+  ( const Matrix<F>& X, Matrix<F>& norms ); \
+  template void RowSum \
   ( const Matrix<F>& X, Matrix<F>& norms ); \
   LBANN_PROTO_DIST(F,MC,  MR  ) \
   LBANN_PROTO_DIST(F,MC,  STAR) \

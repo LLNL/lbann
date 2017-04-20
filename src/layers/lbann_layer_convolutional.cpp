@@ -1256,7 +1256,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 
 bool convolutional_layer::update()
 {
-
+  Layer::update();
   if(m_execution_mode == execution_mode::training) {
 
     // Obtain filter gradient with reduction and scaling

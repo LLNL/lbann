@@ -37,6 +37,10 @@
 #include "lbann/io/lbann_persist.hpp"
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include <vector>
 #include <string>
 
@@ -50,7 +54,8 @@ class lbann_callback;
  */
 class model {
 public:
-  model(lbann_comm* comm, objective_functions::objective_fn* obj_fn);
+  model(lbann_comm* comm, objective_functions::objective_fn* obj_fn,
+        optimizer_factory* optimizer_fac);
   virtual ~model() {}
 
   /** Initialize the model. */
@@ -93,6 +98,11 @@ public:
 
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start() = 0;
+
+  /** Create a new optimizer. */
+  inline optimizer* create_optimizer() {
+    return m_optimizer_fac->create_optimizer();
+  }
 
   /**
    * Objective functions are used to judge the performance of the model during
@@ -163,6 +173,9 @@ protected:
   double m_checkpoint_secs;
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
+
+  /** Factory to create optimizers. */
+  optimizer_factory* m_optimizer_fac;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

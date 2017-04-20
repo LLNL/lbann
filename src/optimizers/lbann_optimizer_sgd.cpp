@@ -63,6 +63,10 @@ void lbann::sgd::setup(AbsDistMat* parameters)
       m_velocity = new DistMat(comm->get_model_grid()); break;
     case matrix_format::STAR_STAR:
       m_velocity = new StarMat(comm->get_model_grid()); break;
+    case matrix_format::MC_STAR:
+      m_velocity = new RowSumMat(comm->get_model_grid()); break;
+    case matrix_format::STAR_VC:
+      m_velocity = new StarVCMat(comm->get_model_grid()); break;
     default:
       throw lbann_exception("lbann_optimizer_sgd: invalid data layout");
     }

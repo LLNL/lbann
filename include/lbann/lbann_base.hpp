@@ -45,13 +45,14 @@ typedef El::DistMatrix<DataType, El::MC, El::MR> DistMat;
 typedef El::DistMatrix<DataType, El::CIRC, El::CIRC> CircMat;
 typedef El::DistMatrix<DataType, El::STAR, El::STAR> StarMat;
 typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix over columns */
+typedef El::DistMatrix<DataType, El::MC, El::STAR> RowSumMat;
 typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
 typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 
 /// Distributed matrix format
-enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, invalid};
+enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
 
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL};

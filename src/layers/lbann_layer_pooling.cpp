@@ -691,5 +691,6 @@ void lbann::pooling_layer::bp_linearity_cpu() {
 
 bool pooling_layer::update()
 {
+  Layer::update();
   return true;
 }

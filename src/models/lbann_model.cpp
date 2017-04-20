@@ -37,7 +37,8 @@
 using namespace std;
 using namespace El;
 
-lbann::model::model(lbann_comm* comm, objective_functions::objective_fn* obj_fn) :
+lbann::model::model(lbann_comm* comm, objective_functions::objective_fn* obj_fn,
+  optimizer_factory* optimizer_fac) :
   obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
@@ -46,7 +47,8 @@ lbann::model::model(lbann_comm* comm, objective_functions::objective_fn* obj_fn)
   m_current_mini_batch_size(0),m_current_phase(0),
   comm(comm),
   m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
-  m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime())
+  m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
+  m_optimizer_fac(optimizer_fac)
 {
   /* store our global rank and size since we refer to this a lot */
   int rank, ranks;

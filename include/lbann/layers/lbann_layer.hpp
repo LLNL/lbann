@@ -104,7 +104,7 @@ namespace lbann
 
     virtual void forwardProp();
     virtual void backProp();
-    virtual bool update() { return false; };
+    virtual bool update();
     virtual void summarize(lbann_summary& summarizer, int64_t step);
     /**
      * Print information at the end of an epoch.

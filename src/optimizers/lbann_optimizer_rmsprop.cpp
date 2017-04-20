@@ -57,6 +57,10 @@ void lbann::rmsprop::setup(AbsDistMat* parameters)
     m_cache = new DistMat(comm->get_model_grid()); break;
   case matrix_format::STAR_STAR:
     m_cache = new StarMat(comm->get_model_grid()); break;
+  case matrix_format::MC_STAR:
+    m_cache = new RowSumMat(comm->get_model_grid()); break;
+  case matrix_format::STAR_VC:
+    m_cache = new StarVCMat(comm->get_model_grid()); break;
   default:
     throw lbann_exception("lbann_optimizer_rmsprop: invalid data layout");
   }

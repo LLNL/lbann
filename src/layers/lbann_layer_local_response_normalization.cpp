@@ -293,5 +293,6 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
 
 bool local_response_normalization_layer::update()
 {
+  Layer::update();
   return true;
 }

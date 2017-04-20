@@ -52,11 +52,10 @@ lbann::sequential_model::sequential_model(const uint mini_batch_size,
                                           lbann_comm* comm,
                                           objective_functions::objective_fn* obj_fn,
                                           layer_factory* _layer_fac,
-                                          optimizer_factory* _optimizer_fac)
-  : model(comm, obj_fn),
+                                          optimizer_factory* optimizer_fac)
+  : model(comm, obj_fn, optimizer_fac),
     m_mini_batch_size(mini_batch_size),
-    layer_fac(_layer_fac),
-    optimizer_fac(_optimizer_fac) {}
+    layer_fac(_layer_fac) {}
 
 lbann::sequential_model::~sequential_model()
 {
@@ -393,7 +392,7 @@ uint lbann::sequential_model::add(const std::string layer_name,
                                   std::vector<regularizer*> regularizers)
 {
     const int layer_index = m_layers.size();
-    optimizer *opt = optimizer_fac->create_optimizer();
+    optimizer *opt = create_optimizer();
 
     // Get properties of previous layer
     int prev_layer_dim = -1;

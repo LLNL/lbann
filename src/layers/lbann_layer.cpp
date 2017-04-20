@@ -275,6 +275,13 @@ void lbann::Layer::backProp() {
   bp_time += get_time() - bp_start;
 }
 
+bool lbann::Layer::update() {
+  if (m_execution_mode == execution_mode::training) {
+    for (regularizer* reg : regularizers) reg->update();
+  }
+  return false;
+}
+
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights/";
   // TODO: implement summarizer functions for other matrix distributions
