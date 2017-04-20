@@ -253,7 +253,10 @@ public:
 
   void select_subset_of_data();
 
-  void swap_used_and_unused_index_sets();
+  /** \brief Replace the shuffled index set with the unused index set 
+   *  The unused index set is emptied.
+   */
+  void use_unused_index_set();
 
   DataReader& operator=(const DataReader& source);
 

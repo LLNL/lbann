@@ -140,7 +140,7 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
         (*(DataReader_cnpy*)reader_validation) = (*(DataReader_cnpy*)reader);
       }
       reader_validation->set_role("validate");
-      reader_validation->swap_used_and_unused_index_sets();
+      reader_validation->use_unused_index_set();
 
       if (master) {
           size_t num_train = reader->getNumData();

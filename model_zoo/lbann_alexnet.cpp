@@ -49,13 +49,23 @@ using namespace El;
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
+#if 0
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/test/"; // "resized_256x256/val/";
+const string g_ImageNet_TestDir = "resized_256x256/test/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train.txt"; // "train_c0-9.txt";
-const string g_ImageNet_ValLabelFile = "val.txt"; // "val_c0-9.txt";
-const string g_ImageNet_TestLabelFile = "val.txt"; //"val_c0-9.txt";
+const string g_ImageNet_TrainLabelFile =  "train.txt";
+const string g_ImageNet_ValLabelFile = "val.txt";
+const string g_ImageNet_TestLabelFile = "val.txt";
+#else
+const string g_ImageNet_TrainDir = "resized_256x256/train/";
+const string g_ImageNet_ValDir = "resized_256x256/val/";
+const string g_ImageNet_TestDir = "resized_256x256/val/";
+const string g_ImageNet_LabelDir = "labels/";
+const string g_ImageNet_TrainLabelFile =  "train_c0-9.txt";
+const string g_ImageNet_ValLabelFile = "val_c0-9.txt";
+const string g_ImageNet_TestLabelFile = "val_c0-9.txt";
+#endif
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -159,7 +169,7 @@ int main(int argc, char* argv[])
         // create a validation set from the unused training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_validation_set(imagenet_trainset); // Clone the training set object
-        imagenet_validation_set.swap_used_and_unused_index_sets();
+        imagenet_validation_set.use_unused_index_set();
 
         if (comm->am_world_master()) {
           size_t num_train = imagenet_trainset.getNumData();

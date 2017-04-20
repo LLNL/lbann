@@ -362,7 +362,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execu
 
             if (role == "train") {
                 DataReader_MNIST *validation_set = new DataReader_MNIST(*data_set);
-                if (not validation_set->swap_used_and_unused_index_sets() and master) {
+                if (not validation_set->use_unused_index_set() and master) {
                     err << __FILE__ << " " << __LINE__ << " :: MNIST validation data error";
                     throw lbann_exception(err.str());
                 }

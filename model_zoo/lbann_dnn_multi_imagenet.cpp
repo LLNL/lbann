@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     // Clone the training set object
     DataReader_ImageNet imagenet_validation_set(imagenet_trainset);
     // Swap the used and unused index sets so that it validates on the remaining data
-    imagenet_validation_set.swap_used_and_unused_index_sets();
+    imagenet_validation_set.use_unused_index_set();
 
         if (comm->am_world_master()) {
           size_t num_train = imagenet_trainset.getNumData();

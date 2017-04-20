@@ -134,9 +134,10 @@ void DataReader::select_subset_of_data() {
   }
 }
 
-void DataReader::swap_used_and_unused_index_sets() {
-  ShuffledIndices.clear();
-  std::copy(ShuffledIndices.begin(), ShuffledIndices.end(), m_unused_indices.begin());
+void DataReader::use_unused_index_set() {
+  ShuffledIndices.swap(m_unused_indices);
+  m_unused_indices.clear();
+  std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
 }
 
 DataReader& DataReader::operator=(const DataReader& source) {
