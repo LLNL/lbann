@@ -1256,6 +1256,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 
 bool convolutional_layer::update()
 {
+  double start = get_time();
   Layer::update();
   if(m_execution_mode == execution_mode::training) {
 
@@ -1275,6 +1276,7 @@ bool convolutional_layer::update()
     m_optimizer->update(m_weights_gradient);
 
   }
+  update_time += get_time() - start;
 
   return true;
 }

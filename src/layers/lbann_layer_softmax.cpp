@@ -279,10 +279,12 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
 bool lbann::SoftmaxLayer::update()
 {
+  double start = get_time();
   Layer::update();
   if(m_execution_mode == execution_mode::training) {
     m_optimizer->update(m_weights_gradient);
   }
+  update_time += get_time() - start;
   return true;
 }
 

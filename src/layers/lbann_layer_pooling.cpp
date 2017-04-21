@@ -691,6 +691,8 @@ void lbann::pooling_layer::bp_linearity_cpu() {
 
 bool pooling_layer::update()
 {
+  double start = get_time();
   Layer::update();
+  update_time += get_time() - start;
   return true;
 }

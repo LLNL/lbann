@@ -293,6 +293,8 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
 
 bool local_response_normalization_layer::update()
 {
+  double start = get_time();
   Layer::update();
+  update_time += get_time() - start;
   return true;
 }

@@ -309,6 +309,7 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
 }
 
