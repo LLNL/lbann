@@ -77,14 +77,14 @@ void batch_normalization::initialize_model_parallel_distribution() {
 }
 
 void batch_normalization::initialize_data_parallel_distribution() {
-  m_gamma = new StarVCMat(comm->get_model_grid());
-  m_beta = new StarVCMat(comm->get_model_grid());
-  m_dgamma = new StarVCMat(comm->get_model_grid());
-  m_dbeta = new StarVCMat(comm->get_model_grid());
-  m_mean = new StarVCMat(comm->get_model_grid());
-  m_var = new StarVCMat(comm->get_model_grid());
-  m_running_mean = new StarVCMat(comm->get_model_grid());
-  m_running_var = new StarVCMat(comm->get_model_grid());
+  m_gamma = new StarMat(comm->get_model_grid());
+  m_beta = new StarMat(comm->get_model_grid());
+  m_dgamma = new StarMat(comm->get_model_grid());
+  m_dbeta = new StarMat(comm->get_model_grid());
+  m_mean = new StarMat(comm->get_model_grid());
+  m_var = new StarMat(comm->get_model_grid());
+  m_running_mean = new StarMat(comm->get_model_grid());
+  m_running_var = new StarMat(comm->get_model_grid());
 }
 
 void batch_normalization::fp_weights() {
