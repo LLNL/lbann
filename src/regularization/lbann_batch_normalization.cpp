@@ -112,8 +112,8 @@ void batch_normalization::fp_weights() {
       mean_local(row, 0) = sum;
       var_local(row, 0) = sqsum;
     }
-    AllReduce(*m_mean, m_mean->RowComm(), mpi::SUM);
-    AllReduce(*m_var, m_var->RowComm(), mpi::SUM);
+    AllReduce(*m_mean, m_mean->RedundantComm(), mpi::SUM);
+    AllReduce(*m_var, m_var->RedundantComm(), mpi::SUM);
     for (Int row = 0; row < local_height; ++row) {
       mean_local(row, 0) /= mbsize;
       var_local(row, 0) = Sqrt(var_local(row, 0) / mbsize -
@@ -180,8 +180,8 @@ void batch_normalization::bp_weights() {
         bp_local(row, col);
     }
   }
-  AllReduce(*m_dbeta, m_dbeta->RowComm(), mpi::SUM);
-  AllReduce(*m_dgamma, m_dgamma->RowComm(), mpi::SUM);
+  AllReduce(*m_dbeta, m_dbeta->RedundantComm(), mpi::SUM);
+  AllReduce(*m_dgamma, m_dgamma->RedundantComm(), mpi::SUM);
   // Update the backprop gradient signal.
   for (Int row = 0; row < local_height; ++row) {
     for (Int col = 0; col < local_width; ++col) {
