@@ -34,6 +34,7 @@ SAVE_MODEL=false
 LOAD_MODEL=false
 CKPT_EPOCHS=0
 CKPT_STEPS=0
+USE_LUSTRE_DIRECT=0
 
 TASKS_PER_NODE=12
 
@@ -53,9 +54,8 @@ TRAIN_IMAGE_FILE="train-images.idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels.idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images.idx3-ubyte"
 ENABLE_HT=
+USE_LUSTRE_DIRECT=1
 fi
-
-USE_LUSTRE_DIRECT=0
 
 #Set fonts for Help.
 NORM=`tput sgr0`

@@ -41,11 +41,13 @@ export SLURM_NNODES=$SLURM_JOB_NUM_NODES
 
 TASKS_PER_NODE=12
 NNODES=${SLURM_NNODES}
+USE_LUSTRE_DIRECT=1
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=48
+USE_LUSTRE_DIRECT=0
 elif [ "${CLUSTER}" = "sierra" ]; then
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
 #ENABLE_HT=--enable-hyperthreads
@@ -64,7 +66,6 @@ ENABLE_HT=
 CORES_PER_NODE=12
 fi
 
-USE_LUSTRE_DIRECT=0
 SHUFFLE_TRAINING=0
 
 #Set fonts for Help.
