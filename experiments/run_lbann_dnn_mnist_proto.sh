@@ -188,7 +188,7 @@ FILES=(${TRAIN_LABEL_FILE} ${TRAIN_IMAGE_FILE} ${TEST_LABEL_FILE} ${TEST_IMAGE_F
 for filename in "${FILES[@]}"
 do
     FILE=`basename $filename`
-    if [ ! -e ${ROOT_DATASET_DIR}/${FILE} ]; then
+    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE} ]; then
         CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${filename} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
         echo "${CMD}"
         ${CMD}
