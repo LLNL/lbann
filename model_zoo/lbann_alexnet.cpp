@@ -56,7 +56,7 @@ const string g_ImageNet_TestDir = "resized_256x256/test/";
 const string g_ImageNet_LabelDir = "labels/";
 const string g_ImageNet_TrainLabelFile =  "train.txt";
 const string g_ImageNet_ValLabelFile = "val.txt";
-const string g_ImageNet_TestLabelFile = "val.txt";
+const string g_ImageNet_TestLabelFile = "test.txt";
 #else
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
@@ -107,6 +107,8 @@ int main(int argc, char* argv[])
 
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
+        Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
         ProcessInput();
         PrintInputReport();
@@ -221,7 +223,7 @@ int main(int argc, char* argv[])
 
         // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
         cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
