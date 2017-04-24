@@ -114,7 +114,6 @@ convolutional_layer::convolutional_layer(const uint index,
   m_forward_algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
   m_backward_filter_algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
   m_backward_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-  m_work_space_size = 0;
 
   // Set parameters for GPU implementation
   if(cudnn) {
@@ -161,7 +160,6 @@ convolutional_layer::~convolutional_layer()
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_work_space_d);
     if(!m_prev_layer_using_gpus)
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     if(!m_next_layer_using_gpus)
@@ -360,8 +358,8 @@ void lbann::convolutional_layer::setup_gpu()
                                                       0,
                                                       &m_backward_data_algo));
 
-  // Choose workspace size
-  m_work_space_size = 0;
+  // Initialize work space
+  size_t max_work_space = 0;
   size_t required_work_space;
   checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(m_cudnn->get_handle(),
                                                      m_input_desc,
@@ -370,7 +368,7 @@ void lbann::convolutional_layer::setup_gpu()
                                                      m_output_desc,
                                                      m_forward_algo,
                                                      &required_work_space));
-  m_work_space_size = Max(m_work_space_size, required_work_space);
+  max_work_space = Max(max_work_space, required_work_space);
   checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(m_cudnn->get_handle(),
                                                             m_input_desc,
                                                             m_output_desc,
@@ -378,7 +376,7 @@ void lbann::convolutional_layer::setup_gpu()
                                                             m_filter_desc,
                                                             m_backward_filter_algo,
                                                             &required_work_space));
-  m_work_space_size = Max(m_work_space_size, required_work_space);
+  max_work_space = Max(max_work_space, required_work_space);
   checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(m_cudnn->get_handle(),
                                                           m_filter_desc,
                                                           m_output_desc,
@@ -386,7 +384,11 @@ void lbann::convolutional_layer::setup_gpu()
                                                           m_input_desc,
                                                           m_backward_data_algo,
                                                           &required_work_space));
-  m_work_space_size = Max(m_work_space_size, required_work_space);
+  max_work_space = Max(max_work_space, required_work_space);
+  for(Int i=0; i<m_cudnn->get_num_gpus(); ++i) {
+    if(max_work_space > m_cudnn->get_work_space_size(i))
+      m_cudnn->set_work_space_size(i, max_work_space);
+  }
 
   // Set activation descriptor
   if(m_activation_type != activation_type::ID) {
@@ -412,9 +414,6 @@ void lbann::convolutional_layer::setup_gpu()
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
                             m_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_work_space_d,
-                            (m_work_space_size+sizeof(DataType)-1)/sizeof(DataType),
-                            1);
   if(!m_prev_layer_using_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_activations_d,
                               m_num_prev_neurons,
@@ -610,8 +609,8 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
                                        m_weights_d[i],
                                        m_convolution_desc,
                                        m_forward_algo,
-                                       m_work_space_d[i],
-                                       m_work_space_size,
+                                       m_cudnn->get_work_space(i),
+                                       m_cudnn->get_work_space_size(i),
                                        &zero,
                                        m_output_desc,
                                        m_weighted_sum_d[i]));
@@ -921,8 +920,8 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
                                               m_prev_error_signal_d[i],
                                               m_convolution_desc,
                                               m_backward_filter_algo,
-                                              m_work_space_d[i],
-                                              m_work_space_size,
+                                              m_cudnn->get_work_space(i),
+                                              m_cudnn->get_work_space_size(i),
                                               &zero,
                                               m_filter_desc,
                                               m_weights_gradient_d[i]));
@@ -934,8 +933,8 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
                                             m_prev_error_signal_d[i],
                                             m_convolution_desc,
                                             m_backward_data_algo,
-                                            m_work_space_d[i],
-                                            m_work_space_size,
+                                            m_cudnn->get_work_space(i),
+                                            m_cudnn->get_work_space_size(i),
                                             &zero,
                                             m_input_desc,
                                             m_error_signal_d[i]));
