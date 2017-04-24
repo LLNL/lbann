@@ -600,7 +600,6 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
 
   // Perform convolution on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnConvolutionForward(m_cudnn->get_handle(i),
@@ -646,7 +645,6 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
   // Perform activation with each GPU
   if(m_activation_type != activation_type::ID) {
     const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
     for(Int i=0; i<num_gpus; ++i) {
       checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       checkCUDNN(cudnnActivationForward(m_cudnn->get_handle(i),
@@ -906,7 +904,6 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
 
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnConvolutionBackwardBias(m_cudnn->get_handle(i),
@@ -965,7 +962,6 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
   // Perform back propagation on each GPU
   if(m_activation_type != activation_type::ID) {
     const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
     for(int i=0; i<num_gpus; ++i) {
       checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       checkCUDNN(cudnnActivationBackward(m_cudnn->get_handle(i),
