@@ -124,14 +124,15 @@ if(ELEMENTAL_USE_CUBLAS)
    set(EL_CUBLAS_FLAGS "-DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS}")
 endif()
 
-include(Elemental)
-
 if(CUDA_FOUND)
   include(CUB)
   if(WITH_CUDNN)
     include(cuDNN)
   endif()
 endif()
+
+include(Elemental)
+
 if(WITH_TBINF)
   include(TBinf)
 endif()

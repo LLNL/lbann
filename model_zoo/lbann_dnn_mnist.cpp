@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
 
     lbann_proto *pb = lbann_proto::get();
 
+    //El::GemmUseGPU();
+
     try {
 
       const string prototext_fn = Input("--prototext_fn", "filename for writing a prototext file; default is 'none,' in which case no file will be written", std::string("none"));

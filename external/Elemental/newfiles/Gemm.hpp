@@ -44,6 +44,7 @@ void EL_BLAS(zgemm)
 
 #if EL_USE_CUBLAS
 #include <cublas.h>
+#include <cub/util_allocator.cuh>
 #endif
 
 namespace El {
@@ -524,8 +525,14 @@ void Gemm
 
 #if EL_USE_CUBLAS
 
+#define USE_CUB 1
+
 namespace El {
 namespace cublas {
+
+#if USE_CUB
+cub::CachingDeviceAllocator g_allocator(true); // Caching allocator for device memory
+#endif
 
 template<typename T>
 void Gemm
@@ -688,8 +695,14 @@ void Gemm
     sizeC = rowC * colC;
 
     cublasStatus stat;
+    
+#if USE_CUB
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&devA, 
+                 sizeof(float) * (sizeA+sizeB+sizeC) ));
+#else
     stat = cublasAlloc(sizeA+sizeB+sizeC, sizeof(float), (void **) &devA);
     if (stat != CUBLAS_STATUS_SUCCESS) { RuntimeError("Alloc A,B,C error\n"); }
+#endif
 
     devB = devA + sizeA;
     devC = devB + sizeB;
@@ -717,7 +730,12 @@ void Gemm
     if (stat != CUBLAS_STATUS_SUCCESS) { RuntimeError("GetMatrix C error\n"); }
 
     // free
+#if USE_CUB
+    CubDebugExit(g_allocator.DeviceFree(devA));
+#else
     cublasFree(devA);
+#endif
+    //printf("CUBLAS float done ...\n");
 }
 
 void Gemm
@@ -781,8 +799,14 @@ void Gemm
     sizeC = rowC * colC;
 
     cublasStatus stat;
+
+#if USE_CUB
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&devA, 
+                 sizeof(double) * (sizeA+sizeB+sizeC) ));
+#else
     stat = cublasAlloc(sizeA+sizeB+sizeC, sizeof(double), (void **) &devA);
     if (stat != CUBLAS_STATUS_SUCCESS) { RuntimeError("Alloc A,B,C error\n"); }
+#endif
 
     devB = devA + sizeA;
     devC = devB + sizeB;
@@ -810,7 +834,12 @@ void Gemm
     if (stat != CUBLAS_STATUS_SUCCESS) { RuntimeError("GetMatrix C error\n"); }
 
     // free
+#if USE_CUB
+    CubDebugExit(g_allocator.DeviceFree(devA));
+#else
     cublasFree(devA);
+#endif
+    //printf("CUBLAS double done ...\n");
 }
 
 void Gemm
