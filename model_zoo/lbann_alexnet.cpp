@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       cudnn);
           dnn->add(layer);
@@ -310,7 +310,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       cudnn);
           dnn->add(layer);
@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       cudnn);
           dnn->add(layer);
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       cudnn);
           dnn->add(layer);
@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       cudnn);
           dnn->add(layer);
@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_uniform,
+                 weight_initialization::he_normal,
                  {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
 
         // Layer 12 (fully-connected)
@@ -447,7 +447,7 @@ int main(int argc, char* argv[])
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_uniform,
+                 weight_initialization::he_normal,
                  {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
 
         // Layer 13 (softmax)
@@ -455,7 +455,7 @@ int main(int argc, char* argv[])
                  data_layout::DATA_PARALLEL, 
                  1000,
                  activation_type::ID,
-                 weight_initialization::glorot_uniform,
+                 weight_initialization::he_normal,
                  {});
 
         // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
