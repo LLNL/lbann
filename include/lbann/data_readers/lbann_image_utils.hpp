@@ -32,6 +32,8 @@
 #ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #endif
+#include "lbann/lbann_base.hpp"
+#include <type_traits>
 
 namespace lbann
 {
@@ -79,6 +81,7 @@ namespace lbann
     static bool saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels);
 
   #ifdef __LIB_OPENCV
+    // preprocess (with cv::Mat type image data)
     template<typename T = uint8_t, int NCh = 3>
     static bool preprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp);
 
@@ -87,6 +90,8 @@ namespace lbann
 
     static bool preprocess_cvMat(cv::Mat& image, const cvMat_proc_params& pp);
 
+
+    // postprocess (with cv::Mat type image data)
     template<typename T = uint8_t, int NCh = 3>
     static bool postprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp);
 
@@ -95,6 +100,8 @@ namespace lbann
 
     static bool postprocess_cvMat(cv::Mat& image, const cvMat_proc_params& pp);
 
+
+    // copy_cvMat_to_buf (with a tempoary buffer)
     template<typename T = uint8_t, int NCh = 3>
     static bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, std::vector<uint8_t>& buf, const cvMat_proc_params& pp);
 
@@ -107,6 +114,8 @@ namespace lbann
      */
     static bool copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const cvMat_proc_params& pp);
 
+
+    // copy_buf_to_cvMat (with a tempoary buffer)
     template<typename T = uint8_t, int NCh = 3>
     static cv::Mat copy_buf_to_cvMat_with_full_info(const std::vector<uint8_t>& buf, const int Width, const int Height, const cvMat_proc_params& pp);
 
@@ -115,29 +124,85 @@ namespace lbann
 
     /** Reconstruct a cv::Mat image from a serialized buffer.
      *  The image size is specified by Width and Height. Type indetifies the
-     *  OpenCV image type.The last argument pp specifies the parameters for
-     *  image preprocessing that takes advantage of the OpenCV framework.
+     *  OpenCV image type. The last argument pp specifies the parameters for
+     *  image postprocessing that takes advantage of the OpenCV framework.
      *  Returns a reconstructed cv::Mat image if successful and an empty one
      *  otherwise.
      */
     static cv::Mat copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp);
+
+
+    // copy_buf_to_cvMat (with an El::Matrix<DataType> block)
+    template<typename T = DataType, int NCh = 3>
+    static bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp);
+
+    template<typename T = DataType>
+    static bool copy_cvMat_to_buf_with_known_type(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp);
+
+    /** Copy a cv::Mat image into an El::Matrix<DataType> block.
+     *  The argument pp specifies the parameters for image preprocessing that
+     *  takes advantage of the OpenCV framework. Returns true if successful.
+     */
+    static bool copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp);
+
+
+    // copy_buf_to_cvMat (with an El::Matrix<DataType> block)
+    template<typename T = DataType, int NCh = 3>
+    static cv::Mat copy_buf_to_cvMat_with_full_info(const ::Mat& buf, const int Width, const int Height, const cvMat_proc_params& pp);
+
+    template<typename T = DataType>
+    static cv::Mat copy_buf_to_cvMat_with_known_type(const ::Mat& buf, const int Width, const int Height, const cvMat_proc_params& pp);
+
+    /** Reconstruct a cv::Mat image from an El::Matrix<DataType> block.
+     *  The image size is specified by Width and Height. Type indetifies the
+     *  OpenCV image type. The last argument pp specifies the parameters for
+     *  image postprocessing that takes advantage of the OpenCV framework.
+     *  Returns a reconstructed cv::Mat image if successful and an empty one
+     *  otherwise.
+     */
+    static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp);
   #endif // __LIB_OPENCV
 
+    // load/save with a temporary buffer
     /// Load an image from a file and put it into a serialized buffer
     static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, std::vector<uint8_t>& buf);
     /// Save an image from a serialized buffer into a file
     static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const std::vector<uint8_t>& buf);
+
+    // load/save with an LBANN data block of El::Matrix<DataType> type
+    /// Load an image from a file and put it into an LBANN Mat data block
+    static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& buf);
+    /// Save an image using data from an LBANN Mat block
+    static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& buf);
   };
 
 
+#ifdef LBANN_DEBUG
+  #define _LBANN_DEBUG_MSG(_MSG_) { \
+    std::stringstream err; \
+    err << __FILE__ << " " << __LINE__ << " : " << _MSG_ << std::endl; \
+    throw lbann_exception(err.str()); \
+  }
+#else
+  #if 1
+    #define _LBANN_DEBUG_MSG(_MSG_) \
+      std::cerr << __FILE__ << " " << __LINE__ << " : " << _MSG_ << std::endl;
+  #else
+    #define _LBANN_DEBUG_MSG(_MSG_)
+  #endif
+#endif
+
 #ifdef __LIB_OPENCV
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                           preprocess (cv::Mat)
 /**
  * The preprocessing place holder function specific to a particular pixel type
  * (in terms of the channel type and the number of channels). Most of the OpenCV
  * routines handel it internally. However, custom routines that access each
- * individual pixel can be added here. The image given as the first parameter
- * will be modified according to the processing parameters described in the
- * second parameter. If successful, it resutns true.
+ * individual pixel can find such information here. The image given as the first
+ * parameter will be modified according to the processing parameters described
+ * in the second parameter. If successful, it returns true.
  */
 template<typename T, int NCh>
 inline bool image_utils::preprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp)
@@ -161,14 +226,18 @@ inline bool image_utils::preprocess_cvMat_with_known_type(cv::Mat& image, const 
   }
   return false;
 }
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                           postprocess (cv::Mat)
 /**
  * The postprocessing place holder function specific to a particular pixel type
  * (in terms of the channel type and the number of channels). Most of the OpenCV
  * routines handel it internally. However, custom routines that access each
- * individual pixel can be added here. The image given as the first parameter
- * will be modified according to the processing parameters described in the
- * second parameter. If successful, it resutns true.
+ * individual pixel can find such information here. The image given as the first
+ * parameter will be modified according to the processing parameters described
+ * in the second parameter. If successful, it returns true.
  */
 template<typename T, int NCh>
 inline bool image_utils::postprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp)
@@ -190,8 +259,11 @@ inline bool image_utils::postprocess_cvMat_with_known_type(cv::Mat& image, const
   }
   return false;
 }
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                       copy_cvMat_to_buf (vector<uchar>)
 /**
  * Copy a cv::Mat image into a serialized buffer. This requires the type of
  * channel values and the number of channels in the image to be known at
@@ -229,24 +301,17 @@ inline bool image_utils::copy_cvMat_to_buf_with_full_info(const cv::Mat& image, 
 #else
   if (pp.to_split()) {
     std::vector<cv::Mat> channels(NCh);
-  #if 1
     for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
       channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
     cv::split(image, channels);
-  #else
-    cv::split(image, channels);
-    T* ptr = Pixels;
-    for(size_t ch=0; ch < NCh; ++ch, ptr += sz) {
-      std::copy(reinterpret_cast<const T*>(channels[ch].datastart), reinterpret_cast<const T*>(channels[ch].dataend), ptr);
-    }
-  #endif
   } else {
     if (image.isContinuous()) {
       std::copy(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels);
     } else {
-      for (int i = 0; i < Height; ++i, Pixels += sz) {
-        const T* ptr = reinterpret_cast<const T*>(image.ptr<uchar>(i));
-        std::copy(ptr, ptr+Width, Pixels);
+      const int stride = Width*NCh;
+      for (int i = 0; i < Height; ++i, Pixels += stride) {
+        const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
+        std::copy(ptr, ptr+stride, Pixels);
       }
     }
   }
@@ -272,13 +337,17 @@ inline bool image_utils::copy_cvMat_to_buf_with_known_type(const cv::Mat& image,
   }
   return false;
 }
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                       copy_buf_to_cvMat (vector<uchar>)
 /**
  * Reconstruct a cv::Mat image from a serialized buffer. This requires the type
  * of channel values and the number of channels in the image to be known at
  * compile time. The default for these are the type uint8_t and 3 channels.
  * The image size is specified by Width and Height. The argument pp specifies
- * the parameters for image preprocessing that takes advantage of the OpenCV
+ * the parameters for image postprocessing that takes advantage of the OpenCV
  * framework. Returns an empty image if unsuccessful.
  */
 template<typename T, int NCh>
@@ -289,7 +358,11 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<u
 
   const int sz = Height*Width;
 
-  if (sz*NCh*sizeof(T) != buf.size()) return cv::Mat();
+  if (sz*NCh*sizeof(T) != buf.size()) {
+    _LBANN_DEBUG_MSG("Size mismatch. Buffer has " << buf.size() \
+                     << " items when " << sz*NCh*sizeof(T) << " are expected.");
+    return cv::Mat();
+  }
 
   const T* Pixels = reinterpret_cast<const T*>(&(buf[0]));
 
@@ -331,19 +404,27 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<u
  * Reconstruct a cv::Mat image from a serialized buffer. This requires the type
  * of channel values to be known at compile time. The default type is uint8_t.
  * The image size is specified by Width and Height. The last argument pp
- * specifies the parameters for image preprocessing that takes advantage of the
+ * specifies the parameters for image postprocessing that takes advantage of the
  * OpenCV framework. Returns a reconstructed cv::Mat image if successful and an
  * empty one otherwise.
  */
 template<typename T>
 inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<uint8_t>& buf, const int Width, const int Height, const cvMat_proc_params& pp)
 {
-  if (buf.size() == 0u || Width == 0 || Height == 0) return cv::Mat();
+  if (buf.size() == 0u || Width == 0 || Height == 0) {
+    _LBANN_DEBUG_MSG("An empty image (" << Height << " x " << Width \
+                     << ") or a buffer (" << buf.size() << ")");
+    return cv::Mat();
+  }
 
-  const size_t S = static_cast<size_t>(Width*Height*sizeof(T));
-  const size_t NCh = buf.size()/S;
+  const size_t sz = static_cast<size_t>(Width*Height*sizeof(T));
+  const size_t NCh = buf.size()/sz;
 
-  if (S*NCh != buf.size()) return cv::Mat();
+  if (sz*NCh != buf.size()) {
+    _LBANN_DEBUG_MSG("Size mismatch. Buffer has " << buf.size() \
+                     << " items when " << sz*NCh << " are expected.");
+    return cv::Mat();
+  }
 
   switch(NCh) {
     case 1u: return copy_buf_to_cvMat_with_full_info<T,1>(buf, Width, Height, pp);
@@ -351,8 +432,188 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<
     case 3u: return copy_buf_to_cvMat_with_full_info<T,3>(buf, Width, Height, pp);
     case 4u: return copy_buf_to_cvMat_with_full_info<T,4>(buf, Width, Height, pp);
   }
+
+  _LBANN_DEBUG_MSG(NCh << "-channel image is not supported.");
   return cv::Mat();
 }
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                       copy_cvMat_to_buf (Elemental)
+/**
+ * Copy a cv::Mat image into a data block of El::Matrix<DataType> type. This
+ * requires the type of channel values and the number of channels in the image
+ * to be known at compile time. The default for these are the DataType of LBANN
+ * and 3 channels.
+ * The argument pp specifies the parameters for image preprocessing that
+ * takes advantage of the OpenCV framework. Returns true if successful.
+ */
+template<typename T, int NCh>
+inline bool image_utils::copy_cvMat_to_buf_with_full_info(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp)
+{
+  if (image.empty()) return false;
+
+  const int Width = image.cols;
+  const int Height = image.rows;
+  const int sz = Height*Width;
+
+  if (buf.Height() != sz*NCh) {
+  #if 0
+    return false;
+  #else
+    //_LBANN_DEBUG_MSG("Resizing buffer height to " << sz*NCh);
+    buf.Resize(sz*NCh, ((buf.Width()<1)? 1 : buf.Width()));
+  #endif
+  }
+
+  DataType* Pixels = buf.Buffer();
+
+  if (pp.to_split()) {
+    std::vector<cv::Mat> channels(NCh);
+
+    if (std::is_same<DataType, T>::value) {
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
+        // create a separate image per channel aliasing the memory of buf
+        channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
+      }
+      cv::split(image, channels);
+    } else {
+      cv::split(image, channels);
+
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
+        std::copy(reinterpret_cast<const T*>(channels[ch].datastart), reinterpret_cast<const T*>(channels[ch].dataend), Pixels);
+      }
+    }
+  } else {
+    if (image.isContinuous()) {
+      std::copy(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels);
+    } else {
+      const int stride = Width*NCh;
+      for (int i = 0; i < Height; ++i, Pixels += stride) {
+        const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
+        std::copy(ptr, ptr+stride, Pixels);
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Copy a cv::Mat image into a data block of El::Matrix<DataType> type. This
+ * requires the type of channel values in the image to be known at compile time.
+ * The default for these are the DataType of LBANN.
+ * The argument pp specifies the parameters for image preprocessing that
+ * takes advantage of the OpenCV framework. Returns true if successful.
+ */
+template<typename T>
+inline bool image_utils::copy_cvMat_to_buf_with_known_type(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp)
+{
+  switch(image.channels()) {
+    case 1: return copy_cvMat_to_buf_with_full_info<T,1>(image, buf, pp);
+    case 2: return copy_cvMat_to_buf_with_full_info<T,2>(image, buf, pp);
+    case 3: return copy_cvMat_to_buf_with_full_info<T,3>(image, buf, pp);
+    case 4: return copy_cvMat_to_buf_with_full_info<T,4>(image, buf, pp);
+  }
+  return false;
+}
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                       copy_buf_to_cvMat (Elemental)
+/**
+ * Reconstruct a cv::Mat image from a data block of El::Matrix<DataType> type.
+ * This requires the type of channel values and the number of channels in the
+ * image to be known at compile time. The default for these are DataType of
+ * LBANN and 3 channels.
+ * The image size is specified by Width and Height. The argument pp specifies
+ * the parameters for image postprocessing that takes advantage of the OpenCV
+ * framework. Returns an empty image if unsuccessful.
+ */
+template<typename T, int NCh>
+inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const ::Mat& buf, const int Width, const int Height, const cvMat_proc_params& pp)
+{
+  using namespace lbann::patchworks;
+  typedef cv_image_type<T, NCh> Img_T;
+
+  const int sz = Height*Width;
+  if (sz*NCh != buf.Height()) {
+    _LBANN_DEBUG_MSG("Size mismatch. Buffer has " << buf.Height() \
+                     << " items in a column when " << sz*NCh << " are expected.");
+    return cv::Mat();
+  }
+
+  const DataType* Pixels = buf.LockedBuffer();
+
+  cv::Mat image = cv::Mat(Height, Width, Img_T::T());
+
+  if (pp.to_split()) {
+    std::vector<cv::Mat> channels(NCh);
+
+    if (std::is_same<DataType, T>::value) {
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
+        channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), const_cast<DataType*>(Pixels));
+    } else {
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
+        channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));
+        std::copy(Pixels, Pixels+sz, reinterpret_cast<T*>(channels[ch].data));
+      }
+    }
+
+    cv::merge(channels, image);
+  } else {
+    std::copy(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data));
+  }
+
+  return image;
+}
+
+/**
+ * Reconstruct a cv::Mat image from a data block of El::Matrix<DataType> type.
+ * This requires the type of channel values to be known at compile time. The
+ * default type is DataType. In this case, the new image may require conversion
+ * to an integer type during postprocessing such that it can be stored in an
+ * typical image file format. An image can sometimes be constructed even when
+ * T is different from DataType if the type casting of a DataType value into T
+ * is valid.
+ * The image size is specified by Width and Height. The last argument pp
+ * specifies the parameters for image postprocessing that takes advantage of the
+ * OpenCV framework. This returns a reconstructed cv::Mat image if successful
+ * and an empty one otherwise.
+ */
+template<typename T>
+inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const ::Mat& buf, const int Width, const int Height, const cvMat_proc_params& pp)
+{
+  if (buf.Height() == 0u || buf.Width() == 0u || Width == 0 || Height == 0) {
+    _LBANN_DEBUG_MSG("An empty image (" << Height << " x " << Width \
+                     << ") or a buffer (" << buf.Height() << " x " << buf.Width() << ").");
+    return cv::Mat();
+  }
+
+  const int sz = Height*Width;
+  const int NCh = buf.Height()/sz;
+
+  if (sz*NCh != buf.Height()) {
+    _LBANN_DEBUG_MSG("Size mismatch. Buffer has " << buf.Height() \
+                     << " items in a column when " << sz*NCh << " are expected.");
+    return cv::Mat();
+  }
+
+  switch(NCh) {
+    case 1: return copy_buf_to_cvMat_with_full_info<T,1>(buf, Width, Height, pp);
+    case 2: return copy_buf_to_cvMat_with_full_info<T,2>(buf, Width, Height, pp);
+    case 3: return copy_buf_to_cvMat_with_full_info<T,3>(buf, Width, Height, pp);
+    case 4: return copy_buf_to_cvMat_with_full_info<T,4>(buf, Width, Height, pp);
+  }
+
+  _LBANN_DEBUG_MSG(NCh << "-channel image is not supported.");
+  return cv::Mat();
+}
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
 #endif // __LIB_OPENCV
 
 } // end of namespace lbann

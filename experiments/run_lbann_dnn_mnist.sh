@@ -189,6 +189,8 @@ BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_openmpi -v 0.86
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 
+SLURM_JOB_NUM_NODES=2
+SLURM_CPUS_ON_NODE=2
 TASKS=$((${SLURM_JOB_NUM_NODES} * ${SLURM_CPUS_ON_NODE}))
 if [ ${TASKS} -gt 384 ]; then
 TASKS=384
