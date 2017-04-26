@@ -65,7 +65,8 @@ public:
     m_last_mini_batch_stride(batchSize),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
-    m_max_sample_count_was_set(false), m_use_percent(1.0)
+    m_max_sample_count_was_set(false), m_use_percent(1.0),
+    m_master(false)
   {}
     
   //developer's note: I eliminated the copy ctor, since the
@@ -251,6 +252,12 @@ public:
   int get_num_unused_data() { return (int)m_unused_indices.size(); }
   int* get_unused_data() { return &m_unused_indices[0]; }
 
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  void set_master(bool m) { m_master = m; }
+
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  bool is_master() { return m_master; }
+
   void select_subset_of_data();
 
   /** \brief Replace the shuffled index set with the unused index set 
@@ -302,6 +309,8 @@ protected:
   size_t m_max_sample_count_was_set;
   double m_use_percent;
   std::string m_role;
+
+  bool m_master;
 };
 
 }  // namespace lbann
