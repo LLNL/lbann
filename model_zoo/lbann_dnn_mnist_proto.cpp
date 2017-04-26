@@ -97,14 +97,13 @@ int main(int argc, char* argv[])
         init_data_seq_random(42);
 
         //get input prototext filenames
-        //string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
+        string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
         string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
         //if (prototext_model_fn == "none" or prototext_dr_fn == "none") {
-        if (prototext_dr_fn == "none") {
+        if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
           if (comm->am_world_master()) {
             cerr << endl << __FILE__ << " " << __LINE__ << " :: error - you must use "
-                 << " --prototext_dr_fn to supply prototext filenames\n\n";
-                 //<< " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
+                 << " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
           }
           Finalize();
           return 9;
@@ -112,7 +111,9 @@ int main(int argc, char* argv[])
         int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
 
         lbann_data::LbannPB pb;
-        readPrototextFile(prototext_dr_fn.c_str(), pb);
+        lbann_data::LbannPB pb_reader;
+        readPrototextFile(prototext_model_fn.c_str(), pb);
+        readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
 
 
         int parallel_io = perfParams.MaxParIOSize;
@@ -132,14 +133,20 @@ int main(int argc, char* argv[])
         // load training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         std::map<execution_mode, DataReader*> data_readers;
-        init_data_readers(comm->am_world_master(), pb, data_readers, mini_batch_size);
+        init_data_readers(comm->am_world_master(), pb_reader, data_readers, mini_batch_size);
+        if (comm->am_world_master()) {
+          for (auto it : data_readers) {
+            cerr << "data reader; role: " << it.second->get_role() << " num data: " << it.second->getNumData() << endl;
+          }
+        }
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        optimizer_factory *optimizer_fac;
+        optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+        #if 0
         if (trainParams.LearnRateMethod == 1) { // Adagrad
           optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         } else if (trainParams.LearnRateMethod == 2) { // RMSprop
@@ -149,6 +156,7 @@ int main(int argc, char* argv[])
         } else {
           optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
+        #endif
 
         // Initialize network
         layer_factory* lfac = new layer_factory();

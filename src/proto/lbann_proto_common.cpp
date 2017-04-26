@@ -1,9 +1,13 @@
 #include "lbann/proto/lbann_proto_common.hpp"
+
+#include "lbann/lbann_base.hpp"
+#include "lbann/lbann_comm.hpp"
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -12,6 +16,39 @@
 
 using namespace lbann;
 
+optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
+  const lbann_data::Model &model = p.model();
+  const lbann_data::Optimizer &optimizer = model.optimizer();
+
+  string name = optimizer.name();
+  double learn_rate = optimizer.learn_rate();
+  double momentum = optimizer.momentum();
+  double decay_rate = optimizer.decay();
+  bool nesterov = optimizer.nesterov();
+
+  //note: learn_rate, momentum, decay are DataType in LBANN, which is
+  //      probably float. They'll be properly cast in the following
+
+  optimizer_factory *factory;
+
+  if (name == "adagrad") {
+    factory = new adagrad_factory(comm, learn_rate);
+  } else if (name == "rmsprop") {
+    factory = new rmsprop_factory(comm, learn_rate);
+  } else if (name == "adam") {
+    factory = new adam_factory(comm, learn_rate);
+  } else if (name == "sgd") {
+    factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
+  } else {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: unknown name for Optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
+        << "instead we found: " << name;
+    throw lbann_exception(err.str());
+  }
+
+  return factory;
+}
 
 int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers, int &mb_size)
 {
@@ -53,19 +90,14 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
 
     if (name == "mnist") {
       reader = new DataReader_MNIST(mini_batch_size, shuffle);
-      reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new DataReader_ImageNet(mini_batch_size, shuffle);
-      reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
-      reader_validation = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "nci_regression") {
       reader = new data_reader_nci_regression(mini_batch_size, shuffle);
-      reader_validation = new data_reader_nci_regression(mini_batch_size, shuffle);
     } else if (name == "cnpy") {
       reader = new DataReader_cnpy(mini_batch_size, shuffle);
-      reader_validation = new DataReader_cnpy(mini_batch_size, shuffle);
     } else {
       err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
           << name;
@@ -78,9 +110,7 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
     }
     reader->set_use_percent( readme.train_or_test_percent() );
     reader->set_firstN( readme.firstn() );
-    cerr << ">>> readme.max_sample_count(): " << readme.max_sample_count() << endl;
     if (readme.max_sample_count()) {
-      cerr << "setting max_sample_count: " << readme.max_sample_count() << endl;
       reader->set_max_sample_count( readme.max_sample_count() );
     }
     if (readme.percent_of_data_to_use()) {
@@ -109,8 +139,6 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       reader->set_role("error");
     }
 
-    reader->load();
-
     if (readme.role() == "train") {
       reader->set_validation_percent( readme.validation_percent() );
       if (master) {
@@ -120,23 +148,35 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       }
     }
 
+    reader->set_master(master);
+
+    reader->load();
+
     if (readme.role() == "train") {
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
       data_readers[execution_mode::testing] = reader;
     }
 
-    double validation_percent = readme.validation_percent();
+    //double validation_percent = readme.validation_percent();
+    //TODO remove this hack!
+    double validation_percent = 1.0 - readme.validation_percent();
+
     if (readme.role() == "train") {
       if (name == "mnist") {
+        reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
         (*(DataReader_MNIST*)reader_validation) = (*(DataReader_MNIST*)reader);
       } else if (name == "imagenet") {
+        reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
         (*(DataReader_ImageNet*)reader_validation) = (*(DataReader_ImageNet*)reader);
       } else if (name == "nci") {
+        reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci*)reader_validation) = (*(data_reader_nci*)reader);
       } else if (name == "nci_regression") {
+        reader_validation = new data_reader_nci_regression(mini_batch_size, shuffle);
         (*(data_reader_nci_regression*)reader_validation) = (*(data_reader_nci_regression*)reader);
       } else if (name == "cnpy") {
+        reader_validation = new DataReader_cnpy(mini_batch_size, shuffle);
         (*(DataReader_cnpy*)reader_validation) = (*(DataReader_cnpy*)reader);
       }
       reader_validation->set_role("validate");
@@ -157,6 +197,15 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
   if (mb_size == 0) {
     mb_size = mini_batch_size;
   }
+
+/*
+  if (master) {
+    for (auto it : data_readers) {
+      cerr << ">>>> leaving int_data_readers; data reader; role: " << it.second->get_role() << " num data: " << it.second->getNumData() << endl;
+    }  
+  }  
+*/
+
   return mini_batch_size;
 }
 

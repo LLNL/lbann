@@ -8,6 +8,9 @@
 /// returns mini_batch_size
 int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, lbann::DataReader*> &data_readers, int &mini_batch_size);
 
+/// returns an optimizer factory
+lbann::optimizer_factory * init_optimizer_factory(lbann::lbann_comm *comm, const lbann_data::LbannPB &p); 
+
 void readPrototextFile(string fn, lbann_data::LbannPB &pb);
 void writePrototextFile(string fn, lbann_data::LbannPB &pb);
 

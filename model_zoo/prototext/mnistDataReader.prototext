@@ -6,8 +6,8 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/MNIST/train-images-idx3-ubyte"
     label_filename: "/p/lscratchf/brainusr/datasets/MNIST/train-labels-idx1-ubyte"
-    train_or_test_percent: .9 
-    validation_percent: 1.0
+    train_or_test_percent: 1.0
+    validation_percent: 0.1
     firstN: false
     max_sample_count: 0
     percent_of_data_to_use: 0

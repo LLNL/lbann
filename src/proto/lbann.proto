@@ -78,6 +78,7 @@ message Model {
   repeated string metric = 5;
 
   repeated Layer layer = 10;
+
   Optimizer optimizer = 11;
 
   // checknan, debug, dump_activations, etc;
