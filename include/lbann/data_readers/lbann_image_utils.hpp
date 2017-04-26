@@ -183,11 +183,14 @@ namespace lbann
 
 
 #ifdef LBANN_DEBUG
+  #define _LBANN_DEBUG_MSG(_MSG_)
+/*
   #define _LBANN_DEBUG_MSG(_MSG_) { \
     std::stringstream err; \
     err << __FILE__ << " " << __LINE__ << " : " << _MSG_ << std::endl; \
     throw lbann_exception(err.str()); \
   }
+*/
 #else
   #if 1
     #define _LBANN_DEBUG_MSG(_MSG_) \
@@ -246,8 +249,8 @@ template<typename T, int NCh>
 inline bool image_utils::preprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp)
 {
   if (image.empty()) return false;
-  cv::Mat _img = image(cv::Rect(cv::Point2i(4250, 700), cv::Point2i(4500, 900)));
-  image = _img;
+  //cv::Mat _img = image(cv::Rect(cv::Point2i(4250, 700), cv::Point2i(4500, 900)));
+  //image = _img;
   if (pp.to_flip())
     cv::flip(image, image, pp.how_to_flip());
   return true;
@@ -394,7 +397,7 @@ template<typename T, int NCh>
 inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<uint8_t>& buf, const int Width, const int Height, const cvMat_proc_params& pp)
 {
   using namespace lbann::patchworks;
-  typedef cv_image_type<T, NCh> Img_T;
+  //typedef cv_image_type<T, NCh> Img_T;
 
   const int sz = Height*Width;
 
@@ -406,7 +409,8 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<u
 
   const T* Pixels = reinterpret_cast<const T*>(&(buf[0]));
 
-  cv::Mat image = cv::Mat(Height, Width, Img_T::T());
+  //cv::Mat image = cv::Mat(Height, Width, Img_T::T());
+  cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
 #if 0
   typedef cv::Vec<T, NCh> Vec_T;
@@ -494,6 +498,11 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<
 template<typename T, int NCh>
 inline bool image_utils::copy_cvMat_to_buf_with_full_info(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp)
 {
+  // NCh need not be a template parameter here. It can be a function argument.
+  // However, keeping it as a static parameter enables custom accesses on pixels
+  // For example,
+  //   typedef cv::Vec<T, NCh> Vec_T;
+  //   image.at<Vec_T>(y, x) = newPixel;
   if (image.empty()) return false;
 
   const int Width = image.cols;
@@ -581,7 +590,7 @@ template<typename T, int NCh>
 inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const ::Mat& buf, const int Width, const int Height, const cvMat_proc_params& pp)
 {
   using namespace lbann::patchworks;
-  typedef cv_image_type<T, NCh> Img_T;
+  //typedef cv_image_type<T, NCh> Img_T;
 
   const int sz = Height*Width;
   if (sz*NCh != buf.Height()) {
@@ -592,7 +601,8 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const ::Mat& buf, c
 
   const DataType* Pixels = buf.LockedBuffer();
 
-  cv::Mat image = cv::Mat(Height, Width, Img_T::T());
+  //cv::Mat image = cv::Mat(Height, Width, Img_T::T());
+  cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
     std::vector<cv::Mat> channels(NCh);
