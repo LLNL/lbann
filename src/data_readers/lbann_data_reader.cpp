@@ -125,7 +125,7 @@ void DataReader::select_subset_of_data() {
     if (unused > 0) {
       m_unused_indices=std::vector<int>(ShuffledIndices.begin() + use_me, ShuffledIndices.end());
       ShuffledIndices.resize(use_me);
-    }  
+    }
   }
 
   if(!get_firstN()) {
