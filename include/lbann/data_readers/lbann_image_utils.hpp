@@ -50,6 +50,11 @@ namespace lbann
     /// Whether to split channels
     bool m_split;
 
+    //used to compute newvalue = cv::saturate_cast<T>(alpha*value + beta)
+    double alpha; ///< for scaling channel values
+    double beta; ///< for shifting channel values
+
+
     /// Check whether to flip
     bool to_flip(void) const { return (m_flip != _none_); }
     /// Tell how to flip
@@ -59,10 +64,10 @@ namespace lbann
     /// Set to split channels
     bool to_split(void) const { return m_split; }
 
-    cvMat_proc_params(void) : m_flip(_none_), m_split(true) {}
+    cvMat_proc_params(void) : m_flip(_none_), m_split(true), alpha(1.0), beta(0.0) {}
 
     cvMat_proc_params(const flpping flip_code, const bool tosplit)
-    : m_flip(flip_code), m_split(tosplit) {}
+    : m_flip(flip_code), m_split(tosplit), alpha(1.0), beta(0.0) {}
   };
 
 
@@ -192,7 +197,40 @@ namespace lbann
   #endif
 #endif
 
+
 #ifdef __LIB_OPENCV
+
+/**
+ * Transform linearly while copying data from one sequential container to another
+ * The transformation is alpha*input + beta -> output
+ * @param first  The beginning of the input interator
+ * @param last   The last of the input iterator
+ * @param result The beginning of the output iterator
+ * @param alpha  linear transform parameter for scaling
+ * @param beta  linear transform parameter for shifting
+ * @return the last of output iterator
+ */
+template<class InputIterator, class OutputIterator>
+  OutputIterator scale (InputIterator first, InputIterator last, OutputIterator result, const double alpha, const double beta)
+{
+  if ((alpha == 1.0) && (beta == 0.0)) {
+    if ((std::is_same< typename std::remove_cv<InputIterator>::type, typename std::remove_cv<OutputIterator>::type >::value) &&
+        (reinterpret_cast<const void*>(first) == reinterpret_cast<const void*>(result)))
+    {
+      std::advance(result, std::distance(first,last));
+      return result;
+    } else {
+      return std::copy(first, last, result);
+    }
+  }
+
+  typedef typename std::iterator_traits<OutputIterator>::value_type T;
+  while (first != last) {
+    *result = cv::saturate_cast<T>(alpha * (*first) + beta);
+    ++result; ++first;
+  }
+  return result;
+}
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //                           preprocess (cv::Mat)
@@ -208,10 +246,10 @@ template<typename T, int NCh>
 inline bool image_utils::preprocess_cvMat_with_full_info(cv::Mat& image, const cvMat_proc_params& pp)
 {
   if (image.empty()) return false;
- #if 1
+  cv::Mat _img = image(cv::Rect(cv::Point2i(4250, 700), cv::Point2i(4500, 900)));
+  image = _img;
   if (pp.to_flip())
     cv::flip(image, image, pp.how_to_flip());
- #endif
   return true;
 }
 
@@ -304,14 +342,16 @@ inline bool image_utils::copy_cvMat_to_buf_with_full_info(const cv::Mat& image, 
     for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
       channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
     cv::split(image, channels);
+    Pixels = reinterpret_cast<T*>(&(buf[0]));
+    scale(Pixels, Pixels + sz*NCh, Pixels, pp.alpha, pp.beta);
   } else {
     if (image.isContinuous()) {
-      std::copy(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels);
+      scale(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels, pp.alpha, pp.beta);
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
         const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
-        std::copy(ptr, ptr+stride, Pixels);
+        scale(ptr, ptr+stride, Pixels, pp.alpha, pp.beta);
       }
     }
   }
@@ -392,8 +432,9 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const std::vector<u
       channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), const_cast<T*>(Pixels));
 
     cv::merge(channels, image);
+    scale(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), reinterpret_cast<T*>(image.data), pp.alpha, pp.beta);
   } else {
-      std::copy(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data));
+    scale(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data), pp.alpha, pp.beta);
   }
 #endif
 
@@ -479,21 +520,24 @@ inline bool image_utils::copy_cvMat_to_buf_with_full_info(const cv::Mat& image, 
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
       }
       cv::split(image, channels);
+
+      Pixels = buf.Buffer();
+      scale(Pixels, Pixels + sz*NCh, Pixels, pp.alpha, pp.beta);
     } else {
       cv::split(image, channels);
 
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
-        std::copy(reinterpret_cast<const T*>(channels[ch].datastart), reinterpret_cast<const T*>(channels[ch].dataend), Pixels);
+        scale(reinterpret_cast<const T*>(channels[ch].datastart), reinterpret_cast<const T*>(channels[ch].dataend), Pixels, pp.alpha, pp.beta);
       }
     }
   } else {
     if (image.isContinuous()) {
-      std::copy(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels);
+      scale(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), Pixels, pp.alpha, pp.beta);
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
         const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
-        std::copy(ptr, ptr+stride, Pixels);
+        scale(ptr, ptr+stride, Pixels, pp.alpha, pp.beta);
       }
     }
   }
@@ -556,16 +600,17 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_full_info(const ::Mat& buf, c
     if (std::is_same<DataType, T>::value) {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), const_cast<DataType*>(Pixels));
+      cv::merge(channels, image);
+      scale(reinterpret_cast<const T*>(image.datastart), reinterpret_cast<const T*>(image.dataend), reinterpret_cast<T*>(image.data), pp.alpha, pp.beta);
     } else {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));
-        std::copy(Pixels, Pixels+sz, reinterpret_cast<T*>(channels[ch].data));
+        scale(Pixels, Pixels+sz, reinterpret_cast<T*>(channels[ch].data), pp.alpha, pp.beta);
       }
+      cv::merge(channels, image);
     }
-
-    cv::merge(channels, image);
   } else {
-    std::copy(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data));
+    scale(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data), pp.alpha, pp.beta);
   }
 
   return image;
