@@ -144,7 +144,10 @@ void lbann::distributed_minibatch_parallel_io::distribute_from_local_matrix(Mat&
 
   if (comm->get_rank_in_model() == m_root) {
     if(!m_local_data_valid) {
-      throw lbann_exception("lbann_distributed_minibatch_parallel_io: No valid data for this step -- local data was invalid");
+      stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          <<" :: lbann_distributed_minibatch_parallel_io: No valid data for this step -- local data was invalid";
+      throw lbann_exception(err.str());
     }
     CopyFromRoot(M_local, Ms);
     m_local_data_valid = false;
