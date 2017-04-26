@@ -352,9 +352,13 @@ bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uin
 }
 
 cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp)
-{
-  if (buf.size() != static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type))))
+{ 
+  if (buf.size() != static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type)))) {
+    _LBANN_DEBUG_MSG("Size mismatch: Buffer has " << buf.size() << " items when " \
+              << static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type))) \
+              << " are expected.");
     return cv::Mat();
+  }
 
   switch(CV_MAT_DEPTH(Type)) {
     case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
@@ -365,6 +369,37 @@ cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, c
     case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
     case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
   }
+  _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
+  return cv::Mat();
+}
+
+bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp)
+{
+  if (image.empty()) return false;
+  switch(image.depth()) {
+    case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, pp);
+    case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, pp);
+    case CV_16U: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16U)>(image, buf, pp);
+    case CV_16S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16S)>(image, buf, pp);
+    case CV_32S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32S)>(image, buf, pp);
+    case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, pp);
+    case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, pp);
+  }
+  return false;
+}
+
+cv::Mat lbann::image_utils::copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp)
+{
+  switch(CV_MAT_DEPTH(Type)) {
+    case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
+    case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, pp);
+    case CV_16U: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16U)>(buf, Width, Height, pp);
+    case CV_16S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16S)>(buf, Width, Height, pp);
+    case CV_32S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32S)>(buf, Width, Height, pp);
+    case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
+    case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
+  }
+  _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
   return cv::Mat();
 }
 #endif // __LIB_OPENCV
@@ -373,11 +408,15 @@ bool lbann::image_utils::load_image(const std::string& filename, int& Width, int
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  bool ok = preprocess_cvMat(image, pp);
+  if (!ok || !copy_cvMat_to_buf(image, buf, pp)) {
+    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
+    return false;
+  }
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  bool ok = preprocess_cvMat(image, pp);
-  return (ok && copy_cvMat_to_buf(image, buf, pp));
+  return true;
 #else
   return false;
 #endif // __LIB_OPENCV
@@ -387,8 +426,44 @@ bool lbann::image_utils::save_image(const std::string& filename, const int Width
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = copy_buf_to_cvMat(buf, Width, Height, Type, pp);
-  if (image.empty()) return false;
-  bool ok = postprocess_cvMat(image, pp);
+  bool ok = !image.empty() && postprocess_cvMat(image, pp);
+  if (!ok) {
+    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
+    return false;
+  }
+  return (ok && cv::imwrite(filename, image));
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& buf)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  bool ok = preprocess_cvMat(image, pp);
+  if (!ok || !copy_cvMat_to_buf(image, buf, pp)) {
+    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
+    return false;
+  }
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+  return true;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& buf)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = copy_buf_to_cvMat(buf, Width, Height, Type, pp);
+  bool ok = !image.empty() && postprocess_cvMat(image, pp);
+  if (!ok) {
+    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
+    return false;
+  }
   return (ok && cv::imwrite(filename, image));
 #else
   return false;
