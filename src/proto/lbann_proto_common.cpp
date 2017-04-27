@@ -16,11 +16,75 @@
 
 using namespace lbann;
 
+sequential_model * init_model(lbann_comm *comm, optimizer_factory * optimizer_fac, const lbann_data::LbannPB &p) {
+  stringstream err;
+
+  sequential_model * model;
+
+  layer_factory* lfac = new layer_factory();
+
+#if __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+#else // __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn = NULL;
+#endif // __LIB_CUDNN
+
+  const lbann_data::Model &m = p.model();
+  const string name = m.name();
+  const string objective_function = m.objective_function();
+  uint mini_batch_size = m.mini_batch_size();
+
+  //instantiate the objective function
+  objective_functions::objective_fn * obj;
+  if (objective_function == "categorical_cross_entropy") {
+    obj = new objective_functions::categorical_cross_entropy(comm);
+  } else if (objective_function == "mean_squared_error") {
+    obj = new objective_functions::mean_squared_error(comm);
+  } else {
+    err << __FILE__ << " " << __LINE__ 
+        << " :: init_model() - unknown objective function name: " << name << endl
+        << "; should be one of: categorical_cross_entropy, mean_squared_error";
+    throw lbann_exception(err.str());
+  }
+
+  //instantiate the network; layers will be added in a separate function call
+  if (name == "dnn") {
+    model = new deep_neural_network(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else if (name == "stacked_autoencoder") {
+    model = new stacked_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else if (name == "greedy_layerwise_autoencoder") {
+    model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else {
+    err << __FILE__ << " " << __LINE__ 
+        << " :: init_model() - unknown model name: " << name << endl
+        << "; should be one of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder";
+    throw lbann_exception(err.str());
+  }
+
+  //add the metrics
+  int size = m.metric_size();
+  for (int j=0; j<size; j++) {
+    string metric = m.metric(j);
+    if (metric == "categorical_accuracy") {
+      model->add_metric(new metrics::categorical_accuracy(comm));
+    } else if (metric == "mean_squared_error") {
+      model->add_metric(new metrics::mean_squared_error(comm));
+    } else {
+      err << __FILE__ << " " << __LINE__ 
+          << " :: init_model() - unknown metric name: " << metric << endl
+          << "; should be one of: categorical_accuracy, mean_squared_error";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  return model;
+}
+
 optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
   const lbann_data::Model &model = p.model();
   const lbann_data::Optimizer &optimizer = model.optimizer();
 
-  string name = optimizer.name();
+  const string name = optimizer.name();
   double learn_rate = optimizer.learn_rate();
   double momentum = optimizer.momentum();
   double decay_rate = optimizer.decay();
