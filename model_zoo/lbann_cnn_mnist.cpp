@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer, 
-                                      cudnn);
+                                      {}, cudnn);
           dnn.add(layer);
         }
 
@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer,
-                                      cudnn);
+                                      {}, cudnn);
           dnn.add(layer);
         }
 

@@ -57,6 +57,7 @@ namespace lbann
                         weight_initialization init,
                         lbann_comm* comm,
                         optimizer* opt,
+                        std::vector<regularizer*> regs={},
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor

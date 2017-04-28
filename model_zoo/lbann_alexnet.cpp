@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
+#include "lbann/regularization/lbann_l2_regularization.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
@@ -254,8 +255,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::he_normal,
-                                      comm, convolution_layer_optimizer, 
+                                      weight_initialization::glorot_normal,
+                                      comm, convolution_layer_optimizer,
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -310,8 +312,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::he_normal,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -366,8 +369,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::he_normal,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -388,8 +392,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::he_normal,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -410,8 +415,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::he_normal,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -439,24 +445,26 @@ int main(int argc, char* argv[])
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::he_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
+                 weight_initialization::glorot_normal,
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                     new l2_regularization(0.0005)});
 
         // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::he_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
+                 weight_initialization::glorot_normal,
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                     new l2_regularization(0.0005)});
 
         // Layer 13 (softmax)
         dnn->add("Softmax",
                  data_layout::DATA_PARALLEL, 
                  1000,
                  activation_type::ID,
-                 weight_initialization::he_normal,
-                 {});
+                 weight_initialization::glorot_normal,
+                 {new l2_regularization(0.0005)});
 
         // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
