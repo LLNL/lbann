@@ -61,8 +61,9 @@ convolutional_layer::convolutional_layer(const uint index,
                                          const weight_initialization init,
                                          lbann_comm* comm,
                                          optimizer* opt,
+                                         std::vector<regularizer*> regs,
                                          cudnn::cudnn_manager* cudnn)
-  : Layer(data_layout::DATA_PARALLEL, index, comm, opt, mini_batch_size, activation, {}),
+  : Layer(data_layout::DATA_PARALLEL, index, comm, opt, mini_batch_size, activation, regs),
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
@@ -1252,9 +1253,8 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 bool convolutional_layer::update()
 {
   double start = get_time();
-  Layer::update();
-  if(m_execution_mode == execution_mode::training) {
 
+  if(m_execution_mode == execution_mode::training) {
     // Obtain filter gradient with reduction and scaling
 #ifdef __LIB_CUDNN
     const Int num_gpus = m_cudnn->get_num_gpus();
@@ -1266,13 +1266,17 @@ bool convolutional_layer::update()
 #endif // #ifdef __LIB_CUDNN  
     *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
     AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+  }
 
+  // Regularize gradients and update regularizers
+  Layer::update();
+
+  if(m_execution_mode == execution_mode::training) {
     // Apply optimizer
     m_optimizer->update(m_weights_gradient);
-
   }
-  update_time += get_time() - start;
 
+  update_time += get_time() - start;
   return true;
 }
 
