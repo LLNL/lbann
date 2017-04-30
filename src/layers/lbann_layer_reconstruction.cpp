@@ -48,6 +48,21 @@ lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t 
   this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
   num_forwardprop_steps = 0;
+    
+  // Setup the data distribution 
+  // Done in base layer constructor
+  /*switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();  base layer
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+  }*/
 }
 
 void lbann::reconstruction_layer::setup(int num_prev_neurons) {
@@ -58,46 +73,7 @@ void lbann::reconstruction_layer::setup(int num_prev_neurons) {
   Zeros(*m_weights, NumNeurons, num_prev_neurons);
 
   // Initialize weights
-  DistMat weights;
-  View(weights, *m_weights, IR(0,NumNeurons), IR(0,num_prev_neurons));
-  switch(m_weight_initialization) {
-  case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
-  case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
-  case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-  }
-  case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-  }
-  case weight_initialization::he_normal: {
-      const DataType var = 1.0 / num_prev_neurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-  }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / num_prev_neurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-  }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
-  }
+  initialize_matrix(*m_weights, m_weight_initialization, num_prev_neurons, NumNeurons);
 
   // Initialize other matrices
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
@@ -119,14 +95,12 @@ void lbann::reconstruction_layer::fp_linearity()
   Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
-  DistMat& DsNext = DsNextProxy.Get();
-  DistMat DsNext_v;
-  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
-  //DsNext is proxy of original layer
+  DistMat original_layer_act_v;
+  //view of original layer
+  View(original_layer_act_v,*(m_original_layer->activations),IR(0,m_original_layer->activations->Height()),IR(0,curr_mini_batch_size));
   // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
-  // and original layer fp_input/original input (DsNext)
-  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, DsNext_v);
+  // and original layer fp_input/original input
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, original_layer_act_v);
   aggregate_cost += avg_error;
   num_forwardprop_steps++;
 }
@@ -134,28 +108,28 @@ void lbann::reconstruction_layer::fp_linearity()
 void lbann::reconstruction_layer::bp_linearity()
 {
 
-  /// @todo: get error signal from objective_fn object
-
-  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
-  DistMat& DsNext = DsNextProxy.Get();
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
-  //@todo: Optimize (may be we dont need this double copy)
-  //Activation in this layer is same as linear transformation of its input, no nonlinearity
-  //@todo: Optimize (check that may be we dont need this double copy)
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
-  DistMat DsNext_v;
-  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
-  //View(DsNext_v, *m_original_layer->m_activations, IR(0, NumNeurons), IR(0, curr_mini_batch_size));
-  Copy(*m_activations_v, *m_prev_error_signal_v);
-  Axpy(-1., DsNext_v, *m_prev_error_signal_v); // Per-neuron error
+  DistMat original_layer_act_v;
+  
+  //view of original layer
+  View(original_layer_act_v,*(m_original_layer->activations),IR(0,m_original_layer->activations->Height()),IR(0,curr_mini_batch_size));
+  
+  // Compute error signal
+  neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
+
+  //m_prev_error_signal_v is the error computed by objective function
+  //is really not previous, but computed in this layer
+  //@todo: rename as obj_error_signal
+  
   // Compute the partial delta update for the next lower layer
-  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+  Gemm(TRANSPOSE, NORMAL, DataType(1), *m_weights, *m_prev_error_signal_v, DataType(0), *m_error_signal_v);
 
   // Compute update for activation weights
-  Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v, (DataType) 0., *m_weights_gradient);
+  Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       *m_prev_activations_v,(DataType(0), *m_weights_gradient);
 }
 
 
