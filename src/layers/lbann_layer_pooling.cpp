@@ -425,7 +425,6 @@ void lbann::pooling_layer::fp_linearity_gpu() {
 
   // Perform pooling with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnPoolingForward(m_cudnn->get_handle(i),
@@ -555,7 +554,6 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Perform back propagation on each GPU
-#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnPoolingBackward(m_cudnn->get_handle(i),
@@ -691,6 +689,8 @@ void lbann::pooling_layer::bp_linearity_cpu() {
 
 bool pooling_layer::update()
 {
+  double start = get_time();
   Layer::update();
+  update_time += get_time() - start;
   return true;
 }

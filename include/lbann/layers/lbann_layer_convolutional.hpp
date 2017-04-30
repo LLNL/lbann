@@ -57,6 +57,7 @@ namespace lbann
                         weight_initialization init,
                         lbann_comm* comm,
                         optimizer* opt,
+                        std::vector<regularizer*> regs={},
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor
@@ -130,10 +131,6 @@ namespace lbann
     std::vector<DataType*> m_weights_d;
     /// GPU memory for convolution filters gradient and bias gradient
     std::vector<DataType*> m_weights_gradient_d;
-    /// GPU memory for work space
-    std::vector<DataType*> m_work_space_d;
-    /// Size of work space in bytes
-    size_t m_work_space_size;
 
     /// Filter and bias gradients computed on each GPU
     StarMat m_weights_gradient_per_gpu;

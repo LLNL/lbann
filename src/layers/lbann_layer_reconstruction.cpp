@@ -139,10 +139,12 @@ execution_mode lbann::reconstruction_layer::get_execution_mode() {
 
 bool lbann::reconstruction_layer::update()
 {
+  double start = get_time();
   Layer::update();
   if(m_execution_mode == execution_mode::training) {
     m_optimizer->update(m_weights_gradient);
   }
+  update_time += get_time() - start;
   return true;
 }
 

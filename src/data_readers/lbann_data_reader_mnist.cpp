@@ -127,67 +127,12 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 }
 
 
-/*
-void lbann::DataReader_MNIST::free()
-{
-  for (size_t n = 0; n < m_image_data.size(); n++) {
-    unsigned char* data = m_image_data[n];
-    delete [] data;
-  }
-  m_image_data.clear();
-}
-*/
-
-// Assignment operator
-#if 0
-lbann::DataReader_MNIST& lbann::DataReader_MNIST::operator=(const DataReader_MNIST& source)
-{
-  // check for self-assignment
-  if (this == &source)
-    return *this;
-
-  // Call the parent operator= function
-  DataReader::operator=(source);
-
-  // first we need to deallocate any data that this data reader is holding!
-  for (size_t n = 0; n < m_image_data.size(); n++) {
-    unsigned char* data = m_image_data[n];
-    delete [] data;
-  }
-  m_image_data.clear();
-
-  this->m_image_width = source.m_image_width;
-  this->m_image_height = source.m_image_height;
-  this->m_num_labels = source.m_num_labels;
-  this->m_num_labels = source.m_num_labels;
-
-  clone_image_data(source);
-  return *this;
-}
-#endif
-
-/*
-void lbann::DataReader_MNIST::clone_image_data(const DataReader_MNIST& source)
-{
-  // m_image_data has pointers, so we need to deep copy them
-  for (size_t n = 0; n < source.m_image_data.size(); n++) {
-    unsigned char* data = new unsigned char[1 + m_image_width * m_image_height];
-    unsigned char* src_data = source.m_image_data[n];
-
-    for (size_t i = 0; i < 1 + m_image_width * m_image_height; i++) {
-      data[i] = src_data[i];
-    }
-    m_image_data.push_back(data);
-  }
-  return;
-}
-*/
 
 //===================================================
 
 void lbann::DataReader_MNIST::load()
 {
-  //this->free();
+  if (is_master()) cerr << "starting lbann::DataReader_MNIST::load\n";
   m_image_data.clear();
 
   string FileDir = get_file_dir();
@@ -254,7 +199,7 @@ void lbann::DataReader_MNIST::load()
   for (size_t n = 0; n < ShuffledIndices.size(); n++) {
     ShuffledIndices[n] = n;
   }
-
+  if (is_master()) cerr << "calling select_subset_of_data; ShuffledIndices.size: " << ShuffledIndices.size() << endl;
   select_subset_of_data();
 }
 

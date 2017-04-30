@@ -66,6 +66,8 @@ public:
   virtual void fp_activations() {}
   /** Corresponding backward-propagation regularization to fp_activations. */
   virtual void bp_activations() {}
+  /** Regularization of weight gradients. */
+  virtual void update_gradients() {}
 
   /** Update the regularizer after backprop. */
   virtual void update() {}

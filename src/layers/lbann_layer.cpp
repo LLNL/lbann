@@ -174,7 +174,9 @@ void lbann::Layer::forwardProp() {
 #endif
 
   // Apply connection regularization. (e.g. DropConnect).
-  for (regularizer* reg : regularizers) reg->fp_connections();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_connections();
+  }
 
   // Layer layer's linearity.
   double fp_lin_start = get_time();
@@ -182,7 +184,9 @@ void lbann::Layer::forwardProp() {
   fp_linearity_time += get_time() - fp_lin_start;
 
   // Apply weight regularization (e.g. L2 normalization).
-  for (regularizer* reg : regularizers) reg->fp_weights();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_weights();
+  }
 
   // Apply activation function/nonlinearity.
   double fp_nonlin_start = get_time();
@@ -190,7 +194,9 @@ void lbann::Layer::forwardProp() {
   fp_nonlinearity_time += get_time() - fp_nonlin_start;
 
   // Apply activation regularization (e.g. Dropout).
-  for (regularizer* reg : regularizers) reg->fp_activations();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_activations();
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
@@ -244,7 +250,9 @@ void lbann::Layer::backProp() {
 #endif
 
   // Backprop activation regularization.
-  for (regularizer* reg : regularizers) reg->bp_activations();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->fp_activations();
+  }
 
   // Backprop the activation function/nonlinearity.
   double bp_nonlin_start = get_time();
@@ -252,7 +260,9 @@ void lbann::Layer::backProp() {
   bp_nonlinearity_time += get_time() - bp_nonlin_start;
 
   // Backprop weight regularization.
-  for (regularizer* reg : regularizers) reg->bp_weights();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->fp_weights();
+  }
 
   // Backprop the layer's linearity.
   double bp_lin_start = get_time();
@@ -260,7 +270,9 @@ void lbann::Layer::backProp() {
   bp_linearity_time += get_time() - bp_lin_start;
 
   // Backprop connection regularization.
-  for (regularizer* reg : regularizers) reg->bp_connections();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->fp_connections();
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU
@@ -277,7 +289,10 @@ void lbann::Layer::backProp() {
 
 bool lbann::Layer::update() {
   if (m_execution_mode == execution_mode::training) {
-    for (regularizer* reg : regularizers) reg->update();
+    for(Int i=0; i<regularizers.size(); ++i) {
+      regularizers[i]->update_gradients();
+      regularizers[i]->update();
+    }
   }
   return false;
 }
@@ -309,6 +324,7 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
 }
 

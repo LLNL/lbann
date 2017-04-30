@@ -97,14 +97,13 @@ int main(int argc, char* argv[])
         init_data_seq_random(42);
 
         //get input prototext filenames
-        //string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
+        string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
         string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
         //if (prototext_model_fn == "none" or prototext_dr_fn == "none") {
-        if (prototext_dr_fn == "none") {
+        if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
           if (comm->am_world_master()) {
             cerr << endl << __FILE__ << " " << __LINE__ << " :: error - you must use "
-                 << " --prototext_dr_fn to supply prototext filenames\n\n";
-                 //<< " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
+                 << " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
           }
           Finalize();
           return 9;
@@ -112,7 +111,9 @@ int main(int argc, char* argv[])
         int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
 
         lbann_data::LbannPB pb;
-        readPrototextFile(prototext_dr_fn.c_str(), pb);
+        lbann_data::LbannPB pb_reader;
+        readPrototextFile(prototext_model_fn.c_str(), pb);
+        readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
 
 
         int parallel_io = perfParams.MaxParIOSize;
@@ -132,65 +133,58 @@ int main(int argc, char* argv[])
         // load training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         std::map<execution_mode, DataReader*> data_readers;
-        init_data_readers(comm->am_world_master(), pb, data_readers, mini_batch_size);
-
-        ///////////////////////////////////////////////////////////////////
-        // initalize neural network (layers)
-        ///////////////////////////////////////////////////////////////////
-
-        // Initialize optimizer
-        optimizer_factory *optimizer_fac;
-        if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-        } else if (trainParams.LearnRateMethod == 3) { // Adam
-          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
-        } else {
-          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+        init_data_readers(comm->am_world_master(), pb_reader, data_readers, mini_batch_size);
+        if (comm->am_world_master()) {
+          for (auto it : data_readers) {
+            cerr << "data reader; role: " << it.second->get_role() << " num data: " << it.second->getNumData() << endl;
+          }
         }
 
-        // Initialize network
-        layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(mini_batch_size, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-        dnn.add_metric(new metrics::categorical_accuracy(comm));
+        ///////////////////////////////////////////////////////////////////
+        // initalize model; includes layers, metrics, objective function, etc
+        ///////////////////////////////////////////////////////////////////
+
+        optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+        sequential_model * model = init_model(comm, optimizer_fac, pb);
+
+
 
         //first layer
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers);
-        dnn.add(input_layer);
+        model->add(input_layer);
         
         //second layer
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        model->add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
         //third layer
-        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        model->add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
         //fourth layer
-        dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
+        model->add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
         //fifth layer
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers, true);
-        dnn.add(target_layer);
+        model->add(target_layer);
 
         lbann_callback_print print_cb;
-        dnn.add_callback(&print_cb);
+        model->add_callback(&print_cb);
         lbann_callback_dump_weights* dump_weights_cb;
         lbann_callback_dump_activations* dump_activations_cb;
         lbann_callback_dump_gradients* dump_gradients_cb;
         if (trainParams.DumpWeights) {
           dump_weights_cb = new lbann_callback_dump_weights(
             trainParams.DumpDir);
-          dnn.add_callback(dump_weights_cb);
+          model->add_callback(dump_weights_cb);
         }
         if (trainParams.DumpActivations) {
           dump_activations_cb = new lbann_callback_dump_activations(
             trainParams.DumpDir);
-          dnn.add_callback(dump_activations_cb);
+          model->add_callback(dump_activations_cb);
         }
         if (trainParams.DumpGradients) {
           dump_gradients_cb = new lbann_callback_dump_gradients(
             trainParams.DumpDir);
-          dnn.add_callback(dump_gradients_cb);
+          model->add_callback(dump_gradients_cb);
         }
         // lbann_callback_io io_cb({0,3});
         // dnn.add_callback(&io_cb);
@@ -219,19 +213,19 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize the model's data structures
-        dnn.setup();
+        model->setup();
 
         // set checkpoint directory and checkpoint interval
-        dnn.set_checkpoint_dir(trainParams.ParameterDir);
-        dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
-        dnn.set_checkpoint_steps(trainParams.CkptSteps);
-        dnn.set_checkpoint_secs(trainParams.CkptSecs);
+        model->set_checkpoint_dir(trainParams.ParameterDir);
+        model->set_checkpoint_epochs(trainParams.CkptEpochs);
+        model->set_checkpoint_steps(trainParams.CkptSteps);
+        model->set_checkpoint_secs(trainParams.CkptSecs);
 
         // restart model from checkpoint if we have one
-        dnn.restartShared();
+        model->restartShared();
 
         // train/test
-        while (dnn.get_cur_epoch() < trainParams.EpochCount) {
+        while (model->get_cur_epoch() < trainParams.EpochCount) {
 #if 0
             // optionally check gradients
             if (n > 0 && n % 10000 == 0) {
@@ -245,7 +239,7 @@ int main(int argc, char* argv[])
             }
 #endif
 
-            dnn.train(1, true);
+            model->train(1, true);
 
             // Update the learning rate on each epoch
             // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
@@ -256,7 +250,7 @@ int main(int argc, char* argv[])
             // testing
             int numerrors = 0;
 
-            dnn.evaluate(execution_mode::testing);
+            model->evaluate(execution_mode::testing);
         }
 
         // Free dynamically allocated memory

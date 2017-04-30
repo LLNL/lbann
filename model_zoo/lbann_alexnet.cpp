@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
+#include "lbann/regularization/lbann_l2_regularization.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
@@ -56,7 +57,7 @@ const string g_ImageNet_TestDir = "resized_256x256/test/";
 const string g_ImageNet_LabelDir = "labels/";
 const string g_ImageNet_TrainLabelFile =  "train.txt";
 const string g_ImageNet_ValLabelFile = "val.txt";
-const string g_ImageNet_TestLabelFile = "val.txt";
+const string g_ImageNet_TestLabelFile = "test.txt";
 #else
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
@@ -107,6 +108,8 @@ int main(int argc, char* argv[])
 
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
+        Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
         ProcessInput();
         PrintInputReport();
@@ -221,7 +224,7 @@ int main(int argc, char* argv[])
 
         // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
         cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
@@ -252,8 +255,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
-                                      comm, convolution_layer_optimizer, 
+                                      weight_initialization::glorot_normal,
+                                      comm, convolution_layer_optimizer,
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -308,8 +312,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -364,8 +369,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -386,8 +392,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -408,8 +415,9 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_uniform,
+                                      weight_initialization::glorot_normal,
                                       comm, convolution_layer_optimizer, 
+                                      {new l2_regularization(0.0005)},
                                       cudnn);
           dnn->add(layer);
         }
@@ -437,24 +445,26 @@ int main(int argc, char* argv[])
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_uniform,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
+                 weight_initialization::glorot_normal,
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                     new l2_regularization(0.0005)});
 
         // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
                  data_layout::DATA_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_uniform,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5)});
+                 weight_initialization::glorot_normal,
+                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                     new l2_regularization(0.0005)});
 
         // Layer 13 (softmax)
         dnn->add("Softmax",
                  data_layout::DATA_PARALLEL, 
                  1000,
                  activation_type::ID,
-                 weight_initialization::glorot_uniform,
-                 {});
+                 weight_initialization::glorot_normal,
+                 {new l2_regularization(0.0005)});
 
         // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);

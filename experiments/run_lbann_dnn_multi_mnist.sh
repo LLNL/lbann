@@ -35,6 +35,7 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
+USE_LUSTRE_DIRECT=0
 
 TASKS_PER_NODE=12
 
@@ -54,9 +55,8 @@ TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
+USE_LUSTRE_DIRECT=1
 fi
-
-USE_LUSTRE_DIRECT=0
 
 #Set fonts for Help.
 NORM=`tput sgr0`
@@ -222,7 +222,7 @@ FILES=(${TRAIN_LABEL_FILE} ${TRAIN_IMAGE_FILE} ${TEST_LABEL_FILE} ${TEST_IMAGE_F
 for filename in "${FILES[@]}"
 do
     FILE=`basename $filename`
-    if [ ! -e ${ROOT_DATASET_DIR}/${FILE} ]; then
+    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE} ]; then
         CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${filename} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
         echo "${CMD}"
         ${CMD}

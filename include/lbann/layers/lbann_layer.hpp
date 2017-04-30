@@ -40,6 +40,7 @@
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/lbann_timer.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <vector>
@@ -143,6 +144,7 @@ namespace lbann
       bp_time = 0.0;
       bp_linearity_time = 0.0;
       bp_nonlinearity_time = 0.0;
+      update_time = 0.0;
     }
 
     /** Return the size of mini-batch this layer uses. */
@@ -299,6 +301,8 @@ namespace lbann
     double bp_linearity_time;
     /** Time spent in the backward propagation linearity. */
     double bp_nonlinearity_time;
+    /** Time spent in updates. */
+    double update_time;
   };
 }
 

@@ -226,7 +226,6 @@ void lbann::local_response_normalization_layer::fp_linearity_gpu() {
 
   // Perform local response normalization with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnLRNCrossChannelForward(m_cudnn->get_handle(i),
@@ -266,7 +265,6 @@ void lbann::local_response_normalization_layer::bp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Perform back propagation on each GPU
-#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     checkCUDNN(cudnnLRNCrossChannelBackward(m_cudnn->get_handle(i),
@@ -293,6 +291,8 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
 
 bool local_response_normalization_layer::update()
 {
+  double start = get_time();
   Layer::update();
+  update_time += get_time() - start;
   return true;
 }
