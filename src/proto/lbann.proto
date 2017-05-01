@@ -85,7 +85,7 @@ message Model {
 
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
-  repeated string callback = 20; 
+  repeated Callback callback = 20; 
 
   //checkpointing
   string checkpoint_dir = 30;
@@ -102,6 +102,52 @@ message Optimizer {
   double decay = 4;
   bool nesterov = 5;
 }
+
+message Callback {
+   // a Callback should contain exactly one of the following
+   CallbackPrint print = 1;
+   CallbackTimer timer = 2;
+   CallbackSummary summary = 3;
+   CallbackDumpWeights dump_weights = 4;
+   CallbackDumpActivations dump_activations = 5;
+   CallbackDumpGradients dump_gradients = 6;
+   CallbackImComm imcomm = 7;
+}
+
+message CallbackPrint {
+  int64 interval = 1; //default in lbann_callback_print.hpp is 1
+}
+
+message CallbackTimer {
+  string dir = 1; //directory for the lbann_summary
+}
+
+message CallbackSummary {
+  string dir = 1; //directory for the lbann_summary
+  int64 interval = 2; //default in lbann_callback_summary.hpp is 1
+}
+
+message CallbackDumpWeights {
+  string basename = 1;
+  int64 interval = 2;
+}
+
+message CallbackDumpActivations {
+  string basename = 1;
+  int64 interval = 2;
+}
+
+message CallbackDumpGradients {
+  string basename = 1;
+  int64 interval = 2;
+}
+
+message CallbackImComm {
+  //todo
+}
+
+
+
 
 message Layer {
    int64 index = 2; //corresponds to index wrt std::vector<Layer*>

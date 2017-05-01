@@ -8,14 +8,17 @@
 #include "lbann/models/lbann_model_sequential.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 
-/// returns mini_batch_size
+/** returns mini_batch_size;
+ *  instantiates one or more DataReaders and inserts them in &data_readers
+ */
 int init_data_readers(
   bool master, 
   const lbann_data::LbannPB &p, 
   std::map<execution_mode, lbann::DataReader*> &data_readers, 
   int &mini_batch_size);
 
-/// returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
+/** returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
+ */
 lbann::sequential_model * init_model(
   lbann::lbann_comm *comm, 
   lbann::optimizer_factory *optimizer_fac, 
@@ -25,6 +28,11 @@ lbann::sequential_model * init_model(
 lbann::optimizer_factory * init_optimizer_factory(
   lbann::lbann_comm *comm, 
   const lbann_data::LbannPB &p); 
+
+void init_callbacks(
+  bool master,
+  lbann::sequential_model *model,
+  const lbann_data::LbannPB &p);
 
 ///
 void readPrototextFile(
