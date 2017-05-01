@@ -68,14 +68,25 @@ void init_params(TrainingParams& trainParams, PerformanceParams& perfParams)
 
 }
 
+string get_data_dir(const TrainingParams& trainParams)
+{
+    string dir_delim = "";
+
+    if (!trainParams.DatasetRootDir.empty() && (trainParams.DatasetRootDir.back() != '/'))
+        dir_delim = "/";
+
+    return (trainParams.DatasetRootDir + dir_delim);
+}
+
 void print_params(lbann_comm* comm, TrainingParams& trainParams, PerformanceParams& perfParams)
 {
   if (comm == NULL) return;
 
   Grid& grid = comm->get_model_grid();
   if (comm->am_world_master()) {
-    const string train_data = trainParams.DatasetRootDir + trainParams.TrainFile;
-    const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
+
+    const string train_data = get_data_dir(trainParams) + trainParams.TrainFile;
+    const string test_data  = get_data_dir(trainParams) + trainParams.TestFile;
 
     cout << "Number of models: " << comm->get_num_models() << endl;
     cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
@@ -108,6 +119,8 @@ int main(int argc, char* argv[])
     init_random(42);
     init_data_seq_random(42);
 
+    lbann_comm* comm = NULL;
+
     try {
 
 
@@ -119,11 +132,11 @@ int main(int argc, char* argv[])
 
         init_params(trainParams, perfParams);
 
-        const string train_data = trainParams.DatasetRootDir + trainParams.TrainFile;
-        const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
+        const string train_data = get_data_dir(trainParams) + trainParams.TrainFile;
+        const string test_data  = get_data_dir(trainParams) + trainParams.TestFile;
 
         // Set up the communicator and get the grid.
-        lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+        comm = new lbann_comm(trainParams.ProcsPerModel);
         Grid& grid = comm->get_model_grid();
 
         print_params(comm, trainParams, perfParams);
@@ -273,12 +286,12 @@ int main(int argc, char* argv[])
           cout << "completing..." << endl;
         }
         delete optimizer_fac;
-        delete comm;
     }
     catch (exception& e) { ReportException(e); }
 
     cout << "Finalizing..." << endl;
     // free all resources by El and MPI
+    delete comm;
     Finalize();
 
     cout << "Exiting..." << endl;
