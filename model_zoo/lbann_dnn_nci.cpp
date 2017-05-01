@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
       const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
 
         // Set up the communicator and get the grid.
-      lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+      comm = new lbann_comm(trainParams.ProcsPerModel);
       Grid& grid = comm->get_model_grid();
       if (comm->am_world_master()) {
         cout << "Number of models: " << comm->get_num_models() << endl;
@@ -229,11 +229,11 @@ int main(int argc, char* argv[])
       }
       
       delete optimizer_fac;
-      delete comm;
     }
     catch (exception& e) { ReportException(e); }
 
     // free all resources by El and MPI
+    delete comm;
     Finalize();
 
     return 0;
