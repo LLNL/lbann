@@ -902,6 +902,13 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   const DataType one = 1;
   const DataType zero = 0;
 
+  // Clear unused columns
+  m_cudnn->clear_unused_columns_on_gpus(m_prev_error_signal_d,
+                                        NumNeurons,
+                                        m_prev_error_signal->LocalWidth(),
+                                        m_mini_batch_size_per_gpu);
+
+
   // Perform back propagation on each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
   for(int i=0; i<num_gpus; ++i) {
