@@ -5,18 +5,36 @@
 #include "lbann/lbann.hpp"
 #include "lbann/models/lbann_model_dnn.hpp"
 #include <lbann.pb.h>
+#include "lbann/models/lbann_model_sequential.hpp"
+#include "lbann/optimizers/lbann_optimizer.hpp"
 
 /// returns mini_batch_size
-int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, lbann::DataReader*> &data_readers, int &mini_batch_size);
+int init_data_readers(
+  bool master, 
+  const lbann_data::LbannPB &p, 
+  std::map<execution_mode, lbann::DataReader*> &data_readers, 
+  int &mini_batch_size);
 
-/// returns an optimizer factory
-lbann::optimizer_factory * init_optimizer_factory(lbann::lbann_comm *comm, const lbann_data::LbannPB &p); 
+/// returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
+lbann::sequential_model * init_model(
+  lbann::lbann_comm *comm, 
+  lbann::Optimizer_factory *optimizer_fac, 
+  const lbann_data::LbannPB &p); 
 
-/// returns a model that contains an optimizer_factory and metric(s)
-lbann::sequential_model * init_model(lbann::lbann_comm *comm, lbann::optimizer_factory * optimizer_fac, const lbann_data::LbannPB &p);
+/// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
+lbann::Optimizer_factory * init_optimizer_factory(
+  lbann::lbann_comm *comm, 
+  const lbann_data::LbannPB &p); 
 
-void readPrototextFile(string fn, lbann_data::LbannPB &pb);
-void writePrototextFile(string fn, lbann_data::LbannPB &pb);
+///
+void readPrototextFile(
+  string fn, 
+  lbann_data::LbannPB &pb);
+
+///
+void writePrototextFile(
+  string fn, 
+  lbann_data::LbannPB &pb);
 
 
 #endif

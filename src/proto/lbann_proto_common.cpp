@@ -2,11 +2,17 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+
+#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -16,7 +22,7 @@
 
 using namespace lbann;
 
-sequential_model * init_model(lbann_comm *comm, optimizer_factory * optimizer_fac, const lbann_data::LbannPB &p) {
+sequential_model * init_model(lbann_comm *comm, Optimizer_factory *optimizer_fac, const lbann_data::LbannPB &p) {
   stringstream err;
 
   sequential_model * model;
@@ -79,10 +85,16 @@ sequential_model * init_model(lbann_comm *comm, optimizer_factory * optimizer_fa
     }
   }
 
+  //set checkpoint values
+  model->set_checkpoint_dir(m.checkpoint_dir());
+  model->set_checkpoint_epochs(m.checkpoint_epochs());
+  model->set_checkpoint_steps(m.checkpoint_steps());
+  model->set_checkpoint_secs(m.checkpoint_secs());
+
   return model;
 }
 
-optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
+Optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
   const lbann_data::Model &model = p.model();
   const lbann_data::Optimizer &optimizer = model.optimizer();
 
@@ -95,16 +107,16 @@ optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::L
   //note: learn_rate, momentum, decay are DataType in LBANN, which is
   //      probably float. They'll be properly cast in the following
 
-  optimizer_factory *factory;
+  Optimizer_factory *factory;
 
   if (name == "adagrad") {
-    factory = new adagrad_factory(comm, learn_rate);
+    factory = new Adagrad_factory(comm, learn_rate);
   } else if (name == "rmsprop") {
-    factory = new rmsprop_factory(comm, learn_rate);
+    factory = new RMSprop_factory(comm, learn_rate);
   } else if (name == "adam") {
-    factory = new adam_factory(comm, learn_rate);
+    factory = new Adam_factory(comm, learn_rate);
   } else if (name == "sgd") {
-    factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
+    factory = new SGD_factory(comm, learn_rate, momentum, decay_rate, nesterov);
   } else {
     stringstream err;
     err << __FILE__ << " " << __LINE__

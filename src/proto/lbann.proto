@@ -21,7 +21,7 @@ message LbannPB {
   string optimizer = 10; //adagrad, rmsprop, adam, sgd 
 
   string objective_fn = 11; //categorical_cross_entropy, mean_squared_error
-  int32 mini_batch_size = 12;
+  int64 mini_batch_size = 12;
 
   //string execution_mode = 13; 
   //   training, validation, testing, prediction, invalid
@@ -37,7 +37,7 @@ message DataReader {
 
 message Reader {
   string name = 1; //mnist, nci, nci_regression, cnpy, imagenet
-  int32 mini_batch_size = 2;
+  int64 mini_batch_size = 2;
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filename = 6;
@@ -45,7 +45,7 @@ message Reader {
   double train_or_test_percent = 8;
   double validation_percent = 9;
   bool firstN = 10;
-  int32 max_sample_count = 11;
+  int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
 }
@@ -71,12 +71,12 @@ message ImagePreprocessor {
 message Model {
   string name = 1; //dnn, stacked_autoencoder, greedy_layerwise_autoencoder
   string objective_function = 2; //categorical_cross_entropy, mean_squared_error
-  int32 mini_batch_size = 6;
-  int32 num_epochs = 4;
+  int64 mini_batch_size = 6;
+  int64 num_epochs = 4;
   repeated string metric = 5; //categorical_accuracy, mean_squared_error
 
 
-  //int32 evaluation_frequency = 3;
+  //int64 evaluation_frequency = 3;
   //string optimizer = 5;
 
   repeated Layer layer = 10;
@@ -86,6 +86,12 @@ message Model {
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
   repeated string callback = 20; 
+
+  //checkpointing
+  string checkpoint_dir = 30;
+  int64 checkpoint_epochs = 31;
+  int64 checkpoint_steps = 32;
+  double checkpoint_secs = 33;
 }
 
 message Optimizer {
@@ -98,7 +104,7 @@ message Optimizer {
 }
 
 message Layer {
-   int32 index = 2; //corresponds to index wrt std::vector<Layer*>
+   int64 index = 2; //corresponds to index wrt std::vector<Layer*>
                      //not currently used
 
    // a Layer should contain exactly one of the following
@@ -135,12 +141,12 @@ message Layer {
 //
 
 message Input {
-  int32 mini_batch_size = 1;
+  int64 mini_batch_size = 1;
 }
 
 message InputDistributedMiniBatchParallelIO {
-  int32 num_parallel_readers = 1;
-  int32 mini_batch_size = 2;
+  int64 num_parallel_readers = 1;
+  int64 mini_batch_size = 2;
   //@TODO: regularizers
 }
 
@@ -150,9 +156,9 @@ message InputDistributedMiniBatch {
 
 
 message FullyConnected {
-  int32 num_prev_neurons = 1;
-  int32 num_neurons = 2;
-  int32 mini_batch_size = 3;
+  int64 num_prev_neurons = 1;
+  int64 num_neurons = 2;
+  int64 mini_batch_size = 3;
   string activation_type = 4;
   string weight_initialization = 5;
   string optimizer = 10; 
@@ -161,12 +167,12 @@ message FullyConnected {
 
 
 message Pooling {
-  int32 num_dims = 1;
-  int32 num_channels = 2;
-  repeated int32 input_dims = 3;
-  repeated int32 pool_dims = 4;
-  repeated int32 pool_pads = 5;
-  repeated int32 pool_strides = 6;
+  int64 num_dims = 1;
+  int64 num_channels = 2;
+  repeated int64 input_dims = 3;
+  repeated int64 pool_dims = 4;
+  repeated int64 pool_pads = 5;
+  repeated int64 pool_strides = 6;
 
   //pool_mode should be one of: max, average, average_no_pad
   //see: lbann/include/lbann/lbann_base.hpp
@@ -178,14 +184,14 @@ message Pooling {
 }
 
 message Convolution {
-  int32 num_dims = 1;
-  int32 num_input_channels = 2;
-  repeated int32 input_dims = 3;
-  int32 num_output_channels = 4;
-  repeated int32  filter_dims = 5;
-  repeated int32  conv_pads = 6;
-  repeated int32  conv_strides = 7;
-  int32 mini_batch_size = 8;
+  int64 num_dims = 1;
+  int64 num_input_channels = 2;
+  repeated int64 input_dims = 3;
+  int64 num_output_channels = 4;
+  repeated int64  filter_dims = 5;
+  repeated int64  conv_pads = 6;
+  repeated int64  conv_strides = 7;
+  int64 mini_batch_size = 8;
   string weight_initialization = 9;
   string activation_type = 10;
    
@@ -193,8 +199,8 @@ message Convolution {
 }
 
 message Softmax {
-  int32 num_prev_neurons = 1;
-  int32 num_neurons = 2;
+  int64 num_prev_neurons = 1;
+  int64 num_neurons = 2;
   string weight_initialization = 3;
   string activation_type = 4;
 }
@@ -212,8 +218,8 @@ message TargetDistributedMinibatch {
 }
 
 message TargetDistributedMinibatchParallelIO {
-  int32 num_parallel_readers = 1;
-  int32 mini_batch_size = 2;
+  int64 num_parallel_readers = 1;
+  int64 mini_batch_size = 2;
   bool shared_data_reader = 3;
   bool for_regression = 4;
 }
@@ -229,9 +235,9 @@ message TargetDistributedMinibatchParallelIO {
 
 message SystemParams {
   string host_name = 1;
-  int32 num_nodes = 2;
-  int32 num_cores = 3;
-  int32 tasks_per_node = 4;
+  int64 num_nodes = 2;
+  int64 num_cores = 3;
+  int64 tasks_per_node = 4;
 }
 
 message NetworkParams {
@@ -239,25 +245,25 @@ message NetworkParams {
 }
 
 message PerformanceParams {
-  int32 block_size = 1;
-  int32 max_par_io_size = 2;
+  int64 block_size = 1;
+  int64 max_par_io_size = 2;
 }
 
 message TrainingParams {
   bool enable_profiling = 1;
-  int32 random_seed = 2;
-  int32 shuffle_training_data = 3;
+  int64 random_seed = 2;
+  int64 shuffle_training_data = 3;
   double percentage_training_samples = 4;
   double percentage_validation_samples = 5;
   double percentage_testing_samples = 6;
-  int32 test_with_train_data = 7;
-  int32 epoch_start = 8;
-  int32 epoch_count = 9;
-  int32 mb_size = 10;
+  int64 test_with_train_data = 7;
+  int64 epoch_start = 8;
+  int64 epoch_count = 9;
+  int64 mb_size = 10;
   double learn_rate = 11;
-  int32 learn_rate_method = 12; //1 - Adagrad, 2 - RMSprop, 3 - Adam
+  int64 learn_rate_method = 12; //1 - Adagrad, 2 - RMSprop, 3 - Adam
   double lr_decay_rate = 13;  
-  int32 lr_decay_cycles = 14;
+  int64 lr_decay_cycles = 14;
   double lr_momentum = 15; 
   string activation_type = 16; //sigmoid, tanh, relu, id, leaky_relu, smooth_relu, elu
   double dropout = 17;
@@ -268,9 +274,9 @@ message TrainingParams {
   string parameter_dir = 22;
   bool save_model = 23;
   bool load_model = 24;
-  int32 ckpt_epochs = 25;
-  int32 ckpt_steps = 26;
-  int32 ckpt_secs = 27;
+  int64 ckpt_epochs = 25;
+  int64 ckpt_steps = 26;
+  int64 ckpt_secs = 27;
   string train_file = 28;
   string test_file = 29;
   string summary_dir = 30;
@@ -278,8 +284,8 @@ message TrainingParams {
   bool dump_activations = 32;
   bool dump_gradients = 33;
   string dump_dir = 34;
-  int32 intermodel_comm_method = 35;
-  int32 procs_per_model = 36;
+  int64 intermodel_comm_method = 35;
+  int64 procs_per_model = 36;
 }
 
 //========================================================================
