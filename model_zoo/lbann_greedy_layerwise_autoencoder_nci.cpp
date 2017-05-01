@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
       trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
       //trainParams.DumpWeights = "false"; //set to true to dump weight bias matrices
       //trainParams.DumpDir = "."; //provide directory to dump weight bias matrices
-      trainParams.EpochCount = 10;
       trainParams.MBSize = 50;
       trainParams.LearnRate = 0.0001;
       trainParams.DropOut = -1.0f;
@@ -200,8 +199,15 @@ int main(int argc, char* argv[])
       // restart model from checkpoint if we have one
       gla.restartShared();
 
-      if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
-      gla.train(trainParams.EpochCount,true);
+      for(int i =1; i <= trainParams.EpochCount; i++) {
+      
+        if (comm->am_world_master()) {
+          std::cout << "\n(Pre) train autoencoder - unsupersived training, global epoch [ " << i << " ]" << std::endl;
+          std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
+        }
+        gla.train(1,true);
+        gla.reset_phase();
+       }
 
       if (trainParams.DumpWeights) {
         delete dump_weights_cb;

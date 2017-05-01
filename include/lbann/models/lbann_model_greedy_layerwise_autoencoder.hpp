@@ -82,6 +82,7 @@ namespace lbann
     bool evaluate_mini_batch();
 
     const std::string & name() { return m_name; }
+    void reset_phase();
 
   protected:
     /// Model's name

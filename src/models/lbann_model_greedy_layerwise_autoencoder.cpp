@@ -49,6 +49,14 @@ struct lbann_model_greedy_layerwise_autoencoder_header {
     uint32_t have_mirror;
 };
 
+void lbann::greedy_layerwise_autoencoder::reset_phase() {
+  m_current_phase = 0;
+  m_current_epoch = 0;
+  m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
+  //clear m_reconstruction layers
+  m_reconstruction_layers.clear();
+}
+  
 bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persist& p)
 {
     // have rank 0 write record whether we have a mirror layer inserted
@@ -230,8 +238,9 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
 
     //Overide default print callback
     if (comm->am_world_master()) {
-      std::cout << "-----------------------------------------------------------" << std::endl;
-      std::cout << "Phase [" << m_current_phase  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
+      //std::cout << "-----------------------------------------------------------" << std::endl;
+      //std::cout << "Phase [" << m_current_phase  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
+      std::cout << "\n Training hidden layer [" << m_current_phase+1  << "] at layer-wise epoch [" << m_current_epoch << "]" <<  std::endl;
       std::cout << "-----------------------------------------------------------" << std::endl;
     }
 
@@ -396,6 +405,8 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode)
   
   //@todo: finetune only up to the true layers skipping the reconstruction layers
   //m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
+  //clear m_reconstruction layers
+  //m_reconstruction_layers.clear();
 
   return;
 }
