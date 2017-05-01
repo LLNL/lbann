@@ -173,6 +173,7 @@ shift $((OPTIND-1))
 # Look for the binary in the cluster specific build directory
 BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 
+
 # Once all of the options are parsed, you can setup the environment
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 

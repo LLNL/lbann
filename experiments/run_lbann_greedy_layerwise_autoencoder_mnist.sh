@@ -10,7 +10,7 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=50
+EPOCHS=10
 
 NETWORK="1000"
 
@@ -23,7 +23,7 @@ ACT=1
 LRM=1
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
-DROPOUT=-1
+DROPOUT=-1.0
 
 RUN="srun"
 
@@ -34,6 +34,7 @@ SAVE_MODEL=false
 LOAD_MODEL=false
 CKPT_EPOCHS=0
 CKPT_STEPS=0
+USE_LUSTRE_DIRECT=0
 
 TASKS_PER_NODE=1
 
@@ -54,9 +55,9 @@ TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
+USE_LUSTRE_DIRECT=1
 fi
 
-USE_LUSTRE_DIRECT=0
 
 #Set fonts for Help.
 NORM=`tput sgr0`

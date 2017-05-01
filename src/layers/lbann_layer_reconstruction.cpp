@@ -97,7 +97,7 @@ void lbann::reconstruction_layer::fp_linearity()
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
   DistMat original_layer_act_v;
   //view of original layer
-  View(original_layer_act_v,*(m_original_layer->activations),IR(0,m_original_layer->activations->Height()),IR(0,curr_mini_batch_size));
+  View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
   // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
   // and original layer fp_input/original input
   DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, original_layer_act_v);
@@ -115,7 +115,7 @@ void lbann::reconstruction_layer::bp_linearity()
   DistMat original_layer_act_v;
   
   //view of original layer
-  View(original_layer_act_v,*(m_original_layer->activations),IR(0,m_original_layer->activations->Height()),IR(0,curr_mini_batch_size));
+  View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
   
   // Compute error signal
   neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
@@ -129,7 +129,7 @@ void lbann::reconstruction_layer::bp_linearity()
 
   // Compute update for activation weights
   Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-       *m_prev_activations_v,(DataType(0), *m_weights_gradient);
+       *m_prev_activations_v,DataType(0), *m_weights_gradient);
 }
 
 
