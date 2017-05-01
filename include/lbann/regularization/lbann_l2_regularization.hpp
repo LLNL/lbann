@@ -35,10 +35,14 @@ namespace lbann {
 
 class l2_regularization : public regularizer {
 public:
+  /** Constructor. */
   l2_regularization(DataType lambda);
+  /** Destructor. */
   ~l2_regularization();
+  /** Apply L2 regularization to weights. */
   void update_gradients();
 protected:
+  /** L2 regularization parameter. */
   DataType m_lambda;
 };
 
