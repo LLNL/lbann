@@ -18,11 +18,11 @@ int init_data_readers(
 /// returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
 lbann::sequential_model * init_model(
   lbann::lbann_comm *comm, 
-  lbann::Optimizer_factory *optimizer_fac, 
+  lbann::optimizer_factory *optimizer_fac, 
   const lbann_data::LbannPB &p); 
 
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
-lbann::Optimizer_factory * init_optimizer_factory(
+lbann::optimizer_factory * init_optimizer_factory(
   lbann::lbann_comm *comm, 
   const lbann_data::LbannPB &p); 
 
