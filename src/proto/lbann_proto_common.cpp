@@ -1,9 +1,16 @@
 #include "lbann/proto/lbann_proto_common.hpp"
+
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+
+#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -12,6 +19,111 @@
 
 using namespace lbann;
 
+sequential_model * init_model(lbann_comm *comm, Optimizer_factory *optimizer_fac, const lbann_data::LbannPB &p) {
+  stringstream err;
+
+  sequential_model * model;
+
+  layer_factory* lfac = new layer_factory();
+
+/*
+#if __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+#else // __LIB_CUDNN
+  cudnn::cudnn_manager* cudnn = NULL;
+#endif // __LIB_CUDNN
+*/
+
+  const lbann_data::Model &m = p.model();
+  const string name = m.name();
+  const string objective_function = m.objective_function();
+  uint mini_batch_size = m.mini_batch_size();
+
+  //instantiate the objective function
+  objective_functions::objective_fn * obj;
+  if (objective_function == "categorical_cross_entropy") {
+    obj = new objective_functions::categorical_cross_entropy(comm);
+  } else if (objective_function == "mean_squared_error") {
+    obj = new objective_functions::mean_squared_error(comm);
+  } else {
+    err << __FILE__ << " " << __LINE__ 
+        << " :: init_model() - unknown objective function name: " << name << endl
+        << "; should be one of: categorical_cross_entropy, mean_squared_error";
+    throw lbann_exception(err.str());
+  }
+
+  //instantiate the network; layers will be added in a separate function call
+  if (name == "dnn") {
+    model = new deep_neural_network(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else if (name == "stacked_autoencoder") {
+    model = new stacked_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else if (name == "greedy_layerwise_autoencoder") {
+    model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac); 
+  } else {
+    err << __FILE__ << " " << __LINE__ 
+        << " :: init_model() - unknown model name: " << name << endl
+        << "; should be one of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder";
+    throw lbann_exception(err.str());
+  }
+
+  //add the metrics
+  int size = m.metric_size();
+  for (int j=0; j<size; j++) {
+    string metric = m.metric(j);
+    if (metric == "categorical_accuracy") {
+      model->add_metric(new metrics::categorical_accuracy(comm));
+    } else if (metric == "mean_squared_error") {
+      model->add_metric(new metrics::mean_squared_error(comm));
+    } else {
+      err << __FILE__ << " " << __LINE__ 
+          << " :: init_model() - unknown metric name: " << metric << endl
+          << "; should be one of: categorical_accuracy, mean_squared_error";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  //set checkpoint values
+  model->set_checkpoint_dir(m.checkpoint_dir());
+  model->set_checkpoint_epochs(m.checkpoint_epochs());
+  model->set_checkpoint_steps(m.checkpoint_steps());
+  model->set_checkpoint_secs(m.checkpoint_secs());
+
+  return model;
+}
+
+Optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
+  const lbann_data::Model &model = p.model();
+  const lbann_data::Optimizer &optimizer = model.optimizer();
+
+  const string name = optimizer.name();
+  double learn_rate = optimizer.learn_rate();
+  double momentum = optimizer.momentum();
+  double decay_rate = optimizer.decay();
+  bool nesterov = optimizer.nesterov();
+
+  //note: learn_rate, momentum, decay are DataType in LBANN, which is
+  //      probably float. They'll be properly cast in the following
+
+  Optimizer_factory *factory;
+
+  if (name == "adagrad") {
+    factory = new Adagrad_factory(comm, learn_rate);
+  } else if (name == "rmsprop") {
+    factory = new RMSprop_factory(comm, learn_rate);
+  } else if (name == "adam") {
+    factory = new Adam_factory(comm, learn_rate);
+  } else if (name == "sgd") {
+    factory = new SGD_factory(comm, learn_rate, momentum, decay_rate, nesterov);
+  } else {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: unknown name for Optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
+        << "instead we found: " << name;
+    throw lbann_exception(err.str());
+  }
+
+  return factory;
+}
 
 int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers, int &mb_size)
 {
