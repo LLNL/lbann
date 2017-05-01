@@ -19,6 +19,17 @@
 
 using namespace lbann;
 
+void init_callbacks(bool master, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
+  stringstream err;
+
+  const lbann_data::Model &m = p.model();
+  //const lbann_data::Callback &callbacks = m.callback();
+  int size = m.callback_size();
+
+  const lbann_data::DataReader &d_reader = p.data_reader();
+}
+
+
 sequential_model * init_model(lbann_comm *comm, Optimizer_factory *optimizer_fac, const lbann_data::LbannPB &p) {
   stringstream err;
 
