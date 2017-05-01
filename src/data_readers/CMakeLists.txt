@@ -6,6 +6,7 @@ add_sources(lbann_data_reader.cpp
             lbann_image_utils.cpp
             lbann_image_preprocessor.cpp
             lbann_data_reader_cnpy.cpp
+            lbann_data_reader_synthetic.cpp
             )
 
 #            lbann_data_reader_cifar10.cpp
