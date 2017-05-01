@@ -22,7 +22,7 @@
 
 using namespace lbann;
 
-sequential_model * init_model(lbann_comm *comm, Optimizer_factory *optimizer_fac, const lbann_data::LbannPB &p) {
+sequential_model * init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB &p) {
   stringstream err;
 
   sequential_model * model;
@@ -94,7 +94,7 @@ sequential_model * init_model(lbann_comm *comm, Optimizer_factory *optimizer_fac
   return model;
 }
 
-Optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
+optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB &p) {
   const lbann_data::Model &model = p.model();
   const lbann_data::Optimizer &optimizer = model.optimizer();
 
@@ -107,20 +107,20 @@ Optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::L
   //note: learn_rate, momentum, decay are DataType in LBANN, which is
   //      probably float. They'll be properly cast in the following
 
-  Optimizer_factory *factory;
+  optimizer_factory *factory;
 
   if (name == "adagrad") {
-    factory = new Adagrad_factory(comm, learn_rate);
+    factory = new adagrad_factory(comm, learn_rate);
   } else if (name == "rmsprop") {
-    factory = new RMSprop_factory(comm, learn_rate);
+    factory = new rmsprop_factory(comm, learn_rate);
   } else if (name == "adam") {
-    factory = new Adam_factory(comm, learn_rate);
+    factory = new adam_factory(comm, learn_rate);
   } else if (name == "sgd") {
-    factory = new SGD_factory(comm, learn_rate, momentum, decay_rate, nesterov);
+    factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
   } else {
     stringstream err;
     err << __FILE__ << " " << __LINE__
-        << " :: unknown name for Optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
+        << " :: unknown name for optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
         << "instead we found: " << name;
     throw lbann_exception(err.str());
   }
