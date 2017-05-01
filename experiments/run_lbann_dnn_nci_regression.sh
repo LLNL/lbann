@@ -43,21 +43,20 @@ RUN="srun"
 
 ROOT_DATASET_DIR="/l/ssd"
 # Originated from /usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/
-#DATASET_DIR="datasets/cancer/anl_datasets/tmp_norm"
+DATASET_DIR="datasets/cancer/anl_datasets/tmp_norm"
 OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
-DATASET_DIR=""
 SAVE_MODEL=false
 LOAD_MODEL=false
 TASKS_PER_NODE=8
 
 if [ "${CLUSTER}" = "catalyst" ]; then
-#LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
-ENABLE_HT=
+#LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
+#ENABLE_HT=--enable-hyperthread
 else
-LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
-#LUSTRE_FILEPATH="/p/lscratche/brainusr"
+#LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
+LUSTRE_FILEPATH="/p/lscratche/brainusr"
 ENABLE_HT=
 fi
 
@@ -201,7 +200,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 
-export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
+export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
 
