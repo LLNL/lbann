@@ -24,7 +24,9 @@ sequential_model * init_model(lbann_comm *comm, optimizer_factory * optimizer_fa
   layer_factory* lfac = new layer_factory();
 
 #if __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+  //cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+  // num_gpus is a user input and '-1' by default (using all available gpus)
+  cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
 #else // __LIB_CUDNN
   cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
