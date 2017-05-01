@@ -30,7 +30,7 @@ lbann::optimizer_factory * init_optimizer_factory(
   const lbann_data::LbannPB &p); 
 
 void init_callbacks(
-  bool master,
+  lbann::lbann_comm *comm,
   lbann::sequential_model *model,
   const lbann_data::LbannPB &p);
 

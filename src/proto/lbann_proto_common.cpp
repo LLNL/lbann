@@ -14,6 +14,10 @@
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 
+#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
+#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -22,14 +26,63 @@
 
 using namespace lbann;
 
-void init_callbacks(bool master, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
+void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
   stringstream err;
 
   const lbann_data::Model &m = p.model();
-  //const lbann_data::Callback &callbacks = m.callback();
   int size = m.callback_size();
+  for (int j=0; j<size; j++) {
+    const lbann_data::Callback &callback = m.callback(j);
 
-  const lbann_data::DataReader &d_reader = p.data_reader();
+    if (callback.has_print()) {
+      const lbann_data::CallbackPrint &c = callback.print();
+      lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
+      model->add_callback(print_cb);
+    }
+
+    if (callback.has_timer()) {
+      const lbann_data::CallbackTimer &c = callback.timer();
+      lbann_summary *summarizer = nullptr;
+      if (c.dir() != "none") {
+        summarizer = new lbann_summary(c.dir(), comm);
+      }
+      lbann_callback_timer *timer_cb = new lbann_callback_timer(summarizer);
+      model->add_callback(timer_cb);
+    }
+
+    if (callback.has_summary()) {
+      const lbann_data::CallbackSummary &c = callback.summary();
+      lbann_summary *summarizer = nullptr;
+      if (c.dir() != "none") {
+        summarizer = new lbann_summary(c.dir(), comm);
+      }
+      lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.interval());
+      model->add_callback(summary_cb);
+    }
+
+    if (callback.has_dump_weights()) {
+      const lbann_data::CallbackDumpWeights &c = callback.dump_weights();
+      lbann_callback_dump_weights *weights_cb = new lbann_callback_dump_weights(c.basename(), c.interval());
+      model->add_callback(weights_cb);
+    }
+
+    if (callback.has_dump_activations()) {
+      const lbann_data::CallbackDumpActivations &c = callback.dump_activations();
+      lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval());
+      model->add_callback(activations_cb);
+    }
+
+    if (callback.has_dump_gradients()) {
+      const lbann_data::CallbackDumpGradients &c = callback.dump_gradients();
+      lbann_callback_dump_gradients *gradients_cb = new lbann_callback_dump_gradients(c.basename(), c.interval());
+      model->add_callback(gradients_cb);
+    }
+
+    if (callback.has_imcomm()) {
+      //TODO todo
+    }
+  }
+
 }
 
 
