@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
         mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
+        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
         mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
         mnist_trainset.load();
 
