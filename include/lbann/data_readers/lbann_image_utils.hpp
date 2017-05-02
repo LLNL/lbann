@@ -168,17 +168,23 @@ namespace lbann
     static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp);
   #endif // __LIB_OPENCV
 
-    // load/save with a temporary buffer
+    // load/save an image into/from a temporary buffer
     /// Load an image from a file and put it into a serialized buffer
     static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, std::vector<uint8_t>& buf);
     /// Save an image from a serialized buffer into a file
     static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const std::vector<uint8_t>& buf);
 
-    // load/save with an LBANN data block of El::Matrix<DataType> type
+    // load/save an image into/from an LBANN data block of El::Matrix<DataType> type
     /// Load an image from a file and put it into an LBANN Mat data block
-    static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& buf);
-    /// Save an image using data from an LBANN Mat block
-    static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& buf);
+    static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data);
+    /// Save an image using data from an LBANN Mat data block
+    static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data);
+
+    // import/export via a buffer of std::vector<uchar> containg the raw bytes of an image file
+    /// Import an image from a file buffer (inbuf) and put it into an LBANN Mat data block
+    static bool import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data);
+    /// Export an image using data from an LBANN Mat block into a file buffer (outbuf)
+    static bool export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data);
   };
 
 
