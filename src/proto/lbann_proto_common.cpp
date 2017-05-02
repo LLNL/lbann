@@ -28,20 +28,29 @@ using namespace lbann;
 
 void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
   stringstream err;
+  bool master = comm->am_world_master();
 
   const lbann_data::Model &m = p.model();
+
+  //loop over the callbacks
   int size = m.callback_size();
   for (int j=0; j<size; j++) {
     const lbann_data::Callback &callback = m.callback(j);
 
     if (callback.has_print()) {
       const lbann_data::CallbackPrint &c = callback.print();
+      if (master) {
+        cout << "adding print callback with interval: " << c.interval() << endl;
+      }
       lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
       model->add_callback(print_cb);
     }
 
     if (callback.has_timer()) {
       const lbann_data::CallbackTimer &c = callback.timer();
+      if (master) {
+        cout << "adding timer callback with dir: " << c.dir() << endl;
+      }  
       lbann_summary *summarizer = nullptr;
       if (c.dir() != "none") {
         summarizer = new lbann_summary(c.dir(), comm);
@@ -52,6 +61,9 @@ void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lban
 
     if (callback.has_summary()) {
       const lbann_data::CallbackSummary &c = callback.summary();
+      if (master) {
+        cout << "adding summary callback with dir: " << c.dir() << endl;
+      }  
       lbann_summary *summarizer = nullptr;
       if (c.dir() != "none") {
         summarizer = new lbann_summary(c.dir(), comm);
@@ -62,18 +74,30 @@ void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lban
 
     if (callback.has_dump_weights()) {
       const lbann_data::CallbackDumpWeights &c = callback.dump_weights();
+      if (master) {
+        cout << "adding dump weights callback with basename: " << c.basename() 
+             << " and interval: " << c.interval() << endl;
+      }  
       lbann_callback_dump_weights *weights_cb = new lbann_callback_dump_weights(c.basename(), c.interval());
       model->add_callback(weights_cb);
     }
 
     if (callback.has_dump_activations()) {
       const lbann_data::CallbackDumpActivations &c = callback.dump_activations();
+      if (master) {
+        cout << "adding dump activations callback with basename: " << c.basename() 
+             << " and interval: " << c.interval() << endl;
+      }  
       lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval());
       model->add_callback(activations_cb);
     }
 
     if (callback.has_dump_gradients()) {
       const lbann_data::CallbackDumpGradients &c = callback.dump_gradients();
+      if (master) {
+        cout << "adding dump gradients callback with basename: " << c.basename() 
+             << " and interval: " << c.interval() << endl;
+      }  
       lbann_callback_dump_gradients *gradients_cb = new lbann_callback_dump_gradients(c.basename(), c.interval());
       model->add_callback(gradients_cb);
     }
