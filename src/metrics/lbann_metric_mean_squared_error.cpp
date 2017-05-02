@@ -38,7 +38,7 @@ lbann::metrics::mean_squared_error::mean_squared_error(lbann_comm* comm)
 }
 
 lbann::metrics::mean_squared_error::~mean_squared_error() {
-  internal_obj_fn.~mean_squared_error();
+  //internal_obj_fn.~mean_squared_error();
 }
 
 void lbann::metrics::mean_squared_error::setup(int num_neurons, int mini_batch_size) {

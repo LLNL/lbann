@@ -289,11 +289,9 @@ int main(int argc, char* argv[])
     }
     catch (exception& e) { ReportException(e); }
 
-    cout << "Finalizing..." << endl;
     // free all resources by El and MPI
     delete comm;
     Finalize();
 
-    cout << "Exiting..." << endl;
     return 0;
 }

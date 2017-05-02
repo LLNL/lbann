@@ -40,8 +40,8 @@ lbann::objective_functions::mean_squared_error::mean_squared_error(lbann_comm* c
 }
 
 lbann::objective_functions::mean_squared_error::~mean_squared_error() {
-  m_errors.Empty();
-  m_errors_v.Empty();
+  //m_errors.Empty();
+  //m_errors_v.Empty();
 }
 
 void lbann::objective_functions::mean_squared_error::setup(int num_neurons, int mini_batch_size) {

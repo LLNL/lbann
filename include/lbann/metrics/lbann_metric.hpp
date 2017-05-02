@@ -121,7 +121,7 @@ namespace lbann
       }
 
       /// Destructor
-      ~metric(){};
+      virtual ~metric(){};
 
       virtual void setup(int num_neurons, int mini_batch_size) {}
       virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
