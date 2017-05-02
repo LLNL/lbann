@@ -498,7 +498,7 @@ inline cv::Mat image_utils::copy_buf_to_cvMat_with_known_type(const std::vector<
  * requires the type of channel values and the number of channels in the image
  * to be known at compile time. The default for these are the DataType of LBANN
  * and 3 channels. In case of copying a single image into a collection of
- * images as an existing El::Matrix<DataType> matrix, a View can be passed.
+ * images as an existing El::Matrix<DataType> matrix, a sub-matrix View can be passed.
  * The argument pp specifies the parameters for image preprocessing that
  * takes advantage of the OpenCV framework. Returns true if successful.
  */
@@ -588,8 +588,8 @@ inline bool image_utils::copy_cvMat_to_buf_with_known_type(const cv::Mat& image,
  * Reconstruct a cv::Mat image from a data block of El::Matrix<DataType> type.
  * This requires the type of channel values and the number of channels in the
  * image to be known at compile time. The default for these are DataType of
- * LBANN and 3 channels. In case of copying a single image in a collection of
- * images as an existing El::Matrix<DataType> matrix, a View can be passed.
+ * LBANN and 3 channels. In case of copying a single image data in a matrix
+ * of multiple images, a sub-matrix View can be passed.
  * The image size is specified by Width and Height. The argument pp specifies
  * the parameters for image postprocessing that takes advantage of the OpenCV
  * framework. Returns an empty image if unsuccessful.

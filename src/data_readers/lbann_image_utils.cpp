@@ -492,7 +492,7 @@ bool lbann::image_utils::save_image(const std::string& filename, const int Width
  *  @param Height  The height of the image consructed
  *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)
  *  @param pp      The pre-processing parameters
- *  @param data    The image data
+ *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
 bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data)
 {
@@ -525,7 +525,7 @@ size_t image_data_amount(const cv::Mat& img)
  *  @param Height  The height of the image
  *  @param Type    The type of the image (OpenCV code used for cv::Mat)
  *  @param pp      The post-processing parameters
- *  @param data    The image data
+ *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
 bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data)
 {
