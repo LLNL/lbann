@@ -39,11 +39,13 @@ void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lban
 
     if (callback.has_print()) {
       const lbann_data::CallbackPrint &c = callback.print();
-      if (master) {
-        cout << "adding print callback with interval: " << c.interval() << endl;
-      }
-      lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
-      model->add_callback(print_cb);
+      if (c.interval() > 0) {
+        if (master) {
+          cout << "adding print callback with interval: " << c.interval() << endl;
+        }
+        lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
+        model->add_callback(print_cb);
+      }  
     }
 
     if (callback.has_timer()) {

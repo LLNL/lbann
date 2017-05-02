@@ -7,17 +7,17 @@ model {
 
   callback {
     print {
-      interval: 1
+      interval: 0
     }
   }
   callback {
     timer {
-      dir: "."
+      dir: "XYZ"
     }
   }
   callback {
     summary {
-      dir: "."
+      dir: "XYZ"
       interval: 1
     }
   }
