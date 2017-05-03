@@ -28,6 +28,16 @@
 #include "lbann/utils/lbann_random.hpp"
 
 namespace {
+#ifdef __ICC
+lbann::rng_gen generator;
+#pragma omp threadprivate(generator)
+
+lbann::fast_rng_gen fast_generator;
+#pragma omp threadprivate(fast_generator)
+
+lbann::rng_gen data_seq_generator;
+#pragma omp threadprivate(data_seq_generator)
+#else
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
 // https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
@@ -42,6 +52,7 @@ lbann::fast_rng_gen fast_generator;
 extern lbann::rng_gen data_seq_generator;
 #pragma omp threadprivate(data_seq_generator)
 lbann::rng_gen data_seq_generator;
+#endif
 }
 
 namespace lbann {
