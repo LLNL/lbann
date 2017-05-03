@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_mnist.cpp - DNN application for mnist
+// lbann_proto.cpp - prototext application 
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
@@ -36,7 +36,6 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
@@ -44,37 +43,24 @@ const uint g_NumLayers = g_LayerDim.size(); // # layers
 /// Main function
 int main(int argc, char* argv[])
 {
-    // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
     lbann_comm* comm = NULL;
 
     try {
 
-        ///////////////////////////////////////////////////////////////////
-        // initalize grid, block
-        ///////////////////////////////////////////////////////////////////
-
         // Initialize parameter defaults
+        // note: these params will eventually be initialized from prototext
         TrainingParams trainParams;
-        //trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
         trainParams.EpochCount = 20;
-        //trainParams.MBSize = 128;
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
-        //trainParams.PercentageTrainingSamples = 0.90;
-        //trainParams.PercentageValidationSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
-
-        //NetworkParams network_params;
-        //SystemParams system_params;
 
         // Parse command-line inputs
         trainParams.parse_params();
         perfParams.parse_params();
-        //network_params.parse_params();
-        //system_params.parse_params();
 
         ProcessInput();
         PrintInputReport();
@@ -166,33 +152,17 @@ int main(int argc, char* argv[])
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers, true);
         model->add(target_layer);
 
-        lbann_callback_print print_cb;
-        model->add_callback(&print_cb);
-        lbann_callback_dump_weights* dump_weights_cb;
-        lbann_callback_dump_activations* dump_activations_cb;
-        lbann_callback_dump_gradients* dump_gradients_cb;
-        if (trainParams.DumpWeights) {
-          dump_weights_cb = new lbann_callback_dump_weights(
-            trainParams.DumpDir);
-          model->add_callback(dump_weights_cb);
-        }
-        if (trainParams.DumpActivations) {
-          dump_activations_cb = new lbann_callback_dump_activations(
-            trainParams.DumpDir);
-          model->add_callback(dump_activations_cb);
-        }
-        if (trainParams.DumpGradients) {
-          dump_gradients_cb = new lbann_callback_dump_gradients(
-            trainParams.DumpDir);
-          model->add_callback(dump_gradients_cb);
-        }
-        // lbann_callback_io io_cb({0,3});
-        // dnn.add_callback(&io_cb);
-        //lbann_callback_io io_cb({0,3});
-        //        dnn.add_callback(&io_cb);
-        //lbann_callback_debug debug_cb(execution_mode::testing);
-        //        dnn.add_callback(&debug_cb);
+        // init callbacks (this includes checkpoint calls)
+        // @todo: not all callbacks code is in place
+        init_callbacks(comm, model, pb);
 
+        // Initialize the model's data structures
+        model->setup();
+
+
+         /*
+        //@todo: add function to print this data from prototext
+        //
         if (comm->am_world_master()) {
           cout << "Layer initialized:" << endl;
           for (uint n = 0; n < g_NumLayers; n++) {
@@ -207,67 +177,22 @@ int main(int argc, char* argv[])
           cout << "\tLearning rate: " << trainParams.LearnRate << endl;
           cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
         }
+        */
+
+        // restart model from checkpoint if we have one
+        //@todo
+        //model->restartShared();
 
         ///////////////////////////////////////////////////////////////////
         // main loop for training/testing
         ///////////////////////////////////////////////////////////////////
-
-        // Initialize the model's data structures
-        model->setup();
-
-        // set checkpoint directory and checkpoint interval
-        model->set_checkpoint_dir(trainParams.ParameterDir);
-        model->set_checkpoint_epochs(trainParams.CkptEpochs);
-        model->set_checkpoint_steps(trainParams.CkptSteps);
-        model->set_checkpoint_secs(trainParams.CkptSecs);
-
-        // restart model from checkpoint if we have one
-        model->restartShared();
-
-        // train/test
         while (model->get_cur_epoch() < trainParams.EpochCount) {
-#if 0
-            // optionally check gradients
-            if (n > 0 && n % 10000 == 0) {
-               printf("Checking gradients...\n");
-               double errors[g_NumLayers];
-               dnn.checkGradient(Xs, Ys, errors);
-               printf("gradient errors: ");
-               for (uint l = 0; l < g_NumLayers; l++)
-                   printf("%lf ", errors[l]);
-               printf("\n");
-            }
-#endif
-
             model->train(1, true);
-
-            // Update the learning rate on each epoch
-            // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
-            // if(grid.Rank() == 0) {
-            //   cout << "Changing the learning rate to " << trainParams.LearnRate << " after processing " << (t+1) << " epochs" << endl;
-            // }
-
-            // testing
-            int numerrors = 0;
-
             model->evaluate(execution_mode::testing);
         }
 
-        // Free dynamically allocated memory
-        // delete target_layer;  // Causes segfault
-        // delete input_layer;  // Causes segfault
-        // delete lfac;  // Causes segfault
-        if (trainParams.DumpWeights) {
-          delete dump_weights_cb;
-        }
-        if (trainParams.DumpActivations) {
-          delete dump_activations_cb;
-        }
-        if (trainParams.DumpGradients) {
-          delete dump_gradients_cb;
-        }
-        delete optimizer_fac;
-        delete comm;
+        // @todo: figure out and implement coherent strategy 
+        // for freeing dynamically allocated memory
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }
     catch (exception& e) { ReportException(e); } /// Elemental exceptions

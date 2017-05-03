@@ -437,12 +437,20 @@ bool lbann::image_utils::save_image(const std::string& filename, const int Width
 #endif // __LIB_OPENCV
 }
 
-bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& buf)
+/**
+ *  @param filename The name of the image file to read in
+ *  @param Width    The width of the image read
+ *  @param Height   The height of the image read
+ *  @param Type     The type of the image read (OpenCV code used for cv::Mat)
+ *  @param pp       The pre-processing parameters
+ *  @param data     The image data pre-processed and copied in El::Matrix<DataType> format
+ */
+bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data)
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = preprocess_cvMat(image, pp);
-  if (!ok || !copy_cvMat_to_buf(image, buf, pp)) {
+  if (!ok || !copy_cvMat_to_buf(image, data, pp)) {
     _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
     return false;
   }
@@ -455,16 +463,94 @@ bool lbann::image_utils::load_image(const std::string& filename, int& Width, int
 #endif // __LIB_OPENCV
 }
 
-bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& buf)
+/**
+ *  @param filename The name of the image file to write
+ *  @param Width    The width of the image to be written
+ *  @param Height   The height of the image to be written
+ *  @param Type     The type of the image to be written (OpenCV code used for cv::Mat)
+ *  @param pp       The post-processing parameters
+ *  @param data     The image data in El::Matrix<DataType> format to post-process and write
+ */
+bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data)
 {
 #ifdef __LIB_OPENCV
-  cv::Mat image = copy_buf_to_cvMat(buf, Width, Height, Type, pp);
+  cv::Mat image = copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && postprocess_cvMat(image, pp);
   if (!ok) {
     _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
     return false;
   }
   return (ok && cv::imwrite(filename, image));
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+/**
+ *  @param inbuf   The buffer that contains the raw bytes read from an image file
+ *  @param Width   The width of the image consturcted out of inbuf
+ *  @param Height  The height of the image consructed
+ *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)
+ *  @param pp      The pre-processing parameters
+ *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
+ */
+bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  bool ok = preprocess_cvMat(image, pp);
+  if (!ok || !copy_cvMat_to_buf(image, data, pp)) {
+    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
+    return false;
+  }
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+  return true;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+/// returns the number of bytes that would be used for the image without compresstion and any header
+size_t image_data_amount(const cv::Mat& img)
+{
+  return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*CV_MAT_CN(img.type())*img.cols*img.rows);
+}
+
+/**
+ *  @param fileExt The format extension name of image file: e.g., ".jpeg", ".png" 
+ *  @param outbuf  The preallocated buffer to contain the bytes to be written into an image file
+ *  @param Width   The width of the image to be consturcted based on the given data of ::Mat
+ *  @param Height  The height of the image
+ *  @param Type    The type of the image (OpenCV code used for cv::Mat)
+ *  @param pp      The post-processing parameters
+ *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
+ */
+bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = copy_buf_to_cvMat(data, Width, Height, Type, pp);
+  bool ok = !image.empty() && postprocess_cvMat(image, pp);
+  if (!ok) {
+    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
+    return false;
+  }
+  if (fileExt.empty()) {
+    _LBANN_DEBUG_MSG("Empty file format extension!");
+    return false;
+  }
+  const std::string ext = ((fileExt[0] != '.')? ("." + fileExt) : fileExt);
+
+  static const size_t max_img_header_size = 1024;
+  const size_t capacity = image_data_amount(image) + max_img_header_size;
+
+  if (outbuf.size() < capacity) {
+    //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;
+    outbuf.resize(capacity);
+  }
+
+  return (ok && cv::imencode(ext, image, outbuf));
 #else
   return false;
 #endif // __LIB_OPENCV

@@ -4,6 +4,24 @@ model {
   num_epochs: 1
   metric: "categorical_accuracy"
   mini_batch_size: 192
+
+  callback {
+    print {
+      interval: 0
+    }
+  }
+  callback {
+    timer {
+      dir: "XYZ"
+    }
+  }
+  callback {
+    summary {
+      dir: "XYZ"
+      interval: 1
+    }
+  }
+
   layer {
     input_distributed_minibatch_parallel_io {
       num_parallel_readers: 16

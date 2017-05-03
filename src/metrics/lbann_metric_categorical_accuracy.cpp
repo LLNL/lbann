@@ -41,6 +41,7 @@ lbann::metrics::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
 }
 
 lbann::metrics::categorical_accuracy::~categorical_accuracy() {
+/*
   YsColMax.Empty();
   YsColMaxStar.Empty();
   m_max_index.Empty();
@@ -50,6 +51,7 @@ lbann::metrics::categorical_accuracy::~categorical_accuracy() {
   YsColMaxStar_v.Empty();
   m_max_index_v.Empty();
   m_reduced_max_indices_v.Empty();
+*/
 }
 
 void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
