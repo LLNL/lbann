@@ -65,7 +65,7 @@ void lbann_callback_print::on_epoch_end(model* m) {
         for (size_t i = 0; i < train_scores.size(); ++i) {
           std::cout << "Model " << i;
           std::cout << " @" << m->get_cur_step() << " steps";
-          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << "%";
+          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << _disp_unit(metric->type);
           std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation " << _to_string(metric->type) << ": " << validate_scores[i] << _disp_unit(metric->type);
           std::cout << std::endl;
         }
