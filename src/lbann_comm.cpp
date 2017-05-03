@@ -237,7 +237,7 @@ void lbann::lbann_comm::setup_node_comm() {
 
   // Hash node names and split MPI processes
   int hash = std::hash<std::string>()(node_string);
-  hash = hash >= 0 ? hash : -hash; // Make sure hash is non-negative
+  hash = hash >= 0 ? hash : -hash;  // Make sure hash is non-negative
   mpi::Comm hash_comm;
   mpi::Split(mpi::COMM_WORLD, hash, mpi::Rank(mpi::COMM_WORLD), hash_comm);
   const int hash_comm_size = mpi::Size(hash_comm);
@@ -257,5 +257,11 @@ void lbann::lbann_comm::setup_node_comm() {
   }
   delete[] node_name_list;
   mpi::Split(hash_comm, node_num, mpi::Rank(mpi::COMM_WORLD), node_comm);
+  mpi::Free(hash_comm);
 
+  // Set up the list of model ranks on this node.
+  int node_comm_size = mpi::Size(node_comm);
+  for (int i = 0; i < node_comm_size; ++i) {
+    model_ranks_on_node.push_back(mpi::Translate(node_comm, i, model_comm));
+  }
 }
