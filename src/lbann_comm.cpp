@@ -99,6 +99,7 @@ lbann::lbann_comm::~lbann_comm() {
   delete grid;
   mpi::Free(model_comm);
   mpi::Free(intermodel_comm);
+  mpi::Free(node_comm);
 }
 
 void lbann::lbann_comm::intermodel_sum_matrix(Mat& mat) {
