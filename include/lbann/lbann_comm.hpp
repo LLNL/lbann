@@ -322,6 +322,25 @@ namespace lbann
     void nb_recv(Mat& mat, mpi::Request<DataType>& req);
     void nb_recv(DistMat& mat, mpi::Request<DataType>& req);
 
+    /** Send/recv to/from ranks. */
+    template <typename T>
+    void sendrecv(const T* send, int send_count, int send_model, int send_rank,
+                  T* recv, int recv_count, int recv_model, int recv_rank) {
+      bytes_sent += sizeof(T) * send_count;
+      bytes_received += sizeof(T) * recv_count;
+      mpi::SendRecv(send, send_count, get_world_rank(send_model, send_rank),
+                    recv, recv_count, get_world_rank(recv_model, recv_rank),
+                    mpi::COMM_WORLD);
+    }
+    template <typename T>
+    void sendrecv(const T* send, int send_count, int send_model,
+                  T* recv, int recv_count, int recv_model) {
+      bytes_sent += sizeof(T) * send_count;
+      bytes_received += sizeof(T) * recv_count;
+      sendrecv(send, send_count, send_model, rank_in_model,
+               recv, recv_count, recv_model, rank_in_model);
+    }
+
     /** Determine the size (count) of an incoming message. */
     template <typename T> int get_count(int model, int rank) {
       MPI_Status status;
