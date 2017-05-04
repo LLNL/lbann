@@ -547,7 +547,7 @@ void lbann::convolutional_layer::fp_linearity() {
   }
   else {
     switch(m_num_dims) {
-    case 2: fp_linearity_cpu_2d_gemm(); break;
+    case 2: fp_linearity_cpu_2d_direct(); break;
     default: fp_linearity_cpu();
     }
   }
@@ -561,7 +561,7 @@ void lbann::convolutional_layer::bp_linearity() {
   }
   else {
     switch(m_num_dims) {
-    case 2: bp_linearity_cpu_2d_gemm(); break;
+    case 2: bp_linearity_cpu_2d_direct(); break;
     default: bp_linearity_cpu();
     }
   }
