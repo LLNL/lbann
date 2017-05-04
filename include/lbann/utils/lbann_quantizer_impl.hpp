@@ -560,8 +560,9 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
       rs_bytes_received -= rs_recv.size() * sizeof(rowT);
       rs_bytes_received += recv_size * sizeof(rowT);
     };
-  intermodel_ring_reduce_scatter<mpi_rowT>(comm, mat, false, rs_send_trans,
-                                           rs_get_recv_buf, rs_recv_trans);
+  intermodel_pairwise_exchange_reduce_scatter<mpi_rowT>(
+    comm, mat, false, rs_send_trans,
+    rs_get_recv_buf, rs_recv_trans);
   std::vector<rowT> local_send;
   std::vector<rowT> ag_send = adaptive_recv_bufs1[max_size];
   std::vector<rowT> ag_recv = adaptive_recv_bufs2[max_size];
@@ -613,7 +614,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
 }
 
 template <typename T>
-void lbann_quantizer::intermodel_ring_reduce_scatter(
+void lbann_quantizer::intermodel_pairwise_exchange_reduce_scatter(
   lbann_comm* comm, Mat& mat, bool var_recv,
   std::function<T*(Mat&, IR, IR, int&)> send_trans,
   std::function<T*(Mat&, int&)> get_recv_buf,

@@ -494,7 +494,7 @@ private:
   }
 
   template <typename T>
-  void intermodel_ring_reduce_scatter(
+  void intermodel_pairwise_exchange_reduce_scatter(
     lbann_comm* comm, Mat& mat, bool var_recv,
     std::function<T*(Mat&, IR, IR, int&)> send_trans,
     std::function<T*(Mat&, int&)> get_recv_buf,
