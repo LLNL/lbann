@@ -118,6 +118,7 @@ void local_response_normalization_layer::setup(const int num_prev_neurons)
   }
 #endif // __LIB_CUDNN
 
+#ifdef LBANN_DEBUG
   // Check if input dimensions are valid
   int num_inputs = m_num_channels;
   for(int i=0; i<m_num_dims; ++i)
@@ -125,6 +126,7 @@ void local_response_normalization_layer::setup(const int num_prev_neurons)
   if(num_inputs != num_prev_neurons) {
     throw lbann_exception("lbann_layer_local_response_normalization: unexpected number of input neurons");
   }
+#endif
 
   // Initialize matrices
   if(!m_using_gpus || !m_prev_layer_using_gpus) {
@@ -249,7 +251,73 @@ void lbann::local_response_normalization_layer::fp_linearity_gpu() {
 }
 
 void lbann::local_response_normalization_layer::fp_linearity_cpu() {
-  throw lbann_exception("lbann_layer_local_response_normalization: no CPU implementation");
+
+  // Get local matrices
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
+  Mat& activations_local = m_activations_v->Matrix();
+
+  // Input and output entries are divided amongst channels
+  const Int num_per_channel = NumNeurons / m_num_channels;
+
+  ////////////////////////////////////////////////////////////////
+  // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
+  // scale_factor(i)
+  //   = k + alpha / window_width * sum( prev_activations(j) ^ 2 )
+  // Note: The sum is over entries in the normalization window.
+  ////////////////////////////////////////////////////////////////
+  
+  // Iterate through data samples in mini-batch
+#pragma omp parallel for collapse(2)
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    // Iterate through positions in sample
+    for(Int pos = 0; pos < num_per_channel; ++pos) {
+
+      // Initialize normalization window
+      Int window_start = - m_window_width / 2;
+      Int window_end = m_window_width / 2;
+      DataType window_sum = 0;
+      for(Int c = Max(window_start, 0);
+          c <= Min(window_end, m_num_channels-1);
+          ++c) {
+        const DataType x
+          = prev_activations_local.Get(pos + num_per_channel*c, sample);
+        window_sum += x * x;
+      }
+
+      // Iterate through channels at current position
+      for(Int channel = 0; channel < m_num_channels; ++channel) {
+        const Int index = pos + num_per_channel * channel;
+
+        // Apply local response normalization to current entry
+        const DataType input_entry = prev_activations_local.Get(index, sample);
+        const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+        const DataType output_entry = input_entry * Pow(scale_factor, -m_lrn_beta);
+        weighted_sum_local.Set(index, sample, output_entry);
+        
+        // Shift normalization window by one entry
+        if(window_start >= 0) {
+          const Int i = pos + num_per_channel*window_start;
+          const DataType x = prev_activations_local.Get(i, sample);
+          window_sum -= x * x;
+        }
+        ++window_start;
+        ++window_end;
+        if(window_end < m_num_channels) {
+          const Int i = pos + num_per_channel*window_end;
+          const DataType x = prev_activations_local.Get(i, sample);
+          window_sum += x * x;
+        }
+
+      }
+
+    }
+    
+  }
+
+  // weighted_sum and output are identical after fp linearity step
+  Copy(weighted_sum_local, activations_local);
+
 }
 
 void lbann::local_response_normalization_layer::bp_linearity_gpu() {
@@ -286,7 +354,94 @@ void lbann::local_response_normalization_layer::bp_linearity_gpu() {
 }
 
 void lbann::local_response_normalization_layer::bp_linearity_cpu() {
-  throw lbann_exception("lbann_layer_local_response_normalization: no CPU implementation");
+
+  // Get local matrices
+  const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
+  const Mat& activations_local = m_activations_v->LockedMatrix();
+  const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
+  Mat& error_signal_local = m_error_signal_v->Matrix();
+
+  // Initialize error signal to zero
+  Zero(error_signal_local);
+
+  // Input and output entries are divided amongst channels
+  const Int num_per_channel = NumNeurons / m_num_channels;
+
+  ////////////////////////////////////////////////////////////////
+  // error_signal(i)
+  //   = prev_error_signal(i) / scale_factor(i) ^ beta 
+  //     - 2 * alpha * beta / window_width * prev_activations(i) 
+  //       * sum( prev_error_signal(j) * activations(j)
+  //              / scale_factor(j) )
+  // Note: See comments in fp_linearity_cpu for a definition of
+  //   scale_factor. The sum is over entries in the normalization
+  //   window.
+  ////////////////////////////////////////////////////////////////
+  
+  // Iterate through data samples in mini-batch
+#pragma omp parallel for collapse(2)
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    // Iterate through positions in sample
+    for(Int pos = 0; pos < num_per_channel; ++pos) {
+
+      // Initialize normalization window
+      Int window_start = - m_window_width / 2;
+      Int window_end = m_window_width / 2;
+      DataType window_sum = 0;
+      for(Int c = Max(window_start, 0);
+          c <= Min(window_end, m_num_channels-1);
+          ++c) {
+        const DataType x
+          = prev_activations_local.Get(pos + num_per_channel*c, sample);
+        window_sum += x * x;
+      }
+
+      // Iterate through channels at current position
+      DataType error_signal_update;
+      for(Int channel = 0; channel < m_num_channels; ++channel) {
+        const Int index = pos + num_per_channel * channel;
+
+        // Get data for current entry
+        const DataType activations_entry = activations_local.Get(index, sample);
+        const DataType prev_error_signal_entry = prev_error_signal_local.Get(index, sample);
+        const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+
+        // Update current error signal entry
+        error_signal_update = prev_error_signal_entry * Pow(scale_factor, -m_lrn_beta);
+        error_signal_local.Update(index, sample, error_signal_update);
+
+        // Update error signal entries in normalization window
+        for(Int c = Max(window_start, 0);
+            c <= Min(window_end, m_num_channels-1);
+            ++c) {
+          const Int i = pos + num_per_channel * c;
+          const DataType prev_activations_entry = prev_activations_local.Get(i, sample);
+          error_signal_update
+            = (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
+               * prev_error_signal_entry * activations_entry / scale_factor);
+          error_signal_local.Update(i, sample, error_signal_update);
+        }
+        
+        // Shift normalization window by one entry
+        if(window_start >= 0) {
+          const Int i = pos + num_per_channel*window_start;
+          const DataType x = prev_activations_local.Get(i, sample);
+          window_sum -= x * x;
+        }
+        ++window_start;
+        ++window_end;
+        if(window_end < m_num_channels) {
+          const Int i = pos + num_per_channel*window_end;
+          const DataType x = prev_activations_local.Get(i, sample);
+          window_sum += x * x;
+        }
+
+      }
+
+    }
+    
+  }
+
 }
 
 bool local_response_normalization_layer::update()

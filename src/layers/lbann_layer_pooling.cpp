@@ -462,11 +462,9 @@ void lbann::pooling_layer::fp_linearity_cpu() {
   const Int num_per_output_channel = NumNeurons / m_num_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through data samples in mini-batch
-#pragma omp parallel for
+  // Iterate through mini-batch and channels
+#pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-    // Iterate through channels
     for(Int channel = 0; channel < m_num_channels; ++channel) {
 
       // Iterate through output entries in current channel
@@ -533,7 +531,6 @@ void lbann::pooling_layer::fp_linearity_cpu() {
       }
 
     }
-
   }
 
   // weighted_sum and output are identical after fp linearity step
@@ -593,11 +590,9 @@ void lbann::pooling_layer::bp_linearity_cpu() {
   const Int num_per_output_channel = NumNeurons / m_num_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through data samples in mini-batch
-#pragma omp parallel for
+  // Iterate through mini-batch and channels
+#pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-    // Iterate through channels
     for(Int channel = 0; channel < m_num_channels; ++channel) {
 
       // Iterate through output entries in current channel
@@ -682,7 +677,6 @@ void lbann::pooling_layer::bp_linearity_cpu() {
       }
 
     }
-
   }
 
 }

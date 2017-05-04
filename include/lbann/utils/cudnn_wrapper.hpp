@@ -142,6 +142,16 @@ namespace cudnn
     /** Deallocate memory on GPUs. */
     void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
+    /** Zero out memory on GPUs. */
+    void clear_on_gpus(std::vector<DataType*>& gpu_data,
+                       Int height,
+                       Int width_per_gpu);
+    /** Zero out memory corresponding to unused columns on GPUs. */
+    void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
+                                      Int height,
+                                      Int width,
+                                      Int width_per_gpu);
+
     /** Copy data on GPUs. */
     void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
                       const std::vector<DataType*>& gpu_src_data,

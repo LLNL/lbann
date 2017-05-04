@@ -184,6 +184,47 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType*>& gp
   
 }
 
+void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType*>& gpu_data,
+                                                 Int height,
+                                                 Int width_per_gpu) {
+
+  // Clear memory on each GPU
+  for(Int i=0; i<m_num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_gpus[i]));
+    checkCUDA(cudaMemsetAsync(gpu_data[i],
+                              0,
+                              height*width_per_gpu*sizeof(DataType),
+                              m_streams[i]));
+  }
+
+}
+
+void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
+                                                                Int height,
+                                                                Int width,
+                                                                Int width_per_gpu) {
+
+  // Iterate through GPUs
+  for(Int i=0; i<m_num_gpus; ++i) {
+    checkCUDA(cudaSetDevice(m_gpus[i]));
+
+    // Find number of columns on each GPU
+    const Int first_pos = Min(i * width_per_gpu, width);
+    const Int last_pos = Min((i+1) * width_per_gpu, width);
+    const Int current_width = last_pos - first_pos;
+
+    // Set unused GPU memory to zero
+    if(current_width < width_per_gpu) {
+      checkCUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
+                                0,
+                                height*(width_per_gpu-current_width)*sizeof(DataType),
+                                m_streams[i]));
+    }
+    
+  }
+
+}
+
 void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
                                                 const std::vector<DataType*>& gpu_src_data,
                                                 Int height,
@@ -200,7 +241,6 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType*>& gpu_dst_
   }
   
 }
-
 
 void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType*>& gpu_data,
                                                    const Mat& cpu_data,
