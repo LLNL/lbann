@@ -145,7 +145,7 @@ namespace lbann
     void fp_linearity_cpu();
     /// CPU implementation of forward propagation linearity (2D case)
     /** Applies convolution directly. */
-    void fp_linearity_cpu_2d();
+    void fp_linearity_cpu_2d_direct();
     /// CPU implementation of forward propagation linearity (2D case, GEMM)
     /** Constructs convolution matrix and performs explicit matrix
      *  multiplication.
@@ -160,7 +160,7 @@ namespace lbann
     void bp_linearity_cpu();
     /// CPU implementation of backward propagation linearity (2D case)
     /** Applies convolution directly. */
-    void bp_linearity_cpu_2d();
+    void bp_linearity_cpu_2d_direct();
     /// CPU implementation of backward propagation linearity (2D case, GEMM)
     /** Constructs convolution matrix and performs explicit matrix
      *  multiplication.
