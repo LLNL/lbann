@@ -508,6 +508,14 @@ private:
     std::function<T*(Mat&, int&)> get_recv_buf,
     std::function<void(T*, Mat&)> recv_trans,
     std::function<void(T*, T*)> swap_bufs);
+
+  template <typename T>
+  void intermodel_recursive_doubling_allreduce(
+    lbann_comm* comm, Mat& mat,
+    std::function<T*(Mat&, int&)> send_trans,
+    std::function<T*(Mat&, int&)> get_recv_buf,
+    std::function<void(T*, Mat&)> recv_trans,
+    std::function<void(T*, T*)> swap_bufs);
 };
 
 }  // namespace lbann

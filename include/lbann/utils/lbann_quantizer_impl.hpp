@@ -787,6 +787,36 @@ void lbann_quantizer::intermodel_ring_allgather(
   ag_time += get_time() - ag_start;
 }
 
+template <typename T>
+void lbann_quantizer::intermodel_recursive_doubling_allreduce(
+  lbann_comm* comm, Mat& mat,
+  std::function<T*(Mat&, int&)> send_trans,
+  std::function<T*(Mat&, int&)> get_recv_buf,
+  std::function<void(T*, Mat&)> recv_trans,
+  std::function<void(T*, T*)> swap_bufs) {
+  int rank = comm->get_model_rank();
+  int nprocs = comm->get_num_models();
+  // This implementation requires a power-of-2 number of processes.
+  if (nprocs & (nprocs - 1)) {
+    // TODO: Fail.
+  }
+  unsigned int mask = 1;
+  while (mask < nprocs) {
+    int partner = rank ^ mask;
+    // Transform and get buffers.
+    int send_size, recv_size;
+    T* send_buf = send_trans(mat, send_size);
+    T* recv_buf = get_recv_buf(mat, recv_size);
+    // Send/recv.
+    comm->sendrecv(send_buf, send_size, partner, recv_buf, recv_size, partner);
+    // Transform + accumulate.
+    recv_trans(recv_buf, mat);
+    // Swap buffers.
+    swap_bufs(send_buf, recv_buf);
+    mask <<= 1;
+  }
+}
+
 }  // namespace lbann
 
 #endif  // LBANN_QUANTIZER_IMPL_HPP_INCLUDED
