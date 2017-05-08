@@ -251,7 +251,7 @@ void lbann::Layer::backProp() {
 
   // Backprop activation regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_activations();
+    regularizers[i]->bp_activations();
   }
 
   // Backprop the activation function/nonlinearity.
@@ -261,7 +261,7 @@ void lbann::Layer::backProp() {
 
   // Backprop weight regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_weights();
+    regularizers[i]->bp_weights();
   }
 
   // Backprop the layer's linearity.
@@ -271,7 +271,7 @@ void lbann::Layer::backProp() {
 
   // Backprop connection regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_connections();
+    regularizers[i]->bp_connections();
   }
 
 #ifdef __LIB_CUDNN
