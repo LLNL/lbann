@@ -282,6 +282,32 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
 #endif
 }
 
+bool lbann::image_utils::loadJPG_buf(const char* image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels)
+{
+#ifdef __LIB_OPENCV
+    cv::Mat image = cv::imread(image_buf, _LBANN_CV_COLOR_);
+    if (image.empty())
+        return false;
+
+    Width = image.cols;
+    Height = image.rows;
+
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
+            int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
+            Pixels[offset]                  = pixel[_LBANN_CV_BLUE_];
+            Pixels[offset + Height*Width]   = pixel[_LBANN_CV_GREEN_];
+            Pixels[offset + 2*Height*Width] = pixel[_LBANN_CV_RED_];
+        }
+    }
+
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels)
 {
 #ifdef __LIB_OPENCV

@@ -82,6 +82,7 @@ namespace lbann
     static bool loadPNG(const char* Imagefile, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool savePNG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels);
 
+    static bool loadJPG_buf(const char* image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool loadJPG(const char* Imagefile, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels);
 
