@@ -104,6 +104,7 @@ class cv_process {
   const std::vector<double>& alpha(void) const { return m_alpha; }
   const std::vector<double>& beta(void)  const { return m_beta; }
   bool set_normalization_params(const std::vector<double>& a, const std::vector<double>& b);
+  void init_normalization_params(void) { m_alpha.clear(); m_beta.clear(); }
 
   void set_preprocessor(const cv_preprocessor& pp) { m_preprocessor = pp; }
   const cv_preprocessor& preprocessor(void) const { return m_preprocessor; }

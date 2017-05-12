@@ -143,13 +143,10 @@ template<typename T, int NCh>
 inline bool cv_utils::preprocess_cvMat_with_full_info(cv::Mat& image, cv_process& pp)
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
-  //cv::Mat _img = image(cv::Rect(cv::Point2i(4250, 700), cv::Point2i(4500, 900)));
-  //image = _img;
 
   bool ok = true;
 
   if (ok && pp.custom_transform1().is_set()) {
-    std::cout << "custom_transform1 " << std::endl;
     ok = pp.custom_transform1().apply(image);
   }
 
@@ -160,7 +157,6 @@ inline bool cv_utils::preprocess_cvMat_with_full_info(cv::Mat& image, cv_process
   ok = pp.augment(image);
 
   if (ok && pp.custom_transform2().is_set()) {
-    std::cout << "custom_transform2 " << std::endl;
     ok = pp.custom_transform2().apply(image);
   }
 
@@ -171,14 +167,11 @@ inline bool cv_utils::preprocess_cvMat_with_full_info(cv::Mat& image, cv_process
 
   //pp.preprocessor().z_score(true);
   pp.compute_normalization_params(image);
-  for (size_t i=0u; i < pp.alpha().size(); ++i) {
-    std::cout << "scaling: " << pp.alpha()[i] << ' ' << pp.beta()[i] << std::endl;
-  }
 
   if (ok && pp.custom_transform3().is_set()) {
-    std::cout << "custom_transform3 " << std::endl;
     // normalization
     ok = pp.normalize(image);
+    pp.init_normalization_params();
     ok = pp.custom_transform3().apply(image);
   }
 
