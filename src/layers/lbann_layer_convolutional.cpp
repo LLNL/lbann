@@ -1505,15 +1505,17 @@ bool convolutional_layer::update()
 
   if(m_execution_mode == execution_mode::training) {
     // Obtain filter gradient with reduction and scaling
+    Mat& weights_gradient_local = m_weights_gradient->Matrix();
 #ifdef __LIB_CUDNN
+    const Mat& weights_gradient_per_gpu_local = m_weights_gradient_per_gpu.Matrix();
     const Int num_gpus = m_cudnn->get_num_gpus();
     if(m_using_gpus) {
       for(Int i=1; i<num_gpus; ++i) {
-        *m_weights_gradient += m_weights_gradient_per_gpu(ALL, IR(i));
+        weights_gradient_local += weights_gradient_per_gpu_local(ALL, IR(i));
       }
     }
 #endif // #ifdef __LIB_CUDNN  
-    *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+    weights_gradient_local *= DataType(1) / get_effective_minibatch_size();
     AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
   }
 
