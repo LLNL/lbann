@@ -311,6 +311,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = cv_utils::preprocess_cvMat(image, pp);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
+  pp.reset_normalization_params();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -353,6 +354,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = cv_utils::preprocess_cvMat(image, pp);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  pp.reset_normalization_params();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -403,6 +405,7 @@ bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf,
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = cv_utils::preprocess_cvMat(image, pp);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  pp.reset_normalization_params();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 

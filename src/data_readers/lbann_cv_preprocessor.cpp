@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_preprocessor .cpp .hpp - Image I/O utility functions
+// lbann_cv_preprocessor .cpp .hpp - Prerpocessing functions for images
+//                                   in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_cv_preprocessor.hpp"
@@ -46,7 +47,7 @@ bool cv_preprocessor::determine_normalization(const cv::Mat& image,
   if (image.empty()) return false;
 
   normalization_type ntype = _none;
-  if (m_scale)            set_normalization_type(ntype, _u_scale);
+  if (m_unit_scale)       set_normalization_type(ntype, _u_scale);
   if (m_mean_subtraction) set_normalization_type(ntype, _mean_sub);
   if (m_unit_variance)    set_normalization_type(ntype, _unit_var);
   if (m_z_score)          set_normalization_type(ntype, _z_score);
@@ -54,9 +55,7 @@ bool cv_preprocessor::determine_normalization(const cv::Mat& image,
   double unit_scale = 1.0;
   double largest = 1.0;
 
-  //std::cout << "normalization setup code: " << static_cast<uint32_t>(ntype) << std::endl;
-
-  if (!m_z_score && m_scale) {
+  if (!m_z_score && m_unit_scale) {
     switch(image.depth()) {
       case CV_8U:  largest = std::numeric_limits<uint8_t>::max();  break;
       case CV_8S:  largest = std::numeric_limits<int8_t>::max();   break;
@@ -123,6 +122,28 @@ bool cv_preprocessor::determine_normalization(const cv::Mat& image,
   return true;
 }
 
+/**
+ * Reverse the normalization done as x' = alpha*x + beta by
+ * x = (x'- beta)/alpha
+ */
+bool cv_preprocessor::unnormalize(cv::Mat& image,
+  const std::vector<double>& alpha, const std::vector<double>& beta) const
+{
+  const size_t NCh = alpha.size();
+  if (NCh != beta.size()) return false;
+
+  std::vector<double> alpha_reverse(NCh, 1.0);
+  std::vector<double> beta_reverse(NCh, 0.0);
+
+  for (size_t ch=0u; ch < NCh; ++ch) {
+    if (alpha[ch] == 0.0) return false;
+    alpha_reverse[ch] = 1.0/alpha[ch];
+    beta_reverse[ch] = - beta[ch]/alpha[ch];
+  }
+
+  return scale(image, alpha_reverse, beta_reverse);
+}
+
 
 bool cv_preprocessor::scale(cv::Mat& image,
   const std::vector<double>& alpha, const std::vector<double>& beta)
@@ -145,26 +166,27 @@ bool cv_preprocessor::scale(cv::Mat& image,
 bool cv_preprocessor::compute_mean_stddev(const cv::Mat& image,
   std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask)
 {
-  bool ok = true;
+  if (image.empty()) return false;
  #if 0
   cv::meanStdDev(image, mean, stddev, mask);
   mean.resize(image.channels());
   stddev.resize(image.channels());
  #else
-  if (image.empty()) return false;
+/*
   switch(image.depth()) {
-    case CV_8U:  ok = compute_mean_stddev_with_known_type<_depth_type(CV_8U) >(image, mean, stddev, mask); break;
-    case CV_8S:  ok = compute_mean_stddev_with_known_type<_depth_type(CV_8S) >(image, mean, stddev, mask); break;
-    case CV_16U: ok = compute_mean_stddev_with_known_type<_depth_type(CV_16U)>(image, mean, stddev, mask); break;
-    case CV_16S: ok = compute_mean_stddev_with_known_type<_depth_type(CV_16S)>(image, mean, stddev, mask); break;
-    case CV_32S: ok = compute_mean_stddev_with_known_type<_depth_type(CV_32S)>(image, mean, stddev, mask); break;
-    case CV_32F: ok = compute_mean_stddev_with_known_type<_depth_type(CV_32F)>(image, mean, stddev, mask); break;
-    case CV_64F: ok = compute_mean_stddev_with_known_type<_depth_type(CV_64F)>(image, mean, stddev, mask); break;
+    case CV_8U:  return compute_mean_stddev_with_known_type<_depth_type(CV_8U) >(image, mean, stddev, mask); break;
+    case CV_8S:  return compute_mean_stddev_with_known_type<_depth_type(CV_8S) >(image, mean, stddev, mask); break;
+    case CV_16U: return compute_mean_stddev_with_known_type<_depth_type(CV_16U)>(image, mean, stddev, mask); break;
+    case CV_16S: return compute_mean_stddev_with_known_type<_depth_type(CV_16S)>(image, mean, stddev, mask); break;
+    case CV_32S: return compute_mean_stddev_with_known_type<_depth_type(CV_32S)>(image, mean, stddev, mask); break;
+    case CV_32F: return compute_mean_stddev_with_known_type<_depth_type(CV_32F)>(image, mean, stddev, mask); break;
+    case CV_64F: return compute_mean_stddev_with_known_type<_depth_type(CV_64F)>(image, mean, stddev, mask); break;
   }
+*/
+  _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
+      compute_mean_stddev_with_known_type, image, mean, stddev, mask)
  #endif
-  //for (size_t ch = 0u; ch < mean.size(); ++ch)
-  //  std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
-  return (ok && (mean.size() == stddev.size()));
+  return false;
 }
 
 } // end of namespace lbann

@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_process .cpp .hpp - Image prerpocessing functions
+// lbann_cv_process .cpp .hpp - structure that defines the operations
+//                              on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_PROCESS_HPP
@@ -67,8 +68,13 @@ class cv_process {
   bool m_split;
 
   // These will be used to compute newvalue[ch] = cv::saturate_cast<T>(alpha[ch]*value[ch] + beta[ch])
-  std::vector<double> m_alpha; ///< scale parameter for linear transform
-  std::vector<double> m_beta;  ///< shift parameter for linear transform
+  std::vector<double> m_alpha; ///< scale parameter to use for linear transform
+  std::vector<double> m_beta;  ///< shift parameter to use for linear transform
+
+  /// preserves the scale parameter used for linear transform to allow reversal
+  std::vector<double> m_alpha_used;
+  /// preserves the shift parameter used for linear transform to allow reversal
+  std::vector<double> m_beta_used;
 
   /// preprocessor
   cv_preprocessor m_preprocessor;
@@ -81,8 +87,6 @@ class cv_process {
 
   /// custom transformation place holder (after normalization)
   cv_custom_transform m_transform3;
-
- public:
 
 
  public:
@@ -101,24 +105,38 @@ class cv_process {
   /// Set to split channels
   bool to_split(void) const { return m_split; }
 
-  const std::vector<double>& alpha(void) const { return m_alpha; }
-  const std::vector<double>& beta(void)  const { return m_beta; }
-  bool set_normalization_params(const std::vector<double>& a, const std::vector<double>& b);
-  void init_normalization_params(void) { m_alpha.clear(); m_beta.clear(); }
+  bool augment(cv::Mat& image) { return m_preprocessor.augment(image); }
 
-  void set_preprocessor(const cv_preprocessor& pp) { m_preprocessor = pp; }
-  const cv_preprocessor& preprocessor(void) const { return m_preprocessor; }
-  cv_preprocessor& preprocessor(void) { return m_preprocessor; }
+
+  /// Returns the channel-wise scaling parameter for normalization transform
+  const std::vector<double>& alpha(void) const { return m_alpha; }
+  /// Returns the channel-wise shifting parameter for normalization transform
+  const std::vector<double>& beta(void)  const { return m_beta; }
+
+  bool set_to_normalize(const std::vector<double>& a, const std::vector<double>& b);
+  bool set_to_unnormalize(void);
+  void reset_normalization_params(void);
+
 
   bool compute_normalization_params(const cv::Mat& image);
 
   bool compute_normalization_params(const cv::Mat& image,
       std::vector<double>& alpha, std::vector<double>& beta) const;
 
-  bool augment(cv::Mat& image) { return m_preprocessor.augment(image); }
-
   bool normalize(cv::Mat& image) const
   { return m_preprocessor.normalize(image, m_alpha, m_beta); }
+
+  bool unnormalize(cv::Mat& image) const
+  { return m_preprocessor.unnormalize(image, m_alpha_used, m_beta_used); }
+
+
+  /// Set the preprocessor member object
+  void set_preprocessor(const cv_preprocessor& pp) { m_preprocessor = pp; }
+  /// Allow read-only access to the preprocessor member object
+  const cv_preprocessor& preprocessor(void) const { return m_preprocessor; }
+  /// Allow read-write access to the preprocessor member object
+  cv_preprocessor& preprocessor(void) { return m_preprocessor; }
+
 
   void set_custom_transform1(const cv_custom_transform& tr1) { m_transform1 = tr1; }
   void set_custom_transform2(const cv_custom_transform& tr2) { m_transform2 = tr2; }

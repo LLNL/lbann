@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_preprocess .cpp .hpp - Image prerpocessing functions
+// lbann_cv_preprocessor .cpp .hpp - Prerpocessing functions for images
+//                                   in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_PREPROCESSOR_HPP
@@ -54,7 +55,7 @@ class cv_preprocessor
   /// Whether to normalize to unit variance.
   bool m_unit_variance;
   /// Whether to scale to [0, 1].
-  bool m_scale;
+  bool m_unit_scale;
   /// Whether to normalize via z-score.
   bool m_z_score;
 
@@ -69,7 +70,7 @@ class cv_preprocessor
  public:
 
   cv_preprocessor(void)
-  : m_mean_subtraction(false), m_unit_variance(false), m_scale(false), m_z_score(false) {}
+  : m_mean_subtraction(false), m_unit_variance(false), m_unit_scale(false), m_z_score(false) {}
 
   /// Enable a particular normalization method
   virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
@@ -79,7 +80,7 @@ class cv_preprocessor
   /// Whether to normalize to unit variance, per-channel and per-sample.
   void unit_variance(bool b) { m_unit_variance = b; }
   /// Whether to scale to [0, 1]
-  void unit_scale(bool b) { m_scale = b; }
+  void unit_scale(bool b) { m_unit_scale = b; }
   /// Whether to normalize by z-scores, per-channel and per-sample.
   void z_score(bool b) { m_z_score = b; }
 
@@ -93,6 +94,9 @@ class cv_preprocessor
   virtual bool normalize(cv::Mat& image,
           const std::vector<double>& alpha, const std::vector<double>& beta) const;
 
+  virtual bool unnormalize(cv::Mat& image,
+          const std::vector<double>& alpha, const std::vector<double>& beta) const;
+
 
   template<class InputIterator, class OutputIterator>
   static OutputIterator scale(InputIterator first, InputIterator last, OutputIterator result,
@@ -102,9 +106,9 @@ class cv_preprocessor
   static bool scale_with_known_type (cv::Mat& image,
               const std::vector<double>& alpha, const std::vector<double>& beta);
   /**
-    * Scale an image using a scaling parameter alpha and a shift parameter beta.
-    * The resultant image will contains channel values of LBANN's DataType.
-    */
+   * Scale an image using a scaling parameter alpha and a shift parameter beta.
+   * The resultant image will contains channel values of LBANN's DataType.
+   */
   static bool scale(cv::Mat& image,
        const std::vector<double>& alpha, const std::vector<double>& beta);
 
@@ -321,6 +325,10 @@ inline bool cv_preprocessor::compute_mean_stddev_with_known_type(const cv::Mat& 
       stddev[ch] = sqrt(sqsum[ch]/num_pixels - shifted_mean*shifted_mean);
     }
   }
+ #if 0
+  for (size_t ch = 0u; ch < NCh; ++ch)
+    std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
+ #endif
   return true;
 }
 

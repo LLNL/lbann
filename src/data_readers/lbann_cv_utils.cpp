@@ -45,6 +45,7 @@ bool cv_utils::preprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
+/*
   switch(image.depth()) {
     case CV_8U:  return preprocess_cvMat_with_known_type<_depth_type(CV_8U)>(image, pp);
     case CV_8S:  return preprocess_cvMat_with_known_type<_depth_type(CV_8S)>(image, pp);
@@ -54,6 +55,10 @@ bool cv_utils::preprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
     case CV_32F: return preprocess_cvMat_with_known_type<_depth_type(CV_32F)>(image, pp);
     case CV_64F: return preprocess_cvMat_with_known_type<_depth_type(CV_64F)>(image, pp);
   }
+*/
+  _SWITCH_CV_FUNC_2PARAMS(image.depth(), \
+                          preprocess_cvMat_with_known_type, \
+                          image, pp)
   return false;
 }
 
@@ -61,6 +66,7 @@ bool cv_utils::postprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
+/*
   switch(image.depth()) {
     case CV_8U:  return postprocess_cvMat_with_known_type<_depth_type(CV_8U)>(image, pp);
     case CV_8S:  return postprocess_cvMat_with_known_type<_depth_type(CV_8S)>(image, pp);
@@ -70,6 +76,10 @@ bool cv_utils::postprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
     case CV_32F: return postprocess_cvMat_with_known_type<_depth_type(CV_32F)>(image, pp);
     case CV_64F: return postprocess_cvMat_with_known_type<_depth_type(CV_64F)>(image, pp);
   }
+*/
+  _SWITCH_CV_FUNC_2PARAMS(image.depth(), \
+                          postprocess_cvMat_with_known_type, \
+                          image, pp)
   return false;
 }
 
@@ -77,6 +87,7 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
+/*
   switch(image.depth()) {
     case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, pp);
     case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, pp);
@@ -86,6 +97,10 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf
     case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, pp);
     case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, pp);
   }
+*/
+  _SWITCH_CV_FUNC_3PARAMS(image.depth(), \
+                          copy_cvMat_to_buf_with_known_type, \
+                          image, buf, pp)
   return false;
 }
 
@@ -99,6 +114,7 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf,
     << " are expected.", \
     cv::Mat())
 
+/*
   switch(CV_MAT_DEPTH(Type)) {
     case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
     case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, pp);
@@ -108,6 +124,11 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf,
     case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
     case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
   }
+*/
+  _SWITCH_CV_FUNC_4PARAMS(CV_MAT_DEPTH(Type), \
+                          copy_buf_to_cvMat_with_known_type, \
+                          buf, Width, Height, pp)
+
   _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
   return cv::Mat();
 }
@@ -116,6 +137,7 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_proc
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
+/*
   switch(image.depth()) {
     case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, pp);
     case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, pp);
@@ -125,12 +147,17 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_proc
     case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, pp);
     case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, pp);
   }
+*/
+  _SWITCH_CV_FUNC_3PARAMS(image.depth(), \
+                          copy_cvMat_to_buf_with_known_type, \
+                          image, buf, pp)
   return false;
 }
 
 cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
   const int Width, const int Height, const int Type, const cv_process& pp)
 {
+/*
   switch(CV_MAT_DEPTH(Type)) {
     case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
     case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, pp);
@@ -140,6 +167,11 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
     case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
     case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
   }
+*/
+  _SWITCH_CV_FUNC_4PARAMS(CV_MAT_DEPTH(Type), \
+                          copy_buf_to_cvMat_with_known_type, \
+                          buf, Width, Height, pp)
+
   _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
   return cv::Mat();
 }
