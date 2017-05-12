@@ -172,17 +172,6 @@ bool cv_preprocessor::compute_mean_stddev(const cv::Mat& image,
   mean.resize(image.channels());
   stddev.resize(image.channels());
  #else
-/*
-  switch(image.depth()) {
-    case CV_8U:  return compute_mean_stddev_with_known_type<_depth_type(CV_8U) >(image, mean, stddev, mask); break;
-    case CV_8S:  return compute_mean_stddev_with_known_type<_depth_type(CV_8S) >(image, mean, stddev, mask); break;
-    case CV_16U: return compute_mean_stddev_with_known_type<_depth_type(CV_16U)>(image, mean, stddev, mask); break;
-    case CV_16S: return compute_mean_stddev_with_known_type<_depth_type(CV_16S)>(image, mean, stddev, mask); break;
-    case CV_32S: return compute_mean_stddev_with_known_type<_depth_type(CV_32S)>(image, mean, stddev, mask); break;
-    case CV_32F: return compute_mean_stddev_with_known_type<_depth_type(CV_32F)>(image, mean, stddev, mask); break;
-    case CV_64F: return compute_mean_stddev_with_known_type<_depth_type(CV_64F)>(image, mean, stddev, mask); break;
-  }
-*/
   _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
       compute_mean_stddev_with_known_type, image, mean, stddev, mask)
  #endif

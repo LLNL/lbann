@@ -186,14 +186,6 @@ inline bool cv_utils::preprocess_cvMat_with_full_info(cv::Mat& image, cv_process
 template<typename T>
 inline bool cv_utils::preprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp)
 {
-/*
-  switch(image.channels()) {
-    case 1: return preprocess_cvMat_with_full_info<T,1>(image, pp);
-    case 2: return preprocess_cvMat_with_full_info<T,2>(image, pp);
-    case 3: return preprocess_cvMat_with_full_info<T,3>(image, pp);
-    case 4: return preprocess_cvMat_with_full_info<T,4>(image, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_2PARAMS(image.channels(), T, \
                                      preprocess_cvMat_with_full_info, \
                                      image, pp)
@@ -230,14 +222,6 @@ inline bool cv_utils::postprocess_cvMat_with_full_info(cv::Mat& image, cv_proces
 template<typename T>
 inline bool cv_utils::postprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp)
 {
-/*
-  switch(image.channels()) {
-    case 1: return postprocess_cvMat_with_full_info<T,1>(image, pp);
-    case 2: return postprocess_cvMat_with_full_info<T,2>(image, pp);
-    case 3: return postprocess_cvMat_with_full_info<T,3>(image, pp);
-    case 4: return postprocess_cvMat_with_full_info<T,4>(image, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_2PARAMS(image.channels(), T, \
                                      postprocess_cvMat_with_full_info, \
                                      image, pp)
@@ -305,14 +289,6 @@ template<typename T>
 inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
   const cv::Mat& image, std::vector<uint8_t>& buf, const cv_process& pp)
 {
-/*
-  switch(image.channels()) {
-    case 1: return copy_cvMat_to_buf_with_full_info<T,1>(image, buf, pp);
-    case 2: return copy_cvMat_to_buf_with_full_info<T,2>(image, buf, pp);
-    case 3: return copy_cvMat_to_buf_with_full_info<T,3>(image, buf, pp);
-    case 4: return copy_cvMat_to_buf_with_full_info<T,4>(image, buf, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_3PARAMS(image.channels(), T, \
                                      copy_cvMat_to_buf_with_full_info, \
                                      image, buf, pp)
@@ -392,14 +368,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
     "Size mismatch. Buffer has " << buf.size() << " items when " << sz*NCh << " are expected.", \
     cv::Mat())
 
-/*
-  switch(NCh) {
-    case 1u: return copy_buf_to_cvMat_with_full_info<T,1>(buf, Width, Height, pp);
-    case 2u: return copy_buf_to_cvMat_with_full_info<T,2>(buf, Width, Height, pp);
-    case 3u: return copy_buf_to_cvMat_with_full_info<T,3>(buf, Width, Height, pp);
-    case 4u: return copy_buf_to_cvMat_with_full_info<T,4>(buf, Width, Height, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_4PARAMS(NCh, T, \
                                      copy_buf_to_cvMat_with_full_info, \
                                      buf, Width, Height, pp);
@@ -502,14 +470,6 @@ template<typename T>
 inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
   const cv::Mat& image, ::Mat& buf, const cv_process& pp)
 {
-/*
-  switch(image.channels()) {
-    case 1: return copy_cvMat_to_buf_with_full_info<T,1>(image, buf, pp);
-    case 2: return copy_cvMat_to_buf_with_full_info<T,2>(image, buf, pp);
-    case 3: return copy_cvMat_to_buf_with_full_info<T,3>(image, buf, pp);
-    case 4: return copy_cvMat_to_buf_with_full_info<T,4>(image, buf, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_3PARAMS(image.channels(), T, \
                                      copy_cvMat_to_buf_with_full_info, \
                                      image, buf, pp)
@@ -613,14 +573,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
     << sz*NCh << " are expected.", \
     cv::Mat())
 
-/*
-  switch(NCh) {
-    case 1: return copy_buf_to_cvMat_with_full_info<T,1>(buf, Width, Height, pp);
-    case 2: return copy_buf_to_cvMat_with_full_info<T,2>(buf, Width, Height, pp);
-    case 3: return copy_buf_to_cvMat_with_full_info<T,3>(buf, Width, Height, pp);
-    case 4: return copy_buf_to_cvMat_with_full_info<T,4>(buf, Width, Height, pp);
-  }
-*/
   _SWITCH_CV_FUNC_KNOWN_TYPE_4PARAMS(NCh, T, \
                                      copy_buf_to_cvMat_with_full_info, \
                                      buf, Width, Height, pp)
