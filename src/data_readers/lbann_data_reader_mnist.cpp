@@ -80,9 +80,10 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
   int pixelcount = m_image_width * m_image_height;
   int current_batch_size = getBatchSize();
 
-  int n = 0;
+  int n = 0, s = 0;
   std::vector<float> pixels(pixelcount);
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
+  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size; n+=m_sample_stride, s++) {
+    //std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << std::endl;
     if (n >= (int)ShuffledIndices.size())
       break;
 
@@ -91,10 +92,10 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     vector<unsigned char> &tmp = m_image_data[index];
 
     for (int p = 0; p < pixelcount; p++) {
-      X.Set(p, k, tmp[p+1]);
+      X.Set(p, s, tmp[p+1]);
     }
 
-    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
+    auto pixel_col = X(IR(0, X.Height()), IR(s, s + 1));
     augment(pixel_col, m_image_height, m_image_width, 1);
     normalize(pixel_col, 1);
   }
@@ -111,16 +112,18 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
   }
 
   int current_batch_size = getBatchSize();
-  int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
+  int n = 0, s = 0;
+  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size; n+=m_sample_stride, s++) {
     if (n >= (int)ShuffledIndices.size())
       break;
+
+    //std::cout << " Target Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << std::endl;
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     unsigned char label = m_image_data[index][0];
 
-    Y.Set(label, k, 1);
+    Y.Set(label, s, 1);
   }
 
   return (n - CurrentPos);

@@ -10,8 +10,10 @@ add_sources(
   lbann_input_layer.cpp
   lbann_input_layer_distributed_minibatch.cpp
   lbann_input_layer_distributed_minibatch_parallel_io.cpp
+  lbann_input_layer_partitioned_minibatch_parallel_io.cpp
   lbann_target_layer.cpp
   lbann_target_layer_distributed_minibatch.cpp
   lbann_target_layer_distributed_minibatch_parallel_io.cpp
+  lbann_target_layer_partitioned_minibatch_parallel_io.cpp
   lbann_layer_reconstruction.cpp
 )

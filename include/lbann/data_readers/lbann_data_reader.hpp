@@ -59,7 +59,8 @@ class DataReader : public lbann_image_preprocessor
 public:
   DataReader(int batchSize, bool shuffle = true) :
     BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-    m_stride(batchSize), m_base_offset(0), m_model_offset(0), 
+    m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0), 
+    m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
     m_last_mini_batch_stride(batchSize),
@@ -207,7 +208,7 @@ public:
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  void setup(int base_offset, int stride, int model_offset = 0, lbann_comm *comm = NULL);
+  void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
   virtual int fetch_data(Mat& X) { 
@@ -279,8 +280,8 @@ protected:
   int BatchSize;
   int CurrentPos;
   int m_shuffle;
-  /// Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
-  int m_stride;
+  /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
+  int m_batch_stride;
   /// If there are multiple instances of the reader, 
   /// then it may not reset to zero
   int m_base_offset;
@@ -288,6 +289,9 @@ protected:
   /// each model's set of readers may not reset to zero
   /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
   int m_model_offset;
+  /// Sample stride is used when a mini-batch is finely interleaved across a DATA_PARALELL
+  /// distribution.
+  int m_sample_stride;
   int m_use_alt_last_mini_batch_size;
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;

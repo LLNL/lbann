@@ -52,7 +52,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
     int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
     //cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
     io_layer::setup_data_readers_for_training(base_offset,
-                                              stride,
+                                              stride, 1,
                                               model_offset);
     /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
     io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,

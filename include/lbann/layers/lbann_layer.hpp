@@ -56,7 +56,9 @@ namespace lbann
   enum class layer_type {fully_connected, softmax, convolution, pooling,
       local_response_normalization,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
+      input_partitioned_minibatch_parallel_io,
       target_distributed_minibatch, target_distributed_minibatch_parallel_io,
+      target_partitioned_minibatch_parallel_io,
       reconstruction,
       INVALID};
   static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
@@ -75,10 +77,14 @@ namespace lbann
       return "input_distributed_minibatch";
     case layer_type::input_distributed_minibatch_parallel_io:
       return "input_distributed_minibatch_parallel_io";
+    case layer_type::input_partitioned_minibatch_parallel_io:
+      return "input_partitioned_minibatch_parallel_io";
     case layer_type::target_distributed_minibatch:
       return "target_distributed_minibatch";
     case layer_type::target_distributed_minibatch_parallel_io:
       return "target_distributed_minibatch_parallel_io";
+    case layer_type::target_partitioned_minibatch_parallel_io:
+      return "target_partitioned_minibatch_parallel_io";
     case layer_type::reconstruction:
       return "reconstruction";
     case layer_type::INVALID:

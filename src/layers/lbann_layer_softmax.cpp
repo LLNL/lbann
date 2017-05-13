@@ -235,6 +235,7 @@ void lbann::SoftmaxLayer::bp_nonlinearity()
   if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
      && (m_next_layer_type == layer_type::target_distributed_minibatch
          || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
+         || m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
          // || m_next_layer_type == layer_type::target_unsupervised
          )) {
     return;
