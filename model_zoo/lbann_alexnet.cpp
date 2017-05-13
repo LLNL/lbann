@@ -132,9 +132,11 @@ int main(int argc, char* argv[])
           g_ImageNet_ValLabelFile   = "val.txt";
           g_ImageNet_TestLabelFile  = "val.txt";
         }
-        cout << "Train set label file: " << g_ImageNet_TrainLabelFile << "\n"
-             << "Validation set label file: " << g_ImageNet_ValLabelFile << "\n"
-             << "Test set label file: " << g_ImageNet_TestLabelFile << "\n";
+        if (comm->am_world_master()) {
+          cout << "Train set label file: " << g_ImageNet_TrainLabelFile << "\n"
+               << "Validation set label file: " << g_ImageNet_ValLabelFile << "\n"
+               << "Test set label file: " << g_ImageNet_TestLabelFile << "\n";
+        }
 
         // create timer for performance measurement
         Timer timer_io;
