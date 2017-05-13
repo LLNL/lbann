@@ -51,6 +51,8 @@
 #include "lbann/layers/lbann_target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
 //#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers
@@ -65,6 +67,8 @@
 #include "lbann/callbacks/lbann_callback_debug.hpp"
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
+#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/callbacks/lbann_callback_early_stopping.hpp"
 
 /// Objective functions (cost functions)
