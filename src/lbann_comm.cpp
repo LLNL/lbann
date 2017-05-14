@@ -100,6 +100,11 @@ lbann::lbann_comm::~lbann_comm() {
   mpi::Free(model_comm);
   mpi::Free(intermodel_comm);
   mpi::Free(node_comm);
+  for (auto&& buf_vec : collective_bufs) {
+    for (auto&& buf : buf_vec.second) {
+      delete[] buf;
+    }
+  }
 }
 
 void lbann::lbann_comm::intermodel_sum_matrix(Mat& mat) {
@@ -263,5 +268,29 @@ void lbann::lbann_comm::setup_node_comm() {
   int node_comm_size = mpi::Size(node_comm);
   for (int i = 0; i < node_comm_size; ++i) {
     model_ranks_on_node.push_back(mpi::Translate(node_comm, i, model_comm));
+  }
+}
+
+uint8_t* lbann::lbann_comm::get_collective_buffer(size_t size, size_t idx) {
+  auto buf_iter = collective_bufs.find(size);
+  if (buf_iter == collective_bufs.end()) {
+    if (idx != 0) {
+      // TODO: Raise exception.
+      return nullptr;
+    }
+    collective_bufs.emplace(std::make_pair(size, std::vector<uint8_t*>()));
+    collective_bufs[size].push_back(new uint8_t[size]);
+    return collective_bufs[size][0];
+  } else {
+    if (collective_bufs[size].size() > idx) {
+      return collective_bufs[size][idx];
+    } else {
+      if (collective_bufs[size].size() != idx) {
+        // TODO: Raise exception.
+        return nullptr;
+      }
+      collective_bufs[size].push_back(new uint8_t[size]);
+      return collective_bufs[size][idx];
+    }
   }
 }

@@ -30,6 +30,7 @@
 #define LBANN_COMM_HPP_INCLUDED
 
 #include <vector>
+#include <unordered_map>
 #include "lbann_base.hpp"
 using namespace El;
 
@@ -406,6 +407,173 @@ namespace lbann
     static inline bool is_sendable(const ElMat& dist_mat) {
       return is_sendable(dist_mat.LockedMatrix());
     }
+
+    // Custom allreduce implementations.
+    /**
+     * Do a custom allreduce on mat on the intermodel communicator.
+     * This selects the allreduce algorithm to use based on the size of mat.
+     * @param mat The matrix to allreduce.
+     * @param max_recv_count An upper bound on the size of data that will be
+     * received in any step; this will be the size of receive buffers used in
+     * the allreduce.
+     * @param send_transform A function that takes a range of a matrix and
+     * applies atransformation to it. The return value is a pointer to a buffer
+     * containing the transformed data, which will be sent. The int param
+     * should be filled in with the count of how many elements are in the
+     * buffer. A boolean parameter indicates whether the matrix is constant
+     * between different calls to send_transform; if true, the function may be
+     * able to take advantage of this.
+     * @param recv_transform A function that takes a pointer to a buffer and a
+     * matrix and applies a transform to the buffer, storing the result in the
+     * matrix. The buffer will be data transformed with send_transform and
+     * received from another rank. The return value is the actual count of the
+     * received data (i.e. the count that the data was sent using).
+     * @param recv_apply_transform A function like recv_transform except that
+     * the transformed data should be combined (applied, reduced) with the
+     * current data in the matrix argument.
+     */
+    template <typename T>
+    void intermodel_allreduce(
+      Mat& mat, int max_recv_count,
+      std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(T*, Mat&)> recv_transform,
+      std::function<int(T*, Mat&)> recv_apply_transform) {
+      
+    }
+
+    /**
+     * A recursive-doubling allreduce.
+     * This implementation only works for a power-of-2 number of processes.
+     */
+    template <typename T>
+    void recursive_doubling_allreduce_pow2(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(T*, Mat&)> recv_apply_transform) {
+      const int rank = mpi::Rank(comm);
+      const int nprocs = mpi::Size(comm);
+      // This implementation requires a power-of-2 number of processes.
+      if (nprocs & (nprocs - 1)) {
+        return;
+      }
+      T* recv_buf = (T*) get_collective_buffer(sizeof(T) * max_recv_count);
+      unsigned int mask = 1;
+      while (mask < nprocs) {
+        int partner = rank ^ mask;  // The rank we exchange with this step.
+        // Transform the data we want to send.
+        int send_size;
+        T* send_buf = send_transform(mat, ALL, ALL, send_size, false);
+        bytes_sent += sizeof(T) * send_size;
+        mpi::SendRecv(send_buf, send_size, partner,
+                      recv_buf, max_recv_count, partner, comm);
+        // Transform and reduce the received data.
+        int recv_size = recv_apply_transform(recv_buf, mat);
+        bytes_received += sizeof(T) * recv_size;
+        mask <<= 1;
+      }
+      delete[] recv_buf;
+    }
+
+    template <typename T>
+    void pe_ring_allreduce(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(T*, Mat&)> recv_transform,
+      std::function<int(T*, Mat&)> recv_apply_transform) {
+      const int rank = mpi::Rank(comm);
+      const int nprocs = mpi::Size(comm);
+      // Compute the number of columns each processor sends. The last processor
+      // handles the excess.
+      const Int cols_per_proc = mat.Width() / nprocs;
+      const Int cols_remainder = mat.Width() % nprocs;
+      const Int local_col_width = cols_per_proc +
+        ((rank == nprocs - 1) ? cols_remainder : 0);
+      T* recv_buf = (T*) get_collective_buffer(sizeof(T) * max_recv_count);
+      // Local slice of our accumulated data.
+      auto accum_view = mat(ALL, IR(rank * cols_per_proc,
+                                    rank * cols_per_proc + local_col_width));
+      // Do a pairwise-exchange reduce-scatter.
+      for (int step = 1; step < nprocs; ++step) {
+        // Compute where we send to/receive from.
+        int dst = (rank + step) % nprocs;
+        int src = (rank - step) % nprocs;
+        if (src < 0) src += nprocs;
+        // Determine how many columns are to be sent.
+        const int send_col_width = cols_per_proc +
+          ((dst == nprocs - 1) ? cols_remainder : 0);
+        // Transform the data we send. We do not look at the same chunk of data
+        // twice.
+        int send_size;
+        T* send_buf = send_transform(
+          mat, ALL, IR(dst*cols_per_proc, dst*cols_per_proc + send_col_width),
+          send_size, true);
+        mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
+        int recv_size = recv_apply_transform(recv_buf, accum_view);
+      }
+      // Do a ring allgather.
+      const int src = (rank == 0) ? nprocs - 1 : rank - 1;
+      const int dst = (rank + 1) % nprocs;
+      // Apply the transform to our locally-accumulated slice of the data.
+      int send_size;
+      T* send_buf = send_transform(
+        mat, ALL, IR(rank*cols_per_proc, rank*cols_per_proc + local_col_width),
+        send_size, false);
+      // Do the first step where we forward our local data.
+      {
+        int data_src = (rank - 1) % nprocs;
+        if (data_src < 0) data_src += nprocs;
+        const int recv_col_width = cols_per_proc +
+          ((data_src == nprocs - 1) ? cols_remainder : 0);
+        mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
+        auto recv_view = mat(ALL,
+                             IR(data_src*cols_per_proc,
+                                data_src*cols_per_proc + recv_col_width));
+        int recv_size = recv_transform(recv_buf, recv_view);
+        send_size = recv_size;
+      }
+      // Now do the remaining nprocs - 2 steps.
+      // We always send from recv_buf and receive to recv_buf2, swapping
+      // pointers to avoid copying.
+      T* recv_buf2 = (T*) get_collective_buffer(sizeof(T) * max_recv_count, 1);
+      for (int step = 1; step < nprocs - 1; ++step) {
+        // Compute where the data we get is coming from.
+        int data_src = (rank - step - 1) % nprocs;
+        if (data_src < 0) data_src += nprocs;
+        const int recv_col_width = cols_per_proc +
+          ((data_src == nprocs - 1) ? cols_remainder : 0);
+        auto recv_view = mat(ALL,
+                             IR(data_src*cols_per_proc,
+                                data_src*cols_per_proc + recv_col_width));
+        mpi::SendRecv(recv_buf, send_size, dst,
+                      recv_buf2, max_recv_count, src, comm);
+        int recv_size = recv_transform(recv_buf2, recv_view);
+        // Swap the send and receive buffers.
+        std::swap(recv_buf, recv_buf2);
+        send_size = recv_size;
+      }
+      delete[] recv_buf;
+      delete[] recv_buf2;
+    }
+
+    template <typename T>
+    void ring_allgather(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(T*, Mat&)> recv_transform,
+      std::function<int(T*, Mat&)> recv_apply_transform) {
+      std::function<int(T*, Mat&)> recv_apply_transform) {
+      const int rank = mpi::Rank(comm);
+      const int nprocs = mpi::Size(comm);
+      // Compute the number of columns each processor sends. The last processor
+      // handles the excess.
+      const Int cols_per_proc = mat.Width() / nprocs;
+      const Int cols_remainder = mat.Width() % nprocs;
+    }
+
+    mpi::Comm get_intermodel_comm() { return intermodel_comm; }
+
   private:
     /** Communicator for every process in this model. */
     mpi::Comm model_comm;
@@ -429,6 +597,8 @@ namespace lbann
     int rank_in_node;
     /** The list of ranks in the model_comm that are on this compute node. */
     std::vector<int> model_ranks_on_node;
+    /** Pre-allocated buffers for collectives. */
+    std::unordered_map<size_t, std::vector<uint8_t*>> collective_bufs;
     
     // Various statistics counters.
     size_t num_model_barriers;
@@ -452,6 +622,13 @@ namespace lbann
      *  avoid hash collisions, the splitting procedure is repeated
      *  with a different salt. */
     void setup_node_comm();
+
+    /**
+     * Return a buffer from collective_bufs, allocating it if needed.
+     * @param size The size of the buffer (in bytes).
+     * @param idx The index of the buffer (default 0).
+     */
+    uint8_t* get_collective_buffer(size_t size, size_t idx = 0);
     
   };
 }
