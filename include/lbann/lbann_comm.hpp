@@ -507,9 +507,11 @@ namespace lbann
         T* send_buf = send_transform(
           mat, ALL, IR(dst*cols_per_proc, dst*cols_per_proc + send_col_width),
           send_size, true);
+        bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(send_buf, send_size, dst,
                       recv_buf, max_recv_count, src, comm);
         int recv_size = recv_apply_transform(recv_buf, accum_view);
+        bytes_received += sizeof(T) * recv_size;
       }
       // Do a ring allgather.
       const int src = (rank == 0) ? nprocs - 1 : rank - 1;
@@ -525,12 +527,14 @@ namespace lbann
         if (data_src < 0) data_src += nprocs;
         const int recv_col_width = cols_per_proc +
           ((data_src == nprocs - 1) ? cols_remainder : 0);
+        bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(send_buf, send_size, dst,
                       recv_buf, max_recv_count, src, comm);
         auto recv_view = mat(ALL,
                              IR(data_src*cols_per_proc,
                                 data_src*cols_per_proc + recv_col_width));
         int recv_size = recv_transform(recv_buf, recv_view);
+        bytes_received += sizeof(T) * recv_size;
         send_size = recv_size;
       }
       // Now do the remaining nprocs - 2 steps.
@@ -546,9 +550,11 @@ namespace lbann
         auto recv_view = mat(ALL,
                              IR(data_src*cols_per_proc,
                                 data_src*cols_per_proc + recv_col_width));
+        bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(recv_buf, send_size, dst,
                       recv_buf2, max_recv_count, src, comm);
         int recv_size = recv_transform(recv_buf2, recv_view);
+        bytes_received += sizeof(T) * recv_size;
         // Swap the send and receive buffers.
         std::swap(recv_buf, recv_buf2);
         send_size = recv_size;
@@ -562,7 +568,6 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(T*, Mat&)> recv_transform,
-      std::function<int(T*, Mat&)> recv_apply_transform) {
       std::function<int(T*, Mat&)> recv_apply_transform) {
       const int rank = mpi::Rank(comm);
       const int nprocs = mpi::Size(comm);
