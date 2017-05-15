@@ -102,5 +102,81 @@ _def_cv_image_type_B_U(64, F, double)
 } // end of namespace patchworks
 } // end of namespace lbann
 
+#define _SWITCH_CV_FUNC_KNOWN_TYPE_1PARAM(_SW_CH_,_T_,_FUNC_,_P1_) \
+  switch (_SW_CH_) { \
+    case 1: return _FUNC_<_T_,1>(_P1_); \
+    case 2: return _FUNC_<_T_,2>(_P1_); \
+    case 3: return _FUNC_<_T_,3>(_P1_); \
+    case 4: return _FUNC_<_T_,4>(_P1_); \
+  }
+
+#define _SWITCH_CV_FUNC_KNOWN_TYPE_2PARAMS(_SW_CH_,_T_,_FUNC_,_P1_,_P2_) \
+  switch (_SW_CH_) { \
+    case 1: return _FUNC_<_T_,1>(_P1_,_P2_); \
+    case 2: return _FUNC_<_T_,2>(_P1_,_P2_); \
+    case 3: return _FUNC_<_T_,3>(_P1_,_P2_); \
+    case 4: return _FUNC_<_T_,4>(_P1_,_P2_); \
+  }
+
+#define _SWITCH_CV_FUNC_KNOWN_TYPE_3PARAMS(_SW_CH_,_T_,_FUNC_,_P1_,_P2_,_P3_) \
+  switch (_SW_CH_) { \
+    case 1: return _FUNC_<_T_,1>(_P1_,_P2_,_P3_); \
+    case 2: return _FUNC_<_T_,2>(_P1_,_P2_,_P3_); \
+    case 3: return _FUNC_<_T_,3>(_P1_,_P2_,_P3_); \
+    case 4: return _FUNC_<_T_,4>(_P1_,_P2_,_P3_); \
+  }
+
+#define _SWITCH_CV_FUNC_KNOWN_TYPE_4PARAMS(_SW_CH_,_T_,_FUNC_,_P1_,_P2_,_P3_,_P4_) \
+  switch (_SW_CH_) { \
+    case 1: return _FUNC_<_T_,1>(_P1_,_P2_,_P3_,_P4_); \
+    case 2: return _FUNC_<_T_,2>(_P1_,_P2_,_P3_,_P4_); \
+    case 3: return _FUNC_<_T_,3>(_P1_,_P2_,_P3_,_P4_); \
+    case 4: return _FUNC_<_T_,4>(_P1_,_P2_,_P3_,_P4_); \
+  }
+
+#define _SWITCH_CV_FUNC_1PARAM(_SW_D_,_FUNC_,_P1_) \
+  switch (_SW_D_) { \
+    case CV_8U : return _FUNC_<_depth_type(CV_8U) >(_P1_); \
+    case CV_8S : return _FUNC_<_depth_type(CV_8S) >(_P1_); \
+    case CV_16U: return _FUNC_<_depth_type(CV_16U)>(_P1_); \
+    case CV_16S: return _FUNC_<_depth_type(CV_16S)>(_P1_); \
+    case CV_32S: return _FUNC_<_depth_type(CV_32S)>(_P1_); \
+    case CV_32F: return _FUNC_<_depth_type(CV_32F)>(_P1_); \
+    case CV_64F: return _FUNC_<_depth_type(CV_64F)>(_P1_); \
+  }
+
+#define _SWITCH_CV_FUNC_2PARAMS(_SW_D_,_FUNC_,_P1_,_P2_) \
+  switch (_SW_D_) { \
+    case CV_8U : return _FUNC_<_depth_type(CV_8U) >(_P1_,_P2_); \
+    case CV_8S : return _FUNC_<_depth_type(CV_8S) >(_P1_,_P2_); \
+    case CV_16U: return _FUNC_<_depth_type(CV_16U)>(_P1_,_P2_); \
+    case CV_16S: return _FUNC_<_depth_type(CV_16S)>(_P1_,_P2_); \
+    case CV_32S: return _FUNC_<_depth_type(CV_32S)>(_P1_,_P2_); \
+    case CV_32F: return _FUNC_<_depth_type(CV_32F)>(_P1_,_P2_); \
+    case CV_64F: return _FUNC_<_depth_type(CV_64F)>(_P1_,_P2_); \
+  }
+
+#define _SWITCH_CV_FUNC_3PARAMS(_SW_D_,_FUNC_,_P1_,_P2_,_P3_) \
+  switch (_SW_D_) { \
+    case CV_8U : return _FUNC_<_depth_type(CV_8U) >(_P1_,_P2_,_P3_); \
+    case CV_8S : return _FUNC_<_depth_type(CV_8S) >(_P1_,_P2_,_P3_); \
+    case CV_16U: return _FUNC_<_depth_type(CV_16U)>(_P1_,_P2_,_P3_); \
+    case CV_16S: return _FUNC_<_depth_type(CV_16S)>(_P1_,_P2_,_P3_); \
+    case CV_32S: return _FUNC_<_depth_type(CV_32S)>(_P1_,_P2_,_P3_); \
+    case CV_32F: return _FUNC_<_depth_type(CV_32F)>(_P1_,_P2_,_P3_); \
+    case CV_64F: return _FUNC_<_depth_type(CV_64F)>(_P1_,_P2_,_P3_); \
+  }
+
+#define _SWITCH_CV_FUNC_4PARAMS(_SW_D_,_FUNC_,_P1_,_P2_,_P3_,_P4_) \
+  switch (_SW_D_) { \
+    case CV_8U : return _FUNC_<_depth_type(CV_8U) >(_P1_,_P2_,_P3_,_P4_); \
+    case CV_8S : return _FUNC_<_depth_type(CV_8S) >(_P1_,_P2_,_P3_,_P4_); \
+    case CV_16U: return _FUNC_<_depth_type(CV_16U)>(_P1_,_P2_,_P3_,_P4_); \
+    case CV_16S: return _FUNC_<_depth_type(CV_16S)>(_P1_,_P2_,_P3_,_P4_); \
+    case CV_32S: return _FUNC_<_depth_type(CV_32S)>(_P1_,_P2_,_P3_,_P4_); \
+    case CV_32F: return _FUNC_<_depth_type(CV_32F)>(_P1_,_P2_,_P3_,_P4_); \
+    case CV_64F: return _FUNC_<_depth_type(CV_64F)>(_P1_,_P2_,_P3_,_P4_); \
+  }
+
 #endif // _PATCHWORKS_OPENCV_H_INCLUDED_
 #endif // __LIB_OPENCV
