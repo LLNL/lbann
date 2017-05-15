@@ -138,7 +138,9 @@ void lbann::DataReader_ImageNet::load()
   // load image list
   FILE* fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
-    cerr << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    throw lbann_exception(err.str());
   }
 
   while (!feof(fplist)) {
