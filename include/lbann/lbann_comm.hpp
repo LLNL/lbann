@@ -521,9 +521,8 @@ namespace lbann
       // Do a pairwise-exchange reduce-scatter.
       for (int step = 1; step < nprocs; ++step) {
         // Compute where we send to/receive from.
-        int dst = (rank + step) % nprocs;
-        int src = (rank - step) % nprocs;
-        if (src < 0) src += nprocs;
+        const int dst = (rank + step) % nprocs;
+        const int src = (rank - step + nprocs) % nprocs;
         // Transform the data we send. We do not look at the same chunk of data
         // twice.
         int send_size;
@@ -537,7 +536,7 @@ namespace lbann
         bytes_received += sizeof(T) * recv_size;
       }
       // Do a ring allgather.
-      const int src = (rank == 0) ? nprocs - 1 : rank - 1;
+      const int src = (rank - 1 + nprocs) % nprocs;
       const int dst = (rank + 1) % nprocs;
       // Apply the transform to our locally-accumulated slice of the data.
       int send_size;
@@ -546,10 +545,7 @@ namespace lbann
         send_size, false);
       // Do the first step where we forward our local data.
       {
-        int data_src = (rank - 1) % nprocs;
-        if (data_src < 0) data_src += nprocs;
-        const int recv_col_width = cols_per_proc +
-          !!(data_src < cols_remainder);
+        const int data_src = (rank - 1 + nprocs) % nprocs;
         bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(send_buf, send_size, dst,
                       recv_buf, max_recv_count, src, comm);
@@ -566,8 +562,7 @@ namespace lbann
       T* recv_buf2 = (T*) get_collective_buffer(sizeof(T) * max_recv_count, 1);
       for (int step = 1; step < nprocs - 1; ++step) {
         // Compute where the data we get is coming from.
-        int data_src = (rank - step - 1) % nprocs;
-        if (data_src < 0) data_src += nprocs;
+        const int data_src = (rank - step - 1 + nprocs) % nprocs;
         auto recv_view = mat(ALL,
                              IR(slice_ends[data_src] - slice_lengths[data_src],
                                 slice_ends[data_src]));
@@ -593,8 +588,7 @@ namespace lbann
       std::function<int(T*, Mat&)> recv_apply_transform) {
       const int rank = mpi::Rank(comm);
       const int nprocs = mpi::Size(comm);
-      // Compute the number of columns each processor sends. The last processor
-      // handles the excess.
+      // Compute the number of columns each processor sends.
       const Int cols_per_proc = mat.Width() / nprocs;
       const Int cols_remainder = mat.Width() % nprocs;
       
