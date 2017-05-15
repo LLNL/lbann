@@ -438,7 +438,24 @@ namespace lbann
       std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(T*, Mat&)> recv_transform,
       std::function<int(T*, Mat&)> recv_apply_transform) {
-      
+      // If not a power-of-2, we can't use the recursive doubling.
+      const int nprocs = get_num_models();
+      if (nprocs & (nprocs - 1)) {
+        pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
+                          send_transform, recv_transform,
+                          recv_apply_transform);
+      } else {
+        // TODO: Don't hardcode this.
+        if (mat.Height() <= 64 && mat.Width() <= 64) {
+          recursive_doubling_allreduce_pow2(
+            intermodel_comm, mat, max_recv_count,
+            send_transform, recv_apply_transform);
+        } else {
+          pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
+                            send_transform, recv_transform,
+                            recv_apply_transform);
+        }
+      }
     }
 
     /**
@@ -473,6 +490,10 @@ namespace lbann
       }
     }
 
+    /**
+     * An allreduce based on a pairwise-exchange reduce-scatter followed by a
+     * ring-based allgather.
+     */
     template <typename T>
     void pe_ring_allreduce(
       mpi::Comm comm, Mat& mat, int max_recv_count,
@@ -481,30 +502,33 @@ namespace lbann
       std::function<int(T*, Mat&)> recv_apply_transform) {
       const int rank = mpi::Rank(comm);
       const int nprocs = mpi::Size(comm);
-      // Compute the number of columns each processor sends. The last processor
-      // handles the excess.
+      // Compute the number of columns each processor sends.
+      // If it doesn't divide evenly, give one extra to the earlier ranks.
       const Int cols_per_proc = mat.Width() / nprocs;
       const Int cols_remainder = mat.Width() % nprocs;
-      const Int local_col_width = cols_per_proc +
-        ((rank == nprocs - 1) ? cols_remainder : 0);
+      // Compute the lengths/ends of the slices.
+      std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+      for (int i = 0; i < cols_remainder; ++i) {
+        slice_lengths[i] += 1;
+      }
+      std::vector<Int> slice_ends(nprocs);
+      std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
+                       slice_ends.begin());
       T* recv_buf = (T*) get_collective_buffer(sizeof(T) * max_recv_count);
       // Local slice of our accumulated data.
-      auto accum_view = mat(ALL, IR(rank * cols_per_proc,
-                                    rank * cols_per_proc + local_col_width));
+      auto accum_view = mat(ALL, IR(slice_ends[rank] - slice_lengths[rank],
+                                    slice_ends[rank]));
       // Do a pairwise-exchange reduce-scatter.
       for (int step = 1; step < nprocs; ++step) {
         // Compute where we send to/receive from.
         int dst = (rank + step) % nprocs;
         int src = (rank - step) % nprocs;
         if (src < 0) src += nprocs;
-        // Determine how many columns are to be sent.
-        const int send_col_width = cols_per_proc +
-          ((dst == nprocs - 1) ? cols_remainder : 0);
         // Transform the data we send. We do not look at the same chunk of data
         // twice.
         int send_size;
         T* send_buf = send_transform(
-          mat, ALL, IR(dst*cols_per_proc, dst*cols_per_proc + send_col_width),
+          mat, ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]),
           send_size, true);
         bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(send_buf, send_size, dst,
@@ -518,20 +542,20 @@ namespace lbann
       // Apply the transform to our locally-accumulated slice of the data.
       int send_size;
       T* send_buf = send_transform(
-        mat, ALL, IR(rank*cols_per_proc, rank*cols_per_proc + local_col_width),
+        mat, ALL, IR(slice_ends[rank] - slice_lengths[rank], slice_ends[rank]),
         send_size, false);
       // Do the first step where we forward our local data.
       {
         int data_src = (rank - 1) % nprocs;
         if (data_src < 0) data_src += nprocs;
         const int recv_col_width = cols_per_proc +
-          ((data_src == nprocs - 1) ? cols_remainder : 0);
+          !!(data_src < cols_remainder);
         bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(send_buf, send_size, dst,
                       recv_buf, max_recv_count, src, comm);
         auto recv_view = mat(ALL,
-                             IR(data_src*cols_per_proc,
-                                data_src*cols_per_proc + recv_col_width));
+                             IR(slice_ends[data_src] - slice_lengths[data_src],
+                                slice_ends[data_src]));
         int recv_size = recv_transform(recv_buf, recv_view);
         bytes_received += sizeof(T) * recv_size;
         send_size = recv_size;
@@ -544,11 +568,9 @@ namespace lbann
         // Compute where the data we get is coming from.
         int data_src = (rank - step - 1) % nprocs;
         if (data_src < 0) data_src += nprocs;
-        const int recv_col_width = cols_per_proc +
-          ((data_src == nprocs - 1) ? cols_remainder : 0);
         auto recv_view = mat(ALL,
-                             IR(data_src*cols_per_proc,
-                                data_src*cols_per_proc + recv_col_width));
+                             IR(slice_ends[data_src] - slice_lengths[data_src],
+                                slice_ends[data_src]));
         bytes_sent += sizeof(T) * send_size;
         mpi::SendRecv(recv_buf, send_size, dst,
                       recv_buf2, max_recv_count, src, comm);
@@ -560,8 +582,11 @@ namespace lbann
       }
     }
 
+    /**
+     * An allreduce using ring-based reduce-scatter and allgather.
+     */
     template <typename T>
-    void ring_allgather(
+    void ring_allreduce(
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<T*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(T*, Mat&)> recv_transform,
@@ -572,9 +597,11 @@ namespace lbann
       // handles the excess.
       const Int cols_per_proc = mat.Width() / nprocs;
       const Int cols_remainder = mat.Width() % nprocs;
+      
     }
 
-    mpi::Comm get_intermodel_comm() { return intermodel_comm; }
+    /** Return the intermodel communicator. */
+    mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
 
   private:
     /** Communicator for every process in this model. */
