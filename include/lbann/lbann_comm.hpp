@@ -471,7 +471,6 @@ namespace lbann
         bytes_received += sizeof(T) * recv_size;
         mask <<= 1;
       }
-      delete[] recv_buf;
     }
 
     template <typename T>
@@ -559,8 +558,6 @@ namespace lbann
         std::swap(recv_buf, recv_buf2);
         send_size = recv_size;
       }
-      delete[] recv_buf;
-      delete[] recv_buf2;
     }
 
     template <typename T>
