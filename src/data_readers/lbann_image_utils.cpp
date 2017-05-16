@@ -427,6 +427,26 @@ bool lbann::image_utils::save_image(const std::string& filename,
  *  @param pp      The pre-processing parameters
  *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
+bool lbann::image_utils::import_image(cv::InputArray inbuf,
+  int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  bool ok = !image.empty() && pp.preprocess(image);
+  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+  return true;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+/*
 bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf,
   int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
 {
@@ -446,6 +466,7 @@ bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf,
   return false;
 #endif // __LIB_OPENCV
 }
+*/
 
 /**
  *  @param fileExt The format extension name of image file: e.g., ".jpeg", ".png" 

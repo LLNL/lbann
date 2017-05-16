@@ -100,6 +100,12 @@ bool test_image_io(const std::string filename, int sz)
     const unsigned int fsz = buf.size();
     std::cout << "file size " << fsz << std::endl;
 
+    // using a portion of the buf
+    typedef cv_image_type<uint8_t, 1> InputBuf_T;
+    size_t img_begin = 0u;
+    cv::Mat inbuf(1, fsz, InputBuf_T::T(), &(buf[img_begin]));
+
+
     int width = 0;
     int height = 0;
     int type = 0;
@@ -117,7 +123,7 @@ bool test_image_io(const std::string filename, int sz)
       Images.Resize(sz, minibatch_size); // minibatch
       View(Image_v0, Images, 0, 0, sz, 1);
       View(Image_v1, Images, 0, 1, sz, 1);
-      ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v0);
+      ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v0);
       if (width*height*CV_MAT_CN(type) != sz) {
         std::cout << "The size of image is not as expected." << std::endl;
       }
@@ -125,7 +131,7 @@ bool test_image_io(const std::string filename, int sz)
       std::cout << "We do not know the size of the image yet." << std::endl;
       const int minimal_data_len = 1;
       Images.Resize(minimal_data_len, minibatch_size); // minibatch
-      ok = lbann::image_utils::import_image(buf, width, height, type, pp, Images);
+      ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       sz = Images.Height();
       std::cout << "The size of the image discovered : " << sz << std::endl;
       View(Image_v0, Images, 0, 0, sz, 1);

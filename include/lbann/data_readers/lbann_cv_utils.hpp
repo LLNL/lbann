@@ -132,6 +132,8 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   T* Pixels = reinterpret_cast<T*>(&(buf[0]));
 
   if (pp.to_split()) {
+    // TODO: like the case with the output in El::Matrixi type, branch on whether the
+    // input channel type T is same as that of the output (especially ::DataType)
     std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
     if (trans.size() == 0u)
       trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
@@ -216,6 +218,8 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
+    // TODO: like the case with the output of El::Matrix type, branch on whether the
+    // input channel type T is same as that of the output (especially ::DataType)
     std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
     if (trans.size() == 0u)
       trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
