@@ -10,19 +10,24 @@
 
 using namespace lbann::patchworks;
 
-bool test_image_io(const std::string filename);
+bool test_image_io(const std::string filename, int sz);
 
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        std::cout << "Usage: > " << argv[0] << " image_filename" << std::endl;
+        std::cout << "Usage: > " << argv[0] << " image_filenamei [n]" << std::endl;
+        std::cout << "    n: the number of channel values in the images (i.e., width*height*num_channels)" << std::endl;
         return 0;
     }
 
     std::string filename = argv[1];
+    int sz = 0;
+    if (argc > 2) {
+      sz = atoi(argv[2]);
+    }
 
     // read write test with converting to/from a serialized buffer
-    bool ok = test_image_io(filename);
+    bool ok = test_image_io(filename, sz);
     if (!ok) {
         std::cout << "Test failed" << std::endl;
         return 0;
@@ -78,23 +83,18 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
     file.close();
 }
 
-bool test_image_io(const std::string filename)
+bool test_image_io(const std::string filename, int sz)
 {
-    // define a data matrix
-    ::Mat Images;
-    // normally the minibatch data size is known in advance.
-    // However, in this example it is not, so we resize on-demand after reading image
-    // Here, we just set some number
-    const int minimal_data_len = 1;
-    const int minibatch_size = 2;
-    Images.Resize(minimal_data_len, minibatch_size); // minibatch
+    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+    normalizer->z_score(true);
 
     lbann::cv_process pp;
+    pp.set_normalizer(std::move(normalizer));
 
     std::vector<unsigned char> buf;
     bool ok = read_file(filename, buf);
     if (!ok) {
-        std::cout << "failed to load" << std::endl;
+        std::cout << "Failed to load" << std::endl;
         return false;
     }
     const unsigned int fsz = buf.size();
@@ -103,25 +103,53 @@ bool test_image_io(const std::string filename)
     int width = 0;
     int height = 0;
     int type = 0;
-    ok = lbann::image_utils::import_image(buf, width, height, type, pp, Images);
+    const int minibatch_size = 2;
+
+    ::Mat Images; // minibatch
+    ::Mat Image_v0; // a submatrix view
+    ::Mat Image_v1; // a submatrix view
+
+    if (sz > 0) {
+      std::cout << "The size of the image is as given : " << sz << std::endl;
+      // Assuming image croping in the preprocessing pipeline, we know the size of the image,
+      // Suppose the size of the image is as give in the command line argument.
+      // Then, pass one of the views instead of whole 'Images'
+      Images.Resize(sz, minibatch_size); // minibatch
+      View(Image_v0, Images, 0, 0, sz, 1);
+      View(Image_v1, Images, 0, 1, sz, 1);
+      ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v0);
+      if (width*height*CV_MAT_CN(type) != sz) {
+        std::cout << "The size of image is not as expected." << std::endl;
+      }
+    } else {
+      std::cout << "We do not know the size of the image yet." << std::endl;
+      const int minimal_data_len = 1;
+      Images.Resize(minimal_data_len, minibatch_size); // minibatch
+      ok = lbann::image_utils::import_image(buf, width, height, type, pp, Images);
+      sz = Images.Height();
+      std::cout << "The size of the image discovered : " << sz << std::endl;
+      View(Image_v0, Images, 0, 0, sz, 1);
+      View(Image_v1, Images, 0, 1, sz, 1);
+    }
+
     if (!ok) {
-        std::cout << "failed to import" << std::endl;
+        std::cout << "Failed to import" << std::endl;
         return false;
     }
     show_image_size(width, height, type);
 
-    ::Mat ImageC0_v;
-    ::Mat ImageC1_v;
-    const int sz = Images.Height();
-    View(ImageC0_v, Images, 0, 0, sz, 1);
-    View(ImageC1_v, Images, 0, 1, sz, 1);
-    ImageC1_v = ImageC0_v;
+    Image_v1 = Image_v0;
+
+    std::cout << "Minibatch matrix size: " << Images.Height() << " x " << Images.Width() << std::endl;
+
+    pp.disable_transforms();
 
     buf.clear();
 
     // Write an image
     const std::string ext = get_file_extention(filename);
-    ok = lbann::image_utils::export_image(ext, buf, width, height, type, pp, ImageC1_v);
+    pp.determine_inverse_normalization();
+    ok = lbann::image_utils::export_image(ext, buf, width, height, type, pp, Image_v1);
     write_file("copy4." + ext, buf);
     return ok;
 }

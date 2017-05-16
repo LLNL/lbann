@@ -30,8 +30,10 @@ link_directories(${Elemental_DIR}/lib)
 link_directories(${Elemental_DIR}/lib64)
 set(Elemental_LIBS ${Elemental_LIBRARIES})
 
-file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/lbann_image_utils.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_preprocessor.cpp
+file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/utils/lbann_random.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_image_utils.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_augmenter.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_normalizer.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_cv_utils.cpp)
 
