@@ -591,7 +591,70 @@ namespace lbann
       // Compute the number of columns each processor sends.
       const Int cols_per_proc = mat.Width() / nprocs;
       const Int cols_remainder = mat.Width() % nprocs;
-      
+      // Compute the lengths/ends of the slices.
+      std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+      for (int i = 0; i < cols_remainder; ++i) {
+        slice_lengths[i] += 1;
+      }
+      std::vector<Int> slice_ends(nprocs);
+      std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
+                       slice_ends.begin());
+      T* recv_buf = (T*) get_collective_buffer(sizeof(T) * max_recv_count);
+      // Compute source/destination in the ring.
+      const int src = (rank - 1 + nprocs) % nprocs;
+      const int dst = (rank + 1) % nprocs;
+      // Do a ring-based reduce-scatter.
+      // This is like the pairwise-exchange reduce-scatter except instead of
+      // rank i accumulating only slice i, the slices are cycled around and
+      // each node accumulates its portion into the slice when it passes
+      // through. After the nprocs-1 steps slice k will be on rank
+      // (k + nprocs - 1) % nprocs.
+      for (int step = 0; step < nprocs - 1; ++step) {
+        // Compute the slices to send/recv.
+        const int send_slice = (rank - step + nprocs) % nprocs;
+        const int recv_slice = (rank - step - 1 + nprocs) % nprocs;
+        // Transform the data to send.
+        int send_size;
+        T* send_buf = send_transform(
+          mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                       slice_ends[send_slice]), send_size, false);
+        mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
+        auto recv_view = mat(
+          ALL, IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
+                  slice_ends[recv_slice]));
+        int recv_size = recv_apply_transform(recv_buf, recv_view);
+      }
+      // Do a ring allgather, first applying the transform to local data.
+      int send_size;
+      {
+        const int send_slice = (rank + 1) % nprocs;
+        const int recv_slice = rank;
+        T* send_buf = send_transform(
+          mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                       slice_ends[send_slice]), send_size, false);
+        mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
+        auto recv_view = mat(ALL,
+                             IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
+                                slice_ends[recv_slice]));
+        int recv_size = recv_transform(recv_buf, recv_view);
+        send_size = recv_size;
+      }
+      T* recv_buf2 = (T*) get_collective_buffer(sizeof(T) * max_recv_count, 1);
+      for (int step = 1; step < nprocs - 1; ++step) {
+        const int send_slice = (rank - step + 1 + nprocs) % nprocs;
+        const int recv_slice = (rank - step + nprocs) % nprocs;
+        auto recv_view = mat(ALL,
+                             IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
+                                slice_ends[recv_slice]));
+        mpi::SendRecv(recv_buf, send_size, dst,
+                      recv_buf2, max_recv_count, src, comm);
+        int recv_size = recv_transform(recv_buf2, recv_view);
+        // Swap the send and receive buffers.
+        std::swap(recv_buf, recv_buf2);
+        send_size = recv_size;
+      }
     }
 
     /** Return the intermodel communicator. */
