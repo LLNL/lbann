@@ -335,9 +335,9 @@ bool lbann::image_utils::load_image(const std::string& filename,
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = cv_utils::preprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
-  pp.reset_normalization_params();
+  pp.disable_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -355,7 +355,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
-  bool ok = !image.empty() && cv_utils::postprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
 
   _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
 
@@ -378,9 +378,12 @@ bool lbann::image_utils::load_image(const std::string& filename,
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = cv_utils::preprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  pp.reset_normalization_params();
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -406,9 +409,9 @@ bool lbann::image_utils::save_image(const std::string& filename,
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
-  bool ok = !image.empty() && cv_utils::postprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
 
-  _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
+  _LBANN_MILD_EXCEPTION(!ok, "Image postprocessing has failed.", false)
 
   return (ok && cv::imwrite(filename, image));
 #else
@@ -429,9 +432,9 @@ bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf,
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = cv_utils::preprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  pp.reset_normalization_params();
+  pp.disable_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -458,7 +461,7 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
-  bool ok = !image.empty() && cv_utils::postprocess_cvMat(image, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
 
   _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
   _LBANN_MILD_EXCEPTION(fileExt.empty(), "Empty file format extension!", false)

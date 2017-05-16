@@ -34,88 +34,124 @@
 namespace lbann
 {
 
-/**
- * Set the linear transform parameters for normalization, and let the actual
- * transform applied during copying from a cv::Mat  image to El::Matrix<DataType>
- * data to avoid reading the image twice.
- * @param _alpha The channel-wise scaling parameters for linear transform
- * @param _beta  The channel-wise shifting parameters for linear transform
- * @return Return false if the number of scaling and shifting parameters does not match.
- */
-bool cv_process::set_to_normalize(const std::vector<double>& _alpha, const std::vector<double>& _beta)
+void cv_process::disable_transforms(void)
 {
-  if (_alpha.size() != _beta.size()) return false;
-  m_alpha = _alpha;
-  m_beta = _beta;
-  return true;
+  if (m_normalizer) m_normalizer->disable();
+  if (m_augmenter) m_augmenter->disable();
+  if (m_transform1) m_transform1->disable();
+  if (m_transform2) m_transform2->disable();
+  if (m_transform3) m_transform3->disable();
 }
 
 /**
- * In case that undoing normalization is required, this call lets it occur
- * during copying from El::Matrix<DataType> data to a cv::Mat image while
- * avoiding reading the image twice.
+ * Preprocess an image.
+ * @return true if successful
  */
-bool cv_process::set_to_unnormalize(void)
+bool cv_process::preprocess(cv::Mat& image)
 {
-  if (m_alpha.size() != m_beta.size()) return false;
+  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  if ((m_alpha.size() == 0u) && (m_alpha_used.size() > 0u)) {
-    m_alpha.swap(m_alpha_used);
-    m_beta.swap(m_beta_used);
+  bool ok = true;
+
+  if (m_transform1 && m_transform1->determine_transform(image)) {
+    ok = m_transform1->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "transform1 has failed!", false);
   }
 
-  const size_t NCh = m_alpha.size();
+  if (to_flip())
+    cv::flip(image, image, how_to_flip());
 
-  std::vector<double> alpha_reverse(NCh, 1.0);
-  std::vector<double> beta_reverse(NCh, 0.0);
-
-  for (size_t ch=0u; ch < NCh; ++ch) {
-    if (m_alpha[ch] == 0.0) return false;
-    alpha_reverse[ch] = 1.0/m_alpha[ch];
-    beta_reverse[ch] = - m_beta[ch]/m_alpha[ch];
+  if (m_augmenter && m_augmenter->determine_transform(image)) {
+    ok = m_augmenter->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "augmentation has failed!", false);
   }
-  alpha_reverse.swap(m_alpha);
-  beta_reverse.swap(m_beta);
-  return true;
+
+  if (m_transform2 && m_transform2->determine_transform(image)) {
+    ok = m_transform2->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "transform2 has failed!", false);
+  }
+
+  // The place for early-normalization in case that there is something to be done
+  // after normalization. Otherwise, normalization will implicitly be applied
+  // during data copying. in which case it needs to be disabled manually after the
+  // copying. If it is explicilty applied here, the normalizer will automatically be
+  // disabled to avoid redundant transform during copying.
+
+  if (m_normalizer)
+    m_normalizer->determine_transform(image);
+
+ #if 0
+  const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
+  for (size_t i=0u; i < ntrans.size(); ++i) {
+    std::cout << "preprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
+  }
+ #endif
+
+  if (m_transform3) {
+    if (m_normalizer) {
+      ok = m_normalizer->apply(image);
+      _LBANN_MILD_EXCEPTION(!ok, "normalization has failed!", false);
+      //m_normalizer->disable();
+    }
+
+    std::cout << "custom_transform3 " << std::endl;
+    if (m_transform3->determine_transform(image)) {
+      ok = m_transform3->apply(image);
+      _LBANN_MILD_EXCEPTION(!ok, "transform3 has failed!", false);
+    }
+  }
+
+  return ok;
 }
 
 /**
- * In case that the normalization has been applied manually before copying
- * from cv::Mat data into El::Matrix<DataType>, clear the scaling parameters
- * to prevent them from being applied again during copying. In addition, store
- * the parameters used as to allow the manual reversal transform afterwards if
- * necessary.
+ * Postprocess an image.
+ * @return true if successful
  */
-void cv_process::reset_normalization_params(void)
+bool cv_process::postprocess(cv::Mat& image)
 {
-  m_alpha.swap(m_alpha_used);
-  m_beta.swap(m_beta_used);
-  m_alpha.clear();
-  m_beta.clear();
-}
+  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-/**
- * Calculates the linear transform parameters for normalization per-channel and
- * per-sample-image, save the parameters, and let the actual transform applied
- * during copying from cv::Mat data into El::Matrix<DataType> data to avoid
- * reading the image twice.
- */
-bool cv_process::compute_normalization_params(const cv::Mat& image)
-{ 
-  return m_preprocessor.determine_normalization(image, m_alpha, m_beta);
-}
+  bool ok = true;
 
-/**
- * Calculates the linear transform parameters for normalization per-channel and
- * per-sample-image, and exports the parameters via alpha and beta. This does
- * not store the result internally.
- * @param _alpha The channel-wise scaling parameters for linear transform
- * @param _beta  The channel-wise shifting parameters for linear transform
- */
-bool cv_process::compute_normalization_params(const cv::Mat& image,
-  std::vector<double>& _alpha, std::vector<double>& _beta) const
-{
-  return m_preprocessor.determine_normalization(image, _alpha, _beta);
+  if (m_transform3 && m_transform3->is_enabled()) {
+    // must have been enabled by calling determine_inverse_transform()
+    ok = m_transform3->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "inverse transform3 has failed!", false);
+  }
+
+  // Inverse the early-normalization in case that there was something
+  // (transform3) had to be done after normalization during preprocessing.
+  // Otherwise, the transform will be done during copying via scaling.
+
+  if (m_transform3) {
+    if (m_normalizer && m_normalizer->determine_inverse_transform()) {
+      ok = m_normalizer->apply(image);
+      _LBANN_MILD_EXCEPTION(!ok, "inverse normalization has failed!", false);
+    }
+  }
+
+ #if 0
+  const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
+  for (size_t i=0u; i < ntrans.size(); ++i) {
+    std::cout << "postprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
+  }
+ #endif
+
+  if (m_transform2 && m_transform2->is_enabled()) {
+    ok = m_transform2->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "inverse transform2 has failed!", false);
+  }
+
+  if (to_flip())
+    cv::flip(image, image, how_to_flip());
+
+  if (m_transform1 && m_transform1->is_enabled()) {
+    ok = m_transform1->apply(image);
+    _LBANN_MILD_EXCEPTION(!ok, "inverse transform1 has failed!", false);
+  }
+
+  return ok;
 }
 
 } // end of namespace lbann

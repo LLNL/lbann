@@ -45,24 +45,6 @@ class cv_utils
  public:
   static size_t image_data_amount(const cv::Mat& img);
 
-  // preprocess (with cv::Mat type image data)
-  template<typename T = uint8_t, int NCh = 3>
-  static bool preprocess_cvMat_with_full_info(cv::Mat& image, cv_process& pp);
-
-  template<typename T = uint8_t>
-  static bool preprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp);
-
-  static bool preprocess_cvMat(cv::Mat& image, cv_process& pp);
-
-  // postprocess (with cv::Mat type image data)
-  template<typename T = uint8_t, int NCh = 3>
-  static bool postprocess_cvMat_with_full_info(cv::Mat& image, cv_process& pp);
-
-  template<typename T = uint8_t>
-  static bool postprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp);
-
-  static bool postprocess_cvMat(cv::Mat& image, cv_process& pp);
-
 
   // copy_cvMat_to_buf (with a tempoary buffer)
   template<typename T = uint8_t, int NCh = 3>
@@ -126,109 +108,6 @@ class cv_utils
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
 };
 
-//------------------------------------------------------------------------------
-
-
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//                           preprocess (cv::Mat)
-/**
- * The preprocessing place holder function specific to a particular pixel type
- * (in terms of the channel type and the number of channels). Most of the OpenCV
- * routines handel it internally. However, custom routines that access each
- * individual pixel can find such information here. The image given as the first
- * parameter will be modified according to the processing parameters described
- * in the second parameter. If successful, it returns true.
- */
-template<typename T, int NCh>
-inline bool cv_utils::preprocess_cvMat_with_full_info(cv::Mat& image, cv_process& pp)
-{
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
-
-  bool ok = true;
-
-  if (ok && pp.custom_transform1().is_set()) {
-    ok = pp.custom_transform1().apply(image);
-  }
-
-  // place for augmentation
-  if (pp.to_flip())
-    cv::flip(image, image, pp.how_to_flip());
-
-  ok = pp.augment(image);
-
-  if (ok && pp.custom_transform2().is_set()) {
-    ok = pp.custom_transform2().apply(image);
-  }
-
-  // The place for early-normalization in case that there is something to be done
-  // after normalization. Otherwise, normalization will be done during copying
-  // via scaling. If early-normalization is done, scaling parameters should be
-  // reset to avoid normalizing again.
-
-  pp.compute_normalization_params(image);
- #if 0
-  for (size_t i=0u; i < pp.alpha().size(); ++i) {
-    std::cout << "scaling: " << pp.alpha()[i] << ' ' << pp.beta()[i] << std::endl;
-  }
- #endif
-
-  if (ok && pp.custom_transform3().is_set()) {
-    std::cout << "custom_transform3 " << std::endl;
-    // normalization
-    ok = pp.normalize(image);
-    pp.reset_normalization_params();
-    ok = pp.custom_transform3().apply(image);
-  }
-
-  return ok;
-}
-
-template<typename T>
-inline bool cv_utils::preprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp)
-{
-  _SWITCH_CV_FUNC_KNOWN_TYPE_2PARAMS(image.channels(), T, \
-                                     preprocess_cvMat_with_full_info, \
-                                     image, pp)
-  return false;
-}
-//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//                           postprocess (cv::Mat)
-/**
- * The postprocessing place holder function specific to a particular pixel type
- * (in terms of the channel type and the number of channels). Most of the OpenCV
- * routines handel it internally. However, custom routines that access each
- * individual pixel can find such information here. The image given as the first
- * parameter will be modified according to the processing parameters described
- * in the second parameter. If successful, it returns true.
- */
-template<typename T, int NCh>
-inline bool cv_utils::postprocess_cvMat_with_full_info(cv::Mat& image, cv_process& pp)
-{
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
-
-  if (pp.to_flip())
-    cv::flip(image, image, pp.how_to_flip());
- #if 0
-  for (size_t i=0u; i < pp.alpha().size(); ++i) {
-    std::cout << "scaling: " << pp.alpha()[i] << ' ' << pp.beta()[i] << std::endl;
-  }
- #endif
-  return true;
-}
-
-template<typename T>
-inline bool cv_utils::postprocess_cvMat_with_known_type(cv::Mat& image, cv_process& pp)
-{
-  _SWITCH_CV_FUNC_KNOWN_TYPE_2PARAMS(image.channels(), T, \
-                                     postprocess_cvMat_with_full_info, \
-                                     image, pp)
-  return false;
-}
-//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //                       copy_cvMat_to_buf (vector<uchar>)
@@ -253,25 +132,35 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   T* Pixels = reinterpret_cast<T*>(&(buf[0]));
 
   if (pp.to_split()) {
+    std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
+    if (trans.size() == 0u)
+      trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
+    _LBANN_MILD_EXCEPTION((trans.size() != NCh),
+                           "Incorrect number of channels in transform", false);
     std::vector<cv::Mat> channels(NCh);
+
     for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
       channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
     cv::split(image, channels);
+
     Pixels = reinterpret_cast<T*>(&(buf[0]));
-    cv_preprocessor::
-    scale(Pixels, Pixels + sz*NCh, Pixels, pp.alpha(), pp.beta());
+
+    for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
+      cv_normalizer::
+      scale(Pixels, Pixels + sz, Pixels, {trans[ch]});
+    }
   } else {
     if (image.isContinuous()) {
-      cv_preprocessor::
+      cv_normalizer::
       scale(reinterpret_cast<const T*>(image.datastart),
             reinterpret_cast<const T* const>(image.dataend),
-            Pixels, pp.alpha(), pp.beta());
+            Pixels, pp.get_transform_normalize());
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
         const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
-        cv_preprocessor::
-        scale(ptr, ptr+stride, Pixels, pp.alpha(), pp.beta());
+        cv_normalizer::
+        scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
     }
   }
@@ -327,19 +216,27 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
+    std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
+    if (trans.size() == 0u)
+      trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
+    _LBANN_MILD_EXCEPTION((trans.size() != NCh),
+                           "Incorrect number of channels in transform", cv::Mat());
     std::vector<cv::Mat> channels(NCh);
 
     for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
       channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), const_cast<T*>(Pixels));
 
     cv::merge(channels, image);
-    cv_preprocessor::
-    scale(reinterpret_cast<const T*>(image.datastart),
-          reinterpret_cast<const T* const>(image.dataend),
-          reinterpret_cast<T*>(image.data), pp.alpha(), pp.beta());
+    T* optr = reinterpret_cast<T*>(image.data);
+    for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
+      cv_normalizer::
+      scale(reinterpret_cast<const T*>(image.datastart),
+            reinterpret_cast<const T* const>(image.dataend),
+            optr, {trans[ch]});
+    }
   } else {
-    cv_preprocessor::
-    scale(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data), pp.alpha(), pp.beta());
+    cv_normalizer::
+    scale(Pixels, Pixels + sz*NCh, reinterpret_cast<T*>(image.data), pp.get_transform_normalize());
   }
 
   return image;
@@ -417,6 +314,11 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   DataType* Pixels = buf.Buffer();
 
   if (pp.to_split()) {
+    std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
+    if (trans.size() == 0u)
+      trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
+    _LBANN_MILD_EXCEPTION((trans.size() != NCh),
+                           "Incorrect number of channels in transform", false);
     std::vector<cv::Mat> channels(NCh);
 
     if (std::is_same<DataType, T>::value) {
@@ -424,34 +326,36 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
         // create a separate image per channel aliasing the memory of buf
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1), Pixels);
       }
+      Pixels = buf.Buffer();
+
       cv::split(image, channels);
 
-      Pixels = buf.Buffer();
-      cv_preprocessor::
-      scale(Pixels, Pixels + sz*NCh,
-            Pixels, pp.alpha(), pp.beta());
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
+        cv_normalizer::
+        scale(Pixels, Pixels + sz, Pixels, {trans[ch]});
+      }
     } else {
       cv::split(image, channels);
 
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
-        cv_preprocessor::
+        cv_normalizer::
         scale(reinterpret_cast<const T*>(channels[ch].datastart),
               reinterpret_cast<const T* const>(channels[ch].dataend),
-              Pixels, pp.alpha(), pp.beta());
+              Pixels, {trans[ch]});
       }
     }
   } else {
     if (image.isContinuous()) {
-      cv_preprocessor::
+      cv_normalizer::
       scale(reinterpret_cast<const T*>(image.datastart),
             reinterpret_cast<const T* const>(image.dataend),
-            Pixels, pp.alpha(), pp.beta());
+            Pixels, pp.get_transform_normalize());
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
         const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
-        cv_preprocessor::
-        scale(ptr, ptr+stride, Pixels, pp.alpha(), pp.beta());
+        cv_normalizer::
+        scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
     }
   }
@@ -509,6 +413,11 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
+    std::vector<cv_normalizer::channel_trans_t> trans = pp.get_transform_normalize();
+    if (trans.size() == 0u)
+      trans.assign(NCh, cv_normalizer::channel_trans_t(1.0, 0.0));
+    _LBANN_MILD_EXCEPTION((trans.size() != NCh),
+                           "Incorrect number of channels in transform", cv::Mat());
     std::vector<cv::Mat> channels(NCh);
 
     if (std::is_same<DataType, T>::value) {
@@ -518,26 +427,28 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
 
       cv::merge(channels, image);
 
-      cv_preprocessor::
-      scale(reinterpret_cast<const T*>(image.datastart),
-            reinterpret_cast<const T* const>(image.dataend),
-            reinterpret_cast<T*>(image.data),
-            pp.alpha(), pp.beta());
+      T* optr = reinterpret_cast<T*>(image.data);
+
+      for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
+        cv_normalizer::
+        scale(reinterpret_cast<const T*>(image.datastart),
+              reinterpret_cast<const T* const>(image.dataend),
+              optr, {trans[ch]});
+      }
     } else {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));
-        cv_preprocessor::
+        cv_normalizer::
         scale(Pixels, Pixels+sz,
-              reinterpret_cast<T*>(channels[ch].data),
-              pp.alpha(), pp.beta());
+              reinterpret_cast<T*>(channels[ch].data), {trans[ch]});
       }
       cv::merge(channels, image);
     }
   } else {
-    cv_preprocessor::
+    cv_normalizer::
     scale(Pixels, Pixels + sz*NCh,
           reinterpret_cast<T*>(image.data),
-          pp.alpha(), pp.beta());
+          pp.get_transform_normalize());
   }
 
   return image;

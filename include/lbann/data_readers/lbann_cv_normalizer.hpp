@@ -23,13 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_preprocessor .cpp .hpp - Prerpocessing functions for images
-//                                   in opencv format
+// lbann_cv_normalizer .cpp .hpp - Normalizing functions for images
+//                                 in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CV_PREPROCESSOR_HPP
-#define LBANN_CV_PREPROCESSOR_HPP
+#ifndef LBANN_CV_NORMALIZER_HPP
+#define LBANN_CV_NORMALIZER_HPP
 
+#include "lbann/data_readers/lbann_cv_transform.hpp"
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/lbann_base.hpp" // DataType
 #include "lbann/utils/lbann_mild_exception.hpp"
@@ -37,8 +38,21 @@
 #ifdef __LIB_OPENCV
 namespace lbann
 {
-
-class cv_preprocessor
+/**
+ *  Modifies the channel values of each pixel according to the chosen normalization
+ *  strategies:
+ *  - Standardize to 0 mean
+ *  - Standardize to unit variance
+ *  - Scale to the range [0, 1]
+ *  - Normalize via z-score
+ *
+ *  Combine these strategies into a single per-pixel linear transform, and
+ *  process them all at once.
+ *  It tries to replace the values in place if possible, rather
+ *  than creating a new copy of data, especially, if the channel data type of
+ *  source image is the same as that of the resultant image.
+ */
+class cv_normalizer : public cv_transform
 {
  public:
   /**
@@ -46,10 +60,10 @@ class cv_preprocessor
    * z-score method is essentially the combination of mean subtraction and unit variance
    */
   enum normalization_type {_none=0, _u_scale=1, _mean_sub=2, _unit_var=4, _z_score=6};
+  typedef std::pair<double, double> channel_trans_t;
 
  protected:
-  // Parameters for normalization
-
+  // --- Parameters for normalization ---
   /// Whether to normalize to 0 mean.
   bool m_mean_subtraction;
   /// Whether to normalize to unit variance.
@@ -59,6 +73,15 @@ class cv_preprocessor
   /// Whether to normalize via z-score.
   bool m_z_score;
 
+
+  // --- normalizing transform determined ---
+  /**
+   *  The parameter to use for linearly transforming channel values of each pixel as:
+   *  new_value[ch] = cv::saturate_cast<T>(m_trans[ch].first*value[ch] + m_trans[ch].second)
+   */
+  std::vector<channel_trans_t> m_trans;
+
+
   /// Set a normalization bit flag
   virtual normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const
   { return static_cast<normalization_type>(static_cast<uint32_t>(ntype) | static_cast<uint32_t>(flag)); }
@@ -67,13 +90,18 @@ class cv_preprocessor
   virtual normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const
   { return static_cast<normalization_type>(static_cast<uint32_t>(ntype) & static_cast<uint32_t>(flag)); }
 
- public:
-
-  cv_preprocessor(void)
-  : m_mean_subtraction(false), m_unit_variance(false), m_unit_scale(false), m_z_score(false) {}
-
   /// Enable a particular normalization method
   virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
+
+  /// Check if there is a reason to enable. (i.e., any option set)
+  virtual bool check_to_enable(void) const;
+
+ public:
+
+  cv_normalizer(void);
+
+  /// Set the parameters all at once
+  virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
 
   /// Whether to subtract the per-channel and per-sample mean.
   void subtract_mean(bool b) { m_mean_subtraction = b; }
@@ -84,33 +112,53 @@ class cv_preprocessor
   /// Whether to normalize by z-scores, per-channel and per-sample.
   void z_score(bool b) { m_z_score = b; }
 
-  // TODO: work-in-progress
-  bool augment(cv::Mat& image) { return true; }
+  /// Reset all the paramters to the default values
+  virtual void reset(void);
 
-  /// Combine the normalizations emabled and define a linear transform to address them all
-  virtual bool determine_normalization(const cv::Mat& image,
-          std::vector<double>& alpha, std::vector<double>& beta) const;
+  /// Returns the channel-wise scaling parameter for normalization transform
+  std::vector<channel_trans_t> transform(void) const {
+    return (m_enabled? m_trans : std::vector<channel_trans_t>());
+  }
 
-  virtual bool normalize(cv::Mat& image,
-          const std::vector<double>& alpha, const std::vector<double>& beta) const;
+  /**
+   * Combine the normalizations enabled and define a linear transform 
+   * per pixel to address them all. If successful, the tranform is enabled.
+   * If not, it is disabled.
+   * @return false if not enabled or unsuccessful.
+   */
+  virtual bool determine_transform(const cv::Mat& image);
 
-  virtual bool unnormalize(cv::Mat& image,
-          const std::vector<double>& alpha, const std::vector<double>& beta) const;
+  /**
+   * Apply the normalization defined as a linear tranform per pixel.
+   * As this method is executed, the transform becomes deactivated.
+   * @return false if not successful.
+   */
+  virtual bool apply(cv::Mat& image);
 
+  /// Set a pre-determined normalization transform.
+  void set_transform(const std::vector<channel_trans_t>& t);
+  /**
+   * Reverse the normalization done as x' = alpha*x + beta by
+   * x = (x'- beta)/alpha
+   * If successful, the tranform is enabled. If not, it is disabled.
+   * @return false if not enabled or unsuccessful.
+   */
+  bool determine_inverse_transform(void);
 
+  // utilities
   template<class InputIterator, class OutputIterator>
   static OutputIterator scale(InputIterator first, InputIterator last, OutputIterator result,
-                        const std::vector<double>& alpha, const std::vector<double>& beta);
+                        const std::vector<channel_trans_t> trans);
 
   template<typename Tsrc, typename Tdst>
-  static bool scale_with_known_type (cv::Mat& image,
-              const std::vector<double>& alpha, const std::vector<double>& beta);
+  static bool scale_with_known_type(cv::Mat& image, const std::vector<channel_trans_t>& trans);
+
   /**
-   * Scale an image using a scaling parameter alpha and a shift parameter beta.
-   * The resultant image will contains channel values of LBANN's DataType.
+   * Scale an image using a set of parameters for linearly transforming channel
+   * values per pixel.
+   * The resultant image will contain channel values of LBANN's DataType.
    */
-  static bool scale(cv::Mat& image,
-       const std::vector<double>& alpha, const std::vector<double>& beta);
+  static bool scale(cv::Mat& image, const std::vector<channel_trans_t>& trans);
 
 
   template<typename T>
@@ -123,38 +171,29 @@ class cv_preprocessor
 };
 
 
-inline bool cv_preprocessor::normalize(cv::Mat& image,
-  const std::vector<double>& alpha, const std::vector<double>& beta) const
-{
-  return scale(image, alpha, beta);
-}
-
-
 /**
- * Transform linearly while copying data from one sequential container to another
+ * Linearly transform each value while copying it from one sequential container
+ * to another, which may be the same container if the type of the initial value
+ * and that of the result are the same.
  * The transformation is alpha[ch]*input[ch] + beta[ch] -> output[ch]
  * @param first  The beginning of the input interator
  * @param last   The last of the input iterator
  * @param result The beginning of the output iterator
- * @param alpha  per-channel scaling parameter for linear transform
- * @param beta   per-channel shifting parameter for linear transform
+ * @param trans  Parameters for linearly transforming channel values per pixel
  * @return the last of output iterator
  */
 template<class InputIterator, class OutputIterator>
-inline OutputIterator cv_preprocessor::scale(
+inline OutputIterator cv_normalizer::scale(
   InputIterator first, InputIterator last, OutputIterator result,
-  const std::vector<double>& alpha, const std::vector<double>& beta)
+  const std::vector<channel_trans_t> trans)
 {
-  _LBANN_MILD_EXCEPTION(alpha.size() != beta.size(), \
-                        "Inconsistent scaling parameters.", result)
-
-  const size_t NCh = alpha.size();
+  const size_t NCh = trans.size();
   bool trivial_alpha = true;
   bool trivial_beta = true;
 
   for (size_t ch=0u; ch < NCh; ++ch) {
-    trivial_alpha = trivial_alpha && (alpha[ch] == 1.0);
-    trivial_beta  = trivial_beta  && (beta[ch] == 0.0);
+    trivial_alpha = trivial_alpha && (trans[ch].first  == 1.0);
+    trivial_beta  = trivial_beta  && (trans[ch].second == 0.0);
   }
 
   if (trivial_alpha && trivial_beta) {
@@ -172,11 +211,10 @@ inline OutputIterator cv_preprocessor::scale(
 
   typedef typename std::iterator_traits<OutputIterator>::value_type T;
 
-  // At this point NCh should not be zero because alpha.size() == beta.size()
-  // and both are not trivial.
+  // At this point NCh should not be zero because both alpha and beta are not trivial.
   if (NCh == 1) {
-    const double a = alpha[0];
-    const double b = beta[0];
+    const double a = trans[0].first;
+    const double b = trans[0].second;
 
     while (first != last) {
       *result = cv::saturate_cast<T>(a * (*first) + b);
@@ -186,7 +224,7 @@ inline OutputIterator cv_preprocessor::scale(
     size_t ch = 0u;
 
     while (first != last) {
-      *result = cv::saturate_cast<T>(alpha[ch] * (*first) + beta[ch]);
+      *result = cv::saturate_cast<T>(trans[ch].first * (*first) + trans[ch].second);
       ++result; ++first; ++ch;
       ch = (ch % NCh);
     }
@@ -197,25 +235,22 @@ inline OutputIterator cv_preprocessor::scale(
 
 /**
  * Linear transform image pixels by scaling parameters given for each channel
- * The transformation is alpha[ch]*input[ch] + beta[ch] -> output[ch].
+ * The transformation is trans[ch].first*input[ch] + trans[ch].second -> output[ch].
  * The first template parameter is the channel value type of the input image.
  * The second one is the channel value type desired for the output image.
  *
  * @param image  The image to be modified, which is the input and also the ouput.
- * @param alpha  per-channel scaling parameter for linear transform
- * @param beta   per-channel shifting parameter for linear transform
+ * @param trans  Parameters for linearly transforming channel values per pixel
  * @return true if successful. The input image will be modified to a new one.
  */
 template<typename Tsrc, typename Tdst>
-inline bool cv_preprocessor::scale_with_known_type(cv::Mat& image,
-  const std::vector<double>& alpha, const std::vector<double>& beta)
+inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
+  const std::vector<channel_trans_t>& trans)
 {
   const unsigned int Width  = static_cast<unsigned int>(image.cols);
   const unsigned int Height = static_cast<unsigned int>(image.rows);
   const unsigned int NCh    = static_cast<unsigned int>(image.channels());
-  if (((alpha.size() > 0u) && (alpha.size() != NCh)) ||
-      ((beta.size() > 0u) && (beta.size() != NCh)))
-    return false;
+  if ((trans.size() > 0u) && (trans.size() != NCh)) return false;
 
   
   // overwrite the storage of the source image if the source and the result have
@@ -225,13 +260,13 @@ inline bool cv_preprocessor::scale_with_known_type(cv::Mat& image,
     if (image.isContinuous()) {
       scale(reinterpret_cast<const Tsrc*>(image.datastart),
             reinterpret_cast<const Tsrc*>(image.dataend),
-            reinterpret_cast<Tsrc*>(image.data), alpha, beta);
+            reinterpret_cast<Tsrc*>(image.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
       for (unsigned int i = 0u; i < Height; ++i) {
         Tsrc* optr = reinterpret_cast<Tsrc*>(image.ptr<Tsrc>(i));
         const Tsrc* iptr = optr;
-        scale(iptr, iptr+stride, optr, alpha, beta);
+        scale(iptr, iptr+stride, optr, trans);
       }
     }
   } else {
@@ -240,13 +275,13 @@ inline bool cv_preprocessor::scale_with_known_type(cv::Mat& image,
     if (image.isContinuous()) {
       scale(reinterpret_cast<const Tsrc*>(image.datastart),
             reinterpret_cast<const Tsrc*>(image.dataend),
-            reinterpret_cast<Tdst*>(image_out.data), alpha, beta);
+            reinterpret_cast<Tdst*>(image_out.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
       Tdst* ptr_out = reinterpret_cast<Tdst*>(image_out.data);
       for (unsigned int i = 0u; i < Height; ++i, ptr_out += stride) {
         const Tsrc* ptr = reinterpret_cast<Tsrc*>(image.ptr<Tsrc>(i));
-        scale(ptr, ptr+stride, ptr_out, alpha, beta);
+        scale(ptr, ptr+stride, ptr_out, trans);
       }
     }
     image = image_out;
@@ -260,7 +295,7 @@ inline bool cv_preprocessor::scale_with_known_type(cv::Mat& image,
  * for a sample image of channel value type T
  */
 template<typename T>
-inline bool cv_preprocessor::compute_mean_stddev_with_known_type(const cv::Mat& image,
+inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& image,
   std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask)
 {
   mean.clear();
@@ -335,4 +370,4 @@ inline bool cv_preprocessor::compute_mean_stddev_with_known_type(const cv::Mat& 
 } // end of namespace lbann
 #endif // __LIB_OPENCV
 
-#endif // LBANN_CV_PREPROCESSOR_HPP
+#endif // LBANN_CV_NORMALIZER_HPP

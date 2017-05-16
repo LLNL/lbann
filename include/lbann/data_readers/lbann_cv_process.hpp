@@ -31,126 +31,152 @@
 #define LBANN_CV_PROCESS_HPP
 
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_preprocessor.hpp"
+#include "lbann/data_readers/lbann_cv_normalizer.hpp"
+#include "lbann/data_readers/lbann_cv_augmenter.hpp"
+#include <memory>
 
 #ifdef __LIB_OPENCV
 namespace lbann
 {
 
-class cv_custom_transform
-{ // TODO: separate out to a new file
- protected:
-  bool m_is_set;
-
- public:
-  cv_custom_transform(void) : m_is_set(false) {}
-  virtual ~cv_custom_transform(void) {}
-  virtual bool apply(cv::Mat& image) const {
-    if (!m_is_set) return false;
-    return true;
-  }
-  virtual void set(void) { m_is_set = true; }
-  virtual bool is_set(void) const { return m_is_set; }
-};
-
 /** A structure packs the parameters for image pre-/post-processing that takes
  *  advantage of the OpenCV framework.
  */
 class cv_process {
- public:
   /// OpenCV flip codes: c<0 for top_left <-> bottom_right, c=0 for top<->down, and c>0 for left<->right
-  enum flipping {_both_axes_=-1, _vertical_=0, _horizontal_=1, _none_=2};
 
  protected:
   /// Whether to flip an image
-  flipping m_flip;
+  cv_transform::cv_flipping m_flip;
   /// Whether to split channels
   bool m_split;
 
-  // These will be used to compute newvalue[ch] = cv::saturate_cast<T>(alpha[ch]*value[ch] + beta[ch])
-  std::vector<double> m_alpha; ///< scale parameter to use for linear transform
-  std::vector<double> m_beta;  ///< shift parameter to use for linear transform
-
-  /// preserves the scale parameter used for linear transform to allow reversal
-  std::vector<double> m_alpha_used;
-  /// preserves the shift parameter used for linear transform to allow reversal
-  std::vector<double> m_beta_used;
-
-  /// preprocessor
-  cv_preprocessor m_preprocessor;
+  // preprocessors: normalizer and augmenter
+  std::unique_ptr<cv_normalizer> m_normalizer;
+  std::unique_ptr<cv_augmenter> m_augmenter;
   
   /// custom transformation place holder (before augmentation)
-  cv_custom_transform m_transform1;
+  std::unique_ptr<cv_transform> m_transform1;
 
   /// custom transformation place holder (after augmentation and before normalization)
-  cv_custom_transform m_transform2;
+  std::unique_ptr<cv_transform> m_transform2;
 
   /// custom transformation place holder (after normalization)
-  cv_custom_transform m_transform3;
+  std::unique_ptr<cv_transform> m_transform3;
 
 
  public:
   cv_process(void)
-  : m_flip(_none_), m_split(true) {}
+  : m_flip(cv_transform::_no_flip_), m_split(true) {}
 
-  cv_process(const flipping flip_code, const bool tosplit)
+  cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
   : m_flip(flip_code), m_split(tosplit) {}
 
   /// Check whether to flip
-  bool to_flip(void) const { return (m_flip != _none_); }
+  bool to_flip(void) const { return (m_flip != cv_transform::_no_flip_); }
   /// Tell how to flip
   int how_to_flip(void) const { return static_cast<int>(m_flip); }
-  /// Set the flipping behavior
-  void set_to_flip(flipping f) { m_flip = f; }
+  /**
+   *  Set the flipping behavior. This is to deal with custom image format, and not
+   *  to substitute for random flipping in augmentation
+   */
+  void set_to_flip(cv_transform::cv_flipping f) { m_flip = f; }
   /// Set to split channels
   bool to_split(void) const { return m_split; }
 
-  bool augment(cv::Mat& image) { return m_preprocessor.augment(image); }
 
+  std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(void) const;
+  std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(const unsigned int ch) const;
 
-  /// Returns the channel-wise scaling parameter for normalization transform
-  const std::vector<double>& alpha(void) const { return m_alpha; }
-  /// Returns the channel-wise shifting parameter for normalization transform
-  const std::vector<double>& beta(void)  const { return m_beta; }
+  void disable_normalizer(void) {
+    if (m_normalizer) m_normalizer->disable();
+  }
+  void determine_inverse_normalization(void);
+  /**
+   * Call this after preprocessing and image loading to deactivate all the transforms.
+   * Then, selectively enable those which require inverse transforms by calling
+   * determine_inverse_transform()
+   */
+  void disable_transforms(void);
 
-  bool set_to_normalize(const std::vector<double>& a, const std::vector<double>& b);
-  bool set_to_unnormalize(void);
-  void reset_normalization_params(void);
+  /// Set the normalization processor
+  void set_normalizer(std::unique_ptr<cv_normalizer> np) { m_normalizer = std::move(np); }
+  /// Set the augmentation processor
+  void set_augmenter(std::unique_ptr<cv_augmenter> ap) { m_augmenter = std::move(ap); }
+  /// Set the custom transform 1 (comes before the augmentation)
+  void set_custom_transform1(std::unique_ptr<cv_transform> tr1) { m_transform1 = std::move(tr1); }
+  /// Set the custom transform 2 (comes after the augmentation and before the normalization)
+  void set_custom_transform2(std::unique_ptr<cv_transform> tr2) { m_transform2 = std::move(tr2); }
+  /// Set the custom transform 3 (comes after the normalization)
+  void set_custom_transform3(std::unique_ptr<cv_transform> tr3) { m_transform3 = std::move(tr3); }
 
+  /// Check if the normalizer has been set
+  bool is_set_normalizer(void) const { return !!m_normalizer; }
+  /// Check if the augmenter has been set
+  bool is_set_augmenter(void) const { return !!m_augmenter; }
+  /// Check if the custom transform 1 has been set
+  bool is_set_custom_transform1(void) const { return !!m_transform1; }
+  /// Check if the custom transform 2 has been set
+  bool is_set_custom_transform2(void) const { return !!m_transform2; }
+  /// Check if the custom transform 3 has been set
+  bool is_set_custom_transform3(void) const { return !!m_transform3; }
 
-  bool compute_normalization_params(const cv::Mat& image);
+  /// Allow read-only access to the normalization processor
+  const cv_normalizer* normalizer(void) const { return m_normalizer.get(); }
+  /// Allow read-only access to the augmentation processor
+  const cv_augmenter* augmenter(void) const { return m_augmenter.get(); }
+  /// Allow read-only access to the first custom transform 
+  const cv_transform* custom_transform1(void) const { return m_transform1.get(); }
+  /// Allow read-only access to the second custom transform 
+  const cv_transform* custom_transform2(void) const { return m_transform2.get(); }
+  /// Allow read-only access to the third custom transform 
+  const cv_transform* custom_transform3(void) const { return m_transform3.get(); }
 
-  bool compute_normalization_params(const cv::Mat& image,
-      std::vector<double>& alpha, std::vector<double>& beta) const;
+  /// Allow read-write access to the normalization processor
+  cv_normalizer* normalizer(void) { return m_normalizer.get(); }
+  /// Allow read-write access to the augmentation processor
+  cv_augmenter* augmenter(void) { return m_augmenter.get(); }
+  /// Allow read-write access to the first custom transform
+  cv_transform* custom_transform1(void) { return m_transform1.get(); }
+  /// Allow read-write access to the second custom transform
+  cv_transform* custom_transform2(void) { return m_transform2.get(); }
+  /// Allow read-write access to the third custom transform
+  cv_transform* custom_transform3(void) { return m_transform3.get(); }
 
-  bool normalize(cv::Mat& image) const
-  { return m_preprocessor.normalize(image, m_alpha, m_beta); }
-
-  bool unnormalize(cv::Mat& image) const
-  { return m_preprocessor.unnormalize(image, m_alpha_used, m_beta_used); }
-
-
-  /// Set the preprocessor member object
-  void set_preprocessor(const cv_preprocessor& pp) { m_preprocessor = pp; }
-  /// Allow read-only access to the preprocessor member object
-  const cv_preprocessor& preprocessor(void) const { return m_preprocessor; }
-  /// Allow read-write access to the preprocessor member object
-  cv_preprocessor& preprocessor(void) { return m_preprocessor; }
-
-
-  void set_custom_transform1(const cv_custom_transform& tr1) { m_transform1 = tr1; }
-  void set_custom_transform2(const cv_custom_transform& tr2) { m_transform2 = tr2; }
-  void set_custom_transform3(const cv_custom_transform& tr3) { m_transform3 = tr3; }
-
-  cv_custom_transform& custom_transform1(void) { return m_transform1; }
-  const cv_custom_transform& custom_transform1(void) const { return m_transform1; }
-
-  cv_custom_transform& custom_transform2(void) { return m_transform2; }
-  const cv_custom_transform& custom_transform2(void) const { return m_transform2; }
-
-  cv_custom_transform& custom_transform3(void) { return m_transform3; }
-  const cv_custom_transform& custom_transform3(void) const { return m_transform3; }
+  bool preprocess(cv::Mat& image);
+  bool postprocess(cv::Mat& image);
 };
+
+/**
+ * Call this after preprocessing and image loading but before image saving and
+ * postprocessing if inverse normalization is needed (e.g. to save image).
+ * Unless transform3 exists, normalization is done while copying data from
+ * El::Matrix<DataType> to cv::Mat format. Otherwise, it will be done during
+ * postprocessing after potentially inversing transform3.
+ */
+inline void cv_process::determine_inverse_normalization(void)
+{
+  if (!m_normalizer) return;
+
+  if (m_transform3) {
+    m_normalizer->disable();
+  } else
+    m_normalizer->determine_inverse_transform();
+}
+
+inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(void) const {
+  return (m_normalizer? m_normalizer->transform() : 
+                        std::vector<cv_normalizer::channel_trans_t>());
+}
+
+inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(const unsigned int ch) const {
+  std::vector<cv_normalizer::channel_trans_t> trans;
+  if (m_normalizer) trans = m_normalizer->transform();
+
+  return ((trans.size() > ch) ?
+           std::vector<cv_normalizer::channel_trans_t>(1, trans[ch]) : 
+           std::vector<cv_normalizer::channel_trans_t>(1, cv_normalizer::channel_trans_t(1.0, 0.0)));
+}
 
 } // end of namespace lbann
 #endif // __LIB_OPENCV

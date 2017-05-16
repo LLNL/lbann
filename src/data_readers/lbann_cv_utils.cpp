@@ -33,6 +33,10 @@
 namespace lbann
 {
 
+/** The mathematical constant (this is the way to get it in C++). */
+const float cv_transform::pi = static_cast<float>(std::acos(-1));
+
+
 /// returns the number of bytes that would be used for the image without compresstion and any header
 size_t cv_utils::image_data_amount(const cv::Mat& img)
 {
@@ -41,25 +45,6 @@ size_t cv_utils::image_data_amount(const cv::Mat& img)
                             img.cols*img.rows);
 }
 
-bool cv_utils::preprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
-{
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
-
-  _SWITCH_CV_FUNC_2PARAMS(image.depth(), \
-                          preprocess_cvMat_with_known_type, \
-                          image, pp)
-  return false;
-}
-
-bool cv_utils::postprocess_cvMat(cv::Mat& image, lbann::cv_process& pp)
-{
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
-
-  _SWITCH_CV_FUNC_2PARAMS(image.depth(), \
-                          postprocess_cvMat_with_known_type, \
-                          image, pp)
-  return false;
-}
 
 bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const cv_process& pp)
 {
@@ -70,6 +55,7 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf
                           image, buf, pp)
   return false;
 }
+
 
 cv::Mat cv_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf,
   const int Width, const int Height, const int Type, const cv_process& pp)
@@ -89,6 +75,7 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf,
   return cv::Mat();
 }
 
+
 bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_process& pp)
 {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
@@ -98,6 +85,7 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_proc
                           image, buf, pp)
   return false;
 }
+
 
 cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
   const int Width, const int Height, const int Type, const cv_process& pp)
