@@ -26,43 +26,30 @@
 // lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
 #include <fstream>
 using namespace std;
 using namespace El;
 
-lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+lbann::DataReader_ImageNetSingle::DataReader_ImageNetSingle(int batchSize, bool shuffle)
+  : DataReader_ImageNet(batchSize, shuffle) 
 {
-  m_image_width = 256;
-  m_image_height = 256;
-  m_image_num_channels = 3;
-  m_num_labels = 1000;
-
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
+  m_pixels.resize(m_image_width * m_image_height * m_image_num_channels);
 }
 
-lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
-  : DataReader((const DataReader&) source),
-    m_image_dir(source.m_image_dir),
-    ImageList(source.ImageList),
-    m_image_width(source.m_image_width),
-    m_image_height(source.m_image_height),
-    m_image_num_channels(source.m_image_num_channels),
-    m_num_labels(source.m_num_labels)
+lbann::DataReader_ImageNetSingle::DataReader_ImageNetSingle(const DataReader_ImageNetSingle& source)
+  : DataReader_ImageNet(source) {}
+
+
+lbann::DataReader_ImageNetSingle::~DataReader_ImageNetSingle() 
 {
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
+  m_data_filestream.close();
 }
 
-lbann::DataReader_ImageNet::~DataReader_ImageNet()
-{
-  delete [] m_pixels;
-}
-
-int lbann::DataReader_ImageNet::fetch_data(Mat& X)
+#if 0
+int lbann::DataReader_ImageNetSingle::fetch_data(Mat& X)
 {
   if(!DataReader::position_valid()) {
     stringstream err;
@@ -103,9 +90,12 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
 
   return end_pos - CurrentPos;
 }
+#endif
 
-int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
+int lbann::DataReader_ImageNetSingle::fetch_label(Mat& Y)
 {
+//@todo only one line if different from ImageNet: 
+//label = ... should be refactored to eliminate duplicate code
   if(!position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
@@ -120,81 +110,67 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
-    int label = ImageList[index].second;
+    int label = m_offsets[index].second;
 
     Y.Set(label, k, 1);
   }
   return (n - CurrentPos);
 }
 
-void lbann::DataReader_ImageNet::load()
+void lbann::DataReader_ImageNetSingle::load()
 {
-  string imageDir = get_file_dir();
-  string imageListFile = get_data_filename();
+  string image_dir = get_file_dir();
+  string base_filename = get_data_filename();
 
-  m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
-  ImageList.clear();
-
-  // load image list
-  FILE* fplist = fopen(imageListFile.c_str(), "rt");
-  if (!fplist) {
+  stringstream b;
+  b << image_dir << "/" << base_filename << "_offsets.txt";
+  ifstream in(b.str().c_str());
+  if (not in.is_open() and in.good()) {
     stringstream err;
-    err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    err << __FILE__ << " " << __LINE__
+        << " ::  failed to open " << b.str() << " for reading";
     throw lbann_exception(err.str());
   }
 
-  while (!feof(fplist)) {
-    char imagepath[512];
-    int imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
-      break;
-    ImageList.push_back(make_pair(imagepath, imagelabel));
+  size_t n;
+  in >> n;
+  m_offsets.reserve(n);
+  m_offsets.push_back(make_pair(0,0));
+  size_t offset;
+  int label;
+  while (in >> offset >> label) {
+    m_offsets.push_back(make_pair(offset + m_offsets.back().first + 1, label));
   }
-  fclose(fplist);
+  
+  if (n != m_offsets.size()) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " ::  we read " << m_offsets.size() << " offsets, but should have read " << n;
+    throw lbann_exception(err.str());
+  }
+  in.close();
 
-  // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(ImageList.size());
-  for (size_t n = 0; n < ImageList.size(); n++) {
+  b.clear();
+  b.str("");
+  b << image_dir << "/" << base_filename << "_data.bin";
+  m_data_filestream.open(b.str().c_str(), ios::in | ios::binary);
+  if (not m_data_filestream.is_open() and m_data_filestream.good()) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " ::  failed to open " << b.str() << " for reading";
+    throw lbann_exception(err.str());
+  }
+
+  ShuffledIndices.resize(m_offsets.size());
+  for (size_t n = 0; n < m_offsets.size(); n++) {
     ShuffledIndices[n] = n;
   }
 
   select_subset_of_data();
 }
 
-void lbann::DataReader_ImageNet::free()
-{
-  delete [] m_pixels;
-}
 
-// Assignment operator
-lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataReader_ImageNet& source)
-{
-  // check for self-assignment
-  if (this == &source)
-    return *this;
-
-  // Call the parent operator= function
-  DataReader::operator=(source);
-
-  // first we need to deallocate any data that this data reader is holding!
-  delete [] m_pixels;
-
-  this->m_image_dir = source.m_image_dir;
-  this->ImageList = source.ImageList;
-  this->m_image_width = source.m_image_width;
-  this->m_image_height = source.m_image_height;
-  this->m_image_num_channels = source.m_image_num_channels;
-  this->m_num_labels = source.m_num_labels;
-
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
-
-  return *this;
-}
-
-
-int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process)
+int lbann::DataReader_ImageNetSingle::fetch_data(Mat &X)
 {
   stringstream err;
 
@@ -203,28 +179,49 @@ int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char
     throw lbann_exception(err.str());
   }
 
-  size_t num_to_process = max_to_process > 0 ? max_to_process : ImageList.size();
-
-  data.clear();
-  data.reserve(num_to_process);
-
-  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  vector<unsigned char> pixels(num_channel_values);
-  unsigned char *v = &(pixels[0]);
-
   int width, height;
-  for (size_t n = 0; n < num_to_process; n++) {
-    string imagepath = m_image_dir + ImageList[n].first;
-    if (n < 10) cout << "DataReader_ImageNet::fetch_data(); loading: " << imagepath << endl;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, v);
+  int current_batch_size = getBatchSize();
+  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+  for (int n = CurrentPos; n < end_pos; ++n) {
+    int k = n - CurrentPos;
+    int idx = ShuffledIndices[n];
+    int start = m_offsets[idx].first;
+    int end = m_offsets[idx+1].first;
+    int ssz = end - start;
+    if (ssz > m_work_buffer.size()) {
+      m_work_buffer.resize(ssz);
+    }
+    char *w = &m_work_buffer[0];
+    m_data_filestream.read(w, ssz);
+
+    unsigned char *p = &m_pixels[0];
+    bool ret = lbann::image_utils::loadJPG_buf(&m_work_buffer[0], width, height, false, p);
+
     if(!ret) {
-      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
+      stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load";
+      throw lbann_exception(err.str());
     }
     if(width != m_image_width || height != m_image_height) {
-      throw lbann_exception("ImageNet: mismatch data size -- either width or height");
+      stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
+      throw lbann_exception(err.str());
     }
 
-    data.push_back(pixels);
+    for (size_t p = 0; p < m_pixels.size(); p++) {
+      X.Set(p, k, m_pixels[p]);
+    }
   }
   return 0;
+}
+
+// Assignment operator
+lbann::DataReader_ImageNetSingle& lbann::DataReader_ImageNetSingle::operator=(const DataReader_ImageNetSingle& source)
+{
+  // check for self-assignment
+  if (this == &source)
+    return *this;
+
+  // Call the parent operator= function
+  DataReader_ImageNet::operator=(source);
 }

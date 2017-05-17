@@ -251,7 +251,7 @@ void lbann::Layer::backProp() {
 
   // Backprop activation regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_activations();
+    regularizers[i]->bp_activations();
   }
 
   // Backprop the activation function/nonlinearity.
@@ -261,7 +261,7 @@ void lbann::Layer::backProp() {
 
   // Backprop weight regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_weights();
+    regularizers[i]->bp_weights();
   }
 
   // Backprop the layer's linearity.
@@ -271,7 +271,7 @@ void lbann::Layer::backProp() {
 
   // Backprop connection regularization.
   for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->fp_connections();
+    regularizers[i]->bp_connections();
   }
 
 #ifdef __LIB_CUDNN
@@ -481,16 +481,11 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  if(m_prev_activations->Width() != 0)
-    View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  if(m_prev_error_signal->Width() != 0)
-    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
-  if(m_weighted_sum->Width() != 0)
-    View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
-  if(m_error_signal->Width() != 0)
-    View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
-  if(m_activations->Width() != 0)
-    View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
+  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
+  View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) {

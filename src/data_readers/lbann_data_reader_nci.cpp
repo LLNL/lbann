@@ -66,9 +66,10 @@ inline int lbann::data_reader_nci::map_label_2int(const std::string label){
   else if (label == "nr") return 1;
   //else if (label == "mi") return 3;
   else {
-    cerr << endl << __FILE__ << " " << __LINE__ 
-         << "  data_reader_nci::map_label_2int() - Unknown label type : " << label;
-    exit(1); 
+    stringstream err;
+    err << endl << __FILE__ << " " << __LINE__ 
+        << "  data_reader_nci::map_label_2int() - Unknown label type : " << label;
+    throw lbann_exception(err.str());
   }
 }
 
@@ -82,9 +83,10 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
   int current_batch_size = getBatchSize();
   ifstream ifs(m_infile.c_str());
   if (!ifs) { 
-    cerr << endl << __FILE__ << " " << __LINE__ 
-         << "  data_reader_nci::fectch_data() - can't open file : " << m_infile;
-    exit(1); 
+    stringstream err;
+    err << endl << __FILE__ << " " << __LINE__ 
+        << "  data_reader_nci::fectch_data() - can't open file : " << m_infile;
+    throw lbann_exception(err.str());
   }
 
   string line;
@@ -152,9 +154,10 @@ void lbann::data_reader_nci::load()
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) { 
-    cerr << endl << __FILE__ << " " << __LINE__ 
-         << "  data_reader_nci::load() - can't open file : " << infile;  
-    exit(1); 
+    stringstream err;
+    err << endl << __FILE__ << " " << __LINE__ 
+        << "  data_reader_nci::load() - can't open file : " << infile;  
+    throw lbann_exception(err.str());
   }
   m_infile = infile;
   string line;

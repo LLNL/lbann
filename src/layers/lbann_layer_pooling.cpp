@@ -170,17 +170,11 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
-  if(!m_using_gpus || !m_prev_layer_using_gpus) {
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus || !m_next_layer_using_gpus) {
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus) {
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  }
+  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -427,6 +421,8 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingForward(m_cudnn->get_handle(i),
                                    m_pooling_desc,
                                    &one,
@@ -553,6 +549,8 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   // Perform back propagation on each GPU
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingBackward(m_cudnn->get_handle(i),
                                     m_pooling_desc,
                                     &one,

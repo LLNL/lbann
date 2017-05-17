@@ -50,23 +50,10 @@ using namespace El;
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
-#if 0
-const string g_ImageNet_TrainDir = "resized_256x256/train/";
-const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/test/";
-const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train.txt";
-const string g_ImageNet_ValLabelFile = "val.txt";
-const string g_ImageNet_TestLabelFile = "test.txt";
-#else
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train_c0-9.txt";
-const string g_ImageNet_ValLabelFile = "val_c0-9.txt";
-const string g_ImageNet_TestLabelFile = "val_c0-9.txt";
-#endif
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -109,13 +96,47 @@ int main(int argc, char* argv[])
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
+        // Number of GPUs
         Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+
+        // Number of class labels
+        Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
 
         ProcessInput();
         PrintInputReport();
 
         // set algorithmic blocksize
         SetBlocksize(perfParams.BlockSize);
+
+        string g_ImageNet_TrainLabelFile;
+        string g_ImageNet_ValLabelFile;
+        string g_ImageNet_TestLabelFile;
+        switch(num_classes) {
+        case 10:
+          g_ImageNet_TrainLabelFile = "train_c0-9.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-9.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-9.txt";
+          break;
+        case 100:
+          g_ImageNet_TrainLabelFile = "train_c0-99.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-99.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-99.txt";
+          break;
+        case 300:
+          g_ImageNet_TrainLabelFile = "train_c0-299.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-299.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-299.txt";
+          break;
+        default:
+          g_ImageNet_TrainLabelFile = "train.txt";
+          g_ImageNet_ValLabelFile   = "val.txt";
+          g_ImageNet_TestLabelFile  = "val.txt";
+        }
+        if (comm->am_world_master()) {
+          cout << "Train set label file: " << g_ImageNet_TrainLabelFile << "\n"
+               << "Validation set label file: " << g_ImageNet_ValLabelFile << "\n"
+               << "Test set label file: " << g_ImageNet_TestLabelFile << "\n";
+        }
 
         // create timer for performance measurement
         Timer timer_io;
@@ -255,7 +276,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer,
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -312,7 +333,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -369,7 +390,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -392,7 +413,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -415,7 +436,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -442,32 +463,32 @@ int main(int argc, char* argv[])
 
         // Layer 11 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                 weight_initialization::he_normal,
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
                      new l2_regularization(0.0005)});
 
         // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                 weight_initialization::he_normal,
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
                      new l2_regularization(0.0005)});
 
         // Layer 13 (softmax)
         dnn->add("Softmax",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  1000,
                  activation_type::ID,
-                 weight_initialization::glorot_normal,
+                 weight_initialization::he_normal,
                  {new l2_regularization(0.0005)});
 
-        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);

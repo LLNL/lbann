@@ -43,7 +43,7 @@ else()
     GIT_REPOSITORY    ${PROTOBUF_URL}
     GIT_TAG           ${PROTOBUF_TAG}
     SOURCE_DIR        ${PROTOBUF_SOURCE_DIR}
-    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && test -f configure && echo "Skipping autogen.sh" || ./autogen.sh  && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping configure" || ./configure --prefix=${CMAKE_INSTALL_PREFIX} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER} && popd
+    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && test -f configure && echo "Skipping autogen.sh" || ./autogen.sh  && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping configure" || ./configure --prefix=${CMAKE_INSTALL_PREFIX} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} && popd
     BINARY_DIR        ${PROTOBUF_BINARY_DIR}
     BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping make" || ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
     INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
