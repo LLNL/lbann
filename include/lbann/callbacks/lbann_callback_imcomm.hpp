@@ -50,10 +50,7 @@ public:
     NORMAL,  /** Simply sum gradient updates. */
     ONEBIT_QUANTIZATION,  /** Do one-bit quantization with AdaGrad. */
     THRESH_QUANTIZATION,  /** Do thresholded one-bit quantization. */
-    COMPRESSED_THRESH_QUANTIZATION,  /** Do compressed thresholded one-bit quantization. */
-    ADAPTIVE_THRESH_QUANTIZATION,  /** Do adaptive thresholded one-bit quantization. */
-    COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION,  /** Do compressed adaptive thresholded one-bit quantization. */
-    NORMAL_AR  /** Sum gradient updates but use the custom allreduce. */
+    ADAPTIVE_QUANTIZATION,  /** Do adaptive thresholded one-bit quantization. */
   };
   /** Do inter-model gradient updates of the given type. */
   lbann_callback_imcomm(comm_type ct = NONE, lbann_summary* _summarizer = nullptr);
@@ -76,10 +73,6 @@ private:
   lbann_quantizer quantizer;
   /** Per-layer quantization errors. */
   std::unordered_map<uint, Mat> quantization_errors;
-  /** Per-layer inter-model sum quantization errors. */
-  std::unordered_map<uint, Mat> im_quantization_errors;
-  /** Per-layer gradient history when using one-bit quantization. */
-  std::unordered_map<uint, Mat> gradhistories;
   /** Layers indicies to quantize. */
   std::unordered_set<uint> layer_indices;
 
@@ -87,9 +80,7 @@ private:
   inline bool ct_does_quantization() const {
     return (ct == ONEBIT_QUANTIZATION ||
             ct == THRESH_QUANTIZATION ||
-            ct == COMPRESSED_THRESH_QUANTIZATION ||
-            ct == ADAPTIVE_THRESH_QUANTIZATION ||
-            ct == COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
+            ct == ADAPTIVE_QUANTIZATION);
   }
 };
 

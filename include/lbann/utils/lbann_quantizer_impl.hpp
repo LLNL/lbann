@@ -35,7 +35,7 @@ namespace lbann
 {
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_quantize(
+void lbann_quantizer::adaptive_quantize(
   const Mat& mat, std::vector<rowT>& q, Mat& qerror, int proportion) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
@@ -158,18 +158,18 @@ void lbann_quantizer::adaptive_threshold_quantize(
   q_col = (colT*) q.data();
   q_col[HEADER_FACTOR * width] = (colT) q.size();
   quantized_count = q.size() - header_len;
-  //adaptive_threshold_bound<colT, rowT>(mat, qerror, q, proportion);
+  adaptive_bound<colT, rowT>(mat, qerror, q, proportion);
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_quantize(
+void lbann_quantizer::adaptive_quantize(
   const DistMat& mat, std::vector<rowT>& q, Mat& qerror, int proportion) {
-  adaptive_threshold_quantize<colT, rowT>(mat.LockedMatrix(), q, qerror, proportion);
+  adaptive_quantize<colT, rowT>(mat.LockedMatrix(), q, qerror, proportion);
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const std::vector<rowT>& q, Mat& mat) {
+void lbann_quantizer::adaptive_unquantize(
+  const rowT* q, Mat& mat) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
                 "Types must be integral");
@@ -185,7 +185,7 @@ void lbann_quantizer::adaptive_threshold_unquantize(
   const colT header_len = mat.Width() * HEADER_FACTOR;
   const colT height = mat.Height();
   const colT ldim = mat.LDim();
-  const colT* q_col = (const colT*) q.data();
+  const colT* q_col = (const colT*) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
   #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
@@ -203,7 +203,7 @@ void lbann_quantizer::adaptive_threshold_unquantize(
     DataType* __restrict__ buf_col = &buf[col_offset];
     const colT chunk_start = q_col[header_loc];
     const colT chunk_end = q_col[header_loc + HEADER_FACTOR] - chunk_start;
-    const rowT* const __restrict__ q_ = &(q.data()[chunk_start]);
+    const rowT* const __restrict__ q_ = &(q[chunk_start]);
     for (rowT i = 0; i < chunk_end; ++i) {
       const rowT val = q_[i];
       const rowT row = val >> 1;
@@ -213,14 +213,14 @@ void lbann_quantizer::adaptive_threshold_unquantize(
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_unquantize(
-  const std::vector<rowT>& q, DistMat& mat) {
-  adaptive_threshold_unquantize<colT, rowT>(q, mat.Matrix());
+void lbann_quantizer::adaptive_unquantize(
+  const rowT* q, DistMat& mat) {
+  adaptive_unquantize<colT, rowT>(q, mat.Matrix());
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_unquantize_add(
-  const std::vector<rowT>& q, Mat& mat) {
+void lbann_quantizer::adaptive_unquantize_add(
+  const rowT* q, Mat& mat) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
                 "Types must be integral");
@@ -236,7 +236,7 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
   const colT header_len = mat.Width() * HEADER_FACTOR;
   const colT height = mat.Height();
   const colT ldim = mat.LDim();
-  const colT* q_col = (const colT*) q.data();
+  const colT* q_col = (const colT*) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
   #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
@@ -258,7 +258,7 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
     DataType* __restrict__ buf_col = &buf[col_offset];
     const colT chunk_start = q_col[header_loc];
     const colT chunk_end = q_col[header_loc + HEADER_FACTOR] - chunk_start;
-    const rowT* const __restrict__ q_ = &(q.data()[chunk_start]);
+    const rowT* const __restrict__ q_ = &(q[chunk_start]);
     for (rowT i = 0; i < chunk_end; ++i) {
       const rowT val = q_[i];
       const rowT row = val >> 1;
@@ -268,7 +268,7 @@ void lbann_quantizer::adaptive_threshold_unquantize_add(
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_quantize_replace(
+void lbann_quantizer::adaptive_quantize_replace(
   Mat& mat, std::vector<rowT>& q, Mat& qerror, int proportion) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
@@ -387,11 +387,11 @@ void lbann_quantizer::adaptive_threshold_quantize_replace(
   q_col = (colT*) q.data();
   q_col[HEADER_FACTOR * width] = q.size();
   quantized_count = q.size() - header_len;
-  adaptive_threshold_bound<colT, rowT>(mat, qerror, q, proportion);
+  adaptive_bound<colT, rowT>(mat, qerror, q, proportion);
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_bound(
+void lbann_quantizer::adaptive_bound(
   const Mat& mat, Mat& qerror, std::vector<rowT>& q, int proportion) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
@@ -463,7 +463,7 @@ void lbann_quantizer::adaptive_threshold_bound(
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::adaptive_threshold_quantize_slice(
+void lbann_quantizer::adaptive_quantize_slice(
   const std::vector<rowT>& q, const Mat& mat, Mat& qerror,
   std::vector<rowT>& slice, colT start, colT end, int proportion) {
   const colT width = end - start;
@@ -485,14 +485,12 @@ void lbann_quantizer::adaptive_threshold_quantize_slice(
   for (colT header_loc = 0; header_loc <= HEADER_FACTOR * width; header_loc += HEADER_FACTOR) {
     slice_col[header_loc] -= adjust;
   }
-  adaptive_threshold_bound<colT, rowT>(mat, qerror, slice, proportion);
+  adaptive_bound<colT, rowT>(mat, qerror, slice, proportion);
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
-  lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
-  std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs1,
-  std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs2) {
+void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
+  lbann_comm* comm, Mat& mat, Mat& qerror, int proportion) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
                 "Types must be integral");
@@ -514,307 +512,50 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
   const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
   const colT header_len = row_header_factor * HEADER_FACTOR * mat.Width() +
     row_header_factor;
-  const Int max_size = header_len +
-    MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion;
-  if (adaptive_recv_bufs1.find(max_size) == adaptive_recv_bufs1.end()) {
-    // Initialize receive buffers.
-    adaptive_recv_bufs1.emplace(std::make_pair(max_size, std::vector<rowT>(max_size)));
-    adaptive_recv_bufs2.emplace(std::make_pair(max_size, std::vector<rowT>(max_size)));
-  }
-  std::vector<rowT> rs_quant;
-  std::vector<rowT> rs_to_send;
-  std::vector<rowT>& rs_recv = adaptive_recv_bufs1[max_size];
-  /* NOTE: std::vector::resize() initializes elements. This is unnecessary, but
-   * there is no way around it. You cannot use reserve() because that does not
-   * update the size or guarantee data() returns anything useful. As far as I
-   * can tell, the only way around this would be to either ensure the
-   * _implementation_ makes guarantees for reserve(), or implement a custom
-   * version of vector.
-   */
-  double quant_time_start = get_time();
-  adaptive_threshold_quantize<colT, rowT>(mat, rs_quant, qerror, proportion);
-  double quant_tot = get_time() - quant_time_start;
-  rs_time += quant_tot;
-  rs_send_trans_time += quant_tot;
-  auto rs_send_trans = 
-    [&qerror, &rs_quant, &rs_to_send, proportion, this]
-    (Mat& mat, IR h, IR w, int& count) {
-      auto to_send = mat(h, w);
-      auto to_send_qerr = qerror(h, w);
-      rs_to_send.clear();
-      adaptive_threshold_quantize_slice<colT, rowT>(rs_quant, to_send, to_send_qerr, rs_to_send, w.beg, w.end, proportion);
-      count = sizeof(rowT) * rs_to_send.size();
-      return (mpi_rowT*) rs_to_send.data();
-    };
-  auto rs_get_recv_buf = 
-    [&rs_recv, max_size] (Mat& mat, int& count) {
-      count = sizeof(rowT) * max_size;
-      return (mpi_rowT*) rs_recv.data();
-    };
-  auto rs_recv_trans = 
-    [&rs_recv, this]
-    (mpi_rowT* buf, Mat& accum) {
-      adaptive_threshold_unquantize_add<colT, rowT>(rs_recv, accum);
-      // Fix the received bytes count.
-      colT recv_size = ((colT*) rs_recv.data())[accum.Width() * HEADER_FACTOR];
-      rs_bytes_received -= rs_recv.size() * sizeof(rowT);
-      rs_bytes_received += recv_size * sizeof(rowT);
-    };
-  intermodel_pairwise_exchange_reduce_scatter<mpi_rowT>(
-    comm, mat, false, rs_send_trans,
-    rs_get_recv_buf, rs_recv_trans);
-  std::vector<rowT> local_send;
-  std::vector<rowT> ag_send = adaptive_recv_bufs1[max_size];
-  std::vector<rowT> ag_recv = adaptive_recv_bufs2[max_size];
-  int send_size = 0;
-  bool local_sent = false;
-  auto ag_reduced_trans =
-    [&im_qerror, &local_send, &send_size, proportion, this]
-    (Mat& reduced) {
-      if (im_qerror.Height() == 0) {
-        im_qerror.Resize(reduced.Height(), reduced.Width(), reduced.LDim());
-        Zero(im_qerror);
+  const Int max_size = (header_len +
+    MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion) *
+    sizeof(rowT);
+  std::vector<rowT> quant;
+  std::vector<rowT> quant_slice;
+  auto send_transform =
+    [&qerror, &quant, &quant_slice, proportion, this]
+    (Mat& mat, IR h, IR w, int& count, bool const_data) {
+    auto to_send = mat(h, w);
+    auto to_send_qerr = qerror(h, w);
+    if (const_data) {
+      // In this case we can quantize the entire matrix then slice it.
+      if (quant.empty()) {
+        adaptive_quantize<colT, rowT>(mat, quant, qerror, proportion);
       }
-      adaptive_threshold_quantize_replace<colT, rowT>(reduced, local_send,
-                                                      im_qerror, proportion);
-      send_size = sizeof(rowT) * local_send.size();
-    };
-  auto ag_get_send_buf = [&ag_send, &local_send, &send_size, &local_sent]
-    (int& count) {
-      count = send_size;
-      if (!local_sent) {
-        local_sent = true;
-        return (mpi_rowT*) local_send.data();
-      } else {
-        return (mpi_rowT*) ag_send.data();
-      }
-    };
-  auto ag_get_recv_buf =
-    [&ag_recv, max_size] (Mat& recv_view, int& count) {
-      count = sizeof(rowT) * max_size;
-      return (mpi_rowT*) ag_recv.data();
-    };
-  auto ag_recv_trans = 
-    [&ag_recv, &send_size, proportion, this]
-    (mpi_rowT*, Mat& accum) {
-      adaptive_threshold_unquantize<colT, rowT>(ag_recv, accum);
-      const colT* q_col = (const colT*) ag_recv.data();
-      send_size = sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
-      // Fix the received bytes count.
-      ag_bytes_received -= ag_recv.size() * sizeof(rowT);
-      ag_bytes_received += send_size;
-    };
-  auto ag_swap_bufs =
-    [&ag_send, &ag_recv, max_size] (mpi_rowT*, mpi_rowT*) {
-      std::swap(ag_send, ag_recv);
-    };
-  intermodel_ring_allgather<mpi_rowT>(comm, mat, false, ag_reduced_trans,
-                                      ag_get_send_buf, ag_get_recv_buf,
-                                      ag_recv_trans, ag_swap_bufs);
-}
-
-template <typename T>
-void lbann_quantizer::intermodel_pairwise_exchange_reduce_scatter(
-  lbann_comm* comm, Mat& mat, bool var_recv,
-  std::function<T*(Mat&, IR, IR, int&)> send_trans,
-  std::function<T*(Mat&, int&)> get_recv_buf,
-  std::function<void(T*, Mat&)> recv_trans) {
-  double rs_start = get_time();
-  int rank = comm->get_model_rank();
-  int nprocs = comm->get_num_models();
-  // Compute the number of columns each processor sends.
-  // The last processor handles the excess.
-  Int cols_per_proc = mat.Width() / nprocs;
-  Int cols_remainder = mat.Width() % nprocs;
-  Int local_col_width = cols_per_proc;
-  if (rank == nprocs - 1) local_col_width += cols_remainder;
-  // Local view into which to accumulate our received data.
-  auto accum_view = mat(IR(0, mat.Height()),
-                        IR(rank * cols_per_proc,
-                           rank * cols_per_proc + local_col_width));
-  // Do the reduce-scatter.
-  for (int step = 1; step < nprocs; ++step) {
-    // Compute the source/destination.
-    int dst = (rank + step) % nprocs;
-    int src = (rank - step) % nprocs;
-    if (src < 0) src += nprocs;
-    // Determine the number of columns to send.
-    int send_col_width = cols_per_proc;
-    if (dst == nprocs - 1) send_col_width += cols_remainder;
-    // Transform the portion to send.
-    int send_size;
-    double send_trans_start = get_time();
-    T* send_buf = send_trans(
-      mat, IR(0, mat.Height()),
-      IR(dst * cols_per_proc, dst * cols_per_proc + send_col_width), send_size);
-    rs_send_trans_time += get_time() - send_trans_start;
-    rs_bytes_sent += send_size * sizeof(T);
-    mpi::Request<T> req;
-    if (var_recv) {
-      // Send.
-      comm->nb_send(send_buf, send_size, dst, req);
-      // Get receive buffer.
-      double recv_buf_start = get_time();
-      int recv_size = comm->get_count<T>(src);
-      T* recv_buf = get_recv_buf(accum_view, recv_size);
-      rs_recv_buf_time += get_time() - recv_buf_start;
-      // Receive.
-      comm->recv(recv_buf, recv_size, src);
-      rs_bytes_received += recv_size * sizeof(T);
-      // Transform the received portion.
-      double recv_trans_start = get_time();
-      recv_trans(recv_buf, accum_view);
-      rs_recv_trans_time += get_time() - recv_trans_start;
-      comm->wait<T>(req);
+      quant_slice.clear();
+      adaptive_quantize_slice<colT, rowT>(quant, to_send, to_send_qerr,
+                                          quant_slice, w.beg, w.end,
+                                          proportion);
+      count = sizeof(rowT) * quant_slice.size();
+      return (uint8_t*) quant_slice.data();
     } else {
-      // Get receive buffer.
-      double recv_buf_start = get_time();
-      int recv_size = 0;
-      T* recv_buf = get_recv_buf(accum_view, recv_size);
-      rs_recv_buf_time += get_time() - recv_buf_start;
-      // Post the receive first.
-      double recv_start = get_time();
-      comm->nb_recv(recv_buf, recv_size, src, req);
-      double recv_tot = get_time() - recv_start;
-      rs_bytes_received += recv_size * sizeof(T);
-      // Do the send.
-      double send_start = get_time();
-      comm->send(send_buf, send_size, dst);
-      rs_send_time += get_time() - send_start;
-      // Complete the receive and transform.
-      recv_start = get_time();
-      comm->wait<T>(req);
-      rs_recv_wait_time += recv_tot + get_time() - recv_start;
-      double recv_trans_start = get_time();
-      recv_trans(recv_buf, accum_view);
-      rs_recv_trans_time += get_time() - recv_trans_start;
+      quant.clear();
+      adaptive_quantize_replace<colT, rowT>(mat, quant, qerror, proportion);
+      count = sizeof(rowT) * quant.size();
+      return (uint8_t*) quant.data();
     }
-  }
-  rs_time += get_time() - rs_start;
-}
-
-template <typename T>
-void lbann_quantizer::intermodel_ring_allgather(
-    lbann_comm* comm, Mat& mat, bool var_recv,
-    std::function<void(Mat&)> reduced_trans,
-    std::function<T*(int&)> get_send_buf,
-    std::function<T*(Mat&, int&)> get_recv_buf,
-    std::function<void(T*, Mat&)> recv_trans,
-    std::function<void(T*, T*)> swap_bufs) {
-  double ag_start = get_time();
-  int rank = comm->get_model_rank();
-  int nprocs = comm->get_num_models();
-  // Compute the number of columns each processor sends.
-  // The last processor handles the excess.
-  int cols_per_proc = mat.Width() / nprocs;
-  int cols_remainder = mat.Width() % nprocs;
-  int local_col_width = cols_per_proc;
-  if (rank == nprocs - 1) local_col_width += cols_remainder;
-  // Get the portion of mat that was reduced.
-  double reduced_start = get_time();
-  auto reduced = mat(IR(0, mat.Height()),
-                     IR(rank * cols_per_proc,
-                        rank * cols_per_proc + local_col_width));
-  // Transform the reduced data.
-  reduced_trans(reduced);
-  ag_reduced_trans_time += get_time() - reduced_start;
-  // Compute the previous/next ranks in the ring.
-  int src = rank - 1;
-  if (src < 0) src = nprocs - 1;
-  int dst = (rank + 1) % nprocs;
-  // Do the allgather.
-  for (int step = 0; step < nprocs - 1; ++step) {
-    // Send our data or forward received data.
-    mpi::Request<T> req;
-    int send_size;
-    // Compute the original rank that sent the data we're going to receive.
-    int data_src = (rank - step - 1) % nprocs;
-    if (data_src < 0) data_src += nprocs;
-    // Compute the amount of data we're receiving.
-    int recv_col_width = cols_per_proc;
-    if (data_src == nprocs - 1) recv_col_width += cols_remainder;
-    // Get the portion of mat to receive into.
-    auto recv_view = mat(IR(0, mat.Height()),
-                         IR(data_src * cols_per_proc,
-                            data_src * cols_per_proc + recv_col_width));
-    T* send_buf;
-    T* recv_buf;
-    if (var_recv) {
-      send_buf = get_send_buf(send_size);
-      comm->nb_send(send_buf, send_size, dst, req);
-      ag_bytes_sent += send_size * sizeof(T);
-      // Get receive buffer.
-      double recv_buf_start = get_time();
-      int recv_size = comm->get_count<T>(src);
-      recv_buf = get_recv_buf(recv_view, recv_size);
-      ag_recv_buf_time += get_time() - recv_buf_start;
-      // Receive data.
-      comm->recv(recv_buf, recv_size, src);
-      ag_bytes_received += recv_size * sizeof(T);
-      // Transform the received portion.
-      double recv_trans_start = get_time();
-      recv_trans(recv_buf, recv_view);
-      ag_recv_trans_time += get_time() - recv_trans_start;
-      comm->wait<T>(req);
-    } else {
-      // Get receive buffer.
-      double recv_buf_start = get_time();
-      int recv_size = 0;
-      recv_buf = get_recv_buf(recv_view, recv_size);
-      ag_recv_buf_time += get_time() - recv_buf_start;
-      // Post the receive first.
-      double recv_start = get_time();
-      comm->nb_recv(recv_buf, recv_size, src, req);
-      double recv_tot = get_time() - recv_start;
-      ag_bytes_received += recv_size * sizeof(T);
-      // Do the send.
-      double send_start = get_time();
-      send_buf = get_send_buf(send_size);
-      comm->send(send_buf, send_size, dst);
-      ag_send_time += get_time() - send_start;
-      ag_bytes_sent += send_size * sizeof(T);
-      // Complete the receive and transform.
-      recv_start = get_time();
-      comm->wait<T>(req);
-      ag_recv_wait_time += recv_tot + get_time() - recv_start;
-      double recv_trans_start = get_time();
-      recv_trans(recv_buf, recv_view);
-      ag_recv_trans_time += get_time() - recv_trans_start;
-    }
-    // Swap so we forward the data we just received.
-    swap_bufs(send_buf, recv_buf);
-  }
-  ag_time += get_time() - ag_start;
-}
-
-template <typename T>
-void lbann_quantizer::intermodel_recursive_doubling_allreduce(
-  lbann_comm* comm, Mat& mat,
-  std::function<T*(Mat&, int&)> send_trans,
-  std::function<T*(Mat&, int&)> get_recv_buf,
-  std::function<void(T*, Mat&)> recv_trans,
-  std::function<void(T*, T*)> swap_bufs) {
-  int rank = comm->get_model_rank();
-  int nprocs = comm->get_num_models();
-  // This implementation requires a power-of-2 number of processes.
-  if (nprocs & (nprocs - 1)) {
-    // TODO: Fail.
-  }
-  unsigned int mask = 1;
-  while (mask < nprocs) {
-    int partner = rank ^ mask;
-    // Transform and get buffers.
-    int send_size, recv_size;
-    T* send_buf = send_trans(mat, send_size);
-    T* recv_buf = get_recv_buf(mat, recv_size);
-    // Send/recv.
-    comm->sendrecv(send_buf, send_size, partner, recv_buf, recv_size, partner);
-    // Transform + accumulate.
-    recv_trans(recv_buf, mat);
-    // Swap buffers.
-    swap_bufs(send_buf, recv_buf);
-    mask <<= 1;
-  }
+  };
+  auto recv_transform =
+    [this] (uint8_t* recv_buf, Mat& accum) {
+    adaptive_unquantize<colT, rowT>((rowT*) recv_buf, accum);
+    const colT* q_col = (colT*) recv_buf;
+    return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
+  };
+  auto recv_apply_transform =
+    [this] (uint8_t* recv_buf, Mat& accum) {
+    adaptive_unquantize_add<colT, rowT>((rowT*) recv_buf, accum);
+    const colT* q_col = (colT*) recv_buf;
+    return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
+  };
+  comm->intermodel_allreduce(mat, max_size,
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
 }
 
 }  // namespace lbann

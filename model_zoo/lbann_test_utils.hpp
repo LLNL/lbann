@@ -71,8 +71,9 @@ inline void assert_false(bool x, const char* xname, const char* file,
   }
 }
 
-inline void assert_mat_eq(Mat& x, Mat& y, DataType tol, const char* xname,
-                          const char* yname, const char* file, size_t line) {
+inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
+                          const char* xname, const char* yname,
+                          const char* file, size_t line) {
   // There are better ways to compare floating point values, but this should be
   // sufficient for now. Google Test has a very comprehensive and well-tested
   // floating-point almost-equal method if needed.
@@ -91,14 +92,16 @@ inline void assert_mat_eq(Mat& x, Mat& y, DataType tol, const char* xname,
   }
 }
 
-inline void assert_mat_eq(DistMat& x, DistMat& y, DataType tol,
+inline void assert_mat_eq(const DistMat& x, const DistMat& y, DataType tol,
                           const char* xname, const char* yname,
                           const char* file, size_t line) {
-  assert_mat_eq(x.Matrix(), y.Matrix(), tol, xname, yname, file, line);
+  assert_mat_eq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
+                line);
 }
 
-inline void assert_mat_neq(Mat& x, Mat& y, DataType tol, const char* xname,
-                           const char* yname, const char* file, size_t line) {
+inline void assert_mat_neq(const Mat& x, const Mat& y, DataType tol,
+                           const char* xname, const char* yname,
+                           const char* file, size_t line) {
   // Still ensure these matrices are the same size.
   assert_eq(x.Height(), y.Height(), xname, yname, file, line);
   assert_eq(x.Width(), y.Width(), xname, yname, file, line);
@@ -114,14 +117,15 @@ inline void assert_mat_neq(Mat& x, Mat& y, DataType tol, const char* xname,
   exit(1);
 }
 
-inline void assert_mat_neq(DistMat& x, DistMat& y, DataType tol,
-                          const char* xname, const char* yname,
+inline void assert_mat_neq(const DistMat& x, const DistMat& y, DataType tol,
+                           const char* xname, const char* yname,
                            const char* file, size_t line) {
-  assert_mat_neq(x.Matrix(), y.Matrix(), tol, xname, yname, file, line);
+  assert_mat_neq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
+                 line);
 }
 
 template <typename T>
-inline void assert_vector_eq(std::vector<T> x, std::vector<T> y,
+inline void assert_vector_eq(const std::vector<T> x, const std::vector<T> y,
                              const char* xname, const char* yname,
                              const char* file, size_t line) {
   assert_eq(x.size(), y.size(), xname, yname, file, line);
@@ -136,7 +140,7 @@ inline void assert_vector_eq(std::vector<T> x, std::vector<T> y,
 }
 
 template <typename T>
-inline void assert_vector_neq(std::vector<T> x, std::vector<T> y,
+inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
                               const char* xname, const char* yname,
                               const char* file, size_t line) {
   assert_eq(x.size(), y.size(), xname, yname, file, line);

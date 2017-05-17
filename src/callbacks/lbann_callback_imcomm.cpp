@@ -62,25 +62,6 @@ void lbann_callback_imcomm::setup(model* m) {
         // TODO: handle case where weights_gradient is in other matrix distribution
         DistMat& weights_gradient = (DistMat&) layer->get_weights_biases_gradient();
         quantization_errors.emplace(idx, Mat{});
-        im_quantization_errors.emplace(idx, Mat{});
-        if (ct == ONEBIT_QUANTIZATION) {
-          // Set up gradient history and SGD optimizer for one-bit quantization.
-          gradhistories.emplace(idx, Mat{});
-          if (layer->m_optimizer != nullptr) {
-            if (typeid(*(layer->m_optimizer)) != typeid(adagrad)) {
-              throw lbann_exception(
-                "lbann_callback_imcomm: Cannot do one-bit quantization for "
-                "layer that does not use Adagrad");
-            }
-            // TODO: This leaks the old optimizer.
-            layer->m_optimizer = new sgd(layer->comm,
-                                         layer->m_optimizer->get_learning_rate(),
-                                         0.0f,
-                                         0.0f,
-                                         false);
-            layer->m_optimizer->setup(layer->m_weights);
-          }
-        }
       }
     }
   }
@@ -130,38 +111,20 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
     case NORMAL:
       comm->intermodel_sum_matrix(weights_gradient);
       break;
-    case NORMAL_AR:
-      quantizer.intermodel_sum(comm, weights_gradient);
-      break;
     case ONEBIT_QUANTIZATION:
-      quantizer.intermodel_sum_quantized(
-        comm, weights_gradient, quantization_errors[l], im_quantization_errors[l], true,
-        &(gradhistories[l]));
+      quantizer.intermodel_sum_onebit_quantized(
+        comm, weights_gradient, quantization_errors[l]);
       break;
     case THRESH_QUANTIZATION:
       // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, weights_gradient, quantization_errors[l], 0.01f, -0.01f,
-        im_quantization_errors[l], false);
+        comm, weights_gradient, quantization_errors[l], 0.01f, -0.01f);
       break;
-    case COMPRESSED_THRESH_QUANTIZATION:
-      // TODO: Don't hardcode thresholds.
-      quantizer.intermodel_sum_threshold_quantized(
-        comm, weights_gradient, quantization_errors[l], 0.01f, -0.01f,
-        im_quantization_errors[l], true);
-      break;
-    case ADAPTIVE_THRESH_QUANTIZATION:
+    case ADAPTIVE_QUANTIZATION:
       // TODO: Don't hardcode proportion.
-      quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, weights_gradient, quantization_errors[l], 64,
-        im_quantization_errors[l]);
+      quantizer.intermodel_sum_adaptive_quantized(
+        comm, weights_gradient, quantization_errors[l], 64);
       break;
-      /*case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
-      // TODO: Don't hardcode proportion.
-      quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, weights_gradient, quantization_errors[l], 64,
-        im_quantization_errors[l], true);
-        break;*/
     }
     double im_time = get_time() - start_time;
     if (summarizer != nullptr && ct != NONE) {
@@ -207,7 +170,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
                                   m->get_cur_step());
         quantizer.reset_bytes_counters();
         quantizer.reset_time_counters();
-        if (ct == ADAPTIVE_THRESH_QUANTIZATION) {
+        if (ct == ADAPTIVE_QUANTIZATION) {
           summarizer->reduce_scalar(prefix + "quantized_count",
                                     quantizer.get_quantized_count(),
                                     m->get_cur_step());
