@@ -276,6 +276,10 @@ public:
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char* name);
 
+public:
+  /// 1-D Matrix of which indices were fetched in this mini-batch
+  El::Matrix<El::Int> m_indices_fetched_per_mb;
+
 protected:
   int BatchSize;
   int CurrentPos;

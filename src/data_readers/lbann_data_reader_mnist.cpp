@@ -46,6 +46,7 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
   m_image_width = 28;
   m_image_height = 28;
   m_num_labels = 10;
+  Zeros(m_indices_fetched_per_mb, batchSize / m_sample_stride, 1);
 }
 
 lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
@@ -82,6 +83,7 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
 
   int n = 0, s = 0;
   std::vector<float> pixels(pixelcount);
+  Zeros(m_indices_fetched_per_mb, current_batch_size / m_sample_stride, 1);
   for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size; n+=m_sample_stride, s++) {
     //std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << std::endl;
     if (n >= (int)ShuffledIndices.size())
@@ -90,6 +92,8 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     vector<unsigned char> &tmp = m_image_data[index];
+
+    m_indices_fetched_per_mb.Set(s, 0, index);
 
     for (int p = 0; p < pixelcount; p++) {
       X.Set(p, s, tmp[p+1]);

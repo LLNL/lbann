@@ -129,6 +129,21 @@ long lbann::io_layer::update_num_samples_processed(long num_samples) {
   }
 }
 
+El::Matrix<El::Int>& lbann::io_layer::get_sample_indices_per_mb() {
+  switch(m_execution_mode) {
+  case execution_mode::training:
+    return m_training_dataset.data_reader->m_indices_fetched_per_mb;
+    break;
+  case execution_mode::validation:
+    return m_validation_dataset.data_reader->m_indices_fetched_per_mb;
+    break;
+  case execution_mode::testing:
+    return m_testing_dataset.data_reader->m_indices_fetched_per_mb;
+    break;
+  default:
+    throw lbann_exception("lbann_io_layer: invalid execution phase");
+  }
+}
 
 long lbann::io_layer::get_linearized_data_size() {
   long linearized_data_size = -1;

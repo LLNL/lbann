@@ -54,6 +54,8 @@ namespace lbann
     long get_total_num_training_samples() { return m_training_dataset.total_samples; }
     long get_total_num_testing_samples() { return m_testing_dataset.total_samples; }
 
+    El::Matrix<El::Int>& get_sample_indices_per_mb();
+
     bool at_new_epoch() { return m_training_dataset.data_reader->at_new_epoch(); }
 
     long get_linearized_data_size();

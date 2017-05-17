@@ -61,6 +61,8 @@ namespace lbann
       target_partitioned_minibatch_parallel_io,
       reconstruction,
       INVALID};
+  enum class layer_category {compute, io, SPECIAL, INVALID};
+
   static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
     switch(l) {
     case layer_type::fully_connected:
@@ -93,6 +95,31 @@ namespace lbann
       throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
     }
     return NULL;
+  }
+
+  static const layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
+    switch(l) {
+    case layer_type::fully_connected:
+    case layer_type::softmax:
+    case layer_type::convolution:
+    case layer_type::pooling:
+    case layer_type::local_response_normalization:
+      return layer_category::compute;
+    case layer_type::input_distributed_minibatch:
+    case layer_type::input_distributed_minibatch_parallel_io:
+    case layer_type::input_partitioned_minibatch_parallel_io:
+    case layer_type::target_distributed_minibatch:
+    case layer_type::target_distributed_minibatch_parallel_io:
+    case layer_type::target_partitioned_minibatch_parallel_io:
+      return layer_category::io;
+    case layer_type::reconstruction:
+      return layer_category::SPECIAL;
+    case layer_type::INVALID:
+      return layer_category::INVALID;
+    default:
+      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
+    }
+    return layer_category::INVALID;
   }
 
 
@@ -187,6 +214,8 @@ namespace lbann
     void setup_fp_input_d(std::vector<DataType*> *fp_input_d);
     void setup_bp_input_d(std::vector<DataType*> *bp_input_d);
 #endif
+
+    virtual El::Matrix<El::Int>& get_sample_indices_per_mb() {};
 
     bool saveToFile(int fd, const char* filename);
     bool loadFromFile(int fd, const char* filename);

@@ -69,6 +69,7 @@
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+#include "lbann/callbacks/lbann_callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/lbann_callback_early_stopping.hpp"
 
 /// Objective functions (cost functions)
