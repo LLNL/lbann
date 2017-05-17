@@ -103,7 +103,8 @@ bool test_image_io(const std::string filename, int sz)
     // using a portion of the buf
     typedef cv_image_type<uint8_t, 1> InputBuf_T;
     size_t img_begin = 0u;
-    cv::Mat inbuf(1, fsz, InputBuf_T::T(), &(buf[img_begin]));
+    size_t img_end = fsz;
+    cv::Mat inbuf(1, (img_end-img_begin), InputBuf_T::T(), &(buf[img_begin]));
 
 
     int width = 0;
