@@ -421,6 +421,8 @@ bool lbann::image_utils::save_image(const std::string& filename,
 
 /**
  *  @param inbuf   The buffer that contains the raw bytes read from an image file
+ *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
+ *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
  *  @param Width   The width of the image consturcted out of inbuf
  *  @param Height  The height of the image consructed
  *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)

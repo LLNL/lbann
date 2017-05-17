@@ -72,7 +72,6 @@ namespace lbann
     // import/export via a buffer of std::vector<uchar> containg the raw bytes of an image file
     /// Import an image from a file buffer (inbuf) and put it into an LBANN Mat data block
     static bool import_image(cv::InputArray inbuf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
-    //static bool import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
     /// Export an image using data from an LBANN Mat block into a file buffer (outbuf)
     static bool export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data);
   };
