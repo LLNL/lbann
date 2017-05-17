@@ -17,9 +17,13 @@
 namespace El {
 
 char gemm_cpu_gpu_switch = 'c';
+int min_M = 0, min_N = 0, min_K = 0;
 
-void GemmUseGPU() {
+void GemmUseGPU(int _min_M, int _min_N, int _min_K) {
    gemm_cpu_gpu_switch = 'g';
+   min_M = _min_M;
+   min_N = _min_N;
+   min_K = _min_K;
 }
 
 void GemmUseCPU() {
@@ -76,7 +80,10 @@ void Gemm
                  B.LockedBuffer(), B.LDim(),
           beta,  C.Buffer(),       C.LDim() );
 #else
-        if (gemm_cpu_gpu_switch == 'g') {
+        if (gemm_cpu_gpu_switch == 'g' && 
+            m >= min_M &&
+            n >= min_N &&
+            k >= min_K) {
           cublas::Gemm
           ( transA, transB, m, n, k,
             alpha, A.LockedBuffer(), A.LDim(),

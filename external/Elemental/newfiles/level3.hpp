@@ -31,7 +31,7 @@ enum GemmAlgorithm {
 }
 using namespace GemmAlgorithmNS;
 
-void GemmUseGPU();
+void GemmUseGPU(int min_M, int min_N, int min_K);
 
 void GemmUseCPU();
 

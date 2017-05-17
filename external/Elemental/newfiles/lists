@@ -1,3 +1,9 @@
 build/surface.llnl.gov/download/elemental/source/src/blas_like/level3/Gemm.cpp
 build/surface.llnl.gov/download/elemental/source/src/core/imports/blas/Gemm.hpp
 build/surface.llnl.gov/download/elemental/source/include/El/core/imports/blas.hpp
+build/surface.llnl.gov/download/elemental/source/include/El/blas_like/level3.hpp
+
+PATCH_COMMAND ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp  ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp.ori &&
+              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp.ori &&
+              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp.ori &&
+              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/include/El/blas_like/level3.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/blas_like/level3.hpp.ori &&

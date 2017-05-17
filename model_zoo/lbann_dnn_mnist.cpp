@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
     lbann_proto *pb = lbann_proto::get();
 
-    //El::GemmUseGPU();
+    El::GemmUseGPU(32,32,32);
 
     try {
 
