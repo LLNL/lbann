@@ -14,6 +14,7 @@ add_definitions(-D__LIB_OPENCV)
 
 
 list(APPEND OpenCV_DIR /usr/local/tools/opencv-3.0.0)
+list(APPEND OpenCV_DIR /usr)
 
 find_package(OpenCV REQUIRED HINTS ${OpenCV_DIR})
 message(STATUS ${OpenCV_DIR})
