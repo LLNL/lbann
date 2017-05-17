@@ -37,84 +37,89 @@ const int num_trials = 20;
 
 void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) -> DataType* {
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
     auto to_send = mat(h, w);
-    send_size = to_send.Height() * to_send.Width();
-    return to_send.Buffer();
+    send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
+    return (uint8_t*) to_send.Buffer();
   };
   auto recv_apply_transform =
-    [] (DataType* recv_buf, Mat& accum) -> int {
+    [] (uint8_t* recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), recv_buf, accum.LDim());
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
     accum += recv_mat;
-    return (int) (recv_mat.Height() * recv_mat.Width());
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   Mat& mat = dmat.Matrix();
-  int max_recv_count = mat.Height() * mat.Width();
+  int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<DataType*(Mat&, IR, IR, int&, bool)>(send_transform),
-    std::function<int(DataType*, Mat&)>(recv_apply_transform));
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
 }
 
 void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
     auto to_send = mat(h, w);
-    send_size = to_send.Height() * to_send.Width();
-    return to_send.Buffer();
+    send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
+    return (uint8_t*) to_send.Buffer();
   };
   auto recv_transform =
-    [] (DataType* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), recv_buf, accum.LDim());
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
     accum = recv_mat;
-    return recv_mat.Height() * recv_mat.Width();
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (DataType* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), recv_buf, accum.LDim());
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
     accum += recv_mat;
-    return recv_mat.Height() * recv_mat.Width();
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   Mat& mat = dmat.Matrix();
-  int max_recv_count = mat.Height() * mat.Width();
+  int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->pe_ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<DataType*(Mat&, IR, IR, int&, bool)>(send_transform),
-    std::function<int(DataType*, Mat&)>(recv_transform),
-    std::function<int(DataType*, Mat&)>(recv_apply_transform));
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
 }
 
 void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
     auto to_send = mat(h, w);
-    send_size = to_send.Height() * to_send.Width();
-    return to_send.Buffer();
+    send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
+    return (uint8_t*) to_send.Buffer();
   };
   auto recv_transform =
-    [] (DataType* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), recv_buf, accum.LDim());
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
     accum = recv_mat;
-    return recv_mat.Height() * recv_mat.Width();
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (DataType* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), recv_buf, accum.LDim());
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
     accum += recv_mat;
-    return recv_mat.Height() * recv_mat.Width();
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   Mat& mat = dmat.Matrix();
-  int max_recv_count = mat.Height() * mat.Width();
+  int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<DataType*(Mat&, IR, IR, int&, bool)>(send_transform),
-    std::function<int(DataType*, Mat&)>(recv_transform),
-    std::function<int(DataType*, Mat&)>(recv_apply_transform));
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
 }
 
 void print_stats(const std::vector<double>& times) {
