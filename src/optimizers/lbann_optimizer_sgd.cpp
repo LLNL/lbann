@@ -23,44 +23,186 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent optimizer
-//
-// Inspired by Kera.io implementation
-// Stochastic gradient descent, with support for momentum, decay, and Nesterov momentum.
-//  lr: float >= 0. Learning rate.
-//  momentum: float >= 0. Parameter updates momentum.
-//  decay: float >= 0. Learning rate decay over each update.
-//  nesterov: boolean. Whether to apply Nesterov momentum.
+// lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 using namespace std;
 using namespace El;
 
-lbann::SGD_factory::SGD_factory(lbann_comm* comm, float lr, float momentum, float decay, bool nesterov)
-  : comm(comm), lr(lr), momentum(momentum), decay(decay), nesterov(nesterov)
+lbann::sgd::sgd
+(lbann_comm* comm,
+ DataType learning_rate,
+ DataType momentum,
+ DataType decay,
+ bool nesterov)
+  : optimizer(comm, "sgd", learning_rate),
+    m_momentum(momentum),
+    m_decay(decay),
+    m_nesterov(nesterov) {}
+
+lbann::sgd::~sgd()
 {
+  if(m_velocity)
+    delete m_velocity;
 }
 
-lbann::SGD_factory::~SGD_factory()
+void lbann::sgd::setup(AbsDistMat* parameters)
 {
+  optimizer::setup(parameters);
 
-}
+  // Initialize iteration count
+  m_iterations = 0;
 
-lbann::Optimizer *lbann::SGD_factory::create_optimizer(matrix_format format) {
-  switch(format) {
-  case matrix_format::MC_MR:
-    return new SGD<DistMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case matrix_format::CIRC_CIRC:
-    return new SGD<CircMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case matrix_format::STAR_STAR:
-    return new SGD<StarMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  case matrix_format::STAR_VC:
-    return new SGD<StarVCMat>(this->comm, this->lr, this->momentum, this->decay, this->nesterov);
-  default:
-    // TODO: throw an exception
-    printf("LBANN Error: unknown matrix distribution for SGD optimizer\n");
-    exit(-1);
+  // Initialize velocity matrix
+  if(m_momentum != DataType(0)) {
+    switch(m_matrix_format) {
+    case matrix_format::MC_MR:
+      m_velocity = new DistMat(comm->get_model_grid()); break;
+    case matrix_format::STAR_STAR:
+      m_velocity = new StarMat(comm->get_model_grid()); break;
+    case matrix_format::MC_STAR:
+      m_velocity = new RowSumMat(comm->get_model_grid()); break;
+    case matrix_format::STAR_VC:
+      m_velocity = new StarVCMat(comm->get_model_grid()); break;
+    default:
+      throw lbann_exception("lbann_optimizer_sgd: invalid data layout");
+    }
+    Zeros(*m_velocity, m_height, m_width);
   }
+  
+}
+
+void lbann::sgd::update(const AbsDistMat* gradient)
+{
+
+  // Update learning rate and iteration count
+  m_learning_rate *= DataType(1) / ( 1 + m_decay * m_iterations );
+  ++m_iterations;
+
+  if(m_momentum == DataType(0)) {
+    // Vanilla SGD
+    Axpy(-m_learning_rate, *gradient, *m_parameters);
+  }
+  else {
+
+    // Get local matrix data
+    const Int local_height = m_parameters->LocalHeight();
+    const Int local_width = m_parameters->LocalWidth();
+    DataType* parameters_buffer = m_parameters->Buffer();
+    const Int parameters_ldim = m_parameters->LDim();
+    const DataType* gradient_buffer = gradient->LockedBuffer();
+    const Int gradient_ldim = gradient->LDim();
+    DataType* velocity_buffer = m_velocity->Buffer();
+    const Int velocity_ldim = m_velocity->LDim();
+
+    // Check if matrix data is contiguous
+    if(parameters_ldim != local_height
+       || gradient_ldim != local_height
+       || velocity_ldim != local_height) {
+      // (Nesterov) momentum SGD for non-contiguous data
+#pragma omp parallel for collapse(2)
+      for(Int j=0; j<local_width; ++j) {
+        for(Int i=0; i<local_height; ++i) {
+          const DataType g = gradient_buffer[i+j*gradient_ldim];
+          DataType& v = velocity_buffer[i+j*velocity_ldim];
+          DataType& x = parameters_buffer[i+j*parameters_ldim];
+          v = m_momentum * v - m_learning_rate * g;
+          x += m_nesterov ? m_momentum * v - m_learning_rate * g : v;
+        }
+      }
+    }
+    else {
+      if(m_nesterov) {
+        // Nesterov's accelerated gradient descent for contiguous data
+#pragma omp parallel for
+        for(Int i=0; i<local_height*local_width; ++i) {
+          DataType& x = parameters_buffer[i];
+          const DataType g = gradient_buffer[i];
+          DataType& v = velocity_buffer[i];
+          v = m_momentum * v - m_learning_rate * g;
+          x += m_momentum * v - m_learning_rate * g;
+        }
+      }
+      else {
+        // Momentum SGD for contiguous data
+#pragma omp parallel for
+        for(Int i=0; i<local_height*local_width; ++i) {
+          DataType& x = parameters_buffer[i];
+          const DataType g = gradient_buffer[i];
+          DataType& v = velocity_buffer[i];
+          v = m_momentum * v - m_learning_rate * g;
+          x += v;
+        }
+      }
+    }
+
+  }
+
+}
+
+#if 0
+    bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes) {
+      //    writeDist(fd, filename, velocity, bytes);
+      return true;
+    }
+
+    bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes) {
+      //    readDist(fd, filename, velocity, bytes);
+      return true;
+    }
+
+    bool saveToCheckpointShared(persist& p, int Index) {
+      char name[512];
+
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(name, "L%d_learning_rate", Index);
+        p.write_float(persist_type::train, name, lr);
+      }
+
+      // build name of the checkpoint file
+      sprintf(name, "L%d_sgd_%lldx%lld", Index, velocity.Height(), velocity.Width());
+      p.write_distmat(persist_type::train, name, (DistMat*)&velocity);
+
+      return true;
+    }
+
+    bool loadFromCheckpointShared(persist& p, int Index) {
+      char name[512];
+
+      // current learning rate value
+      if (p.m_rank == 0) {
+        sprintf(name, "L%d_learning_rate", Index);
+        p.read_float(persist_type::train, name, &lr);
+      }
+      MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+      // build name of the checkpoint file
+      sprintf(name, "L%d_sgd_%lldx%lld.bin", Index, velocity.Height(), velocity.Width());
+      p.read_distmat(persist_type::train, name, (DistMat*)&velocity);
+
+      return true;
+    }
+#endif
+
+lbann::sgd_factory::sgd_factory
+(lbann_comm* comm,
+ DataType learning_rate,
+ DataType momentum,
+ DataType decay,
+ bool nesterov)
+  : optimizer_factory(comm, "sgd"),
+    m_learning_rate(learning_rate),
+    m_momentum(momentum),
+    m_decay(decay),
+    m_nesterov(nesterov) {}
+
+lbann::sgd_factory::~sgd_factory() {}
+
+lbann::optimizer* lbann::sgd_factory::create_optimizer()
+{
+  return new sgd(comm, m_learning_rate, m_momentum, m_decay, m_nesterov);
 }

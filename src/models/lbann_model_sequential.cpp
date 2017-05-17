@@ -52,11 +52,10 @@ lbann::sequential_model::sequential_model(const uint mini_batch_size,
                                           lbann_comm* comm,
                                           objective_functions::objective_fn* obj_fn,
                                           layer_factory* _layer_fac,
-                                          Optimizer_factory* _optimizer_fac)
-  : model(comm, obj_fn),
+                                          optimizer_factory* optimizer_fac)
+  : model(comm, obj_fn, optimizer_fac),
     m_mini_batch_size(mini_batch_size),
-    layer_fac(_layer_fac),
-    optimizer_fac(_optimizer_fac) {}
+    layer_fac(_layer_fac) {}
 
 lbann::sequential_model::~sequential_model()
 {
@@ -386,13 +385,14 @@ int lbann::sequential_model::num_previous_neurons() {
 }
 
 uint lbann::sequential_model::add(const std::string layer_name,
+                                  data_layout data_dist,
                                   const int layer_dim,
                                   const activation_type activation,
                                   const weight_initialization init,
                                   std::vector<regularizer*> regularizers)
 {
     const int layer_index = m_layers.size();
-    Optimizer *optimizer = optimizer_fac->create_optimizer();
+    optimizer *opt = create_optimizer();
 
     // Get properties of previous layer
     int prev_layer_dim = -1;
@@ -412,25 +412,27 @@ uint lbann::sequential_model::add(const std::string layer_name,
     if(layer_name.compare("FullyConnected") == 0) {
       Layer* new_layer
         = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",
+                                                       data_dist,
                                                        layer_index,
                                                        prev_layer_dim,
                                                        layer_dim,
                                                        m_mini_batch_size,
                                                        activation, init,
                                                        comm,
-                                                       optimizer,
+                                                       opt,
                                                        regularizers);
       m_layers.push_back(new_layer);
     } else if(layer_name.compare("Softmax") == 0) {
       Layer* new_layer
         = layer_fac->create_layer<SoftmaxLayer>("Softmax",
+                                                data_dist,
                                                 layer_index,
                                                 prev_layer_dim,
                                                 layer_dim,
                                                 m_mini_batch_size,
                                                 init,
                                                 comm,
-                                                optimizer);
+                                                opt);
       m_layers.push_back(new_layer);
     } else {
       std::cout << "Unknown layer type " << layer_name << std::endl;
@@ -507,7 +509,7 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index)
   int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->NumNeurons : -1;
   for (Int l=start_index; l<end_index; ++l) {
     if (comm->am_model_master()) {
-      cout << "Setting up a layer with input " << prev_layer_dim << " and index " << l << endl;
+      cout << l << ":[" << _layer_type_to_string(m_layers[l]->m_type) <<  "] Setting up a layer with input " << prev_layer_dim << " and " << m_layers[l]->NumNeurons << " neurons."  << endl;
     }
     m_layers[l]->neural_network_model = this; /// Provide a reverse point from each layer to the model
     m_layers[l]->setup(prev_layer_dim);

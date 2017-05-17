@@ -114,6 +114,7 @@ include(OpenMP)
 include(MPI)
 include(OpenCV)
 include(protobuf)
+include(LbannProto)
 
 # Optional dependencies
 if(WITH_CUDA)
@@ -217,6 +218,9 @@ endif()
 if(LBANN_HAS_TBINF)
   add_dependencies(src TBinf)
 endif()
+if(LBANN_BUILT_LBANN_PROTO)
+  add_dependencies(src LbannProto)
+endif()
 
 # Build LBANN library
 add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
@@ -227,6 +231,10 @@ target_link_libraries(lbann ${Elemental_LIBRARIES})
 target_link_libraries(lbann ${OpenCV_LIBRARIES})
 target_link_libraries(lbann ${PROTOBUF_LIBRARIES})
 target_link_libraries(lbann ${CNPY_LIBRARIES})
+
+message("main CMakeFiles XXX LbannProto_LIBRARIES: ${LbannProto_LIBRARIES}")
+# target_link_libraries(lbann ${LbannProto_LIBRARIES})
+
 if(LBANN_HAS_CUDA)
   target_link_libraries(lbann ${CUDA_LIBRARIES})
   target_link_libraries(lbann ${cuBLAS_LIBRARIES})
@@ -240,6 +248,9 @@ if(LBANN_HAS_VTUNE)
 endif()
 if(LBANN_HAS_TBINF)
   target_link_libraries(lbann TBinf)
+endif()
+if(LBANN_HAS_LBANN_PROTO)
+  target_link_libraries(lbann LbannProto)
 endif()
 
 ################################################################
@@ -297,3 +308,4 @@ message("  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}")
 message("  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}")
 message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
 message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
+message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")

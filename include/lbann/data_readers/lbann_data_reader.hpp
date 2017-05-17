@@ -35,6 +35,7 @@
 #include "lbann/lbann_comm.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/io/lbann_persist.hpp"
+#include "lbann/data_readers/lbann_image_preprocessor.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
@@ -53,7 +54,7 @@
 namespace lbann
 {
 
-class DataReader
+class DataReader : public lbann_image_preprocessor
 {
 public:
   DataReader(int batchSize, bool shuffle = true) :
@@ -64,7 +65,8 @@ public:
     m_last_mini_batch_stride(batchSize),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
-    m_max_sample_count_was_set(false), m_use_percent(-1)
+    m_max_sample_count_was_set(false), m_use_percent(1.0),
+    m_master(false)
   {}
     
   //developer's note: I eliminated the copy ctor, since the
@@ -122,23 +124,71 @@ public:
   std::string get_label_filename(); 
 
   /**
-   * Use the first N data entries, without shuffling;
-   * default is: false
+   * if set to true, indices (data samples) are not shuffled;
+   * default is 'false'
    */
   void set_firstN(bool b);
+
+  /** if 'true' is returned, indices (data samples) are not shuffled
+   */
   bool get_firstN();
 
+  /** sets the absolute number of data samples that will be used
+   *  for training or testing
+   */
   void set_max_sample_count(size_t s);
+
+  /** returns 'true' if set_max_sample_count() was called;
+   *  primarily for internal use; end users can ignore.
+   */
   bool has_max_sample_count();
+
+  /** returns the absolute number of data samples that will be used
+   *  for training or testing
+   */
   size_t get_max_sample_count();
 
+  /** set the percentage of the data set to use for training+validation;
+   *  or testing.  Exception is thrown if  1.0 < s < 0
+   */
   void set_use_percent(double s);
+
+  /** returns true if set_use_percent() was called */
   bool has_use_percent();
+
+  /** returns the percent of the data set that is to be used
+   *  for training or testing. If training, this is the total
+   *  for training+validation. Throws an exception if
+   *  set_use_percent() was not previously called.
+   */
   double get_use_percent();
 
+  /** sets the proportion of the data set that will be used for
+   *  validation;  0.0 <= s <= 1.0, else an exception is thrown
+   */
   void set_validation_percent(double s);
+
+  /** returns true if set_validation_percent was called;
+   *  this method will likely be deprecated in the future
+   */  
   bool has_validation_percent();
+
+  /** returns the percentage of the data set that is to be
+   *  used for validation
+   */
   double get_validation_percent();
+
+  /** set the identifyer for the data set; should be
+   *  "train" or "test." This is primarily for internal use:
+   *  end users can ignore.
+   */
+  void set_role(std::string role) { m_role = role; }
+
+  /** returns the role ("train," "test," or "error"
+   *  This is primarily for internal use:
+   *  end users can ignore.
+   */
+  std::string get_role() { return m_role; }
 
   /**
    * Pure abstract virtual function; all DataReaders *must* implement.
@@ -202,13 +252,20 @@ public:
   int get_num_unused_data() { return (int)m_unused_indices.size(); }
   int* get_unused_data() { return &m_unused_indices[0]; }
 
-  void select_subset_of_data(size_t max_sample_count, bool firstN);
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  void set_master(bool m) { m_master = m; }
 
-  bool swap_used_and_unused_index_sets();
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  bool is_master() { return m_master; }
+
+  void select_subset_of_data();
+
+  /** \brief Replace the shuffled index set with the unused index set 
+   *  The unused index set is emptied.
+   */
+  void use_unused_index_set();
 
   DataReader& operator=(const DataReader& source);
-
-  size_t trim_data_set(double use_percentage, bool firstN=false);
 
   void calculate_multi_model_data_distribution(lbann_comm *comm);
 
@@ -251,6 +308,9 @@ protected:
   double m_validation_percent;
   size_t m_max_sample_count_was_set;
   double m_use_percent;
+  std::string m_role;
+
+  bool m_master;
 };
 
 }  // namespace lbann

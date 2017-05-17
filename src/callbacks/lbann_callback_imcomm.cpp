@@ -66,17 +66,19 @@ void lbann_callback_imcomm::setup(model* m) {
         if (ct == ONEBIT_QUANTIZATION) {
           // Set up gradient history and SGD optimizer for one-bit quantization.
           gradhistories.emplace(idx, Mat{});
-          if (layer->optimizer != nullptr) {
-            if (typeid(*(layer->optimizer)) != typeid(Adagrad<DistMat>)) {
+          if (layer->m_optimizer != nullptr) {
+            if (typeid(*(layer->m_optimizer)) != typeid(adagrad)) {
               throw lbann_exception(
                 "lbann_callback_imcomm: Cannot do one-bit quantization for "
                 "layer that does not use Adagrad");
             }
             // TODO: This leaks the old optimizer.
-            layer->optimizer = new SGD<DistMat>(
-              layer->comm, layer->optimizer->get_learning_rate(),
-              0.0f, 0.0f, false);
-            layer->optimizer->setup(layer->m_weights->Width(), layer->m_weights->Height());
+            layer->m_optimizer = new sgd(layer->comm,
+                                         layer->m_optimizer->get_learning_rate(),
+                                         0.0f,
+                                         0.0f,
+                                         false);
+            layer->m_optimizer->setup(layer->m_weights);
           }
         }
       }

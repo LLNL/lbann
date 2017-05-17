@@ -81,8 +81,8 @@ int main(int argc, char* argv[])
     trainParams.IntermodelCommMethod =
       static_cast<int>(lbann_callback_imcomm::ADAPTIVE_THRESH_QUANTIZATION);
     trainParams.parse_params();
-    trainParams.PercentageTrainingSamples = 0.80;
-    trainParams.PercentageValidationSamples = 1.00;
+    trainParams.PercentageTrainingSamples = 1.0;
+    trainParams.PercentageValidationSamples = 0.2;
     PerformanceParams perfParams;
     perfParams.parse_params();
     // Read in the user specified network topology
@@ -135,14 +135,8 @@ int main(int argc, char* argv[])
     DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true);
     imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
     imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
-    imagenet_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+    imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     imagenet_trainset.load();
-
-    if (comm->am_world_master()) {
-      cout << "Training using " << (trainParams.PercentageTrainingSamples*100) <<
-        "% of the training data set, which is " << imagenet_trainset.getNumData() <<
-        " samples." << endl;
-    }
 
     imagenet_trainset.scale(scale);
     imagenet_trainset.subtract_mean(subtract_mean);
@@ -155,29 +149,17 @@ int main(int argc, char* argv[])
     // Clone the training set object
     DataReader_ImageNet imagenet_validation_set(imagenet_trainset);
     // Swap the used and unused index sets so that it validates on the remaining data
-    if (!imagenet_validation_set.swap_used_and_unused_index_sets()) {
-      if (comm->am_world_master()) {
-        cerr << __FILE__ << " " << __LINE__ << " ImageNet validation data error" << endl;
-      }
-      return -1;
-    }
+    imagenet_validation_set.use_unused_index_set();
 
-    if (trainParams.PercentageValidationSamples == 1.00) {
-      if (comm->am_world_master()) {
-        cout << "Validating training using " <<
-          ((1.00 - trainParams.PercentageTrainingSamples)*100) <<
-          "% of the training data set, which is " <<
-          imagenet_validation_set.getNumData() << " samples." << endl;
-      }
-    } else {
-      size_t preliminary_validation_set_size = imagenet_validation_set.getNumData();
-      size_t final_validation_set_size = imagenet_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-      if (comm->am_world_master()) {
-        cout << "Trim the validation data set from " <<
-          preliminary_validation_set_size << " samples to " <<
-          final_validation_set_size << " samples." << endl;
-      }
-    }
+        if (comm->am_world_master()) {
+          size_t num_train = imagenet_trainset.getNumData();
+          size_t num_validate = imagenet_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+        }
+
 
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
@@ -203,28 +185,28 @@ int main(int argc, char* argv[])
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
     ///////////////////////////////////////////////////////////////////
-    Optimizer_factory *optimizer;
+
+    optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
-      optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
-    } else if (trainParams.LearnRateMethod == 2) { // RMSprop
-      optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
+      optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+    }else if (trainParams.LearnRateMethod == 2) { // RMSprop
+      optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
     } else if (trainParams.LearnRateMethod == 3) { // Adam
-      optimizer = new Adam_factory(comm, trainParams.LearnRate);
+      optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
     } else {
-      optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9,
-                                  trainParams.LrDecayRate, true);
+      optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
     layer_factory* lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm,
-                            new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+                            new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
     std::map<execution_mode, DataReader*> data_readers = {
       std::make_pair(execution_mode::training,&imagenet_trainset), 
       std::make_pair(execution_mode::validation, &imagenet_validation_set), 
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
     int NumLayers = netParams.Network.size();
     // initalize neural network (layers)
@@ -232,13 +214,13 @@ int main(int argc, char* argv[])
     for (int l = 0; l < (int)NumLayers; l++) {
       uint idx;
       if (l < (int)NumLayers-1) {
-        idx = dnn.add("FullyConnected", netParams.Network[l],
+        idx = dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       trainParams.ActivationType,
                       weight_initialization::glorot_uniform,
-                      {new dropout(comm, trainParams.DropOut)});
+                      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
       } else {
         // Add a softmax layer to the end
-        idx = dnn.add("Softmax", netParams.Network[l],
+        idx = dnn.add("Softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       activation_type::ID,
                       weight_initialization::glorot_uniform,
                       {});
@@ -246,7 +228,7 @@ int main(int argc, char* argv[])
       layer_indices.insert(idx);
     }
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);

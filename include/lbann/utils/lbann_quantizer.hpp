@@ -494,7 +494,7 @@ private:
   }
 
   template <typename T>
-  void intermodel_ring_reduce_scatter(
+  void intermodel_pairwise_exchange_reduce_scatter(
     lbann_comm* comm, Mat& mat, bool var_recv,
     std::function<T*(Mat&, IR, IR, int&)> send_trans,
     std::function<T*(Mat&, int&)> get_recv_buf,
@@ -505,6 +505,14 @@ private:
     lbann_comm* comm, Mat& mat, bool var_recv,
     std::function<void(Mat&)> reduced_trans,
     std::function<T*(int&)> get_send_buf,
+    std::function<T*(Mat&, int&)> get_recv_buf,
+    std::function<void(T*, Mat&)> recv_trans,
+    std::function<void(T*, T*)> swap_bufs);
+
+  template <typename T>
+  void intermodel_recursive_doubling_allreduce(
+    lbann_comm* comm, Mat& mat,
+    std::function<T*(Mat&, int&)> send_trans,
     std::function<T*(Mat&, int&)> get_recv_buf,
     std::function<void(T*, Mat&)> recv_trans,
     std::function<void(T*, T*)> swap_bufs);

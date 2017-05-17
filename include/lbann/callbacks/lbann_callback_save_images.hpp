@@ -54,7 +54,7 @@ private:
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc
   DataReader* m_reader;
-  void save_image(ElMat* input, ElMat* output); 
+  void save_image(model* m, ElMat* input, ElMat* output,uint index); 
 };
 
 }  // namespace lbann

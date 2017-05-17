@@ -28,6 +28,16 @@
 #include "lbann/utils/lbann_random.hpp"
 
 namespace {
+#ifdef __ICC
+lbann::rng_gen generator;
+#pragma omp threadprivate(generator)
+
+lbann::fast_rng_gen fast_generator;
+#pragma omp threadprivate(fast_generator)
+
+lbann::rng_gen data_seq_generator;
+#pragma omp threadprivate(data_seq_generator)
+#else
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
 // https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
@@ -42,6 +52,7 @@ lbann::fast_rng_gen fast_generator;
 extern lbann::rng_gen data_seq_generator;
 #pragma omp threadprivate(data_seq_generator)
 lbann::rng_gen data_seq_generator;
+#endif
 }
 
 namespace lbann {
@@ -191,6 +202,48 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
     }
   }
   mat.ProcessQueues();
+}
+
+
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out) {
+  switch(initialization) {
+  case weight_initialization::uniform:
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), DataType(1));
+    break;
+  case weight_initialization::normal:
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), DataType(1));
+    break;
+  case weight_initialization::glorot_normal: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::glorot_uniform: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::he_normal: {
+    const DataType var = 1.0 / fan_in;
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::he_uniform: {
+    const DataType var = 1.0 / fan_in;
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::zero: // Zero initialization is default
+  default:
+    Zero(matrix_v);
+    break;
+  }
 }
 
 }  // namespace lbann

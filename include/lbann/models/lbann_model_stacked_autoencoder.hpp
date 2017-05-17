@@ -45,12 +45,13 @@ namespace lbann
                         lbann_comm* comm,
                         objective_functions::objective_fn* obj_fn,
                         layer_factory* _layer_fac,
-                        Optimizer_factory* _optimizer_fac);
+                        optimizer_factory* _optimizer_fac);
 
     /// Destructor
     ~stacked_autoencoder();
 
     void begin_stack(const std::string layer_name,
+                     data_layout data_dist,
                      int layer_dim,
                      activation_type activation=activation_type::RELU,
                      weight_initialization init=weight_initialization::glorot_uniform,

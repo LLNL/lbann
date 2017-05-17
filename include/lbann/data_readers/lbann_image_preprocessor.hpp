@@ -30,9 +30,7 @@
 #define LBANN_IMAGE_PREPROCESSOR
 
 #ifdef __LIB_OPENCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "lbann/data_readers/lbann_opencv.hpp"
 #else
 #error OpenCV required
 #endif

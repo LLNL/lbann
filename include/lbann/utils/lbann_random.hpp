@@ -156,6 +156,12 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
 void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
 
+/**
+ * Using one of the available initialization methods, initialize a
+ * matrix
+ */
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out);
+
 template<typename DistType,typename DType=DataType>
 class rng {
 

@@ -34,28 +34,27 @@ using namespace std;
 using namespace El;
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle), lbann_image_preprocessor()
+  : DataReader(batchSize, shuffle)
 {
   m_image_width = 256;
   m_image_height = 256;
-  m_image_depth = 3;
+  m_image_num_channels = 3;
   m_num_labels = 1000;
 
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
 }
 
 lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
   : DataReader((const DataReader&) source),
-    lbann_image_preprocessor((const lbann_image_preprocessor&) source),
-    m_image_dir(source.m_image_dir), 
+    m_image_dir(source.m_image_dir),
     ImageList(source.ImageList),
-    m_image_width(source.m_image_width), 
-    m_image_height(source.m_image_height), 
-    m_image_depth(source.m_image_depth),  
+    m_image_width(source.m_image_width),
+    m_image_height(source.m_image_height),
+    m_image_num_channels(source.m_image_num_channels),
     m_num_labels(source.m_num_labels)
 {
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 }
 
 lbann::DataReader_ImageNet::~DataReader_ImageNet()
@@ -65,27 +64,26 @@ lbann::DataReader_ImageNet::~DataReader_ImageNet()
 
 int lbann::DataReader_ImageNet::fetch_data(Mat& X)
 {
-  static bool testme = true;
   if(!DataReader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
     throw lbann_exception(err.str());
   }
 
-  int pixelcount = m_image_width * m_image_height * m_image_depth;
+  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int current_batch_size = getBatchSize();
 
-  int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
-      break;
+  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+#pragma omp parallel for
+  for (int n = CurrentPos; n < end_pos; ++n) {
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     string imagepath = m_image_dir + ImageList[index].first;
 
     int width, height;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, m_pixels);
+    unsigned char* pixels = (unsigned char*) std::malloc(num_channel_values*sizeof(unsigned char));
+    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
     }
@@ -93,16 +91,17 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");
     }
 
-    for (int p = 0; p < pixelcount; p++) {
-      X.Set(p, k, m_pixels[p]);
+    for (int p = 0; p < num_channel_values; p++) {
+      X.Set(p, k, pixels[p]);
     }
+    std::free(pixels);
 
     auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
-    augment(pixel_col, m_image_height, m_image_width, m_image_depth);
-    normalize(pixel_col, m_image_depth);
+    augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
+    normalize(pixel_col, m_image_num_channels);
   }
 
-  return (n - CurrentPos);
+  return end_pos - CurrentPos;
 }
 
 int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
@@ -139,7 +138,9 @@ void lbann::DataReader_ImageNet::load()
   // load image list
   FILE* fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
-    cerr << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    throw lbann_exception(err.str());
   }
 
   while (!feof(fplist)) {
@@ -158,40 +159,7 @@ void lbann::DataReader_ImageNet::load()
     ShuffledIndices[n] = n;
   }
 
-  if (has_max_sample_count()) {
-    size_t max_sample_count = get_max_sample_count();
-    bool firstN = get_firstN();
-    load(max_sample_count, firstN);
-  } 
-  
-  else if (has_use_percent()) {
-    double use_percent = get_use_percent();
-    bool firstN = get_firstN();
-    load(use_percent, firstN);
-  }
-
-}
-
-void lbann::DataReader_ImageNet::load(size_t max_sample_count, bool firstN)
-{
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: ImageNet: data reader load error: invalid number of samples selected";
-    throw lbann_exception(err.str());
-  }
-  select_subset_of_data(max_sample_count, firstN);
-}
-
-void lbann::DataReader_ImageNet::load(double use_percentage, bool firstN)
-{
-  size_t max_sample_count = rint(getNumData()*use_percentage);
-
-  if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: ImageNet: data reader load error: invalid number of samples selected";
-    throw lbann_exception(err.str());
-  }
-  select_subset_of_data(max_sample_count, firstN);
+  select_subset_of_data();
 }
 
 void lbann::DataReader_ImageNet::free()
@@ -216,11 +184,11 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   this->ImageList = source.ImageList;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
-  this->m_image_depth = source.m_image_height;
+  this->m_image_num_channels = source.m_image_num_channels;
   this->m_num_labels = source.m_num_labels;
 
-  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_depth];
-  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_depth);
+  m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
+  memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 
   return *this;
 }
@@ -240,8 +208,8 @@ int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char
   data.clear();
   data.reserve(num_to_process);
 
-  int pixelcount = m_image_width * m_image_height * m_image_depth;
-  vector<unsigned char> pixels(pixelcount);
+  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
+  vector<unsigned char> pixels(num_channel_values);
   unsigned char *v = &(pixels[0]);
 
   int width, height;

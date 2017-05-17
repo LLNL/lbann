@@ -40,10 +40,11 @@
 using namespace std;
 using namespace El;
 
-lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
+lbann::Layer::Layer(data_layout data_dist, const uint index, 
+                    lbann_comm* comm, optimizer *opt,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
-  : m_activation_type(activation), optimizer(optimizer), comm(comm),
+  : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
     regularizers(regs), m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize),
     fp_time(0.0), bp_time(0.0),
@@ -68,21 +69,19 @@ lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
     bp_input_d = NULL;
 #endif
 
-    // Most layers use standard elemental matrix distribution
-    m_weights             = new DistMat(comm->get_model_grid());
-    m_weights_gradient    = new DistMat(comm->get_model_grid());
-    m_weighted_sum        = new DistMat(comm->get_model_grid());
-    m_prev_activations    = new DistMat(comm->get_model_grid());
-    m_activations         = new DistMat(comm->get_model_grid());
-    m_prev_error_signal   = new DistMat(comm->get_model_grid());
-    m_error_signal        = new DistMat(comm->get_model_grid());
-
-    /// Instantiate these view objects but do not allocate data for them
-    m_weighted_sum_v      = new DistMat(comm->get_model_grid());
-    m_prev_activations_v  = new DistMat(comm->get_model_grid());
-    m_activations_v       = new DistMat(comm->get_model_grid());
-    m_prev_error_signal_v = new DistMat(comm->get_model_grid());
-    m_error_signal_v      = new DistMat(comm->get_model_grid());
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+    }
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
@@ -105,13 +104,56 @@ lbann::Layer::~Layer() {
   delete m_prev_activations_v;
 }
 
+/// Matrices should be in MC,MR distributions
+void lbann::Layer::initialize_model_parallel_distribution() {
+  m_weights             = new DistMat(comm->get_model_grid());
+  m_weights_gradient    = new DistMat(comm->get_model_grid());
+  m_weighted_sum        = new DistMat(comm->get_model_grid());
+  m_prev_activations    = new DistMat(comm->get_model_grid());
+  m_activations         = new DistMat(comm->get_model_grid());
+  m_prev_error_signal   = new DistMat(comm->get_model_grid());
+  m_error_signal        = new DistMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new DistMat(comm->get_model_grid());
+  m_prev_activations_v  = new DistMat(comm->get_model_grid());
+  m_activations_v       = new DistMat(comm->get_model_grid());
+  m_prev_error_signal_v = new DistMat(comm->get_model_grid());
+  m_error_signal_v      = new DistMat(comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void lbann::Layer::initialize_data_parallel_distribution() {
+  m_weights             = new StarMat(comm->get_model_grid());
+  m_weights_gradient    = new StarMat(comm->get_model_grid());
+  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(comm->get_model_grid());
+  m_activations         = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
+  m_error_signal        = new StarVCMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
+  m_activations_v       = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
+}
+
 void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
-  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
-    *m_prev_activations = *fp_input;
+    DistData curr_dist = m_prev_activations->DistData();
+    DistData prev_dist = fp_input->DistData();
+    if(curr_dist.colDist == prev_dist.colDist
+       && curr_dist.rowDist == prev_dist.rowDist) {
+      View(*m_prev_activations, *fp_input);
+    }
+    else {
+      *m_prev_activations = *fp_input;
+    }
   }
 
   // Set matrix views based on current mini-batch size
@@ -132,19 +174,29 @@ void lbann::Layer::forwardProp() {
 #endif
 
   // Apply connection regularization. (e.g. DropConnect).
-  for (regularizer* reg : regularizers) reg->fp_connections();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_connections();
+  }
 
   // Layer layer's linearity.
+  double fp_lin_start = get_time();
   fp_linearity();
+  fp_linearity_time += get_time() - fp_lin_start;
 
   // Apply weight regularization (e.g. L2 normalization).
-  for (regularizer* reg : regularizers) reg->fp_weights();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_weights();
+  }
 
   // Apply activation function/nonlinearity.
+  double fp_nonlin_start = get_time();
   fp_nonlinearity();
+  fp_nonlinearity_time += get_time() - fp_nonlin_start;
 
   // Apply activation regularization (e.g. Dropout).
-  for (regularizer* reg : regularizers) reg->fp_activations();
+  for(Int i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_activations();
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
@@ -167,9 +219,20 @@ void lbann::Layer::backProp() {
   //  bp_set_std_matrix_view();
 
   // Get incoming loss and convert matrix distribution if necessary
-  // Note that on assignment Elemental handles distribution conversion so a DistMatrixReadProxy is unnecessary
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
-    *m_prev_error_signal = *bp_input;
+    DistData curr_dist = m_prev_error_signal->DistData();
+    DistData next_dist = bp_input->DistData();
+    if(curr_dist.colDist == next_dist.colDist
+       && curr_dist.rowDist == next_dist.rowDist) {
+      View(*m_prev_error_signal, *bp_input);
+      View(*m_prev_error_signal_v,
+           *m_prev_error_signal,
+           ALL,
+           IR(0, m_prev_error_signal_v->Width()));
+    }
+    else {
+      *m_prev_error_signal = *bp_input;
+    }
   }
 
 #ifdef __LIB_CUDNN
@@ -187,19 +250,29 @@ void lbann::Layer::backProp() {
 #endif
 
   // Backprop activation regularization.
-  for (regularizer* reg : regularizers) reg->bp_activations();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_activations();
+  }
 
   // Backprop the activation function/nonlinearity.
+  double bp_nonlin_start = get_time();
   bp_nonlinearity();
+  bp_nonlinearity_time += get_time() - bp_nonlin_start;
 
   // Backprop weight regularization.
-  for (regularizer* reg : regularizers) reg->bp_weights();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_weights();
+  }
 
   // Backprop the layer's linearity.
+  double bp_lin_start = get_time();
   bp_linearity();
+  bp_linearity_time += get_time() - bp_lin_start;
 
   // Backprop connection regularization.
-  for (regularizer* reg : regularizers) reg->bp_connections();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_connections();
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU
@@ -212,6 +285,16 @@ void lbann::Layer::backProp() {
 #endif
 
   bp_time += get_time() - bp_start;
+}
+
+bool lbann::Layer::update() {
+  if (m_execution_mode == execution_mode::training) {
+    for(Int i=0; i<regularizers.size(); ++i) {
+      regularizers[i]->update_gradients();
+      regularizers[i]->update();
+    }
+  }
+  return false;
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
@@ -236,7 +319,12 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_stdev(prefix + "stdev", acts, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
+  summarizer.reduce_scalar(prefix + "fp_linearity_time", fp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "fp_nonlinearity_time", fp_nonlinearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
 }
 
@@ -346,7 +434,7 @@ bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* byte
     //writeDist(fd, filename, *m_weights, bytes);
 
     // Need to catch return value from function
-    optimizer->saveToCheckpoint(fd, filename, bytes);
+    // m_optimizer->saveToCheckpoint(fd, filename, bytes);
     return true;
 }
 
@@ -356,7 +444,7 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* by
     //readDist(fd, filename, (DistMat&) *m_weights, bytes);
 
     // Need to catch return value from function
-    optimizer->loadFromCheckpoint(fd, filename, bytes);
+    // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
     return true;
 }
 
@@ -370,7 +458,7 @@ bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
     p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if saving training state, also write out state of optimizer
-    optimizer->saveToCheckpointShared(p, Index);
+    // m_optimizer->saveToCheckpointShared(p, Index);
 
     return true;
 }
@@ -385,7 +473,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
     p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
 
     // if loading training state, read in state of optimizer
-    optimizer->loadFromCheckpointShared(p, Index);
+    // m_optimizer->loadFromCheckpointShared(p, Index);
 
     return true;
 }
@@ -393,16 +481,11 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  if(m_prev_activations->Width() != 0)
-    View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  if(m_prev_error_signal->Width() != 0)
-    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
-  if(m_weighted_sum->Width() != 0)
-    View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
-  if(m_error_signal->Width() != 0)
-    View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
-  if(m_activations->Width() != 0)
-    View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
+  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
+  View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) {

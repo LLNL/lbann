@@ -40,7 +40,7 @@ SAVE_MODEL=false
 LOAD_MODEL=false
 CKPT_EPOCHS=0
 CKPT_STEPS=0
-TASKS_PER_NODE=8
+TASKS_PER_NODE=1
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"

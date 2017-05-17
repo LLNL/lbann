@@ -5,6 +5,7 @@ add_sources(
   lbann_layer_activations.cpp
   lbann_layer_convolutional.cpp
   lbann_layer_pooling.cpp
+  lbann_layer_local_response_normalization.cpp
   lbann_io_layer.cpp
   lbann_input_layer.cpp
   lbann_input_layer_distributed_minibatch.cpp
@@ -12,5 +13,5 @@ add_sources(
   lbann_target_layer.cpp
   lbann_target_layer_distributed_minibatch.cpp
   lbann_target_layer_distributed_minibatch_parallel_io.cpp
-  lbann_target_layer_unsupervised.cpp
+  lbann_layer_reconstruction.cpp
 )

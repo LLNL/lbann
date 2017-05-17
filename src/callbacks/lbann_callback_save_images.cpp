@@ -35,17 +35,22 @@ namespace lbann {
 void lbann_callback_save_images::on_phase_end(model* m) {
   auto layers = m->get_layers();
   auto phase = m->get_current_phase();
-  save_image(layers[phase]->m_activations, layers[phase+2]->m_activations);
+  auto epoch = m->get_cur_epoch();
+  auto index = phase*epoch + epoch;
+  save_image(m,layers[phase]->m_activations, layers[phase+2]->m_activations,index);
 }
 
-void lbann_callback_save_images::save_image(ElMat* input, ElMat* output){
+void lbann_callback_save_images::save_image(model* m, ElMat* input, ElMat* output,uint index){
   DistMat in_col,out_col;
   View(in_col,*input, ALL, IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
   View(out_col,*output, ALL, IR(0));
   CircMat in_pixel = in_col;
   CircMat out_pixel = out_col;
-  m_reader->save_image(in_pixel.Matrix(), m_image_dir+"gt."+m_extension);
-  m_reader->save_image(out_pixel.Matrix(), m_image_dir+"rc."+m_extension);
+  if (m->get_comm()->am_world_master()) {
+    std::cout << "Saving images to " << m_image_dir << std::endl;
+    m_reader->save_image(in_pixel.Matrix(), m_image_dir+"gt_"+ std::to_string(index)+"."+m_extension);
+    m_reader->save_image(out_pixel.Matrix(), m_image_dir+"rc_"+ std::to_string(index)+"."+m_extension);
+  }
 }
 
 

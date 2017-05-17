@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/lbann_image_preprocessor.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
@@ -137,7 +138,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
 }
 
 void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
-  if (m_z_score) {
+  if (m_z_score || (m_mean_subtraction && m_unit_variance)) {
     z_score(pixels, num_channels);
   } else {
     if (m_scale) {
@@ -152,70 +153,116 @@ void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
   }
 }
 
-void lbann_image_preprocessor::mean_subtraction(
-  Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+void lbann_image_preprocessor::mean_subtraction(Mat& pixels,
+                                                unsigned num_channels) {
+  const unsigned height = pixels.Height();
+  const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
+    const unsigned channel_start = channel*height_per_channel;
+    const unsigned channel_end = (channel+1)*height_per_channel;
     // Compute the mean.
-    DataType mean = 0.0f;
-    for (unsigned i = channel; i < height; i += num_channels) {
-      mean += pixels(i, 0);
+    DataType mean = DataType(0);
+    for (unsigned i = channel_start; i < channel_end; ++i) {
+      mean += pixels_buffer[i];
     }
-    mean /= height / num_channels;
-    for (unsigned i = channel; i < height; i += num_channels) {
-      pixels(i, 0) -= mean;
+    mean /= height_per_channel;
+    for (unsigned i = channel_start; i < channel_end; ++i) {
+      pixels_buffer[i] -= mean;
     }
   }
 }
 
 void lbann_image_preprocessor::unit_variance(
   Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+
+  // Get image parameters
+  const unsigned height = pixels.Height();
+  const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
+
+  // Scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
-    DataType mean = 0.0f;
-    DataType sqsum = 0.0f;
-    for (unsigned i = channel; i < height; i += num_channels) {
-      mean += pixels(i, 0);
-      sqsum += pixels(i, 0) * pixels(i, 0);
+    const unsigned channel_start = channel*height_per_channel;
+    const unsigned channel_end = (channel+1)*height_per_channel;
+
+    // Compute sum and standard deviation
+    // Note: Applying shift near mean improves numerical stability
+    const DataType shift = pixels_buffer[channel_start];
+    DataType shifted_sum = 0;
+    DataType shifted_sqsum = 0;
+    for (unsigned i = channel_start; i < channel_end; ++i) {
+      const DataType shifted_val = pixels_buffer[i] - shift;
+      shifted_sum += shifted_val;
+      shifted_sqsum += shifted_val * shifted_val;
     }
-    mean /= height / num_channels;
-    sqsum /= height / num_channels;
-    DataType std = sqsum - (mean * mean);
-    std = std::sqrt(std) + 1e-7;  // Avoid division by 0.
-    for (unsigned i = channel; i < height; i += num_channels) {
-      pixels(i, 0) /= std;
+    const DataType shifted_mean = shifted_sum / height_per_channel;
+    const DataType mean = shifted_mean + shift;
+    const DataType std = Sqrt(shifted_sqsum / height_per_channel
+                              - shifted_mean * shifted_mean);
+
+    // Apply scaling if standard deviation is non-zero
+    if(std > DataType(1e-7)*Abs(mean)) {
+      const DataType inv_std = 1 / std;
+      for (unsigned i = channel_start; i < channel_end; ++i) {
+        pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std + mean;
+      }
     }
+
   }
+
 }
 
-void lbann_image_preprocessor::unit_scale(Mat& pixels, unsigned num_channels) {
+void lbann_image_preprocessor::unit_scale(Mat& pixels,
+                                          unsigned num_channels) {
   // Pixels are in range [0, 255], normalize using that.
   // Channels are not relevant here.
-  const El::Int height = pixels.Height();
-  for (unsigned i = 0; i < height; ++i) {
-    pixels(i, 0) /= 255.0f;
-  }
+  pixels *= DataType(1) / 255;
 }
 
-void lbann_image_preprocessor::z_score(Mat& pixels, unsigned num_channels) {
-  const El::Int height = pixels.Height();
+void lbann_image_preprocessor::z_score(Mat& pixels,
+                                       unsigned num_channels) {
+
+  // Get image parameters
+  const unsigned height = pixels.Height();
+  const unsigned height_per_channel = height / num_channels;
+  DataType* pixels_buffer = pixels.Buffer();
+
+  // Shift and scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
-    // Compute the mean and standard deviation.
-    DataType mean = 0.0f;
-    DataType sqsum = 0.0f;
-    for (unsigned i = channel; i < height; i += num_channels) {
-      mean += pixels(i, 0);
-      sqsum += pixels(i, 0) * pixels(i, 0);
+    const unsigned channel_start = channel*height_per_channel;
+    const unsigned channel_end = (channel+1)*height_per_channel;
+
+    // Compute sum and standard deviation
+    // Note: Applying shift near mean improves numerical stability
+    const DataType shift = pixels_buffer[channel_start];
+    DataType shifted_sum = 0;
+    DataType shifted_sqsum = 0;
+    for (unsigned i = channel_start; i < channel_end; ++i) {
+      const DataType shifted_val = pixels_buffer[i] - shift;
+      shifted_sum += shifted_val;
+      shifted_sqsum += shifted_val * shifted_val;
     }
-    mean /= height / num_channels;
-    sqsum /= height / num_channels;
-    DataType std = sqsum - (mean * mean);
-    std = std::sqrt(std) + 1e-7;  // Avoid division by 0.
-    // Z-score is (x - mean) / std.
-    for (unsigned i = channel; i < height; i += num_channels) {
-      pixels(i, 0) = (pixels(i, 0) - mean) / std;
+    const DataType shifted_mean = shifted_sum / height_per_channel;
+    const DataType mean = shifted_mean + shift;
+    const DataType std = Sqrt(shifted_sqsum / height_per_channel
+                              - shifted_mean * shifted_mean);
+
+    // Apply shift and scaling if standard deviation is non-zero
+    if(std > DataType(1e-7)*Abs(mean)) {
+      const DataType inv_std = 1 / std;
+      for (unsigned i = channel_start; i < channel_end; ++i) {
+        pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std;
+      }
     }
+    else {
+      for (unsigned i = channel_start; i < channel_end; ++i) {
+        pixels_buffer[i] = DataType(0);
+      }
+    }
+
   }
+
 }
 
 cv::Mat lbann_image_preprocessor::cv_pixels(const Mat& pixels,
@@ -235,10 +282,10 @@ cv::Mat lbann_image_preprocessor::cv_pixels(const Mat& pixels,
     for (unsigned y = 0; y < imheight; ++y) {
       for (unsigned x = 0; x < imwidth; ++x) {
         cv::Vec3f pixel;
-        unsigned offset = 3 * (y * imwidth + x);
+        unsigned offset = y * imwidth + x;
         pixel[0] = pixels(offset, 0);
-        pixel[1] = pixels(offset + 1, 0);
-        pixel[2] = pixels(offset + 2, 0);
+        pixel[1] = pixels(offset + imheight*imwidth, 0);
+        pixel[2] = pixels(offset + 2*imheight*imwidth, 0);
         m.at<cv::Vec3f>(y, x) = pixel;
       }
     }
@@ -264,10 +311,10 @@ void lbann_image_preprocessor::col_pixels(const cv::Mat& sqpixels, Mat& pixels,
     for (unsigned y = 0; y < imheight; ++y) {
       for (unsigned x = 0; x < imwidth; ++x) {
         cv::Vec3f pixel = sqpixels.at<cv::Vec3f>(y, x);
-        unsigned offset = 3 * (y * imwidth + x);
+        unsigned offset = y * imwidth + x;
         pixels(offset, 0) = pixel[0];
-        pixels(offset + 1, 0) = pixel[1];
-        pixels(offset + 2, 0) = pixel[2];
+        pixels(offset + imheight*imwidth, 0) = pixel[1];
+        pixels(offset + 2*imheight*imwidth, 0) = pixel[2];
       }
     }
   } else {

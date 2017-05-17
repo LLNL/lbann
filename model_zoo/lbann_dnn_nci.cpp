@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
       trainParams.LearnRate = 0.0001;
       trainParams.DropOut = -1.0f;
       trainParams.ProcsPerModel = 0;
-      trainParams.PercentageTrainingSamples = 0.90;
-      trainParams.PercentageValidationSamples = 1.00;
+      trainParams.PercentageTrainingSamples = 1.0;
+      trainParams.PercentageValidationSamples = 0.1;
       PerformanceParams perfParams;
       perfParams.BlockSize = 256;
 
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
       const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
 
         // Set up the communicator and get the grid.
-      lbann_comm* comm = new lbann_comm(trainParams.ProcsPerModel);
+      comm = new lbann_comm(trainParams.ProcsPerModel);
       Grid& grid = comm->get_model_grid();
       if (comm->am_world_master()) {
         cout << "Number of models: " << comm->get_num_models() << endl;
@@ -107,35 +107,24 @@ int main(int argc, char* argv[])
       clock_t load_time = clock();
       data_reader_nci nci_trainset(trainParams.MBSize, true);
       nci_trainset.set_data_filename(train_data);
-      nci_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+      nci_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
       nci_trainset.load();
 
-      if (comm->am_world_master()) {
-        cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << nci_trainset.getNumData() << " samples." << endl;
-      }
 
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (NCI)
       ///////////////////////////////////////////////////////////////////
       data_reader_nci nci_validation_set(nci_trainset); // Clone the training set object
-      if (!nci_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-        if (comm->am_world_master()) {
-          cout << "NCI validation data error" << endl;
-        }
-        return -1;
-      }
+      nci_validation_set.use_unused_index_set();
 
-      if(trainParams.PercentageValidationSamples == 1.00) {
         if (comm->am_world_master()) {
-          cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << nci_validation_set.getNumData() << " samples." << endl;
+          size_t num_train = nci_trainset.getNumData();
+          size_t num_validate = nci_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << nci_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << nci_validation_set.getNumData() << " samples." << endl;
         }
-      }else {
-        size_t preliminary_validation_set_size = nci_validation_set.getNumData();
-        size_t final_validation_set_size = nci_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-        if (comm->am_world_master()) {
-          cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-        }
-      }
 
 
         ///////////////////////////////////////////////////////////////////
@@ -154,32 +143,34 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
-      Optimizer_factory *optimizer; //@todo replace with factory
-      if (trainParams.LearnRateMethod == 1) { // Adagrad
-        optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
-      }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-        optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
-      }else {
-        optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
-      }
+        optimizer_factory *optimizer_fac;
+        if (trainParams.LearnRateMethod == 1) { // Adagrad
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+        }
       layer_factory* lfac = new layer_factory();
-      deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+      deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
       metrics::categorical_accuracy acc(comm);
       dnn.add_metric(&acc);
       std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                              std::make_pair(execution_mode::validation, &nci_validation_set),
                                                              std::make_pair(execution_mode::testing, &nci_testset)};
 
-      input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io,
+      input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
                                 (int) trainParams.MBSize, data_readers);
       dnn.add(input_layer);
 
-      dnn.add("FullyConnected", 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-      dnn.add("FullyConnected", 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
-      dnn.add("Softmax", 2, activation_type::ID, weight_initialization::glorot_uniform, {});
+      dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+      dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+      dnn.add("Softmax", data_layout::MODEL_PARALLEL, 2, activation_type::ID, weight_initialization::glorot_uniform, {});
 
 
-      target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io,
+      target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
                                  (int) trainParams.MBSize, data_readers, true);
       dnn.add(target_layer);
 
@@ -237,12 +228,12 @@ int main(int argc, char* argv[])
         delete dump_weights_cb;
       }
       
-      delete optimizer;
-      delete comm;
+      delete optimizer_fac;
     }
     catch (exception& e) { ReportException(e); }
 
     // free all resources by El and MPI
+    delete comm;
     Finalize();
 
     return 0;

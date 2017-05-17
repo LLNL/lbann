@@ -23,66 +23,43 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer .hpp .cpp - Abstract class for neural network optimizers
+// lbann_optimizer .hpp .cpp - Abstract optimizer class
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/lbann_optimizer.hpp"
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 
 using namespace std;
 using namespace El;
 
-void lbann::Optimizer::update_weight_bias_matrix(ElMat &WB_D, ElMat& WB) {
-  // TODO: throw exception
-  printf("LBANN Error: optimizer update not defined\n");
-  exit(-1);
+lbann::optimizer::optimizer
+(lbann_comm* comm, const std::string name, DataType learning_rate)
+  : comm(comm), m_name(name), m_learning_rate(learning_rate) {}
+
+lbann::optimizer::~optimizer() {}
+
+void lbann::optimizer::setup(AbsDistMat* parameters)
+{
+  m_parameters = parameters;
+  m_height = m_parameters->Height();
+  m_width = m_parameters->Width();
+  DistData dist(*m_parameters);
+  if(dist.colDist == MC && dist.rowDist == MR)
+    m_matrix_format = matrix_format::MC_MR;
+  else if(dist.colDist == CIRC && dist.rowDist == CIRC)
+    m_matrix_format = matrix_format::CIRC_CIRC;
+  else if(dist.colDist == STAR && dist.rowDist == STAR)
+    m_matrix_format = matrix_format::STAR_STAR;
+  else if(dist.colDist == STAR && dist.rowDist == VC)
+    m_matrix_format = matrix_format::STAR_VC;
+  else if(dist.colDist == MC && dist.rowDist == STAR)
+    m_matrix_format = matrix_format::MC_STAR;
+  else
+    m_matrix_format = matrix_format::invalid;
 }
 
-#if 0
-lbann::Optimizer::Optimizer() {
+lbann::optimizer_factory::optimizer_factory
+(lbann_comm* comm,
+ const std::string name)
+  : comm(comm), m_name(name) {}
 
-}
-
-lbann::Optimizer::~Optimizer() {
-
-}
-
-static Optimizer *lbann::Optimizer::create_optimizer(int method) {
-  Optimizer *optimizer = NULL
-
-  if (LearnRateMethod == 1) { // Adagrad
-    optimizer = new Adagrad((float) 0.1 /*0.01*/, (float) 1e-6, grid);
-  }else if (LearnRateMethod == 2) { // RMSprop
-    optimizer = new RMSprop((float) 0.001, (float) 0.9, (float) 1e-6, grid);
-  }else {
-    optimizer = new SGD();
-  }
-  return optimizer;
-}
-
-bool lbann::Optimizer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes) {
-    return true;
-}
-
-bool lbann::Optimizer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes) {
-  return true;
-}
-
-bool lbann::Optimizer::saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-  return true;
-}
-
-bool lbann::Optimizer::loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-  return true;
-}
-
-lbann::Optimizer_factory::Optimizer_factory() {
-
-}
-
-lbann::Optimizer_factory::~Optimizer_factory() {
-
-}
-#endif
+lbann::optimizer_factory::~optimizer_factory() {}

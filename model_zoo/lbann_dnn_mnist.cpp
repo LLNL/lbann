@@ -31,10 +31,6 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
-#include "lbann/proto/lbann_proto.hpp"
-
-// for read/write
-#include <unistd.h>
 
 using namespace std;
 using namespace lbann;
@@ -52,13 +48,10 @@ int main(int argc, char* argv[])
     Initialize(argc, argv);
     lbann_comm* comm = NULL;
 
-    lbann_proto *pb = lbann_proto::get();
-
     El::GemmUseGPU(32,32,32);
 
     try {
 
-      const string prototext_fn = Input("--prototext_fn", "filename for writing a prototext file; default is 'none,' in which case no file will be written", std::string("none"));
 
         // Get data files
         const string g_MNIST_TrainLabelFile = Input("--train-label-file",
@@ -96,8 +89,8 @@ int main(int argc, char* argv[])
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 0.90;
-        trainParams.PercentageValidationSamples = 1.00;
+        trainParams.PercentageTrainingSamples = 1.0;
+        trainParams.PercentageValidationSamples = 0.1;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -112,13 +105,6 @@ int main(int argc, char* argv[])
 
         ProcessInput();
         PrintInputReport();
-
-        //register params with the lbann_proto class
-        //pb->add_network_params(network_params);
-        pb->add_performance_params(perfParams);
-        //pb->add_system_params(system_params);
-        pb->add_training_params(trainParams);
-
 
         // Set algorithmic blocksize
         SetBlocksize(perfParams.BlockSize);
@@ -137,12 +123,6 @@ int main(int argc, char* argv[])
         init_random(42);
         init_data_seq_random(42);
 
-        //tell the lbann_proto class who is the master
-        if (comm->am_world_master()) {
-          pb->set_master(true);
-        } else {
-          pb->set_master(false);
-        }
 
         int parallel_io = perfParams.MaxParIOSize;
         if (parallel_io == 0) {
@@ -159,23 +139,11 @@ int main(int argc, char* argv[])
 
         ///////////////////////////////////////////////////////////////////
         // load training data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        lbann_proto::data_reader_params d1;
-        d1.name = "mnist";
-        d1.role = "train";
-        d1.mini_batch_size = trainParams.MBSize;
-        d1.shuffle = true;
-        d1.root_dir = trainParams.DatasetRootDir;
-        d1.data_filename = g_MNIST_TrainImageFile;
-        d1.label_filename = g_MNIST_TrainLabelFile;
-        d1.percent_samples = trainParams.PercentageTrainingSamples;
-        pb->add_data_reader(d1);
-
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
         mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
         mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-        mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+        mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
         mnist_trainset.load();
 
         mnist_trainset.scale(scale);
@@ -183,47 +151,24 @@ int main(int argc, char* argv[])
         mnist_trainset.unit_variance(unit_variance);
         mnist_trainset.z_score(z_score);
 
-        if (comm->am_world_master()) {
-          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
-        }
-
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-          if (comm->am_world_master()) {
-            cerr << __FILE__ << " " << __LINE__ << " MNIST validation data error" << endl;
-          }
-          return -1;
-        }
+        mnist_validation_set.use_unused_index_set();
 
-        if(trainParams.PercentageValidationSamples == 1.00) {
-          if (comm->am_world_master()) {
-            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-          }
-        }else {
-          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          if (comm->am_world_master()) {
-            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-          }
+        if (comm->am_world_master()) {
+          size_t num_train = mnist_trainset.getNumData();
+          size_t num_validate = mnist_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
         }
 
         ///////////////////////////////////////////////////////////////////
         // load testing data (MNIST)
         ///////////////////////////////////////////////////////////////////
-        lbann_proto::data_reader_params d2;
-        d2.name = "mnist";
-        d2.role = "test";
-        d2.mini_batch_size = trainParams.MBSize;
-        d2.shuffle = true;
-        d2.root_dir = trainParams.DatasetRootDir;
-        d2.data_filename = g_MNIST_TestImageFile;
-        d2.label_filename = g_MNIST_TestLabelFile;
-        d2.percent_samples = trainParams.PercentageTestingSamples;
-        pb->add_data_reader(d2);
-
         DataReader_MNIST mnist_testset(trainParams.MBSize, true);
         mnist_testset.set_file_dir(trainParams.DatasetRootDir);
         mnist_testset.set_data_filename(g_MNIST_TestImageFile);
@@ -231,8 +176,6 @@ int main(int argc, char* argv[])
         mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
         mnist_testset.load();
 
-
-        //@TODO: add to lbann_proto.hpp
         mnist_testset.scale(scale);
         mnist_testset.subtract_mean(subtract_mean);
         mnist_testset.unit_variance(unit_variance);
@@ -247,39 +190,20 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        lbann_proto::optimizer_params o1;
-        o1.learn_rate = trainParams.LearnRate;
-        o1.momentum = 0.9;
-        o1.decay = trainParams.LrDecayRate;
-        o1.nesterov = false;
-
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
-          o1.name = "adagrad";
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
-          o1.name = "rms";
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
         } else if (trainParams.LearnRateMethod == 3) { // Adam
-          optimizer = new Adam_factory(comm, trainParams.LearnRate);
-          o1.name = "adam";
-        }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
-          o1.name = "sgd";
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
-        pb->add_optimizer(o1);
 
         // Initialize network
-        lbann_proto::model_params m1;
-        m1.name = "dnn";
-        m1.objective_function = "categorical_cross_entropy";
-        m1.mini_batch_size = trainParams.MBSize;
-        m1.num_epochs = trainParams.EpochCount;
-        m1.add_metric("categorical_accuracy");
-        pb->add_model(m1);
-
         layer_factory* lfac = new layer_factory();
-        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         dnn.add_metric(new metrics::categorical_accuracy(comm));
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
@@ -288,62 +212,22 @@ int main(int argc, char* argv[])
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
         
         //first layer
-        lbann_proto::layer_params layer_1;
-        layer_1.name = "input_distributed_minibatch_parallel_io";
-        layer_1.mini_batch_size = trainParams.MBSize;
-        layer_1.num_parallel_readers = parallel_io;
-        pb->add_layer(layer_1);
-
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
         
         //second layer
-        lbann_proto::layer_params layer_2;
-        layer_2.name = "fully_connected";
-        layer_2.num_prev_neurons = dnn.num_previous_neurons();
-        layer_2.num_neurons = 100;
-        layer_2.activation = trainParams.ActivationType;
-        layer_2.weight_init = weight_initialization::glorot_uniform;
-        lbann_proto::regularizer_params r1;
-        r1.name = "dropout";
-        r1.dropout = trainParams.DropOut;
-        layer_2.add_regularizer(r1);
-        pb->add_layer(layer_2);
-
-        dnn.add("FullyConnected", 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
         //third layer
-        lbann_proto::layer_params layer_3;
-        layer_3.name = "fully_connected";
-        layer_3.num_prev_neurons = dnn.num_previous_neurons();
-        layer_3.num_neurons = 30;
-        layer_3.activation = trainParams.ActivationType;
-        layer_3.weight_init = weight_initialization::glorot_uniform;
-        pb->add_layer(layer_3);
-        dnn.add("FullyConnected", 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
         //fourth layer
-        lbann_proto::layer_params layer_4;
-        layer_4.name = "softmax";
-        layer_4.num_prev_neurons = dnn.num_previous_neurons();
-        layer_4.num_neurons = 10;
-        layer_4.activation = activation_type::ID;
-        layer_4.weight_init = weight_initialization::glorot_uniform;
-        pb->add_layer(layer_4);
-        dnn.add("Softmax", 10, activation_type::ID, weight_initialization::glorot_uniform, {});
+        dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
         //fifth layer
-        lbann_proto::layer_params layer_5;
-        layer_5.name = "target_distributed_minibatch_parallel_io";
-        layer_5.mini_batch_size = trainParams.MBSize;
-        layer_5.num_parallel_readers = parallel_io;
-        layer_5.shared_data_reader = true;
-        layer_5.for_regression = false;
-        pb->add_layer(layer_5);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
-        //callbacks @TODO: add to lbann_proto
         lbann_callback_print print_cb;
         dnn.add_callback(&print_cb);
         lbann_callback_dump_weights* dump_weights_cb;
@@ -393,18 +277,7 @@ int main(int argc, char* argv[])
         // Initialize the model's data structures
         dnn.setup();
 
-        if (comm->am_world_master()) {
-          bool success = pb->writePrototextFile(prototext_fn.c_str());
-          if (success) {
-            cout << "prototext file written to: " << prototext_fn << endl;
-          } else {
-            cout << "prototext file NOT written; you must pass --prototext_fn <string>\n"
-                 << "to write a file\n";
-          }
-        }
-
         // set checkpoint directory and checkpoint interval
-        // @TODO: add to lbann_proto
         dnn.set_checkpoint_dir(trainParams.ParameterDir);
         dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
         dnn.set_checkpoint_steps(trainParams.CkptSteps);
@@ -455,7 +328,7 @@ int main(int argc, char* argv[])
         if (trainParams.DumpGradients) {
           delete dump_gradients_cb;
         }
-        delete optimizer;
+        delete optimizer_fac;
         delete comm;
     }
     catch (lbann_exception& e) { lbann_report_exception(e, comm); }

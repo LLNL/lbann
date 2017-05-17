@@ -1,29 +1,27 @@
-data_reader {
-  mnist {
-    role: "train"
-    batch_size: 192
-    shuffle: true
-    file_dir: "/p/lscratchf/brainusr/datasets/mnist-bin"
-    image_file: "train-images.idx3-ubyte"
-    label_file: "train-labels.idx1-ubyte"
-    percent_samples: 0.9
-  }
-  mnist {
-    role: "test"
-    batch_size: 192
-    shuffle: true
-    file_dir: "/p/lscratchf/brainusr/datasets/mnist-bin"
-    image_file: "t10k-images.idx3-ubyte"
-    label_file: "t10k-labels.idx1-ubyte"
-    percent_samples: 1
-  }
-}
 model {
   name: "dnn"
   objective_function: "categorical_cross_entropy"
   num_epochs: 1
   metric: "categorical_accuracy"
   mini_batch_size: 192
+
+  callback {
+    print {
+      interval: 0
+    }
+  }
+  callback {
+    timer {
+      dir: "XYZ"
+    }
+  }
+  callback {
+    summary {
+      dir: "XYZ"
+      interval: 1
+    }
+  }
+
   layer {
     input_distributed_minibatch_parallel_io {
       num_parallel_readers: 16
@@ -65,9 +63,10 @@ model {
   }
   optimizer {
     name: "adagrad"
-    learn_rate: 0.0099999997764825821
+    learn_rate: 0.01
     momentum: 0.9
     decay: 0.5
+    nesterov: true
   }
 }
 performance_params {

@@ -66,8 +66,8 @@ void lbann_quantizer::intermodel_sum(lbann_comm* comm, Mat& mat) {
     [&rs_recv] (DataType*, Mat& accum) {
       accum += rs_recv;
     };
-  intermodel_ring_reduce_scatter<DataType>(comm, mat, false, rs_send_trans,
-                                           rs_get_recv_buf, rs_recv_trans);
+  intermodel_pairwise_exchange_reduce_scatter<DataType>(
+    comm, mat, false, rs_send_trans, rs_get_recv_buf, rs_recv_trans);
   Mat ag_send;
   Mat ag_recv;
   auto ag_reduced_trans =
@@ -296,8 +296,8 @@ void lbann_quantizer::intermodel_sum_quantized(
     [&rs_recv, this] (qtype*, Mat& accum) {
       unquantize_add(rs_recv, accum);
     };
-  intermodel_ring_reduce_scatter<qtype>(comm, mat, false, rs_send_trans,
-                                        rs_get_recv_buf, rs_recv_trans);
+  intermodel_pairwise_exchange_reduce_scatter<qtype>(
+    comm, mat, false, rs_send_trans, rs_get_recv_buf, rs_recv_trans);
   QuantizedMatrix ag_send;
   QuantizedMatrix ag_recv;
   std::function<DataType(const DataType&)> _sq = [](const DataType& x) { return x*x; };
@@ -568,8 +568,8 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
       threshold_unquantize_apply(rs_recv, accum, pos_thresh,
                                  neg_thresh, positions, compress);
     };
-  intermodel_ring_reduce_scatter<uqtype>(comm, mat, true, rs_send_trans,
-                                         rs_get_recv_buf, rs_recv_trans);
+  intermodel_pairwise_exchange_reduce_scatter<uqtype>(
+    comm, mat, true, rs_send_trans, rs_get_recv_buf, rs_recv_trans);
   ThreshQuantized ag_send;
   ThreshQuantized ag_recv;
   auto ag_reduced_trans =

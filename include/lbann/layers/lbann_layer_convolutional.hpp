@@ -56,7 +56,8 @@ namespace lbann
                         activation_type activation,
                         weight_initialization init,
                         lbann_comm* comm,
-                        Optimizer* optimizer,
+                        optimizer* opt,
+                        std::vector<regularizer*> regs={},
                         cudnn::cudnn_manager* cudnn=NULL);
 
     /// Destructor
@@ -130,10 +131,6 @@ namespace lbann
     std::vector<DataType*> m_weights_d;
     /// GPU memory for convolution filters gradient and bias gradient
     std::vector<DataType*> m_weights_gradient_d;
-    /// GPU memory for work space
-    std::vector<DataType*> m_work_space_d;
-    /// Size of work space in bytes
-    size_t m_work_space_size;
 
     /// Filter and bias gradients computed on each GPU
     StarMat m_weights_gradient_per_gpu;
@@ -143,14 +140,32 @@ namespace lbann
     /// Initialize GPU objects
     void setup_gpu();
 
-    /// CPU implementation of forward propagation linearity
+    /// CPU implementation of forward propagation linearity (general case)
+    /** Applies convolution directly. */
     void fp_linearity_cpu();
+    /// CPU implementation of forward propagation linearity (2D case)
+    /** Applies convolution directly. */
+    void fp_linearity_cpu_2d_direct();
+    /// CPU implementation of forward propagation linearity (2D case, GEMM)
+    /** Constructs convolution matrix and performs explicit matrix
+     *  multiplication.
+     */
+    void fp_linearity_cpu_2d_gemm();
     /// GPU implementation of forward propagation linearity
     void fp_linearity_gpu();
     /// GPU implementation of forward propagation nonlinearity
     void fp_nonlinearity_gpu();
-    /// CPU implementation of backward propagation linearity
+    /// CPU implementation of backward propagation linearity (general case)
+    /** Applies convolution directly. */
     void bp_linearity_cpu();
+    /// CPU implementation of backward propagation linearity (2D case)
+    /** Applies convolution directly. */
+    void bp_linearity_cpu_2d_direct();
+    /// CPU implementation of backward propagation linearity (2D case, GEMM)
+    /** Constructs convolution matrix and performs explicit matrix
+     *  multiplication.
+     */
+    void bp_linearity_cpu_2d_gemm();
     /// GPU implementation of backward propagation linearity
     void bp_linearity_gpu();
     /// GPU implementation of backward propagation nonlinearity

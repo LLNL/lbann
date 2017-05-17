@@ -96,33 +96,44 @@ namespace cudnn
     Int get_num_gpus() const;
     /** Get number of GPUs on current node. */
     Int get_num_total_gpus() const;
-    /** Get GPUs for current process. */
+    /** Get GPUs. */
     std::vector<int>& get_gpus();
-    /** Get GPUs for current process (const). */
+    /** Get GPUs (const). */
     const std::vector<int>& get_gpus() const;
-    /** Get ith GPU for current process. */
+    /** Get ith GPU. */
     int get_gpu(Int i=0) const;
     /** Get GPU memory allocator. */
     cub::CachingDeviceAllocator& get_gpu_memory();
     /** Get GPU memory allocator (const). */
     const cub::CachingDeviceAllocator& get_gpu_memory() const;
-    /** Get CUDA streams for current process. */
+    /** Get CUDA streams. */
     std::vector<cudaStream_t>& get_streams();
-    /** Get CUDA streams for current process (const). */
+    /** Get CUDA streams (const). */
     const std::vector<cudaStream_t>& get_streams() const;
-    /** Get ith CUDA stream for current process. */
+    /** Get ith CUDA stream. */
     cudaStream_t& get_stream(Int i=0);
-    /** Get ith CUDA stream for current process (const). */
+    /** Get ith CUDA stream (const). */
     const cudaStream_t& get_stream(Int i=0) const;
-    /** Get cuDNN handles for current process. */
+    /** Get cuDNN handles. */
     std::vector<cudnnHandle_t>& get_handles();
-    /** Get cuDNN handles for current process (const). */
+    /** Get cuDNN handles (const). */
     const std::vector<cudnnHandle_t>& get_handles() const;
-    /** Get ith cuDNN handle for current process. */
+    /** Get ith cuDNN handle. */
     cudnnHandle_t& get_handle(Int i=0);
-    /** Get ith cuDNN handle for current process (const). */
+    /** Get ith cuDNN handle (const). */
     const cudnnHandle_t& get_handle(Int i=0) const;
-    
+    /** Get GPU work spaces. */
+    std::vector<void*> get_work_spaces();
+    /** Get ith GPU work space. */
+    void* get_work_space(Int i=0);
+    /** Get GPU work space sizes (in bytes). */
+    std::vector<size_t> get_work_space_sizes();
+    /** Get GPU work space sizes (in bytes) (const). */
+    const std::vector<size_t> get_work_space_sizes() const;
+    /** Get ith GPU work space size (in bytes). */
+    const size_t get_work_space_size(Int i=0) const;
+    /** Set ith GPU work space size (in bytes). */
+    void set_work_space_size(Int i, size_t size);
 
     /** Allocate memory on GPUs. */
     void allocate_on_gpus(std::vector<DataType*>& gpu_data,
@@ -130,6 +141,16 @@ namespace cudnn
                           Int width_per_gpu);
     /** Deallocate memory on GPUs. */
     void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
+
+    /** Zero out memory on GPUs. */
+    void clear_on_gpus(std::vector<DataType*>& gpu_data,
+                       Int height,
+                       Int width_per_gpu);
+    /** Zero out memory corresponding to unused columns on GPUs. */
+    void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
+                                      Int height,
+                                      Int width,
+                                      Int width_per_gpu);
 
     /** Copy data on GPUs. */
     void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
@@ -188,14 +209,19 @@ namespace cudnn
      *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
     cub::CachingDeviceAllocator* m_gpu_memory;
 
-    /** GPUs for current process. */
+    /** List of GPUs. */
     std::vector<int> m_gpus;
-    /** CUDA streams for current process. */
+    /** List of CUDA streams. */
     std::vector<cudaStream_t> m_streams;
-    /** cuDNN handles for current process. */
+    /** List of cuDNN handles. */
     std::vector<cudnnHandle_t> m_handles;
     /** Pinned memory addresses. */
     std::map<void*, size_t> pinned_ptr;
+
+    /** List of GPU work spaces. */
+    std::vector<void*> m_work_spaces;
+    /** List of GPU work space sizes. */
+    std::vector<size_t> m_work_space_sizes;
 
 #endif // #ifdef __LIB_CUDNN
   };

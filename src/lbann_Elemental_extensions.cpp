@@ -58,9 +58,9 @@ void ColumnSum( const Matrix<F>& X, Matrix<F>& sums )
 
 }
 
-template<typename F,Dist U,Dist V>
+template<typename F,Dist U,Dist V,DistWrap W>
 void ColumnSum
-( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& sums )
+( const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums )
 {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
     const Int n = A.Width();
@@ -71,42 +71,29 @@ void ColumnSum
 }
 
 template<typename F>
-void ColumnMax( const Matrix<F>& X, Matrix<F>& norms )
-{
-//    DEBUG_ONLY(CSE cse("ColumnMax"))
-
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F* XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
-
-    // Initialize output
-    norms.Resize( n, 1 );
-    Fill( norms, F(-INFINITY) );
-    F* normsBuf = norms.Buffer();
-
-    // Compute maximum over each column
-    EL_PARALLEL_FOR
-    for( Int j=0; j<n; ++j )
-    {
-        for( Int i=0; i<m; ++i ) {
-            normsBuf[j] = Max(normsBuf[j], XBuf[i+j*XLDim]);
-        }
+void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F* XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
+  Zeros(sums, m, 1);
+  F* sumsBuf = sums.Buffer();
+  // Note: Iterating over columns helps cache locality for X but means we can't
+  // naively parallelize the outer loop (race conditions).
+  // Could probably do a local accumulation to avoid this.
+  for (Int j = 0; j < n; ++j) {
+    for (Int i = 0; i < m; ++i) {
+      sumsBuf[i] += XBuf[i+j*XLDim];
     }
-
+  }
 }
 
-template<typename F,Dist U,Dist V>
-void ColumnMax
-( const DistMatrix<F,U,V>& A, DistMatrix<F,V,STAR>& norms )
-{
-//    DEBUG_ONLY(CSE cse("ColumnMax"))
-    const Int n = A.Width();
-    norms.AlignWith( A );
-    norms.Resize( n, 1 );
-    ColumnMax( A.LockedMatrix(), norms.Matrix() );
-    AllReduce( norms.Matrix(), A.ColComm(), mpi::MAX );
+template <typename F,Dist U,Dist V,DistWrap W>
+void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums) {
+  sums.AlignWith(A);
+  sums.Resize(A.Height(), 1);
+  RowSum(A.LockedMatrix(), sums.Matrix());
+  AllReduce(sums, A.RowComm(), mpi::SUM);
 }
 
 LBANN_PROTO_FLOAT

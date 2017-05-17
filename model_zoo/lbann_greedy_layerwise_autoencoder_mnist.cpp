@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
         trainParams.LearnRate = 0.01;
         trainParams.DropOut = -1.0f;
         trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 0.90;
-        trainParams.PercentageValidationSamples = 1.00;
+        trainParams.PercentageTrainingSamples = 1.0;
+        trainParams.PercentageValidationSamples = 0.1;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
@@ -117,34 +117,24 @@ int main(int argc, char* argv[])
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
         mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
         mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
-        mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
+        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
+        mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
         mnist_trainset.load();
-        if (comm->am_world_master()) {
-          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
-        }
 
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-          if (comm->am_world_master()) {
-            cout << "MNIST validation data error" << endl;
-          }
-          return -1;
+        mnist_validation_set.use_unused_index_set();
+        if (comm->am_world_master()) {
+          size_t num_train = mnist_trainset.getNumData();
+          size_t num_validate = mnist_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
         }
 
-        if(trainParams.PercentageValidationSamples == 1.00) {
-          if (comm->am_world_master()) {
-            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-          }
-        }else {
-          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          if (comm->am_world_master()) {
-            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-          }
-        }
 
         ///////////////////////////////////////////////////////////////////
         // load testing data (MNIST)
@@ -164,25 +154,27 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
         }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm/*, trainParams.LearnRate*/);
-        }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
-        greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer);
+        greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
 
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         gla.add(input_layer);
-        gla.add("FullyConnected", 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(comm, trainParams.DropOut)});
+        gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
         if (comm->am_world_master()) {
           cout << "Parameter settings:" << endl;
@@ -216,7 +208,7 @@ int main(int argc, char* argv[])
         // delete target_layer;  // Causes segfault
         // delete input_layer;  // Causes segfault
         // delete lfac;  // Causes segfault
-        delete optimizer;
+        delete optimizer_fac;
         delete comm;
 
     }

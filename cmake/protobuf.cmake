@@ -27,7 +27,7 @@ else()
     set(PROTOBUF_URL https://github.com/google/protobuf.git)
   endif()
   if(NOT PROTOBUF_TAG)
-     set(PROTOBUF_TAG "v3.0.2")
+     set(PROTOBUF_TAG "3.2.x")
   endif()
   message(STATUS "Will pull Protocol Buffers (tag ${PROTOBUF_TAG}) from ${PROTOBUF_URL}")
 
@@ -43,7 +43,7 @@ else()
     GIT_REPOSITORY    ${PROTOBUF_URL}
     GIT_TAG           ${PROTOBUF_TAG}
     SOURCE_DIR        ${PROTOBUF_SOURCE_DIR}
-    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && test -f configure && echo "Skipping autogen.sh" || ./autogen.sh  && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping configure" || ./configure --prefix=${CMAKE_INSTALL_PREFIX} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER} && popd
+    CONFIGURE_COMMAND pushd ${PROTOBUF_SOURCE_DIR} && test -f configure && echo "Skipping autogen.sh" || ./autogen.sh  && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping configure" || ./configure --prefix=${CMAKE_INSTALL_PREFIX} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} && popd
     BINARY_DIR        ${PROTOBUF_BINARY_DIR}
     BUILD_COMMAND     pushd ${PROTOBUF_SOURCE_DIR} && test -f ${CMAKE_INSTALL_PREFIX}/bin/protoc && echo "Skipping make" || ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} && popd
     INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}

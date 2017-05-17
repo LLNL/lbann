@@ -15,10 +15,13 @@ if(LBANN_HAS_PROTOBUF)
   file(MAKE_DIRECTORY ${TBINF_PROTO_DIR})
 
   # Generate source and header files with protocol buffer compiler
-  if(LBANN_BUILT_PROTOBUF)
-    add_custom_target(protobuf_built DEPENDS project_protobuf)
-  else()
-    add_custom_target(protobuf_built)
+  # Don't duplicate custom targets.
+  if (NOT TARGET protobuf_built)
+    if(LBANN_BUILT_PROTOBUF)
+      add_custom_target(protobuf_built DEPENDS project_protobuf)
+    else()
+      add_custom_target(protobuf_built)
+    endif()
   endif()
   add_custom_command(
     OUTPUT ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc
@@ -32,7 +35,7 @@ if(LBANN_HAS_PROTOBUF)
   include_directories(${TBinf_INCLUDE_DIRS})
 
   # Build library
-  add_library(TBinf STATIC ${TBINF_SOURCE_DIR}/TBinf.cpp ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc)
+  add_library(TBinf SHARED ${TBINF_SOURCE_DIR}/TBinf.cpp ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc)
   target_link_libraries(TBinf ${PROTOBUF_LIBRARIES})
 
   # Add preprocessor flag for Tensorboard interface

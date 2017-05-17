@@ -40,6 +40,7 @@
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/lbann_timer.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <vector>
@@ -53,15 +54,45 @@ namespace lbann
 
   // @todo: check list of layer types
   enum class layer_type {fully_connected, softmax, convolution, pooling,
+      local_response_normalization,
       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
-      target_distributed_minibatch, target_distributed_minibatch_parallel_io, target_unsupervised,
+      target_distributed_minibatch, target_distributed_minibatch_parallel_io,
+      reconstruction,
       INVALID};
+  static const char* __attribute__((used)) _layer_type_to_string(layer_type l) {
+    switch(l) {
+    case layer_type::fully_connected:
+      return "fully_connected";
+    case layer_type::softmax:
+      return "softmax";
+    case layer_type::convolution:
+      return "convolution";
+    case layer_type::pooling:
+      return "pooling";
+    case layer_type::local_response_normalization:
+      return "local_response_normalization";
+    case layer_type::input_distributed_minibatch:
+      return "input_distributed_minibatch";
+    case layer_type::input_distributed_minibatch_parallel_io:
+      return "input_distributed_minibatch_parallel_io";
+    case layer_type::target_distributed_minibatch:
+      return "target_distributed_minibatch";
+    case layer_type::target_distributed_minibatch_parallel_io:
+      return "target_distributed_minibatch_parallel_io";
+    case layer_type::reconstruction:
+      return "reconstruction";
+    case layer_type::INVALID:
+      return "INVALID";
+    default:
+      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
+    }
+    return NULL;
+  }
 
 
   class Layer {
   public:
-
-    Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
+    Layer(data_layout data_dist, const uint index, lbann_comm* comm, optimizer *opt,
           uint mbsize, activation_type activation=activation_type::ID,
           std::vector<regularizer*> regs={});
 
@@ -69,9 +100,12 @@ namespace lbann
 
     static std::string weight_initialization_name(weight_initialization id);
 
+    void initialize_model_parallel_distribution();
+    void initialize_data_parallel_distribution();
+
     virtual void forwardProp();
     virtual void backProp();
-    virtual bool update() { return false; };
+    virtual bool update();
     virtual void summarize(lbann_summary& summarizer, int64_t step);
     /**
      * Print information at the end of an epoch.
@@ -101,11 +135,16 @@ namespace lbann
     /** Return (a view of) the activations matrix for this layer. */
     virtual ElMat& get_activations() { return *m_activations; }
     /** Return the layer's optimizer. */
-    virtual Optimizer* get_optimizer() const { return optimizer; }
+    virtual optimizer* get_optimizer() const { return m_optimizer; }
     /** Reset layer stat counters. */
     virtual void reset_counters() {
       fp_time = 0.0;
+      fp_linearity_time = 0.0;
+      fp_nonlinearity_time = 0.0;
       bp_time = 0.0;
+      bp_linearity_time = 0.0;
+      bp_nonlinearity_time = 0.0;
+      update_time = 0.0;
     }
 
     /** Return the size of mini-batch this layer uses. */
@@ -166,6 +205,7 @@ namespace lbann
     Int m_num_prev_neurons; /// Number of neurons in previous layer
     execution_mode  m_execution_mode;
     activation_type m_activation_type;
+    data_layout m_data_layout;
 
     ElMat *m_weights;            /// Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
     ElMat *m_weights_gradient;   /// Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
@@ -183,7 +223,7 @@ namespace lbann
     ElMat *m_activations_v;
     ElMat *m_prev_activations_v;
 
-    Optimizer *optimizer;
+    optimizer *m_optimizer;
 
     ElMat *fp_input;            /// Pointer to input for the forward propagation - no local storage
     ElMat *bp_input;            /// Pointer to the input for the backward propagation - no local storage
@@ -251,8 +291,18 @@ namespace lbann
 
     /** Time spent in forward propagation. */
     double fp_time;
+    /** Time spent in the forward propagation linearity. */
+    double fp_linearity_time;
+    /** Time spent in the forward propagation nonlinearity. */
+    double fp_nonlinearity_time;
     /** Time spent in backward propagation. */
     double bp_time;
+    /** Time spent in the backward propagation linearity. */
+    double bp_linearity_time;
+    /** Time spent in the backward propagation linearity. */
+    double bp_nonlinearity_time;
+    /** Time spent in updates. */
+    double update_time;
   };
 }
 

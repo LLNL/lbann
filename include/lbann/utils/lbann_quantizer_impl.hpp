@@ -560,8 +560,9 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
       rs_bytes_received -= rs_recv.size() * sizeof(rowT);
       rs_bytes_received += recv_size * sizeof(rowT);
     };
-  intermodel_ring_reduce_scatter<mpi_rowT>(comm, mat, false, rs_send_trans,
-                                           rs_get_recv_buf, rs_recv_trans);
+  intermodel_pairwise_exchange_reduce_scatter<mpi_rowT>(
+    comm, mat, false, rs_send_trans,
+    rs_get_recv_buf, rs_recv_trans);
   std::vector<rowT> local_send;
   std::vector<rowT> ag_send = adaptive_recv_bufs1[max_size];
   std::vector<rowT> ag_recv = adaptive_recv_bufs2[max_size];
@@ -613,7 +614,7 @@ void lbann_quantizer::intermodel_sum_adaptive_threshold_quantized_impl(
 }
 
 template <typename T>
-void lbann_quantizer::intermodel_ring_reduce_scatter(
+void lbann_quantizer::intermodel_pairwise_exchange_reduce_scatter(
   lbann_comm* comm, Mat& mat, bool var_recv,
   std::function<T*(Mat&, IR, IR, int&)> send_trans,
   std::function<T*(Mat&, int&)> get_recv_buf,
@@ -784,6 +785,36 @@ void lbann_quantizer::intermodel_ring_allgather(
     swap_bufs(send_buf, recv_buf);
   }
   ag_time += get_time() - ag_start;
+}
+
+template <typename T>
+void lbann_quantizer::intermodel_recursive_doubling_allreduce(
+  lbann_comm* comm, Mat& mat,
+  std::function<T*(Mat&, int&)> send_trans,
+  std::function<T*(Mat&, int&)> get_recv_buf,
+  std::function<void(T*, Mat&)> recv_trans,
+  std::function<void(T*, T*)> swap_bufs) {
+  int rank = comm->get_model_rank();
+  int nprocs = comm->get_num_models();
+  // This implementation requires a power-of-2 number of processes.
+  if (nprocs & (nprocs - 1)) {
+    // TODO: Fail.
+  }
+  unsigned int mask = 1;
+  while (mask < nprocs) {
+    int partner = rank ^ mask;
+    // Transform and get buffers.
+    int send_size, recv_size;
+    T* send_buf = send_trans(mat, send_size);
+    T* recv_buf = get_recv_buf(mat, recv_size);
+    // Send/recv.
+    comm->sendrecv(send_buf, send_size, partner, recv_buf, recv_size, partner);
+    // Transform + accumulate.
+    recv_trans(recv_buf, mat);
+    // Swap buffers.
+    swap_bufs(send_buf, recv_buf);
+    mask <<= 1;
+  }
 }
 
 }  // namespace lbann

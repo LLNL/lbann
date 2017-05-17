@@ -35,6 +35,7 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
+USE_LUSTRE_DIRECT=0
 
 TASKS_PER_NODE=12
 
@@ -54,9 +55,8 @@ TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
+USE_LUSTRE_DIRECT=1
 fi
-
-USE_LUSTRE_DIRECT=0
 
 #Set fonts for Help.
 NORM=`tput sgr0`
@@ -212,39 +212,18 @@ ROOT_DATASET_DIR=${LUSTRE_FILEPATH}
 
 else
 
-FILES=(labels.tar resized_256x256/train.tar resized_256x256/val.tar resized_256x256/test.tar)
-for tarball in "${FILES[@]}"
-do
-    FILE=`basename $tarball`
-    if [ ! -e ${ROOT_DATASET_DIR}/${FILE} ]; then
-#        CMD="pdcp /p/lscratchf/brainusr/datasets/ILSVRC2012/${tarball} /l/ssd/"
-        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${tarball} ${ROOT_DATASET_DIR}/${FILE}"
-        echo "${CMD}"
-        ${CMD}
-    fi
-done
-
-if [ ! -d ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256 ]; then
-    CMD="pdsh mkdir -p ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256"
+if [ ! -d ${ROOT_DATASET_DIR}/${DATASET_DIR} ]; then
+    CMD="pdsh mkdir -p ${ROOT_DATASET_DIR}/${DATASET_DIR}"
     echo "${CMD}"
     ${CMD}
 fi
 
-FILES=(labels)
-for tarball in "${FILES[@]}"
+FILES=(${TRAIN_LABEL_FILE} ${TRAIN_IMAGE_FILE} ${TEST_LABEL_FILE} ${TEST_IMAGE_FILE})
+for filename in "${FILES[@]}"
 do
-    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${tarball} ]; then
-        CMD="pdsh tar xf ${ROOT_DATASET_DIR}/${tarball}.tar -C ${ROOT_DATASET_DIR}/${DATASET_DIR}/"
-        echo "${CMD}"
-        ${CMD}
-    fi
-done
-
-FILES=(train val test)
-for tarball in "${FILES[@]}"
-do
-    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256/${tarball} ]; then
-        CMD="pdsh tar xf ${ROOT_DATASET_DIR}/${tarball}.tar -C ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256/"
+    FILE=`basename $filename`
+    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE} ]; then
+        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${filename} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
         echo "${CMD}"
         ${CMD}
     fi

@@ -49,7 +49,7 @@ class sequential_model : public model
                      lbann_comm* comm,
                      objective_functions::objective_fn* obj_fn,
                      layer_factory* layer_fac,
-                     Optimizer_factory* optimizer_factory);
+                     optimizer_factory* optimizer_fac);
 
     /// Destructor
     ~sequential_model();
@@ -81,6 +81,7 @@ class sequential_model : public model
 
     /// Add layer to sequential model
     virtual uint add(const std::string layer_name,
+                     data_layout data_dist,
                      int layer_dim,
                      activation_type activation=activation_type::RELU,
                      weight_initialization init=weight_initialization::glorot_uniform,
@@ -148,8 +149,6 @@ class sequential_model : public model
     std::vector<Layer*> m_layers;
     /// Layer factory
     layer_factory* layer_fac;
-    /// Optimizer factory
-    Optimizer_factory* optimizer_fac;
 
   };
 }

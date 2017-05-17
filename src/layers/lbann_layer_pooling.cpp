@@ -61,7 +61,7 @@ pooling_layer::pooling_layer(uint index,
                              uint mini_batch_size,
                              lbann_comm* comm,
                              cudnn::cudnn_manager* cudnn)
-  : Layer(index, comm, NULL, mini_batch_size, activation_type::ID, {}),
+  : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
     m_pool_mode(_pool_mode),
     m_num_dims(num_dims), m_num_channels(num_channels)
 {
@@ -87,30 +87,6 @@ pooling_layer::pooling_layer(uint index,
     m_output_dims[i] = (m_output_dims[i]+pool_strides[i]-1)/pool_strides[i];
     NumNeurons *= m_output_dims[i];
   }
-
-  // Matrices should be in Star,VC distribution
-  delete m_weighted_sum;
-  delete m_prev_activations;
-  delete m_activations;
-  delete m_prev_error_signal;
-  delete m_error_signal;
-  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
-  m_prev_activations    = new StarVCMat(comm->get_model_grid());
-  m_activations         = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
-  m_error_signal        = new StarVCMat(comm->get_model_grid());
-
-  // Matrix views should be in Star,VC distributions
-  delete m_weighted_sum_v;
-  delete m_prev_activations_v;
-  delete m_activations_v;
-  delete m_prev_error_signal_v;
-  delete m_error_signal_v;
-  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
-  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
-  m_activations_v       = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
 
 #ifdef __LIB_CUDNN
 
@@ -194,17 +170,11 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
-  if(!m_using_gpus || !m_prev_layer_using_gpus) {
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus || !m_next_layer_using_gpus) {
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus) {
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  }
+  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -341,7 +311,6 @@ void lbann::pooling_layer::pin_memory_blocks_fwd(void)
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   if(!m_prev_layer_using_gpus) {
-    *m_prev_activations = *fp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_activations);
   }
   if(!m_next_layer_using_gpus)
@@ -358,7 +327,6 @@ void lbann::pooling_layer::pin_memory_blocks_bwd(void)
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   if(!m_next_layer_using_gpus) {
-    *m_prev_error_signal = *bp_input;
     total_size += m_cudnn->pin_memory_block(m_prev_error_signal);
   }
   if(!m_prev_layer_using_gpus)
@@ -398,27 +366,27 @@ void lbann::pooling_layer::unpin_memory_blocks_bwd(void)
 
 void lbann::pooling_layer::forwardProp() {
 
+  // Perform forward propagation
+  Layer::forwardProp();
+
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
   if(to_pin_fwd && !is_pinned_fwd)
     pin_memory_blocks_fwd();
 #endif // #ifdef __LIB_CUDNN
 
-  // Perform forward propagation
-  Layer::forwardProp();
-
 }
 
 void lbann::pooling_layer::backProp() {
+
+  // Perform backward propagation
+  Layer::backProp();
 
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
   if(to_pin_bwd && !is_pinned_bwd)
     pin_memory_blocks_bwd();
 #endif // #ifdef __LIB_CUDNN
-
-  // Perform backward propagation
-  Layer::backProp();
 
 }
 
@@ -451,9 +419,10 @@ void lbann::pooling_layer::fp_linearity_gpu() {
 
   // Perform pooling with each GPU
   const Int num_gpus = m_cudnn->get_num_gpus();
-#pragma omp parallel for
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingForward(m_cudnn->get_handle(i),
                                    m_pooling_desc,
                                    &one,
@@ -489,10 +458,9 @@ void lbann::pooling_layer::fp_linearity_cpu() {
   const Int num_per_output_channel = NumNeurons / m_num_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through data samples in mini-batch
+  // Iterate through mini-batch and channels
+#pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-    // Iterate through channels
     for(Int channel = 0; channel < m_num_channels; ++channel) {
 
       // Iterate through output entries in current channel
@@ -559,7 +527,6 @@ void lbann::pooling_layer::fp_linearity_cpu() {
       }
 
     }
-
   }
 
   // weighted_sum and output are identical after fp linearity step
@@ -580,9 +547,10 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
 
   // Perform back propagation on each GPU
-#pragma omp parallel for
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingBackward(m_cudnn->get_handle(i),
                                     m_pooling_desc,
                                     &one,
@@ -620,10 +588,9 @@ void lbann::pooling_layer::bp_linearity_cpu() {
   const Int num_per_output_channel = NumNeurons / m_num_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through data samples in mini-batch
+  // Iterate through mini-batch and channels
+#pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-    // Iterate through channels
     for(Int channel = 0; channel < m_num_channels; ++channel) {
 
       // Iterate through output entries in current channel
@@ -663,7 +630,7 @@ void lbann::pooling_layer::bp_linearity_cpu() {
           if(valid_input_entry) {
             const DataType value = prev_activations_local.Get(input_index, sample);
             if(value >= max_value) {
-              if(value == max_value) {
+              if(value > max_value) {
                 max_value = value;
                 max_input_indices.clear();
               }
@@ -690,7 +657,9 @@ void lbann::pooling_layer::bp_linearity_cpu() {
             error_signal_entry /= max_input_indices.size();
           }
           for(Int i=0; i<max_input_indices.size(); ++i) {
-            error_signal_local.Set(max_input_indices[i], sample, error_signal_entry);
+            error_signal_local.Update(max_input_indices[i],
+                                      sample,
+                                      error_signal_entry);
           }
         }
 
@@ -706,12 +675,14 @@ void lbann::pooling_layer::bp_linearity_cpu() {
       }
 
     }
-
   }
 
 }
 
 bool pooling_layer::update()
 {
+  double start = get_time();
+  Layer::update();
+  update_time += get_time() - start;
   return true;
 }
