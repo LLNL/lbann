@@ -135,8 +135,8 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
       size_t bytes_sent = 0;
       size_t bytes_received = 0;
       if (ct_does_quantization()) {
-        bytes_sent = quantizer.get_bytes_sent();
-        bytes_received = quantizer.get_bytes_received();
+        bytes_sent = comm->get_ar_bytes_sent();
+        bytes_received = comm->get_ar_bytes_received();
       } else {
         // Use the same approximation the comm layer does.
         bytes_sent = sizeof(DataType) * weights_gradient.LocalHeight() * weights_gradient.LocalWidth();
@@ -148,28 +148,28 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
                                 bytes_received, m->get_cur_step());
       if (ct_does_quantization()) {
         summarizer->reduce_scalar(prefix + "rs_bytes_sent",
-                                  quantizer.get_rs_bytes_sent(),
+                                  comm->get_ar_rs_bytes_sent(),
                                   m->get_cur_step());
         summarizer->reduce_scalar(prefix + "ag_bytes_sent",
-                                  quantizer.get_ag_bytes_sent(),
+                                  comm->get_ar_ag_bytes_sent(),
                                   m->get_cur_step());
         summarizer->reduce_scalar(prefix + "rs_bytes_received",
-                                  quantizer.get_rs_bytes_received(),
+                                  comm->get_ar_rs_bytes_received(),
                                   m->get_cur_step());
         summarizer->reduce_scalar(prefix + "ag_bytes_received",
-                                  quantizer.get_ag_bytes_received(),
+                                  comm->get_ar_ag_bytes_received(),
                                   m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "rs_send_trans_time",
-                                  quantizer.get_rs_send_trans_time(),
+        summarizer->reduce_scalar(prefix + "ar_send_trans_time",
+                                  comm->get_ar_send_transform_time(),
                                   m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "rs_recv_trans_time",
-                                  quantizer.get_rs_recv_trans_time(),
+        summarizer->reduce_scalar(prefix + "ar_recv_trans_time",
+                                  comm->get_ar_recv_transform_time(),
                                   m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "ag_recv_trans_time",
-                                  quantizer.get_ag_recv_trans_time(),
+        summarizer->reduce_scalar(prefix + "ar_recv_apply_trans_time",
+                                  comm->get_ar_recv_apply_transform_time(),
                                   m->get_cur_step());
-        quantizer.reset_bytes_counters();
-        quantizer.reset_time_counters();
+        quantizer.reset_counters();
+        comm->reset_stats_counters();
         if (ct == ADAPTIVE_QUANTIZATION) {
           summarizer->reduce_scalar(prefix + "quantized_count",
                                     quantizer.get_quantized_count(),
