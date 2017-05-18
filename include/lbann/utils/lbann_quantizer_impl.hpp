@@ -535,7 +535,8 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
       return (uint8_t*) quant_slice.data();
     } else {
       quant.clear();
-      adaptive_quantize_replace<colT, rowT>(mat, quant, qerror, proportion);
+      adaptive_quantize_replace<colT, rowT>(to_send, quant, to_send_qerr,
+                                            proportion);
       count = sizeof(rowT) * quant.size();
       return (uint8_t*) quant.data();
     }
