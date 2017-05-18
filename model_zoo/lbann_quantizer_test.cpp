@@ -183,27 +183,7 @@ void test_allreduces() {
   if (comm->am_world_master())
     std::cout << "Testing quantized allreduces" << std::endl;
   // Note: Threshold quantized allreduce not currently supported.
-  for (Int mat_size = 2; mat_size <= 4096; mat_size *= 2) {
-    // Test uniform matrix.
-    DistMat uniform_mat(comm->get_model_grid());
-    El::Uniform(uniform_mat, mat_size, mat_size, DataType(0), DataType(4));
-    DistMat onebit_uniform(uniform_mat), threshold_uniform(uniform_mat),
-      adaptive_uniform(uniform_mat);
-    if (comm->am_world_master())
-      std::cout << "Uniform " << mat_size << "x" << mat_size << std::endl;
-    test_onebit_quantize_allreduce(comm, onebit_uniform, false);
-    //test_threshold_quantize_allreduce(comm, threshold_uniform, false);
-    test_adaptive_quantize_allreduce(comm, adaptive_uniform, false);
-    // Test Gaussian matrix.
-    DistMat gaussian_mat(comm->get_model_grid());
-    El::Gaussian(gaussian_mat, mat_size, mat_size, DataType(0), DataType(2));
-    DistMat onebit_gaussian(gaussian_mat), threshold_gaussian(gaussian_mat),
-      adaptive_gaussian(gaussian_mat);
-    if (comm->am_world_master())
-      std::cout << "Gaussian " << mat_size << "x" << mat_size << std::endl;
-    test_onebit_quantize_allreduce(comm, onebit_gaussian, false);
-    //test_threshold_quantize_allreduce(comm, threshold_gaussian, false);
-    test_adaptive_quantize_allreduce(comm, adaptive_gaussian, false);
+  for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
     // Test Rademacher matrix (should be exact);
     DistMat rademacher_mat(comm->get_model_grid());
     if (comm->get_model_rank() == 0) {
@@ -219,6 +199,14 @@ void test_allreduces() {
     DistMat onebit_rademacher(rademacher_mat),
       threshold_rademacher(rademacher_mat),
       adaptive_rademacher(rademacher_mat);
+    if (comm->get_model_rank() % 2 == 1) {
+      // Adaptive quantization disregards 0s, so we need this to sum to a
+      // different value instead.
+      // In the case of 3 models, don't scale by 2 or else elements sum to 0.
+      if (comm->get_num_models() != 3) {
+        El::Scale(2, adaptive_rademacher);
+      }
+    }
     if (comm->am_world_master())
       std::cout << "Rademacher " << mat_size << "x" << mat_size << std::endl;
     test_onebit_quantize_allreduce(comm, onebit_rademacher, true);
