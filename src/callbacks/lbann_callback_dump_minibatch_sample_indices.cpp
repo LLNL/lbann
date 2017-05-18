@@ -43,6 +43,7 @@ void lbann_callback_dump_minibatch_sample_indices::on_forward_prop_end(model* m,
     return;
   }
 
+  El::Matrix<El::Int>& indices = l->get_sample_indices_per_mb();
   El::Write(indices,
             prefix + std::to_string(l->get_index()) +
             "-MB_Sample_Indices",
