@@ -351,8 +351,8 @@ private:
   /** Most recent number of quantized entries. */
   size_t quantized_count;
 
-  /** Return the height of mat after quantization with quantize(). */
-  inline Int get_quantized_matrix_height(const Mat& mat) const {
+  /** Return the height of mat after quantization with onebit_quantize(). */
+  inline Int get_onebit_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
 

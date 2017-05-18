@@ -47,7 +47,7 @@ lbann_quantizer::~lbann_quantizer() {
 void lbann_quantizer::onebit_quantize(
   const Mat& mat, QuantizedMatrix& qmat, Mat& qerror, bool sample) {
   // Set up the quantized matrix. (+2 for the averages.)
-  const Int qheight = get_quantized_matrix_height(mat);
+  const Int qheight = get_onebit_quantized_matrix_height(mat);
   const Int qwidth = mat.Width();
   qmat.Resize(qheight, qwidth);
 
@@ -232,23 +232,23 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   auto recv_transform =
     [this] (uint8_t* recv_buf, Mat& accum) {
     QuantizedMatrix recv_mat;
-    recv_mat.LockedAttach(get_quantized_matrix_height(accum), accum.Width(),
-                          (qtype*) recv_buf,
-                          get_quantized_matrix_height(accum));
+    recv_mat.LockedAttach(
+      get_onebit_quantized_matrix_height(accum), accum.Width(),
+      (qtype*) recv_buf, get_onebit_quantized_matrix_height(accum));
     onebit_unquantize(recv_mat, accum);
     return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
     [this] (uint8_t* recv_buf, Mat& accum) {
     QuantizedMatrix recv_mat;
-    recv_mat.LockedAttach(get_quantized_matrix_height(accum), accum.Width(),
-                          (qtype*) recv_buf,
-                          get_quantized_matrix_height(accum));
+    recv_mat.LockedAttach(get_onebit_quantized_matrix_height(accum),
+                          accum.Width(), (qtype*) recv_buf,
+                          get_onebit_quantized_matrix_height(accum));
     onebit_unquantize_add(recv_mat, accum);
     return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
   };
   comm->intermodel_allreduce(
-    mat, sizeof(qtype) * get_quantized_matrix_height(mat) * mat.Width(),
+    mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
