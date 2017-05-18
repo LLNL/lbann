@@ -218,7 +218,7 @@ void test_allreduces() {
 int main(int argc, char** argv) {
   El::Initialize(argc, argv);
   if (El::mpi::Rank() == 0) {
-    //test_local();
+    test_local();
   }
   test_allreduces();
   El::Finalize();
