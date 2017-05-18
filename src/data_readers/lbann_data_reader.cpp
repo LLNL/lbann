@@ -46,7 +46,7 @@ void DataReader::setup(int base_offset, int stride, int model_offset,
   }
 
   CurrentPos = m_base_offset + m_model_offset;
-  if (m_shuffle) {
+  if (not m_first_n) {
     std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                  get_data_seq_generator());
   }
@@ -67,7 +67,7 @@ bool DataReader::update() {
     m_current_mini_batch_idx++;
     return true;
   } else {
-    if (m_shuffle) {
+    if (not m_first_n) {
       std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                    get_data_seq_generator());
     }
@@ -143,7 +143,7 @@ void DataReader::use_unused_index_set() {
 DataReader& DataReader::operator=(const DataReader& source) {
   this->BatchSize = source.BatchSize;
   this->CurrentPos = source.CurrentPos;
-  this->m_shuffle = source.m_shuffle;
+  this->m_first_n = source.m_first_n;
   this->m_stride = source.m_stride;
   this->m_base_offset = source.m_base_offset;
   this->m_model_offset = source.m_model_offset;
