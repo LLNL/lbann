@@ -230,68 +230,11 @@ public:
     const Mat& mat, const Mat& qerror, Int col,
     const adaptive_thresholds threshes, bool sample = true);
 
-  /** Get the total number of bytes sent during quantization. */
-  size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
-  /** Get the total number of bytes sent during the reduce-scatter phase. */
-  size_t get_rs_bytes_sent() const { return rs_bytes_sent; }
-  /** Get the total number of bytes sent during the all-gather phase. */
-  size_t get_ag_bytes_sent() const { return ag_bytes_sent; }
-  /** Get the total number of bytes received during quantization. */
-  size_t get_bytes_received() const {
-    return rs_bytes_received + ag_bytes_received;
-  }
-  /** Get the total number of bytes received during the reduce-scatter phase. */
-  size_t get_rs_bytes_received() const { return rs_bytes_received; }
-  /** Get the total number of bytes received during the all-gather phase. */
-  size_t get_ag_bytes_received() const { return ag_bytes_received; }
-  /** Reset recorded bytes counters. */
-  void reset_bytes_counters() {
-    rs_bytes_sent = 0;
-    ag_bytes_sent = 0;
-    rs_bytes_received = 0;
-    ag_bytes_received = 0;
-  }
-  /** Get the time spent in the reduce-scatter. */
-  double get_rs_time() const { return rs_time; }
-  /** Get the time spent in the allgather. */
-  double get_ag_time() const { return ag_time; }
-  /** Get the time spent in the reduce-scatter send_trans. */
-  double get_rs_send_trans_time() const { return rs_send_trans_time; }
-  /** Get the time spent in the reduce-scatter get_recv_buf. */
-  double get_rs_recv_buf_time() const { return rs_recv_buf_time; }
-  /** Get the time spent in the reduce-scatter recv_trans. */
-  double get_rs_recv_trans_time() const { return rs_recv_trans_time; }
-  /** Get the time spent in sends in the reduce-scatter. */
-  double get_rs_send_time() const { return rs_send_time; }
-  /** Get the time spent in recvs/waiting for recvs in the reduce-scatter. */
-  double get_rs_recv_wait_time() const { return rs_recv_wait_time; }
-  /** Get the time spent in the allgather reduce_trans. */
-  double get_ag_reduced_trans_time() const { return ag_reduced_trans_time; }
-  /** Get the time spent in the allgather get_recv_buf. */
-  double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
-  /** Get the time spent in the all-gather send_trans. */
-  double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
-  /** Get the time spent in sends in the allgather. */
-  double get_ag_send_time() const { return ag_send_time; }
-  /** Get the time spent in recvs/waiting for recvs in the allgather. */
-  double get_ag_recv_wait_time() const { return ag_recv_wait_time; }
-  /** Get the time spent in proportion_threshold. */
   double get_proportion_time() const { return proportion_time; }
-  /** Reset recorded time counters. */
-  void reset_time_counters() {
-    rs_time = 0.0;
-    ag_time = 0.0;
-    rs_send_trans_time = 0.0;
-    rs_recv_buf_time = 0.0;
-    rs_recv_trans_time = 0.0;
-    rs_send_time = 0.0;
-    rs_recv_wait_time = 0.0;
-    ag_reduced_trans_time = 0.0;
-    ag_recv_buf_time = 0.0;
-    ag_recv_trans_time = 0.0;
-    ag_send_time = 0.0;
-    ag_recv_wait_time = 0.0;
+  /** Reset recorded counters. */
+  void reset_counters() {
     proportion_time = 0.0;
+    quantized_count = 0;
   }
   /** Return the most recent number of quantized entries. */
   size_t get_quantized_count() const { return quantized_count; }
@@ -314,38 +257,6 @@ private:
   /** Max factor by which adaptive quantization can exceed optimal amount. */
   static const Int MAX_QUANTIZED_EXCESS = 4;
 
-  /** Bytes sent in doing the reduce-scatter. */
-  size_t rs_bytes_sent;
-  /** Bytes sent in doing the all-gather. */
-  size_t ag_bytes_sent;
-  /** Bytes received in doing the reduce-scatter. */
-  size_t rs_bytes_received;
-  /** Bytes received in doing the all-gather. */
-  size_t ag_bytes_received;
-  /** Time spent in the reduce-scatter. */
-  double rs_time;
-  /** Time spent in the all-gather. */
-  double ag_time;
-  /** Time spent in the reduce-scatter send_trans. */
-  double rs_send_trans_time;
-  /** Time spent in the reduce-scatter get_recv_buf. */
-  double rs_recv_buf_time;
-  /** Time spent in the reduce-scatter recv_trans. */
-  double rs_recv_trans_time;
-  /** Time spent in the reduce-scatter sending. */
-  double rs_send_time;
-  /** Time spent in the reduce-scatter receiving/waiting for the receive. */
-  double rs_recv_wait_time;
-  /** Time spent in the allgather reduced_trans. */
-  double ag_reduced_trans_time;
-  /** Time spent in the allgather get_recv_buf. */
-  double ag_recv_buf_time;
-  /** Time spent in the all-gather recv_trans. */
-  double ag_recv_trans_time;
-  /** Time spent in the allgather sending. */
-  double ag_send_time;
-  /** Time spent in the allgather receiving/waiting for the receive. */
-  double ag_recv_wait_time;
   /** Time spent in proportion_threshold. */
   double proportion_time;
   /** Most recent number of quantized entries. */
