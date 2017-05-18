@@ -47,11 +47,10 @@ public:
   int fetch_label(Mat& Y);
   void load();
 
-
 private:
   std::ifstream m_data_filestream;
-  std::vector<char> m_work_buffer;
-  std::vector<std::pair<int, int> > m_offsets;
+  std::vector<unsigned char> m_work_buffer;
+  std::vector<std::pair<int, int> > m_offsets; //stores: <offset, label>
   std::vector<unsigned char> m_pixels;
 };
 
