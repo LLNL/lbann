@@ -55,6 +55,7 @@
 
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/lbann_callback_print.hpp"
