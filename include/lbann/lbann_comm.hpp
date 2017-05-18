@@ -30,6 +30,7 @@
 #define LBANN_COMM_HPP_INCLUDED
 
 #include <vector>
+#include <unordered_map>
 #include "lbann_base.hpp"
 using namespace El;
 
@@ -406,6 +407,69 @@ namespace lbann
     static inline bool is_sendable(const ElMat& dist_mat) {
       return is_sendable(dist_mat.LockedMatrix());
     }
+
+    // Custom allreduce implementations.
+    /**
+     * Do a custom allreduce on mat on the intermodel communicator.
+     * This selects the allreduce algorithm to use based on the size of mat.
+     * All counts/sizes are in bytes.
+     * @param mat The matrix to allreduce.
+     * @param max_recv_count An upper bound on the size of data that will be
+     * received in any step; this will be the size of receive buffers used in
+     * the allreduce.
+     * @param send_transform A function that takes a range of a matrix and
+     * applies atransformation to it. The return value is a pointer to a buffer
+     * containing the transformed data, which will be sent. The int param
+     * should be filled in with the count of how many elements are in the
+     * buffer. A boolean parameter indicates whether the matrix is constant
+     * between different calls to send_transform; if true, the function may be
+     * able to take advantage of this.
+     * @param recv_transform A function that takes a pointer to a buffer and a
+     * matrix and applies a transform to the buffer, storing the result in the
+     * matrix. The buffer will be data transformed with send_transform and
+     * received from another rank. The return value is the actual count of the
+     * received data (i.e. the count that the data was sent using).
+     * @param recv_apply_transform A function like recv_transform except that
+     * the transformed data should be combined (applied, reduced) with the
+     * current data in the matrix argument.
+     */
+    void intermodel_allreduce(
+      Mat& mat, int max_recv_count,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(uint8_t*, Mat&)> recv_transform,
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+
+    /**
+     * A recursive-doubling allreduce.
+     * This implementation only works for a power-of-2 number of processes.
+     */
+    void recursive_doubling_allreduce_pow2(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+
+    /**
+     * An allreduce based on a pairwise-exchange reduce-scatter followed by a
+     * ring-based allgather.
+     */
+    void pe_ring_allreduce(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(uint8_t*, Mat&)> recv_transform,
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+
+    /**
+     * An allreduce using ring-based reduce-scatter and allgather.
+     */
+    void ring_allreduce(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(uint8_t*, Mat&)> recv_transform,
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+
+    /** Return the intermodel communicator. */
+    mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
+
   private:
     /** Communicator for every process in this model. */
     mpi::Comm model_comm;
@@ -429,6 +493,8 @@ namespace lbann
     int rank_in_node;
     /** The list of ranks in the model_comm that are on this compute node. */
     std::vector<int> model_ranks_on_node;
+    /** Pre-allocated buffers for collectives. */
+    std::unordered_map<size_t, std::vector<uint8_t*>> collective_bufs;
     
     // Various statistics counters.
     size_t num_model_barriers;
@@ -452,6 +518,13 @@ namespace lbann
      *  avoid hash collisions, the splitting procedure is repeated
      *  with a different salt. */
     void setup_node_comm();
+
+    /**
+     * Return a buffer from collective_bufs, allocating it if needed.
+     * @param size The size of the buffer (in bytes).
+     * @param idx The index of the buffer (default 0).
+     */
+    uint8_t* get_collective_buffer(size_t size, size_t idx = 0);
     
   };
 }
