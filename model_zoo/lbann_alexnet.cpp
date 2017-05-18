@@ -234,9 +234,11 @@ int main(int argc, char* argv[])
         optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
           optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
+        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
           optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-        }else {
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
           optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
         }
 
