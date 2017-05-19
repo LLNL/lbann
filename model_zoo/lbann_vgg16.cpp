@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         TrainingParams trainParams;
         trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
-        trainParams.LearnRate = 1e-3;
+        trainParams.MBSize = 64;
+        trainParams.LearnRate = 5e-5;
         trainParams.DropOut = 0.5;
         trainParams.ProcsPerModel = 0;
         trainParams.parse_params();
