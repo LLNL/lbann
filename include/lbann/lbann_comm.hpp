@@ -486,12 +486,15 @@ namespace lbann
      * @param recv_apply_transform A function like recv_transform except that
      * the transformed data should be combined (applied, reduced) with the
      * current data in the matrix argument.
+     * @param id_recv An optimization flag that indicates that the
+     * recv_transform is the identity.
      */
     void intermodel_allreduce(
       Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * A recursive-doubling allreduce.
@@ -500,7 +503,8 @@ namespace lbann
     void recursive_doubling_allreduce_pow2(
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * An allreduce based on a pairwise-exchange reduce-scatter followed by a
@@ -510,7 +514,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * An allreduce using ring-based reduce-scatter and allgather.
@@ -519,7 +524,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /** Return the intermodel communicator. */
     mpi::Comm get_intermodel_comm() const { return intermodel_comm; }

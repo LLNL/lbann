@@ -237,23 +237,24 @@ void lbann::lbann_comm::intermodel_allreduce(
   Mat& mat, int max_recv_count,
   std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&)> recv_apply_transform) {
+  std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+  bool id_recv) {
   // If not a power-of-2, we can't use the recursive doubling.
   const int nprocs = get_num_models();
   if (nprocs & (nprocs - 1)) {
     pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
                       send_transform, recv_transform,
-                      recv_apply_transform);
+                      recv_apply_transform, id_recv);
   } else {
     // TODO: Don't hardcode this.
     if (mat.Height() <= 64 && mat.Width() <= 64) {
       recursive_doubling_allreduce_pow2(
         intermodel_comm, mat, max_recv_count,
-        send_transform, recv_apply_transform);
+        send_transform, recv_apply_transform, id_recv);
     } else {
       pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
                         send_transform, recv_transform,
-                        recv_apply_transform);
+                        recv_apply_transform, id_recv);
     }
   }
 }
@@ -261,7 +262,8 @@ void lbann::lbann_comm::intermodel_allreduce(
 void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
-  std::function<int(uint8_t*, Mat&)> recv_apply_transform) {
+  std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+  bool id_recv) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
@@ -302,7 +304,8 @@ void lbann::lbann_comm::pe_ring_allreduce(
   mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&)> recv_apply_transform) {
+  std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+  bool id_recv) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
@@ -372,6 +375,13 @@ void lbann::lbann_comm::pe_ring_allreduce(
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
+    auto recv_view = mat(ALL,
+                         IR(slice_ends[data_src] - slice_lengths[data_src],
+                            slice_ends[data_src]));
+    // If we can, receive directly into the destination matrix.
+    if (id_recv) {
+      recv_buf = (uint8_t*) recv_view.Buffer();
+    }
     double sendrecv_start = get_time();
     mpi::SendRecv(send_buf, send_size, dst,
                   recv_buf, max_recv_count, src, comm);
@@ -380,11 +390,13 @@ void lbann::lbann_comm::pe_ring_allreduce(
     ar_recv_time += sendrecv_tot;
     ar_ag_send_time += sendrecv_tot;
     ar_ag_recv_time += sendrecv_tot;
-    auto recv_view = mat(ALL,
-                         IR(slice_ends[data_src] - slice_lengths[data_src],
-                            slice_ends[data_src]));
     double recv_trans_start = get_time();
-    int recv_size = recv_transform(recv_buf, recv_view);
+    int recv_size = 0;
+    if (id_recv) {
+      recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
+    } else {
+      recv_size = recv_transform(recv_buf, recv_view);
+    }
     ar_recv_transform_time += get_time() - recv_trans_start;
     bytes_received += recv_size;
     ar_bytes_received += recv_size;
@@ -394,13 +406,19 @@ void lbann::lbann_comm::pe_ring_allreduce(
   // Now do the remaining nprocs - 2 steps.
   // We always send from recv_buf and receive to recv_buf2, swapping
   // pointers to avoid copying.
-  uint8_t* recv_buf2 = get_collective_buffer(max_recv_count, 1);
+  uint8_t* recv_buf2 = nullptr;
+  if (!id_recv) {
+    recv_buf2 = get_collective_buffer(max_recv_count, 1);
+  }
   for (int step = 1; step < nprocs - 1; ++step) {
     // Compute where the data we get is coming from.
     const int data_src = (rank - step - 1 + nprocs) % nprocs;
     auto recv_view = mat(ALL,
                          IR(slice_ends[data_src] - slice_lengths[data_src],
                             slice_ends[data_src]));
+    if (id_recv) {
+      recv_buf2 = (uint8_t*) recv_view.Buffer();
+    }
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
@@ -413,7 +431,12 @@ void lbann::lbann_comm::pe_ring_allreduce(
     ar_ag_send_time += sendrecv_tot;
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
-    int recv_size = recv_transform(recv_buf2, recv_view);
+    int recv_size = 0;
+    if (id_recv) {
+      recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
+    } else {
+      recv_size = recv_transform(recv_buf2, recv_view);
+    }
     ar_recv_transform_time += get_time() - recv_trans_start;
     bytes_received += recv_size;
     // Swap the send and receive buffers.
@@ -430,7 +453,8 @@ void lbann::lbann_comm::ring_allreduce(
   mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&)> recv_apply_transform) {
+  std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+  bool id_recv) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
@@ -503,6 +527,13 @@ void lbann::lbann_comm::ring_allreduce(
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
+    auto recv_view = mat(ALL,
+                         IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
+                            slice_ends[recv_slice]));
+    // If we can, receive directly into the destination matrix.
+    if (id_recv) {
+      recv_buf = (uint8_t*) recv_view.Buffer();
+    }
     double sendrecv_start = get_time();
     mpi::SendRecv(send_buf, send_size, dst,
                   recv_buf, max_recv_count, src, comm);
@@ -511,24 +542,32 @@ void lbann::lbann_comm::ring_allreduce(
     ar_recv_time += sendrecv_tot;
     ar_ag_send_time += sendrecv_tot;
     ar_ag_recv_time += sendrecv_tot;
-    auto recv_view = mat(ALL,
-                         IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
-                            slice_ends[recv_slice]));
     double recv_trans_start = get_time();
-    int recv_size = recv_transform(recv_buf, recv_view);
+    int recv_size = 0;
+    if (id_recv) {
+      recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
+    } else {
+      recv_size = recv_transform(recv_buf, recv_view);
+    }
     ar_recv_transform_time += get_time() - recv_trans_start;
     send_size = recv_size;
     bytes_received += recv_size;
     ar_bytes_received += recv_size;
     ar_ag_bytes_received += recv_size;
   }
-  uint8_t* recv_buf2 = get_collective_buffer(max_recv_count, 1);
+  uint8_t* recv_buf2 = nullptr;
+  if (!id_recv) {
+    recv_buf2 = get_collective_buffer(max_recv_count, 1);
+  }
   for (int step = 1; step < nprocs - 1; ++step) {
     const int send_slice = (rank - step + 1 + nprocs) % nprocs;
     const int recv_slice = (rank - step + nprocs) % nprocs;
     auto recv_view = mat(ALL,
                          IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                             slice_ends[recv_slice]));
+    if (id_recv) {
+      recv_buf2 = (uint8_t*) recv_view.Buffer();
+    }
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
@@ -541,7 +580,12 @@ void lbann::lbann_comm::ring_allreduce(
     ar_ag_send_time += sendrecv_tot;
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
-    int recv_size = recv_transform(recv_buf2, recv_view);
+    int recv_size = 0;
+    if (id_recv) {
+      recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
+    } else {
+      recv_size = recv_transform(recv_buf2, recv_view);
+    }
     ar_recv_transform_time += get_time() - recv_trans_start;
     // Swap the send and receive buffers.
     std::swap(recv_buf, recv_buf2);
