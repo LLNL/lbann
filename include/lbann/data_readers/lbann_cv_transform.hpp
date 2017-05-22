@@ -65,11 +65,18 @@ class cv_transform
   virtual void disable(void) { m_enabled = false; }
   virtual void reset(void) { m_enabled = false; }
   virtual bool is_enabled(void) const { return m_enabled; }
+
+  virtual std::ostream& print(std::ostream& os) const { return os; }
 };
 
 inline bool cv_transform::apply(cv::Mat& image) {
   m_enabled = false;
   return true;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
+  tr.print(os);
+  return os;
 }
 
 } // end of namespace lbann

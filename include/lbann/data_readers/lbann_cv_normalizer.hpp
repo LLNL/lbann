@@ -168,6 +168,8 @@ class cv_normalizer : public cv_transform
   /// Compute the per-channel and per-sample mean and standard deviation
   static bool compute_mean_stddev(const cv::Mat& image,
        std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask=cv::Mat());
+
+  virtual std::ostream& print(std::ostream& os) const;
 };
 
 
