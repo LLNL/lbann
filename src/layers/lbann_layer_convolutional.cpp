@@ -1063,9 +1063,10 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_weights_gradient_per_gpu.Matrix(),
-                            m_weights_gradient_d,
-                            1);
+  m_cudnn->reduce_from_gpus(m_weights_gradient->Matrix(),
+                            m_weights_gradient_d);
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -1503,22 +1504,6 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
 bool convolutional_layer::update()
 {
   double start = get_time();
-
-  if(m_execution_mode == execution_mode::training) {
-    // Obtain filter gradient with reduction and scaling
-    Mat& weights_gradient_local = m_weights_gradient->Matrix();
-#ifdef __LIB_CUDNN
-    const Mat& weights_gradient_per_gpu_local = m_weights_gradient_per_gpu.Matrix();
-    const Int num_gpus = m_cudnn->get_num_gpus();
-    if(m_using_gpus) {
-      for(Int i=1; i<num_gpus; ++i) {
-        weights_gradient_local += weights_gradient_per_gpu_local(ALL, IR(i));
-      }
-    }
-#endif // #ifdef __LIB_CUDNN  
-    weights_gradient_local *= DataType(1) / get_effective_minibatch_size();
-    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
-  }
 
   // Regularize gradients and update regularizers
   Layer::update();
