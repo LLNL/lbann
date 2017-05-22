@@ -69,7 +69,10 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
 
   /// @todo put in warning about bad target size
   if(num_prev_neurons != NumNeurons) {
-    throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " ::  lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer (" << num_prev_neurons << ") does not match the number of neurons in the target layer (" << NumNeurons <<  ")";
+    throw lbann_exception(err.str());
   }
 
   Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
