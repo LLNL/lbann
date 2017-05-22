@@ -387,12 +387,66 @@ namespace lbann
     inline size_t get_bytes_sent() const { return bytes_sent; }
     /** Return the number of bytes received. */
     inline size_t get_bytes_received() const { return bytes_received; }
+    /** Return the number of bytes sent in allreduces. */
+    inline size_t get_ar_bytes_sent() const { return ar_bytes_sent; }
+    /** Return the number of bytes received in allreduces. */
+    inline size_t get_ar_bytes_received() const { return ar_bytes_sent; }
+    /** Return the number of bytes sent in allreduce reduce-scatters. */
+    inline size_t get_ar_rs_bytes_sent() const { return ar_rs_bytes_sent; }
+    /** Return the number of bytes received in allreduce reduce-scatters. */
+    inline size_t get_ar_rs_bytes_received() const { return ar_rs_bytes_received; }
+    /** Return the number of bytes sent in allreduce allgathers. */
+    inline size_t get_ar_ag_bytes_sent() const { return ar_ag_bytes_sent; }
+    /** Return the number of bytes received in allreduce allgathers. */
+    inline size_t get_ar_ag_bytes_received() const { return ar_ag_bytes_received; }
+    /** Return the time spent in allreduces. */
+    inline double get_ar_time() const { return ar_time; }
+    /** Return the time spent in allreduce reduce-scatters. */
+    inline double get_ar_rs_time() const { return ar_rs_time; }
+    /** Return the time spent in allreduce allgathers. */
+    inline double get_ar_ag_time() const { return ar_ag_time; }
+    /** Return the time spent in allreduce send transforms. */
+    inline double get_ar_send_transform_time() const { return ar_send_transform_time; }
+    /** Return the time spent in allreduce receive transforms. */
+    inline double get_ar_recv_transform_time() const { return ar_recv_transform_time; }
+    /** Return the time spent in allreduce receive/apply transforms. */
+    inline double get_ar_recv_apply_transform_time() const { return ar_recv_apply_transform_time; }
+    /** Return the time spent sending in allreduces. */
+    inline double get_ar_send_time() const { return ar_send_time; }
+    /** Return the time spent receiving in allreduces. */
+    inline double get_ar_recv_time() const { return ar_recv_time; }
+    /** Return the time spent sending in allreduce reduce-scatters. */
+    inline double get_ar_rs_send_time() const { return ar_rs_send_time; }
+    /** Return the time spent receiving in allreduce reduce-scatters. */
+    inline double get_ar_rs_recv_time() const { return ar_rs_recv_time; }
+    /** Return the time spent sending in allreduce allgathers. */
+    inline double get_ar_ag_send_time() const { return ar_ag_send_time; }
+    /** Return the time spent receiving in allreduce allgathers. */
+    inline double get_ar_ag_recv_time() const { return ar_ag_recv_time; }
     inline void reset_stats_counters() {
       num_model_barriers = 0;
       num_intermodel_barriers = 0;
       num_global_barriers = 0;
       bytes_sent = 0;
       bytes_received = 0;
+      ar_bytes_sent = 0;
+      ar_bytes_received = 0;
+      ar_rs_bytes_sent = 0;
+      ar_rs_bytes_received = 0;
+      ar_ag_bytes_sent = 0;
+      ar_ag_bytes_received = 0;
+      ar_time = 0.0;
+      ar_rs_time = 0.0;
+      ar_ag_time = 0.0;
+      ar_send_transform_time = 0.0;
+      ar_recv_transform_time = 0.0;
+      ar_recv_apply_transform_time = 0.0;
+      ar_send_time = 0.0;
+      ar_recv_time = 0.0;
+      ar_rs_send_time = 0.0;
+      ar_rs_recv_time = 0.0;
+      ar_ag_send_time = 0.0;
+      ar_ag_recv_time = 0.0;
     }
 
     /** Return true if mat can be transmitted. */
@@ -432,12 +486,15 @@ namespace lbann
      * @param recv_apply_transform A function like recv_transform except that
      * the transformed data should be combined (applied, reduced) with the
      * current data in the matrix argument.
+     * @param id_recv An optimization flag that indicates that the
+     * recv_transform is the identity.
      */
     void intermodel_allreduce(
       Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * A recursive-doubling allreduce.
@@ -446,7 +503,8 @@ namespace lbann
     void recursive_doubling_allreduce_pow2(
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * An allreduce based on a pairwise-exchange reduce-scatter followed by a
@@ -456,7 +514,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /**
      * An allreduce using ring-based reduce-scatter and allgather.
@@ -465,7 +524,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform);
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
 
     /** Return the intermodel communicator. */
     mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
@@ -502,6 +562,25 @@ namespace lbann
     size_t num_global_barriers;
     size_t bytes_sent;
     size_t bytes_received;
+    // Allreduce statistics.
+    size_t ar_bytes_sent;
+    size_t ar_bytes_received;
+    size_t ar_rs_bytes_sent;
+    size_t ar_rs_bytes_received;
+    size_t ar_ag_bytes_sent;
+    size_t ar_ag_bytes_received;
+    double ar_time;
+    double ar_rs_time;
+    double ar_ag_time;
+    double ar_send_transform_time;
+    double ar_recv_transform_time;
+    double ar_recv_apply_transform_time;
+    double ar_send_time;
+    double ar_recv_time;
+    double ar_rs_send_time;
+    double ar_rs_recv_time;
+    double ar_ag_send_time;
+    double ar_ag_recv_time;
 
     /** MPI tag for point-to-point communication. (Unused) */
     static const int PT2PT_TAG = 42;

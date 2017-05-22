@@ -226,6 +226,10 @@ void lbann::convolutional_layer::setup_gpu()
   throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #else
 
+  // Get device properties
+  cudaDeviceProp device_props;
+  checkCUDA(cudaGetDeviceProperties(&device_props, 0));
+
   // Initialize descriptors
   checkCUDNN(cudnnCreateTensorDescriptor(&m_input_desc));
   checkCUDNN(cudnnCreateTensorDescriptor(&m_output_desc));
@@ -329,24 +333,24 @@ void lbann::convolutional_layer::setup_gpu()
                                                  m_filter_desc,
                                                  m_convolution_desc,
                                                  m_output_desc,
-                                                 CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
-                                                 0,
+                                                 CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+                                                 device_props.totalGlobalMem/2,
                                                  &m_forward_algo));
   checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(m_cudnn->get_handle(),
                                                         m_input_desc,
                                                         m_output_desc,
                                                         m_convolution_desc,
                                                         m_filter_desc,
-                                                        CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
-                                                        0,
+                                                        CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                        device_props.totalGlobalMem/2,
                                                         &m_backward_filter_algo));
   checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(m_cudnn->get_handle(),
                                                       m_filter_desc,
                                                       m_output_desc,
                                                       m_convolution_desc,
                                                       m_input_desc,
-                                                      CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-                                                      0,
+                                                      CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+                                                      device_props.totalGlobalMem/2,
                                                       &m_backward_data_algo));
 
   // Initialize work space

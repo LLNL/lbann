@@ -87,7 +87,7 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
 }
 
 void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -119,7 +119,7 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
 }
 
 void print_stats(const std::vector<double>& times) {

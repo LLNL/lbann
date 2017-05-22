@@ -35,9 +35,7 @@
 namespace lbann {
 
 lbann_quantizer::lbann_quantizer() {
-  reset_bytes_counters();
-  reset_time_counters();
-  quantized_count = 0;
+  reset_counters();
 }
 
 lbann_quantizer::~lbann_quantizer() {
