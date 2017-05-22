@@ -37,7 +37,7 @@ namespace lbann
 
 cv_normalizer::cv_normalizer(void)
 : cv_transform(), m_mean_subtraction(false), m_unit_variance(false),
-  m_unit_scale(false), m_z_score(false)
+  m_unit_scale(true), m_z_score(false)
 {}
 
 
@@ -70,7 +70,7 @@ void cv_normalizer::reset(void)
   m_enabled = false;
   m_mean_subtraction = false;
   m_unit_variance = false;
-  m_unit_scale = false;
+  m_unit_scale = true;
   m_z_score = false;
   m_trans.clear();
 }
@@ -94,7 +94,8 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
   double unit_scale = 1.0;
   double largest = 1.0;
 
-  if (!m_z_score && m_unit_scale) {
+  //if (!m_z_score && m_unit_scale) {
+  if (ntype < _z_score) { // !(m_z_score || (m_mean_subtraction && m_unit_variance))
     switch(image.depth()) {
       case CV_8U:  largest = std::numeric_limits<uint8_t>::max();  break;
       case CV_8S:  largest = std::numeric_limits<int8_t>::max();   break;

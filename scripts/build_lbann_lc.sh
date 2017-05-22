@@ -75,7 +75,7 @@ SEQ_INIT=OFF
 
 WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratche/brainusr/libjpeg-turbo"
-LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
+#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
 
 ################################################################
 # Help message
