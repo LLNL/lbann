@@ -179,12 +179,12 @@ public:
   double get_validation_percent();
 
   /** set the identifyer for the data set; should be
-   *  "train" or "test." This is primarily for internal use:
+   *  "train," "test," or validate. This is primarily for internal use:
    *  end users can ignore.
    */
   void set_role(std::string role) { m_role = role; }
 
-  /** returns the role ("train," "test," or "error"
+  /** returns the role ("train," "test," "validate," or "error"
    *  This is primarily for internal use:
    *  end users can ignore.
    */
@@ -258,6 +258,12 @@ public:
   /// only the master may write to cerr or cout; primarily for use in debugging during development
   bool is_master() { return m_master; }
 
+  /// for use during development and debugging
+  void set_rank(int rank) { m_rank = rank; }
+
+  /// for use during development and debugging
+  int get_rank() { return m_rank; }
+
   void select_subset_of_data();
 
   /** \brief Replace the shuffled index set with the unused index set 
@@ -310,6 +316,7 @@ protected:
   std::string m_role;
 
   bool m_master;
+  int m_rank;
 };
 
 }  // namespace lbann

@@ -49,9 +49,12 @@ public:
 
 private:
   std::ifstream m_data_filestream;
+  size_t m_file_size;
   std::vector<unsigned char> m_work_buffer;
   std::vector<std::pair<int, int> > m_offsets; //stores: <offset, label>
   std::vector<unsigned char> m_pixels;
+
+  void openDataStream();
 };
 
 }  // namespace lbann

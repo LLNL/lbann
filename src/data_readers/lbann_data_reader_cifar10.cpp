@@ -30,75 +30,133 @@
 
 using namespace std;
 using namespace El;
+using namespace lbann;
 
 
-
-lbann::DataReader_CIFAR10::DataReader_CIFAR10(const EGrid& grid, int batchSize)
-	: DataReader(grid, batchSize)
+DataReader_CIFAR10::DataReader_CIFAR10(int batchSize, bool shuffle) 
+	: m_image_width(32), m_image_height(32), m_image_num_channels(3),
+    DataReader(batchSize, shuffle)
 {
-    ImageWidth = 32;
-    ImageHeight = 32;	
 }
 
-lbann::DataReader_CIFAR10::~DataReader_CIFAR10()
+DataReader_CIFAR10::DataReader_CIFAR10(const DataReader_CIFAR10 &source) 
+  : DataReader((const DataReader&) source),
+    m_image_width(source.m_image_width),
+    m_image_height(source.m_image_height),
+    m_image_num_channels(source.m_image_num_channels),
+    m_data(source.m_data)
 {
-	
 }
 
-bool lbann::DataReader_CIFAR10::load(string FileDir, string FileName)
-{
-#if 0
-	this->free();
-	
-	string trainfiles[5] = { "data_batch_1.bin", "data_batch_2.bin",
-		"data_batch_3.bin", "data_batch_4.bin", "data_batch_5.bin"};
-	string testfile = "test_batch.bin";
-	int imgsize = 1 + ImageWidth * ImageHeight * 3;
+DataReader_CIFAR10 & DataReader_CIFAR10::operator=(const DataReader_CIFAR10 &source) {
+  // check for self-assignment
+  if (this == &source) {
+    return *this;
+  }
 
-	// read training data
-	for (int n = 0; n < 5; n++) {
-		string trainpath = string(DatasetDir) + __DIR_DELIMITER + trainfiles[n];
-		FILE* fptrain = fopen(trainpath.c_str(), "rb");
-		if (!fptrain)
-			return false;
-		
-		for (int i = 0; i < 10000; i++) {
-			unsigned char* data = new unsigned char[imgsize];
-			fread(data, imgsize, 1, fptrain);
-			TrainData.push_back(data);
-		}
-
-		fclose(fptrain);
-	}
-	
-	// read testing data
-	string testpath = string(DatasetDir) + __DIR_DELIMITER + testfile;
-	FILE* fptest = fopen(testpath.c_str(), "rb");
-	if (!fptest)
-		return false;
-	
-	for (int i = 0; i < 10000; i++) {
-		unsigned char* data = new unsigned char[imgsize];
-		fread(data, imgsize, 1, fptest);
-		TestData.push_back(data);
-	}
-	
-    return true;
-#endif	
+  DataReader::operator=(source);
+  m_image_width = source.m_image_width;
+  m_image_height = source.m_image_height;
+  m_image_num_channels = source.m_image_num_channels;
+  m_data = source.m_data;
 }
 
-void lbann::DataReader_CIFAR10::free()
+DataReader_CIFAR10::~DataReader_CIFAR10() { }
+
+void DataReader_CIFAR10::load()
 {
-	
+  stringstream err;
+
+  //open data file
+  string image_dir = get_file_dir();
+  string filename = get_data_filename();
+  stringstream b;
+  b << image_dir << "/" << filename;
+  if (is_master()) cout << "opening: " << b.str() << endl;
+  ifstream in(b.str().c_str(), ios::binary);
+  if (not in.good()) {
+    err << __FILE__ << " " << __LINE__
+        << " ::  failed to open " << b.str() << " for reading";
+    throw lbann_exception(err.str());
+  }
+
+  //get number of images, with error checking
+  int n = get_linearized_data_size() + 1;  //should be 3073
+  in.seekg(0, in.end);
+  streampos fs = in.tellg();
+  in.seekg(0, in.beg);
+  if (fs % n != 0) {
+    err << __FILE__ << " " << __LINE__
+        << " ::  fs % n != 0; fs: " << fs << " n: " << n;
+    throw lbann_exception(err.str());
+  }
+
+  //reserve space for string images
+  int num_images = fs / n;
+  m_data.resize(num_images);
+  for (size_t h=0; h<m_data.size(); h++) {
+    m_data[h].resize(n);
+  }
+
+  //read in the images; each image is 1 byte, which is the
+  //label (0-9), and 2072 pixels
+  for (size_t h=0; h<m_data.size(); h++) {
+    in.read((char*)&(m_data[h][0]), n);
+  }
+  in.close();
+
+  ShuffledIndices.resize(m_data.size());
+  for (size_t n = 0; n < m_data.size(); n++) {
+    ShuffledIndices[n] = n;
+  }
+
+  select_subset_of_data();
 }
 
-bool lbann::DataReader_CIFAR10::begin(bool shuffle, int seed)
+
+int lbann::DataReader_CIFAR10::fetch_data(Mat &X)
 {
-	
+  stringstream err;
+
+  if(!DataReader::position_valid()) {
+    err << __FILE__ << " " << __LINE__ << " :: lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
+    throw lbann_exception(err.str());
+  }
+
+  int current_batch_size = getBatchSize();
+  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+  for (int n = CurrentPos; n < end_pos; ++n) {
+    int k = n - CurrentPos;
+    int idx = ShuffledIndices[n];
+    for (size_t p = 1; p<m_data[idx].size(); p++) {
+      X.Set(p-1, k, m_data[idx][p]);
+    }
+
+    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
+    augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
+    normalize(pixel_col, m_image_num_channels);
+  }
+
+  return end_pos - CurrentPos;
 }
 
-bool lbann::DataReader_CIFAR10::next()
-{
-	
-}
+int lbann::DataReader_CIFAR10::fetch_label(Mat& Y) {
+  if(!position_valid()) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
+    throw lbann_exception(err.str());
+  }
 
+  int current_batch_size = getBatchSize();
+  int n = 0;
+  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
+    if (n >= (int)ShuffledIndices.size()) {
+      break;
+    }
+    int k = n - CurrentPos;
+    int index = ShuffledIndices[n];
+    int label = (int)m_data[index][0];
+    Y.Set(label, k, 1);
+  }
+  return (n - CurrentPos);
+}

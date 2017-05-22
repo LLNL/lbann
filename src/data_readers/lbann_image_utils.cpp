@@ -284,7 +284,8 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
 bool lbann::image_utils::loadJPG(std::vector<unsigned char> &image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels)
 {
 #ifdef __LIB_OPENCV
-    cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+    cv::Mat image = cv::imdecode(image_buf, _LBANN_CV_COLOR_);
+    //cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
     if (image.empty()) {
         return false;
     }
