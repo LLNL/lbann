@@ -58,66 +58,63 @@ std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
 }
 
 void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
-                      int trial) {  
+                      lbann_comm* comm, int trial) {
   summarizer->reduce_scalar("bytes_sent",
-                            quantizer.get_bytes_sent(),
+                            comm->get_ar_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("bytes_received",
-                            quantizer.get_bytes_received(),
+                            comm->get_ar_bytes_received(),
                             trial);
   summarizer->reduce_scalar("rs_bytes_sent",
-                            quantizer.get_rs_bytes_sent(),
+                            comm->get_ar_rs_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("ag_bytes_sent",
-                            quantizer.get_ag_bytes_sent(),
+                            comm->get_ar_ag_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("rs_bytes_received",
-                            quantizer.get_rs_bytes_received(),
+                            comm->get_ar_rs_bytes_received(),
                             trial);
   summarizer->reduce_scalar("ag_bytes_received",
-                            quantizer.get_ag_bytes_received(),
+                            comm->get_ar_ag_bytes_received(),
                             trial);
   summarizer->reduce_scalar("rs_time",
-                            quantizer.get_rs_time(),
+                            comm->get_ar_rs_time(),
                             trial);
   summarizer->reduce_scalar("ag_time",
-                            quantizer.get_ag_time(),
+                            comm->get_ar_ag_time(),
                             trial);
-  summarizer->reduce_scalar("rs_send_trans_time",
-                            quantizer.get_rs_send_trans_time(),
+  summarizer->reduce_scalar("ar_send_trans_time",
+                            comm->get_ar_send_transform_time(),
                             trial);
-  summarizer->reduce_scalar("rs_recv_buf_time",
-                            quantizer.get_rs_recv_buf_time(),
+  summarizer->reduce_scalar("ar_recv_trans_time",
+                            comm->get_ar_recv_transform_time(),
                             trial);
-  summarizer->reduce_scalar("rs_recv_trans_time",
-                            quantizer.get_rs_recv_trans_time(),
+  summarizer->reduce_scalar("ar_recv_apply_trans_time",
+                            comm->get_ar_recv_apply_transform_time(),
                             trial);
-  summarizer->reduce_scalar("rs_send_time",
-                            quantizer.get_rs_send_time(),
+  summarizer->reduce_scalar("ar_send_time",
+                            comm->get_ar_send_time(),
                             trial);
-  summarizer->reduce_scalar("rs_recv_wait_time",
-                            quantizer.get_rs_recv_wait_time(),
+  summarizer->reduce_scalar("ar_recv_time",
+                            comm->get_ar_recv_time(),
                             trial);
-  summarizer->reduce_scalar("ag_reduced_trans_time",
-                            quantizer.get_ag_reduced_trans_time(),
+  summarizer->reduce_scalar("ar_rs_send_time",
+                            comm->get_ar_rs_send_time(),
                             trial);
-  summarizer->reduce_scalar("ag_recv_buf_time",
-                            quantizer.get_ag_recv_buf_time(),
+  summarizer->reduce_scalar("ar_rs_recv_time",
+                            comm->get_ar_rs_recv_time(),
                             trial);
-  summarizer->reduce_scalar("ag_recv_trans_time",
-                            quantizer.get_ag_recv_trans_time(),
+  summarizer->reduce_scalar("ar_ag_send_time",
+                            comm->get_ar_ag_send_time(),
                             trial);
-  summarizer->reduce_scalar("ag_send_time",
-                            quantizer.get_ag_send_time(),
-                            trial);
-  summarizer->reduce_scalar("ag_recv_wait_time",
-                            quantizer.get_ag_recv_wait_time(),
+  summarizer->reduce_scalar("ar_ag_recv_time",
+                            comm->get_ar_ag_recv_time(),
                             trial);
   summarizer->reduce_scalar("proportion_time",
                             quantizer.get_proportion_time(),
                             trial);
-  quantizer.reset_bytes_counters();
-  quantizer.reset_time_counters();
+  quantizer.reset_counters();
+  comm->reset_stats_counters();
 }
 
 std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
@@ -132,7 +129,7 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
     double tot = get_time() - start;
     times.push_back(tot);
     onebit_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(onebit_summarizer, quantizer, trial);
+    quantize_summary(onebit_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
@@ -153,7 +150,7 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
     double tot = get_time() - start;
     times.push_back(tot);
     thresh_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(thresh_summarizer, quantizer, trial);
+    quantize_summary(thresh_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
@@ -173,7 +170,7 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
     double tot = get_time() - start;
     times.push_back(tot);
     adaptive_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(adaptive_summarizer, quantizer, trial);
+    quantize_summary(adaptive_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
