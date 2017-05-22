@@ -102,9 +102,9 @@ void lbann::DataReader_ImageNetSingle::load()
   if (is_master()) cout << "num images: " << n << endl;
   m_offsets.reserve(n);
   m_offsets.push_back(make_pair(0,0));
+  size_t last_offset = 0;
   size_t offset;
   int label;
-  int last_offset = 0;
   while (in >> offset >> label) {
     m_offsets.push_back(make_pair(offset + last_offset, label));
     last_offset = m_offsets.back().first;
