@@ -122,6 +122,38 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
 }
 
+void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
+  auto send_transform =
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
+    auto to_send = mat(h, w);
+    send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
+    return (uint8_t*) to_send.Buffer();
+  };
+  auto recv_transform =
+    [] (uint8_t* recv_buf, Mat& accum) {
+    Mat recv_mat;
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
+    accum = recv_mat;
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+  };
+  auto recv_apply_transform =
+    [] (uint8_t* recv_buf, Mat& accum) {
+    Mat recv_mat;
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+                          accum.LDim());
+    accum += recv_mat;
+    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+  };
+  Mat& mat = dmat.Matrix();
+  int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
+  comm->rabenseifner_allreduce(
+    comm->get_intermodel_comm(), mat, max_recv_count,
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_transform),
+    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
+}
+
 void print_stats(const std::vector<double>& times) {
   double sum = std::accumulate(times.begin() + 1, times.end(), 0.0);
   double mean = sum / (times.size() - 1);
@@ -146,7 +178,8 @@ int main(int argc, char** argv) {
   El::Initialize(argc, argv);
   lbann_comm* comm = new lbann_comm(1);
   for (Int mat_size = 1; mat_size <= 16384; mat_size *= 2) {
-    std::vector<double> mpi_times, rd_times, pe_ring_times, ring_times;
+    std::vector<double> mpi_times, rd_times, pe_ring_times, ring_times,
+      rab_times;
     // First trial is a warmup.
     for (int trial = 0; trial < num_trials + 1; ++trial) {
       DistMat rd_mat(comm->get_model_grid());
@@ -154,6 +187,7 @@ int main(int argc, char** argv) {
       DistMat exact_mat(rd_mat);
       DistMat pe_ring_mat(rd_mat);
       DistMat ring_mat(rd_mat);
+      DistMat rab_mat(rd_mat);
       comm->global_barrier();
       // Baseline.
       double start = get_time();
@@ -176,6 +210,11 @@ int main(int argc, char** argv) {
       test_ring_allreduce(comm, ring_mat);
       ring_times.push_back(get_time() - start);
       ASSERT_MAT_EQ(ring_mat.Matrix(), exact_mat.Matrix());
+      // Rabenseifner.
+      start = get_time();
+      test_rabenseifner_allreduce(comm, rab_mat);
+      rab_times.push_back(get_time() - start);
+      ASSERT_MAT_EQ(rab_mat.Matrix(), exact_mat.Matrix());
     }
     if (comm->am_world_master()) {
       std::cout << "MPI (" << mat_size << "x" << mat_size << "):" << std::endl;
@@ -187,6 +226,9 @@ int main(int argc, char** argv) {
       print_stats(pe_ring_times);
       std::cout << "Ring (" << mat_size << "x" << mat_size << "):" << std::endl;
       print_stats(ring_times);
+      std::cout << "Rabenseifner (" << mat_size << "x" << mat_size << "):" <<
+        std::endl;
+      print_stats(rab_times);
     }    
   }
   delete comm;

@@ -267,6 +267,7 @@ void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
+  if (nprocs == 1) return;  // Nothing to do.
   // This implementation requires a power-of-2 number of processes.
   if (nprocs & (nprocs - 1)) {
     throw lbann_exception("lbann_comm: recursive doubling allreduce requires"
@@ -309,6 +310,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
+  if (nprocs == 1) return;  // Nothing to do.
   // Compute the number of columns each processor sends.
   // If it doesn't divide evenly, give one extra to the earlier ranks.
   const Int cols_per_proc = mat.Width() / nprocs;
@@ -458,6 +460,7 @@ void lbann::lbann_comm::ring_allreduce(
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
+  if (nprocs == 1) return;  // Nothing to do.
   // Compute the number of columns each processor sends.
   const Int cols_per_proc = mat.Width() / nprocs;
   const Int cols_remainder = mat.Width() % nprocs;
@@ -593,6 +596,161 @@ void lbann::lbann_comm::ring_allreduce(
     bytes_received += recv_size;
     ar_bytes_received += recv_size;
     ar_ag_bytes_received += recv_size;
+  }
+  ar_ag_time += get_time() - ag_start;
+  ar_time += get_time() - ar_start;
+}
+
+void lbann::lbann_comm::rabenseifner_allreduce(
+  mpi::Comm comm, Mat& mat, int max_recv_count,
+  std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+  std::function<int(uint8_t*, Mat&)> recv_transform,
+  std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+  bool id_recv) {
+  double ar_start = get_time();
+  const int rank = mpi::Rank(comm);
+  const int nprocs = mpi::Size(comm);
+  if (nprocs == 1) return;  // Nothing to do.
+  // This implementation requires a power-of-2 number of processes.
+  if (nprocs & (nprocs - 1)) {
+    throw lbann_exception("lbann_comm: Rabenseifner allreduce requires"
+                          " a power-of-2 number of participating processes");
+  }
+  // Compute the slices on each processor.
+  const Int cols_per_proc = mat.Width() / nprocs;
+  const Int cols_remainder = mat.Width() % nprocs;
+  // Compute the lengths/ends of the slices.
+  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  for (int i = 0; i < cols_remainder; ++i) {
+    slice_lengths[i] += 1;
+  }
+  std::vector<Int> slice_ends(nprocs);
+  std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
+                   slice_ends.begin());
+  // Do a recursive-halving reduce-scatter.
+  // In each step here a process sends all the data needed for the other
+  // "half" of the processes. i.e. each process sends half their data in the
+  // first step, a quarter in the second step, etc.
+  double rs_start = get_time();
+  unsigned int partner_mask = nprocs >> 1;
+  unsigned int slice_mask = 1;
+  unsigned int send_idx = 0;
+  unsigned int recv_idx = 0;
+  unsigned int last_idx = nprocs;
+  uint8_t* recv_buf = get_collective_buffer(max_recv_count);
+  while (partner_mask > 0) {
+    int partner = rank ^ partner_mask;  // The rank we exchange with this step.
+    // Determine the range of data to send/recv.
+    IR send_range, recv_range;
+    if (rank < partner) {
+      send_idx = recv_idx + nprocs / (slice_mask*2);
+      send_range = IR(slice_ends[send_idx] - slice_lengths[send_idx],
+                      slice_ends[last_idx-1]);
+      recv_range = IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
+                      slice_ends[send_idx-1]);
+    } else {
+      recv_idx = send_idx + nprocs / (slice_mask*2);
+      send_range = IR(slice_ends[send_idx] - slice_lengths[send_idx],
+                      slice_ends[recv_idx-1]);
+      recv_range = IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
+                      slice_ends[last_idx-1]);
+    }
+    // Transform the data to send.
+    double send_trans_start = get_time();
+    int send_size;
+    uint8_t* send_buf = send_transform(mat, ALL, send_range, send_size, false);
+    ar_send_transform_time += get_time() - send_trans_start;
+    bytes_sent += send_size;
+    ar_bytes_sent += send_size;
+    ar_rs_bytes_sent += send_size;
+    double sendrecv_start = get_time();
+    mpi::SendRecv(send_buf, send_size, partner,
+                  recv_buf, max_recv_count, partner, comm);
+    double sendrecv_tot = get_time() - sendrecv_start;
+    ar_send_time += sendrecv_tot;
+    ar_recv_time += sendrecv_tot;
+    ar_rs_send_time += sendrecv_tot;
+    ar_rs_recv_time += sendrecv_tot;
+    // Transform the received data.
+    double recv_apply_trans_start = get_time();
+    auto recv_view = mat(ALL, recv_range);
+    int recv_size = recv_apply_transform(recv_buf, recv_view);
+    ar_recv_apply_transform_time += get_time() - recv_apply_trans_start;
+    bytes_received += recv_size;
+    ar_bytes_received += recv_size;
+    ar_rs_bytes_received += send_size;
+    // Update info for next iteration.
+    // Except last_idx when needed for the allgather.
+    send_idx = recv_idx;
+    partner_mask >>= 1;
+    slice_mask <<= 1;
+    if (partner_mask > 0) {
+      last_idx = recv_idx + nprocs / (slice_mask);
+    }
+  }
+  ar_rs_time += get_time() - rs_start;
+  // Do a recursive-doubling algather.
+  double ag_start = get_time();
+  slice_mask >>= 1;
+  partner_mask = 1;
+  // Now do the remaining steps.
+  while (partner_mask < nprocs) {
+    int partner = rank ^ partner_mask;
+    // Determine range to send/recv.
+    IR send_range, recv_range;
+    if (rank < partner) {
+      if (slice_mask != nprocs / 2) {
+        last_idx = last_idx + nprocs / (slice_mask*2);
+      }
+      recv_idx = send_idx + nprocs / (slice_mask*2);
+      send_range = IR(slice_ends[send_idx] - slice_lengths[send_idx],
+                      slice_ends[recv_idx-1]);
+      recv_range = IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
+                      slice_ends[last_idx-1]);
+    } else {
+      recv_idx = send_idx - nprocs / (slice_mask*2);
+      send_range = IR(slice_ends[send_idx] - slice_lengths[send_idx],
+                      slice_ends[last_idx-1]);
+      recv_range = IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
+                      slice_ends[send_idx-1]);
+    }
+    // Transform the data to send.
+    double send_trans_start = get_time();
+    int send_size;
+    uint8_t* send_buf = send_transform(mat, ALL, send_range, send_size, false);
+    ar_send_transform_time += get_time() - send_trans_start;
+    auto recv_view = mat(ALL, recv_range);
+    if (id_recv) {
+      recv_buf = (uint8_t*) recv_view.Buffer();
+    }
+    bytes_sent += send_size;
+    ar_bytes_sent += send_size;
+    ar_ag_bytes_sent += send_size;
+    double sendrecv_start = get_time();
+    mpi::SendRecv(send_buf, send_size, partner,
+                  recv_buf, max_recv_count, partner, comm);
+    double sendrecv_tot = get_time() - sendrecv_start;
+    ar_send_time += sendrecv_tot;
+    ar_recv_time += sendrecv_tot;
+    ar_ag_send_time += sendrecv_tot;
+    ar_ag_recv_time += sendrecv_tot;
+    double recv_trans_start = get_time();
+    int recv_size = 0;
+    if (id_recv) {
+      recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
+    } else {
+      recv_size = recv_transform(recv_buf, recv_view);
+    }
+    ar_recv_transform_time += get_time() - recv_trans_start;
+    bytes_received += recv_size;
+    ar_bytes_received += recv_size;
+    ar_ag_bytes_received += send_size;
+    // Update for the next iteration.
+    if (rank > partner) {
+      send_idx = recv_idx;
+    }
+    partner_mask <<= 1;
+    slice_mask >>= 1;
   }
   ar_ag_time += get_time() - ag_start;
   ar_time += get_time() - ar_start;

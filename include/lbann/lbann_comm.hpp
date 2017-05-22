@@ -527,6 +527,17 @@ namespace lbann
       std::function<int(uint8_t*, Mat&)> recv_apply_transform,
       bool id_recv = false);
 
+    /**
+     * An allreduce using a recursive-halving reduce-scatter followed by a
+     * recursive-doubling allgather.
+     */
+    void rabenseifner_allreduce(
+      mpi::Comm comm, Mat& mat, int max_recv_count,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<int(uint8_t*, Mat&)> recv_transform,
+      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
+      bool id_recv = false);
+
     /** Return the intermodel communicator. */
     mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
 
