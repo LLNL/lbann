@@ -41,6 +41,32 @@ cv_normalizer::cv_normalizer(void)
 {}
 
 
+cv_normalizer::cv_normalizer(const cv_normalizer& rhs)
+: cv_transform(rhs), m_mean_subtraction(rhs.m_mean_subtraction), m_unit_variance(rhs.m_unit_variance),
+  m_unit_scale(rhs.m_unit_scale), m_z_score(rhs.m_z_score), m_trans(rhs.m_trans)
+{
+}
+
+
+cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs)
+{
+  if (this == &rhs) return (*this);
+  cv_transform::operator=(rhs);
+  m_mean_subtraction = rhs.m_mean_subtraction;
+  m_unit_variance = rhs.m_unit_variance;
+  m_unit_scale = rhs.m_unit_scale;
+  m_z_score = rhs.m_z_score;
+  m_trans = rhs.m_trans;
+
+  return (*this);
+}
+
+
+cv_normalizer* cv_normalizer::clone(void) const {
+  return new cv_normalizer(*this);
+}
+
+
 cv_normalizer::normalization_type& cv_normalizer::set_normalization_type(
   normalization_type& ntype, const normalization_type flag) const
 {

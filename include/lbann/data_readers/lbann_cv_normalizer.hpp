@@ -99,6 +99,9 @@ class cv_normalizer : public cv_transform
  public:
 
   cv_normalizer(void);
+  cv_normalizer(const cv_normalizer& rhs);
+  cv_normalizer& operator=(const cv_normalizer& rhs);
+  virtual cv_normalizer* clone(void) const;
 
   /// Set the parameters all at once
   virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);

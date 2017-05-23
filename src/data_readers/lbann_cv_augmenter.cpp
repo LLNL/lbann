@@ -51,6 +51,41 @@ cv_augmenter::cv_augmenter(void)
 }
 
 
+cv_augmenter::cv_augmenter(const cv_augmenter& rhs)
+: cv_transform(rhs),
+  m_do_horizontal_flip(rhs.m_do_horizontal_flip),
+  m_do_vertical_flip(rhs.m_do_vertical_flip),
+  m_rotation_range(rhs.m_rotation_range),
+  m_horizontal_shift_range(rhs.m_horizontal_shift_range),
+  m_vertical_shift_range(rhs.m_vertical_shift_range),
+  m_shear_range(rhs.m_shear_range),
+  m_flip(rhs.m_flip),
+  m_trans(rhs.m_trans)
+{
+}
+
+cv_augmenter* cv_augmenter::clone(void) const {
+  return new cv_augmenter(*this);
+}
+
+cv_augmenter& cv_augmenter::operator=(const cv_augmenter& rhs)
+{
+  if (this == &rhs) return (*this);
+
+  cv_transform::operator=(rhs);
+  m_do_horizontal_flip = rhs.m_do_horizontal_flip;
+  m_do_vertical_flip = rhs.m_do_vertical_flip;
+  m_rotation_range = rhs.m_rotation_range;
+  m_horizontal_shift_range = rhs.m_horizontal_shift_range;
+  m_vertical_shift_range = rhs.m_vertical_shift_range;
+  m_shear_range = rhs.m_shear_range;
+  m_flip = rhs.m_flip;
+  m_trans = rhs.m_trans;
+
+  return (*this);
+}
+
+
 bool cv_augmenter::check_to_enable(void) const
 {
   bool enable = m_do_horizontal_flip || m_do_vertical_flip ||

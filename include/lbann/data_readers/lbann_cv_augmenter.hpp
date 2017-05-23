@@ -77,6 +77,9 @@ class cv_augmenter : public cv_transform
 
  public:
   cv_augmenter(void);
+  cv_augmenter(const cv_augmenter& rhs);
+  cv_augmenter& operator=(const cv_augmenter& rhs);
+  virtual cv_augmenter* clone(void) const;
 
   /// Set the parameters all at once
   virtual void set(const bool hflip, const bool vflip, const float rot, 

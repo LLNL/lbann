@@ -38,6 +38,11 @@ lbann::DataReader_ImageNetSingle_cv::DataReader_ImageNetSingle_cv(int batchSize,
   : DataReader_ImageNet(batchSize, shuffle), m_pp(pp)
 {
   //m_pixels.resize(m_image_width * m_image_height * m_image_num_channels);
+  if (!m_pp) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: invalid image processor";
+    throw lbann_exception(err.str());
+  }
 }
 
 lbann::DataReader_ImageNetSingle_cv::DataReader_ImageNetSingle_cv(const DataReader_ImageNetSingle_cv& source)
@@ -182,7 +187,7 @@ int lbann::DataReader_ImageNetSingle_cv::fetch_data(Mat &X)
       err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << idx;
       throw lbann_exception(err.str());
     }
-    if (_BUILTIN_FALSE(width != m_image_width || height != m_image_height || img_type != CV_8UC3)) {
+    if (_BUILTIN_FALSE((width * height * CV_MAT_CN(img_type)) != num_channel_values)) {
       stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
       throw lbann_exception(err.str());

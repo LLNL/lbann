@@ -69,6 +69,9 @@ class cv_process {
   cv_process(void)
   : m_flip(cv_transform::_no_flip_), m_split(true) {}
 
+  cv_process(const cv_process& rhs);
+  cv_process& operator=(const cv_process& rhs);
+
   cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
   : m_flip(flip_code), m_split(tosplit) {}
 

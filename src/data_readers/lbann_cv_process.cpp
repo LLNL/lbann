@@ -34,6 +34,45 @@
 namespace lbann
 {
 
+/**
+ * Copy constructor.
+ * Rather than transferring the ownership of the managed cv_transform objects
+ * pointed by the pointers, or sharing them by simply copying the pointers,
+ * copy-constructs the objects and owns the pointers to those newly created
+ * objects.
+ */
+cv_process::cv_process(const cv_process& rhs)
+: m_flip(rhs.m_flip), m_split(rhs.m_split),
+  m_normalizer((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL),
+  m_augmenter((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL),
+  m_transform1((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL),
+  m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
+  m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
+{}
+
+/**
+ * Assignment operator.
+ * Rather than transferring the ownership of the managed cv_transform objects
+ * pointed by the pointers, or sharing them by simply copying the pointers,
+ * copy-constructs the objects and owns the pointers to those newly created
+ * objects.
+ */
+cv_process& cv_process::operator=(const cv_process& rhs)
+{
+  if (this == &rhs) return (*this);
+
+  m_flip = rhs.m_flip;
+  m_split = rhs.m_split;
+  m_normalizer.reset((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL);
+  m_augmenter.reset((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL);
+  m_transform1.reset((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL);
+  m_transform2.reset((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL);
+  m_transform3.reset((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL);
+
+  return (*this);
+}
+
+
 void cv_process::disable_transforms(void)
 {
   if (m_normalizer) m_normalizer->disable();
