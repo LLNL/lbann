@@ -56,6 +56,13 @@
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
+#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
+#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
+#include "lbann/data_readers/lbann_data_reader_nci.hpp"
+#include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
+#include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/lbann_callback_print.hpp"
