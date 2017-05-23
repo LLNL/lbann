@@ -33,6 +33,7 @@
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/data_readers/lbann_cv_normalizer.hpp"
 #include "lbann/data_readers/lbann_cv_augmenter.hpp"
+#include "lbann/data_readers/lbann_cv_colorizer.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV

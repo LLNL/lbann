@@ -2,14 +2,15 @@ add_sources(lbann_data_reader.cpp
             lbann_data_reader_mnist.cpp
             lbann_data_reader_imagenet.cpp
             lbann_data_reader_imagenet_single.cpp
-#            lbann_data_reader_imagenet_cv.cpp
-#            lbann_data_reader_imagenet_single_cv.cpp
+            lbann_data_reader_imagenet_cv.cpp
+            lbann_data_reader_imagenet_single_cv.cpp
             lbann_data_reader_nci.cpp
             lbann_data_reader_nci_regression.cpp
             lbann_data_reader_cifar10.cpp
             lbann_image_utils.cpp
             lbann_image_preprocessor.cpp
             lbann_cv_augmenter.cpp
+            lbann_cv_colorizer.cpp
             lbann_cv_normalizer.cpp
             lbann_cv_process.cpp
             lbann_cv_utils.cpp

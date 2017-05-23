@@ -137,9 +137,13 @@ int main(int argc, char* argv[])
     normalizer->unit_variance(unit_variance);
     normalizer->z_score(z_score);
 
+    // set up a custom transform (colorizer)
+    std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+
     // set up the image preprocessor
     std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
     pp->set_normalizer(std::move(normalizer));
+    pp->set_custom_transform2(std::move(colorizer));
 
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)

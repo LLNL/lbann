@@ -90,7 +90,7 @@ class cv_augmenter : public cv_transform
 
   /**
    * Construct an affine transformation matrix based on the options and random
-   * numbers. If successful, the tranform is enabled.If not, it is disabled.
+   * numbers. If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
   virtual bool determine_transform(const cv::Mat& image);
