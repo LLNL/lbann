@@ -35,7 +35,7 @@
 
 namespace lbann
 {
-class DataReader_CIFAR10 : DataReader
+class DataReader_CIFAR10 : public DataReader
 {
 public:
   /// constructor
@@ -64,6 +64,8 @@ public:
     return m_image_height;
   }
 
+  int get_num_labels() { return 10; }
+
   /// returns image depth (which should be 3)
   int get_image_num_channels() {
     return m_image_num_channels;
@@ -74,9 +76,9 @@ public:
     return m_image_width * m_image_height * m_image_num_channels;
   }
 
-  /// returns the number of images
+  /// returns 
   int get_linearized_label_size() {
-    return m_data.size();
+    return 10;
   }
 
 private:
