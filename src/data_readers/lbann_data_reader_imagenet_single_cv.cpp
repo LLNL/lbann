@@ -143,6 +143,7 @@ int lbann::DataReader_ImageNetSingle_cv::fetch_data(Mat &X)
     throw lbann_exception(err.str());
   }
 
+  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int width, height;
   int current_batch_size = getBatchSize();
   const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
