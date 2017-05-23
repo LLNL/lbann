@@ -383,6 +383,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
     // If we can, receive directly into the destination matrix.
     if (id_recv) {
       recv_buf = (uint8_t*) recv_view.Buffer();
+      max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
     mpi::SendRecv(send_buf, send_size, dst,
@@ -420,6 +421,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
                             slice_ends[data_src]));
     if (id_recv) {
       recv_buf2 = (uint8_t*) recv_view.Buffer();
+      max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
@@ -536,6 +538,7 @@ void lbann::lbann_comm::ring_allreduce(
     // If we can, receive directly into the destination matrix.
     if (id_recv) {
       recv_buf = (uint8_t*) recv_view.Buffer();
+      max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
     mpi::SendRecv(send_buf, send_size, dst,
@@ -570,6 +573,7 @@ void lbann::lbann_comm::ring_allreduce(
                             slice_ends[recv_slice]));
     if (id_recv) {
       recv_buf2 = (uint8_t*) recv_view.Buffer();
+      max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
@@ -722,6 +726,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
     auto recv_view = mat(ALL, recv_range);
     if (id_recv) {
       recv_buf = (uint8_t*) recv_view.Buffer();
+      max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
@@ -788,10 +793,11 @@ void lbann::lbann_comm::setup_node_comm() {
   mpi::Split(hash_comm, node_num, mpi::Rank(mpi::COMM_WORLD), node_comm);
   mpi::Free(hash_comm);
 
-  // Set up the list of model ranks on this node.
+  // Set up list of ranks that are local.
   int node_comm_size = mpi::Size(node_comm);
   for (int i = 0; i < node_comm_size; ++i) {
-    model_ranks_on_node.push_back(mpi::Translate(node_comm, i, model_comm));
+    world_ranks_on_node.push_back(
+      mpi::Translate(node_comm, i, mpi::COMM_WORLD));
   }
 }
 

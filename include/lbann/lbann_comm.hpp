@@ -90,11 +90,11 @@ namespace lbann
     inline int get_procs_per_node() const { return procs_per_node; }
     /** Return the rank of this process within its compute node. */
     inline int get_rank_in_node() const { return rank_in_node; }
-    /** Return true if rank (in the model comm) is on this compute node. */
-    inline bool is_model_rank_on_node(int rank) const {
-      return std::find(model_ranks_on_node.begin(),
-                       model_ranks_on_node.end(),
-                       rank) != model_ranks_on_node.end();
+    /** Return true if rank (in COMM_WORLD) is on this compute node. */
+    inline bool is_world_rank_on_node(int rank) const {
+      return std::find(world_ranks_on_node.begin(),
+                       world_ranks_on_node.end(),
+                       rank) != world_ranks_on_node.end();
     }
 
     /** Perform a sum reduction of mat over the inter-model communicator. */
@@ -562,8 +562,8 @@ namespace lbann
     int procs_per_node;
     /** Rank of this process within its compute node. */
     int rank_in_node;
-    /** The list of ranks in the model_comm that are on this compute node. */
-    std::vector<int> model_ranks_on_node;
+    /** The list of world ranks that are on this compute node. */
+    std::vector<int> world_ranks_on_node;
     /** Pre-allocated buffers for collectives. */
     std::unordered_map<size_t, std::vector<uint8_t*>> collective_bufs;
     
