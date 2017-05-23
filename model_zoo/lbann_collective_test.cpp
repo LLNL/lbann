@@ -43,7 +43,7 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
     return (uint8_t*) to_send.Buffer();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
     Mat recv_mat;
     recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
                           accum.LDim());
@@ -55,7 +55,7 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform));
 }
 
 void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -74,7 +74,7 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
     Mat recv_mat;
     recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
                           accum.LDim());
@@ -87,7 +87,7 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
 }
 
 void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -106,7 +106,7 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum, bool) {
     Mat recv_mat;
     recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
                           accum.LDim());
@@ -119,7 +119,7 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
 }
 
 void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -138,7 +138,7 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
     Mat recv_mat;
     recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
                           accum.LDim());
@@ -151,7 +151,7 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
 }
 
 void print_stats(const std::vector<double>& times) {

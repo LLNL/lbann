@@ -485,16 +485,21 @@ namespace lbann
      * received data (i.e. the count that the data was sent using).
      * @param recv_apply_transform A function like recv_transform except that
      * the transformed data should be combined (applied, reduced) with the
-     * current data in the matrix argument.
+     * current data in the matrix argument. A boolean parameter indicates that
+     * no_local_trans was true and the data was not transformed.
      * @param id_recv An optimization flag that indicates that the
      * recv_transform is the identity.
+     * @param no_local_trans An optimization flag that indicates that, when
+     * communication is node-local, the send_transform should not be applied.
+     * In this case, id_recv is implied when possible, and the local flag in
+     * recv_apply_transform is set to true.
      */
     void intermodel_allreduce(
       Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
-      bool id_recv = false);
+      std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+      bool id_recv = false, bool no_local_trans = false);
 
     /**
      * A recursive-doubling allreduce.
@@ -503,8 +508,8 @@ namespace lbann
     void recursive_doubling_allreduce_pow2(
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
-      bool id_recv = false);
+      std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+      bool id_recv = false, bool no_local_trans = false);
 
     /**
      * An allreduce based on a pairwise-exchange reduce-scatter followed by a
@@ -514,8 +519,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
-      bool id_recv = false);
+      std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+      bool id_recv = false, bool no_local_trans = false);
 
     /**
      * An allreduce using ring-based reduce-scatter and allgather.
@@ -524,8 +529,8 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
-      bool id_recv = false);
+      std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+      bool id_recv = false, bool no_local_trans = false);
 
     /**
      * An allreduce using a recursive-halving reduce-scatter followed by a
@@ -535,11 +540,18 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
-      std::function<int(uint8_t*, Mat&)> recv_apply_transform,
-      bool id_recv = false);
+      std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+      bool id_recv = false, bool no_local_trans = false);
 
     /** Return the intermodel communicator. */
     mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
+
+    /** Return true if rank (in comm) is on the local node. */
+    bool is_rank_node_local(int rank, mpi::Comm comm) const {
+      // Translating to COMM_WORLD is typically constant time.
+      int world_rank = mpi::Translate(comm, rank, mpi::COMM_WORLD);
+      return is_world_rank_on_node(world_rank);
+    }
 
   private:
     /** Communicator for every process in this model. */
