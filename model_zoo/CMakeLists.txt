@@ -28,7 +28,7 @@ endfunction()
 # Parallel Tests
 add_mpi_ctest( comm_test )
 add_mpi_ctest( quantizer_test )
-#add_mpi_ctest( quantizer_bm )
+add_mpi_ctest( quantizer_bm )
 add_mpi_ctest( dnn_mnist )
 add_mpi_ctest( dnn_multi_mnist )
 add_mpi_ctest( dnn_imagenet )
