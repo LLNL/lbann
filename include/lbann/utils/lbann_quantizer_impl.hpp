@@ -548,15 +548,25 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
     return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
   };
   auto recv_apply_transform =
-    [this] (uint8_t* recv_buf, Mat& accum) {
-    adaptive_unquantize_add<colT, rowT>((rowT*) recv_buf, accum);
-    const colT* q_col = (colT*) recv_buf;
-    return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
+    [this] (uint8_t* recv_buf, Mat& accum, bool is_local) -> int {
+    if (is_local) {
+      Mat recv_mat;
+      recv_mat.LockedAttach(accum.Height(), accum.Width(),
+                            (DataType*) recv_buf, accum.LDim());
+      accum += recv_mat;
+      return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    } else {
+      adaptive_unquantize_add<colT, rowT>((rowT*) recv_buf, accum);
+      const colT* q_col = (colT*) recv_buf;
+      return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
+    }
   };
-  comm->intermodel_allreduce(mat, max_size,
+  comm->intermodel_allreduce(
+    mat, max_size,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
+    false, false);
 }
 
 }  // namespace lbann

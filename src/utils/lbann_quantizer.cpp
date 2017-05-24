@@ -237,19 +237,28 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
     return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [this] (uint8_t* recv_buf, Mat& accum) {
-    QuantizedMatrix recv_mat;
-    recv_mat.LockedAttach(get_onebit_quantized_matrix_height(accum),
-                          accum.Width(), (qtype*) recv_buf,
-                          get_onebit_quantized_matrix_height(accum));
-    onebit_unquantize_add(recv_mat, accum);
-    return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
+    [this] (uint8_t* recv_buf, Mat& accum, bool is_local) {
+    if (is_local) {
+      Mat recv_mat;
+      recv_mat.LockedAttach(accum.Height(), accum.Width(),
+                            (DataType*) recv_buf, accum.LDim());
+      accum += recv_mat;
+      return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    } else {
+      QuantizedMatrix recv_mat;
+      recv_mat.LockedAttach(get_onebit_quantized_matrix_height(accum),
+                            accum.Width(), (qtype*) recv_buf,
+                            get_onebit_quantized_matrix_height(accum));
+      onebit_unquantize_add(recv_mat, accum);
+      return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
+    }
   };
   comm->intermodel_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
     std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
+    false, false);
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
