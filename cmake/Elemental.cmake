@@ -108,7 +108,7 @@ endif()
 
 # Include header files
 set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
-include_directories(${Elemental_INCLUDE_DIRS})
+include_directories(SYSTEM ${Elemental_INCLUDE_DIRS})
 
 # Get library
 if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)

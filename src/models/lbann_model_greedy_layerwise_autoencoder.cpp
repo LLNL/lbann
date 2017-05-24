@@ -40,7 +40,7 @@ lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint min
                                                 layer_factory* _layer_fac,
                                                 optimizer_factory* _optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
-    m_have_mirror(0),m_phase_end(2) {}
+    m_phase_end(2), m_have_mirror(0) {}
 
 lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 

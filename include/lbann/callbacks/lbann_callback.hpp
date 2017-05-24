@@ -49,6 +49,7 @@ public:
   lbann_callback(int _batch_interval = 1,
                  lbann_summary* _summarizer = nullptr) :
     batch_interval(_batch_interval), summarizer(_summarizer) {}
+  virtual ~lbann_callback() {}
   void set_summarizer(lbann_summary* _summarizer) { summarizer = _summarizer; }
   /** Called once to set up the callback (after all layers are set up). */
   virtual void setup(model* m) {};

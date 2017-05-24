@@ -59,8 +59,6 @@ void lbann_callback_imcomm::setup(model* m) {
           layer->get_minibatch_size() * m->get_comm()->get_num_models());
         // Skip adding matrices when we don't need to.
         if (!ct_does_quantization()) continue;
-        // TODO: handle case where weights_gradient is in other matrix distribution
-        DistMat& weights_gradient = (DistMat&) layer->get_weights_biases_gradient();
         quantization_errors.emplace(idx, Mat{});
       }
     }

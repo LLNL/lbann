@@ -269,7 +269,7 @@ void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   bool id_recv, bool no_local_trans) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
-  const int nprocs = mpi::Size(comm);
+  const unsigned int nprocs = mpi::Size(comm);
   if (nprocs == 1) return;  // Nothing to do.
   // This implementation requires a power-of-2 number of processes.
   if (nprocs & (nprocs - 1)) {
@@ -621,7 +621,6 @@ void lbann::lbann_comm::ring_allreduce(
     recv_buf2 = get_collective_buffer(max_recv_count, 1);
   }
   for (int step = 1; step < nprocs - 1; ++step) {
-    const int send_slice = (rank - step + 1 + nprocs) % nprocs;
     const int recv_slice = (rank - step + nprocs) % nprocs;
     auto recv_view = mat(ALL,
                          IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
@@ -668,7 +667,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   bool id_recv, bool no_local_trans) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
-  const int nprocs = mpi::Size(comm);
+  const unsigned int nprocs = mpi::Size(comm);
   if (nprocs == 1) return;  // Nothing to do.
   // This implementation requires a power-of-2 number of processes.
   if (nprocs & (nprocs - 1)) {

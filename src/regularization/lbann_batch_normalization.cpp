@@ -37,7 +37,7 @@ namespace lbann {
 batch_normalization::batch_normalization(data_layout data_dist,
                                          lbann_comm* comm, DataType decay,
                                          DataType gamma, DataType beta) :
-  comm(comm), m_decay(decay), m_gamma_init(gamma), m_beta_init(beta) {
+  comm(comm), m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
   // Setup the data distribution
   switch(data_dist) {
   case data_layout::MODEL_PARALLEL:

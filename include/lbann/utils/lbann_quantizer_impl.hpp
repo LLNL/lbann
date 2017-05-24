@@ -183,7 +183,9 @@ void lbann_quantizer::adaptive_unquantize(
                 "colT must be at least as large as DataType");
   DataType* __restrict__ buf = mat.Buffer();
   const colT header_len = mat.Width() * HEADER_FACTOR;
+#if LBANN_QUANTIZER_TERNARY
   const colT height = mat.Height();
+#endif
   const colT ldim = mat.LDim();
   const colT* q_col = (const colT*) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
@@ -234,7 +236,9 @@ void lbann_quantizer::adaptive_unquantize_add(
                 "colT must be at least as large as DataType");
   DataType* __restrict__ buf = mat.Buffer();
   const colT header_len = mat.Width() * HEADER_FACTOR;
+#if LBANN_QUANTIZER_TERNARY
   const colT height = mat.Height();
+#endif
   const colT ldim = mat.LDim();
   const colT* q_col = (const colT*) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
@@ -404,7 +408,6 @@ void lbann_quantizer::adaptive_bound(
                 "rowT must be 2, 4, or 8 bytes.");
   static_assert(sizeof(colT) >= sizeof(DataType),
                 "colT must be at least as large as DataType");
-  const DataType* const __restrict__ mat_buf = mat.LockedBuffer();
   DataType* __restrict__ qerror_buf = qerror.Buffer();
   const colT width = mat.Width();
   const colT height = mat.Height();
@@ -502,9 +505,6 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
                 "rowT must be 2, 4, or 8 bytes.");
   static_assert(sizeof(colT) >= sizeof(DataType),
                 "colT must be at least as large as DataType");
-  // Elemental does not seem to support 16-bit MPI types. Using bytes keeps all
-  // versions simpler.
-  typedef uint8_t mpi_rowT;
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zero(qerror);
