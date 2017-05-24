@@ -61,7 +61,7 @@ LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=24
 else
-LUSTRE_FILEPATH="/p/lscratche/brainusr"
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=12
 fi

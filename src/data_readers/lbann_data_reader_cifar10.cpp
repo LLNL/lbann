@@ -59,6 +59,8 @@ DataReader_CIFAR10 & DataReader_CIFAR10::operator=(const DataReader_CIFAR10 &sou
   m_image_height = source.m_image_height;
   m_image_num_channels = source.m_image_num_channels;
   m_data = source.m_data;
+
+  return (*this);
 }
 
 DataReader_CIFAR10::~DataReader_CIFAR10() { }

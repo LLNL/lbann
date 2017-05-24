@@ -221,6 +221,8 @@ lbann::DataReader_ImageNetSingle_cv& lbann::DataReader_ImageNetSingle_cv::operat
   m_pp = source.m_pp;
   //m_pixels = source.m_pixels;
   openDataStream();
+
+  return (*this);
 }
 
 void lbann::DataReader_ImageNetSingle_cv::openDataStream() {

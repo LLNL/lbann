@@ -207,6 +207,8 @@ lbann::DataReader_ImageNetSingle& lbann::DataReader_ImageNetSingle::operator=(co
   m_offsets = source.m_offsets;
   m_pixels = source.m_pixels;
   openDataStream();
+
+  return (*this);
 }
 
 void lbann::DataReader_ImageNetSingle::openDataStream() {

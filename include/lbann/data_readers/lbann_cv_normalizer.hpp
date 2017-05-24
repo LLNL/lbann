@@ -309,9 +309,9 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
   const int NCh = image.channels();
   const int num_pixels = image.rows * image.cols;
-  double sum[NCh] = {0.0, };
-  double sqsum[NCh] = {0.0, };
-  double shift[NCh] = {0.0,};
+  double sum[NCh];
+  double sqsum[NCh];
+  double shift[NCh];
 
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;

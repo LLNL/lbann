@@ -381,7 +381,7 @@ bool lbann::model::checkpointShared()
     MPI_Barrier(MPI_COMM_WORLD);
     if (m_rank == 0) {
         timer.Start();
-        printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
+        printf("Checkpoint: epoch %ld step %ld ...\n", epoch, step);
         fflush(stdout);
     }
 
@@ -391,7 +391,7 @@ bool lbann::model::checkpointShared()
 
     // create subdirectory for this epoch
     char epochdir[1024];
-    snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+    snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%ld.step.%ld", dir, epoch, step);
 
     // start our checkpoint
     lbann::persist p;
@@ -419,7 +419,7 @@ bool lbann::model::checkpointShared()
         if (secs > 0.0) {
             bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
         }
-        printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+        printf("Checkpoint complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
             epoch, step, secs, (unsigned long long) bytes_count, bw
         );
         fflush(stdout);
