@@ -128,7 +128,10 @@ void lbann::adam::update(const AbsDistMat* gradient)
 #pragma omp parallel for
     for(Int i=0; i<local_height*local_width; ++i) {
       DataType& x = parameters_buffer[i];
-      const DataType g = gradient_buffer[i];
+      // We add eps here because sometimes the gradient is small enough that
+      // g*g can become denormalized, which can significantly impact the
+      // performance.
+      const DataType g = gradient_buffer[i] + m_eps;
       DataType& m1 = moment1_buffer[i];
       DataType& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
