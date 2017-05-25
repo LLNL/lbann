@@ -30,14 +30,26 @@
 using namespace std;
 using namespace El;
 
-lbann::metrics::categorical_accuracy::categorical_accuracy(lbann_comm* comm)
-  : metric(comm),
-    YsColMax(comm->get_model_grid()),
+lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm* comm)
+  : metric(data_dist, comm),
     YsColMaxStar(comm->get_model_grid()),
-    YsColMax_v(comm->get_model_grid()),
     YsColMaxStar_v(comm->get_model_grid())
 {
   this->type = metric_type::categorical_accuracy;
+
+  // Setup the data distribution
+  switch(data_dist) {
+  case data_layout::MODEL_PARALLEL:
+    initialize_model_parallel_distribution();
+    break;
+  case data_layout::DATA_PARALLEL:
+    initialize_data_parallel_distribution();
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
 }
 
 lbann::metrics::categorical_accuracy::~categorical_accuracy() {
@@ -52,12 +64,26 @@ lbann::metrics::categorical_accuracy::~categorical_accuracy() {
   m_max_index_v.Empty();
   m_reduced_max_indices_v.Empty();
 */
+  delete YsColMax;
+  delete YsColMax_v;
+}
+
+/// Workspace matrices should be in MR,Star distributions
+void lbann::metrics::categorical_accuracy::initialize_model_parallel_distribution() {
+  YsColMax = new ColSumMat(comm->get_model_grid());
+  YsColMax_v = new ColSumMat(comm->get_model_grid());
+}
+
+/// Workspace matrices should be in VC,Star distributions
+void lbann::metrics::categorical_accuracy::initialize_data_parallel_distribution() {
+  YsColMax = new ColSumStarVCMat(comm->get_model_grid());
+  YsColMax_v = new ColSumStarVCMat(comm->get_model_grid());
 }
 
 void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
   // Clear the contents of the intermediate matrices
-  Zeros(YsColMax, mini_batch_size, 1);
+  Zeros(*YsColMax, mini_batch_size, 1);
   Zeros(YsColMaxStar, mini_batch_size, 1);
   Zeros(m_max_index, mini_batch_size, 1); // Clear the entire matrix
   Zeros(m_reduced_max_indices, mini_batch_size, 1); // Clear the entire matrix
@@ -67,7 +93,7 @@ void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch
 void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   // Note that these matrices are transposed (column max matrices) and thus the mini-batch size effects the number of rows, not columns
-  View(YsColMax_v, YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax.Width()));
+  View(*YsColMax_v, *YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax->Width()));
   View(YsColMaxStar_v, YsColMaxStar, IR(0, cur_mini_batch_size), IR(0, YsColMaxStar.Width()));
   View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size), IR(0, m_max_index.Width()));
   View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
@@ -76,12 +102,24 @@ void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mi
 double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
 
   // Clear the contents of the intermediate matrices
-  Zeros(YsColMax, m_max_mini_batch_size, 1);
+  Zeros(*YsColMax, m_max_mini_batch_size, 1);
   Zeros(YsColMaxStar, m_max_mini_batch_size, 1);
 
   /// Compute the error between the previous layers activations and the ground truth
-  ColumnMaxNorms((DistMat) predictions_v, YsColMax_v); /// For each minibatch (column) find the maximimum value
-  Copy(YsColMax_v, YsColMaxStar_v); /// Give every rank a copy so that they can find the max index locally
+  /// For each minibatch (column) find the maximimum value
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    ColumnMaxNorms((DistMat) predictions_v, *((ColSumMat *) YsColMax_v));
+    break;
+  case data_layout::DATA_PARALLEL:
+    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v)); 
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
+  Copy(*YsColMax_v, YsColMaxStar_v); /// Give every rank a copy so that they can find the max index locally
 
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 

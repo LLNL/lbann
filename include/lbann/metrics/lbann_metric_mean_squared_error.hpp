@@ -39,7 +39,7 @@ namespace lbann
     {
     public:
       /// Constructor
-      mean_squared_error(lbann_comm* comm);
+      mean_squared_error(data_layout data_dist, lbann_comm* comm);
     
       /// Destructor
       ~mean_squared_error();

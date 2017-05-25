@@ -30,8 +30,8 @@
 using namespace std;
 using namespace El;
 
-lbann::metrics::mean_squared_error::mean_squared_error(lbann_comm* comm)
-  : metric(comm),
+lbann::metrics::mean_squared_error::mean_squared_error(data_layout data_dist, lbann_comm* comm)
+  : metric(data_dist, comm),
     internal_obj_fn(comm)
 {
   this->type = metric_type::mean_squared_error;

@@ -112,12 +112,14 @@ namespace lbann
     {
     public:
       /// Constructor
-      metric(lbann_comm *comm) {
+      metric(data_layout data_dist, lbann_comm *comm) {
         m_training_stats.init_stats();
         m_validation_stats.init_stats();
         m_testing_stats.init_stats();
         this->comm = comm;
         this->type = metric_type::INVALID;
+
+        m_data_layout = data_dist;
       }
 
       /// Destructor
@@ -142,6 +144,8 @@ namespace lbann
       lbann_comm* comm;
       model* neural_network_model;
       metric_type type;
+
+      data_layout m_data_layout;
     };
   }
 }

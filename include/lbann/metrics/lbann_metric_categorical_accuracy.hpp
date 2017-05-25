@@ -39,10 +39,12 @@ namespace lbann
     {
     public:
       /// Constructor
-      categorical_accuracy(lbann_comm* comm);
+      categorical_accuracy(data_layout data_dist, lbann_comm* comm);
     
       /// Destructor
       ~categorical_accuracy();
+      void initialize_model_parallel_distribution();
+      void initialize_data_parallel_distribution();
 
       void setup(int num_neurons, int mini_batch_size);
       void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
@@ -52,13 +54,13 @@ namespace lbann
       double report_lifetime_metric(execution_mode mode);
 
     protected:
-      ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
+      AbsDistMat *YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
       StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
       Mat m_max_index;    /// Local array to hold max indicies
       Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
       //    Mat Y_local;
 
-      ColSumMat YsColMax_v;
+      AbsDistMat *YsColMax_v;
       StarMat YsColMaxStar_v;
       Mat m_max_index_v;
       Mat m_reduced_max_indices_v;
