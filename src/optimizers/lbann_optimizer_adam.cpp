@@ -87,8 +87,10 @@ void lbann::adam::update(const AbsDistMat* gradient)
 
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const DataType correction = ( Sqrt(DataType(1) - m_current_beta2)
-                                / (DataType(1) - m_current_beta1) );
+  // Precompute the bias correction and learning rate.
+  const DataType correction = m_learning_rate *
+    (Sqrt(DataType(1) - m_current_beta2)
+     / (DataType(1) - m_current_beta1));
   
   // Get local matrix data
   const Int local_height = m_parameters->LocalHeight();
@@ -101,7 +103,7 @@ void lbann::adam::update(const AbsDistMat* gradient)
   const Int moment1_ldim = m_moment1->LDim();
   DataType* moment2_buffer = m_moment2->Buffer();
   const Int moment2_ldim = m_moment2->LDim();
-  
+
   // Check if matrix data is contiguous
   if(parameters_ldim != local_height
      || gradient_ldim != local_height
@@ -117,7 +119,7 @@ void lbann::adam::update(const AbsDistMat* gradient)
         DataType& m2 = moment2_buffer[i+j*moment2_ldim];
         m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
         m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-        x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+        x -= correction * m1 / (Sqrt(m2) + m_eps);
       }
     }
   }
@@ -131,7 +133,7 @@ void lbann::adam::update(const AbsDistMat* gradient)
       DataType& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-      x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+      x -= correction * m1 / (Sqrt(m2) + m_eps);
     }
   }
 
