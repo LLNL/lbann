@@ -921,14 +921,14 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
   const Int input_dim_x = m_input_dims[1];
   const Int filter_dim_y = m_filter_dims[0];
   const Int filter_dim_x = m_filter_dims[1];
-  const Int offset_y_start = -m_conv_pads[0];
-  const Int offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
-  const Int offset_y_stride = m_conv_strides[0];
-  const Int num_offsets_y = (offset_y_end - offset_y_start + offset_y_stride - 1) / offset_y_stride;
-  const Int offset_x_start = -m_conv_pads[1];
-  const Int offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
-  const Int offset_x_stride = m_conv_strides[1];
-  const Int num_offsets_x = (offset_x_end - offset_x_start + offset_x_stride - 1) / offset_x_stride;
+  const Int offset_start_y = -m_conv_pads[0];
+  const Int offset_end_y = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
+  const Int offset_stride_y = m_conv_strides[0];
+  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
+  const Int offset_start_x = -m_conv_pads[1];
+  const Int offset_end_x = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
+  const Int offset_stride_x = m_conv_strides[1];
+  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
 
   // Reshape filters into matrix
   const Mat filter_mat(current_filter_size, m_num_output_channels,
@@ -948,42 +948,51 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
     // Buffer for current input
     const DataType* input_buffer = prev_activations_local.LockedBuffer(0,sample);
 
-    // Iterate through filter offsets
-    // Note: each filter offset corresponds to column of im2col matrix
-#pragma omp parallel for collapse(2)
+    // Iterate through im2col matrix entries
+#pragma omp parallel for collapse(5)
     for(Int offset_y = 0;
-        offset_y < num_offsets_y;
+        offset_y < offset_num_y;
         ++offset_y) {
       for(Int offset_x = 0;
-          offset_x < num_offsets_x;
+          offset_x < offset_num_x;
           ++offset_x) {
-        const Int offset_y_pos = offset_y_start + offset_y * offset_y_stride;
-        const Int offset_x_pos = offset_x_start + offset_x * offset_x_stride;
-        const Int im2col_col = offset_x + offset_y * num_offsets_x;
-        Int im2col_index = im2col_col * current_filter_size;
-
-        // Iterate through filter entries
-        // Note: each filter entry corresponds to row of im2col matrix
         for(Int input_channel = 0;
             input_channel < m_num_input_channels;
             ++input_channel) {
-          for(Int pos_y = offset_y; pos_y < offset_y + filter_dim_y; ++pos_y) {
-            const bool pos_y_valid = 0 <= pos_y && pos_y < input_dim_y;
-            for(Int pos_x = offset_x; pos_x < offset_x + filter_dim_x; ++pos_x) {
-              const bool pos_x_valid = 0 <= pos_x && pos_x < input_dim_x;
+          for(Int filter_pos_y = 0;
+              filter_pos_y < filter_dim_y;
+              ++filter_pos_y) {
+            for(Int filter_pos_x = 0;
+                filter_pos_x < filter_dim_x;
+                ++filter_pos_x) {
+
+              // Get input entry
+              const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
+              const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
+              const Int input_pos_y = offset_pos_y + filter_pos_y;
+              const Int input_pos_x = offset_pos_x + filter_pos_x;
+              const Int input_index = (input_pos_x
+                                       + input_pos_y * input_dim_x
+                                       + input_channel * input_dim_x * input_dim_y);
+              const bool input_pos_valid = (0 <= input_pos_y
+                                            && input_pos_y < input_dim_y
+                                            && 0 <= input_pos_x
+                                            && input_pos_x < input_dim_x);
 
               // Copy input entry to im2col matrix if valid
-              const Int input_index = input_channel*input_dim_x*input_dim_y + pos_y*input_dim_x + pos_x;
-              im2col_buffer[im2col_index]
-                = pos_x_valid && pos_y_valid ? input_buffer[input_index] : 0;
-
-              // Move to next row in im2col matrix
-              ++im2col_index;
+              const Int im2col_col = offset_x + offset_y * offset_num_x;
+              const Int im2col_row = (filter_pos_x
+                                      + filter_pos_y * filter_dim_x
+                                      + input_channel * filter_dim_x * filter_dim_y);
+              DataType& im2col_entry
+                = im2col_buffer[im2col_row + im2col_col * current_filter_size];
+              im2col_entry = (input_pos_valid ?
+                              input_buffer[input_index] :
+                              DataType(0));
 
             }
           }
         }
-
       }
     }
 
@@ -998,6 +1007,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
          DataType(1), output_mat);
 
   }
+
 
   // weighted_sum and output are identical after fp linearity step
   Copy(weighted_sum_local, activations_local);
@@ -1422,14 +1432,14 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
   const Int input_dim_x = m_input_dims[1];
   const Int filter_dim_y = m_filter_dims[0];
   const Int filter_dim_x = m_filter_dims[1];
-  const Int offset_y_start = -m_conv_pads[0];
-  const Int offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
-  const Int offset_y_stride = m_conv_strides[0];
-  const Int num_offsets_y = (offset_y_end - offset_y_start + offset_y_stride - 1) / offset_y_stride;
-  const Int offset_x_start = -m_conv_pads[1];
-  const Int offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
-  const Int offset_x_stride = m_conv_strides[1];
-  const Int num_offsets_x = (offset_x_end - offset_x_start + offset_x_stride - 1) / offset_x_stride;
+  const Int offset_start_y = -m_conv_pads[0];
+  const Int offset_end_y = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
+  const Int offset_stride_y = m_conv_strides[0];
+  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
+  const Int offset_start_x = -m_conv_pads[1];
+  const Int offset_end_x = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
+  const Int offset_stride_x = m_conv_strides[1];
+  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
 
   // Initialize filter and im2col matrices
   const Mat filter_mat(current_filter_size, m_num_output_channels,
@@ -1466,46 +1476,56 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
     const DataType* input_buffer = prev_activations_local.LockedBuffer(0, sample);
     DataType* error_signal_buffer = error_signal_local.Buffer(0, sample);
 
-    // Iterate through filter offsets
-#pragma omp parallel for collapse(2)
+    // Iterate through im2col matrix entries
     for(Int offset_y = 0;
-        offset_y < num_offsets_y;
+        offset_y < offset_num_y;
         ++offset_y) {
+      const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
       for(Int offset_x = 0;
-          offset_x < num_offsets_x;
+          offset_x < offset_num_x;
           ++offset_x) {
-        const Int offset_y_pos = offset_y_start + offset_y * offset_y_stride;
-        const Int offset_x_pos = offset_x_start + offset_x * offset_x_stride;
-        const Int im2col_col = offset_x + offset_y * num_offsets_x;
-        Int im2col_index = im2col_col * current_filter_size;
-
-        // Iterate through filter entries
-        // Note: each filter entry corresponds to row of im2col matrix
+        const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
+        const Int im2col_col = offset_x + offset_y * offset_num_x;
         for(Int input_channel = 0;
             input_channel < m_num_input_channels;
             ++input_channel) {
-          for(Int pos_y = offset_y; pos_y < offset_y + filter_dim_y; ++pos_y) {
-            const bool pos_y_valid = 0 <= pos_y && pos_y < input_dim_y;
-            for(Int pos_x = offset_x; pos_x < offset_x + filter_dim_x; ++pos_x) {
-              const bool pos_x_valid = 0 <= pos_x && pos_x < input_dim_x;
+          for(Int filter_pos_y = 0;
+              filter_pos_y < filter_dim_y;
+              ++filter_pos_y) {
+            const Int input_pos_y = offset_pos_y + filter_pos_y;
+            for(Int filter_pos_x = 0;
+                filter_pos_x < filter_dim_x;
+                ++filter_pos_x) {
+              const Int input_pos_x = offset_pos_x + filter_pos_x;
 
-              const Int input_index = input_channel*input_dim_x*input_dim_y + pos_y*input_dim_x + pos_x;
+              // Find position in input
+              const Int input_index = (input_pos_x
+                                       + input_pos_y * input_dim_x
+                                       + input_channel * input_dim_x * input_dim_y);
+              const bool input_pos_valid = (0 <= input_pos_y
+                                            && input_pos_y < input_dim_y
+                                            && 0 <= input_pos_x
+                                            && input_pos_x < input_dim_x);
+
+              // Get im2col matrix entry
+              const Int im2col_row = (filter_pos_x
+                                      + filter_pos_y * filter_dim_x
+                                      + input_channel * filter_dim_x * filter_dim_y);
+              DataType& im2col_entry
+                = im2col_buffer[im2col_row + im2col_col * current_filter_size];
 
               // Add im2col matrix entry to error signal if valid
-              if(pos_x_valid && pos_y_valid)
-                error_signal_buffer[input_index] += im2col_buffer[im2col_index];
+              if(input_pos_valid)
+                error_signal_buffer[input_index] += im2col_entry;
 
               // Copy input entry to im2col matrix if valid
-              im2col_buffer[im2col_index]
-                = pos_x_valid && pos_y_valid ? input_buffer[input_index] : 0;
-
-              // Move to next row in im2col matrix
-              ++im2col_index;
+              im2col_entry = (input_pos_valid ?
+                              input_buffer[input_index] :
+                              DataType(0));
 
             }
           }
         }
-
       }
     }
 
