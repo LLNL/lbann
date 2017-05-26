@@ -541,7 +541,7 @@ void lbann::convolutional_layer::fp_linearity() {
   }
   else {
     switch(m_num_dims) {
-    case 2: fp_linearity_cpu_2d_direct(); break;
+    case 2: fp_linearity_cpu_2d_gemm(); break;
     default: fp_linearity_cpu();
     }
   }
@@ -555,7 +555,7 @@ void lbann::convolutional_layer::bp_linearity() {
   }
   else {
     switch(m_num_dims) {
-    case 2: bp_linearity_cpu_2d_direct(); break;
+    case 2: bp_linearity_cpu_2d_gemm(); break;
     default: bp_linearity_cpu();
     }
   }
@@ -897,7 +897,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
   Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
   Mat& activations_local = m_activations_v->Matrix();
 
-  // Get filter and bias
+  // Get filters and bias
   const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
   const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
@@ -916,89 +916,95 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
     Fill(weighted_sum_channel, bias_local.Get(i,0));
   }
 
-  // Initialize convolution matrix portion corresponding to input
-  // channel
-  Mat conv_matrix_channel;
-  Zeros(conv_matrix_channel, NumNeurons, num_per_input_channel);
-
-  // Avoid slow memory accesses by creating local variables
-  const Int dim_y = m_input_dims[0];
-  const Int dim_x = m_input_dims[1];
+  // Convolution parameters
+  const Int input_dim_y = m_input_dims[0];
   const Int filter_dim_y = m_filter_dims[0];
+  const Int offset_start_y = -m_conv_pads[0];
+  const Int offset_end_y = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
+  const Int offset_stride_y = m_conv_strides[0];
+  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
+  const Int input_dim_x = m_input_dims[1];
   const Int filter_dim_x = m_filter_dims[1];
-  const Int filter_offset_y_start = -m_conv_pads[0];
-  const Int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
-  const Int filter_offset_y_stride = m_conv_strides[0];
-  const Int filter_offset_x_start = -m_conv_pads[1];
-  const Int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
-  const Int filter_offset_x_stride = m_conv_strides[1];
+  const Int offset_start_x = -m_conv_pads[1];
+  const Int offset_end_x = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
+  const Int offset_stride_x = m_conv_strides[1];
+  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
 
-  // Iterate through input channels
-  for(Int input_channel = 0;
-      input_channel < m_num_input_channels;
-      ++input_channel) {
-    const Int input_index_start = input_channel*num_per_input_channel;
-    const Int input_index_end = (input_channel+1)*num_per_input_channel;
+  // Reshape filters into matrix
+  const Mat filter_mat(current_filter_size, m_num_output_channels,
+                       filter_local.LockedBuffer(), current_filter_size);
 
-    // Construct convolution matrix portion corresponding to input
-    // channel
-#pragma omp parallel for
-    for(Int output_channel = 0;
-        output_channel < m_num_output_channels;
-        ++output_channel) {
-      const Int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-      
-      // Iterate through output entries in current output channel
-      // Note: each output entry corresponds to a different offset
-      //   of the convolutional kernel
-      Int output_index = output_channel*num_per_output_channel;
-      for(Int filter_offset_y = filter_offset_y_start;
-          filter_offset_y <= filter_offset_y_end;
-          filter_offset_y += filter_offset_y_stride) {
-        for(Int filter_offset_x = filter_offset_x_start;
-            filter_offset_x <= filter_offset_x_end;
-            filter_offset_x += filter_offset_x_stride) {
+  // Initialize im2col matrix
+  Mat im2col_mat(current_filter_size, num_per_output_channel);
+  DataType* __restrict__ im2col_buffer = im2col_mat.Buffer();
 
-          // Iterate through filter entries for current input and output channel
+  // Iterate through data samples
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+
+    ////////////////////////////////////////////////////////////////
+    // Construct im2col matrix from input
+    ////////////////////////////////////////////////////////////////
+
+    // Buffer for current input
+    const DataType* __restrict__ input_buffer = prev_activations_local.LockedBuffer(0,sample);
+
+    // Iterate through im2col matrix entries
+#pragma omp parallel for collapse(5)
+    for(Int offset_y = 0;
+        offset_y < offset_num_y;
+        ++offset_y) {
+      for(Int offset_x = 0;
+          offset_x < offset_num_x;
+          ++offset_x) {
+        for(Int input_channel = 0;
+            input_channel < m_num_input_channels;
+            ++input_channel) {
           for(Int filter_pos_y = 0;
               filter_pos_y < filter_dim_y;
               ++filter_pos_y) {
-            const Int pos_y = filter_offset_y + filter_pos_y;
-            if(pos_y < Int(0) || pos_y >= dim_y) continue;
             for(Int filter_pos_x = 0;
                 filter_pos_x < filter_dim_x;
                 ++filter_pos_x) {
-              const Int pos_x = filter_offset_x + filter_pos_x;
-              if(pos_x < Int(0) || pos_x >= dim_x) continue;
 
-              // Get indices
-              const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
-              const Int input_index_channel = pos_y*dim_x + pos_x;
+              // Get input entry
+              const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
+              const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
+              const Int input_pos_y = offset_pos_y + filter_pos_y;
+              const Int input_pos_x = offset_pos_x + filter_pos_x;
+              const Int input_index = (input_pos_x
+                                       + input_pos_y * input_dim_x
+                                       + input_channel * input_dim_x * input_dim_y);
+              const bool input_pos_valid = (0 <= input_pos_y
+                                            && input_pos_y < input_dim_y
+                                            && 0 <= input_pos_x
+                                            && input_pos_x < input_dim_x);
 
-              // Update convolution matrix
-              const DataType filter_entry = filter_local(filter_index,0);
-              conv_matrix_channel.Set(output_index, input_index_channel, filter_entry);
+              // Copy input entry to im2col matrix if valid
+              const Int im2col_col = offset_x + offset_y * offset_num_x;
+              const Int im2col_row = (filter_pos_x
+                                      + filter_pos_y * filter_dim_x
+                                      + input_channel * filter_dim_x * filter_dim_y);
+              im2col_buffer[im2col_row + im2col_col * current_filter_size]
+                = input_pos_valid ? input_buffer[input_index] : DataType(0);
 
             }
           }
-
-          // Move to next output entry
-          ++output_index;
-
         }
       }
-
     }
 
-    // Apply convolution matrix portion
-    const Mat prev_activations_channel = LockedView(prev_activations_local,
-                                                    IR(input_index_start, input_index_end),
-                                                    ALL);
-    Gemm(NORMAL, NORMAL,
-         DataType(1), conv_matrix_channel, prev_activations_channel,
-         DataType(1), weighted_sum_local);
+    ////////////////////////////////////////////////////////////////
+    // Apply convolution to current data sample
+    ////////////////////////////////////////////////////////////////
+
+    Mat output_mat(num_per_output_channel, m_num_output_channels,
+                   weighted_sum_local.Buffer(0,sample), num_per_output_channel);
+    Gemm(TRANSPOSE, NORMAL,
+         DataType(1), im2col_mat, filter_mat,
+         DataType(1), output_mat);
 
   }
+
 
   // weighted_sum and output are identical after fp linearity step
   Copy(weighted_sum_local, activations_local);
@@ -1063,9 +1069,10 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
   }
 
   // Transfer outputs from GPUs to CPU
-  m_cudnn->gather_from_gpus(m_weights_gradient_per_gpu.Matrix(),
-                            m_weights_gradient_d,
-                            1);
+  m_cudnn->reduce_from_gpus(m_weights_gradient->Matrix(),
+                            m_weights_gradient_d);
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
 
 #endif // #ifndef __LIB_CUDNN
 }
@@ -1244,6 +1251,10 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
     }
   }
 
+  // Scale and accumulate gradients
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+
 }
 
 void lbann::convolutional_layer::bp_linearity_cpu_2d_direct() {
@@ -1368,6 +1379,10 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_direct() {
     }
   }
 
+  // Scale and accumulate gradients
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+
 }
 
 void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
@@ -1396,129 +1411,200 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
   // Compute bias gradient
-  Mat ones;
-  Ones(ones, num_per_output_channel, prev_error_signal_local.Width());
-  for(Int i=0; i<m_num_output_channels; ++i) {
-    const Mat prev_error_signal_channel
-      = LockedView(prev_error_signal_local,
-                   IR(i*num_per_output_channel,
-                      (i+1)*num_per_output_channel),
-                   ALL);
-    bias_gradient_local.Set(i, Int(0), Dot(prev_error_signal_channel, ones));
+  for(Int output_channel = 0;
+      output_channel < m_num_output_channels;
+      ++output_channel) {
+    DataType& bias_gradient_entry = bias_gradient_local(output_channel, 0);
+    for(Int col = 0; col < prev_error_signal_local.Width(); ++col) {
+      for(Int row = output_channel * num_per_output_channel;
+          row < (output_channel+1) * num_per_output_channel;
+          ++row) {
+        bias_gradient_entry += prev_error_signal_local(row, col);
+      }
+    }
   }
 
-  // Initialize convolution matrix portion corresponding to input
-  // channel
-  Mat conv_matrix_channel;
-  Zeros(conv_matrix_channel, NumNeurons, num_per_input_channel);
-
-  // Avoid slow memory accesses by creating local variables
-  const Int dim_y = m_input_dims[0];
-  const Int dim_x = m_input_dims[1];
+  // Convolution parameters
+  const Int input_dim_y = m_input_dims[0];
+  const Int input_start_y = -m_conv_pads[0];
+  const Int input_end_y = input_dim_y + m_conv_pads[0];
   const Int filter_dim_y = m_filter_dims[0];
+  const Int offset_start_y = input_start_y;
+  const Int offset_end_y = input_end_y - m_filter_dims[0] + 1;
+  const Int offset_stride_y = m_conv_strides[0];
+  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
+  const Int input_dim_x = m_input_dims[1];
+  const Int input_start_x = -m_conv_pads[1];
+  const Int input_end_x = input_dim_x + m_conv_pads[1];
   const Int filter_dim_x = m_filter_dims[1];
-  const Int filter_offset_y_start = -m_conv_pads[0];
-  const Int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
-  const Int filter_offset_y_stride = m_conv_strides[0];
-  const Int filter_offset_x_start = -m_conv_pads[1];
-  const Int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
-  const Int filter_offset_x_stride = m_conv_strides[1];
+  const Int offset_start_x = input_start_x;
+  const Int offset_end_x = input_end_x - m_filter_dims[1] + 1;
+  const Int offset_stride_x = m_conv_strides[1];
+  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
 
-  // Iterate through input channels
-  for(Int input_channel = 0;
-      input_channel < m_num_input_channels;
-      ++input_channel) {
-    const Int input_index_start = input_channel*num_per_input_channel;
-    const Int input_index_end = (input_channel+1)*num_per_input_channel;
+  // Initialize filter and im2col matrices
+  const Mat filter_mat(current_filter_size, m_num_output_channels,
+                       filter_local.LockedBuffer(), current_filter_size);
+  Mat filter_gradient_mat(current_filter_size, m_num_output_channels,
+                          filter_gradient_local.Buffer(), current_filter_size);
+  Mat im2col_mat(current_filter_size, num_per_output_channel);
+  DataType* __restrict__ im2col_buffer = im2col_mat.Buffer();
 
-    // Construct convolution matrix portion corresponding to input
-    // channel
-#pragma omp parallel
-    for(Int output_channel = 0;
-        output_channel < m_num_output_channels;
-        ++output_channel) {
-      const Int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
+  // Iterate through data samples
+  for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
-      // Iterate through output entries in current output channel
-      // Note: each output entry corresponds to a different offset
-      //   of the convolutional kernel
-      Int output_index = output_channel*num_per_output_channel;
-      for(Int filter_offset_y = filter_offset_y_start;
-          filter_offset_y <= filter_offset_y_end;
-          filter_offset_y += filter_offset_y_stride) {
-        for(Int filter_offset_x = filter_offset_x_start;
-            filter_offset_x <= filter_offset_x_end;
-            filter_offset_x += filter_offset_x_stride) {
+    ////////////////////////////////////////////////////////////////
+    // Compute gradient w.r.t. input im2col matrix
+    ////////////////////////////////////////////////////////////////
 
-          // Iterate through filter entries for current input and output channel
-          for(Int filter_pos_y = 0;
-              filter_pos_y < filter_dim_y;
-              ++filter_pos_y) {
-            const Int pos_y = filter_offset_y + filter_pos_y;
-            if(pos_y < Int(0) || pos_y >= dim_y) continue;
-            for(Int filter_pos_x = 0;
-                filter_pos_x < filter_dim_x;
-                ++filter_pos_x) {
-              const Int pos_x = filter_offset_x + filter_pos_x;
-              if(pos_x < Int(0) || pos_x >= dim_x) continue;
+    // Reshape previous error signal into matrix
+    const Mat prev_error_signal_mat(num_per_output_channel,
+                                    m_num_output_channels,
+                                    prev_error_signal_local.LockedBuffer(0,sample),
+                                    num_per_output_channel);
 
-              // Get indices
-              const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
-              const Int input_index_channel = pos_y*dim_x + pos_x;
-              const Int input_index = input_index_start + input_index_channel;
+    // Compute gradient w.r.t. input im2col matrix
+    Gemm(NORMAL, TRANSPOSE,
+         DataType(1), filter_mat, prev_error_signal_mat,
+         DataType(0), im2col_mat);
 
-              // Update convolution matrix
-              const DataType filter_entry = filter_local(filter_index,0);
-              conv_matrix_channel.Set(output_index, input_index_channel, filter_entry);
+    ////////////////////////////////////////////////////////////////
+    // Compute error signal (i.e. gradient w.r.t. input)
+    ////////////////////////////////////////////////////////////////
 
-              // Update filter gradient
-              // Note: conv_matrix_gradient = prev_error_signal * prev_activations^T
-              DataType& filter_gradient_entry = filter_gradient_local(filter_index, Int(0));
-              filter_gradient_entry += Dot(prev_activations_local(IR(input_index), ALL),
-                                           prev_error_signal_local(IR(output_index), ALL));
-            }
+    // Buffer for current error signal
+    DataType* __restrict__ error_signal_buffer = error_signal_local.Buffer(0, sample);
 
+    // Iterate through error signal entries
+#pragma omp parallel for collapse(3)
+    for(Int input_channel = 0;
+        input_channel < m_num_input_channels;
+        ++input_channel) {
+      for(Int input_pos_y = input_start_y;
+          input_pos_y < input_end_y;
+          ++input_pos_y) {
+        for(Int input_pos_x = input_start_x;
+            input_pos_x < input_end_x;
+            ++input_pos_x) {
+
+          // Get input and error signal entries
+          const Int input_index = (input_pos_x
+                                   + input_pos_y * input_dim_x
+                                   + input_channel * input_dim_x * input_dim_y);
+          const bool input_pos_valid = (0 <= input_pos_y
+                                        && input_pos_y < input_dim_y
+                                        && 0 <= input_pos_x
+                                        && input_pos_x < input_dim_x);
+          DataType trash;
+          DataType& error_signal_entry = (input_pos_valid ?
+                                          error_signal_buffer[input_index] :
+                                          trash);
+
+          // Get filter offsets containing current input entry
+          const Int offset_y_lower = (input_pos_y - offset_start_y - filter_dim_y) / offset_stride_y + 1;
+          const Int offset_y_upper = (input_pos_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
+          const Int first_offset_y = Max(offset_y_lower, 0);
+          const Int last_offset_y = Min(offset_y_upper, offset_end_y - 1);
+          const Int offset_x_lower = (input_pos_x - offset_start_x - filter_dim_x) / offset_stride_x + 1;
+          const Int offset_x_upper = (input_pos_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
+          const Int first_offset_x = Max(offset_x_lower, 0);
+          const Int last_offset_x = Min(offset_x_upper, offset_end_x - 1);
+
+          // Iterate through filter offsets
+          for(Int offset_y = first_offset_y;
+              offset_y <= last_offset_y;
+              ++offset_y) {
+            const Int filter_pos_y = input_pos_y - (offset_start_y + offset_y * offset_stride_y);
+            for(Int offset_x = first_offset_x;
+                offset_x <= last_offset_x;
+                ++offset_x) {
+              const Int filter_pos_x = input_pos_x - (offset_start_x + offset_x * offset_stride_x);
+
+              // Update error signal entry with im2col matrix entry
+              const Int im2col_col = offset_x + offset_y * offset_num_x;
+              const Int im2col_row = (filter_pos_x
+                                      + filter_pos_y * filter_dim_x
+                                      + input_channel * filter_dim_x * filter_dim_y);
+              error_signal_entry
+                += im2col_buffer[im2col_row + im2col_col * current_filter_size];
+              
+            }            
           }
+
         }
-
-        // Move to next output entry
-        ++output_index;
-
       }
     }
 
-    // Compute error signal
-    // Note: error_signal = conv_matrix^T * prev_error_signal
-    Mat error_signal_channel = View(error_signal_local,
-                                    IR(input_index_start, input_index_end),
-                                    ALL);
-    Gemm(TRANSPOSE, NORMAL,
-         DataType(1), conv_matrix_channel, prev_error_signal_local,
-         DataType(0), error_signal_channel);
+    ////////////////////////////////////////////////////////////////
+    // Construct im2col matrix from input
+    ////////////////////////////////////////////////////////////////
+
+    // Buffer for current input
+    const DataType* __restrict__ input_buffer = prev_activations_local.LockedBuffer(0,sample);
+
+    // Iterate through im2col matrix entries
+#pragma omp parallel for collapse(5)
+    for(Int offset_y = 0;
+        offset_y < offset_num_y;
+        ++offset_y) {
+      for(Int offset_x = 0;
+          offset_x < offset_num_x;
+          ++offset_x) {
+        for(Int input_channel = 0;
+            input_channel < m_num_input_channels;
+            ++input_channel) {
+          for(Int filter_pos_y = 0;
+              filter_pos_y < filter_dim_y;
+              ++filter_pos_y) {
+            for(Int filter_pos_x = 0;
+                filter_pos_x < filter_dim_x;
+                ++filter_pos_x) {
+
+              // Get input entry
+              const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
+              const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
+              const Int input_pos_y = offset_pos_y + filter_pos_y;
+              const Int input_pos_x = offset_pos_x + filter_pos_x;
+              const Int input_index = (input_pos_x
+                                       + input_pos_y * input_dim_x
+                                       + input_channel * input_dim_x * input_dim_y);
+              const bool input_pos_valid = (0 <= input_pos_y
+                                            && input_pos_y < input_dim_y
+                                            && 0 <= input_pos_x
+                                            && input_pos_x < input_dim_x);
+
+              // Copy input entry to im2col matrix if valid
+              const Int im2col_col = offset_x + offset_y * offset_num_x;
+              const Int im2col_row = (filter_pos_x
+                                      + filter_pos_y * filter_dim_x
+                                      + input_channel * filter_dim_x * filter_dim_y);
+              im2col_buffer[im2col_row + im2col_col * current_filter_size]
+                = input_pos_valid ? input_buffer[input_index] : DataType(0);
+
+            }
+          }
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Compute gradient w.r.t. filter
+    ////////////////////////////////////////////////////////////////
+    Gemm(NORMAL, NORMAL,
+         DataType(1), im2col_mat, prev_error_signal_mat,
+         DataType(1), filter_gradient_mat);
 
   }
+
+  // Scale and accumulate gradients
+  *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
+  AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
 
 }
 
 bool convolutional_layer::update()
 {
   double start = get_time();
-
-  if(m_execution_mode == execution_mode::training) {
-    // Obtain filter gradient with reduction and scaling
-    Mat& weights_gradient_local = m_weights_gradient->Matrix();
-#ifdef __LIB_CUDNN
-    const Mat& weights_gradient_per_gpu_local = m_weights_gradient_per_gpu.Matrix();
-    const Int num_gpus = m_cudnn->get_num_gpus();
-    if(m_using_gpus) {
-      for(Int i=1; i<num_gpus; ++i) {
-        weights_gradient_local += weights_gradient_per_gpu_local(ALL, IR(i));
-      }
-    }
-#endif // #ifdef __LIB_CUDNN  
-    weights_gradient_local *= DataType(1) / get_effective_minibatch_size();
-    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
-  }
 
   // Regularize gradients and update regularizers
   Layer::update();

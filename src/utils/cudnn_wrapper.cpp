@@ -384,11 +384,11 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
   gather_from_gpus(temp, gpu_data, width);
 
   // Reduce data from different GPUs
+  Zero(cpu_data);
   synchronize();
-  for(Int i=1; i<m_num_gpus; ++i) {
-    temp(ALL, IR(0,width)) += temp(ALL, IR(i*width, (i+1)*width));
+  for(Int i=0; i<m_num_gpus; ++i) {
+    cpu_data += temp(ALL, IR(i*width, (i+1)*width));
   }
-  Copy(temp(ALL,IR(0,width)), cpu_data);
 
 }
 
