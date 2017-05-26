@@ -65,7 +65,7 @@ else()
   if (PATCH_OPENBLAS)
     set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/patchELOpenBLAS.sh)
   else()
-    set(EL_OpenBLAS_PATCH_SCRIPT)
+    set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/noop.sh)
   endif()
 
   # Get Elemental from Git repository and build
