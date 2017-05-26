@@ -5,9 +5,9 @@
 # fileToPatch.new placed under the directory where this script exists
 
 thisCommand=`basename $0`
-fileList=`echo $0 | sed 's/'${thisCommand}'/ChangedFiles.EL_OpenBLAS.txt/'`
+fileList=`echo $0 | sed 's/'${thisCommand}'/ChangedFiles.OpenBLAS.txt/'`
 patchDir=`echo $0 | sed 's/\/'${thisCommand}'//'`
-patchName=EL_OpenBLAS.patch
+patchName=OpenBLAS.patch
 
 echo 'fileList = '${fileList}
 echo 'patchFile = '${patchDir}/${patchName}

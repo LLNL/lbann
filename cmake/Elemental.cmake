@@ -60,8 +60,13 @@ else()
   set(ELEMENTAL_BINARY_DIR ${PROJECT_BINARY_DIR}/download/elemental/build)
 
   # patch file
-  set(EL_OpenBLAS_PATCH_DIR ${PROJECT_SOURCE_DIR}/external/OpenBLAS)
-  set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/patchELOpenBLAS.sh)
+  set(PATCH_DIR ${PROJECT_SOURCE_DIR}/external)
+  set(EL_OpenBLAS_PATCH_DIR ${PATCH_DIR}/OpenBLAS)
+  if (PATCH_OPENBLAS)
+    set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/patchELOpenBLAS.sh)
+  else()
+    set(EL_OpenBLAS_PATCH_SCRIPT)
+  endif()
 
   # Get Elemental from Git repository and build
   ExternalProject_Add(project_Elemental
@@ -100,6 +105,7 @@ else()
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=${CMAKE_INSTALL_RPATH_USE_LINK_PATH}
       -D CMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
       -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
+      -D PATCH_DIR=${PATCH_DIR}
   )
 
   # Get install directory

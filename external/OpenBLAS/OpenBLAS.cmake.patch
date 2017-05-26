@@ -1,0 +1,11 @@
+--- OpenBLAS.cmake	2017-05-24 23:55:58.119226707 -0700
++++ OpenBLAS.cmake.new	2017-05-25 07:58:51.383397999 -0700
+@@ -145,7 +145,7 @@
+   ExternalProject_Add(project_openblas
+     PREFIX ${CMAKE_INSTALL_PREFIX}
+     GIT_REPOSITORY ${OPENBLAS_URL}
+-    GIT_TAG "v0.2.15"
++    GIT_TAG "v0.2.19"
+     STAMP_DIR ${OPENBLAS_BINARY_DIR}/stamp
+     BUILD_IN_SOURCE 1
+     SOURCE_DIR ${OPENBLAS_SOURCE_DIR}
