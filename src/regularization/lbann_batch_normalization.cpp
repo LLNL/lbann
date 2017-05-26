@@ -101,23 +101,28 @@ void batch_normalization::fp_weights() {
     Mat& mean_local = m_mean->Matrix();
     Mat& var_local = m_var->Matrix();
     // Compute the mean and variance of the activations over the minibatch.
+    // Use the running mean as a shift to help numerical stability.
     // Todo: Better access pattern for locality.
     for (Int row = 0; row < local_height; ++row) {
-      DataType sum = 0.0;
-      DataType sqsum = 0.0;
+      DataType shifted_sum = 0.0;
+      DataType shifted_sqsum = 0.0;
+      const DataType shift = m_running_mean->GetLocal(row, 0);
       for (Int col = 0; col < local_width; ++col) {
-        sum += acts_local(row, col);
-        sqsum += acts_local(row, col) * acts_local(row, col);
+        const DataType shifted_val = acts_local(row, col) - shift;
+        shifted_sum += shifted_val;
+        shifted_sqsum += shifted_val * shifted_val;
       }
-      mean_local(row, 0) = sum;
-      var_local(row, 0) = sqsum;
+      mean_local(row, 0) = shifted_sum;
+      var_local(row, 0) = shifted_sqsum;
     }
     AllReduce(*m_mean, m_mean->RedundantComm(), mpi::SUM);
     AllReduce(*m_var, m_var->RedundantComm(), mpi::SUM);
     for (Int row = 0; row < local_height; ++row) {
-      mean_local(row, 0) /= mbsize;
+      const DataType shift = m_running_mean->GetLocal(row, 0);
+      const DataType shifted_mean = mean_local(row, 0) / mbsize;
+      mean_local(row, 0) = shifted_mean + shift;
       var_local(row, 0) = Sqrt(var_local(row, 0) / mbsize -
-                               (mean_local(row, 0) * mean_local(row, 0)));
+                               (shifted_mean * shifted_mean));
     }
     // Compute transformed activations xhat = (x-mean)/sqrt(var)
     for (Int col = 0; col < local_width; ++col) {
