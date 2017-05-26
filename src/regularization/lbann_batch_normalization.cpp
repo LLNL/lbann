@@ -103,6 +103,7 @@ void batch_normalization::fp_weights() {
     // Compute the mean and variance of the activations over the minibatch.
     // Use the running mean as a shift to help numerical stability.
     // Todo: Better access pattern for locality.
+#pragma omp parallel for
     for (Int row = 0; row < local_height; ++row) {
       DataType shifted_sum = 0.0;
       DataType shifted_sqsum = 0.0;
@@ -117,6 +118,7 @@ void batch_normalization::fp_weights() {
     }
     AllReduce(*m_mean, m_mean->RedundantComm(), mpi::SUM);
     AllReduce(*m_var, m_var->RedundantComm(), mpi::SUM);
+#pragma omp parallel for
     for (Int row = 0; row < local_height; ++row) {
       const DataType shift = m_running_mean->GetLocal(row, 0);
       const DataType shifted_mean = mean_local(row, 0) / mbsize;
@@ -125,6 +127,7 @@ void batch_normalization::fp_weights() {
                                (shifted_mean * shifted_mean));
     }
     // Compute transformed activations xhat = (x-mean)/sqrt(var)
+#pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
         // Normalize.
@@ -145,6 +148,7 @@ void batch_normalization::fp_weights() {
     // Use the running mean/variance to normalize.
     const Mat& mean_local = m_running_mean->LockedMatrix();
     const Mat& var_local = m_running_var->LockedMatrix();
+#pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
         acts_local(row, col) -= mean_local(row, 0);
@@ -174,6 +178,7 @@ void batch_normalization::bp_weights() {
   Mat& dgamma_local = m_dgamma->Matrix();
   Mat& dbeta_local = m_dbeta->Matrix();
   // Compute the derivatives of gamma and beta.
+#pragma omp parallel for
   for (Int row = 0; row < local_height; ++row) {
     dbeta_local(row, 0) = 0.0;
     dgamma_local(row, 0) = 0.0;
@@ -188,6 +193,7 @@ void batch_normalization::bp_weights() {
   AllReduce(*m_dbeta, m_dbeta->RedundantComm(), mpi::SUM);
   AllReduce(*m_dgamma, m_dgamma->RedundantComm(), mpi::SUM);
   // Update the backprop gradient signal.
+#pragma omp parallel for collapse(2)
   for (Int row = 0; row < local_height; ++row) {
     for (Int col = 0; col < local_width; ++col) {
       bp_local(row, col) = mbsize * bp_local(row, col);
