@@ -194,6 +194,7 @@ void batch_normalization::bp_weights() {
       bp_local(row, col) /= DataType(mbsize);
       bp_local(row, col) *= gamma_local(row, 0);
       bp_local(row, col) /= var_local(row, 0) + DataType(1e-7);
+      bp_local(row, col) += DataType(1e-8);  // Avoid very small values.
     }
   }
 }
