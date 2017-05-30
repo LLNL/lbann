@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
     // First trial is a warmup.
     for (int trial = 0; trial < num_trials + 1; ++trial) {
       DistMat rd_mat(comm->get_model_grid());
-      El::Uniform(rd_mat, mat_size, mat_size, 0.0f, 1.0f);
+      El::Uniform(rd_mat, mat_size, mat_size, DataType(0.0), DataType(1.0));
       DistMat exact_mat(rd_mat);
       DistMat pe_ring_mat(rd_mat);
       DistMat ring_mat(rd_mat);

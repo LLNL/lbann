@@ -87,8 +87,11 @@ void test_adaptive_quantization(const Mat& mat, bool exact) {
   El::Zeros(uqmat, mat.Height(), mat.Width());
   lbann_quantizer quantizer;
   std::vector<uint16_t> qmat;
-  quantizer.adaptive_quantize<uint32_t, uint16_t>(mat, qmat, qerror, 3);
-  quantizer.adaptive_unquantize<uint32_t, uint16_t>(qmat.data(), uqmat);
+  // Handle different datatype sizes.
+  typedef std::conditional<sizeof(DataType) <= sizeof(uint32_t),
+    uint32_t, uint64_t>::type colT;
+  quantizer.adaptive_quantize<colT, uint16_t>(mat, qmat, qerror, 3);
+  quantizer.adaptive_unquantize<colT, uint16_t>(qmat.data(), uqmat);
   check_quantized_mat(mat, qerror, uqmat, exact);
 }
 
