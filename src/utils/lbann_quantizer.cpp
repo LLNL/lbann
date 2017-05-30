@@ -214,11 +214,13 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
     Zero(qerror);
   }
-  QuantizedMatrix qmat;
+  std::vector<QuantizedMatrix> qmats(4);
   auto send_transform =
-    [&qerror, &qmat, this] (Mat& mat, IR h, IR w, int& count, bool const_data) {
+    [&qerror, &qmats, this] (Mat& mat, IR h, IR w, int& count, bool const_data,
+      int call_idx) {
     auto to_send = mat(h, w);
     auto to_send_qerr = qerror(h, w);
+    QuantizedMatrix& qmat = qmats[call_idx];
     onebit_quantize(to_send, qmat, to_send_qerr);
     count = sizeof(qtype) * qmat.Height() * qmat.Width();
     if (!const_data) {
@@ -255,10 +257,10 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   };
   comm->intermodel_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
-    false, false);
+    false, false, 4);
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(

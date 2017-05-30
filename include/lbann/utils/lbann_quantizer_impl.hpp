@@ -516,10 +516,10 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
     MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion) *
     sizeof(rowT);
   std::vector<rowT> quant;
-  std::vector<rowT> quant_slice;
+  std::vector<std::vector<rowT>> quant_slices(4);
   auto send_transform =
-    [&qerror, &quant, &quant_slice, proportion, this]
-    (Mat& mat, IR h, IR w, int& count, bool const_data) {
+    [&qerror, &quant, &quant_slices, proportion, this]
+    (Mat& mat, IR h, IR w, int& count, bool const_data, int call_idx) {
     auto to_send = mat(h, w);
     auto to_send_qerr = qerror(h, w);
     if (const_data) {
@@ -527,6 +527,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
       if (quant.empty()) {
         adaptive_quantize<colT, rowT>(mat, quant, qerror, proportion);
       }
+      std::vector<rowT>& quant_slice = quant_slices[call_idx];
       quant_slice.clear();
       adaptive_quantize_slice<colT, rowT>(quant, to_send, to_send_qerr,
                                           quant_slice, w.beg, w.end,
@@ -563,10 +564,10 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   };
   comm->intermodel_allreduce(
     mat, max_size,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
-    false, false);
+    false, false, 4);
 }
 
 }  // namespace lbann

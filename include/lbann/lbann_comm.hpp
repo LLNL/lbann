@@ -472,12 +472,13 @@ namespace lbann
      * received in any step; this will be the size of receive buffers used in
      * the allreduce.
      * @param send_transform A function that takes a range of a matrix and
-     * applies atransformation to it. The return value is a pointer to a buffer
-     * containing the transformed data, which will be sent. The int param
-     * should be filled in with the count of how many elements are in the
-     * buffer. A boolean parameter indicates whether the matrix is constant
-     * between different calls to send_transform; if true, the function may be
-     * able to take advantage of this.
+     * applies a transformation to it. The return value is a pointer to a buffer
+     * containing the transformed data, which will be sent. The int& param
+     * should be set to the count of how many elements are in the buffer. The
+     * boolean parameter indicates whether the matrix is constant between
+     * different calls to send_transform; if true, the function may be able to
+     * take advantage of this. The int parameter gives a count of how many times
+     * send_transform has been called concurrently, starting from 0.
      * @param recv_transform A function that takes a pointer to a buffer and a
      * matrix and applies a transform to the buffer, storing the result in the
      * matrix. The buffer will be data transformed with send_transform and
@@ -493,13 +494,16 @@ namespace lbann
      * communication is node-local, the send_transform should not be applied.
      * In this case, id_recv is implied when possible, and the local flag in
      * recv_apply_transform is set to true.
+     * @param max_reduces The maximum number of concurrent reduce steps that
+     * the allreduce can perform, must be at least 1.
      */
     void intermodel_allreduce(
       Mat& mat, int max_recv_count,
-      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false);
+      bool id_recv = false, bool no_local_trans = false,
+      int max_reduces = 1);
 
     /**
      * A recursive-doubling allreduce.
@@ -507,27 +511,30 @@ namespace lbann
      */
     void recursive_doubling_allreduce_pow2(
       mpi::Comm comm, Mat& mat, int max_recv_count,
-      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
       bool id_recv = false, bool no_local_trans = false);
 
     /**
      * An allreduce based on a pairwise-exchange reduce-scatter followed by a
      * ring-based allgather.
+     * @param num_reduces If >1, performs up to num_reduces reduces concurrently
+     * in the reduce-scatter phase.
      */
     void pe_ring_allreduce(
       mpi::Comm comm, Mat& mat, int max_recv_count,
-      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false);
+      bool id_recv = false, bool no_local_trans = false,
+      int num_reduces = 1);
 
     /**
      * An allreduce using ring-based reduce-scatter and allgather.
      */
     void ring_allreduce(
       mpi::Comm comm, Mat& mat, int max_recv_count,
-      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
       bool id_recv = false, bool no_local_trans = false);
@@ -538,7 +545,7 @@ namespace lbann
      */
     void rabenseifner_allreduce(
       mpi::Comm comm, Mat& mat, int max_recv_count,
-      std::function<uint8_t*(Mat&, IR, IR, int&, bool)> send_transform,
+      std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
       bool id_recv = false, bool no_local_trans = false);

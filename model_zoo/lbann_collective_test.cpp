@@ -37,7 +37,8 @@ const int num_trials = 20;
 
 void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+        int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
     return (uint8_t*) to_send.Buffer();
@@ -54,13 +55,14 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform));
 }
 
 void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+        int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
     return (uint8_t*) to_send.Buffer();
@@ -85,14 +87,16 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->pe_ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true,
+    false);
 }
 
 void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+        int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
     return (uint8_t*) to_send.Buffer();
@@ -117,14 +121,15 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
 }
 
 void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data) {
+    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+        int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
     return (uint8_t*) to_send.Buffer();
@@ -149,7 +154,7 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->rabenseifner_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool)>(send_transform),
+    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
 }
