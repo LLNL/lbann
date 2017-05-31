@@ -48,6 +48,7 @@ typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix 
 typedef El::DistMatrix<DataType, El::MC, El::STAR> RowSumMat;
 typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
 typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
+typedef El::DistMatrix<DataType, El::VC, El::STAR> ColSumStarVCMat; /* Summary matrix over columns */
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 
