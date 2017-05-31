@@ -34,10 +34,6 @@
 namespace lbann {
 
 /**
- * Check matrices for whether they include any NaNs or infs to help debugging.
- * This will kill the rank if such values are discovered.
- */
-/**
  * Check matrices for whether they include any very small values to avoid
  * getting denormalized values. Denormalized values can significantly slow
  * floating point computations.
