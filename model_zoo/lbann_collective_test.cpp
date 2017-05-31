@@ -35,6 +35,16 @@ using namespace lbann;
 
 const int num_trials = 20;
 
+void add_buffer_into_mat(const uint8_t* buf_, Mat& accum) {
+  const Int height = accum.Height();
+  const Int width = accum.Width();
+  const DataType* buf = (const DataType*) buf_;
+  DataType* accum_buf = accum.Buffer();
+  for (Int i = 0; i < height*width; ++i) {
+    accum_buf[i] += buf[i];
+  }
+}
+
 void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
@@ -45,11 +55,8 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   auto recv_apply_transform =
     [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
-    Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
-                          accum.LDim());
-    accum += recv_mat;
-    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    add_buffer_into_mat(recv_buf, accum);
+    return sizeof(DataType) * accum.Height() * accum.Width();
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
@@ -77,11 +84,8 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   auto recv_apply_transform =
     [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
-    Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
-                          accum.LDim());
-    accum += recv_mat;
-    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    add_buffer_into_mat(recv_buf, accum);
+    return sizeof(DataType) * accum.Height() * accum.Width();
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
@@ -111,11 +115,8 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   auto recv_apply_transform =
     [] (uint8_t* recv_buf, Mat& accum, bool) {
-    Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
-                          accum.LDim());
-    accum += recv_mat;
-    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    add_buffer_into_mat(recv_buf, accum);
+    return sizeof(DataType) * accum.Height() * accum.Width();
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
@@ -144,11 +145,8 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   auto recv_apply_transform =
     [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
-    Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
-                          accum.LDim());
-    accum += recv_mat;
-    return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
+    add_buffer_into_mat(recv_buf, accum);
+    return sizeof(DataType) * accum.Height() * accum.Width();
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
