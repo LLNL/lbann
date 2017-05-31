@@ -252,10 +252,10 @@ namespace lbann
     template <typename T> void send(const T* data, int count, int model) {
       send(data, count, model, rank_in_model);
     }
-    void send(Mat& mat, int model, int rank);
-    void send(DistMat& mat, int model, int rank);
-    void send(Mat& mat, int model) { send(mat, model, rank_in_model); }
-    void send(DistMat& mat, int model) { send(mat, model, rank_in_model); }
+    void send(const Mat& mat, int model, int rank);
+    void send(const DistMat& mat, int model, int rank);
+    void send(const Mat& mat, int model) { send(mat, model, rank_in_model); }
+    void send(const DistMat& mat, int model) { send(mat, model, rank_in_model); }
 
     /** Corresponding non-blocking sends. */
     template <typename T>
@@ -268,12 +268,14 @@ namespace lbann
                                        mpi::Request<T>& req) {
       nb_send(data, count, model, rank_in_model, req);
     }
-    void nb_send(Mat& mat, int model, int rank, mpi::Request<DataType>& req);
-    void nb_send(DistMat& mat, int model, int rank, mpi::Request<DataType>& req);
-    void nb_send(Mat& mat, int model, mpi::Request<DataType>& req) {
+    void nb_send(const Mat& mat, int model, int rank,
+                 mpi::Request<DataType>& req);
+    void nb_send(const DistMat& mat, int model, int rank,
+                 mpi::Request<DataType>& req);
+    void nb_send(const Mat& mat, int model, mpi::Request<DataType>& req) {
       nb_send(mat, model, rank_in_model, req);
     }
-    void nb_send(DistMat& mat, int model, mpi::Request<DataType>& req) {
+    void nb_send(const DistMat& mat, int model, mpi::Request<DataType>& req) {
       nb_send(mat, model, rank_in_model, req);
     }
 

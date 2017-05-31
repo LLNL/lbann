@@ -171,22 +171,23 @@ void lbann::lbann_comm::global_barrier() {
   mpi::Barrier(mpi::COMM_WORLD);
 }
 
-void lbann::lbann_comm::send(Mat& mat, int model, int rank) {
-  send(mat.Buffer(), mat.Height() * mat.Width(), model, rank);
+void lbann::lbann_comm::send(const Mat& mat, int model, int rank) {
+  send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank);
 }
 
-void lbann::lbann_comm::send(DistMat& mat, int model, int rank) {
-  send(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
+void lbann::lbann_comm::send(const DistMat& mat, int model, int rank) {
+  send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
 }
 
-void lbann::lbann_comm::nb_send(Mat& mat, int model, int rank,
+void lbann::lbann_comm::nb_send(const Mat& mat, int model, int rank,
                                 mpi::Request<DataType>& req) {
-  nb_send(mat.Buffer(), mat.Height() * mat.Width(), model, rank, req);
+  nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank, req);
 }
 
-void lbann::lbann_comm::nb_send(DistMat& mat, int model, int rank,
+void lbann::lbann_comm::nb_send(const DistMat& mat, int model, int rank,
                                 mpi::Request<DataType>& req) {
-  nb_send(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank, req);
+  nb_send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model,
+          rank, req);
 }
 
 void lbann::lbann_comm::recv(Mat& mat, int model, int rank) {
