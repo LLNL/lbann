@@ -164,9 +164,9 @@ sequential_model * init_model(lbann_comm *comm, optimizer_factory *optimizer_fac
   for (int j=0; j<size; j++) {
     string metric = m.metric(j);
     if (metric == "categorical_accuracy") {
-      model->add_metric(new metrics::categorical_accuracy(comm));
+      model->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     } else if (metric == "mean_squared_error") {
-      model->add_metric(new metrics::mean_squared_error(comm));
+      model->add_metric(new metrics::mean_squared_error(data_layout::DATA_PARALLEL, comm));
     } else {
       err << __FILE__ << " " << __LINE__ 
           << " :: init_model() - unknown metric name: " << metric << endl
