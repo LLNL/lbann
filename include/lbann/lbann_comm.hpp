@@ -465,6 +465,40 @@ namespace lbann
     }
 
     // Custom allreduce implementations.
+    /** Specify different allreduce algorithms. */
+    enum class allreduce_algorithm {
+      DEFAULT,
+      DYNAMIC,  /** Choose algorithm based on data size. */
+      RECURSIVE_DOUBLING,
+      PAIRWISE_EXCHANGE_RING,
+      RING,
+      RABENSEIFNER,
+      INVALID
+    };
+
+    /** Allreduce options. */
+    struct allreduce_options {
+      /** Allreduce algorithm to use. */
+      allreduce_algorithm algo = allreduce_algorithm::DEFAULT;
+      /** Optimization: the recv_transform is the identity. */
+      bool id_recv = false;
+      /**
+       * Optimization: When communication is node-local, do not apply the
+       * send_transform. Implies id_recv when possible and sets the local flag
+       * in recv_apply_transform to true when taken advantage of.
+       */
+      bool no_local_trans = false;
+      /** Max number of concurrent reduce steps, must be >= 1. */
+      int max_reduces = 1;
+    };
+
+    allreduce_algorithm get_default_allreduce_algorithm() const {
+      return default_allreduce_algo;
+    }
+    void set_default_allreduce_algorithm(allreduce_algorithm algo) {
+      default_allreduce_algo = algo;
+    }
+
     /**
      * Do a custom allreduce on mat on the intermodel communicator.
      * This selects the allreduce algorithm to use based on the size of mat.
@@ -490,22 +524,14 @@ namespace lbann
      * the transformed data should be combined (applied, reduced) with the
      * current data in the matrix argument. A boolean parameter indicates that
      * no_local_trans was true and the data was not transformed.
-     * @param id_recv An optimization flag that indicates that the
-     * recv_transform is the identity.
-     * @param no_local_trans An optimization flag that indicates that, when
-     * communication is node-local, the send_transform should not be applied.
-     * In this case, id_recv is implied when possible, and the local flag in
-     * recv_apply_transform is set to true.
-     * @param max_reduces The maximum number of concurrent reduce steps that
-     * the allreduce can perform, must be at least 1.
+     * @param options Various allreduce options.
      */
     void intermodel_allreduce(
       Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false,
-      int max_reduces = 1);
+      const allreduce_options opts);
 
     /**
      * A recursive-doubling allreduce.
@@ -515,7 +541,7 @@ namespace lbann
       mpi::Comm comm, Mat& mat, int max_recv_count,
       std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false);
+      const allreduce_options opts);
 
     /**
      * An allreduce based on a pairwise-exchange reduce-scatter followed by a
@@ -528,8 +554,7 @@ namespace lbann
       std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false,
-      int num_reduces = 1);
+      const allreduce_options opts);
 
     /**
      * An allreduce using ring-based reduce-scatter and allgather.
@@ -539,7 +564,7 @@ namespace lbann
       std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false);
+      const allreduce_options opts);
 
     /**
      * An allreduce using a recursive-halving reduce-scatter followed by a
@@ -550,7 +575,7 @@ namespace lbann
       std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
       std::function<int(uint8_t*, Mat&)> recv_transform,
       std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-      bool id_recv = false, bool no_local_trans = false);
+      const allreduce_options opts);
 
     /** Return the intermodel communicator. */
     mpi::Comm get_intermodel_comm() const { return intermodel_comm; }
@@ -587,6 +612,9 @@ namespace lbann
     std::vector<int> world_ranks_on_node;
     /** Pre-allocated buffers for collectives. */
     std::unordered_map<size_t, std::vector<uint8_t*>> collective_bufs;
+    /** Current default allreduce algorithm. */
+    allreduce_algorithm default_allreduce_algo =
+      allreduce_algorithm::DYNAMIC;
     
     // Various statistics counters.
     size_t num_model_barriers;
@@ -614,8 +642,6 @@ namespace lbann
     double ar_ag_send_time;
     double ar_ag_recv_time;
 
-    /** MPI tag for point-to-point communication. (Unused) */
-    static const int PT2PT_TAG = 42;
     /** Create a new group from a list of ranks. (Needs to be freed.) */
     inline void create_group(std::vector<int>& ranks, mpi::Group& g) {
       mpi::Group world_group;

@@ -63,7 +63,7 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform));
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), {});
 }
 
 void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -89,12 +89,13 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
+  lbann_comm::allreduce_options opts;
+  opts.id_recv = true;
   comm->pe_ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true,
-    false);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -120,11 +121,13 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
+  lbann_comm::allreduce_options opts;
+  opts.id_recv = true;
   comm->ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
@@ -150,11 +153,13 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
   };
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
+  lbann_comm::allreduce_options opts;
+  opts.id_recv = true;
   comm->rabenseifner_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), true);
+    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void print_stats(const std::vector<double>& times) {

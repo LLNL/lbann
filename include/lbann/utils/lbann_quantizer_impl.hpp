@@ -562,12 +562,14 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
       return sizeof(rowT) * q_col[accum.Width() * HEADER_FACTOR];
     }
   };
+  lbann_comm::allreduce_options opts;
+  opts.max_reduces = 4;
   comm->intermodel_allreduce(
     mat, max_size,
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
-    false, false, 4);
+    opts);
 }
 
 }  // namespace lbann

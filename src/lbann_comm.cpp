@@ -239,27 +239,49 @@ void lbann::lbann_comm::intermodel_allreduce(
   std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
   std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-  bool id_recv, bool no_local_trans, int max_reduces) {
-  // If not a power-of-2, we can't use the recursive doubling.
+  const lbann::lbann_comm::allreduce_options opts) {
+  // Determine which algorithm to actually use.
+  lbann::lbann_comm::allreduce_algorithm algo = opts.algo;
+  if (algo == allreduce_algorithm::DEFAULT) {
+    algo = get_default_allreduce_algorithm();
+  }
   const int nprocs = get_num_models();
-  if (nprocs & (nprocs - 1)) {
-    pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
-                      send_transform, recv_transform,
-                      recv_apply_transform, id_recv,
-                      no_local_trans, max_reduces);
-  } else {
-    // TODO: Don't hardcode this.
-    if (mat.Height() <= 64 && mat.Width() <= 64) {
-      recursive_doubling_allreduce_pow2(
-        intermodel_comm, mat, max_recv_count,
-        send_transform, recv_apply_transform, id_recv,
-        no_local_trans);
+  const Int small_message_threshold = 64*64;
+  if (algo == allreduce_algorithm::DYNAMIC) {
+    // For small messages and power-of-2 number of processes, use RD.
+    if (!(nprocs & (nprocs - 1)) &&
+        mat.Height() * mat.Width() <= small_message_threshold) {
+      algo = allreduce_algorithm::RECURSIVE_DOUBLING;
     } else {
-      pe_ring_allreduce(intermodel_comm, mat, max_recv_count,
-                        send_transform, recv_transform,
-                        recv_apply_transform, id_recv,
-                        no_local_trans, max_reduces);
+      algo = allreduce_algorithm::PAIRWISE_EXCHANGE_RING;
     }
+  }
+  switch (algo) {
+  case allreduce_algorithm::RECURSIVE_DOUBLING:
+    recursive_doubling_allreduce_pow2(
+      intermodel_comm, mat, max_recv_count,
+      send_transform, recv_apply_transform, opts);
+    break;
+  case allreduce_algorithm::PAIRWISE_EXCHANGE_RING:
+    pe_ring_allreduce(
+      intermodel_comm, mat, max_recv_count, send_transform,
+      recv_transform, recv_apply_transform, opts);
+    break;
+  case allreduce_algorithm::RING:
+    ring_allreduce(
+      intermodel_comm, mat, max_recv_count, send_transform,
+      recv_transform, recv_apply_transform, opts);
+    break;
+  case allreduce_algorithm::RABENSEIFNER:
+    rabenseifner_allreduce(
+      intermodel_comm, mat, max_recv_count, send_transform,
+      recv_transform, recv_apply_transform, opts);
+    break;
+  case allreduce_algorithm::DEFAULT:
+  case allreduce_algorithm::DYNAMIC:
+  default:
+    throw lbann_exception("intermodel_allreduce: bad algorithm");
+    break;
   }
 }
 
@@ -267,7 +289,7 @@ void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-  bool id_recv, bool no_local_trans) {
+  const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const unsigned int nprocs = mpi::Size(comm);
@@ -282,7 +304,8 @@ void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   unsigned int mask = 1;
   while (mask < nprocs) {
     int partner = rank ^ mask;  // The rank we exchange with this step.
-    const bool is_local = no_local_trans && is_rank_node_local(partner, comm);
+    const bool is_local = opts.no_local_trans &&
+      is_rank_node_local(partner, comm);
     // Transform the data we want to send.
     double send_trans_start = get_time();
     int send_size;
@@ -322,7 +345,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
   std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-  bool id_recv, bool no_local_trans, int num_reduces) {
+  const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
@@ -339,7 +362,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   std::vector<Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
-  std::vector<uint8_t*> max_recv_buffers(num_reduces, nullptr);
+  std::vector<uint8_t*> max_recv_buffers(opts.max_reduces, nullptr);
   for (size_t i = 0; i < max_recv_buffers.size(); ++i) {
     max_recv_buffers[i] = get_collective_buffer(max_recv_count, i);
   }
@@ -348,8 +371,11 @@ void lbann::lbann_comm::pe_ring_allreduce(
                                 slice_ends[rank]));
   // Do a pairwise-exchange reduce-scatter.
   double rs_start = get_time();
-  for (int outer_step = 1; outer_step < nprocs; outer_step += num_reduces) {
-    const int reduces_this_step = std::min(num_reduces, nprocs - outer_step);
+  for (int outer_step = 1;
+       outer_step < nprocs;
+       outer_step += opts.max_reduces) {
+    const int reduces_this_step = std::min(opts.max_reduces,
+                                           nprocs - outer_step);
     std::vector<mpi::Request<uint8_t>> send_reqs(reduces_this_step);
     std::vector<mpi::Request<uint8_t>> recv_reqs(reduces_this_step);
     std::vector<uint8_t*> recv_buffers(max_recv_buffers);
@@ -360,8 +386,10 @@ void lbann::lbann_comm::pe_ring_allreduce(
       // Compute where we send to/receive from.
       const int dst = (rank + step) % nprocs;
       const int src = (rank - step + nprocs) % nprocs;
-      const bool is_send_local = no_local_trans && is_rank_node_local(dst, comm);
-      const bool is_recv_local = no_local_trans && is_rank_node_local(src, comm);
+      const bool is_send_local = opts.no_local_trans &&
+        is_rank_node_local(dst, comm);
+      const bool is_recv_local = opts.no_local_trans &&
+        is_rank_node_local(src, comm);
       // Post the receive.
       double recv_start = get_time();
       int recv_size = max_recv_count;
@@ -456,7 +484,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
                          IR(slice_ends[data_src] - slice_lengths[data_src],
                             slice_ends[data_src]));
     // If we can, receive directly into the destination matrix.
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_buf = (uint8_t*) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
@@ -470,7 +498,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
     int recv_size = 0;
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
       recv_size = recv_transform(recv_buf, recv_view);
@@ -485,7 +513,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   // We always send from recv_buf and receive to recv_buf2, swapping
   // pointers to avoid copying.
   uint8_t* recv_buf2 = nullptr;
-  if (!id_recv) {
+  if (!opts.id_recv) {
     recv_buf2 = get_collective_buffer(max_recv_count, 1);
   }
   for (int step = 1; step < nprocs - 1; ++step) {
@@ -494,7 +522,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
     auto recv_view = mat(ALL,
                          IR(slice_ends[data_src] - slice_lengths[data_src],
                             slice_ends[data_src]));
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_buf2 = (uint8_t*) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
@@ -511,7 +539,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
     int recv_size = 0;
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
       recv_size = recv_transform(recv_buf2, recv_view);
@@ -533,7 +561,7 @@ void lbann::lbann_comm::ring_allreduce(
   std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
   std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-  bool id_recv, bool no_local_trans) {
+  const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
@@ -554,8 +582,10 @@ void lbann::lbann_comm::ring_allreduce(
   // Compute source/destination in the ring.
   const int src = (rank - 1 + nprocs) % nprocs;
   const int dst = (rank + 1) % nprocs;
-  const bool is_send_local = no_local_trans && is_rank_node_local(dst, comm);
-  const bool is_recv_local = no_local_trans && is_rank_node_local(src, comm);
+  const bool is_send_local = opts.no_local_trans &&
+    is_rank_node_local(dst, comm);
+  const bool is_recv_local = opts.no_local_trans &&
+    is_rank_node_local(src, comm);
   // Do a ring-based reduce-scatter.
   // This is like the pairwise-exchange reduce-scatter except instead of
   // rank i accumulating only slice i, the slices are cycled around and
@@ -630,7 +660,7 @@ void lbann::lbann_comm::ring_allreduce(
                          IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                             slice_ends[recv_slice]));
     // If we can, receive directly into the destination matrix.
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_buf = (uint8_t*) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
@@ -644,7 +674,7 @@ void lbann::lbann_comm::ring_allreduce(
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
     int recv_size = 0;
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
       recv_size = recv_transform(recv_buf, recv_view);
@@ -656,7 +686,7 @@ void lbann::lbann_comm::ring_allreduce(
     ar_ag_bytes_received += recv_size;
   }
   uint8_t* recv_buf2 = nullptr;
-  if (!id_recv) {
+  if (!opts.id_recv) {
     recv_buf2 = get_collective_buffer(max_recv_count, 1);
   }
   for (int step = 1; step < nprocs - 1; ++step) {
@@ -664,7 +694,7 @@ void lbann::lbann_comm::ring_allreduce(
     auto recv_view = mat(ALL,
                          IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                             slice_ends[recv_slice]));
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_buf2 = (uint8_t*) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
@@ -681,7 +711,7 @@ void lbann::lbann_comm::ring_allreduce(
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
     int recv_size = 0;
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
       recv_size = recv_transform(recv_buf2, recv_view);
@@ -703,7 +733,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t*, Mat&)> recv_transform,
   std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
-  bool id_recv, bool no_local_trans) {
+  const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const unsigned int nprocs = mpi::Size(comm);
@@ -737,7 +767,8 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   uint8_t* recv_buf = get_collective_buffer(max_recv_count);
   while (partner_mask > 0) {
     int partner = rank ^ partner_mask;  // The rank we exchange with this step.
-    const bool is_local = no_local_trans && is_rank_node_local(partner, comm);
+    const bool is_local = opts.no_local_trans &&
+      is_rank_node_local(partner, comm);
     // Determine the range of data to send/recv.
     IR send_range, recv_range;
     if (rank < partner) {
@@ -803,7 +834,8 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   // Now do the remaining steps.
   while (partner_mask < nprocs) {
     int partner = rank ^ partner_mask;
-    const bool is_local = no_local_trans && is_rank_node_local(partner, comm);
+    const bool is_local = opts.no_local_trans &&
+      is_rank_node_local(partner, comm);
     // Determine range to send/recv.
     IR send_range, recv_range;
     if (rank < partner) {
@@ -837,7 +869,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
       send_buf = send_transform(mat, ALL, send_range, send_size, false, 0);
     }
     ar_send_transform_time += get_time() - send_trans_start;
-    if (id_recv || is_local) {
+    if (opts.id_recv || is_local) {
       recv_buf = (uint8_t*) recv_view.Buffer();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
@@ -853,7 +885,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
     ar_ag_send_time += sendrecv_tot;
     ar_ag_recv_time += sendrecv_tot;
     double recv_trans_start = get_time();
-    if (id_recv) {
+    if (opts.id_recv) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
       recv_size = recv_transform(recv_buf, recv_view);

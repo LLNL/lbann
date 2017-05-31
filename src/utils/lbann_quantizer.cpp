@@ -255,12 +255,14 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
       return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
     }
   };
+  lbann_comm::allreduce_options opts;
+  opts.max_reduces = 4;
   comm->intermodel_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
     std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t*, Mat&)>(recv_transform),
     std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
-    false, false, 4);
+    opts);
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
