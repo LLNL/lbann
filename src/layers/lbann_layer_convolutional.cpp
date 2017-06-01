@@ -923,7 +923,9 @@ void lbann::convolutional_layer::fp_linearity_cpu_gemm() {
 
     // Construct im2col matrix from input
     const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
-    im2col(input_mat, im2col_mat, m_input_dims, m_conv_pads, m_num_input_channels, m_filter_dims, m_conv_strides);
+    im2col(input_mat, im2col_mat,
+           m_input_dims, m_conv_pads, m_num_input_channels,
+           m_filter_dims, m_conv_strides);
 
     // Apply convolution to current data sample
     Mat output_mat(num_per_output_channel, m_num_output_channels,
