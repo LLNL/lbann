@@ -140,33 +140,23 @@ namespace lbann
     /// Initialize GPU objects
     void setup_gpu();
 
-    /// CPU implementation of forward propagation linearity (general case)
-    /** Applies convolution directly. */
-    void fp_linearity_cpu();
-    /// CPU implementation of forward propagation linearity (2D case)
-    /** Applies convolution directly. */
-    void fp_linearity_cpu_2d_direct();
-    /// CPU implementation of forward propagation linearity (2D case, GEMM)
-    /** Constructs convolution matrix and performs explicit matrix
-     *  multiplication.
-     */
-    void fp_linearity_cpu_2d_gemm();
-    /// GPU implementation of forward propagation linearity
+    /// CPU implementation of direct convolution
+    void fp_linearity_cpu_direct();
+    /// CPU implementation of direct convolution on 2D data
+    void fp_linearity_cpu_direct_2d();
+    /// CPU implementation of im2col GEMM convolution
+    void fp_linearity_cpu_gemm();
+    /// GPU implementation of convolution
     void fp_linearity_gpu();
     /// GPU implementation of forward propagation nonlinearity
     void fp_nonlinearity_gpu();
-    /// CPU implementation of backward propagation linearity (general case)
-    /** Applies convolution directly. */
-    void bp_linearity_cpu();
-    /// CPU implementation of backward propagation linearity (2D case)
-    /** Applies convolution directly. */
-    void bp_linearity_cpu_2d_direct();
-    /// CPU implementation of backward propagation linearity (2D case, GEMM)
-    /** Constructs convolution matrix and performs explicit matrix
-     *  multiplication.
-     */
-    void bp_linearity_cpu_2d_gemm();
-    /// GPU implementation of backward propagation linearity
+    /// CPU implementation of direct convolution backward propagation
+    void bp_linearity_cpu_direct();
+    /// CPU implementation of direct convolution backward propagation on 2D data
+    void bp_linearity_cpu_direct_2d();
+    /// CPU implementation of im2col GEMM convolution backward propagation
+    void bp_linearity_cpu_gemm();
+    /// GPU implementation of convolution backward propagation
     void bp_linearity_gpu();
     /// GPU implementation of backward propagation nonlinearity
     void bp_nonlinearity_gpu();

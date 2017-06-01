@@ -30,6 +30,7 @@
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/lbann_im2col.hpp"
 
 using namespace std;
 using namespace El;
@@ -540,10 +541,7 @@ void lbann::convolutional_layer::fp_linearity() {
     fp_linearity_gpu();
   }
   else {
-    switch(m_num_dims) {
-    case 2: fp_linearity_cpu_2d_gemm(); break;
-    default: fp_linearity_cpu();
-    }
+    fp_linearity_cpu_gemm();
   }
 }
 
@@ -554,10 +552,7 @@ void lbann::convolutional_layer::bp_linearity() {
     bp_linearity_gpu();
   }
   else {
-    switch(m_num_dims) {
-    case 2: bp_linearity_cpu_2d_gemm(); break;
-    default: bp_linearity_cpu();
-    }
+    bp_linearity_cpu_gemm();
   }
 
 }
@@ -659,7 +654,7 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
 #endif // #ifndef __LIB_CUDNN
 }  
 
-void lbann::convolutional_layer::fp_linearity_cpu() {
+void lbann::convolutional_layer::fp_linearity_cpu_direct() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -781,7 +776,7 @@ void lbann::convolutional_layer::fp_linearity_cpu() {
   
 }
 
-void lbann::convolutional_layer::fp_linearity_cpu_2d_direct() {
+void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -889,7 +884,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_direct() {
 
 }
 
-void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
+void lbann::convolutional_layer::fp_linearity_cpu_gemm() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -916,87 +911,23 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
     Fill(weighted_sum_channel, bias_local.Get(i,0));
   }
 
-  // Convolution parameters
-  const Int input_dim_y = m_input_dims[0];
-  const Int filter_dim_y = m_filter_dims[0];
-  const Int offset_start_y = -m_conv_pads[0];
-  const Int offset_end_y = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0] + 1;
-  const Int offset_stride_y = m_conv_strides[0];
-  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
-  const Int input_dim_x = m_input_dims[1];
-  const Int filter_dim_x = m_filter_dims[1];
-  const Int offset_start_x = -m_conv_pads[1];
-  const Int offset_end_x = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1] + 1;
-  const Int offset_stride_x = m_conv_strides[1];
-  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
-
   // Reshape filters into matrix
   const Mat filter_mat(current_filter_size, m_num_output_channels,
                        filter_local.LockedBuffer(), current_filter_size);
 
   // Initialize im2col matrix
   Mat im2col_mat(current_filter_size, num_per_output_channel);
-  DataType* __restrict__ im2col_buffer = im2col_mat.Buffer();
 
   // Iterate through data samples
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
-    ////////////////////////////////////////////////////////////////
     // Construct im2col matrix from input
-    ////////////////////////////////////////////////////////////////
+    const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+    im2col(input_mat, im2col_mat,
+           m_input_dims, m_conv_pads, m_num_input_channels,
+           m_filter_dims, m_conv_strides);
 
-    // Buffer for current input
-    const DataType* __restrict__ input_buffer = prev_activations_local.LockedBuffer(0,sample);
-
-    // Iterate through im2col matrix entries
-#pragma omp parallel for collapse(5)
-    for(Int offset_y = 0;
-        offset_y < offset_num_y;
-        ++offset_y) {
-      for(Int offset_x = 0;
-          offset_x < offset_num_x;
-          ++offset_x) {
-        for(Int input_channel = 0;
-            input_channel < m_num_input_channels;
-            ++input_channel) {
-          for(Int filter_pos_y = 0;
-              filter_pos_y < filter_dim_y;
-              ++filter_pos_y) {
-            for(Int filter_pos_x = 0;
-                filter_pos_x < filter_dim_x;
-                ++filter_pos_x) {
-
-              // Get input entry
-              const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
-              const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
-              const Int input_pos_y = offset_pos_y + filter_pos_y;
-              const Int input_pos_x = offset_pos_x + filter_pos_x;
-              const Int input_index = (input_pos_x
-                                       + input_pos_y * input_dim_x
-                                       + input_channel * input_dim_x * input_dim_y);
-              const bool input_pos_valid = (0 <= input_pos_y
-                                            && input_pos_y < input_dim_y
-                                            && 0 <= input_pos_x
-                                            && input_pos_x < input_dim_x);
-
-              // Copy input entry to im2col matrix if valid
-              const Int im2col_col = offset_x + offset_y * offset_num_x;
-              const Int im2col_row = (filter_pos_x
-                                      + filter_pos_y * filter_dim_x
-                                      + input_channel * filter_dim_x * filter_dim_y);
-              im2col_buffer[im2col_row + im2col_col * current_filter_size]
-                = input_pos_valid ? input_buffer[input_index] : DataType(0);
-
-            }
-          }
-        }
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////
     // Apply convolution to current data sample
-    ////////////////////////////////////////////////////////////////
-
     Mat output_mat(num_per_output_channel, m_num_output_channels,
                    weighted_sum_local.Buffer(0,sample), num_per_output_channel);
     Gemm(TRANSPOSE, NORMAL,
@@ -1004,7 +935,6 @@ void lbann::convolutional_layer::fp_linearity_cpu_2d_gemm() {
          DataType(1), output_mat);
 
   }
-
 
   // weighted_sum and output are identical after fp linearity step
   Copy(weighted_sum_local, activations_local);
@@ -1112,7 +1042,7 @@ void lbann::convolutional_layer::bp_nonlinearity_gpu() {
 #endif // #ifndef __LIB_CUDNN
 }
 
-void lbann::convolutional_layer::bp_linearity_cpu() {
+void lbann::convolutional_layer::bp_linearity_cpu_direct() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -1257,7 +1187,7 @@ void lbann::convolutional_layer::bp_linearity_cpu() {
 
 }
 
-void lbann::convolutional_layer::bp_linearity_cpu_2d_direct() {
+void lbann::convolutional_layer::bp_linearity_cpu_direct_2d() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -1385,7 +1315,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_direct() {
 
 }
 
-void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
+void lbann::convolutional_layer::bp_linearity_cpu_gemm() {
 
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
@@ -1400,9 +1330,8 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
   Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_filter_size), ALL);
   Mat bias_gradient_local = View(weights_gradient_local, IR(m_filter_size,END), ALL);
 
-  // Initialize error signal and weight gradients to zero
+  // Initialize weight gradients to zero
   Zero(weights_gradient_local);
-  Zero(error_signal_local);
 
   // Input, output, and filter entries are divided amongst channels
   const Int num_per_output_channel = NumNeurons / m_num_output_channels;
@@ -1411,6 +1340,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
   // Compute bias gradient
+#pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
@@ -1424,38 +1354,15 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
     }
   }
 
-  // Convolution parameters
-  const Int input_dim_y = m_input_dims[0];
-  const Int input_start_y = -m_conv_pads[0];
-  const Int input_end_y = input_dim_y + m_conv_pads[0];
-  const Int filter_dim_y = m_filter_dims[0];
-  const Int offset_start_y = input_start_y;
-  const Int offset_end_y = input_end_y - m_filter_dims[0] + 1;
-  const Int offset_stride_y = m_conv_strides[0];
-  const Int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
-  const Int input_dim_x = m_input_dims[1];
-  const Int input_start_x = -m_conv_pads[1];
-  const Int input_end_x = input_dim_x + m_conv_pads[1];
-  const Int filter_dim_x = m_filter_dims[1];
-  const Int offset_start_x = input_start_x;
-  const Int offset_end_x = input_end_x - m_filter_dims[1] + 1;
-  const Int offset_stride_x = m_conv_strides[1];
-  const Int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
-
   // Initialize filter and im2col matrices
   const Mat filter_mat(current_filter_size, m_num_output_channels,
                        filter_local.LockedBuffer(), current_filter_size);
   Mat filter_gradient_mat(current_filter_size, m_num_output_channels,
                           filter_gradient_local.Buffer(), current_filter_size);
   Mat im2col_mat(current_filter_size, num_per_output_channel);
-  DataType* __restrict__ im2col_buffer = im2col_mat.Buffer();
 
   // Iterate through data samples
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-    ////////////////////////////////////////////////////////////////
-    // Compute gradient w.r.t. input im2col matrix
-    ////////////////////////////////////////////////////////////////
 
     // Reshape previous error signal into matrix
     const Mat prev_error_signal_mat(num_per_output_channel,
@@ -1468,128 +1375,20 @@ void lbann::convolutional_layer::bp_linearity_cpu_2d_gemm() {
          DataType(1), filter_mat, prev_error_signal_mat,
          DataType(0), im2col_mat);
 
-    ////////////////////////////////////////////////////////////////
     // Compute error signal (i.e. gradient w.r.t. input)
-    ////////////////////////////////////////////////////////////////
+    Mat output_mat = View(error_signal_local, ALL, IR(sample));
+    col2im(im2col_mat, output_mat,
+           m_input_dims, m_conv_pads, m_num_input_channels,
+           m_filter_dims, m_conv_strides);
 
-    // Buffer for current error signal
-    DataType* __restrict__ error_signal_buffer = error_signal_local.Buffer(0, sample);
-
-    // Iterate through error signal entries
-#pragma omp parallel for collapse(3)
-    for(Int input_channel = 0;
-        input_channel < m_num_input_channels;
-        ++input_channel) {
-      for(Int input_pos_y = input_start_y;
-          input_pos_y < input_end_y;
-          ++input_pos_y) {
-        for(Int input_pos_x = input_start_x;
-            input_pos_x < input_end_x;
-            ++input_pos_x) {
-
-          // Get input and error signal entries
-          const Int input_index = (input_pos_x
-                                   + input_pos_y * input_dim_x
-                                   + input_channel * input_dim_x * input_dim_y);
-          const bool input_pos_valid = (0 <= input_pos_y
-                                        && input_pos_y < input_dim_y
-                                        && 0 <= input_pos_x
-                                        && input_pos_x < input_dim_x);
-          DataType trash;
-          DataType& error_signal_entry = (input_pos_valid ?
-                                          error_signal_buffer[input_index] :
-                                          trash);
-
-          // Get filter offsets containing current input entry
-          const Int offset_y_lower = (input_pos_y - offset_start_y - filter_dim_y) / offset_stride_y + 1;
-          const Int offset_y_upper = (input_pos_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
-          const Int first_offset_y = Max(offset_y_lower, 0);
-          const Int last_offset_y = Min(offset_y_upper, offset_end_y - 1);
-          const Int offset_x_lower = (input_pos_x - offset_start_x - filter_dim_x) / offset_stride_x + 1;
-          const Int offset_x_upper = (input_pos_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
-          const Int first_offset_x = Max(offset_x_lower, 0);
-          const Int last_offset_x = Min(offset_x_upper, offset_end_x - 1);
-
-          // Iterate through filter offsets
-          for(Int offset_y = first_offset_y;
-              offset_y <= last_offset_y;
-              ++offset_y) {
-            const Int filter_pos_y = input_pos_y - (offset_start_y + offset_y * offset_stride_y);
-            for(Int offset_x = first_offset_x;
-                offset_x <= last_offset_x;
-                ++offset_x) {
-              const Int filter_pos_x = input_pos_x - (offset_start_x + offset_x * offset_stride_x);
-
-              // Update error signal entry with im2col matrix entry
-              const Int im2col_col = offset_x + offset_y * offset_num_x;
-              const Int im2col_row = (filter_pos_x
-                                      + filter_pos_y * filter_dim_x
-                                      + input_channel * filter_dim_x * filter_dim_y);
-              error_signal_entry
-                += im2col_buffer[im2col_row + im2col_col * current_filter_size];
-              
-            }            
-          }
-
-        }
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////
     // Construct im2col matrix from input
-    ////////////////////////////////////////////////////////////////
+    const Mat input_mat = LockedView(prev_activations_local,
+                                     ALL, IR(sample));
+    im2col(input_mat, im2col_mat,
+           m_input_dims, m_conv_pads, m_num_input_channels,
+           m_filter_dims, m_conv_strides);
 
-    // Buffer for current input
-    const DataType* __restrict__ input_buffer = prev_activations_local.LockedBuffer(0,sample);
-
-    // Iterate through im2col matrix entries
-#pragma omp parallel for collapse(5)
-    for(Int offset_y = 0;
-        offset_y < offset_num_y;
-        ++offset_y) {
-      for(Int offset_x = 0;
-          offset_x < offset_num_x;
-          ++offset_x) {
-        for(Int input_channel = 0;
-            input_channel < m_num_input_channels;
-            ++input_channel) {
-          for(Int filter_pos_y = 0;
-              filter_pos_y < filter_dim_y;
-              ++filter_pos_y) {
-            for(Int filter_pos_x = 0;
-                filter_pos_x < filter_dim_x;
-                ++filter_pos_x) {
-
-              // Get input entry
-              const Int offset_pos_y = offset_start_y + offset_y * offset_stride_y;
-              const Int offset_pos_x = offset_start_x + offset_x * offset_stride_x;
-              const Int input_pos_y = offset_pos_y + filter_pos_y;
-              const Int input_pos_x = offset_pos_x + filter_pos_x;
-              const Int input_index = (input_pos_x
-                                       + input_pos_y * input_dim_x
-                                       + input_channel * input_dim_x * input_dim_y);
-              const bool input_pos_valid = (0 <= input_pos_y
-                                            && input_pos_y < input_dim_y
-                                            && 0 <= input_pos_x
-                                            && input_pos_x < input_dim_x);
-
-              // Copy input entry to im2col matrix if valid
-              const Int im2col_col = offset_x + offset_y * offset_num_x;
-              const Int im2col_row = (filter_pos_x
-                                      + filter_pos_y * filter_dim_x
-                                      + input_channel * filter_dim_x * filter_dim_y);
-              im2col_buffer[im2col_row + im2col_col * current_filter_size]
-                = input_pos_valid ? input_buffer[input_index] : DataType(0);
-
-            }
-          }
-        }
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////
     // Compute gradient w.r.t. filter
-    ////////////////////////////////////////////////////////////////
     Gemm(NORMAL, NORMAL,
          DataType(1), im2col_mat, prev_error_signal_mat,
          DataType(1), filter_gradient_mat);
