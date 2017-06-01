@@ -114,7 +114,8 @@ void lbann::adam::update(const AbsDistMat* gradient)
     for(Int j=0; j<local_width; ++j) {
       for(Int i=0; i<local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
-        const DataType g = gradient_buffer[i+j*gradient_ldim];
+        // See below; avoid denormalization.
+        const DataType g = gradient_buffer[i+j*gradient_ldim] + m_eps;
         DataType& m1 = moment1_buffer[i+j*moment1_ldim];
         DataType& m2 = moment2_buffer[i+j*moment2_ldim];
         m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
