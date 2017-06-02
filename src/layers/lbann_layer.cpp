@@ -530,10 +530,7 @@ void lbann::Layer::fp_nonlinearity() {
 
 void lbann::Layer::bp_nonlinearity() {
   // Backward propagation
-  m_activation_fn->backwardProp(*m_weighted_sum_v);
-  if (m_activation_type != activation_type::ID) {
-    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
-  }
+  m_activation_fn->backwardPropError(*m_weighted_sum_v, *m_prev_error_signal_v);
 }
 
 
