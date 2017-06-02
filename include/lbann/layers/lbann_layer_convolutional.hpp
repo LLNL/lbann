@@ -38,6 +38,9 @@
 namespace lbann
 {
 
+// Forward declaration.
+class lbann_callback_imcomm;
+
   /// Convolutional layer
   class convolutional_layer : public Layer
   {
@@ -80,6 +83,8 @@ namespace lbann
     void bp_nonlinearity();
 
   private:
+
+    friend class lbann_callback_imcomm;
 
     /// Weight initialization scheme
     const weight_initialization m_weight_initialization;

@@ -29,6 +29,7 @@
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/layers/lbann_layer_convolutional.hpp"
 
 namespace lbann {
 
@@ -88,10 +89,14 @@ void lbann_callback_imcomm::setup(model* m) {
       layers[layer]->set_effective_minibatch_size(
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
       // Check if reshaping is needed.
-      // Currently only automatically reshapes conv layers.
+      // Currently only automatically reshapes conv layers. (But ignores bias.)
       if (layers[layer]->m_type == layer_type::convolution) {
-        //params.reshape_height = 
-        //params.reshape_width = 
+        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        params.reshape_height = conv_layer->m_num_input_channels *
+          std::accumulate(conv_layer->m_filter_dims.begin(),
+                          conv_layer->m_filter_dims.end(),
+                          Int(0), std::multiplies<Int>());
+        params.reshape_width = conv_layer->m_num_output_channels;
       }
       if (ct_does_quantization(params.ct)) {
         if (params.reshape_height) {
@@ -146,9 +151,17 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
     Mat& local_gradients =
       layers[layer]->get_weights_biases_gradient().Matrix();
     Mat* reshaped = &local_gradients;
-    if (params.reshape_height > 0) {
-      reshape_mat(local_gradients, *reshaped, params.reshape_height,
-                  params.reshape_width);
+    if (params.reshape_height > 0 && ct_does_quantization(params.ct)) {
+      if (layers[layer]->m_type == layer_type::convolution) {
+        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        // Currently ignores the bias.
+        Mat grad_view = local_gradients(IR(0, conv_layer->m_filter_size), ALL);
+        reshape_mat(grad_view, *reshaped, params.reshape_height,
+                    params.reshape_width);
+      } else {
+        reshape_mat(local_gradients, *reshaped, params.reshape_height,
+                    params.reshape_width);
+      }
     }
     switch (params.ct) {
     case NORMAL:
