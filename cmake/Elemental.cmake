@@ -24,7 +24,7 @@ else()
      # 0.87.6
      # set(ELEMENTAL_TAG "8a1a42c4391b73e1b7e9ea07736459cccb7d6b21")
      # 0.87.7
-     set(ELEMENTAL_TAG "477e503a7a840cc1a75173552711b980505a0b06")
+     set(ELEMENTAL_TAG "351bc9460dcc58be62e9b42902e49640a97c0b0e")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
