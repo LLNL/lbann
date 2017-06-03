@@ -73,7 +73,6 @@ void batch_normalization::initialize_model_parallel_distribution() {
   m_var = new RowSumMat(comm->get_model_grid());
   m_running_mean = new RowSumMat(comm->get_model_grid());
   m_running_var = new RowSumMat(comm->get_model_grid());
-  m_weighted_sum_copy = new DistMat(comm->get_model_grid());
 }
 
 void batch_normalization::initialize_data_parallel_distribution() {
@@ -90,7 +89,6 @@ void batch_normalization::initialize_data_parallel_distribution() {
 void batch_normalization::fp_weights() {
   // Get output from linearity.
   ElMat* acts = m_layer->m_activations_v;
-  Copy(*(m_layer->m_weighted_sum_v), *m_weighted_sum_copy);
   Int mbsize = acts->Width();
   Mat& acts_local = acts->Matrix();
   Mat& gamma_local = m_gamma->Matrix();
@@ -165,8 +163,7 @@ void batch_normalization::bp_weights() {
   if (m_layer->m_execution_mode != execution_mode::training) return;
   ElMat* bpsignal = m_layer->m_prev_error_signal_v;
   // "activations" here are from *before* the nonlinearity is applied.
-  //const ElMat* acts = m_layer->m_weighted_sum_v;
-  const ElMat* acts = m_weighted_sum_copy;
+  const ElMat* acts = m_layer->m_weighted_sum_v;
   const Int mbsize = acts->Width();
   Mat& bp_local = bpsignal->Matrix();
   const Mat& acts_local = acts->LockedMatrix();

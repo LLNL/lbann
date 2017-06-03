@@ -92,7 +92,6 @@ protected:
   ElMat* m_running_mean;
   /** Running variance of activations (for inference). */
   ElMat* m_running_var;
-  ElMat* m_weighted_sum_copy;
 };
 
 }  // namespace lbann
