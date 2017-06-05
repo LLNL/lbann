@@ -86,15 +86,15 @@ void col2im(const Mat& col,
  */
 void im2col_2d(const DataType* __restrict__ input_buffer,
                DataType* __restrict__ output_buffer,
-               size_t input_dim_x,
-               size_t input_dim_y,
-               size_t input_pad_x,
-               size_t input_pad_y,
-               size_t num_channels,
-               size_t window_dim_x,
-               size_t window_dim_y,
-               size_t offset_stride_x,
-               size_t offset_stride_y);
+               int input_dim_x,
+               int input_dim_y,
+               int input_pad_x,
+               int input_pad_y,
+               int num_channels,
+               int window_dim_x,
+               int window_dim_y,
+               int offset_stride_x,
+               int offset_stride_y);
 
 /// Rearrange matrix columns into 2D image blocks
 /** This is an optimized implementation of col2im for 2D data. col2im
@@ -102,15 +102,15 @@ void im2col_2d(const DataType* __restrict__ input_buffer,
  */
 void col2im_2d(const DataType* __restrict__ input_buffer,
                DataType* __restrict__ output_buffer,
-               size_t output_dim_x,
-               size_t output_dim_y,
-               size_t output_pad_x,
-               size_t output_pad_y,
-               size_t num_channels,
-               size_t window_dim_x,
-               size_t window_dim_y,
-               size_t offset_stride_x,
-               size_t offset_stride_y);
+               int output_dim_x,
+               int output_dim_y,
+               int output_pad_x,
+               int output_pad_y,
+               int num_channels,
+               int window_dim_x,
+               int window_dim_y,
+               int offset_stride_x,
+               int offset_stride_y);
 
 } // end namespace
 #endif // LBANN_UTILS_IM2COL_HPP
