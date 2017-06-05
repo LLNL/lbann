@@ -95,7 +95,7 @@ void lbann_callback_imcomm::setup(model* m) {
         params.reshape_height = conv_layer->m_num_input_channels *
           std::accumulate(conv_layer->m_filter_dims.begin(),
                           conv_layer->m_filter_dims.end(),
-                          Int(0), std::multiplies<Int>());
+                          Int(1), std::multiplies<Int>());
         params.reshape_width = conv_layer->m_num_output_channels;
       }
       if (ct_does_quantization(params.ct)) {
