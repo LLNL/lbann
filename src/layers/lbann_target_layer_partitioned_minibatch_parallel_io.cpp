@@ -38,7 +38,7 @@ using namespace El;
 
 lbann::target_layer_partitioned_minibatch_parallel_io::target_layer_partitioned_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), 
-    partitioned_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers)
+    partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers)
 {
   m_type = layer_type::target_partitioned_minibatch_parallel_io;
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
@@ -51,28 +51,40 @@ void lbann::target_layer_partitioned_minibatch_parallel_io::setup(int num_prev_n
       int base_offset = Layer::comm->get_rank_in_model();
       int batch_stride = Layer::m_mini_batch_size;
       int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
-      //cout << "Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
+      cout << "Setting up target layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << endl;
       io_layer::setup_data_readers_for_training(base_offset,
                                                 batch_stride,
-                                                Layer::comm->get_procs_per_model(),
+                                                m_num_parallel_readers_training,
                                                 model_offset);
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
       io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
                                                   Layer::m_mini_batch_size,
-                                                  Layer::comm->get_procs_per_model());
+                                                  m_num_parallel_readers_testing);
     }else {
       io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model(),
                                                 Layer::m_mini_batch_size,
-                                                Layer::comm->get_procs_per_model());
+                                                m_num_parallel_readers_training);
       io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
                                                   Layer::m_mini_batch_size,
-                                                  Layer::comm->get_procs_per_model());
+                                                  m_num_parallel_readers_testing);
     }
   }
 
   /// @todo put in warning about bad target size
   if(num_prev_neurons != NumNeurons) {
     throw lbann_exception("lbann_target_layer_partitioned_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
+  }
+
+  if(m_training_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_training = m_training_dataset.data_reader->get_num_iterations_per_epoch();
+  }
+
+  if(m_validation_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_validation = m_validation_dataset.data_reader->get_num_iterations_per_epoch();
+  }
+
+  if(m_testing_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_testing = m_testing_dataset.data_reader->get_num_iterations_per_epoch();
   }
 
   Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);

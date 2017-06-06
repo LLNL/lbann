@@ -252,6 +252,7 @@ public:
   int getNumData() { return (int)ShuffledIndices.size(); }
   int get_num_unused_data() { return (int)m_unused_indices.size(); }
   int* get_unused_data() { return &m_unused_indices[0]; }
+  int get_num_iterations_per_epoch() { return m_num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
   void set_master(bool m) { m_master = m; }
@@ -296,13 +297,17 @@ protected:
   /// Sample stride is used when a mini-batch is finely interleaved across a DATA_PARALELL
   /// distribution.
   int m_sample_stride;
+
+  /// These fields are used to calculate when to use the last mini-batch
   int m_use_alt_last_mini_batch_size;
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
-
   int m_current_mini_batch_idx;
-  int m_num_mini_batches_per_reader;
+  int m_num_mini_batches_per_reader; /// How many mini-batches will this reader process
+
+  /// @todo BVE FIXME merge this with alternate approach
+  int m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
   std::vector<int> ShuffledIndices;
   /// Record of the indicies that are not being used for training

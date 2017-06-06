@@ -43,6 +43,7 @@ namespace lbann
     void distribute_from_local_matrix(Mat& M_local, CircMat& Ms);
     bool is_data_set_processed();
     int get_num_parallel_readers();
+    int get_num_iterations_per_epoch();
 
     virtual int fetch_from_data_reader(Mat& M_local) { return 0; }
     virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
@@ -62,6 +63,11 @@ namespace lbann
     uint m_max_mini_batch_size; /** Maximum size of the mini-batch */
     uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
+
+    int m_cur_step_in_epoch;
+    int m_num_iterations_per_epoch_training; /** Number of parallel readers (I/O streams) for training data */
+    int m_num_iterations_per_epoch_validation; /** Number of parallel readers (I/O streams) for testing data */
+    int m_num_iterations_per_epoch_testing; /** Number of parallel readers (I/O streams) for testing data */
 
     long m_num_data_per_epoch;
     int m_num_valid_readers;

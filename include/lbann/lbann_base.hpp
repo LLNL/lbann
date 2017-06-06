@@ -32,7 +32,7 @@
 #include "datatype.hpp"
 #include "El.hpp"
 
-// typedef double DataType; // if you change this, also update DataTypeMPI
+//typedef double DataType; // if you change this, also update DataTypeMPI
 // static MPI_Datatype DataTypeMPI = MPI_DOUBLE;
 typedef float DataType; // if you change this, also update DataTypeMPI
 static MPI_Datatype DataTypeMPI = MPI_FLOAT;

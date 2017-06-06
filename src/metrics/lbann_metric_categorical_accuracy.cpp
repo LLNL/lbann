@@ -53,17 +53,6 @@ lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist
 }
 
 lbann::metrics::categorical_accuracy::~categorical_accuracy() {
-/*
-  YsColMax.Empty();
-  YsColMaxStar.Empty();
-  m_max_index.Empty();
-  m_reduced_max_indices.Empty();
-
-  YsColMax_v.Empty();
-  YsColMaxStar_v.Empty();
-  m_max_index_v.Empty();
-  m_reduced_max_indices_v.Empty();
-*/
   delete YsColMax;
   delete YsColMax_v;
 }

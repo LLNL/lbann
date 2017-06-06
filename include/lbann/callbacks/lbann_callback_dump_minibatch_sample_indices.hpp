@@ -51,6 +51,10 @@ public:
       set_name("dump_minibatch_sample_indices");
     }
   void on_forward_prop_end(model* m, Layer* l);
+  void on_evaluate_forward_prop_end(model* m, Layer* l);
+
+  void dump_to_file(model* m, Layer* l, int64_t step);
+
 private:
   /** Basename for writing files. */
   std::string basename;

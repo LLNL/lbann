@@ -65,6 +65,7 @@ lbann::DataReader *lbann::io_layer::set_training_data_reader(DataReader *data_re
   m_training_dataset.data_reader = data_reader;
   m_training_dataset.num_samples_processed = 0;
   m_training_dataset.total_samples = data_reader->getNumData();
+  m_training_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   return old_data_reader;
 }
 
@@ -75,6 +76,7 @@ lbann::DataReader *lbann::io_layer::set_validation_data_reader(DataReader *data_
   m_validation_dataset.data_reader = data_reader;
   m_validation_dataset.num_samples_processed = 0;
   m_validation_dataset.total_samples = data_reader->getNumData();
+  m_validation_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   return old_data_reader;
 }
 
@@ -85,6 +87,7 @@ lbann::DataReader *lbann::io_layer::set_testing_data_reader(DataReader *data_rea
   m_testing_dataset.data_reader = data_reader;
   m_testing_dataset.num_samples_processed = 0;
   m_testing_dataset.total_samples = data_reader->getNumData();
+  m_testing_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   return old_data_reader;
 }
 

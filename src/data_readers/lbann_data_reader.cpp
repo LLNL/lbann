@@ -40,10 +40,18 @@ namespace lbann {
   m_sample_stride = sample_stride;
   m_last_mini_batch_stride = batch_stride;
   m_current_mini_batch_idx = 0;
+  m_num_iterations_per_epoch = 0;
+
+  /// The amount of space needed will vary based on input layer type,
+  /// but the batch size is the maximum space necessary
+  Zeros(m_indices_fetched_per_mb, BatchSize, 1);
 
   if(comm != NULL) {
     calculate_multi_model_data_distribution(comm);
     m_use_alt_last_mini_batch_size = true;
+    m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
+  }else {
+    m_num_iterations_per_epoch = ceil((float) this->getNumData() / (float) BatchSize);
   }
 
   CurrentPos = m_base_offset + m_model_offset;
@@ -52,6 +60,9 @@ namespace lbann {
     std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
                  get_data_seq_generator());
   }
+
+  //  m_num_iterations_per_epoch = m_num_mini_batches_per_reader; //ceil((float) this->getNumData() / (float) BatchSize);
+  std::cout << "I have just finished setup and the number of samples is " << this->getNumData() << " which will require " << m_num_iterations_per_epoch << " iterations " <<  std::endl;
 }
 
 void DataReader::setup() {
@@ -67,6 +78,10 @@ bool DataReader::update() {
     //    std::cout << "Data reader update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_batch_stride) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
     CurrentPos += m_batch_stride;
   }
+  
+  /// Maintain the current width of the matrix
+  Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
+
   if (CurrentPos < (int)ShuffledIndices.size()) {
     m_current_mini_batch_idx++;
     return true;
@@ -197,7 +212,8 @@ void DataReader::calculate_multi_model_data_distribution(lbann_comm *comm) {
   per_model_partial_mini_batch_size += world_master_remainder_data;
 
   /// The first reader that doesn't have an extra mini batch gets the partial batch
-  if(comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch && per_model_partial_mini_batch_size > 0) {
+  /// @todo BVE FIXME I need to figure out how this is going to work
+  if((0 &&comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch) && per_model_partial_mini_batch_size > 0) {
     m_num_mini_batches_per_reader++;
     m_last_mini_batch_size = per_model_partial_mini_batch_size;
   }

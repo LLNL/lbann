@@ -37,7 +37,7 @@ using namespace El;
 
 lbann::input_layer_partitioned_minibatch_parallel_io::input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
   : input_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, regs),
-    partitioned_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers)
+    partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers)
 {
   m_type = layer_type::input_partitioned_minibatch_parallel_io;
 }
@@ -48,22 +48,34 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::setup(int num_prev_ne
     int base_offset = Layer::comm->get_rank_in_model();
     int batch_stride = Layer::m_mini_batch_size;
     int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
-  //   //cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
+    cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
     io_layer::setup_data_readers_for_training(base_offset,
                                               batch_stride,
-                                              Layer::comm->get_procs_per_model(),
+                                              m_num_parallel_readers_training,
                                               model_offset);
     /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
     io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
                                                 Layer::m_mini_batch_size,
-                                                Layer::comm->get_procs_per_model());
+                                                m_num_parallel_readers_testing);
   }else {
     io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model(),
                                               Layer::m_mini_batch_size,
-                                              Layer::comm->get_procs_per_model());
+                                              m_num_parallel_readers_training);
     io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
                                                 Layer::m_mini_batch_size,
-                                                Layer::comm->get_procs_per_model());
+                                                m_num_parallel_readers_testing);
+  }
+
+  if(m_training_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_training = m_training_dataset.data_reader->get_num_iterations_per_epoch();
+  }
+
+  if(m_validation_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_validation = m_validation_dataset.data_reader->get_num_iterations_per_epoch();
+  }
+
+  if(m_testing_dataset.data_reader != NULL) {
+    m_num_iterations_per_epoch_testing = m_testing_dataset.data_reader->get_num_iterations_per_epoch();
   }
 
   Zeros(*m_activations, NumNeurons, Layer::m_mini_batch_size);
@@ -77,6 +89,7 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::fp_linearity() {
   //  DataReader *data_reader = input_layer::select_data_reader();
   int num_parallel_readers = get_num_parallel_readers();
 
+  //  DISPLAY_MATRIX(m_activations);
   int num_samples_in_batch = fetch_to_local_matrix(m_activations->Matrix());
 
   input_layer::update_num_samples_processed(num_samples_in_batch);

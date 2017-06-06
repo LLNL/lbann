@@ -75,7 +75,28 @@ public:
   /** Get the current epoch for the model. */
   inline int64_t get_cur_epoch() const { return m_current_epoch; }
   /** Get the current step for the model. */
-  inline int64_t get_cur_step() const { return m_current_step; }
+  inline int64_t get_cur_step() const { return m_current_step; } /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
+#if 0
+  inline int64_t get_cur_step() const {
+    int64_t step = 0;
+    switch(m_execution_mode) {
+    case execution_mode::training:
+      step = get_cur_training_step();
+      break;
+    case execution_mode::validation:
+      step = get_cur_validation_step();
+      break;
+    case execution_mode::testing:
+      step = get_cur_testing_step();
+      break;
+    default:
+      throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
+    }
+    return step;
+  }
+  /** Get the current training step for the model. */
+  inline int64_t get_cur_training_step() const { return m_current_step; } /// @todo This should be renamed to m_current_testing_step
+#endif
   /** Get the current validation step for the model. */
   inline int64_t get_cur_validation_step() const { return m_current_validation_step; }
   /** Get the current testing step for the model. */
