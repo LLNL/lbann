@@ -338,8 +338,6 @@ namespace lbann
     template <typename T>
     void sendrecv(const T* send, int send_count, int send_model,
                   T* recv, int recv_count, int recv_model) {
-      bytes_sent += sizeof(T) * send_count;
-      bytes_received += sizeof(T) * recv_count;
       sendrecv(send, send_count, send_model, rank_in_model,
                recv, recv_count, recv_model, rank_in_model);
     }
