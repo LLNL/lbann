@@ -30,8 +30,8 @@
 #ifndef LBANN_CV_AUGMENTER_HPP
 #define LBANN_CV_AUGMENTER_HPP
 
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_transform.hpp"
+#include "patchworks/patchworks_opencv.hpp"
+#include "lbann_cv_transform.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include <iostream>
 #include <ostream>

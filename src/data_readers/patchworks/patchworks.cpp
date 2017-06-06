@@ -33,7 +33,7 @@
 
 #ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks.hpp"
-#include "lbann/data_readers/patchworks/patchworks_rand.hpp"
+#include "lbann/utils/lbann_random.hpp"
 #include "lbann/data_readers/patchworks/patchworks_stats.hpp"
 
 namespace lbann {
@@ -125,7 +125,12 @@ cv::Mat drop_2channels(const cv::Mat& _img)
 
   // compute channel to remain
   pw_fp_t m[3] = {0.0 _f, 0.0 _f, 0.0 _f};
-  const int chosenCh = std::rand() % 3;
+
+  ::lbann::rng_gen& gen = ::lbann::get_generator();
+
+  std::uniform_int_distribution<int> rg_ch(0, 2);
+  const int chosenCh = rg_ch(gen);
+
   m[chosenCh] = 1.0 _f;
 
   // compute white noise
@@ -137,10 +142,10 @@ cv::Mat drop_2channels(const cv::Mat& _img)
   pw_fp_t avgs[3] = {avg, avg, avg};
   pw_fp_t devs[3] = {dev, dev, dev};
 
-  rand_patch<> rg;
-  rg.init_normal(0, avgs[0], devs[0]);
-  rg.init_normal(1, avgs[1], devs[1]);
-  rg.init_normal(2, avgs[2], devs[2]);
+  std::normal_distribution<pw_fp_t> rg_ch0(avgs[0], devs[0]);
+  std::normal_distribution<pw_fp_t> rg_ch1(avgs[1], devs[1]);
+  std::normal_distribution<pw_fp_t> rg_ch2(avgs[2], devs[2]);
+
   cv::MatIterator_<pw_cv_vec3> it = img.begin<pw_cv_vec3>();
   cv::MatIterator_<pw_cv_vec3> itend = img.end<pw_cv_vec3>();
 
@@ -150,9 +155,9 @@ cv::Mat drop_2channels(const cv::Mat& _img)
     const pw_fp_t r0 = static_cast<pw_fp_t>((*it)[2]);
 
   #if 1
-    pw_fp_t b = b0*m[0] + (1.0-m[0])*rg.gen_normal(0);
-    pw_fp_t g = g0*m[1] + (1.0-m[1])*rg.gen_normal(1);
-    pw_fp_t r = r0*m[2] + (1.0-m[2])*rg.gen_normal(2);
+    pw_fp_t b = b0*m[0] + (1.0-m[0])*rg_ch0(gen);
+    pw_fp_t g = g0*m[1] + (1.0-m[1])*rg_ch1(gen);
+    pw_fp_t r = r0*m[2] + (1.0-m[2])*rg_ch2(gen);
   #else
     pw_fp_t b = b0*m[0];
     pw_fp_t g = g0*m[1];
@@ -167,46 +172,6 @@ cv::Mat drop_2channels(const cv::Mat& _img)
   img.convertTo(img_final, img_depth);
 
   return img_final;
-}
-
-bool take_patch(const cv::Mat& img, const patch_descriptor& pi,
-  const ROI& roi, std::vector<cv::Mat>& patches)
-{
-  cv::Mat roiImg = img(cv::Rect(cv::Point(roi.left(), roi.top()),
-                                cv::Point(roi.right(), roi.bottom()))).clone();
-
-  if (pi.is_to_correct_chromatic_aberration_at_pixel()) {
-    roiImg = correct_chromatic_aberration(roiImg);
-  } else if (pi.is_to_drop_2channels()) {
-    roiImg = drop_2channels(roiImg);
-  }
-
-  patches.push_back(roiImg);
-
-  return true;
-}
-
-bool extract_patches(const cv::Mat& img, patch_descriptor& pi, std::vector<cv::Mat>& patches)
-{
-  if (img.data == NULL) return false;
-
-  ROI roi_center;
-  bool ok = pi.get_first_patch(roi_center);
-  if (!ok) return false;
-
-  take_patch(img, pi, roi_center, patches);
-  //std::cout << "center patch: " << roi_center << std::endl;
-
-  ROI roi;
-  unsigned int i = 1u;
-
-  while (pi.get_next_patch(roi)) {
-    take_patch(img, pi, roi, patches);
-    i++;
-  }
-
-  if (i == 1u) return false;
-  return true;
 }
 
 } // end of namespace patchworks

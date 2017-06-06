@@ -30,7 +30,7 @@
 #ifndef LBANN_CV_COLORIZE_HPP
 #define LBANN_CV_COLORIZE_HPP
 
-#include "lbann/data_readers/lbann_cv_transform.hpp"
+#include "lbann_cv_transform.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann
