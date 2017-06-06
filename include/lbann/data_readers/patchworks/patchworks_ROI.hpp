@@ -86,6 +86,8 @@ class ROI {
   /// Returns the bottom position of the region
   int bottom(void) const { return m_bottom; }
 
+  /// Returns a cv::Rect equivalent
+  cv::Rect rect(void) const { return cv::Rect(m_left, m_top, m_right-m_left, m_bottom-m_top); }
   /// Returns the width of the rectangular region
   int width(void) const { return (m_right - m_left); }
   /// Returns the height of the rectangular region

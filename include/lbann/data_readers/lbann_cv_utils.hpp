@@ -31,8 +31,8 @@
 
 #include <type_traits>
 #include <typeinfo>   // operator typeid
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_process.hpp"
+#include "patchworks/patchworks_opencv.hpp"
+#include "lbann_cv_process.hpp"
 #include "lbann/utils/lbann_mild_exception.hpp"
 
 

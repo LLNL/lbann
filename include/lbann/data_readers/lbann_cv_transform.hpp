@@ -30,7 +30,7 @@
 #ifndef LBANN_CV_TRANSFORM_HPP
 #define LBANN_CV_TRANSFORM_HPP
 
-#include "lbann/data_readers/lbann_opencv.hpp"
+#include "lbann_opencv.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann

@@ -33,17 +33,13 @@
 #ifdef __LIB_OPENCV
 #include <iostream>
 #include "lbann/data_readers/patchworks/patchworks_patch_descriptor.hpp"
+#include "lbann/utils/lbann_random.hpp"
 
 namespace lbann {
 namespace patchworks {
 
-void patch_descriptor::init(const int seed)
+void patch_descriptor::init(void)
 {
-  if (seed == 0)
-    m_rg_jitter.reset();
-  else
-    m_rg_jitter.reset(static_cast<rand_t::generator_t::result_type>(seed));
-
   m_width = 0u;
   m_height = 0u;
   m_gap = 0u;
@@ -52,11 +48,6 @@ void patch_descriptor::init(const int seed)
   m_mode_chrom = 0u;
   m_ext = "";
   m_cur_patch_idx = 0u;
-}
-
-void patch_descriptor::set_seed(const int seed)
-{
-  m_rg_jitter.reset(static_cast<rand_t::generator_t::result_type>(seed));
 }
 
 void patch_descriptor::set_size(const int width, const int height)
@@ -98,8 +89,6 @@ void patch_descriptor::define_patch_set(void)
 void patch_descriptor::set_jitter(const unsigned int j)
 {
   m_jitter = j;
-  m_rg_jitter.init_uniform_int(0, 0, 2*m_jitter);
-  m_rg_jitter.init_uniform_int(1, 0, 2*m_jitter);
 }
 
 bool patch_descriptor::get_first_patch(ROI& patch)
@@ -120,6 +109,8 @@ bool patch_descriptor::get_first_patch(ROI& patch)
     y_margin = m_height + (m_height+1)/2 + 2*m_jitter + m_gap;
   }
 
+  ::lbann::rng_gen& gen = ::lbann::get_generator();
+
   if ((m_mode_center == 0u || m_mode_center == 1u)) {
     // area where the center of a center patch can be in
     ROI center_patch_area;
@@ -134,17 +125,17 @@ bool patch_descriptor::get_first_patch(ROI& patch)
     if (!center_patch_area.is_valid()) return false;
 
     // randomly generate the center coordinate within the center patch area
-    rand_t rg_center;
-    rg_center.init_uniform_int(0, 0, center_patch_area.width()-1);
-    rg_center.init_uniform_int(1, 0, center_patch_area.height()-1);
-
-    x_center = rg_center.gen_uniform_int(0) + center_patch_area.left();
-    y_center = rg_center.gen_uniform_int(1) + center_patch_area.top();
+    std::uniform_int_distribution<int> rg_center_x(0, center_patch_area.width()-1);
+    std::uniform_int_distribution<int> rg_center_y(0, center_patch_area.height()-1);
+    x_center = rg_center_x(gen) + center_patch_area.left();
+    y_center = rg_center_y(gen) + center_patch_area.top();
   }
 
   if (m_jitter > 0u) { // apply position jitter if enabled
-    x_center += m_rg_jitter.gen_uniform_int(0) - m_jitter;
-    y_center += m_rg_jitter.gen_uniform_int(1) - m_jitter;
+    std::uniform_int_distribution<int> rg_jitter_x(0, 2*m_jitter);
+    std::uniform_int_distribution<int> rg_jitter_y(0, 2*m_jitter);
+    x_center += rg_jitter_x(gen) - m_jitter;
+    y_center += rg_jitter_y(gen) - m_jitter;
   }
 
   // set the center patch
@@ -156,6 +147,7 @@ bool patch_descriptor::get_first_patch(ROI& patch)
   m_patch_center = p;
   patch = p;
   m_positions.clear();
+  m_cur_patch_idx = 0u;
   m_positions.push_back(patch);
 
   return true;
@@ -165,6 +157,8 @@ bool patch_descriptor::get_next_patch(ROI& patch)
 {
   bool got_one = false;
 
+  ::lbann::rng_gen& gen = ::lbann::get_generator();
+
   do {
     ROI p = m_patch_center;
 
@@ -172,8 +166,10 @@ bool patch_descriptor::get_next_patch(ROI& patch)
     p.move(m_displacements[m_cur_patch_idx++]);
 
     if (m_jitter > 0u) {
-      const int x_jitter = m_rg_jitter.gen_uniform_int(0) - m_jitter;
-      const int y_jitter = m_rg_jitter.gen_uniform_int(1) - m_jitter;
+      std::uniform_int_distribution<int> rg_jitter_x(0, 2*m_jitter);
+      std::uniform_int_distribution<int> rg_jitter_y(0, 2*m_jitter);
+      const int x_jitter = rg_jitter_x(gen) - m_jitter;
+      const int y_jitter = rg_jitter_y(gen) - m_jitter;
       p.move(displacement_type(x_jitter, y_jitter));
     }
 
@@ -184,6 +180,27 @@ bool patch_descriptor::get_next_patch(ROI& patch)
   } while (!got_one);
 
   m_positions.push_back(patch);
+  return true;
+}
+
+bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches)
+{
+  patches.clear();
+  if (img.data == NULL) return false;
+
+  ROI roi;
+  bool ok = get_first_patch(roi);
+  if (!ok) return false;
+
+  patches.push_back(img(roi.rect()).clone());
+
+  unsigned int i = 1u;
+
+  while (get_next_patch(roi)) {
+    patches.push_back(img(roi.rect()).clone());
+    i++;
+  }
+  if (i == 1u) return false;
   return true;
 }
 

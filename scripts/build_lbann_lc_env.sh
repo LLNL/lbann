@@ -35,6 +35,9 @@ elif [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
   elif [ -d /opt/cudatoolkit-$CUDATOOLKIT_VERSION ] ; then
       CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-$CUDATOOLKIT_VERSION
   fi
+elif [ "${ARCH}" == "ppc64le" ]; then
+  CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+  CUDATOOLKIT_VERSION=`ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2`
 else
   CUDATOOLKIT_VERSION=`basename "$CUDA_PATH" | sed 's/cudatoolkit-//'`
   CUDA_TOOLKIT_ROOT_DIR=$CUDA_PATH

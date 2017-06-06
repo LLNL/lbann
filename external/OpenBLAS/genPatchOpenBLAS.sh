@@ -22,7 +22,10 @@ do
     continue;
   fi
 
-  ln -s ${patchDir}/${fnew} ${fdir}/${fnew}
+  pushd . > /dev/null
+  cd ${fdir}
+  ln -sf ${patchDir}/${fnew} ${fnew}
+  popd > /dev/null
   diff -u $f ${fdir}/${fnew}
   rm ${fdir}/${fnew}
 done < ${fileList} > ${patchDir}/${patchName}
