@@ -1,9 +1,13 @@
 model {
   name: "dnn"
   objective_function: "categorical_cross_entropy"
-  num_epochs: 1
   metric: "categorical_accuracy"
   mini_batch_size: 192
+  num_epochs: 1
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: false
+  num_gpus: -1
 
   callback {
     print {

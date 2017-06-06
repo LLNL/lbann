@@ -5,39 +5,18 @@ package lbann_data;
 message LbannPB {
   DataReader data_reader = 1; 
   Model model = 2; 
-
-  PerformanceParams performance_params = 3;
-  SystemParams system_params = 4;
-  NetworkParams network_params = 5;
-  TrainingParams training_params = 6;
-
-  //use cudnn_manager, if has_cudnn = true, and lbann was compiled with cudnn support
-  bool has_cudnn = 8;
-
-  //see note in Layer section below. This is the global optimzer, that is, as of
-  //this writing, passed to all pertinent layers. However, in theory we could
-  //pass different optimizers to different layers; therefore, each Layer
-  //that takes an optimizer in its ctor also has an optimizer field.
-  string optimizer = 10; //adagrad, rmsprop, adam, sgd 
-
-  string objective_fn = 11; //categorical_cross_entropy, mean_squared_error
-  int64 mini_batch_size = 12;
-
-  //string execution_mode = 13; 
-  //   training, validation, testing, prediction, invalid
-  //   do we need these? for future development
 }
 
 //========================================================================
 // start of DataReaders
 //========================================================================
 message DataReader {
-  repeated Reader reader = 1;
+  int64 max_par_io_size = 1;
+  repeated Reader reader = 2;
 }
 
 message Reader {
   string name = 1; //mnist, nci, nci_regression, cnpy, imagenet
-  int64 mini_batch_size = 2;
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filename = 6;
@@ -71,17 +50,25 @@ message ImagePreprocessor {
 message Model {
   string name = 1; //dnn, stacked_autoencoder, greedy_layerwise_autoencoder
   string objective_function = 2; //categorical_cross_entropy, mean_squared_error
-  int64 mini_batch_size = 6;
-  int64 num_epochs = 4;
   repeated string metric = 5; //categorical_accuracy, mean_squared_error
 
+  int64 mini_batch_size = 12;
+  int64 num_epochs = 4;
+  int64 block_size = 50;
+  int64 procs_per_model = 51;
+  int64 num_parallel_readers = 52;
+  int64 num_gpus = 53;
 
-  //int64 evaluation_frequency = 3;
-  //string optimizer = 5;
+  //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
+  bool use_cudnn = 8;
+
+  //see note in Layer section below. This is the global optimzer, that is, as of
+  //this writing, passed to all pertinent layers. However, in theory we could
+  //pass different optimizers to different layers; therefore, each Layer
+  //that takes an optimizer in its ctor also has an optimizer field.
+  Optimizer optimizer = 11;
 
   repeated Layer layer = 10;
-
-  Optimizer optimizer = 11;
 
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
@@ -146,25 +133,31 @@ message CallbackImComm {
   //todo
 }
 
+//========================================================================
+// Regularizers
+//========================================================================
 
+message Regularizer {
+  //a Regularizer should contain exactly one of the following
+  BatchNormalization batch_normalization = 1;
+  Dropout dropout = 2;
+  L2Regularization l2_regularization = 3; 
+}
 
+message BatchNormalization {
+  string data_layout = 1;
+  double decay = 2;
+  double gamma = 3;
+  double beta = 4;
+}
 
-message Layer {
-   int64 index = 2; //corresponds to index wrt std::vector<Layer*>
-                     //not currently used
+message Dropout {
+  string data_layout = 1;
+  double keep_prob = 2;
+}
 
-   // a Layer should contain exactly one of the following
-   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;
-   InputDistributedMiniBatch input_distributed_minibatch = 9;
-   Input input = 10;
-   FullyConnected fully_connected = 11;
-   Pooling pooling = 12;
-   Convolution convolution = 13;
-   Softmax softmax = 14;
-   Target target = 15;
-   TargetParallel target_parallel = 16;
-   TargetDistributedMinibatch target_distributed_minibatch = 17;
-   TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
+message L2Regularization {
+  double lambda = 3;
 }
 
 //========================================================================
@@ -186,15 +179,29 @@ message Layer {
 //
 //
 
-message Input {
-  int64 mini_batch_size = 1;
+message Layer {
+   int64 index = 2; //corresponds to index wrt std::vector<Layer*>
+                     //not currently used
+
+   // a Layer should contain exactly one of the following
+   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;
+   InputDistributedMiniBatch input_distributed_minibatch = 9;
+   FullyConnected fully_connected = 11;
+   Pooling pooling = 12;
+   Convolution convolution = 13;
+   Softmax softmax = 14;
+   Target target = 15;
+   TargetParallel target_parallel = 16;
+   TargetDistributedMinibatch target_distributed_minibatch = 17;
+   TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
 }
 
+
 message InputDistributedMiniBatchParallelIO {
-  int64 num_parallel_readers = 1;
-  int64 mini_batch_size = 2;
-  //@TODO: regularizers
+  string data_layout = 3;
+  repeated Regularizer regularizer = 2;
 }
+
 
 message InputDistributedMiniBatch {
   //@TODO
@@ -202,13 +209,13 @@ message InputDistributedMiniBatch {
 
 
 message FullyConnected {
-  int64 num_prev_neurons = 1;
+  string data_layout = 12;
+  //int64 num_prev_neurons = 1;
   int64 num_neurons = 2;
-  int64 mini_batch_size = 3;
   string activation_type = 4;
   string weight_initialization = 5;
-  string optimizer = 10; 
-  repeated string regularizer = 11;
+  //string optimizer = 10; 
+  repeated Regularizer regularizer = 11;
 }
 
 
@@ -245,10 +252,10 @@ message Convolution {
 }
 
 message Softmax {
-  int64 num_prev_neurons = 1;
+  string data_layout = 4;
+  //int64 num_prev_neurons = 1;
   int64 num_neurons = 2;
   string weight_initialization = 3;
-  string activation_type = 4;
 }
 
 message Target {
@@ -264,76 +271,11 @@ message TargetDistributedMinibatch {
 }
 
 message TargetDistributedMinibatchParallelIO {
-  int64 num_parallel_readers = 1;
-  int64 mini_batch_size = 2;
+  string data_layout = 5;
   bool shared_data_reader = 3;
   bool for_regression = 4;
 }
 
 //========================================================================
 // end of Layer types
-//========================================================================
-
-
-//========================================================================
-// start of Params 
-//========================================================================
-
-message SystemParams {
-  string host_name = 1;
-  int64 num_nodes = 2;
-  int64 num_cores = 3;
-  int64 tasks_per_node = 4;
-}
-
-message NetworkParams {
-  string network_str = 1;
-}
-
-message PerformanceParams {
-  int64 block_size = 1;
-  int64 max_par_io_size = 2;
-}
-
-message TrainingParams {
-  bool enable_profiling = 1;
-  int64 random_seed = 2;
-  int64 shuffle_training_data = 3;
-  double percentage_training_samples = 4;
-  double percentage_validation_samples = 5;
-  double percentage_testing_samples = 6;
-  int64 test_with_train_data = 7;
-  int64 epoch_start = 8;
-  int64 epoch_count = 9;
-  int64 mb_size = 10;
-  double learn_rate = 11;
-  int64 learn_rate_method = 12; //1 - Adagrad, 2 - RMSprop, 3 - Adam
-  double lr_decay_rate = 13;  
-  int64 lr_decay_cycles = 14;
-  double lr_momentum = 15; 
-  string activation_type = 16; //sigmoid, tanh, relu, id, leaky_relu, smooth_relu, elu
-  double dropout = 17;
-  double lambda = 18;
-  string weight_initialization = 19; //zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform
-  string dataset_root_dir = 20;
-  string save_image_dir = 21;
-  string parameter_dir = 22;
-  bool save_model = 23;
-  bool load_model = 24;
-  int64 ckpt_epochs = 25;
-  int64 ckpt_steps = 26;
-  int64 ckpt_secs = 27;
-  string train_file = 28;
-  string test_file = 29;
-  string summary_dir = 30;
-  bool dump_weights = 31;
-  bool dump_activations = 32;
-  bool dump_gradients = 33;
-  string dump_dir = 34;
-  int64 intermodel_comm_method = 35;
-  int64 procs_per_model = 36;
-}
-
-//========================================================================
-// end of Params 
 //========================================================================

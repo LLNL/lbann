@@ -26,9 +26,6 @@
 // lbann_proto.cpp - prototext application 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
-#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
-#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto_common.hpp"
 
@@ -36,11 +33,6 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-// layer definition
-const std::vector<int> g_LayerDim = {784, 100, 30, 10};
-const uint g_NumLayers = g_LayerDim.size(); // # layers
-
-/// Main function
 int main(int argc, char* argv[])
 {
     Initialize(argc, argv);
@@ -48,28 +40,50 @@ int main(int argc, char* argv[])
 
     try {
 
-        // Initialize parameter defaults
-        // note: these params will eventually be initialized from prototext
-        TrainingParams trainParams;
-        trainParams.EpochCount = 20;
-        trainParams.LearnRate = 0.01;
-        trainParams.DropOut = -1.0f;
-        trainParams.ProcsPerModel = 0;
-        PerformanceParams perfParams;
-        perfParams.BlockSize = 256;
+        //get input prototext filenames
+        string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
+        string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
 
-        // Parse command-line inputs
-        trainParams.parse_params();
-        perfParams.parse_params();
+        //Get optional over-rides for various fields in the prototext.
+        //If you add anything here, also change the section below:
+        //  "adjust the prototext with any over-rides"
+        int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
+        int num_epochs = Input("--num-epochs", "num epochs", 0);
 
         ProcessInput();
         PrintInputReport();
 
+        //error check the command line
+        if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
+          if (comm->am_world_master()) {
+            cerr << endl << __FILE__ << " " << __LINE__ 
+                 << " :: error - you must use  --prototext_fn and "
+                 << "--prototext_dr_fn to supply prototext filenames\n\n";
+          }
+          Finalize();
+          return 9;
+        }
+
+        // read in the prototext files
+        lbann_data::LbannPB pb;
+        lbann_data::LbannPB pb_reader;
+        readPrototextFile(prototext_model_fn.c_str(), pb);
+        readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
+        lbann_data::Model *pb_model = pb.mutable_model();
+
+        //adjust the prototext with any over-rides
+        if (mini_batch_size != 0) {
+          pb_model->set_mini_batch_size(mini_batch_size);
+        }
+        if (num_epochs == 0) {
+          pb_model->set_num_epochs(num_epochs);
+        }
+
         // Set algorithmic blocksize
-        SetBlocksize(perfParams.BlockSize);
+        SetBlocksize(pb_model->block_size());
 
         // Set up the communicator and get the grid.
-        comm = new lbann_comm(trainParams.ProcsPerModel);
+        comm = new lbann_comm(pb_model->procs_per_model());
         Grid& grid = comm->get_model_grid();
         if (comm->am_world_master()) {
           cout << "Number of models: " << comm->get_num_models() << endl;
@@ -82,33 +96,15 @@ int main(int argc, char* argv[])
         init_random(42);
         init_data_seq_random(42);
 
-        //get input prototext filenames
-        string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
-        string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
-        //if (prototext_model_fn == "none" or prototext_dr_fn == "none") {
-        if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
-          if (comm->am_world_master()) {
-            cerr << endl << __FILE__ << " " << __LINE__ << " :: error - you must use "
-                 << " --prototext_fn and --prototext_dr_fn to supply prototext filenames\n\n";
-          }
-          Finalize();
-          return 9;
-        }
-        int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
-
-        lbann_data::LbannPB pb;
-        lbann_data::LbannPB pb_reader;
-        readPrototextFile(prototext_model_fn.c_str(), pb);
-        readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
-
-
-        int parallel_io = perfParams.MaxParIOSize;
+        const lbann_data::DataReader &d_reader = pb.data_reader();
+        int parallel_io = pb_model->num_parallel_readers();
         if (parallel_io == 0) {
           if (comm->am_world_master()) {
             cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
               " (Limited to # Processes)" << endl;
           }
           parallel_io = comm->get_procs_per_model();
+          pb_model->set_num_parallel_readers(parallel_io); //adjust the prototext
         } else {
           if (comm->am_world_master()) {
             cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
@@ -116,68 +112,41 @@ int main(int argc, char* argv[])
         }
 
         ///////////////////////////////////////////////////////////////////
-        // load training data (MNIST)
+        // initialize data readers
+        //@todo: code not in place for correctly handling image preprocessing
         ///////////////////////////////////////////////////////////////////
         std::map<execution_mode, DataReader*> data_readers;
-        init_data_readers(comm->am_world_master(), pb_reader, data_readers, mini_batch_size);
+        init_data_readers(comm->am_world_master(), pb_reader, data_readers);
         if (comm->am_world_master()) {
           for (auto it : data_readers) {
-            cerr << "data reader; role: " << it.second->get_role() << " num data: " << it.second->getNumData() << endl;
+            cerr << "data reader; role: " << it.second->get_role() 
+                 << " num data: " << it.second->getNumData() << endl;
           }
         }
 
         ///////////////////////////////////////////////////////////////////
-        // initalize model; includes layers, metrics, objective function, etc
-        ///////////////////////////////////////////////////////////////////
-
-        optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
-        sequential_model * model = init_model(comm, optimizer_fac, pb);
-
-
-
-        //first layer
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers);
-        model->add(input_layer);
-        
-        //second layer
-        model->add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
-        //third layer
-        model->add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
-        //fourth layer
-        model->add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
-
-        //fifth layer
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, mini_batch_size, data_readers, true);
-        model->add(target_layer);
-
-        // init callbacks (this includes checkpoint calls)
+        // initalize model
         // @todo: not all callbacks code is in place
-        init_callbacks(comm, model, pb);
-
-        // Initialize the model's data structures
-        model->setup();
-
-
-         /*
-        //@todo: add function to print this data from prototext
-        //
-        if (comm->am_world_master()) {
-          cout << "Layer initialized:" << endl;
-          for (uint n = 0; n < g_NumLayers; n++) {
-            cout << "\tLayer[" << n << "]: " << g_LayerDim[n] << endl;
-          }
-          cout << endl;
+        ///////////////////////////////////////////////////////////////////
+        optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+        cudnn::cudnn_manager* cudnn = NULL;
+        #if __LIB_CUDNN
+        if (pb_model->use_cudnn()) {
+          cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus());
         }
+        #endif
+        sequential_model * model = init_model(comm, optimizer_fac, pb);
+        add_layers(model, data_readers, pb);
+        init_callbacks(comm, model, pb);
+        model->setup();
 
         if (comm->am_world_master()) {
           cout << "Parameter settings:" << endl;
           cout << "\tMini-batch size: " << mini_batch_size << endl;
-          cout << "\tLearning rate: " << trainParams.LearnRate << endl;
-          cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
+          const lbann_data::Optimizer optimizer = pb_model->optimizer();
+          cout << "\tLearning rate: " <<  optimizer.learn_rate() << endl;
+          cout << "\tEpoch count: " << pb_model->num_epochs() << endl << endl;
         }
-        */
 
         // restart model from checkpoint if we have one
         //@todo
@@ -186,7 +155,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // main loop for training/testing
         ///////////////////////////////////////////////////////////////////
-        while (model->get_cur_epoch() < trainParams.EpochCount) {
+        while (model->get_cur_epoch() < num_epochs) {
             model->train(1, true);
             model->evaluate(execution_mode::testing);
         }
