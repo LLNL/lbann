@@ -3,7 +3,7 @@ model {
   objective_function: "categorical_cross_entropy"
   metric: "categorical_accuracy"
   mini_batch_size: 192
-  num_epochs: 1
+  num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
   use_cudnn: false
@@ -11,7 +11,7 @@ model {
 
   callback {
     print {
-      interval: 0
+      interval: 1
     }
   }
   callback {
@@ -28,31 +28,28 @@ model {
 
   layer {
     input_distributed_minibatch_parallel_io {
-      num_parallel_readers: 16
-      mini_batch_size: 192
+      data_layout: "data_parallel"
     }
   }
   layer {
     fully_connected {
-      num_prev_neurons: 784
+      data_layout: "data_parallel"
       num_neurons: 100
-      mini_batch_size: 3
       activation_type: "sigmoid"
       weight_initialization: "glorot_uniform"
     }
   }
   layer {
     fully_connected {
-      num_prev_neurons: 100
+      data_layout: "data_parallel"
       num_neurons: 30
-      mini_batch_size: 119
       activation_type: "sigmoid"
       weight_initialization: "glorot_uniform"
     }
   }
   layer {
     softmax {
-      num_prev_neurons: 30
+      data_layout: "data_parallel"
       num_neurons: 10
       weight_initialization: "glorot_uniform"
       activation_type: "id"
@@ -60,8 +57,7 @@ model {
   }
   layer {
     target_distributed_minibatch_parallel_io {
-      num_parallel_readers: 16
-      mini_batch_size: 192
+      data_layout: "data_parallel"
       shared_data_reader: true
     }
   }
@@ -72,32 +68,4 @@ model {
     decay: 0.5
     nesterov: true
   }
-}
-performance_params {
-  block_size: 256
-}
-training_params {
-  random_seed: 1
-  shuffle_training_data: 1
-  percentage_training_samples: 0.9
-  percentage_validation_samples: 1
-  percentage_testing_samples: 1
-  epoch_count: 1
-  mb_size: 192
-  learn_rate: 0.0099999997764825821
-  learn_rate_method: 1
-  lr_decay_rate: 0.5
-  lr_decay_cycles: 5000
-  lr_momentum: 1.6675451725465323e-43
-  activation_type: "sigmoid"
-  dropout: -1
-  lambda: 0.1
-  weight_initialization: "none"
-  dataset_root_dir: "/p/lscratchf/brainusr/datasets/mnist-bin"
-  save_image_dir: "."
-  parameter_dir: "."
-  train_file: " "
-  test_file: " "
-  summary_dir: "."
-  dump_dir: "."
 }

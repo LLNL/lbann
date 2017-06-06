@@ -14,7 +14,8 @@
 void init_data_readers(
   bool master, 
   const lbann_data::LbannPB &p, 
-  std::map<execution_mode, lbann::DataReader*> &data_readers);
+  std::map<execution_mode, lbann::DataReader*> &data_readers,
+  int mini_batch_size);
 
 /** returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
  */

@@ -37,24 +37,9 @@
 
 using namespace lbann;
 
-/*
 //this is a macro instead of a function only because we want the
 //__FILE__ and __LINE__ to be correct, if an exception is thrown
 
-#define GET_DATA_LAYOUT(s) { \
-    if (s == "model_parallel") { \
-      return data_layout::MODEL_PARALLEL; \
-    } else if (d == "data_parallel") { \
-      return data_layout::DATA_PARALLEL; \
-    } else { \
-      stringstream err; \
-      err << __FILE__ << " " << __LINE__  \
-          << " :: unknown value for data_layout; should be model_parallel" \
-          << " or data_parallel; we got: " << d; \
-      throw lbann_exception(err.str());  \
-    } \
-  }
-*/
 
 activation_type get_activation_type(const string &s) {
   if (s == "sigmoid") return activation_type::SIGMOID;
@@ -91,14 +76,14 @@ weight_initialization get_weight_initialization(const string &s) {
   }
 }
 
-data_layout get_data_layout(const string &s) {
+data_layout get_data_layout(const string &s, const char *file, int line) {
     if (s == "model_parallel") { 
       return data_layout::MODEL_PARALLEL; 
     } else if (s == "data_parallel") { 
       return data_layout::DATA_PARALLEL; 
     } else { 
       stringstream err; 
-      err << __FILE__ << " " << __LINE__  
+      err << file << " " << line
           << " :: unknown value for data_layout; should be model_parallel" 
           << " or data_parallel; we got: " << s; 
       throw lbann_exception(err.str());  
@@ -114,7 +99,7 @@ void init_regularizers(
      if (r[i].has_batch_normalization()) {
        const lbann_data::BatchNormalization &b = r[i].batch_normalization();
        batch_normalization *b2 = new batch_normalization(
-         get_data_layout(b.data_layout()),
+         get_data_layout(b.data_layout(), __FILE__, __LINE__),
          comm,
          b.decay(),
          b.gamma(),
@@ -124,7 +109,7 @@ void init_regularizers(
      if (r[i].has_dropout()) {
        const lbann_data::Dropout &b = r[i].dropout();
        dropout *b2 = new dropout(
-         get_data_layout(b.data_layout()),
+         get_data_layout(b.data_layout(), __FILE__, __LINE__),
          comm,
          b.keep_prob());
        regs.push_back(b2);
@@ -155,7 +140,7 @@ void add_layers(
 
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO &ell = layer.input_distributed_minibatch_parallel_io();
-      data_layout layout = get_data_layout(ell.data_layout());
+      data_layout layout = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
 
       vector<regularizer*> regs;
       init_regularizers(regs, comm, ell.regularizer());
@@ -167,6 +152,7 @@ void add_layers(
          mb_size,
          data_readers,
          regs); 
+      model->add(d);
     }
     
     if (layer.has_fully_connected()) {
@@ -175,7 +161,7 @@ void add_layers(
       init_regularizers(regs, comm, ell.regularizer());
       model->add(
         "FullyConnected",
-        get_data_layout(ell.data_layout()),
+        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
         ell.num_neurons(),
         get_activation_type(ell.activation_type()),
         get_weight_initialization(ell.weight_initialization()),
@@ -192,9 +178,9 @@ void add_layers(
       const lbann_data::Softmax &ell = layer.softmax();
       model->add(
         "Softmax",
-        get_data_layout(ell.data_layout()),
+        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
         ell.num_neurons(),
-        activation_type::ID,
+        get_activation_type(ell.activation_type()),
         get_weight_initialization(ell.weight_initialization()),
         {});
     }
@@ -202,7 +188,7 @@ void add_layers(
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO &ell = layer.target_distributed_minibatch_parallel_io();
       target_layer *t = new  target_layer_distributed_minibatch_parallel_io(
-          get_data_layout(ell.data_layout()),
+          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           comm,
           m.num_parallel_readers(),
           mb_size,
@@ -221,6 +207,8 @@ void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lban
   bool master = comm->am_world_master();
 
   const lbann_data::Model &m = p.model();
+
+  cerr << endl << "STARTING init_callbacks; size: " << m.callback_size() << endl;
 
   //loop over the callbacks
   int size = m.callback_size();
@@ -408,41 +396,18 @@ optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::L
   return factory;
 }
 
-void init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers)
+void init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers, int mini_batch_size)
 {
   stringstream err;
 
   const lbann_data::DataReader &d_reader = p.data_reader();
   int size = d_reader.reader_size();
-  const lbann_data::Model &m = p.model();
-  int mb_size = m.mini_batch_size();
-
-  int mini_batch_size = 0;
-  if (mb_size != 0) {
-    mini_batch_size = mb_size;
-  }
-  if (master) {
-    cout << "mini_batch_size: " << mini_batch_size << " mb_size: " << mb_size << endl;
-  }
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader &readme = d_reader.reader(j);
     const lbann_data::ImagePreprocessor &preprocessor = readme.image_preprocessor();
 
     const string &name = readme.name();
-
-    if (mb_size == 0) {
-      const lbann_data::Model &m = p.model();
-      int this_mini_batch_size = m.mini_batch_size();
-      if (this_mini_batch_size != mini_batch_size and mini_batch_size > 0) {
-        stringstream err;
-        err << __FILE__ << " " << __LINE__
-            << " :: mini_batch sizes don't match; one reader has "
-            << this_mini_batch_size << " the other has " << mini_batch_size;
-        throw lbann_exception(err.str());
-      }
-      mini_batch_size = this_mini_batch_size;
-    }
 
     bool shuffle = readme.shuffle();
 
@@ -590,9 +555,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execu
 
       data_readers[execution_mode::validation] = reader_validation;
     }
-  }
-  if (mb_size == 0) {
-    mb_size = mini_batch_size;
   }
 }
 

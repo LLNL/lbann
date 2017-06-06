@@ -253,9 +253,9 @@ message Convolution {
 
 message Softmax {
   string data_layout = 4;
-  //int64 num_prev_neurons = 1;
   int64 num_neurons = 2;
   string weight_initialization = 3;
+  string activation_type = 10;
 }
 
 message Target {
