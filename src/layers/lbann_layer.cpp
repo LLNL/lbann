@@ -482,7 +482,11 @@ void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
+  if (m_prev_error_signal->Height() > 0) {
+    // No previous error signal for the final layer.
+    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
+         IR(0, cur_mini_batch_size));
+  }
   View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
   View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
