@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     }
 #endif
     sequential_model * model = init_model(comm, optimizer_fac, pb);
-    add_layers(model, data_readers, pb);
+    add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, pb);
     model->setup();
 

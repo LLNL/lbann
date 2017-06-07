@@ -33,13 +33,31 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 
-
-
 using namespace lbann;
 
-//this is a macro instead of a function only because we want the
-//__FILE__ and __LINE__ to be correct, if an exception is thrown
+pool_mode get_pool_mode(const string &s) {
+  if (s == "max") return pool_mode::max;
+  else if (s == "average") return pool_mode::average;
+  else if (s == "average_no_pad") return pool_mode::average_no_pad;
+  else {
+    stringstream err;
+    err << __FILE__ << " " <<__LINE__
+        << " :: unkown pool_mode: " << s
+        << " should be one of: max, average, average_no_pad";
+    throw lbann_exception(err.str());  
+  }
+  
+}
 
+void get_prev_neurons_and_index( lbann::sequential_model *model, int &prev_num_neurons, int &cur_index) {
+  std::vector<Layer*>& layers = model->get_layers();
+  prev_num_neurons = -1;
+  if(layers.size() != 0) {
+    Layer* prev_layer = layers.back();
+    prev_num_neurons = prev_layer->NumNeurons;
+  }
+  cur_index = layers.size();
+}
 
 activation_type get_activation_type(const string &s) {
   if (s == "sigmoid") return activation_type::SIGMOID;
@@ -125,6 +143,7 @@ void init_regularizers(
 void add_layers(
   lbann::sequential_model *model, 
   std::map<execution_mode, DataReader*> &data_readers, 
+  cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB &p) 
   {
   stringstream err;
@@ -134,10 +153,17 @@ void add_layers(
   const lbann_data::Model &m = p.model();
   int mb_size = m.mini_batch_size();
   int size = m.layer_size();
+
   for (int j=0; j<size; j++) {
     const lbann_data::Layer &layer = m.layer(j);
 
+    int layer_id;
+    int prev_num_neurons;
+    get_prev_neurons_and_index(model, prev_num_neurons, layer_id);
 
+    //////////////////////////////////////////////////////////////////
+    // LAYER: input_distributed_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO &ell = layer.input_distributed_minibatch_parallel_io();
       data_layout layout = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
@@ -155,36 +181,142 @@ void add_layers(
       model->add(d);
     }
     
+    //////////////////////////////////////////////////////////////////
+    // LAYER: fully_connected
+    //////////////////////////////////////////////////////////////////
     if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected &ell = layer.fully_connected();
       vector<regularizer*> regs;
       init_regularizers(regs, comm, ell.regularizer());
-      model->add(
-        "FullyConnected",
+      FullyConnectedLayer *layer = new FullyConnectedLayer(
         get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+        layer_id,
+        prev_num_neurons,
         ell.num_neurons(),
+        mb_size, 
         get_activation_type(ell.activation_type()),
         get_weight_initialization(ell.weight_initialization()),
+        comm,
+        model->create_optimizer(),
         regs);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // LAYER: pooling
+    //////////////////////////////////////////////////////////////////
     if (layer.has_pooling()) {
+      const lbann_data::Pooling &ell = layer.pooling();
+
+      vector<int> input_dims;
+      for (int i=0; i<ell.input_dims_size(); i++) {
+        input_dims.push_back(ell.input_dims(i));
+      }
+
+      vector<int> pool_dims;
+      for (int i=0; i<ell.pool_dims_size(); i++) {
+        pool_dims.push_back(ell.pool_dims(i));
+      }
+
+      vector<int> pool_pads;
+      for (int i=0; i<ell.pool_pads_size(); i++) {
+        pool_pads.push_back(ell.pool_pads(i));
+      }
+
+      vector<int> pool_strides;
+      for (int i=0; i<ell.pool_strides_size(); i++) {
+        pool_strides.push_back(ell.pool_strides(i));
+      }
+
+      pooling_layer *layer = new pooling_layer(
+        layer_id,
+        ell.num_dims(),
+        ell.num_channels(),
+        &input_dims[0],
+        &pool_dims[0],
+        &pool_pads[0],
+        &pool_strides[0],
+        get_pool_mode(ell.pool_mode()),
+        mb_size,
+        comm,
+        cudnn);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // LAYER: convolution
+    //////////////////////////////////////////////////////////////////
     if (layer.has_convolution()) {
-    }
+      const lbann_data::Convolution &ell = layer.convolution();
 
-    if (layer.has_softmax()) {
-      const lbann_data::Softmax &ell = layer.softmax();
-      model->add(
-        "Softmax",
-        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
-        ell.num_neurons(),
+      vector<Int> input_dims;
+      for (int i=0; i<ell.input_dims_size(); i++) {
+        input_dims.push_back(ell.input_dims(i));
+      }
+
+      vector<Int> filter_dims;
+      for (int i=0; i<ell.filter_dims_size(); i++) {
+        filter_dims.push_back(ell.filter_dims(i));
+      }
+
+      vector<Int> conv_pads;
+      for (int i=0; i<ell.conv_pads_size(); i++) {
+        conv_pads.push_back(ell.conv_pads(i));
+      }
+
+      vector<Int> conv_strides;
+      for (int i=0; i<ell.conv_strides_size(); i++) {
+        conv_strides.push_back(ell.conv_strides(i));
+      }
+
+      Int num_dims = ell.num_dims();
+      Int num_input_channels = ell.num_input_channels();
+      Int num_output_channels = ell.num_output_channels();
+
+      vector<regularizer*> regs;
+      init_regularizers(regs, comm, ell.regularizer());
+
+      convolutional_layer* layer = new convolutional_layer(
+        layer_id,
+        num_dims,
+        num_input_channels,
+        &input_dims[0],
+        num_output_channels,
+        &filter_dims[0],
+        &conv_pads[0],
+        &conv_strides[0],
+        mb_size,
         get_activation_type(ell.activation_type()),
         get_weight_initialization(ell.weight_initialization()),
-        {});
+        comm,
+        model->create_optimizer(),
+        regs,
+        cudnn
+      );  
+
+      model->add(layer);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // LAYER: softmax
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_softmax()) {
+      const lbann_data::Softmax &ell = layer.softmax();
+      SoftmaxLayer *layer = new SoftmaxLayer(
+        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+        layer_id,
+        prev_num_neurons,
+        ell.num_neurons(),
+        mb_size, 
+        get_weight_initialization(ell.weight_initialization()),
+        comm,
+        model->create_optimizer()
+      );
+
+      model->add(layer);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: target_distributed_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO &ell = layer.target_distributed_minibatch_parallel_io();
       target_layer *t = new  target_layer_distributed_minibatch_parallel_io(
@@ -197,9 +329,7 @@ void add_layers(
           ell.for_regression());
       model->add(t);
     }
-
   }
-  
 }
 
 void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
