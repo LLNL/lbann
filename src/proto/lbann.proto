@@ -230,10 +230,6 @@ message Pooling {
   //pool_mode should be one of: max, average, average_no_pad
   //see: lbann/include/lbann/lbann_base.hpp
   string pool_mode = 7;
-
-  string activation_type = 8;
-
-  //?? std::vector<regularizer*> regs,
 }
 
 message Convolution {
@@ -247,15 +243,13 @@ message Convolution {
   int64 mini_batch_size = 8;
   string weight_initialization = 9;
   string activation_type = 10;
-   
-  //?? std::vector<regularizer*> regs,
+  repeated Regularizer regularizer = 11;
 }
 
 message Softmax {
   string data_layout = 4;
   int64 num_neurons = 2;
   string weight_initialization = 3;
-  string activation_type = 10;
 }
 
 message Target {

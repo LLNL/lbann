@@ -7,6 +7,8 @@
 #include <lbann.pb.h>
 #include "lbann/models/lbann_model_sequential.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
+
 
 /** returns mini_batch_size;
  *  instantiates one or more DataReaders and inserts them in &data_readers
@@ -27,6 +29,7 @@ lbann::sequential_model * init_model(
 void add_layers(
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::DataReader*> &data_readers,
+  cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB &p);
 
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
