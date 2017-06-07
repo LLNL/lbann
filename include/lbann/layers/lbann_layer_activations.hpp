@@ -112,9 +112,7 @@ protected:
 class id_layer : public Activation {
   void forwardProp(ElMat& m) {}
   void backwardProp(ElMat& m) {}
-  void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {
-    El::Hadamard(prev_error_signal, m, prev_error_signal);
-  }
+  void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {}
 protected:
   DataType act(const DataType& z) { return z; }
   DataType act_prime(const DataType& z) { return z; }
