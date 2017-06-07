@@ -34,13 +34,13 @@
 namespace lbann {
 
 /**
- * Batch normalization: normalize layers to zero mean/unit variance.
+ * Batch normalization: normalize layers to zero mean/unit standard deviation.
  * See paper:
- * Sergey Ioffe and Christian Szegedy. "Batch Normalization: Accelerating Deep
- * Network Training by Reducing Internal Covariate Shift." ICML 2015.
- * This keeps a running mean and variance (with exponential decay) instead of
- * computing it over the data at test time. This approach seems to have become
- * standard.
+ * Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+ * Accelerating Deep Network Training by Reducing Internal Covariate
+ * Shift." ICML 2015.  This keeps a running mean and standard
+ * deviation (with exponential decay) instead of computing it over the
+ * data at test time. This approach seems to have become standard.
  * See also:
  * https://cthorey.github.io/backpropagation/
  */
@@ -48,12 +48,13 @@ class batch_normalization : public regularizer {
 public:
   /**
    * Set up batch normalization.
-   * @param decay Controls the momentum of the running mean/variance averages.
-   * @param gamma The initial value for gamma. The paper recommends 1.0 as a
-   * starting point, but other papers have had better results with a smaller
-   * value (e.g. 0.1).
-   * @param beta The initial value for beta. This should almost always stay at
-   * zero.
+   * @param decay Controls the momentum of the running mean/standard
+   * deviation averages.
+   * @param gamma The initial value for gamma. The paper recommends 1.0
+   * as a starting point, but other papers have had better results with
+   * a smaller value (e.g. 0.1).
+   * @param beta The initial value for beta. This should almost always 
+   * stay at zero.
    */
   batch_normalization(data_layout data_dist, lbann_comm* comm,
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0);
@@ -82,16 +83,16 @@ protected:
   ElMat* m_dgamma;
   /** Gradients of beta. */
   ElMat* m_dbeta;
-  /** Decay rate for the running mean/variance. */
+  /** Decay rate for the running mean/standard deviation. */
   DataType m_decay;
   /** Current minibatch mean of activations. */
   ElMat* m_mean;
-  /** Current minibatch variance of activations. */
-  ElMat* m_var;
+  /** Current minibatch standard deviation of activations. */
+  ElMat* m_stdev;
   /** Running mean of activations (for inference). */
   ElMat* m_running_mean;
-  /** Running variance of activations (for inference). */
-  ElMat* m_running_var;
+  /** Running standard deviation of activations (for inference). */
+  ElMat* m_running_stdev;
 };
 
 }  // namespace lbann

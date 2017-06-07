@@ -29,6 +29,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/regularization/lbann_batch_normalization.hpp"
+#include "lbann/utils/lbann_statistics.hpp"
 
 using namespace El;
 
@@ -59,9 +60,9 @@ batch_normalization::~batch_normalization() {
   delete m_dgamma;
   delete m_dbeta;
   delete m_mean;
-  delete m_var;
+  delete m_stdev;
   delete m_running_mean;
-  delete m_running_var;
+  delete m_running_stdev;
 }
 
 void batch_normalization::initialize_model_parallel_distribution() {
@@ -70,9 +71,9 @@ void batch_normalization::initialize_model_parallel_distribution() {
   m_dgamma = new RowSumMat(comm->get_model_grid());
   m_dbeta = new RowSumMat(comm->get_model_grid());
   m_mean = new RowSumMat(comm->get_model_grid());
-  m_var = new RowSumMat(comm->get_model_grid());
+  m_stdev = new RowSumMat(comm->get_model_grid());
   m_running_mean = new RowSumMat(comm->get_model_grid());
-  m_running_var = new RowSumMat(comm->get_model_grid());
+  m_running_stdev = new RowSumMat(comm->get_model_grid());
 }
 
 void batch_normalization::initialize_data_parallel_distribution() {
@@ -81,9 +82,9 @@ void batch_normalization::initialize_data_parallel_distribution() {
   m_dgamma = new StarMat(comm->get_model_grid());
   m_dbeta = new StarMat(comm->get_model_grid());
   m_mean = new StarMat(comm->get_model_grid());
-  m_var = new StarMat(comm->get_model_grid());
+  m_stdev = new StarMat(comm->get_model_grid());
   m_running_mean = new StarMat(comm->get_model_grid());
-  m_running_var = new StarMat(comm->get_model_grid());
+  m_running_stdev = new StarMat(comm->get_model_grid());
 }
 
 void batch_normalization::fp_weights() {
@@ -96,41 +97,17 @@ void batch_normalization::fp_weights() {
   const Int local_width = acts_local.Width();
   const Int local_height = acts_local.Height();
   if (m_layer->m_execution_mode == execution_mode::training) {
+    // Compute row-wise mean and standard deviation
+    rowwise_mean_and_stdev(*acts, *m_mean, *m_stdev);
     Mat& mean_local = m_mean->Matrix();
-    Mat& var_local = m_var->Matrix();
-    // Compute the mean and variance of the activations over the minibatch.
-    // Use the running mean as a shift to help numerical stability.
-    // Todo: Better access pattern for locality.
-#pragma omp parallel for
-    for (Int row = 0; row < local_height; ++row) {
-      DataType shifted_sum = 0.0;
-      DataType shifted_sqsum = 0.0;
-      const DataType shift = m_running_mean->GetLocal(row, 0);
-      for (Int col = 0; col < local_width; ++col) {
-        const DataType shifted_val = acts_local(row, col) - shift;
-        shifted_sum += shifted_val;
-        shifted_sqsum += shifted_val * shifted_val;
-      }
-      mean_local(row, 0) = shifted_sum;
-      var_local(row, 0) = shifted_sqsum;
-    }
-    AllReduce(*m_mean, m_mean->RedundantComm(), mpi::SUM);
-    AllReduce(*m_var, m_var->RedundantComm(), mpi::SUM);
-#pragma omp parallel for
-    for (Int row = 0; row < local_height; ++row) {
-      const DataType shift = m_running_mean->GetLocal(row, 0);
-      const DataType shifted_mean = mean_local(row, 0) / mbsize;
-      mean_local(row, 0) = shifted_mean + shift;
-      var_local(row, 0) = Sqrt(var_local(row, 0) / mbsize -
-                               (shifted_mean * shifted_mean));
-    }
-    // Compute transformed activations xhat = (x-mean)/sqrt(var)
+    Mat& stdev_local = m_stdev->Matrix();
+    // Compute transformed activations xhat = (x-mean)/stdev
 #pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
         // Normalize.
         acts_local(row, col) -= mean_local(row, 0);
-        acts_local(row, col) /= var_local(row, 0) + DataType(1e-7);
+        acts_local(row, col) /= stdev_local(row, 0) + DataType(1e-7);
         // Apply scale/shift.
         acts_local(row, col) *= gamma_local(row, 0);
         acts_local(row, col) += beta_local(row, 0);
@@ -138,19 +115,21 @@ void batch_normalization::fp_weights() {
     }
     // Update the running averages.
     Scale(m_decay, *m_running_mean);
-    Scale(m_decay, *m_running_var);
+    Scale(m_decay, *m_running_stdev);
     Axpy(DataType(1) - m_decay, *m_mean, *m_running_mean);
-    Axpy(DataType(1) - m_decay, *m_var, *m_running_var);
+    Axpy(DataType(1) - m_decay, *m_stdev, *m_running_stdev);
   } else if (m_layer->m_execution_mode == execution_mode::validation ||
              m_layer->m_execution_mode == execution_mode::testing) {
-    // Use the running mean/variance to normalize.
+    // Use the running mean/standard deviation to normalize.
     const Mat& mean_local = m_running_mean->LockedMatrix();
-    const Mat& var_local = m_running_var->LockedMatrix();
+    const Mat& stdev_local = m_running_stdev->LockedMatrix();
 #pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
+        // Normalize.
         acts_local(row, col) -= mean_local(row, 0);
-        acts_local(row, col) /= var_local(row, 0) + DataType(1e-7);
+        acts_local(row, col) /= stdev_local(row, 0) + DataType(1e-7);
+        // Apply scale/shift.
         acts_local(row, col) *= gamma_local(row, 0);
         acts_local(row, col) += beta_local(row, 0);
       }
@@ -170,7 +149,7 @@ void batch_normalization::bp_weights() {
   const Int local_height = bp_local.Height();
   const Int local_width = bp_local.Width();
   const Mat& mean_local = m_mean->LockedMatrix();
-  const Mat& var_local = m_var->LockedMatrix();
+  const Mat& stdev_local = m_stdev->LockedMatrix();
   const Mat& gamma_local = m_gamma->LockedMatrix();
   Mat& dgamma_local = m_dgamma->Matrix();
   Mat& dbeta_local = m_dbeta->Matrix();
@@ -183,7 +162,7 @@ void batch_normalization::bp_weights() {
       dbeta_local(row, 0) += bp_local(row, col);
       dgamma_local(row, 0) +=
         ((acts_local(row, col) - mean_local(row, 0)) /
-         (var_local(row, 0) + DataType(1e-7))) *
+         (stdev_local(row, 0) + DataType(1e-7))) *
         bp_local(row, col);
     }
   }
@@ -197,11 +176,11 @@ void batch_normalization::bp_weights() {
       bp_local(row, col) -= dbeta_local(row, 0);
       bp_local(row, col) -=
         ((acts_local(row, col) - mean_local(row, 0)) /
-         (var_local(row, 0) + DataType(1e-7))) *
+         (stdev_local(row, 0) + DataType(1e-7))) *
         dgamma_local(row, 0);
       bp_local(row, col) /= DataType(mbsize);
       bp_local(row, col) *= gamma_local(row, 0);
-      bp_local(row, col) /= var_local(row, 0) + DataType(1e-7);
+      bp_local(row, col) /= stdev_local(row, 0) + DataType(1e-7);
       bp_local(row, col) += DataType(1e-8);  // Avoid very small values.
     }
   }
@@ -216,9 +195,9 @@ void batch_normalization::setup(Layer* l) {
   Zeros(*m_dgamma, l->NumNeurons, 1);
   Zeros(*m_dbeta, l->NumNeurons, 1);
   Zeros(*m_mean, l->NumNeurons, 1);
-  Zeros(*m_var, l->NumNeurons, 1);
+  Zeros(*m_stdev, l->NumNeurons, 1);
   Zeros(*m_running_mean, l->NumNeurons, 1);
-  Zeros(*m_running_var, l->NumNeurons, 1);
+  Zeros(*m_running_stdev, l->NumNeurons, 1);
   m_gamma_optimizer = l->neural_network_model->create_optimizer();
   m_beta_optimizer = l->neural_network_model->create_optimizer();
   m_gamma_optimizer->setup(m_gamma);

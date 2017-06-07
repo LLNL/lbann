@@ -30,6 +30,7 @@
 #include "lbann/data_readers/lbann_image_utils.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/lbann_statistics.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
@@ -161,14 +162,12 @@ void lbann_image_preprocessor::mean_subtraction(Mat& pixels,
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
-    // Compute the mean.
-    DataType mean = DataType(0);
-    for (unsigned i = channel_start; i < channel_end; ++i) {
-      mean += pixels_buffer[i];
-    }
-    mean /= height_per_channel;
-    for (unsigned i = channel_start; i < channel_end; ++i) {
-      pixels_buffer[i] -= mean;
+    Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
+    DataType mean, stdev;
+    mean_and_stdev(pixels_channel, mean, stdev);
+    for (unsigned i = 0; i < height_per_channel; ++i) {
+      DataType& pixels_entry = pixels_channel(i, 0);
+      pixels_entry -= mean;
     }
   }
 }
@@ -185,30 +184,16 @@ void lbann_image_preprocessor::unit_variance(
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
-
-    // Compute sum and standard deviation
-    // Note: Applying shift near mean improves numerical stability
-    const DataType shift = pixels_buffer[channel_start];
-    DataType shifted_sum = 0;
-    DataType shifted_sqsum = 0;
-    for (unsigned i = channel_start; i < channel_end; ++i) {
-      const DataType shifted_val = pixels_buffer[i] - shift;
-      shifted_sum += shifted_val;
-      shifted_sqsum += shifted_val * shifted_val;
-    }
-    const DataType shifted_mean = shifted_sum / height_per_channel;
-    const DataType mean = shifted_mean + shift;
-    const DataType std = Sqrt(shifted_sqsum / height_per_channel
-                              - shifted_mean * shifted_mean);
-
-    // Apply scaling if standard deviation is non-zero
-    if(std > DataType(1e-7)*Abs(mean)) {
-      const DataType inv_std = 1 / std;
-      for (unsigned i = channel_start; i < channel_end; ++i) {
-        pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std + mean;
+    Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
+    DataType mean, stdev;
+    mean_and_stdev(pixels_channel, mean, stdev);
+    if(stdev > DataType(1e-7)*Abs(mean)) {
+      const DataType inv_stdev = 1 / stdev;
+      for (unsigned i = 0; i < height_per_channel; ++i) {
+        DataType& pixels_entry = pixels_channel(i, 0);
+        pixels_entry = (pixels_entry - mean) * inv_stdev + mean;
       }
     }
-
   }
 
 }
@@ -232,35 +217,19 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
-
-    // Compute sum and standard deviation
-    // Note: Applying shift near mean improves numerical stability
-    const DataType shift = pixels_buffer[channel_start];
-    DataType shifted_sum = 0;
-    DataType shifted_sqsum = 0;
-    for (unsigned i = channel_start; i < channel_end; ++i) {
-      const DataType shifted_val = pixels_buffer[i] - shift;
-      shifted_sum += shifted_val;
-      shifted_sqsum += shifted_val * shifted_val;
-    }
-    const DataType shifted_mean = shifted_sum / height_per_channel;
-    const DataType mean = shifted_mean + shift;
-    const DataType std = Sqrt(shifted_sqsum / height_per_channel
-                              - shifted_mean * shifted_mean);
-
-    // Apply shift and scaling if standard deviation is non-zero
-    if(std > DataType(1e-7)*Abs(mean)) {
-      const DataType inv_std = 1 / std;
-      for (unsigned i = channel_start; i < channel_end; ++i) {
-        pixels_buffer[i] = (pixels_buffer[i] - mean) * inv_std;
+    Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
+    DataType mean, stdev;
+    mean_and_stdev(pixels_channel, mean, stdev);
+    if(stdev > DataType(1e-7)*Abs(mean)) {
+      const DataType inv_stdev = 1 / stdev;
+      for (unsigned i = 0; i < height_per_channel; ++i) {
+        DataType& pixels_entry = pixels_channel(i, 0);
+        pixels_entry = (pixels_entry - mean) * inv_stdev;
       }
     }
     else {
-      for (unsigned i = channel_start; i < channel_end; ++i) {
-        pixels_buffer[i] = DataType(0);
-      }
+      Zero(pixels_channel);
     }
-
   }
 
 }
