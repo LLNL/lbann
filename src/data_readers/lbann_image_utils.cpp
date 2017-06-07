@@ -346,7 +346,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
@@ -373,7 +373,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
  *  @param Height   The height of the image read
  *  @param Type     The type of the image read (OpenCV code used for cv::Mat)
  *  @param pp       The pre-processing parameters
- *  @param data     The image data pre-processed and copied in El::Matrix<DataType> format
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
  */
 bool lbann::image_utils::load_image(const std::string& filename,
   int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
@@ -392,7 +392,47 @@ bool lbann::image_utils::load_image(const std::string& filename,
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+/**
+ *  @param filename The name of the image file to read in
+ *  @param Width    The width of a patch from the image read
+ *  @param Height   The height of a patch from the image read
+ *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp       The pre-processing parameters
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ */
+bool lbann::image_utils::load_image(const std::string& filename,
+  int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  std::vector<cv::Mat> patches;
+  bool ok = !image.empty() && pp.preprocess(image, patches);
+  if ((patches.size() == 0u) || (patches.size() != data.size())) {
+    return false;
+  }
+
+  for(size_t i=0u; ok && (i < patches.size()); ++i) {
+    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
+  }
+
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
@@ -429,7 +469,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
  *  @param Height  The height of the image consructed
  *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)
  *  @param pp      The pre-processing parameters
- *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
+ *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
 bool lbann::image_utils::import_image(cv::InputArray inbuf,
   int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
@@ -445,32 +485,50 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
 }
-/*
-bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf,
-  int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
+
+/**
+ *  @param inbuf   The buffer that contains the raw bytes read from an image file
+ *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
+ *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
+ *  @param Width   The width of a patch from the image consturcted out of inbuf
+ *  @param Height  The height of a patch from the image consructed
+ *  @param Type    The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp      The pre-processing parameters
+ *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
+ */
+bool lbann::image_utils::import_image(cv::InputArray inbuf,
+  int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data)
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = !image.empty() && pp.preprocess(image);
-  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+
+  std::vector<cv::Mat> patches;
+  bool ok = !image.empty() && pp.preprocess(image, patches);
+  if ((patches.size() == 0u) || (patches.size() != data.size())) {
+    return false;
+  }
+
+  for(size_t i=0u; ok && (i < patches.size()); ++i) {
+    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
+  }
+
   pp.disable_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
-  Width  = image.cols;
-  Height = image.rows;
-  Type   = image.type();
-  return true;
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
 }
-*/
 
 /**
  *  @param fileExt The format extension name of image file: e.g., ".jpeg", ".png" 

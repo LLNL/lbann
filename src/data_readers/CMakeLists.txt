@@ -1,3 +1,5 @@
+add_subdirectory(patchworks)
+
 add_sources(lbann_data_reader.cpp
             lbann_data_reader_mnist.cpp
             lbann_data_reader_imagenet.cpp
@@ -13,9 +15,8 @@ add_sources(lbann_data_reader.cpp
             lbann_cv_colorizer.cpp
             lbann_cv_normalizer.cpp
             lbann_cv_process.cpp
+            lbann_cv_process_patches.cpp
             lbann_cv_utils.cpp
             lbann_data_reader_cnpy.cpp
             lbann_data_reader_synthetic.cpp
             )
-
-add_subdirectory(patchworks)
