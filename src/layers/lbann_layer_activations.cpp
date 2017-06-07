@@ -44,8 +44,8 @@ void Activation::backwardProp(ElMat& m) {
 }
 
 void Activation::backwardPropError(const ElMat& m, ElMat& prev_error_signal) {
-  const Int height = m.Height();
-  const Int width = m.Width();
+  const Int height = m.LocalHeight();
+  const Int width = m.LocalWidth();
   const Int m_LDim = m.LDim();
   const DataType* m_buf = m.LockedBuffer();
   const Int p_LDim = prev_error_signal.LDim();
@@ -59,6 +59,7 @@ void Activation::backwardPropError(const ElMat& m, ElMat& prev_error_signal) {
     }
   } else {
     // Non-contiguous.
+#pragma omp parallel for collapse(2)
     for (Int j = 0; j < width; ++j) {
       for (Int i = 0; i < height; ++i) {
         p_buf[i+j*p_LDim] = act_prime(m_buf[i+j*m_LDim]) * p_buf[i+j*p_LDim];
