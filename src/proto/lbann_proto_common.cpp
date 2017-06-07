@@ -199,6 +199,8 @@ void add_layers(
         comm,
         model->create_optimizer(),
         regs);
+
+      model->add(layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -208,23 +210,31 @@ void add_layers(
       const lbann_data::Pooling &ell = layer.pooling();
 
       vector<int> input_dims;
-      for (int i=0; i<ell.input_dims_size(); i++) {
-        input_dims.push_back(ell.input_dims(i));
+      int i;
+      stringstream ss(ell.input_dims());
+      while (ss >> i) {
+        input_dims.push_back(i);
       }
 
       vector<int> pool_dims;
-      for (int i=0; i<ell.pool_dims_size(); i++) {
-        pool_dims.push_back(ell.pool_dims(i));
+      ss.clear();
+      ss.str(ell.pool_dims());
+      while (ss >> i) {
+        pool_dims.push_back(i);
       }
 
       vector<int> pool_pads;
-      for (int i=0; i<ell.pool_pads_size(); i++) {
-        pool_pads.push_back(ell.pool_pads(i));
+      ss.clear();
+      ss.str(ell.pool_pads());
+      while (ss >> i) {
+        pool_pads.push_back(i);
       }
 
       vector<int> pool_strides;
-      for (int i=0; i<ell.pool_strides_size(); i++) {
-        pool_strides.push_back(ell.pool_strides(i));
+      ss.clear();
+      ss.str(ell.pool_strides());
+      while (ss >> i) {
+        pool_strides.push_back(i);
       }
 
       pooling_layer *layer = new pooling_layer(
@@ -238,7 +248,10 @@ void add_layers(
         get_pool_mode(ell.pool_mode()),
         mb_size,
         comm,
-        cudnn);
+        cudnn
+      );
+
+      model->add(layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -248,23 +261,31 @@ void add_layers(
       const lbann_data::Convolution &ell = layer.convolution();
 
       vector<Int> input_dims;
-      for (int i=0; i<ell.input_dims_size(); i++) {
-        input_dims.push_back(ell.input_dims(i));
+      stringstream ss(ell.input_dims());
+      int i;
+      while (ss >> i) {
+        input_dims.push_back(i);
       }
 
       vector<Int> filter_dims;
-      for (int i=0; i<ell.filter_dims_size(); i++) {
-        filter_dims.push_back(ell.filter_dims(i));
+      ss.clear();
+      ss.str(ell.filter_dims());
+      while (ss >> i) {
+        filter_dims.push_back(i);
       }
 
       vector<Int> conv_pads;
-      for (int i=0; i<ell.conv_pads_size(); i++) {
-        conv_pads.push_back(ell.conv_pads(i));
+      ss.clear();
+      ss.str(ell.conv_pads());
+      while (ss >> i) {
+        conv_pads.push_back(i);
       }
 
       vector<Int> conv_strides;
-      for (int i=0; i<ell.conv_strides_size(); i++) {
-        conv_strides.push_back(ell.conv_strides(i));
+      ss.clear();
+      ss.str(ell.conv_strides());
+      while (ss >> i) {
+        conv_strides.push_back(i);
       }
 
       Int num_dims = ell.num_dims();

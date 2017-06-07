@@ -148,8 +148,19 @@ int main(int argc, char* argv[])
     cudnn::cudnn_manager* cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
+      if (comm->am_world_master()) {
+        cerr << "USING cudnn\n";
+      }
       cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus());
+    } else {
+      if (comm->am_world_master()) {
+        cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
+      }
     }
+#else
+  if (comm->am_world_master()) {
+    cerr << "code was NOT compiled with __LIB_CUDNN\n";
+  }
 #endif
     sequential_model * model = init_model(comm, optimizer_fac, pb);
     add_layers(model, data_readers, cudnn, pb);

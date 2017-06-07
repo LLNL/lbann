@@ -16,12 +16,12 @@ model {
   }
   callback {
     timer {
-      dir: "XYZ"
+      dir: "none"
     }
   }
   callback {
     summary {
-      dir: "XYZ"
+      dir: "none"
       interval: 1
     }
   }
@@ -52,7 +52,6 @@ model {
       data_layout: "data_parallel"
       num_neurons: 10
       weight_initialization: "glorot_uniform"
-      activation_type: "id"
     }
   }
   layer {

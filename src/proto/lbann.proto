@@ -222,10 +222,10 @@ message FullyConnected {
 message Pooling {
   int64 num_dims = 1;
   int64 num_channels = 2;
-  repeated int64 input_dims = 3;
-  repeated int64 pool_dims = 4;
-  repeated int64 pool_pads = 5;
-  repeated int64 pool_strides = 6;
+  string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
+  string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
+  string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
+  string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
 
   //pool_mode should be one of: max, average, average_no_pad
   //see: lbann/include/lbann/lbann_base.hpp
@@ -235,11 +235,11 @@ message Pooling {
 message Convolution {
   int64 num_dims = 1;
   int64 num_input_channels = 2;
-  repeated int64 input_dims = 3;
+  string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
   int64 num_output_channels = 4;
-  repeated int64  filter_dims = 5;
-  repeated int64  conv_pads = 6;
-  repeated int64  conv_strides = 7;
+  string filter_dims = 5; //should be space-separated list, e.g, "2 2 3"
+  string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
+  string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
   int64 mini_batch_size = 8;
   string weight_initialization = 9;
   string activation_type = 10;
