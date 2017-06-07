@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_statistics.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 using namespace El;
 
