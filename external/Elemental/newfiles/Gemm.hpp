@@ -42,7 +42,7 @@ void EL_BLAS(zgemm)
 } // extern "C"
 
 
-#if EL_USE_CUBLAS
+#if defined(EL_USE_CUBLAS)
 #include <cublas.h>
 #include <cub/util_allocator.cuh>
 #endif

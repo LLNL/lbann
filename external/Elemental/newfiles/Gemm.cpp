@@ -73,13 +73,7 @@ void Gemm
     const Int k = ( orientA == NORMAL ? A.Width() : A.Height() );
     if( k != 0 )
     {
-#if !EL_USE_CUBLAS
-        blas::Gemm
-        ( transA, transB, m, n, k,
-          alpha, A.LockedBuffer(), A.LDim(),
-                 B.LockedBuffer(), B.LDim(),
-          beta,  C.Buffer(),       C.LDim() );
-#else
+#if defined(EL_USE_CUBLAS)
         if (gemm_cpu_gpu_switch == 'g' && 
             m >= min_M &&
             n >= min_N &&
@@ -96,6 +90,12 @@ void Gemm
                    B.LockedBuffer(), B.LDim(),
             beta,  C.Buffer(),       C.LDim() );
         }
+#else
+        blas::Gemm
+        ( transA, transB, m, n, k,
+          alpha, A.LockedBuffer(), A.LDim(),
+                 B.LockedBuffer(), B.LDim(),
+          beta,  C.Buffer(),       C.LDim() );
 #endif
     }
     else

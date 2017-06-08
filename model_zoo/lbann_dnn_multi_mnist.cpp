@@ -85,6 +85,8 @@ int main(int argc, char* argv[])
     // set algorithmic blocksize
     SetBlocksize(perfParams.BlockSize);
 
+    El::GemmUseGPU(512,512,512);
+
     // Set up the communicator and get the grid.
     comm = new lbann_comm(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();

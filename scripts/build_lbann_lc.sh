@@ -72,7 +72,6 @@ INSTALL_LBANN=0
 ALTERNATE_BUILD_DIR=none
 BUILD_SUFFIX=
 SEQ_INIT=OFF
-ELEMENTAL_USE_CUBLAS=1
 
 ################################################################
 # Help message
@@ -318,6 +317,7 @@ MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 if [ "${CLUSTER}" == "surface" ]; then
   WITH_CUDA=ON
   WITH_CUDNN=ON
+  ELEMENTAL_USE_CUBLAS=1
 fi
 
 ################################################################

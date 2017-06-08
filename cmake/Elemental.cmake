@@ -74,15 +74,7 @@ else()
     GIT_REPOSITORY  ${ELEMENTAL_URL}
     GIT_TAG         ${ELEMENTAL_TAG}
     #--Update/Patch step----------
-    #    PATCH_COMMAND ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp  ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp.ori &&
-    #              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp.ori &&
-    #              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp.ori &&
-    #              ${CMAKE_COMMAND} -E rename ${ELEMENTAL_SOURCE_DIR}/include/El/blas_like/level3.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/blas_like/level3.hpp.ori &&
-    PATCH_COMMAND
-                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/Gemm.cpp  ${ELEMENTAL_SOURCE_DIR}/src/blas_like/level3/Gemm.cpp &&
-                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/Gemm.hpp ${ELEMENTAL_SOURCE_DIR}/src/core/imports/blas/Gemm.hpp &&
-                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/blas.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/core/imports/blas.hpp &&
-                  ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/Elemental/newfiles/level3.hpp ${ELEMENTAL_SOURCE_DIR}/include/El/blas_like/level3.hpp
+    PATCH_COMMAND   patch -d ${ELEMENTAL_SOURCE_DIR} -p 1 < ${PROJECT_SOURCE_DIR}/external/Elemental/elemental_cublas.patch
     #--Configure step-------------
     SOURCE_DIR      ${ELEMENTAL_SOURCE_DIR}
     BINARY_DIR      ${ELEMENTAL_BINARY_DIR}

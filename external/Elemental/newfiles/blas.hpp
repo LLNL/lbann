@@ -917,7 +917,7 @@ void Trsm
 } // namespace El
 
 
-#if EL_USE_CUBLAS
+#if defined(EL_USE_CUBLAS)
 
 namespace El {
 
