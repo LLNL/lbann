@@ -58,7 +58,7 @@ class DataReader : public lbann_image_preprocessor
 {
 public:
   DataReader(int batchSize, bool shuffle = true) :
-    BatchSize(batchSize), CurrentPos(0)
+    BatchSize(batchSize), CurrentPos(0),
     m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0), 
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
