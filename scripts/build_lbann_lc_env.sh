@@ -2,6 +2,8 @@
 
 # Detect OS version
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
+# Detect computing system
+CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 HasGPU=`hostname | grep -e surface -e ray`
 ARCH=$(uname -m)
 
@@ -250,9 +252,6 @@ fi
 ################################################################
 # Initialize variables
 ################################################################
-
-# Detect computing system
-CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
 # Build and install directories
 ROOT_DIR=$(git rev-parse --show-toplevel)
