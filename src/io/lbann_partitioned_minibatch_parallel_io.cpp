@@ -32,7 +32,7 @@
 using namespace std;
 
 lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers)
-  : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size)
+  : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size), m_data_readers(data_readers)
 {
   m_root = 0;
   m_num_samples_in_batch = 0;
@@ -40,29 +40,20 @@ lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lban
 
   m_cur_step_in_epoch = 0;
 
-  m_num_iterations_per_epoch_training = 0;
-  m_num_iterations_per_epoch_validation = 0;
-  m_num_iterations_per_epoch_testing = 0;
-
   int training_data_set_size = 0;
   int validation_data_set_size = 0;
   int testing_data_set_size = 0;
 
   if(data_readers[execution_mode::training] != NULL) {
     training_data_set_size = data_readers[execution_mode::training]->getNumData();
-    //    calculate_multi_model_data_distribution(data_readers[execution_mode::training]);
-    //    m_num_iterations_per_epoch_training = data_readers[execution_mode::training]->get_num_iterations_per_epoch();
-    //std::cout << "Here is the number of iterations " << m_num_iterations_per_epoch_training << std::endl;
   }
 
   if(data_readers[execution_mode::validation] != NULL) {
     validation_data_set_size = data_readers[execution_mode::validation]->getNumData();
-    //    m_num_iterations_per_epoch_validation = data_readers[execution_mode::validation]->get_num_iterations_per_epoch();
   }
 
   if(data_readers[execution_mode::testing] != NULL) {
     testing_data_set_size = data_readers[execution_mode::testing]->getNumData();
-    //    m_num_iterations_per_epoch_testing = data_readers[execution_mode::testing]->get_num_iterations_per_epoch();
   }
 
   if(comm->get_model_grid().Size() != num_parallel_readers) {
@@ -88,53 +79,12 @@ lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lban
     m_num_parallel_readers_testing = mini_batch_size;
   }
 
-  /// Check to make sure that there is enough training data for all of the parallel readers
-  if(training_data_set_size != 0) {
-    int max_num_parallel_readers = m_num_parallel_readers_training;
-    while(ceil((float)training_data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
-      max_num_parallel_readers--;
-    }
-    if(max_num_parallel_readers != m_num_parallel_readers_training) {
-      cout << "Warning the training data set size "<<training_data_set_size
-           <<" is too small for the number of requested parallel readers "
-           <<m_num_parallel_readers_training<<", using "<< max_num_parallel_readers<<"." << endl;
-      m_num_parallel_readers_training = max_num_parallel_readers;
-    }
-  }else {
-    m_num_parallel_readers_training = 0;
-  }
+  /// Check to make sure that there is enough data for all of the parallel readers
+  m_num_parallel_readers_training = compute_max_num_parallel_readers(training_data_set_size, mini_batch_size, m_num_parallel_readers_training);
 
-  /// Check to make sure that there is enough training data for all of the parallel readers
-  if(validation_data_set_size != 0) {
-    int max_num_parallel_readers = m_num_parallel_readers_validating;
-    while(ceil((float)validation_data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
-      max_num_parallel_readers--;
-    }
-    if(max_num_parallel_readers != m_num_parallel_readers_validating) {
-      cout << "Warning the validation data set size "<<validation_data_set_size
-           <<" is too small for the number of requested parallel readers "
-           <<m_num_parallel_readers_validating<<", using "<< max_num_parallel_readers<<"." << endl;
-      m_num_parallel_readers_validating = max_num_parallel_readers;
-    }
-  }else {
-    m_num_parallel_readers_validating = 0;
-  }
+  m_num_parallel_readers_validating = compute_max_num_parallel_readers(validation_data_set_size, mini_batch_size, m_num_parallel_readers_validating);
 
-  /// Check to make sure that there is enough testing data for all of the parallel readers
-  if(testing_data_set_size != 0) {
-    int max_num_parallel_readers = m_num_parallel_readers_testing;
-    while(ceil((float)testing_data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
-      max_num_parallel_readers--;
-    }
-    if(max_num_parallel_readers != m_num_parallel_readers_testing) {
-      cout << "Warning the testing data set size "<<testing_data_set_size
-           <<" is too small for the number of requested parallel readers "
-           <<m_num_parallel_readers_testing<<", using "<< max_num_parallel_readers<<"." << endl;
-      m_num_parallel_readers_testing = max_num_parallel_readers;
-    }
-  }else {
-    m_num_parallel_readers_testing = 0;
-  }
+  m_num_parallel_readers_testing = compute_max_num_parallel_readers(testing_data_set_size, mini_batch_size, m_num_parallel_readers_testing);
 }
 
 int lbann::partitioned_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local) {
@@ -235,21 +185,40 @@ int lbann::partitioned_minibatch_parallel_io::get_num_parallel_readers() {
 }
 
 int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
-  int num_iterations_per_epoch = 0;
+  DataReader *data_reader;
   switch(get_execution_mode()) {
   case execution_mode::training:
-    num_iterations_per_epoch = m_num_iterations_per_epoch_training;
+    data_reader = m_data_readers[execution_mode::training];
     break;
   case execution_mode::validation:
-    num_iterations_per_epoch = m_num_iterations_per_epoch_validation;
+    data_reader = m_data_readers[execution_mode::validation];
     break;
   case execution_mode::testing:
-    num_iterations_per_epoch = m_num_iterations_per_epoch_testing;
+    data_reader = m_data_readers[execution_mode::testing];
     break;
   default:
     throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
   }
-  return num_iterations_per_epoch;
+  return data_reader->m_num_iterations_per_epoch;
+}
+
+int lbann::partitioned_minibatch_parallel_io::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {
+  /// Check to make sure that there is enough data for all of the parallel readers
+  if(data_set_size != 0) {
+    int max_num_parallel_readers = num_parallel_readers;
+    while(ceil((float)data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
+      max_num_parallel_readers--;
+    }
+    if(max_num_parallel_readers != num_parallel_readers) {
+      std::cout << "Warning the training data set size " << data_set_size
+                << " is too small for the number of requested parallel readers "
+                << num_parallel_readers << ", using " << max_num_parallel_readers << "." 
+                << std::endl;
+    }
+    return max_num_parallel_readers;
+  }else {
+    return 0;
+  }
 }
 
 void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(DataReader *data_reader) {

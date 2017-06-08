@@ -67,18 +67,6 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::setup(int num_prev_ne
                                                 m_num_parallel_readers_testing);
   }
 
-  if(m_training_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_training = m_training_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
-  if(m_validation_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_validation = m_validation_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
-  if(m_testing_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_testing = m_testing_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
   Zeros(*m_activations, NumNeurons, Layer::m_mini_batch_size);
 
   m_local_data_valid = false;

@@ -45,6 +45,7 @@ namespace lbann
     int get_num_parallel_readers();
     int get_num_iterations_per_epoch();
 
+    int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
     void calculate_num_iterations_per_epoch(DataReader *data_reader);
 
 
@@ -70,10 +71,9 @@ namespace lbann
     uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
 
+    std::map<execution_mode, DataReader*> m_data_readers;
+
     int m_cur_step_in_epoch;
-    int m_num_iterations_per_epoch_training; /** Number of parallel readers (I/O streams) for training data */
-    int m_num_iterations_per_epoch_validation; /** Number of parallel readers (I/O streams) for testing data */
-    int m_num_iterations_per_epoch_testing; /** Number of parallel readers (I/O streams) for testing data */
 
     long m_num_data_per_epoch;
     int m_num_valid_readers;

@@ -76,18 +76,6 @@ void lbann::target_layer_partitioned_minibatch_parallel_io::setup(int num_prev_n
     throw lbann_exception("lbann_target_layer_partitioned_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
   }
 
-  if(m_training_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_training = m_training_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
-  if(m_validation_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_validation = m_validation_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
-  if(m_testing_dataset.data_reader != NULL) {
-    m_num_iterations_per_epoch_testing = m_testing_dataset.data_reader->get_num_iterations_per_epoch();
-  }
-
   Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
   // Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
   // Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
