@@ -105,8 +105,8 @@ void lbann::distributed_minibatch_parallel_io::distribute_from_local_matrix(Mat&
     if(!m_local_data_valid) {
       stringstream err;
       err << __FILE__ << " " << __LINE__ 
-          <<" :: lbann_distributed_minibatch_parallel_io: No valid data for this step -- local data was invalid";
-      throw lbann_exception(err.str());
+          << " :: lbann_distributed_minibatch_parallel_io: No valid data for this step -- local data was invalid";
+        lbann_exception(err.str());
     }
     CopyFromRoot(M_local, Ms);
     m_local_data_valid = false;
@@ -131,7 +131,10 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
   if(comm->get_rank_in_model() < num_parallel_readers) {
     if((comm->get_rank_in_model()+1)%num_parallel_readers == m_root) {
       if(m_local_data_valid) { /// Make sure that all local data has been processed
-        throw lbann_exception("lbann_input_layer_distributed_minibatch_parallel_io: all valid data was not processed.");
+        stringstream err;
+        err << __FILE__ << " "<<  __LINE__
+            << " :: lbann_input_layer_distributed_minibatch_parallel_io: all valid data was not processed.";
+        throw lbann_exception(err.str());
       }
       m_local_reader_done = !update_data_reader();
     }
@@ -169,7 +172,10 @@ int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
     num_parallel_readers = m_num_parallel_readers_testing;
     break;
   default:
-    throw lbann_exception("lbann_distributed_minibatch_parallel_io: invalid execution phase");
+    stringstream err;
+    err << __FILE__ << " "<<  __LINE__
+        << " :: lbann_distributed_minibatch_parallel_io: invalid execution phase";
+    throw lbann_exception(err.str());
   }
   return num_parallel_readers;
 }

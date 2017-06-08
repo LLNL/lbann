@@ -158,8 +158,9 @@ lbann::adagrad_factory::adagrad_factory
  DataType learning_rate,
  DataType eps)
   : optimizer_factory(comm, "adagrad"),
-    m_learning_rate(learning_rate),
-    m_eps(eps) {}
+    m_eps(eps),
+    m_learning_rate(learning_rate)
+{}
 
 lbann::adagrad_factory::~adagrad_factory() {}
 

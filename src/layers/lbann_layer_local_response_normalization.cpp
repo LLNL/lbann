@@ -46,8 +46,9 @@ local_response_normalization_layer::local_response_normalization_layer
  lbann_comm* comm,
  cudnn::cudnn_manager* cudnn)
   : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
-    m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta), m_lrn_k(lrn_k),
-    m_num_dims(num_dims), m_num_channels(num_channels)
+    m_num_dims(num_dims), m_num_channels(num_channels),
+    m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
+    m_lrn_k(lrn_k)
 {
   m_type = layer_type::local_response_normalization;
 
@@ -129,17 +130,11 @@ void local_response_normalization_layer::setup(const int num_prev_neurons)
 #endif
 
   // Initialize matrices
-  if(!m_using_gpus || !m_prev_layer_using_gpus) {
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus || !m_next_layer_using_gpus) {
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus) {
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  }
+  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -230,6 +225,8 @@ void lbann::local_response_normalization_layer::fp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnLRNCrossChannelForward(m_cudnn->get_handle(i),
                                            m_lrn_desc,
                                            CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -335,6 +332,8 @@ void lbann::local_response_normalization_layer::bp_linearity_gpu() {
   // Perform back propagation on each GPU
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnLRNCrossChannelBackward(m_cudnn->get_handle(i),
                                             m_lrn_desc,
                                             CUDNN_LRN_CROSS_CHANNEL_DIM1,

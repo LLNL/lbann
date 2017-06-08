@@ -58,7 +58,7 @@ class DataReader : public lbann_image_preprocessor
 {
 public:
   DataReader(int batchSize, bool shuffle = true) :
-    BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
+    BatchSize(batchSize), CurrentPos(0)
     m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0), 
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
@@ -180,12 +180,12 @@ public:
   double get_validation_percent();
 
   /** set the identifyer for the data set; should be
-   *  "train" or "test." This is primarily for internal use:
+   *  "train," "test," or validate. This is primarily for internal use:
    *  end users can ignore.
    */
   void set_role(std::string role) { m_role = role; }
 
-  /** returns the role ("train," "test," or "error"
+  /** returns the role ("train," "test," "validate," or "error"
    *  This is primarily for internal use:
    *  end users can ignore.
    */
@@ -261,6 +261,12 @@ public:
   /// only the master may write to cerr or cout; primarily for use in debugging during development
   bool is_master() { return m_master; }
 
+  /// for use during development and debugging
+  void set_rank(int rank) { m_rank = rank; }
+
+  /// for use during development and debugging
+  int get_rank() { return m_rank; }
+
   void select_subset_of_data();
 
   /** \brief Replace the shuffled index set with the unused index set 
@@ -283,7 +289,6 @@ public:
 public: //protected:
   int BatchSize;
   int CurrentPos;
-  int m_shuffle;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
   int m_batch_stride;
   /// If there are multiple instances of the reader, 
@@ -323,6 +328,7 @@ public: //protected:
   std::string m_role;
 
   bool m_master;
+  int m_rank;
 };
 
 }  // namespace lbann

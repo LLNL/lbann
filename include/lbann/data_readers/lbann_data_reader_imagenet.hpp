@@ -41,19 +41,13 @@ public:
   DataReader_ImageNet(const DataReader_ImageNet& source);
   ~DataReader_ImageNet();
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
-
-  /** returns a vector of 256*256*3 vectors; if max_to_process > 0, only
-   *  returns that number of inner vectors; this is probably only useful
-   *  for development and testing
-   */
-  int fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process = 0);
+  virtual int fetch_data(Mat& X);
+  virtual int fetch_label(Mat& Y);
 
   int get_num_labels() { return m_num_labels; }
 
   // ImageNet specific functions
-  void load();
+  virtual void load();
   void free();
 
   int get_image_width() { return m_image_width; }
@@ -69,7 +63,7 @@ public:
                         m_image_num_channels, scale);
   }
 
-private:
+protected:
   std::string m_image_dir; // where images are stored
   std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
   int m_image_width; // image width

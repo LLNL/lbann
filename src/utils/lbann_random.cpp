@@ -111,11 +111,10 @@ void init_random(int seed, lbann_comm* comm) {
 }
 
 void init_data_seq_random(int seed) {
-  unsigned rand_val = seed;
   if (seed == -1) {
     // Seed with a random value.
     std::random_device rd;
-    rand_val = rd();
+    seed = rd();
   }
 
   // Seed every OpenMP thread, if present.

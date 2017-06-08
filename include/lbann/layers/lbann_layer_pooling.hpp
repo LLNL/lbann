@@ -87,12 +87,14 @@ namespace lbann
     std::vector<Int> m_input_dims;
     /// Output dimensions
     std::vector<Int> m_output_dims;
-    /// Pooling padding
-    std::vector<int> m_pool_dims;
+    /// Pooling window dimensions
+    std::vector<Int> m_pool_dims;
     /// Pooling padding
     std::vector<Int> m_pool_pads;
     /// Pooling strides
     std::vector<Int> m_pool_strides;
+    /// Size of pooling window
+    Int m_pool_size;
 
 #ifdef __LIB_CUDNN
     /// Input tensor descriptor

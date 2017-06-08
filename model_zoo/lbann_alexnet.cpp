@@ -50,23 +50,10 @@ using namespace El;
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
-#if 0
-const string g_ImageNet_TrainDir = "resized_256x256/train/";
-const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/test/";
-const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train.txt";
-const string g_ImageNet_ValLabelFile = "val.txt";
-const string g_ImageNet_TestLabelFile = "test.txt";
-#else
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const string g_ImageNet_TrainLabelFile =  "train_c0-9.txt";
-const string g_ImageNet_ValLabelFile = "val_c0-9.txt";
-const string g_ImageNet_TestLabelFile = "val_c0-9.txt";
-#endif
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
@@ -109,13 +96,49 @@ int main(int argc, char* argv[])
         //if set to true, above three settings have no effect
         bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
+        // Number of GPUs
         Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+
+        // Number of class labels
+        Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
+
+        bool use_new_reader = Input("--new-reader", "use new data reader", false);
 
         ProcessInput();
         PrintInputReport();
 
         // set algorithmic blocksize
         SetBlocksize(perfParams.BlockSize);
+
+        string g_ImageNet_TrainLabelFile;
+        string g_ImageNet_ValLabelFile;
+        string g_ImageNet_TestLabelFile;
+        switch(num_classes) {
+        case 10:
+          g_ImageNet_TrainLabelFile = "train_c0-9.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-9.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-9.txt";
+          break;
+        case 100:
+          g_ImageNet_TrainLabelFile = "train_c0-99.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-99.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-99.txt";
+          break;
+        case 300:
+          g_ImageNet_TrainLabelFile = "train_c0-299.txt";
+          g_ImageNet_ValLabelFile   = "val_c0-299.txt";
+          g_ImageNet_TestLabelFile  = "val_c0-299.txt";
+          break;
+        default:
+          g_ImageNet_TrainLabelFile = "train.txt";
+          g_ImageNet_ValLabelFile   = "val.txt";
+          g_ImageNet_TestLabelFile  = "val.txt";
+        }
+        if (comm->am_world_master()) {
+          cout << "Train set label file: " << g_ImageNet_TrainLabelFile << "\n"
+               << "Validation set label file: " << g_ImageNet_ValLabelFile << "\n"
+               << "Test set label file: " << g_ImageNet_TestLabelFile << "\n";
+        }
 
         // create timer for performance measurement
         Timer timer_io;
@@ -153,57 +176,134 @@ int main(int argc, char* argv[])
         }
 
         parallel_io = 1;
+
+        std::map<execution_mode, DataReader*> data_readers;  
         ///////////////////////////////////////////////////////////////////
         // load training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true);
-        imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
-        imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
-        imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
-        imagenet_trainset.load();
+if (not use_new_reader) {
+        if (comm->am_world_master()) cout << endl << "USING DataReader_ImageNet\n\n";
+        DataReader_ImageNet *imagenet_trainset = new DataReader_ImageNet(trainParams.MBSize, true);
+        imagenet_trainset->set_firstN(false);
+        imagenet_trainset->set_role("train");
+        imagenet_trainset->set_master(comm->am_world_master());
+        imagenet_trainset->set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
+        imagenet_trainset->set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
+        imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
+        imagenet_trainset->load();
 
-
-        imagenet_trainset.scale(scale);
-        imagenet_trainset.subtract_mean(subtract_mean);
-        imagenet_trainset.unit_variance(unit_variance);
-        imagenet_trainset.z_score(z_score);
+        imagenet_trainset->scale(scale);
+        imagenet_trainset->subtract_mean(subtract_mean);
+        imagenet_trainset->unit_variance(unit_variance);
+        imagenet_trainset->z_score(z_score);
 
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_validation_set(imagenet_trainset); // Clone the training set object
-        imagenet_validation_set.use_unused_index_set();
+        DataReader_ImageNet *imagenet_validation_set = new DataReader_ImageNet(*imagenet_trainset); // Clone the training set object
+        imagenet_validation_set->set_role("validation");
+        imagenet_validation_set->use_unused_index_set();
 
         if (comm->am_world_master()) {
-          size_t num_train = imagenet_trainset.getNumData();
-          size_t num_validate = imagenet_validation_set.getNumData();
+          size_t num_train = imagenet_trainset->getNumData();
+          size_t num_validate = imagenet_trainset->getNumData();
           double validate_percent = num_validate / (num_train+num_validate)*100.0;
           double train_percent = num_train / (num_train+num_validate)*100.0;
-          cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
-               << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
-        }       
-
-        imagenet_validation_set.scale(scale);
-        imagenet_validation_set.subtract_mean(subtract_mean);
-        imagenet_validation_set.unit_variance(unit_variance);
-        imagenet_validation_set.z_score(z_score);
+          cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->getNumData() << " samples." << endl;
+        }
 
         ///////////////////////////////////////////////////////////////////
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_testset(trainParams.MBSize);
-        imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
-        imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
-        imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
-        imagenet_testset.load();
+        DataReader_ImageNet *imagenet_testset = new DataReader_ImageNet(trainParams.MBSize, true);
+        imagenet_testset->set_firstN(false);
+        imagenet_testset->set_role("test");
+        imagenet_testset->set_master(comm->am_world_master());
+        imagenet_testset->set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
+        imagenet_testset->set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
+        imagenet_testset->set_use_percent(trainParams.PercentageTestingSamples);
+        imagenet_testset->load();
 
         if (comm->am_world_master()) {
-          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
+          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
         }
-        imagenet_testset.scale(scale);
-        imagenet_testset.subtract_mean(subtract_mean);
-        imagenet_testset.unit_variance(unit_variance);
-        imagenet_testset.z_score(z_score);
+
+        imagenet_testset->scale(scale);
+        imagenet_testset->subtract_mean(subtract_mean);
+        imagenet_testset->unit_variance(unit_variance);
+        imagenet_testset->z_score(z_score);
+
+          data_readers[execution_mode::training] = imagenet_trainset;
+          data_readers[execution_mode::validation] = imagenet_validation_set;
+          data_readers[execution_mode::testing] = imagenet_testset;
+  } else {
+      //=============================================================== 
+      // DataReader_ImageNetSingle
+      //=============================================================== 
+      if (comm->am_world_master()) cout << endl << "USING DataReader_ImageNetSingle\n\n";
+      DataReader_ImageNetSingle *imagenet_trainset = new DataReader_ImageNetSingle(trainParams.MBSize, true);
+      imagenet_trainset->set_firstN(false);
+      imagenet_trainset->set_role("train");
+      imagenet_trainset->set_master(comm->am_world_master());
+      imagenet_trainset->set_file_dir(trainParams.DatasetRootDir);
+
+      stringstream ss;
+      ss << "Single_" << g_ImageNet_TrainLabelFile.substr(0, g_ImageNet_TrainLabelFile.size()-4);
+      imagenet_trainset->set_data_filename(ss.str());
+      imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
+
+      imagenet_trainset->load();
+
+      imagenet_trainset->scale(scale);
+      imagenet_trainset->subtract_mean(subtract_mean);
+      imagenet_trainset->unit_variance(unit_variance);
+      imagenet_trainset->z_score(z_score);
+
+      ///////////////////////////////////////////////////////////////////
+      // create a validation set from the unused training data (ImageNet)
+      ///////////////////////////////////////////////////////////////////
+      DataReader_ImageNetSingle *imagenet_validation_set = new DataReader_ImageNetSingle(*imagenet_trainset); // Clone the training set object
+      imagenet_validation_set->set_role("validation");
+      imagenet_validation_set->use_unused_index_set();
+
+      if (comm->am_world_master()) {
+        size_t num_train = imagenet_trainset->getNumData();
+        size_t num_validate = imagenet_trainset->getNumData();
+        double validate_percent = num_validate / (num_train+num_validate)*100.0;
+        double train_percent = num_train / (num_train+num_validate)*100.0;
+        cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->getNumData() << " samples." << endl
+             << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->getNumData() << " samples." << endl;
+      }
+
+      ///////////////////////////////////////////////////////////////////
+      // load testing data (ImageNet)
+      ///////////////////////////////////////////////////////////////////
+      ss.clear();
+      ss.str("");
+      ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
+      DataReader_ImageNetSingle *imagenet_testset = new DataReader_ImageNetSingle(trainParams.MBSize, true);
+      imagenet_testset->set_firstN(false);
+      imagenet_testset->set_role("test");
+      imagenet_testset->set_master(comm->am_world_master());
+      imagenet_testset->set_file_dir(trainParams.DatasetRootDir);
+      imagenet_testset->set_data_filename(ss.str());
+      imagenet_testset->set_use_percent(trainParams.PercentageTestingSamples);
+      imagenet_testset->load();
+
+      if (comm->am_world_master()) {
+        cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
+      }
+
+      imagenet_testset->scale(scale);
+      imagenet_testset->subtract_mean(subtract_mean);
+      imagenet_testset->unit_variance(unit_variance);
+      imagenet_testset->z_score(z_score);
+
+          data_readers[execution_mode::training] = imagenet_trainset;
+          data_readers[execution_mode::validation] = imagenet_validation_set;
+          data_readers[execution_mode::testing] = imagenet_testset;
+    }
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
@@ -213,9 +313,11 @@ int main(int argc, char* argv[])
         optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
           optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
+        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
           optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-        }else {
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
           optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
         }
 
@@ -231,9 +333,6 @@ int main(int argc, char* argv[])
 
         deep_neural_network *dnn = NULL;
         dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
-                                                              std::make_pair(execution_mode::validation, &imagenet_validation_set), 
-                                                              std::make_pair(execution_mode::testing, &imagenet_testset)};
         dnn->add_metric(new metrics::categorical_accuracy(comm));
         // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
@@ -255,7 +354,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer,
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -312,7 +411,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -369,7 +468,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -392,7 +491,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -415,7 +514,7 @@ int main(int argc, char* argv[])
                                       convPads, convStrides,
                                       trainParams.MBSize,
                                       activation_type::RELU,
-                                      weight_initialization::glorot_normal,
+                                      weight_initialization::he_normal,
                                       comm, convolution_layer_optimizer, 
                                       {new l2_regularization(0.0005)},
                                       cudnn);
@@ -442,33 +541,34 @@ int main(int argc, char* argv[])
 
         // Layer 11 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                 weight_initialization::he_normal,
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
                      new l2_regularization(0.0005)});
 
         // Layer 12 (fully-connected)
         dnn->add("FullyConnected",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  4096,
                  activation_type::RELU,
-                 weight_initialization::glorot_normal,
-                 {new dropout(data_layout::DATA_PARALLEL, comm, 0.5),
+                 weight_initialization::he_normal,
+                 {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
                      new l2_regularization(0.0005)});
 
         // Layer 13 (softmax)
         dnn->add("Softmax",
-                 data_layout::DATA_PARALLEL, 
+                 data_layout::MODEL_PARALLEL, 
                  1000,
                  activation_type::ID,
-                 weight_initialization::glorot_normal,
+                 weight_initialization::he_normal,
                  {new l2_regularization(0.0005)});
 
-        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn->add(target_layer);
+
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);
         // Print out information for each epoch.
@@ -668,7 +768,7 @@ int main(int argc, char* argv[])
         // load training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
-        if (!imagenet_trainset.load(trainParams.DatasetRootDir, g_MNIST_TrainImageFile, g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile)) {
+        if (!imagenet_trainset->load(trainParams.DatasetRootDir, g_MNIST_TrainImageFile, g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile)) {
           if (comm->am_world_master()) {
             cout << "ImageNet train data error" << endl;
           }
@@ -679,7 +779,7 @@ int main(int argc, char* argv[])
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST imagenet_testset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
-        if (!imagenet_testset.load(g_MNIST_Dir, g_MNIST_TestImageFile, g_MNIST_TestLabelFile)) {
+        if (!imagenet_testset->load(g_MNIST_Dir, g_MNIST_TestImageFile, g_MNIST_TestLabelFile)) {
           if (comm->am_world_master()) {
             cout << "ImageNet Test data error" << endl;
           }

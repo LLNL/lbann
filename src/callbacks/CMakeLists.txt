@@ -13,4 +13,7 @@ add_sources(
   lbann_callback_dump_minibatch_sample_indices.cpp
   lbann_callback_checknan.cpp
   lbann_callback_save_images.cpp
+  lbann_callback_checksmall.cpp
+  lbann_callback_check_init.cpp
+  lbann_callback_ltfb.cpp
 )

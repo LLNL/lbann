@@ -72,8 +72,8 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
 
   int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int current_batch_size = getBatchSize();
-
   const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+
 #pragma omp parallel for
   for (int n = CurrentPos; n < end_pos; ++n) {
 
@@ -138,7 +138,9 @@ void lbann::DataReader_ImageNet::load()
   // load image list
   FILE* fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
-    cerr << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
+    throw lbann_exception(err.str());
   }
 
   while (!feof(fplist)) {
@@ -189,40 +191,4 @@ lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataRead
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 
   return *this;
-}
-
-
-int lbann::DataReader_ImageNet::fetch_data(std::vector<std::vector<unsigned char> > &data, size_t max_to_process)
-{
-  stringstream err;
-
-  if(!DataReader::position_valid()) {
-    err << __FILE__ << " " << __LINE__ << " lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
-    throw lbann_exception(err.str());
-  }
-
-  size_t num_to_process = max_to_process > 0 ? max_to_process : ImageList.size();
-
-  data.clear();
-  data.reserve(num_to_process);
-
-  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  vector<unsigned char> pixels(num_channel_values);
-  unsigned char *v = &(pixels[0]);
-
-  int width, height;
-  for (size_t n = 0; n < num_to_process; n++) {
-    string imagepath = m_image_dir + ImageList[n].first;
-    if (n < 10) cout << "DataReader_ImageNet::fetch_data(); loading: " << imagepath << endl;
-    bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, v);
-    if(!ret) {
-      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
-    }
-    if(width != m_image_width || height != m_image_height) {
-      throw lbann_exception("ImageNet: mismatch data size -- either width or height");
-    }
-
-    data.push_back(pixels);
-  }
-  return 0;
 }

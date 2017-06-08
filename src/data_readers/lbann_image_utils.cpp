@@ -31,7 +31,6 @@
 #include <stdio.h>
 
 #ifdef __LIB_OPENCV
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 using namespace cv;
 #endif
 
@@ -282,6 +281,34 @@ bool lbann::image_utils::loadJPG(const char* Imagefile, int& Width, int& Height,
 #endif
 }
 
+bool lbann::image_utils::loadJPG(std::vector<unsigned char> &image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels)
+{
+#ifdef __LIB_OPENCV
+    cv::Mat image = cv::imdecode(image_buf, _LBANN_CV_COLOR_);
+    //cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+    if (image.empty()) {
+        return false;
+    }
+
+    Width = image.cols;
+    Height = image.rows;
+
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
+            int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
+            Pixels[offset]                  = pixel[_LBANN_CV_BLUE_];
+            Pixels[offset + Height*Width]   = pixel[_LBANN_CV_GREEN_];
+            Pixels[offset + 2*Height*Width] = pixel[_LBANN_CV_RED_];
+        }
+    }
+
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels)
 {
 #ifdef __LIB_OPENCV
@@ -305,132 +332,35 @@ bool lbann::image_utils::saveJPG(const char* Imagefile, int Width, int Height, b
 #endif
 }
 
-#ifdef __LIB_OPENCV
-bool lbann::image_utils::preprocess_cvMat(cv::Mat& image, const lbann::cvMat_proc_params& pp)
-{
-  if (image.empty()) return false;
-  switch(image.depth()) {
-    case CV_8U:  return preprocess_cvMat_with_known_type<_depth_type(CV_8U)>(image, pp);
-    case CV_8S:  return preprocess_cvMat_with_known_type<_depth_type(CV_8S)>(image, pp);
-    case CV_16U: return preprocess_cvMat_with_known_type<_depth_type(CV_16U)>(image, pp);
-    case CV_16S: return preprocess_cvMat_with_known_type<_depth_type(CV_16S)>(image, pp);
-    case CV_32S: return preprocess_cvMat_with_known_type<_depth_type(CV_32S)>(image, pp);
-    case CV_32F: return preprocess_cvMat_with_known_type<_depth_type(CV_32F)>(image, pp);
-    case CV_64F: return preprocess_cvMat_with_known_type<_depth_type(CV_64F)>(image, pp);
-  }
-  return false;
-}
-
-bool lbann::image_utils::postprocess_cvMat(cv::Mat& image, const lbann::cvMat_proc_params& pp)
-{
-  if (image.empty()) return false;
-  switch(image.depth()) {
-    case CV_8U:  return postprocess_cvMat_with_known_type<_depth_type(CV_8U)>(image, pp);
-    case CV_8S:  return postprocess_cvMat_with_known_type<_depth_type(CV_8S)>(image, pp);
-    case CV_16U: return postprocess_cvMat_with_known_type<_depth_type(CV_16U)>(image, pp);
-    case CV_16S: return postprocess_cvMat_with_known_type<_depth_type(CV_16S)>(image, pp);
-    case CV_32S: return postprocess_cvMat_with_known_type<_depth_type(CV_32S)>(image, pp);
-    case CV_32F: return postprocess_cvMat_with_known_type<_depth_type(CV_32F)>(image, pp);
-    case CV_64F: return postprocess_cvMat_with_known_type<_depth_type(CV_64F)>(image, pp);
-  }
-  return false;
-}
-
-bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const cvMat_proc_params& pp)
-{
-  if (image.empty()) return false;
-  switch(image.depth()) {
-    case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, pp);
-    case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, pp);
-    case CV_16U: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16U)>(image, buf, pp);
-    case CV_16S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16S)>(image, buf, pp);
-    case CV_32S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32S)>(image, buf, pp);
-    case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, pp);
-    case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, pp);
-  }
-  return false;
-}
-
-cv::Mat lbann::image_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp)
-{ 
-  if (buf.size() != static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type)))) {
-    _LBANN_DEBUG_MSG("Size mismatch: Buffer has " << buf.size() << " items when " \
-              << static_cast<size_t>(Width * Height * CV_MAT_CN(Type) * CV_ELEM_SIZE(CV_MAT_DEPTH(Type))) \
-              << " are expected.");
-    return cv::Mat();
-  }
-
-  switch(CV_MAT_DEPTH(Type)) {
-    case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
-    case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, pp);
-    case CV_16U: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16U)>(buf, Width, Height, pp);
-    case CV_16S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16S)>(buf, Width, Height, pp);
-    case CV_32S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32S)>(buf, Width, Height, pp);
-    case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
-    case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
-  }
-  _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
-  return cv::Mat();
-}
-
-bool lbann::image_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cvMat_proc_params& pp)
-{
-  if (image.empty()) return false;
-  switch(image.depth()) {
-    case CV_8U:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8U)>(image, buf, pp);
-    case CV_8S:  return copy_cvMat_to_buf_with_known_type<_depth_type(CV_8S)>(image, buf, pp);
-    case CV_16U: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16U)>(image, buf, pp);
-    case CV_16S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_16S)>(image, buf, pp);
-    case CV_32S: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32S)>(image, buf, pp);
-    case CV_32F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_32F)>(image, buf, pp);
-    case CV_64F: return copy_cvMat_to_buf_with_known_type<_depth_type(CV_64F)>(image, buf, pp);
-  }
-  return false;
-}
-
-cv::Mat lbann::image_utils::copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp)
-{
-  switch(CV_MAT_DEPTH(Type)) {
-    case CV_8U:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8U)>(buf, Width, Height, pp);
-    case CV_8S:  return copy_buf_to_cvMat_with_known_type<_depth_type(CV_8S)>(buf, Width, Height, pp);
-    case CV_16U: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16U)>(buf, Width, Height, pp);
-    case CV_16S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_16S)>(buf, Width, Height, pp);
-    case CV_32S: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32S)>(buf, Width, Height, pp);
-    case CV_32F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_32F)>(buf, Width, Height, pp);
-    case CV_64F: return copy_buf_to_cvMat_with_known_type<_depth_type(CV_64F)>(buf, Width, Height, pp);
-  }
-  _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
-  return cv::Mat();
-}
-#endif // __LIB_OPENCV
-
-bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, std::vector<uint8_t>& buf)
+bool lbann::image_utils::load_image(const std::string& filename,
+  int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf)
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = preprocess_cvMat(image, pp);
-  if (!ok || !copy_cvMat_to_buf(image, buf, pp)) {
-    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
-    return false;
-  }
+  bool ok = !image.empty() && pp.preprocess(image);
+  ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
 }
 
-bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const std::vector<uint8_t>& buf)
+bool lbann::image_utils::save_image(const std::string& filename,
+  const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf)
 {
 #ifdef __LIB_OPENCV
-  cv::Mat image = copy_buf_to_cvMat(buf, Width, Height, Type, pp);
-  bool ok = !image.empty() && postprocess_cvMat(image, pp);
-  if (!ok) {
-    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
-    return false;
-  }
+  cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
+
+  _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
+
   return (ok && cv::imwrite(filename, image));
 #else
   return false;
@@ -443,21 +373,66 @@ bool lbann::image_utils::save_image(const std::string& filename, const int Width
  *  @param Height   The height of the image read
  *  @param Type     The type of the image read (OpenCV code used for cv::Mat)
  *  @param pp       The pre-processing parameters
- *  @param data     The image data pre-processed and copied in El::Matrix<DataType> format
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
  */
-bool lbann::image_utils::load_image(const std::string& filename, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data)
+bool lbann::image_utils::load_image(const std::string& filename,
+  int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = preprocess_cvMat(image, pp);
-  if (!ok || !copy_cvMat_to_buf(image, data, pp)) {
-    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
-    return false;
-  }
+  bool ok = !image.empty() && pp.preprocess(image);
+  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}
+
+/**
+ *  @param filename The name of the image file to read in
+ *  @param Width    The width of a patch from the image read
+ *  @param Height   The height of a patch from the image read
+ *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp       The pre-processing parameters
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ */
+bool lbann::image_utils::load_image(const std::string& filename,
+  int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data)
+{
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  std::vector<cv::Mat> patches;
+  bool ok = !image.empty() && pp.preprocess(image, patches);
+  if ((patches.size() == 0u) || (patches.size() != data.size())) {
+    return false;
+  }
+
+  for(size_t i=0u; ok && (i < patches.size()); ++i) {
+    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
+  }
+
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
@@ -471,15 +446,15 @@ bool lbann::image_utils::load_image(const std::string& filename, int& Width, int
  *  @param pp       The post-processing parameters
  *  @param data     The image data in El::Matrix<DataType> format to post-process and write
  */
-bool lbann::image_utils::save_image(const std::string& filename, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data)
+bool lbann::image_utils::save_image(const std::string& filename,
+  const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data)
 {
 #ifdef __LIB_OPENCV
-  cv::Mat image = copy_buf_to_cvMat(data, Width, Height, Type, pp);
-  bool ok = !image.empty() && postprocess_cvMat(image, pp);
-  if (!ok) {
-    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
-    return false;
-  }
+  cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image postprocessing has failed.", false)
+
   return (ok && cv::imwrite(filename, image));
 #else
   return false;
@@ -488,34 +463,71 @@ bool lbann::image_utils::save_image(const std::string& filename, const int Width
 
 /**
  *  @param inbuf   The buffer that contains the raw bytes read from an image file
+ *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
+ *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
  *  @param Width   The width of the image consturcted out of inbuf
  *  @param Height  The height of the image consructed
  *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)
  *  @param pp      The pre-processing parameters
- *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
+ *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
-bool lbann::image_utils::import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, const cvMat_proc_params& pp, ::Mat& data)
+bool lbann::image_utils::import_image(cv::InputArray inbuf,
+  int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data)
 {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = preprocess_cvMat(image, pp);
-  if (!ok || !copy_cvMat_to_buf(image, data, pp)) {
-    _LBANN_DEBUG_MSG("Image preprocessing or copying failed.");
-    return false;
-  }
+  bool ok = !image.empty() && pp.preprocess(image);
+  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return true;
+  return ok;
 #else
   return false;
 #endif // __LIB_OPENCV
 }
 
-/// returns the number of bytes that would be used for the image without compresstion and any header
-size_t image_data_amount(const cv::Mat& img)
+/**
+ *  @param inbuf   The buffer that contains the raw bytes read from an image file
+ *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
+ *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
+ *  @param Width   The width of a patch from the image consturcted out of inbuf
+ *  @param Height  The height of a patch from the image consructed
+ *  @param Type    The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp      The pre-processing parameters
+ *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
+ */
+bool lbann::image_utils::import_image(cv::InputArray inbuf,
+  int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data)
 {
-  return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*CV_MAT_CN(img.type())*img.cols*img.rows);
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  std::vector<cv::Mat> patches;
+  bool ok = !image.empty() && pp.preprocess(image, patches);
+  if ((patches.size() == 0u) || (patches.size() != data.size())) {
+    return false;
+  }
+
+  for(size_t i=0u; ok && (i < patches.size()); ++i) {
+    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
+  }
+
+  pp.disable_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+  return ok;
+#else
+  return false;
+#endif // __LIB_OPENCV
 }
 
 /**
@@ -527,23 +539,20 @@ size_t image_data_amount(const cv::Mat& img)
  *  @param pp      The post-processing parameters
  *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
-bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, const cvMat_proc_params& pp, const ::Mat& data)
+bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
+  const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data)
 {
 #ifdef __LIB_OPENCV
-  cv::Mat image = copy_buf_to_cvMat(data, Width, Height, Type, pp);
-  bool ok = !image.empty() && postprocess_cvMat(image, pp);
-  if (!ok) {
-    _LBANN_DEBUG_MSG("Either the image is empty or postprocessing has failed.");
-    return false;
-  }
-  if (fileExt.empty()) {
-    _LBANN_DEBUG_MSG("Empty file format extension!");
-    return false;
-  }
+  cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
+  bool ok = !image.empty() && pp.postprocess(image);
+
+  _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
+  _LBANN_MILD_EXCEPTION(fileExt.empty(), "Empty file format extension!", false)
+
   const std::string ext = ((fileExt[0] != '.')? ("." + fileExt) : fileExt);
 
   static const size_t max_img_header_size = 1024;
-  const size_t capacity = image_data_amount(image) + max_img_header_size;
+  const size_t capacity = cv_utils::image_data_amount(image) + max_img_header_size;
 
   if (outbuf.size() < capacity) {
     //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;

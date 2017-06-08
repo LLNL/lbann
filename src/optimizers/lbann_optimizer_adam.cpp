@@ -87,8 +87,10 @@ void lbann::adam::update(const AbsDistMat* gradient)
 
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const DataType correction = ( Sqrt(DataType(1) - m_current_beta2)
-                                / (DataType(1) - m_current_beta1) );
+  // Precompute the bias correction and learning rate.
+  const DataType correction = m_learning_rate *
+    (Sqrt(DataType(1) - m_current_beta2)
+     / (DataType(1) - m_current_beta1));
   
   // Get local matrix data
   const Int local_height = m_parameters->LocalHeight();
@@ -101,7 +103,7 @@ void lbann::adam::update(const AbsDistMat* gradient)
   const Int moment1_ldim = m_moment1->LDim();
   DataType* moment2_buffer = m_moment2->Buffer();
   const Int moment2_ldim = m_moment2->LDim();
-  
+
   // Check if matrix data is contiguous
   if(parameters_ldim != local_height
      || gradient_ldim != local_height
@@ -112,12 +114,13 @@ void lbann::adam::update(const AbsDistMat* gradient)
     for(Int j=0; j<local_width; ++j) {
       for(Int i=0; i<local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
-        const DataType g = gradient_buffer[i+j*gradient_ldim];
+        // See below; avoid denormalization.
+        const DataType g = gradient_buffer[i+j*gradient_ldim] + m_eps;
         DataType& m1 = moment1_buffer[i+j*moment1_ldim];
         DataType& m2 = moment2_buffer[i+j*moment2_ldim];
         m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
         m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-        x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+        x -= correction * m1 / (Sqrt(m2) + m_eps);
       }
     }
   }
@@ -126,12 +129,15 @@ void lbann::adam::update(const AbsDistMat* gradient)
 #pragma omp parallel for
     for(Int i=0; i<local_height*local_width; ++i) {
       DataType& x = parameters_buffer[i];
-      const DataType g = gradient_buffer[i];
+      // We add eps here because sometimes the gradient is small enough that
+      // g*g can become denormalized, which can significantly impact the
+      // performance.
+      const DataType g = gradient_buffer[i] + m_eps;
       DataType& m1 = moment1_buffer[i];
       DataType& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-      x -= m_learning_rate * correction * m1 / (Sqrt(m2) + m_eps);
+      x -= correction * m1 / (Sqrt(m2) + m_eps);
     }
   }
 

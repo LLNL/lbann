@@ -180,10 +180,14 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
   AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::SUM);
 
   // Divide activations by column sums
+  // This truncates small values to 0 to avoid them becoming denormalized later
+  // in the forward/backward stages. Denormalized values can significantly
+  // impact floating point performance.
   IndexDependentMap(activations_local,
                     (std::function<DataType(Int,Int,const DataType&)>)
                     ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
-                      return z / workspace_local.Get(Int(0), c);
+                      const DataType v = z / workspace_local.Get(Int(0), c);
+                      return Abs(v) < 1e-8 ? DataType(1e-8) : v;
                     }));
   
 }

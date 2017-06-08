@@ -28,6 +28,7 @@
 
 #include "lbann/layers/lbann_layer_pooling.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/lbann_im2col.hpp"
 
 using namespace std;
 using namespace El;
@@ -72,11 +73,13 @@ pooling_layer::pooling_layer(uint index,
   m_pool_dims.resize(num_dims);
   m_pool_pads.resize(num_dims);
   m_pool_strides.resize(num_dims);
+  m_pool_size = 1;
   for(int i=0; i<num_dims; ++i) {
     m_input_dims[i] = input_dims[i];
     m_pool_dims[i] = pool_dims[i];
     m_pool_pads[i] = pool_pads[i];
     m_pool_strides[i] = pool_strides[i];
+    m_pool_size *= m_pool_dims[i];
   }
 
   // Calculate output dimensions
@@ -170,17 +173,11 @@ void pooling_layer::setup(const int num_prev_neurons)
   }
 
   // Initialize matrices
-  if(!m_using_gpus || !m_prev_layer_using_gpus) {
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus || !m_next_layer_using_gpus) {
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  }
-  if(!m_using_gpus) {
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  }
+  Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
 
 }
 
@@ -427,6 +424,8 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   const Int num_gpus = m_cudnn->get_num_gpus();
   for(Int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingForward(m_cudnn->get_handle(i),
                                    m_pooling_desc,
                                    &one,
@@ -447,90 +446,68 @@ void lbann::pooling_layer::fp_linearity_gpu() {
 }
 
 void lbann::pooling_layer::fp_linearity_cpu() {
+
+  // Throw exception if pooling mode is not max or average pooling
+  if(m_pool_mode != pool_mode::max
+     && m_pool_mode != pool_mode::average) {
+    throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max and average pooling");
+  }
   
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
   Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
   Mat& activations_local = m_activations_v->Matrix();
 
-  // Throw exception if pooling mode is not max pooling
-  if(m_pool_mode != pool_mode::max) {
-    throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max pooling");
-  }
-
-  // Input, output, and filter entries are divided amongst channels
+  // Output entries are divided amongst channels
   const Int num_per_output_channel = NumNeurons / m_num_channels;
-  const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through mini-batch and channels
-#pragma omp parallel for collapse(2)
+  // Initialize im2col matrix
+  Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
+  
+  // Iterate through data samples
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-    for(Int channel = 0; channel < m_num_channels; ++channel) {
+    
+    // Construct im2col matrix from input
+    const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+    im2col(input_mat, im2col_mat,
+           m_input_dims, m_pool_pads, m_num_channels,
+           m_pool_dims, m_pool_strides);
 
-      // Iterate through output entries in current channel
-      // Note: each output entry corresponds to a different offset of
-      //   the pool kernel
-      std::vector<Int> pool_offsets(m_num_dims);
-      for(int d = 0; d < m_num_dims; ++d) {
-        pool_offsets[d] = -m_pool_pads[d];
-      }
-      const Int start_output_index = channel*num_per_output_channel;
-      const Int end_output_index = (channel+1)*num_per_output_channel;
-      for(Int output_index = start_output_index;
-          output_index < end_output_index;
-          ++output_index) {
-
-        // Iterate through pool entries and find maximum
-        std::vector<Int> pool_pos(m_num_dims, 0);
-        DataType max_value = -INFINITY;
-        while(pool_pos[0] < m_pool_dims[0]) {
-
-          // Get input entry corresponding to pool entry
-          Int input_index = 0;
-          bool valid_input_entry = true;
-          for(Int d = 0; d < m_num_dims; ++d) {
-            if(pool_offsets[d] + pool_pos[d] < 0
-               || pool_offsets[d] + pool_pos[d] >= m_input_dims[d]) {
-              valid_input_entry = false;
-              break;
-            }
-            input_index *= m_input_dims[d];
-            input_index += pool_offsets[d] + pool_pos[d];
+    // Apply max pooling
+    if(m_pool_mode == pool_mode::max) {
+      DataType* output_buffer = weighted_sum_local.Buffer(0, sample);
+#pragma omp parallel for collapse(2)
+      for(Int c = 0; c < m_num_channels; ++c) {
+        for(Int j = 0; j < num_per_output_channel; ++j) {
+          DataType* im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+          DataType output_entry = -INFINITY;
+          for(Int i = 0; i < m_pool_size; ++i) {
+            output_entry = Max(output_entry, im2col_buffer[i]);
           }
-          input_index += channel * num_per_input_channel;
-
-          // Check if pool entry is largest encountered
-          if(valid_input_entry) {
-            const DataType value = prev_activations_local.Get(input_index, sample);
-            max_value = Max(value, max_value);
-          }
-
-          // Move to next pool entry
-          ++pool_pos[m_num_dims-1];
-          for(Int d = m_num_dims - 1; d > 0; --d) {
-            if(pool_pos[d] >= m_pool_dims[d]) {
-              pool_pos[d] = 0;
-              ++pool_pos[d-1];
-            }
-          }
-
+          const Int output_index = j + c * num_per_output_channel;
+          output_buffer[output_index] = output_entry;
         }
-
-        // Set output entry
-        weighted_sum_local.Set(output_index, sample, max_value);
-
-        // Move to next pool offset
-        pool_offsets[m_num_dims-1] += m_pool_strides[m_num_dims-1];
-        for(Int d = m_num_dims - 1; d > 0; --d) {
-          if(pool_offsets[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
-            pool_offsets[d] = -m_pool_pads[d];
-            pool_offsets[d-1] += m_pool_strides[d-1];
-          }
-        }
-
       }
-
     }
+
+    // Apply average pooling
+    if(m_pool_mode == pool_mode::average) {
+      DataType* output_buffer = weighted_sum_local.Buffer(0, sample);
+#pragma omp parallel for collapse(2)
+      for(Int c = 0; c < m_num_channels; ++c) {
+        for(Int j = 0; j < num_per_output_channel; ++j) {
+          DataType* im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+          DataType output_entry = 0;
+          for(Int i = 0; i < m_pool_size; ++i) {
+            output_entry += im2col_buffer[i];
+          }
+          output_entry /= m_pool_size;
+          const Int output_index = j + c * num_per_output_channel;
+          output_buffer[output_index] = output_entry;
+        }
+      }
+    }
+
   }
 
   // weighted_sum and output are identical after fp linearity step
@@ -553,6 +530,8 @@ void lbann::pooling_layer::bp_linearity_gpu() {
   // Perform back propagation on each GPU
   for(int i=0; i<num_gpus; ++i) {
     checkCUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    checkCUDNN(cudnnSetStream(m_cudnn->get_handle(i),
+                              m_cudnn->get_stream(i)));
     checkCUDNN(cudnnPoolingBackward(m_cudnn->get_handle(i),
                                     m_pooling_desc,
                                     &one,
@@ -572,111 +551,84 @@ void lbann::pooling_layer::bp_linearity_gpu() {
 
 void lbann::pooling_layer::bp_linearity_cpu() {
 
+  // Throw exception if pooling mode is not max or average pooling
+  if(m_pool_mode != pool_mode::max
+     && m_pool_mode != pool_mode::average) {
+    throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max and average pooling");
+  }
+
   // Get local matrices
   const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-  const Mat& activations_local = m_activations_v->LockedMatrix();
   const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
-  // Initialize error signal to zero
-  Zero(error_signal_local);
-
-  // Throw exception if pooling mode is not max pooling
-  if(m_pool_mode != pool_mode::max) {
-    throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max pooling");
-  }
-
-  // Input and output entries are divided amongst channels
+  // Output entries are divided amongst channels
   const Int num_per_output_channel = NumNeurons / m_num_channels;
-  const Int num_per_input_channel = m_num_prev_neurons / m_num_channels;
 
-  // Iterate through mini-batch and channels
-#pragma omp parallel for collapse(2)
+  // Initialize im2col matrix
+  Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
+
+  // Iterate through data samples
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-    for(Int channel = 0; channel < m_num_channels; ++channel) {
 
-      // Iterate through output entries in current channel
-      // Note: each output entry corresponds to a different offset of
-      //   the pool kernel
-      std::vector<Int> pool_offsets(m_num_dims);
-      for(int d = 0; d < m_num_dims; ++d) {
-        pool_offsets[d] = -m_pool_pads[d];
-      }
-      const Int start_output_index = channel*num_per_output_channel;
-      const Int end_output_index = (channel+1)*num_per_output_channel;
-      for(Int output_index = start_output_index;
-          output_index < end_output_index;
-          ++output_index) {
+    // Compute gradient w.r.t. im2col matrix for max pooling
+    if(m_pool_mode == pool_mode::max) {
 
-        // Iterate through pool entries and find maximum
-        std::vector<Int> pool_pos(m_num_dims, 0);
-        std::vector<Int> max_input_indices;
-        DataType max_value = -INFINITY;
-        while(pool_pos[0] < m_pool_dims[0]) {
+      // Construct im2col matrix from input
+      const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+      im2col(input_mat, im2col_mat,
+             m_input_dims, m_pool_pads, m_num_channels,
+             m_pool_dims, m_pool_strides);
 
-          // Get input entry corresponding to pool entry
-          Int input_index = 0;
-          bool valid_input_entry = true;
-          for(Int d = 0; d < m_num_dims; ++d) {
-            if(pool_offsets[d] + pool_pos[d] < 0
-               || pool_offsets[d] + pool_pos[d] >= m_input_dims[d]) {
-              valid_input_entry = false;
-              break;
-            }
-            input_index *= m_input_dims[d];
-            input_index += pool_offsets[d] + pool_pos[d];
-          }
-          input_index += channel * num_per_input_channel;
-
-          // Check if pool entry is largest encountered
-          if(valid_input_entry) {
-            const DataType value = prev_activations_local.Get(input_index, sample);
-            if(value >= max_value) {
-              if(value > max_value) {
-                max_value = value;
-                max_input_indices.clear();
-              }
-              max_input_indices.push_back(input_index);
+      // Copy previous error signal to im2col matrix entries
+      // corresponding to max
+      const DataType* prev_error_signal_buffer
+        = prev_error_signal_local.LockedBuffer(0, sample);
+#pragma omp parallel for collapse(2)
+      for(Int j = 0; j < num_per_output_channel; ++j) {
+        for(Int c = 0; c < m_num_channels; ++c) {
+          DataType* im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+          Int max_index = 0;
+          DataType max_entry = -INFINITY;
+          for(Int i = 0; i < m_pool_size; ++i) {
+            const DataType current_entry = im2col_buffer[i];
+            im2col_buffer[i] = 0;
+            if(current_entry > max_entry) {
+              max_index = i;
+              max_entry = current_entry;
             }
           }
-
-          // Move to next pool entry
-          ++pool_pos[m_num_dims-1];
-          for(Int d = m_num_dims - 1; d > 0; --d) {
-            if(pool_pos[d] >= m_pool_dims[d]) {
-              pool_pos[d] = 0;
-              ++pool_pos[d-1];
-            }
-          }
-
+          const Int prev_error_signal_index = j + c * num_per_output_channel;
+          im2col_buffer[max_index]
+            = prev_error_signal_buffer[prev_error_signal_index];
         }
-
-        // Propagate error signal
-        // Note: error signal is normalized if multiple entries are the largest
-        if(max_input_indices.size() > 0) {
-          DataType error_signal_entry = prev_error_signal_local.Get(output_index, sample);
-          if(max_input_indices.size() > 1) {
-            error_signal_entry /= max_input_indices.size();
-          }
-          for(Int i=0; i<max_input_indices.size(); ++i) {
-            error_signal_local.Update(max_input_indices[i],
-                                      sample,
-                                      error_signal_entry);
-          }
-        }
-
-        // Move to next pool offset
-        pool_offsets[m_num_dims-1] += m_pool_strides[m_num_dims-1];
-        for(Int d = m_num_dims - 1; d > 0; --d) {
-          if(pool_offsets[d] + m_pool_dims[d] > m_input_dims[d] + m_pool_pads[d]) {
-            pool_offsets[d] = -m_pool_pads[d];
-            pool_offsets[d-1] += m_pool_strides[d-1];
-          }
-        }
-
       }
 
     }
+
+    // Compute gradient w.r.t. im2col matrix for average pooling
+    if(m_pool_mode == pool_mode::average) {
+#pragma omp parallel for collapse(2)
+      for(Int j = 0; j < num_per_output_channel; ++j) {
+        for(Int c = 0; c < m_num_channels; ++c) {
+          DataType* im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+          const Int input_index = j + c * num_per_output_channel;
+          const DataType output_entry
+            = prev_error_signal_local(input_index, sample) / m_pool_size;
+          for(Int i = 0; i < m_pool_size; ++i) {
+            im2col_buffer[i] = output_entry;
+          }
+        }
+      }
+
+    }
+
+    // Compute error signal (i.e. gradient w.r.t. input)
+    Mat output_mat = View(error_signal_local, ALL, IR(sample));
+    col2im(im2col_mat, output_mat,
+           m_input_dims, m_pool_pads, m_num_channels,
+           m_pool_dims, m_pool_strides);
+
   }
 
 }
