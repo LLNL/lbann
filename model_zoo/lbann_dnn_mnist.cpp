@@ -48,6 +48,8 @@ int main(int argc, char* argv[])
     Initialize(argc, argv);
     lbann_comm* comm = NULL;
 
+    El::GemmUseGPU(32,32,32);
+
     try {
 
 

@@ -59,6 +59,12 @@ else()
   set(ELEMENTAL_SOURCE_DIR ${PROJECT_BINARY_DIR}/download/elemental/source)
   set(ELEMENTAL_BINARY_DIR ${PROJECT_BINARY_DIR}/download/elemental/build)
 
+  if(ELEMENTAL_USE_CUBLAS)
+     set(EL_CUBLAS_FLAGS "-DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS} -I${CUB_SOURCE_DIR}")
+  endif()
+  #set(EL_CUBLAS_FLAGS "${CMAKE_CXX_FLAGS} ${EL_CUBLAS_FLAGS}")
+  set(EL_CUBLAS_LINK "${CMAKE_EXE_LINKER_FLAGS} -L${CUDA_TOOLKIT_ROOT_DIR}/lib64 -lcublas -lcudart")  
+  
   # patch file
   set(PATCH_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EL_OpenBLAS_PATCH_DIR ${PATCH_DIR}/OpenBLAS)
@@ -73,8 +79,12 @@ else()
     PREFIX          ${CMAKE_INSTALL_PREFIX}
     TMP_DIR         ${ELEMENTAL_BINARY_DIR}/tmp
     STAMP_DIR       ${ELEMENTAL_BINARY_DIR}/stamp
+    #--Download step--------------
     GIT_REPOSITORY  ${ELEMENTAL_URL}
     GIT_TAG         ${ELEMENTAL_TAG}
+    #--Update/Patch step----------
+    PATCH_COMMAND   patch -d ${ELEMENTAL_SOURCE_DIR} -p 1 < ${PROJECT_SOURCE_DIR}/external/Elemental/elemental_cublas.patch
+    #--Configure step-------------
     SOURCE_DIR      ${ELEMENTAL_SOURCE_DIR}
     BINARY_DIR      ${ELEMENTAL_BINARY_DIR}
     BUILD_COMMAND   pushd ${ELEMENTAL_SOURCE_DIR} && ${EL_OpenBLAS_PATCH_SCRIPT} && popd && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER}
@@ -105,6 +115,8 @@ else()
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=${CMAKE_INSTALL_RPATH_USE_LINK_PATH}
       -D CMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
       -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
+      -D CMAKE_CXX_FLAGS=${EL_CUBLAS_FLAGS}
+      -D CMAKE_EXE_LINKER_FLAGS=${EL_CUBLAS_LINK}
       -D PATCH_DIR=${PATCH_DIR}
   )
 

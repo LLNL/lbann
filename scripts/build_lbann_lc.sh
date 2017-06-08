@@ -326,6 +326,7 @@ MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 if [ "${CLUSTER}" == "surface" ]; then
   WITH_CUDA=ON
   WITH_CUDNN=ON
+  ELEMENTAL_USE_CUBLAS=1
 fi
 
 ################################################################
@@ -376,6 +377,7 @@ cmake \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 -D LBANN_HOME=${ROOT_DIR} \
 -D SEQ_INIT=${SEQ_INIT} \
+-D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
 -D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
 -D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
 ${ROOT_DIR}
