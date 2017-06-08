@@ -59,7 +59,7 @@ message Model {
   int64 num_parallel_readers = 52;
   int64 num_gpus = 53;
   int64 evaluation_frequency = 54;
-  repeated Regularizer regularizer = 54;
+  repeated Regularizer regularizer = 55;
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
