@@ -38,7 +38,7 @@ namespace lbann {
 batch_normalization::batch_normalization(data_layout data_dist,
                                          lbann_comm* comm, DataType decay,
                                          DataType gamma, DataType beta) :
-  comm(comm), m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
+  m_comm(comm), m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
   // Setup the data distribution
   switch(data_dist) {
   case data_layout::MODEL_PARALLEL:
@@ -66,25 +66,25 @@ batch_normalization::~batch_normalization() {
 }
 
 void batch_normalization::initialize_model_parallel_distribution() {
-  m_gamma = new RowSumMat(comm->get_model_grid());
-  m_beta = new RowSumMat(comm->get_model_grid());
-  m_dgamma = new RowSumMat(comm->get_model_grid());
-  m_dbeta = new RowSumMat(comm->get_model_grid());
-  m_mean = new RowSumMat(comm->get_model_grid());
-  m_stdev = new RowSumMat(comm->get_model_grid());
-  m_running_mean = new RowSumMat(comm->get_model_grid());
-  m_running_stdev = new RowSumMat(comm->get_model_grid());
+  m_gamma = new RowSumMat(m_comm->get_model_grid());
+  m_beta = new RowSumMat(m_comm->get_model_grid());
+  m_dgamma = new RowSumMat(m_comm->get_model_grid());
+  m_dbeta = new RowSumMat(m_comm->get_model_grid());
+  m_mean = new RowSumMat(m_comm->get_model_grid());
+  m_stdev = new RowSumMat(m_comm->get_model_grid());
+  m_running_mean = new RowSumMat(m_comm->get_model_grid());
+  m_running_stdev = new RowSumMat(m_comm->get_model_grid());
 }
 
 void batch_normalization::initialize_data_parallel_distribution() {
-  m_gamma = new StarMat(comm->get_model_grid());
-  m_beta = new StarMat(comm->get_model_grid());
-  m_dgamma = new StarMat(comm->get_model_grid());
-  m_dbeta = new StarMat(comm->get_model_grid());
-  m_mean = new StarMat(comm->get_model_grid());
-  m_stdev = new StarMat(comm->get_model_grid());
-  m_running_mean = new StarMat(comm->get_model_grid());
-  m_running_stdev = new StarMat(comm->get_model_grid());
+  m_gamma = new StarMat(m_comm->get_model_grid());
+  m_beta = new StarMat(m_comm->get_model_grid());
+  m_dgamma = new StarMat(m_comm->get_model_grid());
+  m_dbeta = new StarMat(m_comm->get_model_grid());
+  m_mean = new StarMat(m_comm->get_model_grid());
+  m_stdev = new StarMat(m_comm->get_model_grid());
+  m_running_mean = new StarMat(m_comm->get_model_grid());
+  m_running_stdev = new StarMat(m_comm->get_model_grid());
 }
 
 void batch_normalization::fp_weights() {

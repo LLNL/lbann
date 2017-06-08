@@ -67,7 +67,7 @@ public:
   void setup(Layer* l);
   void update();
 protected:
-  lbann_comm* comm;
+  lbann_comm* m_comm;
   /** For learning gamma and beta. */
   optimizer* m_gamma_optimizer;
   optimizer* m_beta_optimizer;

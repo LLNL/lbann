@@ -56,7 +56,7 @@ public:
   /** Adjust gradients for dropout in backprop. */
   void bp_activations();
 protected:
-  lbann_comm* comm;
+  lbann_comm* m_comm;
   /** Probability of keeping each unit. */
   float m_keep_prob;
 #ifdef LBANN_PROCDET_DROPOUT
