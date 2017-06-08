@@ -72,7 +72,7 @@ void DataReader::setup() {
 bool DataReader::update() {
   /// Is the mini-batch that is about to finish equal to the second to last mini-batch
   if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
-    //    std::cout << "Data reader last update update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_last_mini_batch_size) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
+    //    std::cout << "Data reader last update update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_last_mini_batch_stride) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
     CurrentPos += m_last_mini_batch_stride;
   }else {
     //    std::cout << "Data reader update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_batch_stride) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
@@ -212,8 +212,7 @@ void DataReader::calculate_multi_model_data_distribution(lbann_comm *comm) {
   per_model_partial_mini_batch_size += world_master_remainder_data;
 
   /// The first reader that doesn't have an extra mini batch gets the partial batch
-  /// @todo BVE FIXME I need to figure out how this is going to work
-  if((0 &&comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch) && per_model_partial_mini_batch_size > 0) {
+  if(comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch && per_model_partial_mini_batch_size > 0) {
     m_num_mini_batches_per_reader++;
     m_last_mini_batch_size = per_model_partial_mini_batch_size;
   }
