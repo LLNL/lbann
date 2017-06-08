@@ -37,6 +37,7 @@ lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t 
                                                   optimizer* opt,/*needed?*/
                                                   const uint miniBatchSize,
                                                   Layer* original_layer,
+                                                  activation_type activation,
                                                   const weight_initialization init)
   :  target_layer(data_dist, comm, miniBatchSize, {}, false),m_original_layer(original_layer),
      m_weight_initialization(init)
@@ -48,8 +49,8 @@ lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t 
   this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
   num_forwardprop_steps = 0;
-    
-  // Setup the data distribution 
+  // Initialize activation function
+  m_activation_fn = new_activation(activation);
   // Done in base layer constructor
   /*switch(data_dist) {
     case data_layout::MODEL_PARALLEL:
@@ -180,4 +181,17 @@ void lbann::reconstruction_layer::reset_cost() {
 
 DataType lbann::reconstruction_layer::average_cost() const {
   return aggregate_cost / num_forwardprop_steps;
+}
+
+void lbann::reconstruction_layer::fp_nonlinearity() {
+  // Forward propagation
+  m_activation_fn->forwardProp(*m_activations_v);
+}
+
+void lbann::reconstruction_layer::bp_nonlinearity() {
+  // Backward propagation
+  m_activation_fn->backwardProp(*m_weighted_sum_v);
+  if (m_activation_type != activation_type::ID) {
+    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
+  }
 }

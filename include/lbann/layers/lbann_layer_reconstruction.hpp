@@ -38,6 +38,7 @@ namespace lbann
                          optimizer* optimizer,
                          const uint miniBatchSize,
                          Layer* original_layer,
+                         activation_type activation=activation_type::RELU,
                          weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
@@ -54,8 +55,8 @@ namespace lbann
   protected:
     void fp_linearity();
     void bp_linearity();
-    void fp_nonlinearity() {}
-    void bp_nonlinearity() {}
+    void fp_nonlinearity(); 
+    void bp_nonlinearity();
 
   private:
     Layer* m_original_layer;
