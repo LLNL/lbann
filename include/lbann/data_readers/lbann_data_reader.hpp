@@ -270,8 +270,6 @@ public:
 
   DataReader& operator=(const DataReader& source);
 
-  void calculate_multi_model_data_distribution(lbann_comm *comm);
-
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool saveToCheckpointShared(persist& p, const char* name);
 

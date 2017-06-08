@@ -54,6 +54,7 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
     io_layer::setup_data_readers_for_training(base_offset,
                                               stride, 1,
                                               model_offset);
+    distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(m_training_dataset.data_reader);
     /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
     io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                 m_num_parallel_readers_training * Layer::m_mini_batch_size);
