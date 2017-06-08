@@ -94,7 +94,6 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
     if (n >= (int)ShuffledIndices.size())
       break;
 
-    int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     vector<unsigned char> &tmp = m_image_data[index];
 
@@ -128,7 +127,6 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 
     //std::cout << " Target Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << std::endl;
 
-    int k = n - CurrentPos;
     int index = ShuffledIndices[n];
     unsigned char label = m_image_data[index][0];
 
