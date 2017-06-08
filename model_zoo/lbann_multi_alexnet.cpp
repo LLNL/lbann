@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set), 
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
-        dnn->add_metric(new metrics::categorical_accuracy(comm));
+        dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
         // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn->add(input_layer);

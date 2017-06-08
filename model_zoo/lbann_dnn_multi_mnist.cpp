@@ -33,6 +33,13 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
+//#define PARTITIONED
+#if defined(PARTITIONED)
+#define DATA_LAYOUT data_layout::DATA_PARALLEL
+#else
+#define DATA_LAYOUT data_layout::MODEL_PARALLEL
+#endif
+
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
@@ -117,6 +124,7 @@ int main(int argc, char* argv[])
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
+    mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
     mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     mnist_trainset.load();
 
@@ -169,31 +177,39 @@ int main(int argc, char* argv[])
 
     layer_factory* lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    metrics::categorical_accuracy acc(comm);
+    metrics::categorical_accuracy acc(data_layout::DATA_PARALLEL, comm);
     dnn.add_metric(&acc);
     std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                           std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                           std::make_pair(execution_mode::testing, &mnist_testset)};
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+#ifdef PARTITIONED
+    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+#else
     input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+#endif
     dnn.add(input_layer);
     uint fcidx1 = dnn.add(
-      "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
+      "FullyConnected", DATA_LAYOUT, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+      {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
     uint fcidx2 = dnn.add(
-      "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
+                          "FullyConnected", DATA_LAYOUT, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+      {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
     uint fcidx3 = dnn.add(
-      "FullyConnected", data_layout::MODEL_PARALLEL, 1024,
+                          "FullyConnected", DATA_LAYOUT, 1024,
       trainParams.ActivationType, weight_initialization::glorot_uniform,
-      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+      {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
     uint smidx = dnn.add(
-      "Softmax", data_layout::MODEL_PARALLEL, 10,
+      "Softmax", DATA_LAYOUT, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+#ifdef PARTITIONED
+    target_layer *target_layer = new target_layer_partitioned_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+#else
+      target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+#endif
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);

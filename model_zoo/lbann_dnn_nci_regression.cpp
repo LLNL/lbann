@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
         layer_factory* lfac = new layer_factory();
         deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
 
-        metrics::mean_squared_error mse(comm);
+        metrics::mean_squared_error mse(data_layout::MODEL_PARALLEL, comm);
         dnn.add_metric(&mse);
 
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),

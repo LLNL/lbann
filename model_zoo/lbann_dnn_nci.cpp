@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
         }
       layer_factory* lfac = new layer_factory();
       deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-      metrics::categorical_accuracy acc(comm);
+      metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
       dnn.add_metric(&acc);
       std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                              std::make_pair(execution_mode::validation, &nci_validation_set),

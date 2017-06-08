@@ -299,7 +299,7 @@ int main(int argc, char* argv[])
     layer_factory* lfac = new layer_factory();
     deep_neural_network *dnn = NULL;
     dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    metrics::categorical_accuracy acc(comm);
+    metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
     dnn->add_metric(&acc);
 
     input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
