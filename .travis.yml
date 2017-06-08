@@ -8,6 +8,7 @@ language: cpp
 # Blacklist
 branches:
   except:
+    - develop
     - gh-pages
 
 # Environment variables (Set the gh-pages repo dir to html to match with doxygen)
