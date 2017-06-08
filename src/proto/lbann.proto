@@ -58,6 +58,8 @@ message Model {
   int64 procs_per_model = 51;
   int64 num_parallel_readers = 52;
   int64 num_gpus = 53;
+  int64 evaluation_frequency = 54;
+  repeated Regularizer regularizer = 54;
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
@@ -99,6 +101,12 @@ message Callback {
    CallbackDumpActivations dump_activations = 5;
    CallbackDumpGradients dump_gradients = 6;
    CallbackImComm imcomm = 7;
+   CallbackSaveImages save_images = 8;
+}
+
+message CallbackSaveImages {
+  string image_dir = 1;
+  string extension = 2;
 }
 
 message CallbackPrint {
@@ -180,8 +188,9 @@ message L2Regularization {
 //
 
 message Layer {
-   int64 index = 2; //corresponds to index wrt std::vector<Layer*>
-                     //not currently used
+   int64 index = 2; 
+   int64 parent = 3;
+   int64 child = 4;
 
    // a Layer should contain exactly one of the following
    InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;

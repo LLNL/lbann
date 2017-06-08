@@ -40,6 +40,7 @@ lbann::optimizer_factory * init_optimizer_factory(
 void init_callbacks(
   lbann::lbann_comm *comm,
   lbann::sequential_model *model,
+  std::map<execution_mode, lbann::DataReader*> &data_readers,
   const lbann_data::LbannPB &p);
 
 ///
