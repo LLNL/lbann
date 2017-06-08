@@ -493,7 +493,11 @@ void lbann::Layer::fp_set_std_matrix_view() {
     View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
-  if(cur_mini_batch_size != m_mini_batch_size) {
+  /// @todo BVE FIXME This will cause a bug when you are on the last
+  /// iteration and the size of the current mini-batch equals the normal
+  /// mini-batch size.  In this case one of the ranks gets out of sync
+  /// To fix this, we need a flag for when we are on the last mini-batch
+  if(cur_mini_batch_size != m_mini_batch_size || 1) {
     // When the current mini-batch is partial, check with the other
     // models to figure out the entire size of the complete mini-batch
     Int total_mini_batch_size = comm->intermodel_allreduce((Int) cur_mini_batch_size);

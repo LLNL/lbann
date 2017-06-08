@@ -46,13 +46,14 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::setup(int num_prev_ne
   input_layer::setup(num_prev_neurons);
   if(io_layer::m_data_sets_span_models) {
     int base_offset = Layer::comm->get_rank_in_model();
-    int batch_stride = Layer::m_mini_batch_size;
+    int batch_stride = Layer::comm->get_num_models() * Layer::m_mini_batch_size;
     int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
     cout << "["<< Layer::comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
     io_layer::setup_data_readers_for_training(base_offset,
                                               batch_stride,
                                               m_num_parallel_readers_training,
                                               model_offset);
+    partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(m_training_dataset.data_reader);
     /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
     io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
                                                 Layer::m_mini_batch_size,

@@ -45,6 +45,12 @@ namespace lbann
     int get_num_parallel_readers();
     int get_num_iterations_per_epoch();
 
+    void calculate_num_iterations_per_epoch(DataReader *data_reader);
+
+
+    /// @todo BVE replace this with a function pointer that is passed
+    /// into the fetch_to_local_matrix function to avoid the
+    /// "circular" function dependence
     virtual int fetch_from_data_reader(Mat& M_local) { return 0; }
     virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
     virtual bool update_data_reader() { return false; }

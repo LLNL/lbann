@@ -252,6 +252,7 @@ public:
   int getNumData() { return (int)ShuffledIndices.size(); }
   int get_num_unused_data() { return (int)m_unused_indices.size(); }
   int* get_unused_data() { return &m_unused_indices[0]; }
+  int set_num_iterations_per_epoch(int num_iterations_per_epoch) { m_num_iterations_per_epoch = num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
   int get_num_iterations_per_epoch() { return m_num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
@@ -281,7 +282,7 @@ public:
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
-protected:
+public: //protected:
   int BatchSize;
   int CurrentPos;
   int m_shuffle;

@@ -51,6 +51,7 @@ namespace lbann {
     m_use_alt_last_mini_batch_size = true;
     m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
   }else {
+    /// By default each data reader will plan to process the entire data set
     m_num_iterations_per_epoch = ceil((float) this->getNumData() / (float) BatchSize);
   }
 

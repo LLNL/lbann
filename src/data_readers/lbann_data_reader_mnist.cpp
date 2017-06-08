@@ -83,13 +83,13 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
   int n = 0, s = 0;
   std::vector<float> pixels(pixelcount);
   Zeros(m_indices_fetched_per_mb, X.Width(), 1); /// The width of the local matrix X dictates how many samples this rank will get
-  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < X.Width(); n+=m_sample_stride, s++) {
-    //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << CurrentPos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) << std::endl;
+  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < X.Width() && n < ShuffledIndices.size(); n+=m_sample_stride, s++) {
+    //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << CurrentPos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) <<  " and there are only samples = " << getNumData() << std::endl;
 
-    // if(n < CurrentPos + current_batch_size) {
-    //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) << " and the limit is " << (CurrentPos + current_batch_size) << std::endl;
+     // if(n >= CurrentPos + current_batch_size) {
+     //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) << " and the limit is " << (CurrentPos + current_batch_size) << std::endl;
 
-    // }
+     // }
 
     if (n >= (int)ShuffledIndices.size())
       break;
@@ -122,7 +122,7 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 
   int current_batch_size = getBatchSize();
   int n = 0, s = 0;
-  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < Y.Width(); n+=m_sample_stride, s++) {
+  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < Y.Width() && n < ShuffledIndices.size(); n+=m_sample_stride, s++) {
     if (n >= (int)ShuffledIndices.size())
       break;
 

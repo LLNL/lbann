@@ -135,4 +135,25 @@ static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
 }
 #define DISPLAY_MATRIX(x) _display_matrix(x, #x);
 
+#ifndef DEBUG
+#define DEBUG 1 // set debug mode
+#endif
+
+#if DEBUG
+// __FILE__
+#define log_msg(...) {\
+  char str[256];\
+  sprintf(str, __VA_ARGS__);\
+  std::cout << "[" << comm->get_model_rank() << "." << comm->get_rank_in_model() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
+  }
+#define log_simple_msg(...) {\
+  char str[256];\
+  sprintf(str, __VA_ARGS__);\
+  std::cout << "[" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
+  }
+#else
+#define log_msg(...)
+#define log_simple_msg(...)
+#endif
+
 #endif // LBANN_BASE_HPP
