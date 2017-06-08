@@ -290,7 +290,7 @@ if [ "${BY_MODULE}" == "1" ]; then
     echo The MPI version might not have been compiled with the compiler ${COMPILER} version. Try other versions.
     exit 1
   fi
-  COMPILER_BASE="`module show ${COMPILER_} 2> /dev/stdout | grep '"PATH"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g'`"
+  COMPILER_BASE="`module show ${COMPILER_} 2> /dev/stdout | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g'`"
 else
   if [ ${COMPILER} == "intel" ] ; then
     COMPILER_=ic
@@ -381,7 +381,7 @@ if [ "${BY_MODULE}" == "1" ]; then
     echo The MPI version might not have been compiled with the compiler ${COMPILER} version. Try other versions.
     exit 1
   fi
-  MPI_DIR="`module show ${MPI} 2> /dev/stdout | grep '"PATH"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g'`"
+  MPI_DIR="`module show ${MPI} 2> /dev/stdout | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g'`"
 else
   if [ "`use | grep ${MPI}`" == "" ] ; then
     echo "do \'use ${MPI}\'"
@@ -405,10 +405,10 @@ if [ "${MPI_Fortran_COMPILER}" == "" ]; then
 fi
 
 # Get CUDA and cuDNN
-if [ "${CLUSTER}" == "surface" ]; then
+if [ "${HasGPU}" != "" ] ; then
   WITH_CUDA=ON
   WITH_CUDNN=ON
-  export PATH=/p/lscratche/brainusr/autoconf/bin:${PATH}
+  ELEMENTAL_USE_CUBLAS=1
 fi
 
 
@@ -473,6 +473,7 @@ cmake \
 -D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
 -D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
+-D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
 ${ROOT_DIR}
 EOF
 )
