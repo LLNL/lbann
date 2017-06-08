@@ -30,8 +30,8 @@
 #ifndef LBANN_CV_NORMALIZER_HPP
 #define LBANN_CV_NORMALIZER_HPP
 
-#include "lbann/data_readers/lbann_cv_transform.hpp"
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
+#include "lbann_cv_transform.hpp"
+#include "patchworks/patchworks_opencv.hpp"
 #include "lbann/lbann_base.hpp" // DataType
 #include "lbann/utils/lbann_mild_exception.hpp"
 
@@ -99,6 +99,9 @@ class cv_normalizer : public cv_transform
  public:
 
   cv_normalizer(void);
+  cv_normalizer(const cv_normalizer& rhs);
+  cv_normalizer& operator=(const cv_normalizer& rhs);
+  virtual cv_normalizer* clone(void) const;
 
   /// Set the parameters all at once
   virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
@@ -168,6 +171,8 @@ class cv_normalizer : public cv_transform
   /// Compute the per-channel and per-sample mean and standard deviation
   static bool compute_mean_stddev(const cv::Mat& image,
        std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask=cv::Mat());
+
+  virtual std::ostream& print(std::ostream& os) const;
 };
 
 
@@ -304,9 +309,9 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
   const int NCh = image.channels();
   const int num_pixels = image.rows * image.cols;
-  double sum[NCh] = {0.0, };
-  double sqsum[NCh] = {0.0, };
-  double shift[NCh] = {0.0,};
+  double sum[NCh];
+  double sqsum[NCh];
+  double shift[NCh];
 
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;

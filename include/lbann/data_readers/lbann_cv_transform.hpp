@@ -30,7 +30,7 @@
 #ifndef LBANN_CV_TRANSFORM_HPP
 #define LBANN_CV_TRANSFORM_HPP
 
-#include "lbann/data_readers/lbann_opencv.hpp"
+#include "lbann_opencv.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann
@@ -50,6 +50,10 @@ class cv_transform
 
 
   cv_transform(void) : m_enabled(false) {}
+  cv_transform(const cv_transform& rhs);
+  cv_transform& operator=(const cv_transform& rhs);
+  virtual cv_transform* clone(void) const;
+
   virtual ~cv_transform(void) {}
 
   virtual bool determine_transform(const cv::Mat& image)
@@ -65,11 +69,30 @@ class cv_transform
   virtual void disable(void) { m_enabled = false; }
   virtual void reset(void) { m_enabled = false; }
   virtual bool is_enabled(void) const { return m_enabled; }
+
+  virtual std::ostream& print(std::ostream& os) const { return os; }
 };
+
+inline cv_transform::cv_transform(const cv_transform& rhs)
+: m_enabled(rhs.m_enabled) {}
+
+inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
+  m_enabled = rhs.m_enabled;
+  return *this;
+}
 
 inline bool cv_transform::apply(cv::Mat& image) {
   m_enabled = false;
   return true;
+}
+
+inline cv_transform* cv_transform::clone(void) const {
+  return static_cast<cv_transform*>(NULL);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
+  tr.print(os);
+  return os;
 }
 
 } // end of namespace lbann

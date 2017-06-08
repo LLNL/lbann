@@ -24,7 +24,7 @@ else()
      # 0.87.6
      # set(ELEMENTAL_TAG "8a1a42c4391b73e1b7e9ea07736459cccb7d6b21")
      # 0.87.7
-     set(ELEMENTAL_TAG "477e503a7a840cc1a75173552711b980505a0b06")
+     set(ELEMENTAL_TAG "351bc9460dcc58be62e9b42902e49640a97c0b0e")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -64,6 +64,15 @@ else()
   endif()
   #set(EL_CUBLAS_FLAGS "${CMAKE_CXX_FLAGS} ${EL_CUBLAS_FLAGS}")
   set(EL_CUBLAS_LINK "${CMAKE_EXE_LINKER_FLAGS} -L${CUDA_TOOLKIT_ROOT_DIR}/lib64 -lcublas -lcudart")  
+  
+  # patch file
+  set(PATCH_DIR ${PROJECT_SOURCE_DIR}/external)
+  set(EL_OpenBLAS_PATCH_DIR ${PATCH_DIR}/OpenBLAS)
+  if (PATCH_OPENBLAS)
+    set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/patchELOpenBLAS.sh)
+  else()
+    set(EL_OpenBLAS_PATCH_SCRIPT ${EL_OpenBLAS_PATCH_DIR}/noop.sh)
+  endif()
 
   # Get Elemental from Git repository and build
   ExternalProject_Add(project_Elemental
@@ -78,7 +87,7 @@ else()
     #--Configure step-------------
     SOURCE_DIR      ${ELEMENTAL_SOURCE_DIR}
     BINARY_DIR      ${ELEMENTAL_BINARY_DIR}
-    BUILD_COMMAND   ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER}
+    BUILD_COMMAND   pushd ${ELEMENTAL_SOURCE_DIR} && ${EL_OpenBLAS_PATCH_SCRIPT} && popd && ${CMAKE_MAKE_PROGRAM} -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} CC=${MPI_C_COMPILER} CXX=${MPI_CXX_COMPILER}
     INSTALL_DIR     ${CMAKE_INSTALL_PREFIX}
     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}
     CMAKE_ARGS
@@ -108,6 +117,7 @@ else()
       -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
       -D CMAKE_CXX_FLAGS=${EL_CUBLAS_FLAGS}
       -D CMAKE_EXE_LINKER_FLAGS=${EL_CUBLAS_LINK}
+      -D PATCH_DIR=${PATCH_DIR}
   )
 
   # Get install directory
@@ -120,7 +130,7 @@ endif()
 
 # Include header files
 set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
-include_directories(${Elemental_INCLUDE_DIRS})
+include_directories(SYSTEM ${Elemental_INCLUDE_DIRS})
 
 # Get library
 if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)

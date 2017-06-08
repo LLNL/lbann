@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     trainParams.DropOut = -1.0f;
     trainParams.ProcsPerModel = 48;
     trainParams.IntermodelCommMethod =
-      static_cast<int>(lbann_callback_imcomm::ADAPTIVE_THRESH_QUANTIZATION);
+      static_cast<int>(lbann_callback_imcomm::ADAPTIVE_QUANTIZATION);
     trainParams.parse_params();
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.2;

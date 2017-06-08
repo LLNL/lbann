@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 # Detect OS version
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
@@ -72,6 +73,14 @@ INSTALL_LBANN=0
 ALTERNATE_BUILD_DIR=none
 BUILD_SUFFIX=
 SEQ_INIT=OFF
+
+# In case that autoconf fails during on-demand buid on surface, try the newer
+# version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
+# by putting it at the beginning of the PATH or use the preinstalled library
+# by enabling LIBJPEG_TURBO_DIR
+WITH_LIBJPEG_TURBO=ON
+#LIBJPEG_TURBO_DIR="/p/lscratche/brainusr/libjpeg-turbo"
+#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
 
 ################################################################
 # Help message
@@ -369,6 +378,8 @@ cmake \
 -D LBANN_HOME=${ROOT_DIR} \
 -D SEQ_INIT=${SEQ_INIT} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
+-D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
+-D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
 ${ROOT_DIR}
 EOF
 )

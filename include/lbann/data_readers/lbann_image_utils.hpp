@@ -37,6 +37,7 @@
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/data_readers/lbann_cv_utils.hpp"
+#include "lbann/data_readers/lbann_cv_process_patches.hpp"
 #endif
 
 
@@ -53,7 +54,7 @@ namespace lbann
     static bool loadPNG(const char* Imagefile, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool savePNG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels);
 
-    static bool loadJPG_buf(const char* image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
+    static bool loadJPG(std::vector<unsigned char> &image_buf, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool loadJPG(const char* Imagefile, int& Width, int& Height, bool Flip, unsigned char*& Pixels);
     static bool saveJPG(const char* Imagefile, int Width, int Height, bool Flip, unsigned char* Pixels);
 
@@ -66,13 +67,16 @@ namespace lbann
     // load/save an image into/from an LBANN data block of El::Matrix<DataType> type
     /// Load an image from a file and put it into an LBANN Mat data block
     static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
+    /// Load an image from a file, extract patches from it and put them into LBANN Mat data blocks
+    static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data);
     /// Save an image using data from an LBANN Mat data block
     static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data);
 
     // import/export via a buffer of std::vector<uchar> containg the raw bytes of an image file
     /// Import an image from a file buffer (inbuf) and put it into an LBANN Mat data block
     static bool import_image(cv::InputArray inbuf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
-    //static bool import_image(const std::vector<uchar>& inbuf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
+    /// Import an image from a file buffer (inbuf), extract patches from it and put them into LBANN Mat data blocks
+    static bool import_image(cv::InputArray inbuf, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data);
     /// Export an image using data from an LBANN Mat block into a file buffer (outbuf)
     static bool export_image(const std::string& fileExt, std::vector<uchar>& outbuf, const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data);
   };

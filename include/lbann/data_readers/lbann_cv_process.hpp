@@ -30,9 +30,10 @@
 #ifndef LBANN_CV_PROCESS_HPP
 #define LBANN_CV_PROCESS_HPP
 
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_normalizer.hpp"
-#include "lbann/data_readers/lbann_cv_augmenter.hpp"
+#include "patchworks/patchworks_opencv.hpp"
+#include "lbann_cv_normalizer.hpp"
+#include "lbann_cv_augmenter.hpp"
+#include "lbann_cv_colorizer.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV
@@ -68,6 +69,9 @@ class cv_process {
  public:
   cv_process(void)
   : m_flip(cv_transform::_no_flip_), m_split(true) {}
+
+  cv_process(const cv_process& rhs);
+  cv_process& operator=(const cv_process& rhs);
 
   cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
   : m_flip(flip_code), m_split(tosplit) {}

@@ -30,8 +30,8 @@
 #ifndef LBANN_CV_AUGMENTER_HPP
 #define LBANN_CV_AUGMENTER_HPP
 
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_transform.hpp"
+#include "patchworks/patchworks_opencv.hpp"
+#include "lbann_cv_transform.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include <iostream>
 #include <ostream>
@@ -77,6 +77,9 @@ class cv_augmenter : public cv_transform
 
  public:
   cv_augmenter(void);
+  cv_augmenter(const cv_augmenter& rhs);
+  cv_augmenter& operator=(const cv_augmenter& rhs);
+  virtual cv_augmenter* clone(void) const;
 
   /// Set the parameters all at once
   virtual void set(const bool hflip, const bool vflip, const float rot, 
@@ -87,7 +90,7 @@ class cv_augmenter : public cv_transform
 
   /**
    * Construct an affine transformation matrix based on the options and random
-   * numbers. If successful, the tranform is enabled.If not, it is disabled.
+   * numbers. If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
   virtual bool determine_transform(const cv::Mat& image);

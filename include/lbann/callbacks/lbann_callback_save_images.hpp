@@ -44,8 +44,10 @@ public:
    * @param image_dir directory to save image
    * @param image extension e.g., jpg, png, pgm......
    */
-  lbann_callback_save_images(DataReader* reader,std::string image_dir,std::string extension="jpg") :
-    lbann_callback(), m_reader(reader),m_image_dir(image_dir),m_extension(extension) {
+  lbann_callback_save_images(DataReader* reader, std::string image_dir,
+                             std::string extension="jpg") :
+    lbann_callback(), m_image_dir(image_dir), m_extension(extension),
+    m_reader(reader) {
       set_name("save_images");
     }
   void on_phase_end(model* m);

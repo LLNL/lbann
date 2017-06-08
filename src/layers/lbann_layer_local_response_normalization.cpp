@@ -46,8 +46,9 @@ local_response_normalization_layer::local_response_normalization_layer
  lbann_comm* comm,
  cudnn::cudnn_manager* cudnn)
   : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
-    m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta), m_lrn_k(lrn_k),
-    m_num_dims(num_dims), m_num_channels(num_channels)
+    m_num_dims(num_dims), m_num_channels(num_channels),
+    m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
+    m_lrn_k(lrn_k)
 {
   m_type = layer_type::local_response_normalization;
 

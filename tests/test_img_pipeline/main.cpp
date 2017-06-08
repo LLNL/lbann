@@ -100,11 +100,6 @@ bool test_image_io(const std::string filename, int sz)
     const unsigned int fsz = buf.size();
     std::cout << "file size " << fsz << std::endl;
 
-    // using a portion of the buf
-    typedef cv_image_type<uint8_t, 1> InputBuf_T;
-    size_t img_begin = 0u;
-    cv::Mat inbuf(1, fsz, InputBuf_T::T(), &(buf[img_begin]));
-
 
     int width = 0;
     int height = 0;
@@ -115,27 +110,41 @@ bool test_image_io(const std::string filename, int sz)
     ::Mat Image_v0; // a submatrix view
     ::Mat Image_v1; // a submatrix view
 
-    if (sz > 0) {
-      std::cout << "The size of the image is as given : " << sz << std::endl;
-      // Assuming image croping in the preprocessing pipeline, we know the size of the image,
-      // Suppose the size of the image is as give in the command line argument.
-      // Then, pass one of the views instead of whole 'Images'
-      Images.Resize(sz, minibatch_size); // minibatch
-      View(Image_v0, Images, 0, 0, sz, 1);
-      View(Image_v1, Images, 0, 1, sz, 1);
-      ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v0);
-      if (width*height*CV_MAT_CN(type) != sz) {
-        std::cout << "The size of image is not as expected." << std::endl;
+    { // inbuf scope
+      // using a portion of the buf
+      typedef cv_image_type<uint8_t, 1> InputBuf_T;
+      size_t img_begin = 0u;
+      size_t img_end = fsz;
+      // construct a view of a portion of the existing data
+      const cv::Mat inbuf(1, (img_end-img_begin), InputBuf_T::T(), &(buf[img_begin]));
+      std::cout << "address of the zero copying view: "
+                << reinterpret_cast<unsigned long long>(reinterpret_cast<const void*>(inbuf.datastart)) << " "
+                << reinterpret_cast<unsigned long long>(reinterpret_cast<const void*>(&(buf[img_begin]))) << std::endl;
+
+      if (sz > 0) {
+        std::cout << "The size of the image is as given : " << sz << std::endl;
+        // Assuming image croping in the preprocessing pipeline, we know the size of the image,
+        // Suppose the size of the image is as give in the command line argument.
+        // Then, pass one of the views instead of whole 'Images'
+        Images.Resize(sz, minibatch_size); // minibatch
+        View(Image_v0, Images, 0, 0, sz, 1);
+        View(Image_v1, Images, 0, 1, sz, 1);
+        ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v0);
+        if (width*height*CV_MAT_CN(type) != sz) {
+          std::cout << "The size of image is not as expected." << std::endl;
+          sz = width*height*CV_MAT_CN(type);
+          Images.Resize(sz, Images.Width());
+        }
+      } else {
+        std::cout << "We do not know the size of the image yet." << std::endl;
+        const int minimal_data_len = 1;
+        Images.Resize(minimal_data_len, minibatch_size); // minibatch
+        ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
+        sz = Images.Height();
+        std::cout << "The size of the image discovered : " << sz << std::endl;
+        View(Image_v0, Images, 0, 0, sz, 1);
+        View(Image_v1, Images, 0, 1, sz, 1);
       }
-    } else {
-      std::cout << "We do not know the size of the image yet." << std::endl;
-      const int minimal_data_len = 1;
-      Images.Resize(minimal_data_len, minibatch_size); // minibatch
-      ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
-      sz = Images.Height();
-      std::cout << "The size of the image discovered : " << sz << std::endl;
-      View(Image_v0, Images, 0, 0, sz, 1);
-      View(Image_v1, Images, 0, 1, sz, 1);
     }
 
     if (!ok) {
@@ -150,12 +159,11 @@ bool test_image_io(const std::string filename, int sz)
 
     pp.disable_transforms();
 
-    buf.clear();
-
     // Write an image
     const std::string ext = get_file_extention(filename);
     pp.determine_inverse_normalization();
-    ok = lbann::image_utils::export_image(ext, buf, width, height, type, pp, Image_v1);
-    write_file("copy4." + ext, buf);
+    std::vector<unsigned char> outbuf;
+    ok = lbann::image_utils::export_image(ext, outbuf, width, height, type, pp, Image_v1);
+    write_file("copy." + ext, outbuf);
     return ok;
 }

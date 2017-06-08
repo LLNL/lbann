@@ -30,6 +30,32 @@ else()
     set(OPENCV_BUILD_TYPE ${CMAKE_BUILD_TYPE})
   endif()
 
+  # whether to link with prebuilt libjpeg-turbo
+  if(WITH_LIBJPEG_TURBO)
+    if ("${LIBJPEG_TURBO_DIR}" STREQUAL "")
+      #set(WITH_LIBJPEG_TURBO OFF)
+      include(jpeg-turbo)
+      set(BUILD_JPEG_TURBO ON)
+      message(STATUS "Building libjpeg-turbo")
+      set(LIBJPEG_TURBO_DIR                ${CMAKE_INSTALL_PREFIX})
+      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
+      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
+      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
+      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
+      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
+      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
+    else()
+      set(BUILD_JPEG_TURBO OFF)
+      message(STATUS "Using libjpeg-turbo installed under ${LIBJPEG_TURBO_DIR}")
+      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
+      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
+      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
+      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
+      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
+      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
+    endif()
+  endif()
+
   # ============================
   # OpenCV CMake options
   # ============================
@@ -122,7 +148,11 @@ else()
   option(OPENCV_BUILD_ZLIB             "OpenCV: Build zlib from source"                                             ON)
   option(OPENCV_BUILD_TIFF             "OpenCV: Build libtiff from source"                                          ON)
   option(OPENCV_BUILD_JASPER           "OpenCV: Build libjasper from source"                                        OFF)
-  option(OPENCV_BUILD_JPEG             "OpenCV: Build libjpeg from source"                                          ON)
+  if(WITH_LIBJPEG_TURBO)
+    option(OPENCV_BUILD_JPEG           "OpenCV: Build libjpeg from source"                                          OFF)
+  else()
+    option(OPENCV_BUILD_JPEG           "OpenCV: Build libjpeg from source"                                          ON)
+  endif()
   option(OPENCV_BUILD_PNG              "OpenCV: Build libpng from source"                                           ON)
   option(OPENCV_BUILD_OPENEXR          "OpenCV: Build openexr from source"                                          OFF)
   option(OPENCV_BUILD_TBB              "OpenCV: Download and build TBB from source"                                 OFF)
@@ -313,7 +343,16 @@ else()
       -D ENABLE_WINSDK81=${OPENCV_ENABLE_WINSDK81}
       -D ENABLE_WINPHONESDK80=${OPENCV_ENABLE_WINPHONESDK80}
       -D ENABLE_WINPHONESDK81=${OPENCV_ENABLE_WINPHONESDK81}
+      -D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}
+      -D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}
+      ${OPENCV_LIBJPEG_TURBO_INC}
+      ${OPENCV_LIBJPEG_TURBO_LIB}
   )
+
+  if(BUILD_JPEG_TURBO)
+    message(STATUS "setting up the dependency of OpenCV on jpeg-turbo")
+    add_dependencies(project_OpenCV project_jpeg_turbo)
+  endif()
 
   # Get install directory
   set(OpenCV_DIR ${CMAKE_INSTALL_PREFIX})

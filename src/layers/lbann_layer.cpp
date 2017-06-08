@@ -45,10 +45,8 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
   : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
-    regularizers(regs), m_mini_batch_size(mbsize),
-    m_effective_mbsize(mbsize),
-    fp_time(0.0), bp_time(0.0),
-    m_cudnn(NULL)
+    m_cudnn(nullptr), regularizers(regs), m_mini_batch_size(mbsize),
+    m_effective_mbsize(mbsize)
 {
 
     m_type = layer_type::INVALID;
@@ -85,6 +83,8 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
+
+    reset_counters();
 
 }
 
@@ -174,7 +174,7 @@ void lbann::Layer::forwardProp() {
 #endif
 
   // Apply connection regularization. (e.g. DropConnect).
-  for(Int i=0; i<regularizers.size(); ++i) {
+  for(size_t i=0; i<regularizers.size(); ++i) {
     regularizers[i]->fp_connections();
   }
 
@@ -184,7 +184,7 @@ void lbann::Layer::forwardProp() {
   fp_linearity_time += get_time() - fp_lin_start;
 
   // Apply weight regularization (e.g. L2 normalization).
-  for(Int i=0; i<regularizers.size(); ++i) {
+  for(size_t i=0; i<regularizers.size(); ++i) {
     regularizers[i]->fp_weights();
   }
 
@@ -194,7 +194,7 @@ void lbann::Layer::forwardProp() {
   fp_nonlinearity_time += get_time() - fp_nonlin_start;
 
   // Apply activation regularization (e.g. Dropout).
-  for(Int i=0; i<regularizers.size(); ++i) {
+  for(size_t i=0; i<regularizers.size(); ++i) {
     regularizers[i]->fp_activations();
   }
 
@@ -289,7 +289,7 @@ void lbann::Layer::backProp() {
 
 bool lbann::Layer::update() {
   if (m_execution_mode == execution_mode::training) {
-    for(Int i=0; i<regularizers.size(); ++i) {
+    for(size_t i=0; i<regularizers.size(); ++i) {
       regularizers[i]->update_gradients();
       regularizers[i]->update();
     }
@@ -482,7 +482,11 @@ void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  View(*m_prev_error_signal_v, *m_prev_error_signal, ALL, IR(0, cur_mini_batch_size));
+  if (m_prev_error_signal->Height() > 0) {
+    // No previous error signal for the final layer.
+    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
+         IR(0, cur_mini_batch_size));
+  }
   View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
   View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
@@ -530,10 +534,7 @@ void lbann::Layer::fp_nonlinearity() {
 
 void lbann::Layer::bp_nonlinearity() {
   // Backward propagation
-  m_activation_fn->backwardProp(*m_weighted_sum_v);
-  if (m_activation_type != activation_type::ID) {
-    Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
-  }
+  m_activation_fn->backwardPropError(*m_weighted_sum_v, *m_prev_error_signal_v);
 }
 
 

@@ -34,6 +34,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 #include <omp.h>
 using namespace El;
 
@@ -96,30 +97,25 @@ public:
   ~lbann_quantizer();
 
   /**
-   * Do an allreduce of mat, using the custom allreduce algorithm.
-   */
-  void intermodel_sum(lbann_comm* comm, Mat& mat);
-  void intermodel_sum(lbann_comm* comm, DistMat& mat);
-
-  /**
-   * Quantize a matrix. qerror needs to be initialized with:
+   * Quantize a matrix with onebit quantization.
+   * qerror needs to be initialized with:
    * Zeros(qerror, mat.Height(), mat.Width()).
    * @param mat The matrix to quantize.
    * @param qmat The output quantized matrix (will be resized).
    * @param qerror Running quantization error.
    * @param sample Whether to use samples to approximate averages.
    */
-  void quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror,
+  void onebit_quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror,
                 bool sample = true);
-  void quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror,
+  void onebit_quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror,
                 bool sample = true);
   /**
-   * Unquantize a matrix.
+   * Unquantize a onebit-quantized matrix..
    * @param qmat The matrix to unquantize.
    * @param mat The output unquantized matrix.
    */
-  void unquantize(const QuantizedMatrix& qmat, Mat& mat);
-  void unquantize(const QuantizedMatrix& qmat, DistMat& mat);
+  void onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat);
+  void onebit_unquantize(const QuantizedMatrix& qmat, DistMat& mat);
   /**
    * Do a sum reduction of mat over comm's inter-model communicator, with all
    * communication being quantized. im_querror is a separate quantization error
@@ -132,12 +128,9 @@ public:
    * should use SGD as the optimizer for those layers to avoid applying AdaGrad
    * twice.
    */
-  void intermodel_sum_quantized(lbann_comm* comm, Mat& mat, Mat& qerror,
-                                Mat& im_qerror, bool do_adagrad = false,
-                                Mat* gradhist = nullptr);
-  void intermodel_sum_quantized(lbann_comm* comm, DistMat& mat, Mat& qerror,
-                                Mat& im_qerror, bool do_adagrad = false,
-                                Mat* gradhist = nullptr);
+  void intermodel_sum_onebit_quantized(lbann_comm* comm, Mat& mat, Mat& qerror);
+  void intermodel_sum_onebit_quantized(lbann_comm* comm, DistMat& mat,
+                                       Mat& qerror);
 
   /**
    * Threshold and quantize a matrix. qerror needs to be initialized with:
@@ -170,8 +163,18 @@ public:
                             DataType pos_thresh, DataType neg_thresh,
                             bool delta = false);
   /**
-   * Threshold and quantize a matrix, dynamically choosing the threshold and
-   * quantization values. qerror needs to be initialized with:
+   * As with intermodel_sum_onebit_quantized, but use threshold quantization.
+   */
+  void intermodel_sum_threshold_quantized(lbann_comm* comm, Mat& mat,
+                                          Mat& qerror, DataType pos_thresh,
+                                          DataType neg_thresh);
+  void intermodel_sum_threshold_quantized(lbann_comm* comm, DistMat& mat,
+                                          Mat& qerror, DataType pos_thresh,
+                                          DataType neg_thresh);
+
+  /**
+   * Adaptively quantize a matrix.
+   * qerror needs to be initialized with:
    * Zeros(qerror, mat.Height(), mat.Width()).
    * @param mat The matrix to quantize.
    * @param q The output list of quantized entries.
@@ -179,51 +182,28 @@ public:
    * @param proportion Quantize one in proportion of the values.
    */
   template <typename colT, typename rowT>
-  void adaptive_threshold_quantize(const Mat& mat, std::vector<rowT>& q, Mat& qerror,
+  void adaptive_quantize(const Mat& mat, std::vector<rowT>& q, Mat& qerror,
                                    int proportion);
   template <typename colT, typename rowT>
-  void adaptive_threshold_quantize(const DistMat& mat, std::vector<rowT>& q,
+  void adaptive_quantize(const DistMat& mat, std::vector<rowT>& q,
                                    Mat& qerror, int proportion);
   /**
-   * Unquantize an adaptively-thresholded-and-quantized matrix.
+   * Unquantize an adaptively-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
    */
   template <typename colT, typename rowT>
-  void adaptive_threshold_unquantize(const std::vector<rowT>& q, Mat& mat);
+  void adaptive_unquantize(const rowT* q, Mat& mat);
   template <typename colT, typename rowT>
-  void adaptive_threshold_unquantize(const std::vector<rowT>& q, DistMat& mat);
+  void adaptive_unquantize(const rowT* q, DistMat& mat);
 
   /**
-   * As with intermodel_sum_quantized, but use threshold quantization.
+   * As with intermodel_sum_onebit_quantized, but use adaptive quantization.
    */
-  void intermodel_sum_threshold_quantized(lbann_comm* comm, Mat& mat,
-                                          Mat& qerror, DataType pos_thresh,
-                                          DataType neg_thresh, Mat& im_qerror,
-                                          bool compress=true);
-  void intermodel_sum_threshold_quantized(lbann_comm* comm, DistMat& mat,
-                                          Mat& qerror, DataType pos_thresh,
-                                          DataType neg_thresh, Mat& im_qerror,
-                                          bool compress=true);
-
-  /**
-   * As with intermodel_sum_quantized, but use adaptive threshold quantization.
-   */
-  void intermodel_sum_adaptive_threshold_quantized(
-    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror);
-  void intermodel_sum_adaptive_threshold_quantized(
-    lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion, Mat& im_qerror);
-
-  /**
-   * Compress the output of threshold_quantize.
-   * This uses Golomb-Rice coding, with the quotient stored first, followed by
-   * the remainder.
-   */
-  void compress_thresholds(const ThreshQuantized& q,
-                           ThreshQuantized& cq);
-  /** Corresponding uncompress. */
-  void uncompress_thresholds(const ThreshQuantized& cq,
-                             ThreshQuantized& q);
+  void intermodel_sum_adaptive_quantized(
+    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion);
+  void intermodel_sum_adaptive_quantized(
+    lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion);
 
   /**
    * Compute positive and negative thresholds such that only one in proportion
@@ -250,68 +230,11 @@ public:
     const Mat& mat, const Mat& qerror, Int col,
     const adaptive_thresholds threshes, bool sample = true);
 
-  /** Get the total number of bytes sent during quantization. */
-  size_t get_bytes_sent() const { return rs_bytes_sent + ag_bytes_sent; }
-  /** Get the total number of bytes sent during the reduce-scatter phase. */
-  size_t get_rs_bytes_sent() const { return rs_bytes_sent; }
-  /** Get the total number of bytes sent during the all-gather phase. */
-  size_t get_ag_bytes_sent() const { return ag_bytes_sent; }
-  /** Get the total number of bytes received during quantization. */
-  size_t get_bytes_received() const {
-    return rs_bytes_received + ag_bytes_received;
-  }
-  /** Get the total number of bytes received during the reduce-scatter phase. */
-  size_t get_rs_bytes_received() const { return rs_bytes_received; }
-  /** Get the total number of bytes received during the all-gather phase. */
-  size_t get_ag_bytes_received() const { return ag_bytes_received; }
-  /** Reset recorded bytes counters. */
-  void reset_bytes_counters() {
-    rs_bytes_sent = 0;
-    ag_bytes_sent = 0;
-    rs_bytes_received = 0;
-    ag_bytes_received = 0;
-  }
-  /** Get the time spent in the reduce-scatter. */
-  double get_rs_time() const { return rs_time; }
-  /** Get the time spent in the allgather. */
-  double get_ag_time() const { return ag_time; }
-  /** Get the time spent in the reduce-scatter send_trans. */
-  double get_rs_send_trans_time() const { return rs_send_trans_time; }
-  /** Get the time spent in the reduce-scatter get_recv_buf. */
-  double get_rs_recv_buf_time() const { return rs_recv_buf_time; }
-  /** Get the time spent in the reduce-scatter recv_trans. */
-  double get_rs_recv_trans_time() const { return rs_recv_trans_time; }
-  /** Get the time spent in sends in the reduce-scatter. */
-  double get_rs_send_time() const { return rs_send_time; }
-  /** Get the time spent in recvs/waiting for recvs in the reduce-scatter. */
-  double get_rs_recv_wait_time() const { return rs_recv_wait_time; }
-  /** Get the time spent in the allgather reduce_trans. */
-  double get_ag_reduced_trans_time() const { return ag_reduced_trans_time; }
-  /** Get the time spent in the allgather get_recv_buf. */
-  double get_ag_recv_buf_time() const { return ag_recv_buf_time; }
-  /** Get the time spent in the all-gather send_trans. */
-  double get_ag_recv_trans_time() const { return ag_recv_trans_time; }
-  /** Get the time spent in sends in the allgather. */
-  double get_ag_send_time() const { return ag_send_time; }
-  /** Get the time spent in recvs/waiting for recvs in the allgather. */
-  double get_ag_recv_wait_time() const { return ag_recv_wait_time; }
-  /** Get the time spent in proportion_threshold. */
   double get_proportion_time() const { return proportion_time; }
-  /** Reset recorded time counters. */
-  void reset_time_counters() {
-    rs_time = 0.0;
-    ag_time = 0.0;
-    rs_send_trans_time = 0.0;
-    rs_recv_buf_time = 0.0;
-    rs_recv_trans_time = 0.0;
-    rs_send_time = 0.0;
-    rs_recv_wait_time = 0.0;
-    ag_reduced_trans_time = 0.0;
-    ag_recv_buf_time = 0.0;
-    ag_recv_trans_time = 0.0;
-    ag_send_time = 0.0;
-    ag_recv_wait_time = 0.0;
+  /** Reset recorded counters. */
+  void reset_counters() {
     proportion_time = 0.0;
+    quantized_count = 0;
   }
   /** Return the most recent number of quantized entries. */
   size_t get_quantized_count() const { return quantized_count; }
@@ -319,13 +242,6 @@ public:
 private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
-  /**
-   * Golomb-Rice M parameter, a power of 2. Should be large-ish relative to the
-   * data being encoded, but log_2(GR_M) should be <= 31.
-   */
-  static const uqtype GR_M = 128;
-  /** log_2(GR_M). */
-  static const uqtype GR_K = 7;
   /** Number of samples to use in proportion_threshold. */
   static const Int NUM_THRESHOLD_SAMPLES = 1024;
   /** Number of samples to use in col_reconstruction. */
@@ -341,58 +257,18 @@ private:
   /** Max factor by which adaptive quantization can exceed optimal amount. */
   static const Int MAX_QUANTIZED_EXCESS = 4;
 
-  /** Bytes sent in doing the reduce-scatter. */
-  size_t rs_bytes_sent;
-  /** Bytes sent in doing the all-gather. */
-  size_t ag_bytes_sent;
-  /** Bytes received in doing the reduce-scatter. */
-  size_t rs_bytes_received;
-  /** Bytes received in doing the all-gather. */
-  size_t ag_bytes_received;
-  /** Time spent in the reduce-scatter. */
-  double rs_time;
-  /** Time spent in the all-gather. */
-  double ag_time;
-  /** Time spent in the reduce-scatter send_trans. */
-  double rs_send_trans_time;
-  /** Time spent in the reduce-scatter get_recv_buf. */
-  double rs_recv_buf_time;
-  /** Time spent in the reduce-scatter recv_trans. */
-  double rs_recv_trans_time;
-  /** Time spent in the reduce-scatter sending. */
-  double rs_send_time;
-  /** Time spent in the reduce-scatter receiving/waiting for the receive. */
-  double rs_recv_wait_time;
-  /** Time spent in the allgather reduced_trans. */
-  double ag_reduced_trans_time;
-  /** Time spent in the allgather get_recv_buf. */
-  double ag_recv_buf_time;
-  /** Time spent in the all-gather recv_trans. */
-  double ag_recv_trans_time;
-  /** Time spent in the allgather sending. */
-  double ag_send_time;
-  /** Time spent in the allgather receiving/waiting for the receive. */
-  double ag_recv_wait_time;
   /** Time spent in proportion_threshold. */
   double proportion_time;
   /** Most recent number of quantized entries. */
   size_t quantized_count;
 
-  /** Pre-allocated receive buffers for adaptive quantization. */
-  std::unordered_map<Int, std::vector<uint16_t>> adaptive_recv16_bufs1;
-  std::unordered_map<Int, std::vector<uint16_t>> adaptive_recv16_bufs2;
-  std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs1;
-  std::unordered_map<Int, std::vector<uint32_t>> adaptive_recv32_bufs2;
-  std::unordered_map<Int, std::vector<uint64_t>> adaptive_recv64_bufs1;
-  std::unordered_map<Int, std::vector<uint64_t>> adaptive_recv64_bufs2;
-
-  /** Return the height of mat after quantization with quantize(). */
-  inline Int get_quantized_matrix_height(const Mat& mat) const {
+  /** Return the height of mat after quantization with onebit_quantize(). */
+  inline Int get_onebit_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
 
   /** Variant of unquantize that adds its entries. */
-  void unquantize_add(const QuantizedMatrix& qmat, Mat& mat);
+  void onebit_unquantize_add(const QuantizedMatrix& qmat, Mat& mat);
 
   /**
    * Do threshold unquantization from arbitrary locations, adding the
@@ -413,48 +289,34 @@ private:
                                 bool delta = false);
 
   /**
-   * Variant of adaptive_threshold_unquantize that adds its entries.
+   * Variant of adaptive_unquantize that adds its entries.
    */
   template <typename colT, typename rowT>
-  void adaptive_threshold_unquantize_add(const std::vector<rowT>& q, Mat& mat);
+  void adaptive_unquantize_add(const rowT* q, Mat& mat);
   /**
-   * Variant of adaptive_threshold_quantize that also replaces entries in mat
+   * Variant of adaptive_quantize that also replaces entries in mat
    * with their quantized version. This is equivalent to:
-   * adaptive_threshold_quantize(mat, q, qerror, proportion);
-   * adaptive_threshold_unquantize(q, mat);
-   * Note this does not (currently) support compression.
+   * adaptive_quantize(mat, q, qerror, proportion);
+   * adaptive_unquantize(q, mat);
    */
   template <typename colT, typename rowT>
-  void adaptive_threshold_quantize_replace(Mat& mat, std::vector<rowT>& q,
-                                           Mat& qerror, int proportion);
+  void adaptive_quantize_replace(Mat& mat, std::vector<rowT>& q,
+                                 Mat& qerror, int proportion);
   /**
    * Ensure that q is no more than a factor of MAX_QUANTIZED_EXCESS larger
    * than optimal.
    */
   template <typename colT, typename rowT>
-  void adaptive_threshold_bound(const Mat& mat, Mat& qerror, std::vector<rowT>& q,
-                                int proportion);
+  void adaptive_bound(const Mat& mat, Mat& qerror, std::vector<rowT>& q,
+                      int proportion);
   template <typename colT, typename rowT>
-  void adaptive_threshold_quantize_slice(const std::vector<rowT>& q,
-                                         const Mat& mat, Mat& qerror,
-                                         std::vector<rowT>& slice, colT start,
-                                         colT end, int proportion);
+  void adaptive_quantize_slice(const std::vector<rowT>& q,
+                               const Mat& mat, Mat& qerror,
+                               std::vector<rowT>& slice, colT start,
+                               colT end, int proportion);
   template <typename colT, typename rowT>
-  void intermodel_sum_adaptive_threshold_quantized_impl(
-    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion, Mat& im_qerror,
-    std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs1,
-    std::unordered_map<Int, std::vector<rowT>>& adaptive_recv_bufs2);
-
-  /** Handle compression starting from arbitrary locations. */
-  void compress_thresholds(const ThreshQuantized& q,
-                           ThreshQuantized::const_iterator qstart,
-                           ThreshQuantized::const_iterator qend,
-                           ThreshQuantized& cq);
-  /** Handle uncompression starting from arbitrary locations. */
-  void uncompress_thresholds(const ThreshQuantized& cq,
-                             ThreshQuantized::const_iterator cqstart,
-                             ThreshQuantized::const_iterator cqend,
-                             ThreshQuantized& q);
+  void intermodel_sum_adaptive_quantized_impl(
+    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion);
 
   /**
    * Return the number of threads adaptive quantization should use for a matrix
@@ -492,30 +354,6 @@ private:
     }
     return num_threads;
   }
-
-  template <typename T>
-  void intermodel_pairwise_exchange_reduce_scatter(
-    lbann_comm* comm, Mat& mat, bool var_recv,
-    std::function<T*(Mat&, IR, IR, int&)> send_trans,
-    std::function<T*(Mat&, int&)> get_recv_buf,
-    std::function<void(T*, Mat&)> recv_trans);
-
-  template <typename T>
-  void intermodel_ring_allgather(
-    lbann_comm* comm, Mat& mat, bool var_recv,
-    std::function<void(Mat&)> reduced_trans,
-    std::function<T*(int&)> get_send_buf,
-    std::function<T*(Mat&, int&)> get_recv_buf,
-    std::function<void(T*, Mat&)> recv_trans,
-    std::function<void(T*, T*)> swap_bufs);
-
-  template <typename T>
-  void intermodel_recursive_doubling_allreduce(
-    lbann_comm* comm, Mat& mat,
-    std::function<T*(Mat&, int&)> send_trans,
-    std::function<T*(Mat&, int&)> get_recv_buf,
-    std::function<void(T*, Mat&)> recv_trans,
-    std::function<void(T*, T*)> swap_bufs);
 };
 
 }  // namespace lbann

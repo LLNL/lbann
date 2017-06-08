@@ -37,8 +37,34 @@ namespace lbann
 
 cv_normalizer::cv_normalizer(void)
 : cv_transform(), m_mean_subtraction(false), m_unit_variance(false),
-  m_unit_scale(false), m_z_score(false)
+  m_unit_scale(true), m_z_score(false)
 {}
+
+
+cv_normalizer::cv_normalizer(const cv_normalizer& rhs)
+: cv_transform(rhs), m_mean_subtraction(rhs.m_mean_subtraction), m_unit_variance(rhs.m_unit_variance),
+  m_unit_scale(rhs.m_unit_scale), m_z_score(rhs.m_z_score), m_trans(rhs.m_trans)
+{
+}
+
+
+cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs)
+{
+  if (this == &rhs) return (*this);
+  cv_transform::operator=(rhs);
+  m_mean_subtraction = rhs.m_mean_subtraction;
+  m_unit_variance = rhs.m_unit_variance;
+  m_unit_scale = rhs.m_unit_scale;
+  m_z_score = rhs.m_z_score;
+  m_trans = rhs.m_trans;
+
+  return (*this);
+}
+
+
+cv_normalizer* cv_normalizer::clone(void) const {
+  return new cv_normalizer(*this);
+}
 
 
 cv_normalizer::normalization_type& cv_normalizer::set_normalization_type(
@@ -70,7 +96,7 @@ void cv_normalizer::reset(void)
   m_enabled = false;
   m_mean_subtraction = false;
   m_unit_variance = false;
-  m_unit_scale = false;
+  m_unit_scale = true;
   m_z_score = false;
   m_trans.clear();
 }
@@ -94,7 +120,8 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
   double unit_scale = 1.0;
   double largest = 1.0;
 
-  if (!m_z_score && m_unit_scale) {
+  //if (!m_z_score && m_unit_scale) {
+  if (ntype < _z_score) { // !(m_z_score || (m_mean_subtraction && m_unit_variance))
     switch(image.depth()) {
       case CV_8U:  largest = std::numeric_limits<uint8_t>::max();  break;
       case CV_8S:  largest = std::numeric_limits<int8_t>::max();   break;
@@ -250,6 +277,21 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
  #endif
   return false;
 }
+
+std::ostream& cv_normalizer::print(std::ostream& os) const
+{
+  os << "m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
+     << "m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
+     << "m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
+     << "m_z_score" << (m_z_score? "true" : "false") << std::endl;
+  os << "transform:";
+  for (const channel_trans_t& tr: m_trans)
+    os << ' ' << tr.first << ' ' << tr.second;
+  os << std::endl;
+
+  return os;
+}
+
 
 } // end of namespace lbann
 #endif // __LIB_OPENCV

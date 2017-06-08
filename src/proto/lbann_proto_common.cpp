@@ -4,10 +4,16 @@
 #include "lbann/lbann_comm.hpp"
 
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
+#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_cv.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
+#include "lbann/data_readers/lbann_opencv.hpp"
 
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
@@ -18,19 +24,342 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 
+#include "lbann/regularization/lbann_regularizer.hpp"
+#include "lbann/regularization/lbann_batch_normalization.hpp"
+#include "lbann/regularization/lbann_dropout.hpp"
+#include "lbann/regularization/lbann_l2_regularization.hpp"
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 
-
-
 using namespace lbann;
+
+pool_mode get_pool_mode(const string &s) {
+  if (s == "max") return pool_mode::max;
+  else if (s == "average") return pool_mode::average;
+  else if (s == "average_no_pad") return pool_mode::average_no_pad;
+  else {
+    stringstream err;
+    err << __FILE__ << " " <<__LINE__
+        << " :: unkown pool_mode: " << s
+        << " should be one of: max, average, average_no_pad";
+    throw lbann_exception(err.str());  
+  }
+  
+}
+
+void get_prev_neurons_and_index( lbann::sequential_model *model, int &prev_num_neurons, int &cur_index) {
+  std::vector<Layer*>& layers = model->get_layers();
+  prev_num_neurons = -1;
+  if(layers.size() != 0) {
+    Layer* prev_layer = layers.back();
+    prev_num_neurons = prev_layer->NumNeurons;
+  }
+  cur_index = layers.size();
+}
+
+activation_type get_activation_type(const string &s) {
+  if (s == "sigmoid") return activation_type::SIGMOID;
+  else if (s == "tanh") return activation_type::TANH;
+  else if (s == "relu") return activation_type::RELU;
+  else if (s == "id") return activation_type::ID;
+  else if (s == "leaky_relu") return activation_type::LEAKY_RELU;
+  else if (s == "softplus") return activation_type::SOFTPLUS;
+  else if (s == "smooth_relu") return activation_type::SMOOTH_RELU;
+  else if (s == "elu") return activation_type::ELU;
+  else {
+    stringstream err;
+    err << __FILE__ << " " <<__LINE__
+        << " :: unkown activation_type: " << s
+        << " should be one of: sigmoid tanh relu id leaky_relu softplus smooth_relu elu";
+    throw lbann_exception(err.str());  
+  }
+}
+
+weight_initialization get_weight_initialization(const string &s) {
+  if (s == "zero") return weight_initialization::zero;
+  else if (s == "uniform") return weight_initialization::uniform;
+  else if (s == "normal") return weight_initialization::normal;
+  else if (s == "glorot_normal") return weight_initialization::glorot_normal;
+  else if (s == "glorot_uniform") return weight_initialization::glorot_uniform;
+  else if (s == "he_normal") return weight_initialization::he_normal;
+  else if (s == "he_uniform") return weight_initialization::he_uniform;
+  else {
+    stringstream err;
+    err << __FILE__ << " " <<__LINE__
+        << " :: unkown weight_initialization: " << s
+        << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
+    throw lbann_exception(err.str());  
+  }
+}
+
+data_layout get_data_layout(const string &s, const char *file, int line) {
+    if (s == "model_parallel") { 
+      return data_layout::MODEL_PARALLEL; 
+    } else if (s == "data_parallel") { 
+      return data_layout::DATA_PARALLEL; 
+    } else { 
+      stringstream err; 
+      err << file << " " << line
+          << " :: unknown value for data_layout; should be model_parallel" 
+          << " or data_parallel; we got: " << s; 
+      throw lbann_exception(err.str());  
+    } 
+}
+
+void init_regularizers(
+  vector<regularizer*> &regs, 
+  lbann_comm *comm,
+   const ::google::protobuf::RepeatedPtrField< ::lbann_data::Regularizer >& r) {
+   for (int i=0; i<r.size(); i++) {
+     const lbann_data::Regularizer r2 = r[i];
+     if (r[i].has_batch_normalization()) {
+       const lbann_data::BatchNormalization &b = r[i].batch_normalization();
+       batch_normalization *b2 = new batch_normalization(
+         get_data_layout(b.data_layout(), __FILE__, __LINE__),
+         comm,
+         b.decay(),
+         b.gamma(),
+         b.beta());
+       regs.push_back(b2);
+     }
+     if (r[i].has_dropout()) {
+       const lbann_data::Dropout &b = r[i].dropout();
+       dropout *b2 = new dropout(
+         get_data_layout(b.data_layout(), __FILE__, __LINE__),
+         comm,
+         b.keep_prob());
+       regs.push_back(b2);
+     }
+     if (r[i].has_l2_regularization()) {
+       const lbann_data::L2Regularization &b = r[i].l2_regularization();
+       l2_regularization *b2 = new l2_regularization(b.lambda());
+       regs.push_back(b2);
+     }
+   }
+}
+
+void add_layers(
+  lbann::sequential_model *model, 
+  std::map<execution_mode, DataReader*> &data_readers, 
+  cudnn::cudnn_manager *cudnn,
+  const lbann_data::LbannPB &p) 
+  {
+  stringstream err;
+  lbann_comm *comm = model->get_comm();
+  bool master = comm->am_world_master();
+
+  const lbann_data::Model &m = p.model();
+  int mb_size = m.mini_batch_size();
+  int size = m.layer_size();
+
+  for (int j=0; j<size; j++) {
+    const lbann_data::Layer &layer = m.layer(j);
+
+    int layer_id;
+    int prev_num_neurons;
+    get_prev_neurons_and_index(model, prev_num_neurons, layer_id);
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: input_distributed_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_input_distributed_minibatch_parallel_io()) {
+      const lbann_data::InputDistributedMiniBatchParallelIO &ell = layer.input_distributed_minibatch_parallel_io();
+      data_layout layout = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+
+      vector<regularizer*> regs;
+      init_regularizers(regs, comm, ell.regularizer());
+
+      input_layer *d = new input_layer_distributed_minibatch_parallel_io(
+         layout, //data_layout
+         comm, 
+         m.num_parallel_readers(),
+         mb_size,
+         data_readers,
+         regs); 
+      model->add(d);
+    }
+    
+    //////////////////////////////////////////////////////////////////
+    // LAYER: fully_connected
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_fully_connected()) {
+      const lbann_data::FullyConnected &ell = layer.fully_connected();
+      vector<regularizer*> regs;
+      init_regularizers(regs, comm, ell.regularizer());
+      FullyConnectedLayer *layer = new FullyConnectedLayer(
+        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+        layer_id,
+        prev_num_neurons,
+        ell.num_neurons(),
+        mb_size, 
+        get_activation_type(ell.activation_type()),
+        get_weight_initialization(ell.weight_initialization()),
+        comm,
+        model->create_optimizer(),
+        regs);
+
+      model->add(layer);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: pooling
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_pooling()) {
+      const lbann_data::Pooling &ell = layer.pooling();
+
+      vector<int> input_dims;
+      int i;
+      stringstream ss(ell.input_dims());
+      while (ss >> i) {
+        input_dims.push_back(i);
+      }
+
+      vector<int> pool_dims;
+      ss.clear();
+      ss.str(ell.pool_dims());
+      while (ss >> i) {
+        pool_dims.push_back(i);
+      }
+
+      vector<int> pool_pads;
+      ss.clear();
+      ss.str(ell.pool_pads());
+      while (ss >> i) {
+        pool_pads.push_back(i);
+      }
+
+      vector<int> pool_strides;
+      ss.clear();
+      ss.str(ell.pool_strides());
+      while (ss >> i) {
+        pool_strides.push_back(i);
+      }
+
+      pooling_layer *layer = new pooling_layer(
+        layer_id,
+        ell.num_dims(),
+        ell.num_channels(),
+        &input_dims[0],
+        &pool_dims[0],
+        &pool_pads[0],
+        &pool_strides[0],
+        get_pool_mode(ell.pool_mode()),
+        mb_size,
+        comm,
+        cudnn
+      );
+
+      model->add(layer);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: convolution
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_convolution()) {
+      const lbann_data::Convolution &ell = layer.convolution();
+
+      vector<Int> input_dims;
+      stringstream ss(ell.input_dims());
+      int i;
+      while (ss >> i) {
+        input_dims.push_back(i);
+      }
+
+      vector<Int> filter_dims;
+      ss.clear();
+      ss.str(ell.filter_dims());
+      while (ss >> i) {
+        filter_dims.push_back(i);
+      }
+
+      vector<Int> conv_pads;
+      ss.clear();
+      ss.str(ell.conv_pads());
+      while (ss >> i) {
+        conv_pads.push_back(i);
+      }
+
+      vector<Int> conv_strides;
+      ss.clear();
+      ss.str(ell.conv_strides());
+      while (ss >> i) {
+        conv_strides.push_back(i);
+      }
+
+      Int num_dims = ell.num_dims();
+      Int num_input_channels = ell.num_input_channels();
+      Int num_output_channels = ell.num_output_channels();
+
+      vector<regularizer*> regs;
+      init_regularizers(regs, comm, ell.regularizer());
+
+      convolutional_layer* layer = new convolutional_layer(
+        layer_id,
+        num_dims,
+        num_input_channels,
+        &input_dims[0],
+        num_output_channels,
+        &filter_dims[0],
+        &conv_pads[0],
+        &conv_strides[0],
+        mb_size,
+        get_activation_type(ell.activation_type()),
+        get_weight_initialization(ell.weight_initialization()),
+        comm,
+        model->create_optimizer(),
+        regs,
+        cudnn
+      );  
+
+      model->add(layer);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: softmax
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_softmax()) {
+      const lbann_data::Softmax &ell = layer.softmax();
+      SoftmaxLayer *layer = new SoftmaxLayer(
+        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+        layer_id,
+        prev_num_neurons,
+        ell.num_neurons(),
+        mb_size, 
+        get_weight_initialization(ell.weight_initialization()),
+        comm,
+        model->create_optimizer()
+      );
+
+      model->add(layer);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: target_distributed_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_target_distributed_minibatch_parallel_io()) {
+      const lbann_data::TargetDistributedMinibatchParallelIO &ell = layer.target_distributed_minibatch_parallel_io();
+      target_layer *t = new  target_layer_distributed_minibatch_parallel_io(
+          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          ell.shared_data_reader(),
+          ell.for_regression());
+      model->add(t);
+    }
+  }
+}
 
 void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
   stringstream err;
   bool master = comm->am_world_master();
 
   const lbann_data::Model &m = p.model();
+
+  cerr << endl << "STARTING init_callbacks; size: " << m.callback_size() << endl;
 
   //loop over the callbacks
   int size = m.callback_size();
@@ -218,38 +547,18 @@ optimizer_factory * init_optimizer_factory(lbann_comm *comm, const lbann_data::L
   return factory;
 }
 
-int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers, int &mb_size)
+void init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execution_mode, DataReader*> &data_readers, int mini_batch_size)
 {
   stringstream err;
 
   const lbann_data::DataReader &d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
-  int mini_batch_size = 0;
-  if (mb_size != 0) {
-    mini_batch_size = mb_size;
-  }
-  if (master) {
-    cout << "mini_batch_size: " << mini_batch_size << " mb_size: " << mb_size << endl;
-  }
-
   for (int j=0; j<size; j++) {
     const lbann_data::Reader &readme = d_reader.reader(j);
     const lbann_data::ImagePreprocessor &preprocessor = readme.image_preprocessor();
 
     const string &name = readme.name();
-
-    if (mb_size == 0) {
-      int this_mini_batch_size = readme.mini_batch_size();
-      if (this_mini_batch_size != mini_batch_size and mini_batch_size > 0) {
-        stringstream err;
-        err << __FILE__ << " " << __LINE__
-            << " :: mini_batch sizes don't match; one reader has "
-            << this_mini_batch_size << " the other has " << mini_batch_size;
-        throw lbann_exception(err.str());
-      }
-      mini_batch_size = this_mini_batch_size;
-    }
 
     bool shuffle = readme.shuffle();
 
@@ -260,12 +569,29 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       reader = new DataReader_MNIST(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new DataReader_ImageNet(mini_batch_size, shuffle);
+      /*
+    } else if (name == "imagenet_cv") {
+      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+      pp->set_normalizer(std::move(normalizer));
+      pp->set_custom_transform2(std::move(colorizer));
+      reader = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
+    } else if (name == "imagenet_single") {
+      reader = new DataReader_ImageNet_single(mini_batch_size, shuffle);
+    } else if (name == "imagenet_single_cv") {
+      reader = new DataReader_ImageNet_single_cv(mini_batch_size, shuffle);
+      */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "nci_regression") {
       reader = new data_reader_nci_regression(mini_batch_size, shuffle);
     } else if (name == "cnpy") {
       reader = new DataReader_cnpy(mini_batch_size, shuffle);
+    } else if (name == "cifar10") {
+      reader = new DataReader_CIFAR10(mini_batch_size, shuffle);
+      /*
+    } else if (name == "synthetic") {
+      reader = new data_reader_synthetic(mini_batch_size, shuffle);
+      */
     } else {
       err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
           << name;
@@ -346,7 +672,26 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       } else if (name == "cnpy") {
         reader_validation = new DataReader_cnpy(mini_batch_size, shuffle);
         (*(DataReader_cnpy*)reader_validation) = (*(DataReader_cnpy*)reader);
-      }
+    } else if (name == "cifar10") {
+      reader_validation = new DataReader_CIFAR10(mini_batch_size, shuffle);
+      /*
+    } else if (name == "synthetic") {
+      reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
+      */
+    }  
+      /*
+    } else if (name == "imagenet_cv") {
+      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+      pp->set_normalizer(std::move(normalizer));
+      pp->set_custom_transform2(std::move(colorizer));
+      reader = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
+      reader_validation = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
+    } else if (name == "imagenet_single") {
+      reader_validation = new DataReader_ImageNet_single(mini_batch_size, shuffle);
+    } else if (name == "imagenet_single_cv") {
+      reader_validation = new DataReader_ImageNet_single_cv(mini_batch_size, shuffle);
+      */
+
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
 
@@ -362,19 +707,6 @@ int init_data_readers(bool master, const lbann_data::LbannPB &p, std::map<execut
       data_readers[execution_mode::validation] = reader_validation;
     }
   }
-  if (mb_size == 0) {
-    mb_size = mini_batch_size;
-  }
-
-/*
-  if (master) {
-    for (auto it : data_readers) {
-      cerr << ">>>> leaving int_data_readers; data reader; role: " << it.second->get_role() << " num data: " << it.second->getNumData() << endl;
-    }  
-  }  
-*/
-
-  return mini_batch_size;
 }
 
 void readPrototextFile(string fn, lbann_data::LbannPB &pb)

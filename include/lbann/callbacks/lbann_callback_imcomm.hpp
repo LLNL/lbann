@@ -48,49 +48,80 @@ public:
   enum comm_type {
     NONE,  /** Do no gradient updates. */
     NORMAL,  /** Simply sum gradient updates. */
-    ONEBIT_QUANTIZATION,  /** Do one-bit quantization with AdaGrad. */
-    THRESH_QUANTIZATION,  /** Do thresholded one-bit quantization. */
-    COMPRESSED_THRESH_QUANTIZATION,  /** Do compressed thresholded one-bit quantization. */
-    ADAPTIVE_THRESH_QUANTIZATION,  /** Do adaptive thresholded one-bit quantization. */
-    COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION,  /** Do compressed adaptive thresholded one-bit quantization. */
-    NORMAL_AR  /** Sum gradient updates but use the custom allreduce. */
+    ONEBIT_QUANTIZATION,  /** Do one-bit quantization. */
+    THRESH_QUANTIZATION,  /** Do threshold quantization. */
+    ADAPTIVE_QUANTIZATION,  /** Do adaptive quantization. */
   };
-  /** Do inter-model gradient updates of the given type. */
-  lbann_callback_imcomm(comm_type ct = NONE, lbann_summary* _summarizer = nullptr);
+
   /**
-   * Do inter-model gradient updates of the given type, only for the layers in
-   * the layers set.
+   * Initialize with ct being used for every layer.
+   */
+  lbann_callback_imcomm(comm_type ct = NORMAL,
+                        lbann_summary* _summarizer = nullptr);
+  /**
+   * Convenience initialization to do one update type for a set of layers.
+   * Implies no inter-model updates for other layers.
    */
   lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> _layers,
                         lbann_summary* _summarizer = nullptr);
+
+  /** Choose comm type ct for layer. */
+  void set_layer_comm(uint layer, comm_type ct);
+  /** Set a layer to use adaptive quantization with proportion. */
+  void set_layer_adaptive(uint layer, int proportion);
+  /** Set a layer to use threshold quantization with given thresholds. */
+  void set_layer_threshold(uint layer, DataType pos_thresh,
+                           DataType neg_thresh);
+
   /** Do initialization for this model. */
   void setup(model* m);
   /** Clear out remaining error if needed. */
   void on_epoch_end(model* m);
   /** Do inter-model gradient updates. */
   void on_backward_prop_end(model* m);
+
 private:
-  /** Communication type. */
-  comm_type ct;
+  /** Parameters for a given layer. */
+  struct imcomm_params {
+    /** Type of communication done. */
+    comm_type ct = NONE;
+    /** Accumulated error (e.g. from quantization). */
+    Mat error;
+    /** If >0, reshape (local) layer gradients to these dimensions. */
+    Int reshape_height = 0;
+    Int reshape_width = 0;
+    /** Adaptive quantization proportion. */
+    int proportion = 32;
+    /** Threshold quantization thresholds. */
+    DataType pos_thresh = 1.0;
+    DataType neg_thresh = -1.0;
+  };
+  /** Default communication type. */
+  comm_type default_ct;
+  /** Per-layer parameters. */
+  std::vector<imcomm_params> layer_params;
   /** Quantizer for quantization of updates, if needed. */
   lbann_quantizer quantizer;
-  /** Per-layer quantization errors. */
-  std::unordered_map<uint, Mat> quantization_errors;
-  /** Per-layer inter-model sum quantization errors. */
-  std::unordered_map<uint, Mat> im_quantization_errors;
-  /** Per-layer gradient history when using one-bit quantization. */
-  std::unordered_map<uint, Mat> gradhistories;
-  /** Layers indicies to quantize. */
-  std::unordered_set<uint> layer_indices;
+  /** Record param choices for specific layers for setup. */
+  std::unordered_map<uint, imcomm_params> param_choices;
 
   /** Return true if the comm type does quantization. */
-  inline bool ct_does_quantization() const {
+  inline bool ct_does_quantization(comm_type ct) const {
     return (ct == ONEBIT_QUANTIZATION ||
             ct == THRESH_QUANTIZATION ||
-            ct == COMPRESSED_THRESH_QUANTIZATION ||
-            ct == ADAPTIVE_THRESH_QUANTIZATION ||
-            ct == COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION);
+            ct == ADAPTIVE_QUANTIZATION);
   }
+
+  /**
+   * Get a matrix that reinterprets mat as being height x width.
+   * Assumes that mat.Height()*mat.Width() == height*width.
+   */
+  void reshape_mat(Mat& mat, Mat& reshaped, Int height, Int width) {
+    reshaped.Attach(height, width, mat.Buffer(), height);
+  }
+
+  /** Summarize relevant statistics. */
+  void do_summary(model* m, Layer* layer, double im_time);
 };
 
 }  // namespace lbann

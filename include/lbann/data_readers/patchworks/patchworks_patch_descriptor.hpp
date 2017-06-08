@@ -37,17 +37,13 @@
 #include <string>
 #include <ostream>
 #include "patchworks_common.hpp"
+#include "patchworks_opencv.hpp"
 #include "patchworks_ROI.hpp"
-#include "patchworks_rand.hpp"
 
 namespace lbann {
 namespace patchworks {
 
 class patch_descriptor {
- protected:
-  typedef rand_patch<> rand_t; ///< random number generator type
-  rand_t m_rg_jitter; ///< random number generator for position jitter
-
  public:
   unsigned int m_width; ///< patch width
   unsigned int m_height; ///< patch height
@@ -81,9 +77,8 @@ class patch_descriptor {
   std::vector<ROI> m_positions;
 
  public:
-  patch_descriptor(void) { init(0); } ///< Default constructor
-  void init(const int seed=0); ///< Initializer
-  void set_seed(const int seed); ///< Re-seed the random number generator
+  patch_descriptor(void) { init(); } ///< Default constructor
+  void init(void); ///< Initializer
 
   /// Set patch size
   void set_size(const int w, const int h);
@@ -125,6 +120,8 @@ class patch_descriptor {
   virtual bool get_first_patch(ROI& patch);
   /// Compute the position of a subsequent patch
   virtual bool get_next_patch(ROI& patch);
+  /// extract all the patches defined
+  virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
 
   /// Allow read-only access to the positions of the patches generated
   const std::vector<ROI>& access_positions(void) const { return m_positions; }

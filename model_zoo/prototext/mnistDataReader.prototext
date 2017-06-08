@@ -1,7 +1,6 @@
 data_reader {
   reader {
     name: "mnist"
-    mini_batch_size: 128
     role: "train"
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/MNIST/train-images-idx3-ubyte"
@@ -26,7 +25,6 @@ data_reader {
   }
   reader {
     name: "mnist"
-    mini_batch_size: 128
     role: "test"
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/MNIST/t10k-images-idx3-ubyte"

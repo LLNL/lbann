@@ -33,364 +33,197 @@
 
 using namespace lbann;
 
-/** Test quantization and unquantization. */
-void test_quantize() {
-  Mat mat;
-  El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::QuantizedMatrix qmat;
-  Mat qerror;
-  El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.quantize(mat, qmat, qerror);
-  Mat uqmat(mat.Height(), mat.Width());
-  quantizer.unquantize(qmat, uqmat);
-  // Ensure there's some quantization error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_NEQ(qerror, z);
-  ASSERT_MAT_NEQ(mat, uqmat);
-  // With quantization error, we should approximately have the original matrix.
+// Test local quantization/unquantization.
+
+/** Do some checks on the unquantized matrix. */
+void check_quantized_mat(const Mat& orig, const Mat& qerror, const Mat& uqmat,
+                         bool exact) {
+  if (!exact) {
+    // Ensure there is some quantization error.
+    Mat z;
+    El::Zeros(z, orig.Height(), orig.Width());
+    ASSERT_MAT_NEQ(qerror, z);
+    ASSERT_MAT_NEQ(orig, uqmat);
+  }
+  // Ensure we can use qerror to recover the original matrix.
   Mat with_qerror(uqmat);
   with_qerror += qerror;
-  ASSERT_MAT_EQ(mat, with_qerror);
+  Mat err(with_qerror);
+  err -= orig;
+  ASSERT_MAT_EQ(orig, with_qerror);
 }
 
-/**
- * Test quantization/unquantization with one positive and negative value.
- * This should have no error.
- */
-void test_2value_quantize() {
-  Mat mat;
-  El::Rademacher(mat, 10, 10);
-  lbann_quantizer::QuantizedMatrix qmat;
-  Mat qerror;
+/** Test onebit quantization. */
+void test_onebit_quantization(const Mat& mat, bool exact) {
+  std::cout << "Testing onebit" << std::endl;
+  Mat qerror, uqmat;
   El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.quantize(mat, qmat, qerror);
-  Mat uqmat(mat.Height(), mat.Width());
-  quantizer.unquantize(qmat, uqmat);
-  // Should have no error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ(mat, uqmat);
-}
-
-/** Test threshold_quantize/unquantize. */
-void test_threshold_quantize() {
-  Mat mat;
-  El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::ThreshQuantized qmat;
-  Mat qerror;
-  El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.threshold_quantize(mat, qmat, qerror, 2.0f, -2.0f);
-  Mat uqmat;
   El::Zeros(uqmat, mat.Height(), mat.Width());
-  quantizer.threshold_unquantize(qmat, uqmat, 2.0f, -2.0f);
-  // Ensure there's some quantization error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_NEQ(qerror, z);
-  ASSERT_MAT_NEQ(mat, uqmat);
-  // Ensure reconstruction is decent.
-  Mat with_qerror(uqmat);
-  with_qerror += qerror;
-  ASSERT_MAT_EQ(mat, with_qerror);
-}
-
-/** Test compression with manual inputs. */
-void test_compression() {
-  lbann_quantizer::ThreshQuantized in = {1000, 0, 1, 2, 1000, 137};
-  lbann_quantizer::ThreshQuantized comp;
-  lbann_quantizer::ThreshQuantized out;
   lbann_quantizer quantizer;
-  quantizer.compress_thresholds(in, comp);
-  quantizer.uncompress_thresholds(comp, out);
-  ASSERT_VECTOR_EQ(in, out);
+  lbann_quantizer::QuantizedMatrix qmat;
+  quantizer.onebit_quantize(mat, qmat, qerror);
+  quantizer.onebit_unquantize(qmat, uqmat);
+  check_quantized_mat(mat, qerror, uqmat, exact);
 }
 
-/** Test threshold compression/uncompression. */
-void test_threshold_compression() {
-  Mat mat;
-  El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::ThreshQuantized qmat;
-  Mat qerror;
+/** Test threshold quantization. */
+void test_threshold_quantization(const Mat& mat, bool exact) {
+  std::cout << "Testing threshold" << std::endl;
+  Mat qerror, uqmat;
   El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.threshold_quantize(mat, qmat, qerror, 2.0f, -2.0f);
-  lbann_quantizer::ThreshQuantized compressed_qmat;
-  quantizer.compress_thresholds(qmat, compressed_qmat);
-  lbann_quantizer::ThreshQuantized uncompressed_qmat;
-  quantizer.uncompress_thresholds(compressed_qmat, uncompressed_qmat);
-  ASSERT_VECTOR_EQ(qmat, uncompressed_qmat);
-  Mat uqmat;
   El::Zeros(uqmat, mat.Height(), mat.Width());
-  quantizer.threshold_unquantize(qmat, uqmat, 2.0f, -2.0f);
-  // Ensure there's some quantization error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_NEQ(qerror, z);
-  ASSERT_MAT_NEQ(mat, uqmat);
-  // Ensure reconstruction is decent.
-  Mat with_qerror(uqmat);
-  with_qerror += qerror;
-  ASSERT_MAT_EQ(mat, with_qerror);
+  lbann_quantizer quantizer;
+  lbann_quantizer::ThreshQuantized qmat;
+  quantizer.threshold_quantize(mat, qmat, qerror, DataType(2.0), DataType(-2.0));
+  quantizer.threshold_unquantize(qmat, uqmat, DataType(2.0), DataType(-2.0));
+  check_quantized_mat(mat, qerror, uqmat, exact);
 }
 
-/** Test adaptive threshold quantization/unquantization. */
-void test_adaptive_threshold_quantize() {
-  Mat mat;
-  El::Uniform(mat, 10, 10, 0.0f, 10.0f);
+/** Test adaptive quantization. */
+void test_adaptive_quantization(const Mat& mat, bool exact) {
+  std::cout << "Testing adaptive" << std::endl;
+  Mat qerror, uqmat;
+  El::Zeros(qerror, mat.Height(), mat.Width());
+  El::Zeros(uqmat, mat.Height(), mat.Width());
+  lbann_quantizer quantizer;
   std::vector<uint16_t> qmat;
-  Mat qerror;
-  El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.adaptive_threshold_quantize<uint32_t, uint16_t>(mat, qmat, qerror, 3);
-  Mat uqmat;
-  El::Zeros(uqmat, mat.Height(), mat.Width());
-  quantizer.adaptive_threshold_unquantize<uint32_t, uint16_t>(qmat, uqmat);
-  // Ensure there's some quantization error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_NEQ(qerror, z);
-  ASSERT_MAT_NEQ(mat, uqmat);
-  // Ensure reconstruction is decent.
-  Mat with_qerror(uqmat);
-  with_qerror += qerror;
-  ASSERT_MAT_EQ(mat, with_qerror);
+  // Handle different datatype sizes.
+  typedef std::conditional<sizeof(DataType) <= sizeof(uint32_t),
+    uint32_t, uint64_t>::type colT;
+  quantizer.adaptive_quantize<colT, uint16_t>(mat, qmat, qerror, 3);
+  quantizer.adaptive_unquantize<colT, uint16_t>(qmat.data(), uqmat);
+  check_quantized_mat(mat, qerror, uqmat, exact);
 }
 
-/** Test adaptive threshold compression/uncompression. */
-/*void test_adaptive_threshold_compression() {
-  Mat mat;
-  El::Uniform(mat, 10, 10, 0.0f, 10.0f);
-  lbann_quantizer::ThreshQuantized qmat, comp_qmat;
-  Mat qerror;
-  El::Zeros(qerror, mat.Height(), mat.Width());
-  lbann_quantizer quantizer;
-  quantizer.adaptive_threshold_quantize(mat, comp_qmat, qerror, 3, true);
-  Mat uqmat;
-  El::Zeros(uqmat, mat.Height(), mat.Width());
-  quantizer.adaptive_threshold_unquantize(comp_qmat, uqmat, true);
-  // Ensure there's some quantization error.
-  Mat z;
-  El::Zeros(z, mat.Height(), mat.Width());
-  ASSERT_MAT_NEQ(qerror, z);
-  ASSERT_MAT_NEQ(mat, uqmat);
-  // Ensure reconstruction is decent.
-  Mat with_qerror(uqmat);
-  with_qerror += qerror;
-  ASSERT_MAT_EQ(mat, with_qerror);
-  }*/
+// Test quantized allreduces.
 
-/** Test the basic allreduce without quantization. */
-void test_allreduce() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  El::Uniform(mat, 512, 512, 0.0f, 10.0f);
-  DistMat exact_sum(mat);
-  lbann_quantizer quantizer;
-  quantizer.intermodel_sum(comm, mat);
-  comm->intermodel_sum_matrix(exact_sum);
-  comm->global_barrier();
-  ASSERT_MAT_EQ(mat, exact_sum);
-  delete comm;
+void check_allreduced_mat(lbann_comm* comm, const DistMat& mat,
+                          const DistMat& exact_sum, const Mat& qerror,
+                          bool exact) {
+  if (exact) {
+    ASSERT_MAT_EQ(mat.LockedMatrix(), exact_sum.LockedMatrix());
+  }
+  // Compute the global error and compare.
+  Mat global_qerror(qerror);
+  comm->intermodel_sum_matrix(global_qerror);
+  Mat with_qerror(mat.LockedMatrix());
+  with_qerror += global_qerror;
+  ASSERT_MAT_EQ(exact_sum.LockedMatrix(), with_qerror);
 }
 
-/** Test the inter-model quantize-and-allreduce. */
-void test_quantize_allreduce() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
-  }
+/** Test onebit quantized allreduce. */
+void test_onebit_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+                                    bool exact) {
+  if (comm->am_world_master()) std::cout << "Testing onebit" << std::endl;
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
   lbann_quantizer quantizer;
-  quantizer.intermodel_sum_quantized(comm, mat, qerror, im_qerror);
-  comm->intermodel_sum_matrix(exact_sum);  // Compute exact sum.
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  // Should have no error.
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ(mat, exact_sum);
-  ASSERT_MAT_EQ(abs_elemerr, z);
-  delete comm;
+  quantizer.intermodel_sum_onebit_quantized(comm, mat, qerror);
+  comm->intermodel_sum_matrix(exact_sum);
+  check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
-/** Test the inter-model threshold quantize-and-allreduce. */
-void test_threshold_quantize_allreduce() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
-  }
+/** Test threshold quantized allreduce. */
+void test_threshold_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+                                       bool exact) {
+  if (comm->am_world_master()) std::cout << "Testing threshold" << std::endl;
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
   lbann_quantizer quantizer;
-  // Thresholds such that everything is sent.
-  quantizer.intermodel_sum_threshold_quantized(comm, mat, qerror, 1.0f, -1.0f,
-                                               im_qerror, false);
+  quantizer.intermodel_sum_threshold_quantized(comm, mat, qerror,
+                                               DataType(2.0), DataType(-2.0));
   comm->intermodel_sum_matrix(exact_sum);
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  // Since this can't change thresholds, the 0s get requantized as 1s. So we
-  // should have no intermediate error, but some final error.
-  // Specifically, it should be within 1.
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ_TOL(mat, exact_sum, 1.0f);
-  ASSERT_MAT_EQ_TOL(abs_elemerr, z, 1.0f);
-  delete comm;
+  check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
-/** Test the inter-model threshold quantize-and-allreduce with compression. */
-void test_compressed_threshold_quantize_allreduce() {
-    lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
-  }
+/** Test adaptively quantized allreduce. */
+void test_adaptive_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+                                      bool exact) {
+  if (comm->am_world_master()) std::cout << "Testing adaptive" << std::endl;
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
   lbann_quantizer quantizer;
-  // Thresholds such that everything is sent.
-  quantizer.intermodel_sum_threshold_quantized(comm, mat, qerror, 1.0f, -1.0f,
-                                               im_qerror);
+  quantizer.intermodel_sum_adaptive_quantized(comm, mat, qerror, 1);
   comm->intermodel_sum_matrix(exact_sum);
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  // Since this can't change thresholds, the 0s get requantized as 1s. So we
-  // should have no intermediate error, but some final error.
-  // Specifically, it should be within 1.
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ_TOL(mat, exact_sum, 1.0f);
-  ASSERT_MAT_EQ_TOL(abs_elemerr, z, 1.0f);
-  delete comm;
+  check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
-/** Test the inter-model adaptive threshold quantize-and-allreduce. */
-void test_adaptive_threshold_quantize_allreduce() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
+/** Test local operations. */
+void test_local() {
+  std::cout << "Testing local quantization" << std::endl;
+  for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
+    // Test uniform matrix.
+    Mat uniform_mat;
+    El::Uniform(uniform_mat, mat_size, mat_size, DataType(0), DataType(4));
+    std::cout << "Uniform " << mat_size << "x" << mat_size << std::endl;
+    test_onebit_quantization(uniform_mat, false || mat_size <= 2);
+    test_threshold_quantization(uniform_mat, false);
+    test_adaptive_quantization(uniform_mat, false || mat_size <= 2);
+    // Test Gaussian matrix.
+    Mat gaussian_mat;
+    El::Gaussian(gaussian_mat, mat_size, mat_size, DataType(0), DataType(2));
+    std::cout << "Gaussian " << mat_size << "x" << mat_size << std::endl;
+    test_onebit_quantization(gaussian_mat, false || mat_size <= 2);
+    test_threshold_quantization(gaussian_mat, false);
+    test_adaptive_quantization(gaussian_mat, false || mat_size <= 2);
+    // Test Rademacher matrix (should be exact).
+    Mat rademacher_mat;
+    El::Rademacher(rademacher_mat, mat_size, mat_size);
+    std::cout << "Rademacher " << mat_size << "x" << mat_size << std::endl;
+    test_onebit_quantization(rademacher_mat, true);
+    // Threshold can't guarantee exact reconstruction.
+    test_threshold_quantization(rademacher_mat, false);
+    test_adaptive_quantization(rademacher_mat, true);
   }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-2, mat);
-  }
-  DistMat exact_sum(mat);
-  Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
-  lbann_quantizer quantizer;
-  // Proportion such that everything is sent.
-  quantizer.intermodel_sum_adaptive_threshold_quantized(comm, mat, qerror, 1,
-                                                        im_qerror);
-  comm->intermodel_sum_matrix(exact_sum);
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ(mat, exact_sum);
-  ASSERT_MAT_EQ(abs_elemerr, z);
-  delete comm;
 }
 
-/**
- * Test the inter-model adaptive threshold quantize-and-allreduce with
- * compression.
- */
-/*void test_compressed_adaptive_threshold_quantize_allreduce() {
-  lbann_comm* comm = new lbann_comm(2);
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    El::Rademacher(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
-  } else {
-    El::Zeros(mat, 10, 10);
-    comm->intermodel_broadcast_matrix(mat, 0);
+/** Test global allreduce operations. */
+void test_allreduces() {
+  lbann_comm* comm = new lbann_comm(1);
+  if (comm->am_world_master())
+    std::cout << "Testing quantized allreduces" << std::endl;
+  // Note: Threshold quantized allreduce not currently supported.
+  for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
+    // Test Rademacher matrix (should be exact);
+    DistMat rademacher_mat(comm->get_model_grid());
+    if (comm->get_model_rank() == 0) {
+      El::Rademacher(rademacher_mat, mat_size, mat_size);
+      comm->intermodel_broadcast_matrix(rademacher_mat, 0);
+    } else {
+      rademacher_mat.Resize(mat_size, mat_size);
+      comm->intermodel_broadcast_matrix(rademacher_mat, 0);
+    }
+    if (comm->get_model_rank() % 2 == 1) {
+      El::Scale(-1, rademacher_mat);
+    }
+    DistMat onebit_rademacher(rademacher_mat),
+      threshold_rademacher(rademacher_mat),
+      adaptive_rademacher(rademacher_mat);
+    if (comm->get_model_rank() % 2 == 1) {
+      // Adaptive quantization disregards 0s, so we need this to sum to a
+      // different value instead.
+      // In the case of 3 models, don't scale by 2 or else elements sum to 0.
+      if (comm->get_num_models() != 3) {
+        El::Scale(2, adaptive_rademacher);
+      }
+    }
+    if (comm->am_world_master())
+      std::cout << "Rademacher " << mat_size << "x" << mat_size << std::endl;
+    test_onebit_quantize_allreduce(comm, onebit_rademacher, true);
+    //test_threshold_quantize_allreduce(comm, threshold_rademacher, false);
+    test_adaptive_quantize_allreduce(comm, adaptive_rademacher, true);
   }
-  if (comm->get_model_rank() % 2 == 1) {
-    El::Scale(-1, mat);
-  }
-  DistMat exact_sum(mat);
-  Mat qerror;
-  El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  Mat im_qerror;
-  lbann_quantizer quantizer;
-  // Proportion such that everything is sent.
-  quantizer.intermodel_sum_adaptive_threshold_quantized(comm, mat, qerror, 1,
-                                                        im_qerror);
-  comm->intermodel_sum_matrix(exact_sum);
-  Mat abs_elemerr;
-  DataType abs_err = absolute_error(mat.Matrix(), exact_sum.Matrix(),
-                                    abs_elemerr);
-  Mat z;
-  El::Zeros(z, mat.LocalHeight(), mat.LocalWidth());
-  ASSERT_MAT_EQ(qerror, z);
-  ASSERT_MAT_EQ(mat, exact_sum);
-  ASSERT_MAT_EQ(abs_elemerr, z);
-  delete comm;
-  }*/
+}
 
 int main(int argc, char** argv) {
   El::Initialize(argc, argv);
-  test_quantize();
-  test_2value_quantize();
-  test_threshold_quantize();
-  //test_compression();
-  //test_threshold_compression();
-  test_adaptive_threshold_quantize();
-  //test_adaptive_threshold_compression();
-  test_allreduce();
-  test_quantize_allreduce();
-  test_threshold_quantize_allreduce();
-  //test_compressed_threshold_quantize_allreduce();
-  test_adaptive_threshold_quantize_allreduce();
-  //test_compressed_adaptive_threshold_quantize_allreduce();
+  if (El::mpi::Rank() == 0) {
+    test_local();
+  }
+  test_allreduces();
   El::Finalize();
   return 0;
 }
