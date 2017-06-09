@@ -80,15 +80,37 @@ int lbann::makedir(const char* dir)
     return ret;
 }
 
+int lbann::exists(const char* file)
+{
+    // get our rank
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+
+    // check whether file exists
+    struct stat buffer;
+    int exists = 0;
+    if (rank == 0) {
+        // TODO: would be nice to use something lighter weight than stat here
+        if (stat(file, &buffer) == 0) {
+            exists = 1;
+        }
+    }
+    MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    return exists;
+}
+
 int lbann::openread(const char* file)
 {
     // open the file for writing
     int fd = open(file, O_RDONLY);
     if (fd == -1) {
+        /*
         fprintf(stderr, "ERROR: Failed to open file `%s' (%d: %s) @ %s:%d\n",
                 file, errno, strerror(errno), __FILE__, __LINE__
         );
         fflush(stderr);
+        */
     }
     return fd;
 }

@@ -30,14 +30,19 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/utils/lbann_dataset.hpp"
+#include "lbann/io/lbann_persist.hpp"
+
+// snprintf
+#include <stdio.h>
 
 namespace lbann
 {
   class io_layer : public Layer {
   public:
-    io_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={}, bool data_sets_span_models=true);
+    io_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={}, bool data_sets_span_models=true, bool for_regression=false);
     //    io_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader);
-    void setup_data_readers(int base_offset, int stride, int model_offset = 0);
+    void setup_data_readers_for_training(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
+    void setup_data_readers_for_evaluation(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
     DataReader *select_data_reader();
     DataReader *set_training_data_reader(DataReader *data_reader);
     DataReader *set_validation_data_reader(DataReader *data_reader);
@@ -49,14 +54,28 @@ namespace lbann
     long get_total_num_training_samples() { return m_training_dataset.total_samples; }
     long get_total_num_testing_samples() { return m_testing_dataset.total_samples; }
 
+    El::Matrix<El::Int>& get_sample_indices_per_mb();
+
+    bool at_new_epoch() { return m_training_dataset.data_reader->at_new_epoch(); }
+
     long get_linearized_data_size();
     long get_linearized_label_size();
+    long get_linearized_response_size(void) const { return static_cast<long>(1); }
+
+    // save state of IO to a checkpoint
+    bool saveToCheckpointShared(persist& p);
+    bool loadFromCheckpointShared(persist& p);
 
   public:
     dataset m_training_dataset;
     dataset m_testing_dataset;
     dataset m_validation_dataset;
     bool m_data_sets_span_models;
+
+  private:
+    const bool m_for_regression;
+  public:
+    bool is_for_regression(void) const { return m_for_regression; }
   };
 }
 

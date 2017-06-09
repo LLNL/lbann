@@ -28,25 +28,88 @@
 #define LBANN_UTILS_RNG_HPP
 
 #include "lbann/lbann_base.hpp"
+#include "lbann/lbann_comm.hpp"
 #include <random>
 
 namespace lbann {
 
 typedef std::mt19937 rng_gen;  // Mersenne Twister
+typedef std::minstd_rand fast_rng_gen;  // Minimum standard, LC
 
 /**
  * Return a reference to the global LBANN random number generator.
- * @note If it matters, the generator is not thread-safe.
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 rng_gen& get_generator();
 
 /**
+ * Return a reference to a possibly-faster global LBANN random number generator.
+ * Compared to get_generator, this should be slightly faster.
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ */
+fast_rng_gen& get_fast_generator();
+
+/**
+ * Return a reference to the global LBANN random number generator used
+ * for shuffling the data samples within each mini-bathc
+ * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ */
+rng_gen& get_data_seq_generator();
+
+/**
+ * Return random integers uniformly distributed in [0, max).
+ * @param g C++ uniform random bit generator.
+ * @param max Upper bound on the distribution.
+ * @note It turns out that the GCC std::uniform_int_distribution is really
+ * slow. That implementation is used by most compilers. This implementation
+ * is roughly five times faster than that one.
+ */
+template <typename Generator, typename T>
+inline T fast_rand_int(Generator& g, T max) {
+  typename Generator::result_type x;
+  do {
+    x = g();
+  } while (x >= (Generator::max() - Generator::max() % max));
+  return x % max;
+}
+
+/**
+ * Faster variant of fast_rand_int in the case that max is a power of 2.
+ * Do not call this if max is not a power of 2.
+ */
+template <typename Generator, typename T>
+inline T fast_rand_int_pow2(Generator& g, T max) {
+  typename Generator::result_type x;
+  max -= 1;
+  const typename Generator::result_type upper = Generator::max() -
+    (Generator::max() & (typename Generator::result_type) max);
+  do {
+    x = g();
+  } while (x >= upper);
+  return x & ((typename Generator::result_type) max);
+}
+
+/**
  * Initialize the random number generator (with optional seed).
+ * @param comm If present, mixes the process's rank within the model into the
+ * seed; if not, uses the MPI world rank.
  * @todo Support saving/restoring the generator's state. This is directly
  * supported via the >> and << operators on the generator (reading/writing
  * from/to a stream).
  */
-void init_random(int seed = -1);
+void init_random(int seed = -1, lbann_comm* comm = nullptr);
+
+/**
+ * Initialize a random number generator (with optional seed) that is
+ * specifically used for sequencing the training / testing data
+ * samples.  Using a separate RNG for the data sequences helps provide
+ * a stable training result that does not vary with how much I/O
+ * parallelism is applied.
+ * @todo Support saving/restoring the generator's state. This is directly
+ * supported via the >> and << operators on the generator (reading/writing
+ * from/to a stream).
+ */
+void init_data_seq_random(int seed = -1);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -92,6 +155,12 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
  */
 void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
+
+/**
+ * Using one of the available initialization methods, initialize a
+ * matrix
+ */
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out);
 
 template<typename DistType,typename DType=DataType>
 class rng {

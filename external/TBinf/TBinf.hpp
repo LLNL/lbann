@@ -48,7 +48,7 @@ public:
    * Create a new event file in logdir to write to.
    * @param logdir The directory where the event file will be written.
    */
-  SummaryWriter(std::string logdir);
+  SummaryWriter(const std::string logdir);
   ~SummaryWriter();
 
   /**
@@ -57,14 +57,38 @@ public:
    * @param value The scalar value.
    * @param step Optional global step.
    */
-  void add_scalar(std::string tag, float value, int64_t step = -1);
+  void add_scalar(const std::string tag, float value, int64_t step = -1);
   /**
    * Add a histogram of values to the event file.
    * @param tag The tag for this summary.
-   * @param values A vector of values to histogram.
+   * @param first Iterator to the first value to add.
+   * @param last Iterator past the last value to add.
    * @param step Optional global step.
    */
-  void add_histogram(std::string tag, std::vector<double> values, int64_t step = -1);
+  void add_histogram(const std::string tag, 
+                     std::vector<float>::const_iterator first,
+                     std::vector<float>::const_iterator last,
+                     int64_t step = -1);
+  /**
+   * Add a histogram based upon buckets to the event file.
+   * @param tag The tag for this summary.
+   * @param buckets The histogram buckets.
+   * @param min The minimum value in the dataset.
+   * @param max The maximum value in the dataset.
+   * @param num The number of values in the dataset.
+   * @param sum The sum of the values in the dataset.
+   * @param sqsum The sum of squared values in the dataset.
+   * @param step Optional global step.
+   */
+  void add_histogram(const std::string tag,
+                     const std::vector<float> buckets,
+                     double min, double max, double num,
+                     double sum, double sqsum,
+                     int64_t step = -1);
+  /** Return the current histogram buckets. */
+  const std::vector<double>& get_histogram_buckets() const;
+  /** Return the default histogram buckets. */
+  static std::vector<double> get_default_histogram_buckets();
 
   /** Ensure all events are written out. */
   void flush();
@@ -86,6 +110,9 @@ private:
   /** Get current wall time in fractional seconds. */
   double get_time_in_seconds();
 
+  /** Initialize histogram buckets. */
+  void init_histogram_buckets();
+
   /** Current event version. */
   static constexpr const char* EVENT_VERSION = "brain.Event:2";
 
@@ -94,6 +121,9 @@ private:
 
   /** File stream for writing. */
   std::fstream file;
+
+  /** Current histogram buckets. */
+  std::vector<double> histogram_buckets;
 };
 
 }  // namespace TBinf

@@ -35,7 +35,9 @@ namespace lbann {
 lbann_callback_io::lbann_callback_io() {}
 
 lbann_callback_io::lbann_callback_io(
-  std::unordered_set<uint> _layers) : layer_indices(_layers) {}
+  std::unordered_set<uint> _layers) : layer_indices(_layers) {
+    set_name("io");
+}
 
 // void lbann_callback_io::on_train_begin(model* m) {
 //   std::vector<Layer*>& layers = m->get_layers();

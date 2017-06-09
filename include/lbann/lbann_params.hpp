@@ -27,7 +27,8 @@
 #ifndef LBANN_PARAMS_HPP_INCLUDED
 #define LBANN_PARAMS_HPP_INCLUDED
 
-#include "lbann.hpp"
+#include "lbann/lbann.hpp"
+#include "lbann_base.hpp"
 #include <string>
 
 namespace lbann
@@ -59,8 +60,13 @@ namespace lbann
     double PercentageTestingSamples;
     /// Test with training data
     int TestWithTrainData;
-
-    // Number of training epochs
+    /// Number of training samples- use in generating synthetic dataset
+    int TrainingSamples;
+    /// Number of testing samples- use in generating synthetic dataset
+    int TestingSamples;
+    /// Starting epoch (initialized to 0, overridden from checkpoint)
+    int EpochStart;
+    /// Number of training epochs
     int EpochCount;
     /// Size of the mini-batch to be trained
     int MBSize;
@@ -68,12 +74,14 @@ namespace lbann
     /// Learning rate
     float LearnRate;
     /// Learning method
-    /** 1 - Adagrad, 2 - RMSprop */
+    /** 1 - Adagrad, 2 - RMSprop, 3 - Adam */
     int LearnRateMethod;
     /// How much does the learning rate decay
     float LrDecayRate;
     /// How often does the learning rate decay
     int LrDecayCycles;
+    /// LrMomentum for SGD learning rate method
+    float LrMomentum;
     /// Activation function
     /** 1 - Sigmoid, 2 - Tanh, 3 - reLU */
     activation_type ActivationType;
@@ -83,6 +91,9 @@ namespace lbann
     float DropOut;
     /// Lambda for L2 regularization
     double Lambda;
+    /// Weight initialization method
+    /** 0 - zero, 1 - uniform, 2 - normal, 3 - glorot_normal, 4 - glorot_uniform, 5 - he_normal, 6 - he_uniform */
+    weight_initialization WeightInitType;
 
     /// Location of training and test data
     std::string DatasetRootDir;
@@ -94,14 +105,28 @@ namespace lbann
     bool SaveModel;
     /// Load a saved model file
     bool LoadModel;
+
     /// Number of epochs between checkpoints
-    int Checkpoint;
+    int CkptEpochs;
+    /// Number of training steps between checkpoints
+    int CkptSteps;
+    /// Number of seconds between checkpoints
+    int CkptSecs;
+
     /// Train data file name
     std::string TrainFile;
     /// Test data file name
     std::string TestFile;
     /// Location to write summary files.
     std::string SummaryDir;
+    /// Whether to dump weights.
+    bool DumpWeights;
+    /// Whether to dump activations;
+    bool DumpActivations;
+    /// Whether to dump gradients.
+    bool DumpGradients;
+    /// Location to dump matrices.
+    std::string DumpDir;
 
     /// Type of intermodel communication to use, if any.
     int IntermodelCommMethod;

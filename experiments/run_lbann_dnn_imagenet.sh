@@ -12,19 +12,19 @@ BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov/model_zoo"
 #Initialize variables to default values.
 TRAINING_SAMPLES=-1
 VALIDATION_SAMPLES=-1
-EPOCHS=1
+EPOCHS=20
 
-NETWORK="1000"
+NETWORK="5000,1000"
 
 PARIO=0
 BLOCK_SIZE=256
 MODE="false"
 MB_SIZE=192
-LR=0.1
-ACT=1
+LR=0.0001
+ACT=3
 LRM=1
 TEST_W_TRAIN_DATA=0
-LR_DECAY=0.5
+LR_DECAY=0.0
 
 RUN="srun"
 
@@ -41,24 +41,31 @@ export SLURM_NNODES=$SLURM_JOB_NUM_NODES
 
 TASKS_PER_NODE=12
 NNODES=${SLURM_NNODES}
+USE_LUSTRE_DIRECT=1
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-ENABLE_HT=--enable-hyperthreads
+ENABLE_HT=
 CORES_PER_NODE=48
+USE_LUSTRE_DIRECT=0
 elif [ "${CLUSTER}" = "sierra" ]; then
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
 #ENABLE_HT=--enable-hyperthreads
 #CORES_PER_NODE=24
 ENABLE_HT=
 CORES_PER_NODE=12
+elif [ "${CLUSTER}" = "flash" ]; then
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
+#ENABLE_HT=--enable-hyperthreads
+#CORES_PER_NODE=24
+ENABLE_HT=
+CORES_PER_NODE=24
 else
-LUSTRE_FILEPATH="/p/lscratche/brainusr"
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=12
 fi
 
-USE_LUSTRE_DIRECT=0
 SHUFFLE_TRAINING=0
 
 #Set fonts for Help.
@@ -204,7 +211,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${NNODES} * ${TASKS_PER_NODE}))
 
-export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
+export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
 

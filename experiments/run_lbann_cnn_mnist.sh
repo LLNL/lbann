@@ -17,7 +17,7 @@ NETWORK="1000"
 PARIO=0
 BLOCK_SIZE=128
 MODE="false"
-MB_SIZE=128
+MB_SIZE=256
 LR=0.01
 ACT=3
 LRM=1
@@ -41,7 +41,7 @@ TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
 TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
 TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
-ENABLE_HT=--enable-hyperthread
+ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
@@ -184,7 +184,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
 
-export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
+export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
 
@@ -192,39 +192,18 @@ ROOT_DATASET_DIR=${LUSTRE_FILEPATH}
 
 else
 
-FILES=(labels.tar resized_256x256/train.tar resized_256x256/val.tar resized_256x256/test.tar)
-for tarball in "${FILES[@]}"
-do
-    FILE=`basename $tarball`
-    if [ ! -e ${ROOT_DATASET_DIR}/${FILE} ]; then
-#        CMD="pdcp /p/lscratchf/brainusr/datasets/ILSVRC2012/${tarball} /l/ssd/"
-        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${tarball} ${ROOT_DATASET_DIR}/${FILE}"
-        echo "${CMD}"
-        ${CMD}
-    fi
-done
-
-if [ ! -d ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256 ]; then
-    CMD="pdsh mkdir -p ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256"
+if [ ! -d ${ROOT_DATASET_DIR}/${DATASET_DIR} ]; then
+    CMD="pdsh mkdir -p ${ROOT_DATASET_DIR}/${DATASET_DIR}"
     echo "${CMD}"
     ${CMD}
 fi
 
-FILES=(labels)
-for tarball in "${FILES[@]}"
+FILES=(${TRAIN_LABEL_FILE} ${TRAIN_IMAGE_FILE} ${TEST_LABEL_FILE} ${TEST_IMAGE_FILE})
+for filename in "${FILES[@]}"
 do
-    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${tarball} ]; then
-        CMD="pdsh tar xf ${ROOT_DATASET_DIR}/${tarball}.tar -C ${ROOT_DATASET_DIR}/${DATASET_DIR}/"
-        echo "${CMD}"
-        ${CMD}
-    fi
-done
-
-FILES=(train val test)
-for tarball in "${FILES[@]}"
-do
-    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256/${tarball} ]; then
-        CMD="pdsh tar xf ${ROOT_DATASET_DIR}/${tarball}.tar -C ${ROOT_DATASET_DIR}/${DATASET_DIR}/resized_256x256/"
+    FILE=`basename $filename`
+    if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE} ]; then
+        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${filename} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
         echo "${CMD}"
         ${CMD}
     fi

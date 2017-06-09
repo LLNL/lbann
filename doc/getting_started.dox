@@ -31,6 +31,7 @@ $ cd build/my_build_dir
 $ cmake ../..
 $ make
 $ make install
+$ make doc
 \endcode
 
 It will typically be necessary to manually set CMake variables to

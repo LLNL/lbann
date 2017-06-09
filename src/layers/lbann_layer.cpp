@@ -29,6 +29,9 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/regularization/lbann_regularizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#include "lbann/models/lbann_model.hpp"
+#include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,91 +40,278 @@
 using namespace std;
 using namespace El;
 
-lbann::Layer::Layer(const uint index, lbann_comm* comm, Optimizer *optimizer,
+lbann::Layer::Layer(data_layout data_dist, const uint index, 
+                    lbann_comm* comm, optimizer *opt,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer*> regs)
-  : m_activation_type(activation), optimizer(optimizer), comm(comm),
-    regularizers(regs), m_mini_batch_size(mbsize),
-    m_effective_mbsize(mbsize),
-    fp_time(0.0), bp_time(0.0)
+  : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
+    m_cudnn(nullptr), regularizers(regs), m_mini_batch_size(mbsize),
+    m_effective_mbsize(mbsize)
 {
+
+    m_type = layer_type::INVALID;
+    m_prev_layer_type = layer_type::INVALID;
+    m_next_layer_type = layer_type::INVALID;    
+
     Index = index;
     m_execution_mode = execution_mode::training;
     fp_input = NULL;
     bp_input = NULL;
+    neural_network_model = NULL;
 
-    // Most layers use standard elemental matrix distribution
-    WB = new DistMat(comm->get_model_grid());
-    WB_D = new DistMat(comm->get_model_grid());
-    Zs = new DistMat(comm->get_model_grid());
-    Ds = new DistMat(comm->get_model_grid());
-    Ds_Temp = new DistMat(comm->get_model_grid());
-    Acts = new DistMat(comm->get_model_grid());
+    m_using_gpus = false;
+    m_prev_layer_using_gpus = false;
+    m_next_layer_using_gpus = false;
+#ifdef __LIB_CUDNN
+    fp_input_d = NULL;
+    bp_input_d = NULL;
+#endif
+
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+    }
 
     // Initialize activation function
     m_activation_fn = new_activation(activation);
+
+    reset_counters();
 
 }
 
 lbann::Layer::~Layer() {
   delete m_activation_fn;
-  delete WB;
-  delete WB_D;
-  delete Zs;
-  delete Ds;
-  delete Ds_Temp;
-  delete Acts;
+  delete m_weights;
+  delete m_weights_gradient;
+  delete m_weighted_sum;
+  delete m_prev_error_signal;
+  delete m_error_signal;
+  delete m_activations;
+  delete m_prev_activations;
+  delete m_weighted_sum_v;
+  delete m_prev_error_signal_v;
+  delete m_error_signal_v;
+  delete m_activations_v;
+  delete m_prev_activations_v;
 }
 
-DataType lbann::Layer::forwardProp(DataType prev_WBL2NormSum) {
+/// Matrices should be in MC,MR distributions
+void lbann::Layer::initialize_model_parallel_distribution() {
+  m_weights             = new DistMat(comm->get_model_grid());
+  m_weights_gradient    = new DistMat(comm->get_model_grid());
+  m_weighted_sum        = new DistMat(comm->get_model_grid());
+  m_prev_activations    = new DistMat(comm->get_model_grid());
+  m_activations         = new DistMat(comm->get_model_grid());
+  m_prev_error_signal   = new DistMat(comm->get_model_grid());
+  m_error_signal        = new DistMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new DistMat(comm->get_model_grid());
+  m_prev_activations_v  = new DistMat(comm->get_model_grid());
+  m_activations_v       = new DistMat(comm->get_model_grid());
+  m_prev_error_signal_v = new DistMat(comm->get_model_grid());
+  m_error_signal_v      = new DistMat(comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void lbann::Layer::initialize_data_parallel_distribution() {
+  m_weights             = new StarMat(comm->get_model_grid());
+  m_weights_gradient    = new StarMat(comm->get_model_grid());
+  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(comm->get_model_grid());
+  m_activations         = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
+  m_error_signal        = new StarVCMat(comm->get_model_grid());
+  
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
+  m_activations_v       = new StarVCMat(comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
+}
+
+void lbann::Layer::forwardProp() {
   double fp_start = get_time();
+
+  // Get incoming activations and convert matrix distribution if necessary
+  if(fp_input != NULL) { // Input layers will not have a valid fp_input
+    DistData curr_dist = m_prev_activations->DistData();
+    DistData prev_dist = fp_input->DistData();
+    if(curr_dist.colDist == prev_dist.colDist
+       && curr_dist.rowDist == prev_dist.rowDist) {
+      View(*m_prev_activations, *fp_input);
+    }
+    else {
+      *m_prev_activations = *fp_input;
+    }
+  }
+
+  // Set matrix views based on current mini-batch size
+  fp_set_std_matrix_view();
+
+#ifdef __LIB_CUDNN
+  // Transfer inputs from CPU to GPUs if needed
+  if(m_using_gpus) {
+    if(!m_prev_layer_using_gpus) {
+      m_cudnn->scatter_to_gpus(m_prev_activations_d,
+                               m_prev_activations_v->LockedMatrix(),
+                               m_mini_batch_size_per_gpu);
+    }
+    else {
+      m_prev_activations_d = *fp_input_d;
+    }
+  }
+#endif
+
   // Apply connection regularization. (e.g. DropConnect).
-  for (regularizer* reg : regularizers) reg->fp_connections();
+  for(size_t i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_connections();
+  }
+
   // Layer layer's linearity.
-  fp_linearity(*WB, *fp_input, *Zs, *Acts);
+  double fp_lin_start = get_time();
+  fp_linearity();
+  fp_linearity_time += get_time() - fp_lin_start;
+
   // Apply weight regularization (e.g. L2 normalization).
-  for (regularizer* reg : regularizers) reg->fp_weights();
+  for(size_t i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_weights();
+  }
+
   // Apply activation function/nonlinearity.
+  double fp_nonlin_start = get_time();
   fp_nonlinearity();
+  fp_nonlinearity_time += get_time() - fp_nonlin_start;
+
   // Apply activation regularization (e.g. Dropout).
-  for (regularizer* reg : regularizers) reg->fp_activations();
+  for(size_t i=0; i<regularizers.size(); ++i) {
+    regularizers[i]->fp_activations();
+  }
+
+#ifdef __LIB_CUDNN
+  // Transfer outputs from GPUs to CPU if needed
+  if(m_using_gpus && !m_next_layer_using_gpus) {
+    m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                              m_activations_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
+  }
+#endif
+
   fp_time += get_time() - fp_start;
-  return prev_WBL2NormSum;
 }
 
 void lbann::Layer::backProp() {
   double bp_start = get_time();
 
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  //  bp_set_std_matrix_view();
+
   // Get incoming loss and convert matrix distribution if necessary
-  *Ds = *bp_input;
+  if(bp_input != NULL) { // Target layers will not have a valid bp_input
+    DistData curr_dist = m_prev_error_signal->DistData();
+    DistData next_dist = bp_input->DistData();
+    if(curr_dist.colDist == next_dist.colDist
+       && curr_dist.rowDist == next_dist.rowDist) {
+      View(*m_prev_error_signal, *bp_input);
+      View(*m_prev_error_signal_v,
+           *m_prev_error_signal,
+           ALL,
+           IR(0, m_prev_error_signal_v->Width()));
+    }
+    else {
+      *m_prev_error_signal = *bp_input;
+    }
+  }
+
+#ifdef __LIB_CUDNN
+  // Transfer inputs from CPU to GPUs
+  if(m_using_gpus) {
+    if(!m_next_layer_using_gpus) {
+      m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
+                               m_prev_error_signal_v->LockedMatrix(),
+                               m_mini_batch_size_per_gpu);
+    }
+    else {
+      m_prev_error_signal_d = *bp_input_d;
+    }
+  }
+#endif
+
   // Backprop activation regularization.
-  for (regularizer* reg : regularizers) reg->bp_activations();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_activations();
+  }
+
   // Backprop the activation function/nonlinearity.
+  double bp_nonlin_start = get_time();
   bp_nonlinearity();
+  bp_nonlinearity_time += get_time() - bp_nonlin_start;
+
   // Backprop weight regularization.
-  for (regularizer* reg : regularizers) reg->bp_weights();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_weights();
+  }
+
   // Backprop the layer's linearity.
+  double bp_lin_start = get_time();
   bp_linearity();
+  bp_linearity_time += get_time() - bp_lin_start;
+
   // Backprop connection regularization.
-  for (regularizer* reg : regularizers) reg->bp_connections();
+  for(Int i=regularizers.size()-1; i>=0; --i) {
+    regularizers[i]->bp_connections();
+  }
+
+#ifdef __LIB_CUDNN
+  // Transfer outputs from GPUs to CPU
+  if(m_using_gpus && !m_prev_layer_using_gpus) {
+    m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
+                              m_error_signal_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
+  }
+#endif
+
   bp_time += get_time() - bp_start;
 }
 
+bool lbann::Layer::update() {
+  if (m_execution_mode == execution_mode::training) {
+    for(size_t i=0; i<regularizers.size(); ++i) {
+      regularizers[i]->update_gradients();
+      regularizers[i]->update();
+    }
+  }
+  return false;
+}
+
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB/";
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights/";
   // TODO: implement summarizer functions for other matrix distributions
   const ElMat& wb = get_weights_biases();
   summarizer.reduce_mean(prefix + "mean", wb, step);
   summarizer.reduce_min(prefix + "min", wb, step);
   summarizer.reduce_max(prefix + "max", wb, step);
   summarizer.reduce_stdev(prefix + "stdev", wb, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/WB_D/";
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights_gradient/";
   const ElMat& wb_d = get_weights_biases_gradient();
   summarizer.reduce_mean(prefix + "mean", wb_d, step);
   summarizer.reduce_min(prefix + "min", wb_d, step);
   summarizer.reduce_max(prefix + "max", wb_d, step);
   summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/Acts/";
+  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/activations/";
   const ElMat& acts = get_activations();
   summarizer.reduce_mean(prefix + "mean", acts, step);
   summarizer.reduce_min(prefix + "min", acts, step);
@@ -129,515 +319,250 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_stdev(prefix + "stdev", acts, step);
   prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
+  summarizer.reduce_scalar(prefix + "fp_linearity_time", fp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "fp_nonlinearity_time", fp_nonlinearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
+  summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
 }
 
-void lbann::Layer::setup(int) {
+void lbann::Layer::setup(int num_prev_neurons) {
+  m_num_prev_neurons = num_prev_neurons;
   for (regularizer* reg : regularizers) reg->setup(this);
 }
 
+void lbann::Layer::check_setup() {
+  // If these two are sendable, the other matrices should be fine.
+  if (!lbann::lbann_comm::is_sendable(*m_weights)) {
+    throw lbann::lbann_exception("Weights too large to send");
+  }
+  if (!lbann::lbann_comm::is_sendable(*m_activations)) {
+    throw lbann::lbann_exception("Activations too large to send");
+  }
+}
+
 ElMat *lbann::Layer::fp_output() {
-  return Acts;
+  return m_activations;
 }
 
 ElMat *lbann::Layer::bp_output() {
-  return Ds_Temp;
+  return m_error_signal;
 }
 
 void lbann::Layer::setup_fp_input(ElMat *fp_input)
 {
   this->fp_input = fp_input;
-  // cout << "Layer " << Index << " is looking at fp_input " << fp_input << endl;
 }
 
 void lbann::Layer::setup_bp_input(ElMat *bp_input)
 {
   this->bp_input = bp_input;
-  // cout << "Layer " << Index << " is looking at bp_input " << bp_input << endl;
 }
 
-struct layer_header {
-    uint64_t rank;
-    uint64_t width;
-    uint64_t height;
-    uint64_t localwidth;
-    uint64_t localheight;
-    uint64_t ldim;
-};
-
-static bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes)
-{
-    struct layer_header header;
-    header.rank        = (uint64_t) M.Grid().Rank();
-    header.width       = (uint64_t) M.Width();
-    header.height      = (uint64_t) M.Height();
-    header.localwidth  = (uint64_t) M.LocalWidth();
-    header.localheight = (uint64_t) M.LocalHeight();
-    header.ldim        = (uint64_t) M.LDim();
-
-    ssize_t write_rc = write(fd, &header, sizeof(header));
-    if (write_rc != sizeof(header)) {
-        // error!
-    }
-    *bytes += write_rc;
-
-    const Int localHeight = M.LocalHeight();
-    const Int localWidth = M.LocalWidth();
-    const Int lDim = M.LDim();
-    if(localHeight == lDim) {
-        void* buf = (void*) M.LockedBuffer();
-        size_t bufsize = localHeight * localWidth * sizeof(DataType);
-        write_rc = write(fd, buf, bufsize);
-        if (write_rc != bufsize) {
-            // error!
-        }
-        *bytes += write_rc;
-    } else {
-        for(Int j = 0; j < localWidth; ++j) {
-            void* buf = (void*) M.LockedBuffer(0, j);
-            size_t bufsize = localHeight * sizeof(DataType);
-            write_rc = write(fd, buf, bufsize);
-            if (write_rc != bufsize) {
-                // error!
-            }
-            *bytes += write_rc;
-        }
-    }
-
-    return true;
+#ifdef __LIB_CUDNN
+std::vector<DataType*> *lbann::Layer::fp_output_d() {
+  if(m_using_gpus)
+    return &m_activations_d;
+  else
+    return NULL;
 }
 
-static bool readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes)
-{
-    struct layer_header header;
-    ssize_t read_rc = read(fd, &header, sizeof(header));
-    if (read_rc != sizeof(header)) {
-        // error!
-    }
-    *bytes += read_rc;
-
-    // check that header values match up
-
-    Int height = header.height;
-    Int width  = header.width;
-    M.Resize(height, width);
-
-    if(M.ColStride() == 1 && M.RowStride() == 1) {
-        if(M.Height() == M.LDim()) {
-            void* buf = (void*) M.Buffer();
-            size_t bufsize = height * width * sizeof(DataType);
-            read_rc = read(fd, buf, bufsize);
-            if (read_rc != bufsize) {
-                // error!
-            }
-            *bytes += read_rc;
-        } else {
-            for(Int j = 0; j < width; ++j) {
-                void* buf = (void*) M.Buffer(0, j);
-                size_t bufsize = height * sizeof(DataType);
-                read_rc = read(fd, buf, bufsize);
-                if (read_rc != bufsize) {
-                    // error!
-                }
-                *bytes += read_rc;
-            }
-        }
-    } else {
-        const Int localHeight = M.LocalHeight();
-        const Int localWidth = M.LocalWidth();
-        const Int lDim = M.LDim();
-        if(localHeight == lDim) {
-            void* buf = (void*) M.Buffer();
-            size_t bufsize = localHeight * localWidth * sizeof(DataType);
-            read_rc = read(fd, buf, bufsize);
-            if (read_rc != bufsize) {
-                // error!
-            }
-            *bytes += read_rc;
-        } else {
-            for(Int jLoc = 0; jLoc < localWidth; ++jLoc) {
-                void* buf = (void*) M.Buffer(0, jLoc);
-                size_t bufsize = localHeight * sizeof(DataType);
-                read_rc = read(fd, buf, bufsize);
-                if (read_rc != bufsize) {
-                    // error!
-                }
-                *bytes += read_rc;
-            }
-        }
-    }
-    return true;
+std::vector<DataType*> *lbann::Layer::bp_output_d() {
+  if(m_using_gpus)
+    return &m_error_signal_d;
+  else
+    return NULL;
 }
 
-// TODO: we could cache these datatypes on Matrix object
-static void create_types(const DistMatrix<DataType> &M, MPI_Datatype* mattype, MPI_Datatype* viewtype)
+void lbann::Layer::setup_fp_input_d(std::vector<DataType*> *fp_input_d)
 {
-    // initialize to known values
-    *mattype  = MPI_DATATYPE_NULL;
-    *viewtype = MPI_DATATYPE_NULL;
-
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
-
-    // get global width and height of matrix
-    Int global_width  = M.Width();
-    Int global_height = M.Height();
-
-    // get local width and height, plus leading dimension of local matrix
-    Int W    = M.LocalWidth();
-    Int H    = M.LocalHeight();
-    Int LDim = M.LDim();
-
-    // create a datatype to describe libelemental data in memory,
-    // data is stored in column-major order with a local height of H
-    // and a local width of W, also the leading dimension LDim >= H
-    // so there may be holes in our local buffer between consecutive
-    // columns which we need to account for
-
-    // first we have H consecutive elements in a column
-    MPI_Datatype tmptype;
-    MPI_Type_contiguous(H, type, &tmptype);
-
-    // then there may be some holes at then end of our column,
-    // since LDim >= H
-    MPI_Datatype coltype;
-    MPI_Aint extent = LDim * sizeof(DataType);
-    MPI_Type_create_resized(tmptype, 0, extent, &coltype);
-    MPI_Type_free(&tmptype);
-
-    // finally we have W such columns
-    MPI_Type_contiguous(W, coltype, mattype);
-    MPI_Type_free(&coltype);
-    MPI_Type_commit(mattype);
-
-    // create datatype to desribe fileview for a collective IO operation
-    // we will store matrix in column-major order in the file
-
-    // get width and height of the process grid
-    int rank    = M.Grid().Rank();
-    int ranks   = M.Grid().Size();
-    int pheight = M.Grid().Height();
-    int pwidth  = M.Grid().Width();
-
-    // TODO: need to account for alignment if user has set this
-
-    // create_darray expects processes to be in row-major order,
-    // find our global rank in row-major order
-    int prow = M.Grid().Row();
-    int pcol = M.Grid().Col();
-    int row_major_rank = prow * pwidth + pcol;
-
-    int gsizes[2];
-    gsizes[0] = global_height;
-    gsizes[1] = global_width;
-    int distribs[2] = {MPI_DISTRIBUTE_CYCLIC, MPI_DISTRIBUTE_CYCLIC};
-    // TODO: if using block sizes > 1, then change dargs below (BlockHeight, BlockWidth)
-    int dargs[2] = {1, 1};
-    int psizes[2];
-    psizes[0] = pheight;
-    psizes[1] = pwidth;
-    MPI_Type_create_darray(ranks, row_major_rank, 2, gsizes, distribs, dargs, psizes, MPI_ORDER_FORTRAN, type, viewtype);
-    MPI_Type_commit(viewtype);
-
-    return;
+  this->fp_input_d = fp_input_d;
 }
 
-void Write_MPI(const DistMatrix<DataType> &M, std::string basename = "DistMatrix", FileFormat format = BINARY, std::string title = "")
+void lbann::Layer::setup_bp_input_d(std::vector<DataType*> *bp_input_d)
 {
-    // TODO: error out if format != BINARY
+  this->bp_input_d = bp_input_d;
+}
+#endif
 
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
-
-    // define our file name
-    string filename = basename + "." + FileExtension(BINARY);
-    const char* path = filename.c_str();
-
-    // get MPI communicator
-    MPI_Comm comm = M.Grid().Comm().comm;
-
-    // get our rank
-    int rank = M.Grid().Rank();
-
-    // first, delete the existing file
-    if (rank == 0) {
-        /*
-        int unlink_rc = unlink(path);
-        if (unlink_rc != 0) {
-            fprintf(stderr, "Error deleting file `%s'\n", path);
-            fflush(stderr);
-        }
-        */
-        MPI_File_delete(path, MPI_INFO_NULL);
-    }
-
-    // get global width and height of matrix
-    Int global_width  = M.Width();
-    Int global_height = M.Height();
-
-    // define datatypes to describe local buffer and view into file
-    MPI_Datatype mattype, viewtype;
-    create_types(M, &mattype, &viewtype);
-
-    // define hints for creating the file (e.g., number of stripes on Lustre)
-    MPI_Info info;
-    MPI_Info_create(&info);
-    MPI_Info_set(info, "striping_factor", "10");
-    //MPI_Info_set(info, "striping_factor", "80");
-
-    // open the file
-    MPI_File fh;
-    MPI_Status status;
-    char datarep[] = "native";
-    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
-    MPI_File_open(comm, path, amode, info, &fh);
-
-    // done with the info object
-    MPI_Info_free(&info);
-
-    // truncate file to 0 bytes
-//    MPI_File_set_size(fh, 0);
-
-    // set our view to write header (height and width as unsigned 32-bit ints)
-    MPI_Offset disp = 0;
-    MPI_File_set_view(fh, disp, MPI_UINT32_T, MPI_UINT32_T, datarep, MPI_INFO_NULL);
-    if (rank == 0) {
-        uint32_t dimensions[2];
-        dimensions[0] = global_height;
-        dimensions[1] = global_width;
-        MPI_File_write_at(fh, 0, dimensions, 2, MPI_UINT32_T, &status);
-    }
-    disp += 2 * sizeof(uint32_t);
-
-    // set view to write data
-    MPI_File_set_view(fh, disp, type, viewtype, datarep, MPI_INFO_NULL);
-
-    // write our portion of the matrix, since we set our view using create_darray,
-    // all procs write at offset 0, the file view will take care of interleaving appropriately
-    const char* buf = (const char*) M.LockedBuffer();
-    MPI_File_write_at_all(fh, 0, buf, 1, mattype, &status);
-
-    // close file
-    MPI_File_close(&fh);
-
-    // free our datatypes
-    MPI_Type_free(&mattype);
-    MPI_Type_free(&viewtype);
-
-    return;
+void lbann::Layer::set_prev_layer_type(layer_type type)
+{
+  this->m_prev_layer_type = type;
 }
 
-void Read_MPI(DistMatrix<DataType> &M, std::string filename, FileFormat format = BINARY, bool sequential = false)
+void lbann::Layer::set_next_layer_type(layer_type type)
 {
-    // TODO: error out if format != BINARY
+  this->m_next_layer_type = type;
+}
 
-    // TODO: use TypeMap<>() and templating to figure this out
-    MPI_Datatype type = DataTypeMPI;
+bool lbann::Layer::using_gpus() const {
+  return m_using_gpus;
+}
 
-    // define our file name
-    const char* path = filename.c_str();
+void lbann::Layer::set_prev_layer_using_gpus(bool using_gpus)
+{
+  m_prev_layer_using_gpus = using_gpus;
+}
 
-    // get MPI communicator
-    MPI_Comm comm = M.Grid().Comm().comm;
-
-    // get our rank
-    int rank = M.Grid().Rank();
-
-    // open the file
-    MPI_File fh;
-    MPI_Status status;
-    char datarep[] = "native";
-    int amode = MPI_MODE_RDONLY;
-    int rc = MPI_File_open(comm, path, amode, MPI_INFO_NULL, &fh);
-    if (rc != MPI_SUCCESS) {
-        if (rank == 0) {
-            cout << "Failed to open file `" << path << "'" << endl;
-        }
-        return;
-    }
-
-    // set displacement to beginning of file
-    MPI_Offset disp = 0;
-
-    // set our view to read header (height and width as unsigned 32-bit ints)
-    uint32_t dimensions[2];
-    MPI_File_set_view(fh, disp, MPI_UINT32_T, MPI_UINT32_T, datarep, MPI_INFO_NULL);
-    if (rank == 0) {
-        MPI_File_read_at(fh, 0, dimensions, 2, MPI_UINT32_T, &status);
-    }
-    disp += 2 * sizeof(uint32_t);
-
-    // broadcast dimensions from rank 0
-    MPI_Bcast(dimensions, 2, MPI_UINT32_T, 0, comm);
-
-    // resize matrix to hold data
-    Int global_height = dimensions[0];
-    Int global_width  = dimensions[1];
-    M.Resize(global_height, global_width);
-
-    // now define datatypes to describe local buffer and view into file
-    MPI_Datatype mattype, viewtype;
-    create_types(M, &mattype, &viewtype);
-
-    // set view to write data
-    MPI_File_set_view(fh, disp, type, viewtype, datarep, MPI_INFO_NULL);
-
-    // write our portion of the matrix, since we set our view using create_darray,
-    // all procs write at offset 0, the file view will take care of interleaving appropriately
-    char* buf = (char*) M.Buffer();
-    MPI_File_read_at_all(fh, 0, buf, 1, mattype, &status);
-
-    // close file
-    MPI_File_close(&fh);
-
-    // free our datatypes
-    MPI_Type_free(&mattype);
-    MPI_Type_free(&viewtype);
-
-    return;
+void lbann::Layer::set_next_layer_using_gpus(bool using_gpus)
+{
+  m_next_layer_using_gpus = using_gpus;
 }
 
 bool lbann::Layer::saveToFile(int fd, const char* dirname)
 {
-//    return writeDist(fd, filename, WB);
     char filepath[512];
-    sprintf(filepath, "%s/WB_L%d_%03dx%03d", dirname, Index, WB->Height()-1, WB->Width()-1);
-    if(WB->Grid().Rank() == 0) {
-      cout << "Rank " << WB->Grid().Rank() << " saving layer " << Index << " to file " << filepath << endl;
-    }
-    Write(*WB, filepath, BINARY, "");
-    //Write_MPI(WB, filepath, BINARY, "");
-    return true;
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+
+    uint64_t bytes;
+    return lbann::write_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
 }
 
 bool lbann::Layer::loadFromFile(int fd, const char* dirname)
 {
-//   return readDist(fd, filename, WB);
     char filepath[512];
-    sprintf(filepath, "%s/WB_L%d_%03dx%03d.bin", dirname, Index, WB->Height()-1, WB->Width()-1);
-    struct stat buffer;
-    Int restoreFileFound = 0;
-    if (WB->Grid().Rank() == 0 && stat(filepath, &buffer) == 0) {
-      restoreFileFound = 1;
-    }
-    mpi::Broadcast(&restoreFileFound, 1, 0, WB->Grid().Comm());
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
 
-    if (restoreFileFound == 1) {
-      if (WB->Grid().Rank() == 0) {
-        cout << "Rank " << WB->Grid().Rank() << " restoring layer " << Index << " from file " << filepath << endl;
-      }
-      Read(*WB, filepath, BINARY, 1);
-      //Read_MPI(WB, filepath, BINARY, 1);
-      return true;
-    } else {
-      return false;
-    }
+    uint64_t bytes;
+    return lbann::read_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
 }
 
 bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
-    writeDist(fd, filename, *WB, bytes);
+    //writeDist(fd, filename, *m_weights, bytes);
+
     // Need to catch return value from function
-    optimizer->saveToCheckpoint(fd, filename, bytes);
+    // m_optimizer->saveToCheckpoint(fd, filename, bytes);
     return true;
 }
 
 bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
 {
     // TODO: implement reader for other matrix distributions
-    readDist(fd, filename, (DistMat&) *WB, bytes);
+    //readDist(fd, filename, (DistMat&) *m_weights, bytes);
+
     // Need to catch return value from function
-    optimizer->loadFromCheckpoint(fd, filename, bytes);
+    // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
     return true;
 }
 
-bool lbann::Layer::saveToCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
 {
-    int rank = WB->Grid().Rank();
+    // define name to store our parameters
+    char name[512];
+    sprintf(name, "weights_L%d_%lldx%lld", Index, m_weights->Height(), m_weights->Width());
 
-    char path[512];
-    sprintf(path, "%s/WB_L%d_%03dx%03d", dir, Index, WB->Height()-1, WB->Width()-1);
-    if(rank == 0) {
-      cout << "Saving layer " << Index << " to file " << path << endl;
-    }
-    Write(*WB, path, BINARY, "");
-    //Write_MPI(WB, path, BINARY, "");
+    // write out our weights to the model file
+    p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
 
-    if (rank == 0) {
-        *bytes += 2 * sizeof(int) + WB->Height() * WB->Width() * sizeof(DataType);
-    }
-
-    optimizer->saveToCheckpointShared(dir, Index, bytes);
+    // if saving training state, also write out state of optimizer
+    // m_optimizer->saveToCheckpointShared(p, Index);
 
     return true;
 }
 
-bool lbann::Layer::loadFromCheckpointShared(const char* dir, uint64_t* bytes)
+bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
 {
-    int rank = WB->Grid().Rank();
+    // define name to store our parameters
+    char name[512];
+    sprintf(name, "weights_L%d_%lldx%lld.bin", Index, m_weights->Height(), m_weights->Width());
 
-    char path[512];
-    sprintf(path, "%s/WB_L%d_%03dx%03d.bin", dir, Index, WB->Height()-1, WB->Width()-1);
+    // read our weights from model file
+    p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
 
-    // check whether WB file exists
-    struct stat buffer;
-    int exists = 0;
-    if (rank == 0 && stat(path, &buffer) == 0) {
-        exists = 1;
-    }
-    MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // if loading training state, read in state of optimizer
+    // m_optimizer->loadFromCheckpointShared(p, Index);
 
-    if (! exists) {
-        return false;
-    }
-
-    // read WB file
-    if (rank == 0) {
-        cout << "Restoring layer " << Index << " from file " << path << endl;
-    }
-    Read(*WB, path, BINARY, 1);
-    //Read_MPI(WB, path, BINARY, 1);
-
-    if (rank == 0) {
-        *bytes += 2 * sizeof(int) + WB->Height() * WB->Width() * sizeof(DataType);
-    }
-
-    optimizer->loadFromCheckpointShared(dir, Index, bytes);
     return true;
 }
 
-void lbann::Layer::fp_nonlinearity() {
+void lbann::Layer::fp_set_std_matrix_view() {
+  Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
-  // Forward propagation
-  m_activation_fn->forwardProp(*Acts);
-
-  // Set bias row back to 1.0
-  const Int local_row = Acts->LocalHeight() - 1;
-  const Int global_row = Acts->GlobalRow(local_row);
-  if(global_row == Acts->Height() - 1) {
-    for(Int col = 0; col < Acts->LocalWidth(); ++col) {
-      Acts->SetLocal(local_row, col, DataType(1));
-    }
+  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
+  if (m_prev_error_signal->Height() > 0) {
+    // No previous error signal for the final layer.
+    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
+         IR(0, cur_mini_batch_size));
   }
+  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
+  // Update the layer's effective mini-batch size so it averages properly.
+  /// @todo BVE FIXME This will cause a bug when you are on the last
+  /// iteration and the size of the current mini-batch equals the normal
+  /// mini-batch size.  In this case one of the ranks gets out of sync
+  /// To fix this, we need a flag for when we are on the last mini-batch
+  if(cur_mini_batch_size != m_mini_batch_size || 1) {
+    // When the current mini-batch is partial, check with the other
+    // models to figure out the entire size of the complete mini-batch
+    Int total_mini_batch_size = comm->intermodel_allreduce((Int) cur_mini_batch_size);
+    set_effective_minibatch_size(total_mini_batch_size);
+  }
+  else {
+    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  }
+}
+
+#if 0
+void lbann::Layer::bp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+
+  if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
+    View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
+  }
+  View(*m_weighted_sum_v, *m_weighted_sum, IR(0, m_weighted_sum->Height()), IR(0, cur_mini_batch_size));
+  if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
+    View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
+  }
+  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
+
+  // Update the layer's effective mini-batch size so it averages properly.
+  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
+    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
+    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+    set_effective_minibatch_size(total_mini_batch_size);
+  }else {
+    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+  }
+}
+#endif
+void lbann::Layer::fp_nonlinearity() {
+  // Forward propagation
+  m_activation_fn->forwardProp(*m_activations_v);
 }
 
 void lbann::Layer::bp_nonlinearity() {
-
   // Backward propagation
-  m_activation_fn->backwardProp(*Zs);
-  if (m_activation_type != activation_type::ID) {
-    Hadamard(*Ds, *Zs, *Ds);
-  }
+  m_activation_fn->backwardPropError(*m_weighted_sum_v, *m_prev_error_signal_v);
+}
 
-  // Set bias row back to 0.0
-  const Int local_row = Ds->LocalHeight() - 1;
-  const Int global_row = Ds->GlobalRow(local_row);
-  if(global_row == Ds->Height() - 1) {
-    for(Int col = 0; col < Ds->LocalWidth(); ++col) {
-      Ds->SetLocal(local_row, col, DataType(0));
-    }
+
+//enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+
+std::string lbann::Layer::weight_initialization_name(weight_initialization id) {
+  switch(id) {
+    case weight_initialization::zero : return "zero";
+         break;
+    case weight_initialization::uniform : return "uniform";
+         break;
+    case weight_initialization::normal : return "normal";
+         break;
+    case weight_initialization::glorot_normal : return "glorot_normal";
+         break;
+    case weight_initialization::glorot_uniform : return "glorot_uniform";
+         break;
+    case weight_initialization::he_normal : return "he_normal";
+         break;
+    case weight_initialization::he_uniform : return "he_uniform";
+         break;
+    default:
+      char b[1024];
+      sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
+      throw lbann_exception(b);
   }
-  
 }

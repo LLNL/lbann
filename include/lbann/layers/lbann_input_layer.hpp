@@ -33,13 +33,42 @@ namespace lbann
 {
   class input_layer : public io_layer {
   public:
-    input_layer(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+    input_layer(data_layout dist_data, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
     DistMat *bp_output();
+
+    /** No setting the standard view of the matrix -- it defines the standard view */
+    void fp_set_std_matrix_view() {}
 
     /** No non-linearity */
     void fp_nonlinearity() {}
     /** No non-linearity */
     void bp_nonlinearity() {}
+
+    // save state of IO to a checkpoint
+    bool saveToCheckpointShared(persist& p) {
+        // save state of data readers from input layer
+        m_training_dataset.data_reader->saveToCheckpointShared(p, "data_reader_training");
+        m_validation_dataset.data_reader->saveToCheckpointShared(p, "data_reader_validation");
+        m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
+
+        // save our own state
+        io_layer::saveToCheckpointShared(p);
+
+        return true;
+    }
+
+    // reload state of IO from a checkpoint
+    bool loadFromCheckpointShared(persist& p) {
+        // save state of data readers from input layer
+        m_training_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_training");
+        m_validation_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_validation");
+        m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
+
+        // save our own state
+        io_layer::loadFromCheckpointShared(p);
+
+        return true;
+    }
 
   public:
   };

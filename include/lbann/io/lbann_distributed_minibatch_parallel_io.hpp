@@ -44,6 +44,9 @@ namespace lbann
     bool is_data_set_processed();
     int get_num_parallel_readers();
 
+    void calculate_num_iterations_per_epoch(DataReader *data_reader);
+    int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
+
     virtual int fetch_from_data_reader(Mat& M_local) { return 0; }
     virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
     virtual bool update_data_reader() { return false; }
@@ -59,10 +62,12 @@ namespace lbann
     int m_num_parallel_readers_validating; /** Number of parallel readers (I/O streams) for testing data  */
     int m_num_parallel_readers_testing; /** Number of parallel readers (I/O streams) for testing data  */
     int m_local_reader_done;
-    uint m_mini_batch_size; /** Size of the mini-batch */
+    uint m_max_mini_batch_size; /** Maximum size of the mini-batch */
+    uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
 
     long m_num_data_per_epoch;
+    int m_num_valid_readers;
   };
 }
 

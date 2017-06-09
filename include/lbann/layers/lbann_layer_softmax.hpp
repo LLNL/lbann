@@ -30,66 +30,50 @@
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-//#include "lbann/layers/lbann_layer_fully_connected.hpp"
 #include <string>
-
-
 
 namespace lbann
 {
-    // CLayer : dense layer class
-    class SoftmaxLayer: public Layer
-    {
-    public:
-      SoftmaxLayer(uint index,
-                   int numPrevNeurons,
-                   uint numNeurons,
-                   uint miniBatchSize,
-                   weight_initialization init,
-                   lbann_comm* comm,
-                   Optimizer *optimizer);
-        void setup(int numPrevNeurons);
-        bool update();
-      void summarize(lbann_summary& summarizer, int64_t step);
-      void epoch_print() const;
-      void epoch_reset();
-        DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
-        //        void updateMB(const float LearnRate);
-        DataType computeCost(const DistMat& Y);
-        //        DataType computeCost(CircMat& Output);
-        DataType WBL2norm();
+  class SoftmaxLayer: public Layer
+  {
+  public:
+    SoftmaxLayer(data_layout data_dist,
+                 uint index,
+                 int numPrevNeurons,
+                 uint numNeurons,
+                 uint miniBatchSize,
+                 weight_initialization init,
+                 lbann_comm* comm,
+                 optimizer *opt);
+    ~SoftmaxLayer();
+    void initialize_model_parallel_distribution();
+    void initialize_data_parallel_distribution();
+    void setup(int numPrevNeurons);
+    bool update();
+    DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
+    //        void updateMB(const float LearnRate);
+    DataType WBL2norm();
 
-        bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
-        bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
+  protected:
+    void fp_linearity();
+    void bp_linearity();
+    void fp_nonlinearity();
+    void bp_nonlinearity();
+    void fp_set_std_matrix_view();
 
-        bool saveToCheckpointShared(const char* dir, uint64_t* bytes);
-        bool loadFromCheckpointShared(const char* dir, uint64_t* bytes);
+  public:
+    DataType   WBL2NormSum;
 
-        void resetCost();
-        DataType avgCost() const;
+    bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes);
+    bool saveToCheckpointShared(persist& p);
+    bool loadFromCheckpointShared(persist& p);
 
-    protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
-      void bp_linearity();
-      void fp_nonlinearity() {}
-      void bp_nonlinearity() {}
-
-    public:
-        DataType   WBL2NormSum;
-
-    private:
-        DataType aggregate_cost;   // if this type is changed, update checkpoint code
-        long num_backprop_steps; // if this type is changed, update checkpoint code
-        weight_initialization m_weight_initialization;
-        ColSumMat ZsColMax;
-        ColSumMat ZsNormExpSum;
-        ColSumMat norms;
-        StarMat ZsColMaxStar;
-        StarMat ZsNormExpSumStar;
-        DistMat Acts_Cost;
-      /** Colume-wise sum of the costs of a minibatch. */
-      ColSumMat m_minibatch_cost;
-    };
+  private:
+    weight_initialization m_weight_initialization;
+    AbsDistMat *m_workspace;
+    AbsDistMat *m_workspace_v;
+  };
 }
 
 

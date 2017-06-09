@@ -29,55 +29,81 @@
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/utils/lbann_exception.hpp"
+#include "lbann/layers/lbann_layer_convolutional.hpp"
 
 namespace lbann {
 
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
                                              lbann_summary* _summarizer) :
-  lbann_callback(1, _summarizer), ct(ct) {
-  
+  lbann_callback(1, _summarizer), default_ct(ct) {
+  set_name("imcomm");  
 }
 
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
                                              std::unordered_set<uint> _layers,
                                              lbann_summary* _summarizer) :
-  lbann_callback(1, _summarizer), ct(ct), layer_indices(_layers) {
+  lbann_callback_imcomm(NONE, _summarizer) {
+  for (const auto& layer : _layers) {
+    param_choices[layer] = {};
+    param_choices[layer].ct = ct;
+  }
+}
 
+void lbann_callback_imcomm::set_layer_comm(uint layer, comm_type ct) {
+  param_choices[layer] = {};
+  param_choices[layer].ct = ct;
+}
+
+void lbann_callback_imcomm::set_layer_adaptive(uint layer, int proportion) {
+  param_choices[layer] = {};
+  param_choices[layer].ct = ADAPTIVE_QUANTIZATION;
+  param_choices[layer].proportion = proportion;
+}
+
+void lbann_callback_imcomm::set_layer_threshold(
+  uint layer, DataType pos_thresh, DataType neg_thresh) {
+  param_choices[layer] = {};
+  param_choices[layer].ct = THRESH_QUANTIZATION;
+  param_choices[layer].pos_thresh = pos_thresh;
+  param_choices[layer].neg_thresh = neg_thresh;
 }
 
 void lbann_callback_imcomm::setup(model* m) {
-  if (ct != NONE) {
-    bool add = layer_indices.size() == 0;
-    std::vector<Layer*>& layers = m->get_layers();
-    for (Layer* layer : layers) {
-      uint idx = layer->get_index();
-      if (add || layer_indices.find(idx) != layer_indices.end()) {
-        // Ensure index is present (overwrites if already there).
-        layer_indices.insert(idx);
-        // Update the layer's effective mini-batch size so it averages properly.
-        layer->set_effective_minibatch_size(
-          layer->get_minibatch_size() * m->get_comm()->get_num_models());
-        // Skip adding matrices when we don't need to.
-        if (!ct_does_quantization()) continue;
-        // TODO: handle case where WB_D is in other matrix distribution
-        DistMat& WB_D = (DistMat&) layer->get_weights_biases_gradient();
-        quantization_errors.emplace(idx, Mat{});
-        im_quantization_errors.emplace(idx, Mat{});
-        if (ct == ONEBIT_QUANTIZATION) {
-          // Set up gradient history and SGD optimizer for one-bit quantization.
-          gradhistories.emplace(idx, Mat{});
-          if (layer->optimizer != nullptr) {
-            if (typeid(*(layer->optimizer)) != typeid(Adagrad<DistMat>)) {
-              throw lbann_exception(
-                "lbann_callback_imcomm: Cannot do one-bit quantization for "
-                "layer that does not use Adagrad");
-            }
-            // TODO: This leaks the old optimizer.
-            layer->optimizer = new SGD<DistMat>(
-              layer->comm, layer->optimizer->get_learning_rate(),
-              0.0f, 0.0f, false);
-            layer->optimizer->setup(layer->WB->Width(), layer->WB->Height());
-          }
+  std::vector<Layer*>& layers = m->get_layers();
+  layer_params.resize(layers.size());
+  for (size_t layer = 0; layer < layers.size(); ++layer) {
+    imcomm_params& params = layer_params[layer];
+    if (param_choices.find(layer) != param_choices.end()) {
+      params = param_choices[layer];
+    } else if (layer != 0 && layer != layers.size() - 1) {
+      // Don't do communication for input/output layers unless explicitly told.
+      // Also don't do communication for layers with no gradients.
+      if (layers[layer]->get_weights_biases_gradient().Height() == 0) {
+        params.ct = NONE;
+      } else {
+        params.ct = default_ct;
+      }
+    }
+    if (params.ct != NONE) {
+      // Update the effective mini-batch size so averaging is done properly.
+      layers[layer]->set_effective_minibatch_size(
+        layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
+      // Check if reshaping is needed.
+      // Currently only automatically reshapes conv layers. (But ignores bias.)
+      if (layers[layer]->m_type == layer_type::convolution) {
+        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        params.reshape_height = conv_layer->m_num_input_channels *
+          std::accumulate(conv_layer->m_filter_dims.begin(),
+                          conv_layer->m_filter_dims.end(),
+                          Int(1), std::multiplies<Int>());
+        params.reshape_width = conv_layer->m_num_output_channels;
+      }
+      if (ct_does_quantization(params.ct)) {
+        if (params.reshape_height) {
+          Zeros(params.error, params.reshape_height, params.reshape_width);
+        } else {
+          const ElMat& gradients = layers[layer]->get_weights_biases_gradient();
+          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
         }
       }
     }
@@ -90,20 +116,23 @@ void lbann_callback_imcomm::on_epoch_end(model* m) {
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
-  if (ct_does_quantization()) {
-    std::vector<Layer*>& layers = m->get_layers();
-    for (size_t l = 0; l < layers.size(); ++l) {
-      if (layer_indices.find(layers[l]->get_index()) == layer_indices.end()) {
-        continue;
+  std::vector<Layer*>& layers = m->get_layers();
+  for (size_t layer = 0; layer < layers.size(); ++layer) {
+    imcomm_params& params = layer_params[layer];
+    if (ct_does_quantization(params.ct)) {
+      comm->intermodel_sum_matrix(params.error);
+      Mat& local_gradients = layers[layer]->get_weights_biases_gradient().Matrix();
+      if (params.reshape_height > 0) {
+        Mat reshaped;
+        reshape_mat(local_gradients, reshaped, params.reshape_height,
+                    params.reshape_width);
+        reshaped = params.error;
+      } else {
+        local_gradients = params.error;
       }
-      comm->intermodel_sum_matrix(quantization_errors[l]);
-      // TODO: handle case where WB_D is in other matrix distribution
-      DistMat& WB_D = (DistMat&) layers[l]->get_weights_biases_gradient();
-      Mat& local_mat = WB_D.Matrix();
-      local_mat = quantization_errors[l];
-      // Apply optimizer update again.
-      layers[l]->update();
-      quantization_errors[l].Empty();
+      // Apply optimizer update with accumulated gradient error.
+      layers[layer]->update();
+      Zero(params.error);
     }
   }
 }
@@ -115,95 +144,105 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
     return;  // No point with only one model.
   }
   std::vector<Layer*>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    if (layer_indices.find(layers[l]->get_index()) == layer_indices.end()) {
-      continue;
-    }
+  for (size_t layer = 0; layer < layers.size(); ++layer) {
     double start_time = get_time();
-    // TODO: handle case where WB_D is in other matrix distribution
-    DistMat& WB_D = (DistMat&) layers[l]->get_weights_biases_gradient();
-    switch (ct) {
-    case NONE:
-      break;
+    imcomm_params& params = layer_params[layer];
+    if (params.ct == NONE) continue;
+    Mat& local_gradients =
+      layers[layer]->get_weights_biases_gradient().Matrix();
+    Mat* reshaped = &local_gradients;
+    if (params.reshape_height > 0 && ct_does_quantization(params.ct)) {
+      if (layers[layer]->m_type == layer_type::convolution) {
+        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        // Currently ignores the bias.
+        Mat grad_view = local_gradients(IR(0, conv_layer->m_filter_size), ALL);
+        reshape_mat(grad_view, *reshaped, params.reshape_height,
+                    params.reshape_width);
+      } else {
+        reshape_mat(local_gradients, *reshaped, params.reshape_height,
+                    params.reshape_width);
+      }
+    }
+    switch (params.ct) {
     case NORMAL:
-      comm->intermodel_sum_matrix(WB_D);
+      comm->intermodel_sum_matrix(*reshaped);
       break;
     case ONEBIT_QUANTIZATION:
-      quantizer.intermodel_sum_quantized(
-        comm, WB_D, quantization_errors[l], im_quantization_errors[l], true,
-        &(gradhistories[l]));
+      quantizer.intermodel_sum_onebit_quantized(
+        comm, *reshaped, params.error);
       break;
     case THRESH_QUANTIZATION:
-      // TODO: Don't hardcode thresholds.
       quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 0.01f, -0.01f,
-        im_quantization_errors[l], false);
+        comm, *reshaped, params.error, params.pos_thresh, params.neg_thresh);
       break;
-    case COMPRESSED_THRESH_QUANTIZATION:
-      // TODO: Don't hardcode thresholds.
-      quantizer.intermodel_sum_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 0.01f, -0.01f,
-        im_quantization_errors[l], true);
+    case ADAPTIVE_QUANTIZATION:
+      quantizer.intermodel_sum_adaptive_quantized(
+        comm, *reshaped, params.error, params.proportion);
       break;
-    case ADAPTIVE_THRESH_QUANTIZATION:
-      // TODO: Don't hardcode proportion.
-      quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 64,
-        im_quantization_errors[l], false);
-      break;
-    case COMPRESSED_ADAPTIVE_THRESH_QUANTIZATION:
-      // TODO: Don't hardcode proportion.
-      quantizer.intermodel_sum_adaptive_threshold_quantized(
-        comm, WB_D, quantization_errors[l], 64,
-        im_quantization_errors[l], true);
-      break;
+    default:
+      throw lbann_exception("imcomm: unknown comm type");
     }
     double im_time = get_time() - start_time;
-    if (summarizer != nullptr && ct != NONE) {
-      std::string prefix = "layer" + std::to_string(
-        static_cast<long long>(layers[l]->get_index())) + "/imcomm_";
-      summarizer->reduce_scalar(prefix + "time",
-                                im_time, m->get_cur_step());
-      size_t bytes_sent = 0;
-      size_t bytes_received = 0;
-      if (ct_does_quantization()) {
-        bytes_sent = quantizer.get_bytes_sent();
-        bytes_received = quantizer.get_bytes_received();
-      } else {
-        // Use the same approximation the comm layer does.
-        bytes_sent = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
-        bytes_received = sizeof(DataType) * WB_D.LocalHeight() * WB_D.LocalWidth();
-      }
-      summarizer->reduce_scalar(prefix + "bytes_sent",
-                                bytes_sent, m->get_cur_step());
-      summarizer->reduce_scalar(prefix + "bytes_received",
-                                bytes_received, m->get_cur_step());
-      if (ct_does_quantization()) {
-        summarizer->reduce_scalar(prefix + "rs_bytes_sent",
-                                  quantizer.get_rs_bytes_sent(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "ag_bytes_sent",
-                                  quantizer.get_ag_bytes_sent(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "rs_bytes_received",
-                                  quantizer.get_rs_bytes_received(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "ag_bytes_received",
-                                  quantizer.get_ag_bytes_received(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "rs_send_trans_time",
-                                  quantizer.get_rs_send_trans_time(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "rs_recv_trans_time",
-                                  quantizer.get_rs_recv_trans_time(),
-                                  m->get_cur_step());
-        summarizer->reduce_scalar(prefix + "ag_recv_trans_time",
-                                  quantizer.get_ag_recv_trans_time(),
-                                  m->get_cur_step());
-        quantizer.reset_bytes_counters();
-        quantizer.reset_time_counters();
-      }
+    do_summary(m, layers[layer], im_time);
+  }
+}
+
+void lbann_callback_imcomm::do_summary(model* m, Layer* layer,
+                                       double im_time) {
+  if (summarizer == nullptr) return;
+  uint idx = layer->get_index();
+  lbann_comm* comm = m->get_comm();
+  std::string prefix = "layer" + std::to_string(
+    static_cast<long long>(idx)) + "/imcomm_";
+  summarizer->reduce_scalar(prefix + "time",
+                            im_time, m->get_cur_step());
+  size_t bytes_sent = 0;
+  size_t bytes_received = 0;
+  if (ct_does_quantization(layer_params[idx].ct)) {
+    bytes_sent = comm->get_ar_bytes_sent();
+    bytes_received = comm->get_ar_bytes_received();
+  } else {
+    // Use the same approximation the comm layer does.
+    const Mat& local_gradients =
+      layer->get_weights_biases_gradient().LockedMatrix();
+    bytes_sent =
+      sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
+    bytes_received =
+      sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
+  }
+  summarizer->reduce_scalar(prefix + "bytes_sent",
+                            bytes_sent, m->get_cur_step());
+  summarizer->reduce_scalar(prefix + "bytes_received",
+                            bytes_received, m->get_cur_step());
+  if (ct_does_quantization(layer_params[idx].ct)) {
+    summarizer->reduce_scalar(prefix + "rs_bytes_sent",
+                              comm->get_ar_rs_bytes_sent(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "ag_bytes_sent",
+                              comm->get_ar_ag_bytes_sent(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "rs_bytes_received",
+                              comm->get_ar_rs_bytes_received(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "ag_bytes_received",
+                              comm->get_ar_ag_bytes_received(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "ar_send_trans_time",
+                              comm->get_ar_send_transform_time(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "ar_recv_trans_time",
+                              comm->get_ar_recv_transform_time(),
+                              m->get_cur_step());
+    summarizer->reduce_scalar(prefix + "ar_recv_apply_trans_time",
+                              comm->get_ar_recv_apply_transform_time(),
+                              m->get_cur_step());
+    if (layer_params[idx].ct == ADAPTIVE_QUANTIZATION) {
+      summarizer->reduce_scalar(prefix + "quantized_count",
+                                quantizer.get_quantized_count(),
+                                m->get_cur_step());
     }
+    quantizer.reset_counters();
+    comm->reset_stats_counters();
   }
 }
 

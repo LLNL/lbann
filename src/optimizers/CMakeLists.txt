@@ -3,4 +3,6 @@ add_sources(
   lbann_optimizer_sgd.cpp
   lbann_optimizer_adagrad.cpp
   lbann_optimizer_rmsprop.cpp
+  lbann_optimizer_adam.cpp
+  lbann_optimizer_hypergradient_adam.cpp
 )

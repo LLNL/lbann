@@ -23,57 +23,109 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer .hpp .cpp - Abstract class for neural network optimizers
+// lbann_optimizer .hpp .cpp - Abstract optimizer class
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * LBANN optimizer base class
- * Implements checkpoint and restart
- */
 #ifndef LBANN_OPTIMIZER_HPP
 #define LBANN_OPTIMIZER_HPP
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include <vector>
 #include <string>
 
 namespace lbann
 {
-  class Optimizer {
-  public:
-    Optimizer() {}
-    virtual ~Optimizer() {}
-    // virtual Optimizer *create_optimizer() {};
-    virtual void setup(int input_dims, int num_neurons) {}
-    virtual void update_weight_bias_matrix(ElMat &WB_D, ElMat& WB);
-    /** Get the optimizer's current learning rate, if any. */
-    virtual float get_learning_rate() const { return 0.0f; }
-    /** Set the optimizer's learning rate. */
-    virtual void set_learning_rate(float _lr) {}
-    virtual bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes) {
-      return false;
-    }
-    virtual bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes) {
-      return false;
-    }
-    virtual bool saveToCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      return false;
-    }
-    virtual bool loadFromCheckpointShared(const char* dir, int Index, uint64_t* bytes) {
-      return false;
-    }
+
+  /// Optimizer base class
+  class optimizer
+  {
 
   public:
+
+    /// Constructor
+    optimizer
+    (lbann_comm* comm,
+     const std::string name,
+     DataType learning_rate = DataType(0));
+
+    /// Destructor
+    virtual ~optimizer();
+
+    /// Set parameters to optimize and initialize optimizer
+    virtual void setup(AbsDistMat* parameters);
+
+    /// Update parameters using objective function gradient
+    virtual void update(const AbsDistMat* gradient) = 0;
+
+    /// Get learning rate
+    virtual DataType get_learning_rate() const
+    { return m_learning_rate; }
+
+    /// Set learning rate
+    virtual void set_learning_rate(DataType learning_rate)
+    { m_learning_rate = learning_rate; };
+
+    /// Get parameters
+    AbsDistMat* get_parameters() { return m_parameters; }
+    
+    /// Get optimizer name 
+    const string name() const { return m_name; }
+
+#if 0
+    /// Checkpoint functions
+    /// @todo Implement and document
+    virtual bool saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
+    { return false; }
+    virtual bool loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
+    { return false; }
+    virtual bool saveToCheckpointShared(persist& p, int Index)
+    { return false; }
+    virtual bool loadFromCheckpointShared(persist& p, int Index)
+    { return false; }
+#endif
+
+  protected:
+    /// LBANN communicator
+    lbann_comm* comm;
+    /// Parameters to optimize
+    AbsDistMat* m_parameters;
+    /// Parameter matrix height
+    Int m_height;
+    /// Parameter matrix width
+    Int m_width;
+    /// Parameter matrix format
+    matrix_format m_matrix_format;
+    /// Learning rate
+    DataType m_learning_rate;
+
+  private:
+    /// Optimizer name
+    const std::string m_name;
+
   };
 
-  class Optimizer_factory {
+  /// Optimizer factory base class
+  class optimizer_factory
+  {
   public:
-    Optimizer_factory() {}
-    virtual ~Optimizer_factory() {}
-    virtual Optimizer *create_optimizer(matrix_format format=matrix_format::MC_MR) { return nullptr; };
-
+    /// Constructor
+    optimizer_factory
+    (lbann_comm* comm,
+     const std::string name);
+    /// Destructor
+    virtual ~optimizer_factory();
+    /// Create optimizer
+    virtual optimizer* create_optimizer() = 0;
+    /// Get optimizer name
+    virtual const std::string name() const { return m_name; };
+  protected:
+    /// LBANN communicator
+    lbann_comm* comm;
+  private:
+    /// Optimizer name
+    const std::string m_name;
   };
-}
+
+} // namespace lbann
 
 #endif // LBANN_OPTIMIZER_HPP

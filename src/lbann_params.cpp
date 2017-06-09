@@ -33,13 +33,17 @@ lbann::TrainingParams::TrainingParams(void)
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
     PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
     PercentageTestingSamples(1.00), TestWithTrainData(0),
-    EpochCount(2), MBSize(192),
+    TrainingSamples(1024), TestingSamples(256),
+    EpochStart(0), EpochCount(2), MBSize(192),
     LearnRate(0.3), LearnRateMethod(2),
     LrDecayRate(0.5), LrDecayCycles(5000),
     ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
-    SaveModel(false), LoadModel(false), Checkpoint(10), TrainFile(" "),
-    TestFile(" "), SummaryDir("."), IntermodelCommMethod(0), ProcsPerModel(0) {
+    SaveModel(false), LoadModel(false),
+    CkptEpochs(0), CkptSteps(0), CkptSecs(0.0),
+    TrainFile(" "), TestFile(" "), SummaryDir("."), DumpWeights(false), DumpActivations(false),
+    DumpGradients(false), DumpDir("."), IntermodelCommMethod(0),
+    ProcsPerModel(0) {
 }
 
 void lbann::TrainingParams::parse_params(void) {
@@ -57,8 +61,11 @@ void lbann::TrainingParams::parse_params(void) {
   EpochCount = Input("--num-epochs", "# of training epochs", EpochCount);
   MBSize = Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
 
+  TrainingSamples = Input("--training-samples", "# of samples to use in training", TrainingSamples);
+  TestingSamples = Input("--testing-samples", "# of samples to use in testing", TestingSamples);
+
   LearnRate = Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
-  LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop", LearnRateMethod);
+  LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);
   LrDecayRate = Input("--lr-decay-rate", "How much does the learning rate decay when it decays", LrDecayRate);
   LrDecayCycles = Input("--lr-decay-cycle", "How often does the learning rate decay", LrDecayCycles);
   ActivationType = static_cast<activation_type>(Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", static_cast<int>(ActivationType)));
@@ -73,8 +80,16 @@ void lbann::TrainingParams::parse_params(void) {
   ParameterDir = Input("--params", "Location to save model parameters", ParameterDir);
   SaveModel = Input("--save-model", "Save the current model", SaveModel);
   LoadModel = Input("--load-model", "Load a saved model", LoadModel);
-  Checkpoint = Input("--checkpoint", "Number of training epochs between checkpoints", Checkpoint);
+
+  CkptEpochs = Input("--ckpt-epochs", "Number of training epochs between checkpoints", CkptEpochs);
+  CkptSteps  = Input("--ckpt-steps", "Number of training steps between checkpoints", CkptSteps);
+  CkptSecs   = Input("--ckpt-secs", "Number of seconds between checkpoints", CkptSecs);
+
   SummaryDir = Input("--summary-dir", "Directory to write summary files", SummaryDir);
+  DumpWeights = Input("--dump-weights", "Whether to dump weights", DumpWeights);
+  DumpActivations = Input("--dump-activations", "Whether to dump weights", DumpActivations);
+  DumpGradients = Input("--dump-gradients", "Whether to dump gradients", DumpGradients);
+  DumpDir = Input("--dump-dir", "Directory to dump matrices", DumpDir);
 
   IntermodelCommMethod = Input("--imcomm", "Type of inter-model communication",
                                IntermodelCommMethod);

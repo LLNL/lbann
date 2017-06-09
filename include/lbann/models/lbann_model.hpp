@@ -34,6 +34,13 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/lbann_persist.hpp"
+#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include <vector>
 #include <string>
 
@@ -47,7 +54,8 @@ class lbann_callback;
  */
 class model {
 public:
-  model(lbann_comm* comm);
+  model(lbann_comm* comm, objective_functions::objective_fn* obj_fn,
+        optimizer_factory* optimizer_fac);
   virtual ~model() {}
 
   /** Initialize the model. */
@@ -56,24 +64,58 @@ public:
   /** Register a new callback for the model. */
   virtual void add_callback(lbann_callback* cb);
 
+  /** Register a new metric for the model. */
+  virtual void add_metric(metrics::metric* m);
+
   /** Return the model's layers. */
   virtual std::vector<Layer*>& get_layers() = 0;
-
-  /** Get the most recent training accuracy. */
-  virtual DataType get_train_accuracy() const = 0;
-  /** Get the most recent validation accuracy. */
-  virtual DataType get_validate_accuracy() const = 0;
-  /** Get the most recent test accuracy. */
-  virtual DataType get_test_accuracy() const = 0;
 
   /** Get the model's comm. */
   inline lbann_comm* get_comm() const { return comm; }
   /** Get the current epoch for the model. */
   inline int64_t get_cur_epoch() const { return m_current_epoch; }
   /** Get the current step for the model. */
-  inline int64_t get_cur_step() const { return m_current_step; }
+  inline int64_t get_cur_step() const { return m_current_step; } /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
+#if 0
+  inline int64_t get_cur_step() const {
+    int64_t step = 0;
+    switch(m_execution_mode) {
+    case execution_mode::training:
+      step = get_cur_training_step();
+      break;
+    case execution_mode::validation:
+      step = get_cur_validation_step();
+      break;
+    case execution_mode::testing:
+      step = get_cur_testing_step();
+      break;
+    default:
+      throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
+    }
+    return step;
+  }
+  /** Get the current training step for the model. */
+  inline int64_t get_cur_training_step() const { return m_current_step; } /// @todo This should be renamed to m_current_testing_step
+#endif
+  /** Get the current validation step for the model. */
+  inline int64_t get_cur_validation_step() const { return m_current_validation_step; }
+  /** Get the current testing step for the model. */
+  inline int64_t get_cur_testing_step() const { return m_current_testing_step; }
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const { return m_execution_mode; }
+  /** Set the model (and all layers') execution mode. */
+  inline void set_execution_mode(execution_mode mode) {
+    m_execution_mode = mode;
+    std::vector<Layer*>& layers = get_layers();
+    for (auto&& l : layers) {
+      l->m_execution_mode = mode;
+    }
+  }
+  inline int64_t set_current_mini_batch_size(int64_t mini_batch_size)
+  { m_current_mini_batch_size = mini_batch_size; return m_current_mini_batch_size; }
+  inline int64_t get_current_mini_batch_size() { return m_current_mini_batch_size; }
+  /** Get the current phase (multiple epochs) in layer-wise model training. */
+  inline size_t get_current_phase() { return m_current_phase; }
 
   /** Produce summary information (if any). */
   virtual void summarize(lbann_summary& summarizer) {}
@@ -82,6 +124,49 @@ public:
   bool get_terminate_training() const { return m_terminate_training; }
   /** Set the terminate training flag (on or off). */
   void set_terminate_training(bool f) { m_terminate_training = f; }
+
+  /** Return true if about to start a new training epoch */
+  virtual bool at_epoch_start() = 0;
+
+  /** Create a new optimizer. */
+  inline optimizer* create_optimizer() {
+    return m_optimizer_fac->create_optimizer();
+  }
+
+  /**
+   * Objective functions are used to judge the performance of the model during
+   * training and can be used to adapt training via either early termination or
+   * adaptive learning rates.
+   */
+  objective_functions::objective_fn* obj_fn;
+  /**
+   * A metric is a function that is used to judge the performance of your model.
+   * A metric function is similar to an objective function, except that the
+   * results from evaluating a metric are not used when training the model.
+   */
+  std::vector<metrics::metric*> metrics;
+
+  /** Set checkpoint values */
+  inline void set_checkpoint_dir(std::string dir)   { m_checkpoint_dir    = dir;    }
+  inline void set_checkpoint_epochs(int64_t epochs) { m_checkpoint_epochs = epochs; }
+  inline void set_checkpoint_steps(int64_t steps)   { m_checkpoint_steps  = steps;  }
+  inline void set_checkpoint_secs(double secs)      { m_checkpoint_secs   = secs;   }
+
+  /** Returns true if a checkpoint should be taken, false otherwise */
+  bool need_checkpoint();
+
+  /** Checkpoint model to given file descriptor, return number of bytes written */
+  virtual bool save_to_checkpoint_shared(persist& p);
+  /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  virtual bool load_from_checkpoint_shared(persist& p);
+
+  /*! Top-level call to start checkpoint.  This creates the persist object
+   *  and then calls the model's save_to_checkpoint_shared() virtual function */ 
+  bool checkpointShared();
+
+  /*! Top-level call to restart.  This creates the persist object
+   *  and then calls the model's load_from_checkpoint_shared() virtual function */ 
+  bool restartShared();
     
 protected:
   /** The model's current execution mode. */
@@ -92,15 +177,40 @@ protected:
   int64_t m_current_epoch;
   /** Most recent/current training step for the model. */
   int64_t m_current_step;
+  int64_t m_current_validation_step;
+  int64_t m_current_testing_step;
+  /** Size of the current mini-batch */
+  int64_t m_current_mini_batch_size;
+  /** current phase (multiple of epoch counts) in training a model */
+  size_t m_current_phase;
   /** Communicator for the model. */
   lbann_comm* comm;
+  /** Global rank of process in MPI_COMM_WORLD */
+  int m_rank;
+  /** Size of MPI_COMM_WORLD */
+  int m_ranks;
   /** Current callbacks to process. */
   std::vector<lbann_callback*> callbacks;
+
+  /** Directory where we should save checkpoints */
+  std::string m_checkpoint_dir;
+  /** Number of training steps to elapse between checkpoints */
+  int64_t m_checkpoint_epochs;
+  /** Number of training steps to elapse between checkpoints */
+  int64_t m_checkpoint_steps;
+  /** Number of seconds to elapse between checkpoints (checkpoint interval) */
+  double m_checkpoint_secs;
+  /** Timestamp of last checkpoint */
+  double m_checkpoint_last;
+
+  /** Factory to create optimizers. */
+  optimizer_factory* m_optimizer_fac;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();
   void do_train_begin_cbs();
   void do_train_end_cbs();
+  void do_phase_end_cbs();
   void do_epoch_begin_cbs();
   void do_epoch_end_cbs();
   void do_batch_begin_cbs();
@@ -117,6 +227,13 @@ protected:
   void do_layer_backward_prop_begin_cbs(Layer* l);
   void do_model_backward_prop_end_cbs();
   void do_layer_backward_prop_end_cbs(Layer* l);
+  /// Evaluation phases (validation / testing)
+  void do_batch_evaluate_begin_cbs();
+  void do_batch_evaluate_end_cbs();
+  void do_model_evaluate_forward_prop_begin_cbs();
+  void do_layer_evaluate_forward_prop_begin_cbs(Layer* l);
+  void do_model_evaluate_forward_prop_end_cbs();
+  void do_layer_evaluate_forward_prop_end_cbs(Layer* l);
 };
 
 }  // namespace lbann

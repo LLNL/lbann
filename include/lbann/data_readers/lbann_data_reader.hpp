@@ -33,252 +33,304 @@
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/lbann_persist.hpp"
+#include "lbann/data_readers/lbann_image_preprocessor.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
+
+#define NOT_IMPLEMENTED(n) { \
+  std::stringstream s; \
+  s << "the method " << n << " has not been implemented"; \
+  throw lbann_exception(s.str()); }
 
 /**
  * @todo - add support for save and restore
  */
 namespace lbann
 {
-	class DataReader
-	{
-	public:
-    DataReader(int batchSize, bool shuffle) :
-      BatchSize(batchSize), CurrentPos(0), m_shuffle(shuffle),
-      m_stride(batchSize), m_base_offset(0), m_model_offset(0), 
-      m_use_alt_last_mini_batch_size(false),
-      m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize), m_last_mini_batch_stride(0) 
-    {}
-    DataReader(int batchSize) :
-      DataReader(batchSize, true) {}
+
+class DataReader : public lbann_image_preprocessor
+{
+public:
+  DataReader(int batchSize, bool shuffle = true) :
+    BatchSize(batchSize), CurrentPos(0),
+    m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0), 
+    m_sample_stride(1),
+    m_use_alt_last_mini_batch_size(false),
+    m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
+    m_last_mini_batch_stride(batchSize),
+    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
+    m_max_sample_count_was_set(false), m_use_percent(1.0),
+    m_master(false)
+  {}
     
-    DataReader(const DataReader& source) :
-      BatchSize(source.BatchSize), CurrentPos(source.CurrentPos), m_shuffle(source.m_shuffle),
-      m_stride(source.m_stride), m_base_offset(source.m_base_offset), m_model_offset(source.m_model_offset),
-      m_use_alt_last_mini_batch_size(source.m_use_alt_last_mini_batch_size),
-      m_last_mini_batch_threshold(source.m_last_mini_batch_threshold), m_last_mini_batch_size(source.m_last_mini_batch_size), m_last_mini_batch_stride(source.m_last_mini_batch_stride),
-      ShuffledIndices(source.ShuffledIndices), m_unused_indices(source.m_unused_indices)
-    {}
+  //developer's note: I eliminated the copy ctor, since the
+  //default does everything we need; eliminating our explicit
+  //code helps minimize sources of error -dHysom
 
-    virtual ~DataReader() {}
+  virtual ~DataReader() {}
 
-    /**
-     * Prepare to start processing an epoch of data.
-     * If shuffle is true, then shuffle the indices of the data set
-     * If the base offset is not specified set it to 0
-     * If the stride is not specified set it to batch size
-     */
-    void setup(int base_offset, int stride, int model_offset = 0, lbann_comm *comm = NULL) {
-      m_model_offset = model_offset;
-      m_base_offset = base_offset;
-      m_stride = stride;
+  /** @name Methods related to construction and loading
+   *  These methods are used in drivers (front ends) to construct data readers,
+   *  tell them were to find data, how much to load, etc.
+   *  These are all non-virtual methods.
+   */
 
-      if(comm != NULL) {
-        calculate_multi_model_data_distribution(comm);
-        m_use_alt_last_mini_batch_size = true;
-      }
+  /** 
+   * Set base directory for your data. Optional: if given,
+   * then get_data_filename will concatenate the value passed
+   * to this method with the value passed to set_data_filename,
+   * and similarly for get_label_filename
+   */
+  void set_file_dir(std::string s);
 
-      CurrentPos = m_base_offset + m_model_offset;
-      if (m_shuffle) {
-        std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
-                     get_generator());
-      }
-    }
+  /**
+   * Returns the base directory for your data. 
+   * If set_file_dir was not called, returns the empty string
+   */
+  std::string get_file_dir();
 
-    void setup() { DataReader::setup(0, BatchSize); }
+  /**
+   * Set the filename for your data (images, etc).
+   * This may either be a complete filepath, or a subdirectory;
+   * see note for set_file_dir(). Also, use this method
+   * for cases where the file contains a list of files (e.g, imagenet)
+   */ 
+  void set_data_filename(std::string s);
 
-		virtual int fetch_data(Mat& X) { return 0; }
-		// 	if (CurrentPos < (int)ShuffledIndices.size()) {
-		// 		return true;
-		// 	}
-		// 	else {
-		// 		return false;
-		// 	}
-		// }
-		virtual int fetch_label(Mat& Y) { return 0; }
-		// 	if (CurrentPos < (int)ShuffledIndices.size()) {
-		// 		return true;
-		// 	}
-		// 	else {
-		// 		return false;
-		// 	}
-		// }
-    /**
-     * During the network's update phase, the data reader will
-     * advanced the current position pointer.  If the pointer wraps
-     * around, then reshuffle the data indicies.
-     */
-    virtual bool update() {
-      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
-        CurrentPos += m_last_mini_batch_stride;
-      }else {
-        CurrentPos += m_stride;
-      }
-      if (CurrentPos < (int)ShuffledIndices.size()) {
-        return true;
-      } else {
-        if (m_shuffle) {
-          std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(),
-                       get_generator());
-        }
-        CurrentPos = m_base_offset + m_model_offset;
-        return false;
-      }
-    }
+  /**
+   * Returns the complete filepath to you data file.
+   * See not for set_file_dir()
+   */
+  std::string get_data_filename(); 
 
-		virtual int getNumLabels() { return 0; }
-    virtual int get_linearized_data_size() { return 0; }
-    virtual int get_linearized_label_size() { return 0; }
+  /**
+   * Set the filename for your data (images, etc).
+   * This may either be a complete filepath, or a subdirectory;
+   * see note for set_file_dir()
+   */ 
+  void set_label_filename(std::string s);
 
-    bool position_valid()   { return (CurrentPos < (int)ShuffledIndices.size()); }
-    int getBatchSize()      { 
-      if(m_use_alt_last_mini_batch_size && CurrentPos >= m_last_mini_batch_threshold) {
-        return m_last_mini_batch_size;
-      }else {
-        return BatchSize; 
-      }
-    }
-		int getPosition()       { return CurrentPos; }
-    int get_next_position() { 
-      if(m_use_alt_last_mini_batch_size && CurrentPos+m_stride > m_last_mini_batch_threshold) {
-        return CurrentPos + m_last_mini_batch_stride;
-      }else {
-        return CurrentPos + m_stride;
-      }
-    }
-		int* getIndices()       { return &ShuffledIndices[0]; }
-		int getNumData()        { return (int)ShuffledIndices.size(); }
-		int get_num_unused_data() { return (int)m_unused_indices.size(); }
-		int* get_unused_data()    { return &m_unused_indices[0]; }
+  /**
+   * Returns the complete filepath to you data file.
+   * See not for set_file_dir(). Note: some pipelines (autoencoders)
+   * will not make use of this method.
+   */
+  std::string get_label_filename(); 
 
-    void select_subset_of_data(size_t max_sample_count, bool firstN) {
-      size_t num_data_samples = getNumData();
-      
-      /// If the user requested fewer than the total data set size, select
-      /// a random set from the entire data set.
-      if (max_sample_count != 0) {
-        max_sample_count = __MIN(max_sample_count, num_data_samples);
-        if(!firstN) {
-          std::shuffle(ShuffledIndices.begin(), ShuffledIndices.end(), get_generator());
-        }
-        m_unused_indices=std::vector<int>(ShuffledIndices.begin() + max_sample_count, ShuffledIndices.end());
-        ShuffledIndices.resize(max_sample_count);
+  /**
+   * if set to true, indices (data samples) are not shuffled;
+   * default is 'false'
+   */
+  void set_firstN(bool b);
 
-        if(!firstN) {
-          std::sort(ShuffledIndices.begin(), ShuffledIndices.end());
-          std::sort(m_unused_indices.begin(), m_unused_indices.end());
-        }
+  /** if 'true' is returned, indices (data samples) are not shuffled
+   */
+  bool get_firstN();
 
-        // std::cout << "shuffled indices ";
-        // for (auto i = ShuffledIndices.begin(); i != ShuffledIndices.end(); ++i)
-        //   std::cout << *i << ' ';
-        // std::cout << std::endl;
+  /** sets the absolute number of data samples that will be used
+   *  for training or testing
+   */
+  void set_max_sample_count(size_t s);
 
-        // std::cout << "unused indices ";
-        // for (auto i = m_unused_indices.begin(); i != m_unused_indices.end(); ++i)
-        //   std::cout << *i << ' ';
-        // std::cout << std::endl;
-      }
-    }
+  /** returns 'true' if set_max_sample_count() was called;
+   *  primarily for internal use; end users can ignore.
+   */
+  bool has_max_sample_count();
 
-    bool swap_used_and_unused_index_sets() {
-      std::vector<int> tmp_indices = ShuffledIndices;
-      ShuffledIndices = m_unused_indices;
-      m_unused_indices = tmp_indices;
-      return true;
-    }
+  /** returns the absolute number of data samples that will be used
+   *  for training or testing
+   */
+  size_t get_max_sample_count();
 
-    DataReader& operator=(const DataReader& source) {
-      this->BatchSize = source.BatchSize;
-      this->CurrentPos = source.CurrentPos;
-      this->m_shuffle = source.m_shuffle;
-      this->m_stride = source.m_stride;
-      this->m_base_offset = source.m_base_offset;
-      this->m_model_offset = source.m_model_offset;
-      this->m_use_alt_last_mini_batch_size = source.m_use_alt_last_mini_batch_size;
-      this->m_last_mini_batch_threshold = source.m_last_mini_batch_threshold;
-      this->m_last_mini_batch_size = source.m_last_mini_batch_size;
-      this->m_last_mini_batch_stride = source.m_last_mini_batch_stride;
+  /** set the percentage of the data set to use for training+validation;
+   *  or testing.  Exception is thrown if  1.0 < s < 0
+   */
+  void set_use_percent(double s);
 
-      // Vectors implement a deep copy
-      this->ShuffledIndices = source.ShuffledIndices;
-      this->m_unused_indices = source.m_unused_indices;
-      return *this;
-    }
+  /** returns true if set_use_percent() was called */
+  bool has_use_percent();
 
-    size_t trim_data_set(double use_percentage, bool firstN=false) {
-      size_t max_sample_count = rint(getNumData()*use_percentage);
-      
-      if(max_sample_count > getNumData() || ((long) max_sample_count) < 0) {
-        throw lbann_exception("data reader trim error: invalid number of samples selected");
-      }
-      select_subset_of_data(max_sample_count, firstN);
+  /** returns the percent of the data set that is to be used
+   *  for training or testing. If training, this is the total
+   *  for training+validation. Throws an exception if
+   *  set_use_percent() was not previously called.
+   */
+  double get_use_percent();
 
-      return getNumData();
-    }
+  /** sets the proportion of the data set that will be used for
+   *  validation;  0.0 <= s <= 1.0, else an exception is thrown
+   */
+  void set_validation_percent(double s);
 
-    void calculate_multi_model_data_distribution(lbann_comm *comm) {
-      int max_mini_batch_size = BatchSize;
-      int num_parallel_readers_per_model = (m_stride / comm->get_num_models()) / max_mini_batch_size;
+  /** returns true if set_validation_percent was called;
+   *  this method will likely be deprecated in the future
+   */  
+  bool has_validation_percent();
 
-      int num_whole_mini_batches = rint(getNumData() / m_stride);
-      int partial_mini_batch_size = (getNumData() - (num_whole_mini_batches*m_stride))/(comm->get_num_models() * num_parallel_readers_per_model);
-      int world_master_remainder_data = 0;
+  /** returns the percentage of the data set that is to be
+   *  used for validation
+   */
+  double get_validation_percent();
 
-      int world_master_remainder_adjustment = getNumData() 
-        - (num_whole_mini_batches * m_stride) 
-        - (partial_mini_batch_size * comm->get_num_models() * num_parallel_readers_per_model);
-      if(comm->am_world_master()) {
-        world_master_remainder_data = world_master_remainder_adjustment;
-        world_master_remainder_adjustment = 0;
-      }
-      partial_mini_batch_size += world_master_remainder_data;
+  /** set the identifyer for the data set; should be
+   *  "train," "test," or validate. This is primarily for internal use:
+   *  end users can ignore.
+   */
+  void set_role(std::string role) { m_role = role; }
 
-      m_last_mini_batch_threshold = m_stride * num_whole_mini_batches;
-      m_last_mini_batch_size = partial_mini_batch_size;
+  /** returns the role ("train," "test," "validate," or "error"
+   *  This is primarily for internal use:
+   *  end users can ignore.
+   */
+  std::string get_role() { return m_role; }
 
-      /// Note that comm->get_model_rank() + comm->get_rank_in_model() is not equivalent to comm->get_world_rank() from a parallel I/O perspective
-      /// Given the data readers rank, how many readers have a higher rank
-      int num_readers_at_full_stride = (comm->get_num_models() - comm->get_model_rank()) * num_parallel_readers_per_model;
-      /// Given the data readers rank, how many readers have a lower rank
-      int num_readers_at_last_stride = comm->get_model_rank() * num_parallel_readers_per_model;
-      if(comm->get_rank_in_model() < num_parallel_readers_per_model) { /// If this rank is one of the readers, adjust the number of readers to account for that
-        num_readers_at_full_stride -= comm->get_rank_in_model();
-        num_readers_at_last_stride += comm->get_rank_in_model();
-      }
-      /// Compute how big the stride should be assuming that each higher ranked parallel reader has completed a full mini-batch
-      /// and each lower ranked parallel reader has completed a partial mini-batch
-      m_last_mini_batch_stride = max_mini_batch_size * num_readers_at_full_stride
-        + (partial_mini_batch_size * (num_readers_at_last_stride)) + world_master_remainder_adjustment;
+  /**
+   * Pure abstract virtual function; all DataReaders *must* implement.
+   */
+  virtual void load() = 0;
 
-      //      cout << "[" << comm->get_rank_in_world() << "] " << comm->get_model_rank() << " model rank, num_whole_mini_batches=" << num_whole_mini_batches << " partial_mini_batch_size=" << partial_mini_batch_size << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << m_last_mini_batch_threshold << " with a last stride of " << m_last_mini_batch_stride << " and stride of " << m_stride << " and there are " << num_parallel_readers_per_model << " parallel readers per model " <<endl;
+  ///@}
 
-      return;
-    }
 
-  protected:
-    int							BatchSize;
-    int 						CurrentPos;
-    int             m_shuffle;
-    int             m_stride;       /// Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
-    int             m_base_offset;  /// If there are multiple instances of the reader, 
-                                    /// then it may not reset to zero
-    int             m_model_offset;  /// If there are multiple models with multiple instances of the reader, 
-                                     /// each model's set of readers may not reset to zero
-    /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
-    bool            m_use_alt_last_mini_batch_size;
-    int             m_last_mini_batch_threshold;
-    int             m_last_mini_batch_size;
-    int             m_last_mini_batch_stride;
 
-    std::vector<int> 			ShuffledIndices;
-    std::vector<int> 			m_unused_indices; /// Record of the indicies that are not being used for training
-	};
 
-}
 
-#endif // LBANN_DATA_READER_HPP
+  /**
+   * Prepare to start processing an epoch of data.
+   * If shuffle is true, then shuffle the indices of the data set
+   * If the base offset is not specified set it to 0
+   * If the stride is not specified set it to batch size
+   */
+  void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
+  void setup();
+
+  virtual int fetch_data(Mat& X) { 
+    NOT_IMPLEMENTED("fetch_data");
+    return 0; 
+  }
+
+  virtual int fetch_label(Mat& Y) { 
+    NOT_IMPLEMENTED("fetch_label");
+    return 0; 
+  }
+
+  virtual int fetch_response(Mat& Y) { 
+    NOT_IMPLEMENTED("fetch_response");
+    return 0; 
+  }
+
+  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) { 
+   NOT_IMPLEMENTED("save_image"); 
+  }
+
+  /**
+   * During the network's update phase, the data reader will
+   * advanced the current position pointer.  If the pointer wraps
+   * around, then reshuffle the data indicies.
+   */
+  virtual bool update();
+
+  virtual int getNumLabels() { return 0; }
+  virtual int getNumResponses() { return 1; }
+  virtual int get_linearized_data_size() { return 0; }
+  virtual int get_linearized_label_size() { return 0; }
+  virtual int get_linearized_response_size() { return 1; }
+
+  bool position_valid() { return (CurrentPos < (int)ShuffledIndices.size()); }
+  bool at_new_epoch() { return (m_current_mini_batch_idx == 0); }
+  int getBatchSize();
+  int getPosition() { return CurrentPos; }
+  int get_next_position();
+  int* getIndices() { return &ShuffledIndices[0]; }
+  int getNumData() { return (int)ShuffledIndices.size(); }
+  int get_num_unused_data() { return (int)m_unused_indices.size(); }
+  int* get_unused_data() { return &m_unused_indices[0]; }
+  int set_num_iterations_per_epoch(int num_iterations_per_epoch) { m_num_iterations_per_epoch = num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
+  int get_num_iterations_per_epoch() { return m_num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
+
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  void set_master(bool m) { m_master = m; }
+
+  /// only the master may write to cerr or cout; primarily for use in debugging during development
+  bool is_master() { return m_master; }
+
+  /// for use during development and debugging
+  void set_rank(int rank) { m_rank = rank; }
+
+  /// for use during development and debugging
+  int get_rank() { return m_rank; }
+
+  void select_subset_of_data();
+
+  /** \brief Replace the shuffled index set with the unused index set 
+   *  The unused index set is emptied.
+   */
+  void use_unused_index_set();
+
+  DataReader& operator=(const DataReader& source);
+
+  /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
+  bool saveToCheckpointShared(persist& p, const char* name);
+
+  /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+  bool loadFromCheckpointShared(persist& p, const char* name);
+
+public:
+  /// 1-D Matrix of which indices were fetched in this mini-batch
+  El::Matrix<El::Int> m_indices_fetched_per_mb;
+
+public: //protected:
+  int BatchSize;
+  int CurrentPos;
+  /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
+  int m_batch_stride;
+  /// If there are multiple instances of the reader, 
+  /// then it may not reset to zero
+  int m_base_offset;
+  /// If there are multiple models with multiple instances of the reader, 
+  /// each model's set of readers may not reset to zero
+  /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
+  int m_model_offset;
+  /// Sample stride is used when a mini-batch is finely interleaved across a DATA_PARALELL
+  /// distribution.
+  int m_sample_stride;
+
+  /// These fields are used to calculate when to use the last mini-batch
+  int m_use_alt_last_mini_batch_size;
+  int m_last_mini_batch_threshold;
+  int m_last_mini_batch_size;
+  int m_last_mini_batch_stride;
+  int m_current_mini_batch_idx;
+  int m_num_mini_batches_per_reader; /// How many mini-batches will this reader process
+
+  /// @todo BVE FIXME merge this with alternate approach
+  int m_num_iterations_per_epoch; /// How many iterations all readers will execute
+
+  std::vector<int> ShuffledIndices;
+  /// Record of the indicies that are not being used for training
+  std::vector<int> m_unused_indices;
+
+  std::string m_file_dir;
+  std::string m_data_fn;
+  std::string m_label_fn;
+  bool m_first_n;
+  size_t m_max_sample_count;
+  double m_validation_percent;
+  size_t m_max_sample_count_was_set;
+  double m_use_percent;
+  std::string m_role;
+
+  bool m_master;
+  int m_rank;
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_HPP

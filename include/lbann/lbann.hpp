@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -35,7 +35,8 @@
 
 /// Models
 #include "lbann/models/lbann_model_dnn.hpp"
-#include "lbann/models/lbann_model_autoencoder.hpp"
+#include "lbann/models/lbann_model_stacked_autoencoder.hpp"
+#include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
 /// Layers
 #include "lbann/layers/lbann_layer_activations.hpp"
@@ -43,15 +44,27 @@
 #include "lbann/layers/lbann_layer_softmax.hpp"
 #include "lbann/layers/lbann_layer_convolutional.hpp"
 #include "lbann/layers/lbann_layer_pooling.hpp"
+#include "lbann/layers/lbann_layer_local_response_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/lbann_input_layer_distributed_minibatch.hpp"
 #include "lbann/layers/lbann_target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+//#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
+#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
+#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
+#include "lbann/data_readers/lbann_data_reader_nci.hpp"
+#include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
+#include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/lbann_callback_print.hpp"
@@ -59,6 +72,23 @@
 #include "lbann/callbacks/lbann_callback_summary.hpp"
 #include "lbann/callbacks/lbann_callback_timer.hpp"
 #include "lbann/callbacks/lbann_callback_learning_rate.hpp"
+#include "lbann/callbacks/lbann_callback_debug.hpp"
+#include "lbann/callbacks/lbann_callback_imcomm.hpp"
+#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
+#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
+#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+#include "lbann/callbacks/lbann_callback_dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/lbann_callback_early_stopping.hpp"
+
+/// Objective functions (cost functions)
+#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
+
+/// Metrics
+#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
+#include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
 
 /// Regularizers
 #include "lbann/regularization/lbann_dropout.hpp"
@@ -66,7 +96,8 @@
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_summary.hpp"
-#include "lbann_params.hpp"
+#include "lbann/lbann_params.hpp"
 #include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/lbann_persist.hpp"
 
 #endif // LBANN_HPP_INCLUDED

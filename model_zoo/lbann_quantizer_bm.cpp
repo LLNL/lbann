@@ -29,6 +29,9 @@
 #include "lbann/lbann.hpp"
 #include "lbann/utils/lbann_quantizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
+#ifdef LBANN_VTUNE
+#include <ittnotify.h>
+#endif
 
 /** Number of times to run the quantization. */
 const int num_trials = 20;
@@ -39,9 +42,7 @@ using namespace lbann;
 lbann_summary* normal_summarizer;
 lbann_summary* onebit_summarizer;
 lbann_summary* thresh_summarizer;
-lbann_summary* comp_thresh_summarizer;
 lbann_summary* adaptive_summarizer;
-lbann_summary* comp_adaptive_summarizer;
 
 std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
   std::vector<double> times;
@@ -57,74 +58,78 @@ std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
 }
 
 void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
-                      int trial) {  
+                      lbann_comm* comm, int trial) {
   summarizer->reduce_scalar("bytes_sent",
-                            quantizer.get_bytes_sent(),
+                            comm->get_ar_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("bytes_received",
-                            quantizer.get_bytes_received(),
+                            comm->get_ar_bytes_received(),
                             trial);
   summarizer->reduce_scalar("rs_bytes_sent",
-                            quantizer.get_rs_bytes_sent(),
+                            comm->get_ar_rs_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("ag_bytes_sent",
-                            quantizer.get_ag_bytes_sent(),
+                            comm->get_ar_ag_bytes_sent(),
                             trial);
   summarizer->reduce_scalar("rs_bytes_received",
-                            quantizer.get_rs_bytes_received(),
+                            comm->get_ar_rs_bytes_received(),
                             trial);
   summarizer->reduce_scalar("ag_bytes_received",
-                            quantizer.get_ag_bytes_received(),
+                            comm->get_ar_ag_bytes_received(),
                             trial);
   summarizer->reduce_scalar("rs_time",
-                            quantizer.get_rs_time(),
+                            comm->get_ar_rs_time(),
                             trial);
   summarizer->reduce_scalar("ag_time",
-                            quantizer.get_ag_time(),
+                            comm->get_ar_ag_time(),
                             trial);
-  summarizer->reduce_scalar("rs_send_trans_time",
-                            quantizer.get_rs_send_trans_time(),
+  summarizer->reduce_scalar("ar_send_trans_time",
+                            comm->get_ar_send_transform_time(),
                             trial);
-  summarizer->reduce_scalar("rs_recv_buf_time",
-                            quantizer.get_rs_recv_buf_time(),
+  summarizer->reduce_scalar("ar_recv_trans_time",
+                            comm->get_ar_recv_transform_time(),
                             trial);
-  summarizer->reduce_scalar("rs_recv_trans_time",
-                            quantizer.get_rs_recv_trans_time(),
+  summarizer->reduce_scalar("ar_recv_apply_trans_time",
+                            comm->get_ar_recv_apply_transform_time(),
                             trial);
-  summarizer->reduce_scalar("ag_reduced_trans_time",
-                            quantizer.get_ag_reduced_trans_time(),
+  summarizer->reduce_scalar("ar_send_time",
+                            comm->get_ar_send_time(),
                             trial);
-  summarizer->reduce_scalar("ag_recv_buf_time",
-                            quantizer.get_ag_recv_buf_time(),
+  summarizer->reduce_scalar("ar_recv_time",
+                            comm->get_ar_recv_time(),
                             trial);
-  summarizer->reduce_scalar("ag_recv_trans_time",
-                            quantizer.get_ag_recv_trans_time(),
+  summarizer->reduce_scalar("ar_rs_send_time",
+                            comm->get_ar_rs_send_time(),
                             trial);
-  summarizer->reduce_scalar("pta_time",
-                            quantizer.get_pta_time(),
+  summarizer->reduce_scalar("ar_rs_recv_time",
+                            comm->get_ar_rs_recv_time(),
                             trial);
-  summarizer->reduce_scalar("pta_pos_time",
-                            quantizer.get_pta_pos_time(),
+  summarizer->reduce_scalar("ar_ag_send_time",
+                            comm->get_ar_ag_send_time(),
                             trial);
-  quantizer.reset_bytes_counters();
-  quantizer.reset_time_counters();
+  summarizer->reduce_scalar("ar_ag_recv_time",
+                            comm->get_ar_ag_recv_time(),
+                            trial);
+  summarizer->reduce_scalar("proportion_time",
+                            quantizer.get_proportion_time(),
+                            trial);
+  quantizer.reset_counters();
+  comm->reset_stats_counters();
 }
 
 std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  Mat im_qerror;
   // Allocate here, prevents messing with timing.
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    quantizer.intermodel_sum_quantized(comm, mat, qerror, im_qerror,
-                                       false);
+    quantizer.intermodel_sum_onebit_quantized(comm, mat, qerror);
     double tot = get_time() - start;
     times.push_back(tot);
     onebit_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(onebit_summarizer, quantizer, trial);
+    quantize_summary(onebit_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
@@ -141,32 +146,11 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
     quantizer.intermodel_sum_threshold_quantized(
-      comm, mat, qerror, thresh, -thresh, im_qerror, false);
+      comm, mat, qerror, thresh, -thresh);
     double tot = get_time() - start;
     times.push_back(tot);
     thresh_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(thresh_summarizer, quantizer, trial);
-    comm->global_barrier();
-  }
-  return times;
-}
-
-std::vector<double> test_comp_thresh(lbann_comm* comm, DistMat& mat,
-                                     float thresh) {
-  std::vector<double> times;
-  lbann_quantizer quantizer;
-  Mat qerror;
-  Mat im_qerror;
-  // Allocate here, prevents messing with timing.
-  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  for (int trial = 0; trial < num_trials; ++trial) {
-    double start = get_time();
-    quantizer.intermodel_sum_threshold_quantized(
-      comm, mat, qerror, thresh, -thresh, im_qerror, true);
-    double tot = get_time() - start;
-    times.push_back(tot);
-    comp_thresh_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(comp_thresh_summarizer, quantizer, trial);
+    quantize_summary(thresh_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
@@ -177,50 +161,28 @@ std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
-  Mat im_qerror;
   // Allocate here, prevents messing with timing.
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    quantizer.intermodel_sum_adaptive_threshold_quantized(
-      comm, mat, qerror, proportion, im_qerror, false);
+    quantizer.intermodel_sum_adaptive_quantized(
+      comm, mat, qerror, proportion);
     double tot = get_time() - start;
     times.push_back(tot);
     adaptive_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(adaptive_summarizer, quantizer, trial);
-    comm->global_barrier();
-  }
-  return times;
-}
-
-std::vector<double> test_comp_adaptive(lbann_comm* comm, DistMat& mat,
-                                       int proportion) {
-  std::vector<double> times;
-  lbann_quantizer quantizer;
-  Mat qerror;
-  Mat im_qerror;
-  // Allocate here, prevents messing with timing.
-  Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
-  for (int trial = 0; trial < num_trials; ++trial) {
-    double start = get_time();
-    quantizer.intermodel_sum_adaptive_threshold_quantized(
-      comm, mat, qerror, proportion, im_qerror, true);
-    double tot = get_time() - start;
-    times.push_back(tot);
-    comp_adaptive_summarizer->reduce_scalar("time", tot, trial);
-    quantize_summary(comp_adaptive_summarizer, quantizer, trial);
+    quantize_summary(adaptive_summarizer, quantizer, comm, trial);
     comm->global_barrier();
   }
   return times;
 }
 
 void print_stats(const std::vector<double>& times) {
-  double sum = std::accumulate(times.begin(), times.end(), 0.0);
-  double mean = sum / times.size();
-  auto minmax = std::minmax_element(times.begin(), times.end());
+  double sum = std::accumulate(times.begin() + 1, times.end(), 0.0);
+  double mean = sum / (times.size() - 1);
+  auto minmax = std::minmax_element(times.begin() + 1, times.end());
   double sqsum = 0.0;
-  for (const auto& t : times) {
-    sqsum += (t - mean) * (t - mean);
+  for (auto t = times.begin() + 1; t != times.end(); ++t) {
+    sqsum += (*t - mean) * (*t - mean);
   }
   double stdev = std::sqrt(sqsum / (times.size() - 1));
   std::cout << "\tMean: " << mean << std::endl;
@@ -251,66 +213,46 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
     print_stats(onebit_times);
   }
   onebit_copy.Empty();
-  DistMat thresh_copy(mat);
+  /*DistMat thresh_copy(mat);
   auto thresh_times = test_thresh(comm, thresh_copy, 3.875f);
   if (comm->am_world_master()) {
     std::cout << "Thresh (" << mat.Height() << "x" << mat.Width() << "):" <<
       std::endl;
     print_stats(thresh_times);
   }
-  thresh_copy.Empty();
-  DistMat comp_thresh_copy(mat);
-  auto comp_thresh_times = test_comp_thresh(comm, comp_thresh_copy, 3.875f);
-  if (comm->am_world_master()) {
-    std::cout << "Compressed thresh (" << mat.Height() << "x" << mat.Width() <<
-      "):" << std::endl;
-    print_stats(comp_thresh_times);
-  }
-  comp_thresh_copy.Empty();
+  thresh_copy.Empty();*/
   DistMat adaptive_copy(mat);
-  auto adaptive_times = test_adaptive(comm, adaptive_copy, 64);
+  auto adaptive_times = test_adaptive(comm, adaptive_copy, 32);
   if (comm->am_world_master()) {
-    std::cout << "Adaptive 64 " << "(" << mat.Height() << "x" <<
+    std::cout << "Adaptive 32 " << "(" << mat.Height() << "x" <<
       mat.Width() << "):" << std::endl;
     print_stats(adaptive_times);
   }
   adaptive_copy.Empty();
-  DistMat comp_adaptive_copy(mat);
-  auto comp_adaptive_times = test_comp_adaptive(comm, comp_adaptive_copy, 64);
-  if (comm->am_world_master()) {
-    std::cout << "Compressed adaptive 64 " << "(" << mat.Height() <<
-      "x" << mat.Width() << "):" << std::endl;
-    print_stats(comp_adaptive_times);
-  }
-  comp_adaptive_copy.Empty();
 }
 
 int main(int argc, char** argv) {
   El::Initialize(argc, argv);
-  lbann_comm* comm = new lbann_comm(2);
+  lbann_comm* comm = new lbann_comm(1);
   normal_summarizer = new lbann_summary("qbm/normal", comm);
   onebit_summarizer = new lbann_summary("qbm/onebit", comm);
-  thresh_summarizer = new lbann_summary("qbm/thresh", comm);
-  comp_thresh_summarizer = new lbann_summary("qbm/comp_thresh", comm);
+  //thresh_summarizer = new lbann_summary("qbm/thresh", comm);
   adaptive_summarizer = new lbann_summary("qbm/adaptive", comm);
-  comp_adaptive_summarizer = new lbann_summary("qbm/comp_adaptive", comm);
 
   if (comm->am_world_master()) {
     std::cout << "Models: " << comm->get_num_models() << std::endl;
     std::cout << "Procs per model: " << comm->get_procs_per_model() << std::endl;
   }
-  for (int mat_size = 64; mat_size <= 32768; mat_size *= 2) {
+  for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
     DistMat mat(comm->get_model_grid());
-    El::Uniform(mat, mat_size, mat_size, 0.0f, 4.0f);
+    El::Gaussian(mat, mat_size, mat_size, (DataType) 0.0, (DataType) 0.4);
     test_mat(comm, mat);
   }
 
   delete normal_summarizer;
   delete onebit_summarizer;
-  delete thresh_summarizer;
-  delete comp_thresh_summarizer;
+  //delete thresh_summarizer;
   delete adaptive_summarizer;
-  delete comp_adaptive_summarizer;
   delete comm;
   El::Finalize();
 }

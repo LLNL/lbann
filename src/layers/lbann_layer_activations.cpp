@@ -29,109 +29,74 @@
 #include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-using namespace std;
 using namespace El;
 
 namespace lbann {
 
-Activation* new_activation(activation_type act_fn) {
-  switch (act_fn) {
-  case activation_type::SIGMOID:
-    return new sigmoid_layer();
-  case activation_type::TANH:
-    return new tanh_layer();
-  case activation_type::RELU:
-    return new reLU_layer();
-  case activation_type::ID:
-    return new id_layer();
-  default:
-    throw lbann_exception("Unsupported activation type.");
-  }
-  return nullptr;  // Never reached.
+void Activation::forwardProp(ElMat& m) {
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(
+                 [this] (const DataType& z) { return act(z); }));
 }
 
-// Activation class
-DataType sigmoid_layer::sigmoid(DataType z)
-{
-    return (1.0 / (1.0 + exp(-z)));
+void Activation::backwardProp(ElMat& m) {
+  EntrywiseMap(m, std::function<DataType(const DataType&)>(
+                 [this] (const DataType& z) { return act_prime(z); }));
 }
 
-DataType sigmoid_layer::sigmoidPrime(DataType z)
-{
-    DataType sigz = sigmoid(z);
-    return sigz * (1 - sigz);
-}
+void Activation::backwardPropError(const ElMat& m, ElMat& prev_error_signal) {
+  const Int height = m.LocalHeight();
+  const Int width = m.LocalWidth();
+  const Int m_LDim = m.LDim();
+  const DataType* m_buf = m.LockedBuffer();
+  const Int p_LDim = prev_error_signal.LDim();
+  DataType* p_buf = prev_error_signal.Buffer();
 
-DataType tanh_layer::tanh(DataType z)
-{
-#ifdef __ICC
-    // If using Intel compiler, use the MKL specific Tanh function
-    return Tanh(z);
-#else
-    // Otherwise force the system to use the C++ version - glibc version is having problems with memory leaks
-    return std::tanh(z);
-#endif
-}
-
-DataType tanh_layer::tanhPrime(DataType z)
-{
-    float e = exp(2 * z);
-    return ((e - 1) / (e + 1));
-}
-
-DataType reLU_layer::reLU(DataType z)
-{
-    return max((DataType) 0.0, z);
-}
-
-DataType reLU_layer::reLUPrime(DataType z)
-{
-    if (z > 0.0) {
-      return 1.0;
-    }else {
-      return 0.0;
+  if (height == m_LDim && height == p_LDim) {
+    // Contiguous memory.
+#pragma omp parallel for
+    for (Int i = 0; i < height * width; ++i) {
+      p_buf[i] = act_prime(m_buf[i]) * p_buf[i];
     }
+  } else {
+    // Non-contiguous.
+#pragma omp parallel for collapse(2)
+    for (Int j = 0; j < width; ++j) {
+      for (Int i = 0; i < height; ++i) {
+        p_buf[i+j*p_LDim] = act_prime(m_buf[i+j*m_LDim]) * p_buf[i+j*p_LDim];
+      }
+    }
+  }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// There are three mechanisms for updating all fields of a distributed matrix
-// 1) EntrywiseMap + independent reset of the bias row - Fastest (about ~30% faster)
-// 2) IndexDependentMap (conditional application of function to mask bias row) - Slow
-//        IndexDependentMap(m, 
-//          (std::function<double(int,int,double)>)[m](int r, int c, double z)->
-//          double{int bias_row = m.Height(); 
-//                 if(r == bias_row - 1){return 1.0;}else{return sigmoid(z);}
-//                 });
-// 3) Dual nested loop over local matrix indices with global matrix lookups - Slow
-////////////////////////////////////////////////////////////////////////////////
-void sigmoid_layer::forwardProp(ElMat& m)
-{
-  EntrywiseMap(m, std::function<DataType(DataType)>(sigmoid));
-}
-
-void sigmoid_layer::backwardProp(ElMat& m)
-{
-  EntrywiseMap(m, std::function<DataType(DataType)>(sigmoidPrime));
-}
-
-void tanh_layer::forwardProp(ElMat& m)
-{
-  EntrywiseMap(m, std::function<DataType(DataType)>(tanh));
-}
-
-void tanh_layer::backwardProp(ElMat& m)
-{
-  EntrywiseMap(m, std::function<DataType(DataType)>(tanhPrime));
-}
-
-void reLU_layer::forwardProp(ElMat& m)
-{
-    EntrywiseMap(m, std::function<DataType(DataType)>(reLU));
-}
-
-void reLU_layer::backwardProp(ElMat& m)
-{
-  EntrywiseMap(m, std::function<DataType(DataType)>(reLUPrime));
+const std::string Activation::activation_name(activation_type id) {
+  switch(id) {
+  case activation_type::SIGMOID:
+    return "sigmoid";
+    break;
+  case activation_type::TANH:
+    return "tanh";
+    break;
+  case activation_type::RELU:
+    return "relu";
+    break;
+  case activation_type::ID:
+    return "id";
+    break;
+  case activation_type::LEAKY_RELU:
+    return "leaky_relu";
+    break;
+  case activation_type::SOFTPLUS:
+    return "softplus";
+    break;
+  case activation_type::SMOOTH_RELU:
+    return "smooth_relu";
+    break;
+  case activation_type::ELU:
+    return "elu";
+    break;
+  default: 
+    throw lbann_exception("unknown activation_type");
+  }
 }
 
 }  // namespace lbann

@@ -24,11 +24,35 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <omp.h>
 #include "lbann/utils/lbann_random.hpp"
 
 namespace {
-// Random number generator, file-visible only.
+#ifdef __ICC
 lbann::rng_gen generator;
+#pragma omp threadprivate(generator)
+
+lbann::fast_rng_gen fast_generator;
+#pragma omp threadprivate(fast_generator)
+
+lbann::rng_gen data_seq_generator;
+#pragma omp threadprivate(data_seq_generator)
+#else
+// Random number generator, file-visible only.
+// Defined like this to work around a GCC problem with threadprivate objects:
+// https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
+extern lbann::rng_gen generator;
+#pragma omp threadprivate(generator)
+lbann::rng_gen generator;
+
+extern lbann::fast_rng_gen fast_generator;
+#pragma omp threadprivate(fast_generator)
+lbann::fast_rng_gen fast_generator;
+
+extern lbann::rng_gen data_seq_generator;
+#pragma omp threadprivate(data_seq_generator)
+lbann::rng_gen data_seq_generator;
+#endif
 }
 
 namespace lbann {
@@ -37,21 +61,72 @@ rng_gen& get_generator() {
   return ::generator;
 }
 
-void init_random(int seed) {
+fast_rng_gen& get_fast_generator() {
+  return ::fast_generator;
+}
+
+rng_gen& get_data_seq_generator() {
+  return ::data_seq_generator;
+}
+
+void init_random(int seed, lbann_comm* comm) {
   if (seed != -1) {
+    // Seed every OpenMP thread, if present.
+    // Note: Threadprivate OMP variables don't work with dynamic threads.
+#ifdef _OPENMP
+    #pragma omp parallel
+    {
+      get_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+      get_fast_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+    }
+#else
     get_generator().seed(seed);
+    get_fast_generator().seed(seed);
+#endif
 #ifdef LBANN_SET_EL_RNG
-    El::Generator().seed(seed);
+    if (comm != nullptr) {
+      El::Generator().seed(seed ^ comm->get_rank_in_model());
+    } else {
+      El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
+    }
 #endif
   } else {
     // Seed with a random value.
     std::random_device rd;
     unsigned rand_val = rd();
+#ifdef _OPENMP
+    #pragma omp parallel
+    {
+      get_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+      get_fast_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+    }
+#else
     get_generator().seed(rand_val);
+    get_fast_generator().seed(rand_val);
+#endif
 #ifdef LBANN_SET_EL_RNG
     El::Generator().seed(rand_val);
 #endif
   }
+}
+
+void init_data_seq_random(int seed) {
+  if (seed == -1) {
+    // Seed with a random value.
+    std::random_device rd;
+    seed = rd();
+  }
+
+  // Seed every OpenMP thread, if present.
+  // Note: Threadprivate OMP variables don't work with dynamic threads.
+#ifdef _OPENMP
+#pragma omp parallel
+  {
+    get_data_seq_generator().seed(seed);
+  }
+#else
+  get_data_seq_generator().seed(seed);
+#endif
 }
 
 void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
@@ -87,8 +162,8 @@ void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
     mat.Reserve(n * m);
     auto& gen = get_generator();
     std::normal_distribution<DataType> dist(mean, stddev);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen));
       }
     }
@@ -102,8 +177,8 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
     mat.Reserve(m * n);
     auto& gen = get_generator();
     std::bernoulli_distribution dist(p);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen) ? 1.0f : 0.0f);
       }
     }
@@ -119,13 +194,55 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
                                                   center + radius);
-    for (int col = 0; col < n; ++col) {
-      for (int row = 0; row < m; ++row) {
+    for (El::Int col = 0; col < n; ++col) {
+      for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen));
       }
     }
   }
   mat.ProcessQueues();
+}
+
+
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out) {
+  switch(initialization) {
+  case weight_initialization::uniform:
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), DataType(1));
+    break;
+  case weight_initialization::normal:
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), DataType(1));
+    break;
+  case weight_initialization::glorot_normal: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::glorot_uniform: {
+    const DataType var = 2.0 / (fan_in + fan_out);
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::he_normal: {
+    const DataType var = 1.0 / fan_in;
+    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                  DataType(0), sqrt(var));
+    break;
+  }
+  case weight_initialization::he_uniform: {
+    const DataType var = 1.0 / fan_in;
+    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
+  }
+  case weight_initialization::zero: // Zero initialization is default
+  default:
+    Zero(matrix_v);
+    break;
+  }
 }
 
 }  // namespace lbann

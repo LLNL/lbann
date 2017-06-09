@@ -41,20 +41,21 @@ namespace lbann
     class FullyConnectedLayer : public Layer
     {
     public:
-      FullyConnectedLayer(uint index,
+      FullyConnectedLayer(data_layout data_dist,
+                          uint index,
                           int numPrevNeurons,
                           uint numNeurons,
                           uint miniBatchSize,
                           activation_type activationType,
                           weight_initialization init,
                           lbann_comm* comm,
-                          Optimizer *optimizer,
+                          optimizer *opt,
                           std::vector<regularizer*> regs={});
       ~FullyConnectedLayer();
+      void initialize_model_parallel_distribution();
+      void initialize_data_parallel_distribution();
       void setup(int numPrevNeurons);
-      DistMat& get_weights_biases() { return WB_view; }
-      DistMat& get_weights_biases_gradient() { return WB_D_view; }
-      DistMat& get_activations() { return Acts_view; }
+      void fp_set_std_matrix_view();
       bool update();
       DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
       DataType computeCost(DistMat &deltas);
@@ -67,12 +68,17 @@ namespace lbann
 
       const weight_initialization m_weight_initialization;
 
-      /** View of the WB matrix, except for the bottom row. */
-      DistMat WB_view;
-      /** View of the WB_D matrix, except for the bottom row. */
-      DistMat WB_D_view;
-      /** View of the Acts matrix, except for the bottom row. */
-      DistMat Acts_view;
+      /// Views of the weight matrix that allow you to separate activation weights from bias weights
+      ElMat *m_activation_weights_v;
+      ElMat *m_bias_weights_v;
+      ElMat *m_activation_weights_gradient_v;
+      ElMat *m_bias_weights_gradient_v;
+
+      /// Special matrices to allow backprop across the bias term
+      ElMat *m_bias_bp_t;
+      ElMat *m_bias_bp_t_v;
+      ElMat *m_bias_weights_repl;
+      DataType m_bias_term;
 
     public:
       //Probability of dropping neuron/input used in dropout_layer
@@ -80,7 +86,7 @@ namespace lbann
       DataType  WBL2NormSum;
 
     protected:
-      void fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y);
+      void fp_linearity();
       void bp_linearity();
     };
 

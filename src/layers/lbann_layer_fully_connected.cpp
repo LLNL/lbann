@@ -28,6 +28,7 @@
 
 #include "lbann/layers/lbann_layer_fully_connected.hpp"
 #include "lbann/utils/lbann_random.hpp"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,138 +43,219 @@ using namespace El;
 // WB structure: (num units "neurons / filters" x (num features + 1))
 // Each row represents a neuron / filter
 // There is a column for each feature coming in from the previous layer plus 1 for the bias
-// [W0 ...   B0]
+// [W00 ...   B0]
 // [|         |]
-// [Wn       Bn]
-// [0  ...  0 1] - Initialize the final row to be all zeros and 1 in the bias to properly
-//                 set the bias for the next layer
+// [Wn0       Bn]
+//
 // WB_D structure:
 // [dW     dB]
-// [0 ... 0 0]
 // D structure:
 // [D        ]
-// [0 ... 0 0]
 // Z, Zs, Act, Acts structure:
 // [Acts     ]
-// [1 ... 1 1]
 
-lbann::FullyConnectedLayer::
-FullyConnectedLayer(const uint index,
+lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist, 
+                    const uint index,
                     const int numPrevNeurons,
                     const uint numNeurons,
                     const uint miniBatchSize,
                     const activation_type activationType,
                     const weight_initialization init,
                     lbann_comm* comm,
-                    Optimizer *optimizer,
+                    optimizer *opt,
                     std::vector<regularizer*> regs)
-  : Layer(index, comm, optimizer, miniBatchSize, activationType, regs),
-    m_weight_initialization(init),
-    WB_view(comm->get_model_grid()),
-    WB_D_view(comm->get_model_grid()),
-    Acts_view(comm->get_model_grid())
+  : Layer(data_dist,
+          index, comm, opt, miniBatchSize, activationType, regs),
+    m_weight_initialization(init)
 {
+
+    m_type = layer_type::fully_connected;
+
     Index = index;
     NumNeurons = numNeurons;
     WBL2NormSum = 0.0;
+    m_bias_term = 1.0;
+
+    // Setup the data distribution
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      initialize_model_parallel_distribution();
+      break;
+    case data_layout::DATA_PARALLEL:
+      initialize_data_parallel_distribution();
+      break;
+    default:
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            "Invalid data layout selected");
+    }
 }
 
-lbann::FullyConnectedLayer::~FullyConnectedLayer() {}
+lbann::FullyConnectedLayer::~FullyConnectedLayer() {
+  delete m_bias_bp_t;
+  delete m_bias_weights_repl;
+  delete m_activation_weights_v;
+  delete m_bias_weights_v;
+  delete m_activation_weights_gradient_v;
+  delete m_bias_weights_gradient_v;
+  delete m_bias_bp_t_v;
+}
+
+/// Matrices should be in MC,MR distributions
+void lbann::FullyConnectedLayer::initialize_model_parallel_distribution() {
+  m_bias_bp_t                      = new DistMat(comm->get_model_grid());
+  m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new DistMat(comm->get_model_grid());
+  m_bias_weights_v                 = new DistMat(comm->get_model_grid());
+  m_activation_weights_gradient_v  = new DistMat(comm->get_model_grid());
+  m_bias_weights_gradient_v        = new DistMat(comm->get_model_grid());
+  m_bias_bp_t_v                    = new DistMat(comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+void lbann::FullyConnectedLayer::initialize_data_parallel_distribution() {
+  m_bias_bp_t                      = new StarVCMat(comm->get_model_grid());
+  m_bias_weights_repl              = new StarMat(comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new StarMat(comm->get_model_grid());
+  m_bias_weights_v                 = new StarMat(comm->get_model_grid());
+  m_activation_weights_gradient_v  = new StarMat(comm->get_model_grid());
+  m_bias_weights_gradient_v        = new StarMat(comm->get_model_grid());
+  m_bias_bp_t_v                    = new StarVCMat(comm->get_model_grid());
+}
 
 void lbann::FullyConnectedLayer::setup(int numPrevNeurons) {
-  Layer::setup(numPrevNeurons);
-    if(optimizer != NULL) {
-      optimizer->setup(numPrevNeurons+1, NumNeurons+1);
-    }
+    Layer::setup(numPrevNeurons);
 
-    // Initialize weight-bias matrix
-    Zeros(*WB, NumNeurons+1, numPrevNeurons+1);
-    if(WB->IsLocal(NumNeurons,numPrevNeurons)) {
-      WB->SetLocal(WB->LocalHeight()-1, WB->LocalWidth()-1, DataType(1));
-    }
+    // Initialize matrices
+    // Note: the weights-bias matrix has an extra column so it includes bias term
+    Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
+    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
+    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
+    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
-    // Initialize weights
-    DistMat weights;
-    View(weights, *WB, IR(0,NumNeurons), IR(0,numPrevNeurons));
-    switch(m_weight_initialization) {
-    case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
-    case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
-    case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (numPrevNeurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::he_normal: {
-      const DataType var = 1.0 / numPrevNeurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
-    }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / numPrevNeurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
-    }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
-    }
+    /// Setup independent views of the weight matrix for the activations and bias terms
+    View(*m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
 
-    // Initialize other matrices
-    Zeros(*WB_D, NumNeurons + 1, numPrevNeurons + 1);
-    Zeros(*Ds, NumNeurons + 1, m_mini_batch_size);
-    Zeros(*Ds_Temp, numPrevNeurons + 1, m_mini_batch_size); // Ds_Temp holds the product of WB^T * Ds
-    Zeros(*Zs, NumNeurons + 1, m_mini_batch_size);
-    View(WB_view, *WB, IR(0, WB->Height() - 1), IR(0, WB->Width()));
-    View(WB_D_view, *WB_D, IR(0, WB_D->Height() - 1), IR(0, WB_D->Width()));
-    Zeros(*Acts, NumNeurons + 1, m_mini_batch_size);
-    View(Acts_view, *Acts, IR(0, Acts->Height() - 1), IR(0, Acts->Width()));
+    /// Setup independent views of the weights gradient matrix for the activations and bias terms
+    View(*m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
+
+    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
+
+    /// Create a "transposed" vector of the bias term for use in backprop
+    Ones(*m_bias_bp_t, 1, m_mini_batch_size);
+
+    // Initialize optimizer
+    if(m_optimizer != NULL) {
+      m_optimizer->setup(m_weights);
+    }
 
 }
 
-void lbann::FullyConnectedLayer::fp_linearity(ElMat& _WB, ElMat& _X, ElMat& _Z, ElMat& _Y)
-{
-  // Convert matrices to desired format
-  DistMatrixReadProxy<DataType,DataType,MC,MR> WBProxy(_WB);
-  DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(_X); // TODO: Store for bp step
-  DistMatrixWriteProxy<DataType,DataType,MC,MR> ZProxy(_Z);
-  DistMatrixWriteProxy<DataType,DataType,MC,MR> YProxy(_Y);
-  DistMat& WB = WBProxy.Get();
-  DistMat& X = XProxy.Get();
-  DistMat& Z = ZProxy.Get();
-  DistMat& Y = YProxy.Get();
+void lbann::FullyConnectedLayer::fp_set_std_matrix_view() {
+  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
 
+  Layer::fp_set_std_matrix_view();
+
+  /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
+  /// limit the height, not the width
+  View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
+}
+
+void lbann::FullyConnectedLayer::fp_linearity()
+{
   // Apply forward prop linearity
-  Gemm(NORMAL, NORMAL, (DataType) 1., WB, X, (DataType) 0., Z);
-  Copy(Z, Y);
+
+  // Apply bias
+  Copy(*m_bias_weights_v, *m_bias_weights_repl);
+  const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
+  IndexDependentFill(m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
+                     ([&local_bias_weights](El::Int r, El::Int c)->DataType {
+                       return local_bias_weights.Get(r);
+                     }));
+  Scale(m_bias_term, *m_weighted_sum_v);
+
+  // Apply weight matrix
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         *m_activation_weights_v,
+         *m_prev_activations_v,
+         DataType(1),
+         *m_weighted_sum_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    Gemm(NORMAL, NORMAL, DataType(1),
+         m_activation_weights_v->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(1),
+         m_weighted_sum_v->Matrix());
+    break;
+  }
+
+  // Copy result to output matrix
+  Copy(*m_weighted_sum_v, *m_activations_v);
+
 }
 
 void lbann::FullyConnectedLayer::bp_linearity()
 {
-    // Convert forward and backward prop matrices to MC,MR format
-    DistMatrixReadProxy<DataType,DataType,MC,MR> XProxy(*fp_input); // TODO: store from fp step
-    DistMat& X = XProxy.Get();
 
+  switch(m_data_layout) {
+  case data_layout::MODEL_PARALLEL:
     // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, (DataType) 1., *WB, *Ds, (DataType) 0., *Ds_Temp);
-    // Compute update for weights
-    Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *Ds,
-         X, (DataType) 0., *WB_D);
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         *m_activation_weights_v,
+         *m_prev_error_signal_v,
+         DataType(0),
+         *m_error_signal_v);
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         *m_prev_error_signal_v,
+         *m_prev_activations_v,
+         DataType(0),
+         *m_activation_weights_gradient_v);
+    // Compute update for bias terms
+    Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
+         *m_prev_error_signal_v,
+         *m_bias_bp_t_v,
+         DataType(0),
+         *m_bias_weights_gradient_v);
+    break;
+  case data_layout::DATA_PARALLEL:
+    // Compute the partial delta update for the next lower layer
+    Gemm(TRANSPOSE, NORMAL, DataType(1),
+         m_activation_weights_v->LockedMatrix(),
+         m_prev_error_signal_v->LockedMatrix(),
+         DataType(0),
+         m_error_signal_v->Matrix());
+    // Compute update for activation weights
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
+         m_prev_error_signal_v->LockedMatrix(),
+         m_prev_activations_v->LockedMatrix(),
+         DataType(0),
+         m_activation_weights_gradient_v->Matrix());
+    // Compute update for bias terms
+    Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
+         m_prev_error_signal_v->LockedMatrix(),
+         m_bias_bp_t_v->LockedMatrix(),
+         DataType(0),
+         m_bias_weights_gradient_v->Matrix());
+    // Add gradients from all processes
+    AllReduce(*m_weights_gradient,
+              m_weights_gradient->RedundantComm());
+    break;
+  }
+
 }
 
 DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
@@ -192,7 +274,7 @@ DataType lbann::FullyConnectedLayer::computeCost(DistMat &deltas) {
 }
 
 DataType lbann::FullyConnectedLayer::WBL2norm() {
-  DataType nrm2 = Nrm2(*WB);
+  DataType nrm2 = Nrm2(*m_weights);
   return nrm2 * nrm2;
 }
 
@@ -201,103 +283,106 @@ inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
 
 bool lbann::FullyConnectedLayer::update()
 {
+  double start = get_time();
+  Layer::update();
   if(m_execution_mode == execution_mode::training) {
-    optimizer->update_weight_bias_matrix(*WB_D, *WB);
+    m_optimizer->update(m_weights_gradient);
   }
+  update_time += get_time() - start;
   return true;
 }
 
 DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
 {
-    DistMat WB_E1(WB->Grid());
-    DistMat WB_E2(WB->Grid());
-    DistMat Zs_E1(Zs->Grid());
-    DistMat Zs_E2(Zs->Grid());
-    DistMat Acts_E1(Acts->Grid());
-    DistMat Acts_E2(Acts->Grid());
+    DistMat WB_E1(m_weights->Grid());
+    DistMat WB_E2(m_weights->Grid());
+    DistMat Zs_E1(m_weighted_sum->Grid());
+    DistMat Zs_E2(m_weighted_sum->Grid());
+    DistMat Acts_E1(m_activations->Grid());
+    DistMat Acts_E2(m_activations->Grid());
     DataType grad_diff = 0;
     DataType grad_sum = 0;
 
-    Zeros(WB_E1, WB->Height(), WB->Width());
-    Zeros(WB_E2, WB->Height(), WB->Width());
-    Zeros(Zs_E1, Zs->Height(), Zs->Width());
-    Zeros(Zs_E2, Zs->Height(), Zs->Width());
-    Zeros(Acts_E1, Acts->Height(), Acts->Width());
-    Zeros(Acts_E2, Acts->Height(), Acts->Width());
+    Zeros(WB_E1, m_weights->Height(), m_weights->Width());
+    Zeros(WB_E2, m_weights->Height(), m_weights->Width());
+    Zeros(Zs_E1, m_weighted_sum->Height(), m_weighted_sum->Width());
+    Zeros(Zs_E2, m_weighted_sum->Height(), m_weighted_sum->Width());
+    Zeros(Acts_E1, m_activations->Height(), m_activations->Width());
+    Zeros(Acts_E2, m_activations->Height(), m_activations->Width());
 
-    Copy(*WB, WB_E1);
-    Copy(*WB, WB_E2);
+    Copy(*m_weights, WB_E1);
+    Copy(*m_weights, WB_E2);
 
     DataType sum_error = 0;
-    int prow = 0;
-    int pcol = 0;
+    Int prow = 0;
+    Int pcol = 0;
 
     if(WB_E1.IsLocal(prow, pcol)) {
-      int _prow = WB_E1.LocalRow(prow);
-      int _pcol = WB_E1.LocalCol(pcol);
+      Int _prow = WB_E1.LocalRow(prow);
+      Int _pcol = WB_E1.LocalCol(pcol);
       WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) + Epsilon);
     }
     if(WB_E2.IsLocal(prow, pcol)) {
-      int _prow = WB_E2.LocalRow(prow);
-      int _pcol = WB_E2.LocalCol(pcol);
+      Int _prow = WB_E2.LocalRow(prow);
+      Int _pcol = WB_E2.LocalCol(pcol);
       WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) - Epsilon);
     }
-    for (int row = 0; row < WB->Height(); row++) {
-        for (int col = 0; col < WB->Width(); col++) {
+    for (Int row = 0; row < m_weights->Height(); row++) {
+        for (Int col = 0; col < m_weights->Width(); col++) {
           //          printf("Updating %d: %d x %d\n", Index, row, col);
             if(WB_E1.IsLocal(prow, pcol)) {
-              int _prow = WB_E1.LocalRow(prow);
-              int _pcol = WB_E1.LocalCol(pcol);
+              Int _prow = WB_E1.LocalRow(prow);
+              Int _pcol = WB_E1.LocalCol(pcol);
               WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) - Epsilon);
             }
             if(WB_E2.IsLocal(prow, pcol)) {
-              int _prow = WB_E2.LocalRow(prow);
-              int _pcol = WB_E2.LocalCol(pcol);
+              Int _prow = WB_E2.LocalRow(prow);
+              Int _pcol = WB_E2.LocalCol(pcol);
               WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) + Epsilon);
             }
             if(WB_E1.IsLocal(row, col)) {
-              int _row = WB_E1.LocalRow(row);
-              int _col = WB_E1.LocalCol(col);
+              Int _row = WB_E1.LocalRow(row);
+              Int _col = WB_E1.LocalCol(col);
               WB_E1.SetLocal(_row,  _col,  WB_E1.GetLocal(_row, _col)   + Epsilon);
             }
             if(WB_E2.IsLocal(row, col)) {
-              int _row = WB_E2.LocalRow(row);
-              int _col = WB_E2.LocalCol(col);
+              Int _row = WB_E2.LocalRow(row);
+              Int _col = WB_E2.LocalCol(col);
               WB_E2.SetLocal(_row,  _col,  WB_E2.GetLocal(_row, _col)   - Epsilon);
             }
 
             // J(theta)
-            this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
+            //            this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
             //this->fp_nonlinearity(*Acts);
 
             // J(thetaPlus(i))
-            this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
+            //            this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
             //this->fp_nonlinearity(Acts_E1);
 
             // J(thetaMinus(i))
-            this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
+            //            this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
             //this->fp_nonlinearity(Acts_E2);
 
             //            this->getCost();
 
             // gradApprox(i) = J(thetaPlus(i)) - J(thetaMinus(i)) / (2*Epsilon)
-            Axpy(-1.0, *Acts, Acts_E1);
-            Axpy(-1.0, *Acts, Acts_E2);
+            Axpy(-1.0, *m_activations, Acts_E1);
+            Axpy(-1.0, *m_activations, Acts_E2);
 
             bool bad_E1 = false, bad_E2 = false;
-            for(int r = 0; r < Acts->Height(); r++) {
-              for(int c = 0; c < Acts->Width(); c++) {
+            for(Int r = 0; r < m_activations->Height(); r++) {
+              for(Int c = 0; c < m_activations->Width(); c++) {
                 if(Acts_E1.IsLocal(r,c)) {
-                  int _r = Acts_E1.LocalRow(r);
-                  int _c = Acts_E1.LocalCol(c);
+                  Int _r = Acts_E1.LocalRow(r);
+                  Int _c = Acts_E1.LocalCol(c);
                   if((Acts_E1.GetLocal(_r,_c) > 1e-12 || Acts_E1.GetLocal(_r,_c) < -1e-12) && r != row) {
                     bad_E1 = true;
                     //                    cout << "Acts_E1=["<< r << "," << c << "]="<<Acts_E1.GetLocal(_r,_c)<<endl;
                   }
                 }
                 if(Acts_E2.IsLocal(r,c)) {
-                  int _r = Acts_E2.LocalRow(r);
-                  int _c = Acts_E2.LocalCol(c);
+                  Int _r = Acts_E2.LocalRow(r);
+                  Int _c = Acts_E2.LocalCol(c);
                   if((Acts_E2.GetLocal(_r,_c) > 1e-12 || Acts_E2.GetLocal(_r,_c) < -1e-12) && r != row) {
                     bad_E2 = true;
                     //                    cout << "Acts_E2=["<< r << "," << c << "]="<<Acts_E2.GetLocal(_r,_c)<<endl;
@@ -308,18 +393,18 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
             if(bad_E1) {
               if(Acts_E1.Grid().Rank() == 0) {
-                printf("BAD ENTRY Acts_E1 %d x %d\n", row, col);
+                printf("BAD ENTRY Acts_E1 %lld x %lld\n", row, col);
               }
               cout.precision(20);
               Print(Acts_E1);
               if(Acts_E1.Grid().Rank() == 0) {
                 printf("Acts\n");
               }
-              Print(*Acts);
+              Print(*m_activations);
             }
             if(bad_E2) {
               if(Acts_E2.Grid().Rank() == 0) {
-                printf("BAD ENTRY Acts_E2 %d x %d\n", row, col);
+                printf("BAD ENTRY Acts_E2 %lld x %lld\n", row, col);
               }
               Print(Acts_E2);
             }

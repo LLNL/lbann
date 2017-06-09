@@ -52,23 +52,27 @@ void lbann_callback_print::on_epoch_begin(model* m) {
 void lbann_callback_print::on_epoch_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_model_master()) {
-    DataType train_acc = m->get_train_accuracy();
-    DataType validate_acc = m->get_validate_accuracy();
-    if (comm->am_world_master()) {
-      std::vector<DataType> train_accs(comm->get_num_models());
-      std::vector<DataType> validate_accs(comm->get_num_models());
-      comm->intermodel_gather(train_acc, train_accs);
-      comm->intermodel_gather(validate_acc, validate_accs);
-      for (size_t i = 0; i < train_accs.size(); ++i) {
-        std::cout << "Model " << i;
-        std::cout << " @" << m->get_cur_step() << " steps";
-        std::cout << " Training accuracy: " << train_accs[i] << "%";
-        std::cout << " Validation accuracy: " << validate_accs[i] << "%";
-        std::cout << std::endl;
+    /// Report the current score for each metric attached to the model
+    for (auto&& metric : m->metrics) {
+      double train_score = metric->report_metric(execution_mode::training);
+      double validate_score = metric->report_metric(execution_mode::validation);
+      if (comm->am_world_master()) {
+        std::vector<double> train_scores(comm->get_num_models());
+        std::vector<double> validate_scores(comm->get_num_models());
+        comm->intermodel_gather(train_score, train_scores);
+        comm->intermodel_gather(validate_score, validate_scores);
+
+        for (size_t i = 0; i < train_scores.size(); ++i) {
+          std::cout << "Model " << i;
+          std::cout << " @" << m->get_cur_step() << " steps";
+          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << _disp_unit(metric->type);
+          std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation " << _to_string(metric->type) << ": " << validate_scores[i] << _disp_unit(metric->type);
+          std::cout << std::endl;
+        }
+      } else {
+        comm->intermodel_gather(train_score, comm->get_intermodel_master());
+        comm->intermodel_gather(validate_score, comm->get_intermodel_master());
       }
-    } else {
-      comm->intermodel_gather(train_acc, comm->get_intermodel_master());
-      comm->intermodel_gather(validate_acc, comm->get_intermodel_master());
     }
     for (Layer* layer : m->get_layers()) {
       layer->epoch_print();
@@ -79,16 +83,19 @@ void lbann_callback_print::on_epoch_end(model* m) {
 void lbann_callback_print::on_test_end(model* m) {
   lbann_comm* comm = m->get_comm();
   if (comm->am_model_master()) {
-    DataType test_acc = m->get_test_accuracy();
-    if (comm->am_world_master()) {
-      std::vector<DataType> accs(comm->get_num_models());
-      comm->intermodel_gather(test_acc, accs);
-      for (size_t i = 0; i < accs.size(); ++i) {
-        std::cout << "Model " << i << " external validation accuracy: ";
-        std::cout << accs[i] << "%" << std::endl;
+    /// Report the current score for each metric attached to the model
+    for (auto&& metric : m->metrics) {
+      double test_score = metric->report_metric(execution_mode::testing);
+      if (comm->am_world_master()) {
+        std::vector<double> test_scores(comm->get_num_models());
+        comm->intermodel_gather(test_score, test_scores);
+        for (size_t i = 0; i < test_scores.size(); ++i) {
+          std::cout << "Model " << i << " @" << m->get_cur_testing_step() << " testing steps external validation " << _to_string(metric->type) << ": ";
+          std::cout << test_scores[i] << _disp_unit(metric->type) << std::endl;
+        }
+      } else {
+        comm->intermodel_gather(test_score, comm->get_intermodel_master());
       }
-    } else {
-      comm->intermodel_gather(test_acc, comm->get_intermodel_master());
     }
   }
 }

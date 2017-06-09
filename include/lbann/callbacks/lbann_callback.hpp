@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -49,13 +49,16 @@ public:
   lbann_callback(int _batch_interval = 1,
                  lbann_summary* _summarizer = nullptr) :
     batch_interval(_batch_interval), summarizer(_summarizer) {}
+  virtual ~lbann_callback() {}
   void set_summarizer(lbann_summary* _summarizer) { summarizer = _summarizer; }
   /** Called once to set up the callback (after all layers are set up). */
-  virtual void setup(model* m) {}
+  virtual void setup(model* m) {};
   /** Called at the beginning of training. */
   virtual void on_train_begin(model* m) {}
   /** Called at the end of training. */
   virtual void on_train_end(model* m) {}
+  /** Called at the end of every phase (multiple epochs) in a layer-wise model training */
+  virtual void on_phase_end(model* m) {}
   /** Called at the beginning of each epoch. */
   virtual void on_epoch_begin(model* m) {}
   /** Called at the end of each epoch. */
@@ -89,11 +92,32 @@ public:
   /** Called when a layer ends backward propagation. */
   virtual void on_backward_prop_end(model* m, Layer* l) {}
 
+  /** Called at the beginning of a (mini-)batch evaluation (validation / testing). */
+  virtual void on_batch_evaluate_begin(model* m) {}
+  /** Called at the end of a (mini-)batch evaluation (validation / testing). */
+  virtual void on_batch_evaluate_end(model* m) {}
+  /** Called when a model begins forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_begin(model* m) {}
+  /** Called when a layer begins forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_begin(model* m, Layer* l) {}
+  /** Called when a model ends forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_end(model* m) {}
+  /** Called when a layer ends forward propagation for evaluation (validation / testing). */
+  virtual void on_evaluate_forward_prop_end(model* m, Layer* l) {}
+
   /** Batch methods should once every this many steps. */
   const int batch_interval;
+
+  /** sets the callback's name **/
+  void set_name(std::string name) { m_name = name; }
+
+  /** Returns the callback's name **/
+  const std::string & name() { return m_name; }
 protected:
   /** Optional summarizer for the callbacks to use. */
   lbann_summary* summarizer;
+  /** string representation of the callback, for use with protocol buffers **/
+  std::string m_name;
 };
 
 }  // namespace lbann

@@ -52,19 +52,22 @@ using namespace El;
 
 lbann::stacked_autoencoder::stacked_autoencoder(const uint mini_batch_size,
                                                 lbann_comm* comm,
+                                                objective_functions::objective_fn* obj_fn,
                                                 layer_factory* _layer_fac,
-                                                Optimizer_factory* _optimizer_fac)
-  : sequential_model(mini_batch_size, comm, _layer_fac, _optimizer_fac),
-    m_train_accuracy(0.0),
-    m_validation_accuracy(0.0),
-    m_test_accuracy(0.0),
-    m_reconstruction_accuracy(0.0){}
+                                                optimizer_factory* _optimizer_fac)
+  : sequential_model(mini_batch_size, comm, obj_fn,  _layer_fac, _optimizer_fac),
+    m_name("stacked_autoencoder") {
+    //m_target_layer = new target_layer_unsupervised(comm,mini_batch_size);
+    }
 
-lbann::stacked_autoencoder::~stacked_autoencoder() {}
+lbann::stacked_autoencoder::~stacked_autoencoder() {
+  //delete m_target_layer;
+}
 
 
 //This add hidden layers and their mirrors, input layer is added in base class?
 void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
+                               const data_layout data_dist,
                                const int layer_dim,
                                const activation_type activation,
                                const weight_initialization init,
@@ -82,17 +85,17 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
 	if (cur_size == 1) {
 		// create first hidden layer
     if(layer_name == "FullyConnected"){
-      Optimizer *new_optimizer = optimizer_fac->create_optimizer();
+      optimizer *new_optimizer = create_optimizer();
       Layer* new_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
                                                        m_mini_batch_size, activation, init,
                                                        comm,new_optimizer, regularizers);
       m_layers.push_back(new_layer);
       // create output/mirror layer
-      Optimizer *mirror_optimizer = optimizer_fac->create_optimizer();
+      optimizer *mirror_optimizer = create_optimizer();
       Layer* mirror_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size+1,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
                                                        m_mini_batch_size,activation, init,
                                                        comm,mirror_optimizer,regularizers);
@@ -102,17 +105,17 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
 	else {
 		// create hiden layer
     if(layer_name == "FullyConnected"){
-      Optimizer *hidden_optimizer = optimizer_fac->create_optimizer();
+      optimizer *hidden_optimizer = create_optimizer();
       Layer* hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size,
                                                        prev_layer_dim,layer_dim,
                                                        m_mini_batch_size, activation, init,
                                                        comm,hidden_optimizer, regularizers);
       m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);
       // create mirror layer
-      Optimizer *mirror_hidden_optimizer = optimizer_fac->create_optimizer();
+      optimizer *mirror_hidden_optimizer = create_optimizer();
       Layer* mirror_hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",cur_size+1,
+        = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",data_dist,cur_size+1,
                                                        layer_dim,prev_layer_dim,
                                                        m_mini_batch_size,activation, init,
                                                        comm,mirror_hidden_optimizer,regularizers);
@@ -148,7 +151,16 @@ and the remaining ones are initialized with the transpose of the other layer W^1
 */
 void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
 {
-  size_t num_layers = m_layers.size();
+  m_execution_mode = execution_mode::training;
+  //Supervised target to compute reconstruction cost
+  /*m_target_layer->set_input_layer((input_layer_distributed_minibatch_parallel_io*)m_layers[0]);
+
+  //m_target_layer->m_execution_mode = m_execution_mode;
+  add(m_target_layer);
+  m_target_layer->setup(m_layers[0]->NumNeurons);*/
+  //replace with this
+ //target_layer_unsupervised mirror_layer(phase_index+2, comm, optimizer, m_mini_batch_size,sibling_layer);
+
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -161,93 +173,59 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
     do_epoch_begin_cbs();
 
     /// Set the execution mode to training
-    m_execution_mode = execution_mode::training;
-    //for (size_t l = 0; l < m_layers.size(); ++l) {
-    //pretrained half of layers
-    for (size_t l = 0; l <= m_layers.size() / 2; ++l) {
-      //cout << "Layer Index and neurons " << m_layers[l]->Index << " : " << m_layers[l]->NumNeurons << endl;
-      m_layers[l]->m_execution_mode = execution_mode::training;
+    for (size_t l = 0; l < m_num_layers; ++l) {
+    //for (size_t l = 0; l <= m_num_layers / 2; ++l) {
+      m_layers[l]->m_execution_mode = m_execution_mode;
     }
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    long num_samples = 0;
-    long num_errors = 0;
+    for (auto&& m : metrics) { m->reset_metric(); }
     bool finished_epoch;
     do {
-      finished_epoch = train_mini_batch(&num_samples, &num_errors);
+      finished_epoch = train_mini_batch();
     } while(!finished_epoch);
 
-    // Compute train accuracy on current epoch
-    m_train_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
-
-    //cout << "acc " << m_train_accuracy << endl;
-
-    /*if(evaluation_frequency > 0
-       && (epoch + 1) % evaluation_frequency == 0) {
-      // Evaluate model on validation set
-      // TODO: do we need validation callbacks here?
-      // do_validation_begin_cbs();
-      //m_validation_accuracy = evaluate(execution_mode::validation);
-      m_reconstruction_accuracy = reconstruction();
-      // do_validation_end_cbs();
-
-      // Set execution mode back to training
-      m_execution_mode = execution_mode::training;
-      for (size_t l = 0; l < m_layers.size(); l++) {
-        //cout << "B2B Layer Index and neurons " << m_layers[l]->Index << " : " << m_layers[l]->NumNeurons << endl;
-        m_layers[l]->m_execution_mode = execution_mode::training;
-      }
-    }*/
-
-    //copy to mirror layers
+    //Copy to (initialize) mirror layers
     for(size_t l=1; l<= m_num_layers/2; l++){
       //Copy(m_layers[l]->Acts, m_layers[m_num_layers-l]->fp_input)
       //output of reciprocating layer == input to (activation of )its succesor (l+1)
-      m_layers[m_num_layers-l]->setup_fp_input(m_layers[l+1]->Acts);
-
-      //reconstruction here
-      //Add unsupervised target layer
-      //m_reconstruction_accuracy = reconstruction();
-
+      m_layers[m_num_layers-l]->setup_fp_input(m_layers[l+1]->m_activations);
     }
+
+    //Reconstruction
+    reconstruction();
 
     do_epoch_end_cbs();
     for (Layer* layer : m_layers) {
       layer->epoch_reset();
     }
   }
+  //todo: resize base m_layers
+  cout << " In Train m_num_layers: " << m_num_layers << " m_layers size " << m_layers.size() << endl;
   do_train_end_cbs();
 }
 
-bool lbann::stacked_autoencoder::train_mini_batch(long *num_samples,
-                                                  long *num_errors)
+bool lbann::stacked_autoencoder::train_mini_batch()
 {
   do_batch_begin_cbs();
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  DataType L2NormSum = 0;
   //pretrained half of layers
-  for (size_t l = 0; l <= m_layers.size()/2; ++l) {
+  for (size_t l = 0; l <= m_num_layers/2; ++l) {
   //for (size_t l = 0; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
   do_model_forward_prop_end_cbs();
-
-  // Update training accuracy
-  m_train_accuracy = DataType(*num_samples - *num_errors) / *num_samples * 100;
-  ++m_current_step;
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
   //pretrained half of layers
   //for (size_t l = (m_layers.size() / 2); l-- > 0;) {
-  for (size_t l = round(m_layers.size() / 2); l > 0; --l) {
+  for (size_t l = round(m_num_layers / 2); l > 0; --l) {
     do_layer_backward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->backProp();
     //Copy??
@@ -255,39 +233,22 @@ bool lbann::stacked_autoencoder::train_mini_batch(long *num_samples,
   }
   do_model_backward_prop_end_cbs();
 
-  /// Update layers
   // Update pretrained layers
-  for (size_t l = round(m_layers.size() / 2); l > 0; --l) {
+  for (size_t l = round(m_num_layers / 2); l > 0; --l) {
     m_layers[l]->update();
   }
-  //cout << "Samples : : " << *num_samples << endl;
   const bool data_set_processed = m_layers[0]->update();
   //cout << "data processed : " << data_set_processed << endl;
   do_batch_end_cbs();
   return data_set_processed;
 }
 
-DataType lbann::stacked_autoencoder::reconstruction()
+void lbann::stacked_autoencoder::reconstruction()
 {
-
-  /*do_validation_begin_cbs()
-  // Set the execution mode
-  m_execution_mode = mode;
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->m_execution_mode = mode;
-  }*/
-
-  // Evaluate on mini-batches until data set is traversed
-  // Note: The data reader shuffles the data after each epoch
-  long num_samples = 0;
-  long num_errors = 0;
   bool finished_epoch;
   do {
-    finished_epoch = reconstruction_mini_batch(&num_samples, &num_errors);
+    finished_epoch = reconstruction_mini_batch();
   } while(!finished_epoch);
-
-  // Compute reconstruction accuracy
-  m_reconstruction_accuracy = DataType(num_samples - num_errors) / num_samples * 100;
 
   /*do_validation_end_cbs()
   // Reset after testing.
@@ -296,24 +257,20 @@ DataType lbann::stacked_autoencoder::reconstruction()
   }*/
 
 
-  return m_reconstruction_accuracy;
+  return;
 }
 
-bool lbann::stacked_autoencoder::reconstruction_mini_batch(long *num_samples,
-                                                     long *num_errors)
+bool lbann::stacked_autoencoder::reconstruction_mini_batch()
 {
   // forward propagation (mini-batch)
-  // add unsupervised target layer for reconstruction
-  DataType L2NormSum = 0;
+  cout << " In Recon m_num_layers: " << m_num_layers << " m_layers size " << m_layers.size() << endl;
   for (size_t l = 0; l < m_layers.size(); l++) {
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
+    m_layers[l]->forwardProp();
   }
-  *num_errors += (long) L2NormSum;
-  *num_samples += m_mini_batch_size;
 
   // Update layers
   // Note: should only affect the input and target layers
-  for (size_t l = m_layers.size() - 1; l > 0; --l) {
+  for (size_t l = m_layers.size() - 2; l > 0; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();

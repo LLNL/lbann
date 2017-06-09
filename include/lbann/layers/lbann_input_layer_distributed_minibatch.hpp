@@ -33,7 +33,7 @@ namespace lbann
 {
   class input_layer_distributed_minibatch : public input_layer {
   public:
-    input_layer_distributed_minibatch(lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+    input_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
 
     void setup(int num_prev_neurons);
     bool update();
@@ -47,7 +47,7 @@ namespace lbann
     long m_num_data_per_epoch;
   protected:
     /** Handle forward propagation (arguments are unused.) */
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&);
+    void fp_linearity();
   };
 }
 

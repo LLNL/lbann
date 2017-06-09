@@ -57,12 +57,12 @@ while getopts ":c:hm:v:" opt; do
 done
 
 # If the script is sourced setup the compiler modules
-if  [[ $BASH_SOURCE != $0 ]] ; then
-    module load intel/14.0
-    module load mkl/14.0
-fi
+#if  [[ $BASH_SOURCE != $0 ]] ; then
+#    module load intel/14.0
+#    module load mkl/14.0
+#fi
 
-source /usr/gapps/brain/tools/Elemental/${EL_VER}/${COMPILER}/setup_libElemental_env.sh
+#source /usr/gapps/brain/tools/Elemental/${EL_VER}/${COMPILER}/setup_libElemental_env.sh
 
 BOOST_LIB_PATH=/usr/gapps/brain/installs/boost_stages/intel
 BOOST_VER=boost_1_58_0

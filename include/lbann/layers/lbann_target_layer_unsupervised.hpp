@@ -24,34 +24,44 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED
 
+#include "lbann/layers/lbann_layer.hpp"
 #include "lbann/layers/lbann_target_layer.hpp"
-#include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp" //@generalize to base class
 
 namespace lbann
 {
-  class target_layer_unsupervised : public target_layer, public distributed_minibatch_parallel_io {
+  class target_layer_unsupervised : public target_layer{
   public:
-    target_layer_unsupervised(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
-    //target_layer_unsupervised(lbann_comm* comm, input_layer* in_layer);
+    target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
+                              optimizer* opt,
+                              const uint miniBatchSize,
+                              Layer* original_layer,
+                              weight_initialization init=weight_initialization::glorot_uniform);
 
     void setup(int num_prev_neurons);
-    DataType forwardProp(DataType prev_WBL2NormSum);
-    void backProp();
+    bool update();
+    void summarize(lbann_summary& summarizer, int64_t step);
+    void epoch_print() const;
+    void epoch_reset();
     execution_mode get_execution_mode();
-    void set_input_layer(input_layer_distributed_minibatch_parallel_io*); //@todo replace with base layer class
+    DataType reconstruction_cost(const DistMat& Y);
+    void reset_cost();
+    DataType average_cost() const;
 
-  public:
-    Mat* input_mat;
-    CircMat* input_circmat;
-    input_layer_distributed_minibatch_parallel_io* m_input_layer;
 
   protected:
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
-    void bp_linearity() {}
+    void fp_linearity();
+    void bp_linearity();
+    void fp_nonlinearity() {}
+    void bp_nonlinearity() {}
+
+  private:
+    Layer* m_original_layer;
+    DataType aggregate_cost;
+    long num_forwardprop_steps;
+    weight_initialization m_weight_initialization;
   };
 }
 

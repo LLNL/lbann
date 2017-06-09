@@ -159,15 +159,15 @@ void test_send_recv_mat() {
   DistMat send_mat(comm->get_model_grid());
   DistMat recv_mat(comm->get_model_grid());
   create_mat(send_mat, (float) comm->get_model_rank());
-  create_mat(recv_mat, (float) 42.0);
+  create_mat(recv_mat, (DataType) 42.0);
   comm->send(send_mat, send_model, comm->get_rank_in_model());
   comm->recv(recv_mat, recv_model, comm->get_rank_in_model());
   validate_mat(recv_mat, (float) recv_model);
-  El::Fill(recv_mat, (float) 42.0);
+  El::Fill(recv_mat, (DataType) 42.0);
   comm->send(send_mat, send_model);
   comm->recv(recv_mat, recv_model);
   validate_mat(recv_mat, (float) recv_model);
-  El::Fill(recv_mat, (float) 42.0);
+  El::Fill(recv_mat, (DataType) 42.0);
   comm->send(send_mat, send_model, comm->get_rank_in_model());
   comm->recv(recv_mat);
   validate_mat(recv_mat, (float) recv_model);
@@ -196,7 +196,7 @@ void test_broadcast_mat() {
   lbann_comm* comm = init_comm();
   DistMat mat(comm->get_model_grid());
   if (comm->get_model_rank() == 0) {
-    create_mat(mat, (float) 42.0);
+    create_mat(mat, (DataType) 42.0);
   } else {
     create_mat(mat, (float) 0.0);
   }
@@ -206,7 +206,7 @@ void test_broadcast_mat() {
   dests[2] = comm->get_world_rank(3, comm->get_rank_in_model());
   comm->broadcast(mat, dests,
                   comm->get_world_rank(0, comm->get_rank_in_model()));
-  validate_mat(mat, (float) 42.0);
+  validate_mat(mat, (DataType) 42.0);
   fini_comm(comm);
 }
 

@@ -34,7 +34,6 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
@@ -45,6 +44,7 @@ int main(int argc, char* argv[])
     // El initialization (similar to MPI_Init)
     Initialize(argc, argv);
     init_random(42);
+    init_data_seq_random(42);
     lbann_comm* comm = NULL;
 
     try {
@@ -52,16 +52,16 @@ int main(int argc, char* argv[])
         // Get data files
         const string g_MNIST_TrainLabelFile = Input("--train-label-file",
                                                     "MNIST training set label file",
-                                                    "train-labels-idx1-ubyte");
+                                                    std::string("train-labels-idx1-ubyte"));
         const string g_MNIST_TrainImageFile = Input("--train-image-file",
                                                     "MNIST training set image file",
-                                                    "train-images-idx3-ubyte");
+                                                    std::string("train-images-idx3-ubyte"));
         const string g_MNIST_TestLabelFile = Input("--test-label-file",
                                                    "MNIST test set label file",
-                                                   "t10k-labels-idx1-ubyte");
+                                                   std::string("t10k-labels-idx1-ubyte"));
         const string g_MNIST_TestImageFile = Input("--test-image-file",
                                                    "MNIST test set image file",
-                                                   "t10k-images-idx3-ubyte");
+                                                   std::string("t10k-images-idx3-ubyte"));
 
         ///////////////////////////////////////////////////////////////////
         // initalize grid, block
@@ -73,17 +73,29 @@ int main(int argc, char* argv[])
         trainParams.EpochCount = 20;
         trainParams.MBSize = 256;
         trainParams.LearnRate = 0.01;
+        trainParams.ActivationType = activation_type::RELU;
         trainParams.DropOut = 0.5;
         trainParams.SummaryDir = "./out";
         trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 0.90;
-        trainParams.PercentageValidationSamples = 1.00;
+        trainParams.PercentageTrainingSamples = 1.0;
+        trainParams.PercentageValidationSamples = 0.1;
+        trainParams.PercentageTestingSamples = 1.00;
         PerformanceParams perfParams;
         perfParams.BlockSize = 256;
 
         // Parse command-line inputs
         trainParams.parse_params();
         perfParams.parse_params();
+
+        bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+        bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
+        bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+
+        //if set to true, above three settings have no effect
+        bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
+        Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+
         ProcessInput();
         PrintInputReport();
 
@@ -116,97 +128,94 @@ int main(int argc, char* argv[])
         // load training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
-        if (!mnist_trainset.load(trainParams.DatasetRootDir,
-                                 g_MNIST_TrainImageFile,
-                                 g_MNIST_TrainLabelFile, trainParams.PercentageTrainingSamples)) {
-          if (comm->am_world_master()) {
-            cout << "MNIST train data error" << endl;
-          }
-          return -1;
-        }
-        if (comm->am_world_master()) {
-          cout << "Training using " << (trainParams.PercentageTrainingSamples*100) << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl;
-        }
+        mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
+        mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
+        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
+        mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
+        mnist_trainset.load();
+
+        mnist_trainset.scale(scale);
+        mnist_trainset.subtract_mean(subtract_mean);
+        mnist_trainset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
 
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
-        if (!mnist_validation_set.swap_used_and_unused_index_sets()) { // Swap the used and unused index sets so that it validates on the remaining data
-          if (comm->am_world_master()) {
-            cout << "MNIST validation data error" << endl;
-          }
-          return -1;
+        mnist_validation_set.use_unused_index_set();
+
+        if (comm->am_world_master()) {
+          size_t num_train = mnist_trainset.getNumData();
+          size_t num_validate = mnist_trainset.getNumData();
+          double validate_percent = num_validate / (num_train+num_validate)*100.0;
+          double train_percent = num_train / (num_train+num_validate)*100.0;
+          cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
+               << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
         }
 
-        if(trainParams.PercentageValidationSamples == 1.00) {
-          if (comm->am_world_master()) {
-            cout << "Validating training using " << ((1.00 - trainParams.PercentageTrainingSamples)*100) << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-          }
-        }else {
-          size_t preliminary_validation_set_size = mnist_validation_set.getNumData();
-          size_t final_validation_set_size = mnist_validation_set.trim_data_set(trainParams.PercentageValidationSamples);
-          if (comm->am_world_master()) {
-            cout << "Trim the validation data set from " << preliminary_validation_set_size << " samples to " << final_validation_set_size << " samples." << endl;
-          }
-        }
 
         ///////////////////////////////////////////////////////////////////
         // load testing data (MNIST)
         ///////////////////////////////////////////////////////////////////
         DataReader_MNIST mnist_testset(trainParams.MBSize, true);
-        if (!mnist_testset.load(trainParams.DatasetRootDir,
-                                g_MNIST_TestImageFile,
-                                g_MNIST_TestLabelFile,
-                                trainParams.PercentageTestingSamples)) {
-          if (comm->am_world_master()) {
-            cout << "MNIST Test data error" << endl;
-          }
-          return -1;
-        }
+        mnist_testset.set_file_dir(trainParams.DatasetRootDir);
+        mnist_testset.set_data_filename(g_MNIST_TestImageFile);
+        mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
+        mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
+        mnist_testset.load();
         if (comm->am_world_master()) {
           cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
         }
+
+        mnist_testset.scale(scale);
+        mnist_testset.subtract_mean(subtract_mean);
+        mnist_testset.unit_variance(unit_variance);
+        mnist_trainset.z_score(z_score);
 
         ///////////////////////////////////////////////////////////////////
         // initalize neural network (layers)
         ///////////////////////////////////////////////////////////////////
 
         // Initialize optimizer
-        Optimizer_factory *optimizer;
+        optimizer_factory *optimizer_fac;
         if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer = new Adagrad_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer = new RMSprop_factory(comm, trainParams.LearnRate);
-        }else {
-          optimizer = new SGD_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 2) { // RMSprop
+          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+        } else if (trainParams.LearnRateMethod == 3) { // Adam
+          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+        } else {
+          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
         }
 
         // Initialize network
         layer_factory* lfac = new layer_factory();
 #if __LIB_CUDNN
-        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
+        cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
         cudnn::cudnn_manager* cudnn = NULL;
 #endif // __LIB_CUDNN
-        deep_neural_network dnn(trainParams.MBSize, comm, lfac, optimizer);
+        deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset), 
                                                                std::make_pair(execution_mode::validation, &mnist_validation_set), 
                                                                std::make_pair(execution_mode::testing, &mnist_testset)};
+        dnn.add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
         //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
         dnn.add(input_layer);
 
         // First convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
-          int inputChannels = 1;
-          int inputDims[] = {28, 28};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
+          Int numDims = 2;
+          Int inputChannels = 1;
+          Int inputDims[] = {28, 28};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
+
           convolutional_layer* layer
             = new convolutional_layer(1, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
@@ -221,14 +230,14 @@ int main(int argc, char* argv[])
 
         // Second convolution layer
         {
-          Optimizer* convolution_layer_optimizer = optimizer->create_optimizer(matrix_format::STAR_STAR);
-          int numDims = 2;
-          int inputChannels = 32;
-          int inputDims[] = {26, 26};
-          int outputChannels = 32;
-          int filterDims[] = {3, 3};
-          int convPads[] = {0, 0};
-          int convStrides[] = {1, 1};
+          optimizer* convolution_layer_optimizer = optimizer_fac->create_optimizer();
+          Int numDims = 2;
+          Int inputChannels = 32;
+          Int inputDims[] = {26, 26};
+          Int outputChannels = 32;
+          Int filterDims[] = {3, 3};
+          Int convPads[] = {0, 0};
+          Int convStrides[] = {1, 1};
           convolutional_layer* layer
             = new convolutional_layer(2, numDims, inputChannels, inputDims,
                                       outputChannels, filterDims,
@@ -237,8 +246,7 @@ int main(int argc, char* argv[])
                                       activation_type::RELU,
                                       weight_initialization::glorot_uniform,
                                       comm, convolution_layer_optimizer,
-                                      {},
-                                      cudnn);
+                                      {}, cudnn);
           dnn.add(layer);
         }
 
@@ -254,21 +262,20 @@ int main(int argc, char* argv[])
           pooling_layer* layer
             = new pooling_layer(3, numDims, channels, inputDim,
                                 poolWindowDims, poolPads, poolStrides, poolMode,
-                                trainParams.MBSize, activation_type::ID,
+                                trainParams.MBSize,
                                 comm,
-                                {new dropout(comm, 0.75)},
                                 cudnn);
           dnn.add(layer);
         }
 
         // Fully connected and output layers
-        dnn.add("FullyConnected", 128, trainParams.ActivationType,
-                weight_initialization::glorot_uniform, {new dropout(comm, 0.5)});
-        dnn.add("Softmax", 10, activation_type::ID,
+        dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 128, activation_type::RELU,
+                weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
+        dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID,
                 weight_initialization::glorot_uniform, {});
 
         //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+        target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
         dnn.add(target_layer);
 
         lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -276,6 +283,8 @@ int main(int argc, char* argv[])
         dnn.add_callback(&print_cb);
         // lbann_callback_io io_cb({0,3});
         // dnn.add_callback(&io_cb);
+        lbann_callback_timer timer_cb(&summarizer);
+        dnn.add_callback(&timer_cb);
 
         // Summarize information to Tensorboard
         lbann_callback_summary summary_cb(&summarizer, 25);
@@ -310,7 +319,7 @@ int main(int argc, char* argv[])
 
         // Free dynamically allocated memory
         // delete lfac;  // Causes segfault
-        delete optimizer;
+        delete optimizer_fac;
         // delete comm;  // Causes error
 
     }

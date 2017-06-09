@@ -34,6 +34,7 @@
 #include "lbann/layers/lbann_layer_activations.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/layers/lbann_layer_factory.hpp"
+#include "lbann/io/lbann_persist.hpp"
 #include <vector>
 #include <string>
 
@@ -46,8 +47,9 @@ class sequential_model : public model
     /// Constructor
     sequential_model(const uint mini_batch_size,
                      lbann_comm* comm,
+                     objective_functions::objective_fn* obj_fn,
                      layer_factory* layer_fac,
-                     Optimizer_factory* optimizer_factory);
+                     optimizer_factory* optimizer_fac);
 
     /// Destructor
     ~sequential_model();
@@ -66,10 +68,8 @@ class sequential_model : public model
     /** @todo This is old and likely broken */
     bool load_from_checkpoint(int fd, const char* filename, uint64_t* bytes);
 
-    /** @todo This is old and likely broken */
-    bool save_to_checkpoint_shared(const char* dir, uint64_t* bytes);
-    /** @todo This is old and likely broken */
-    bool load_from_checkpoint_shared(const char* dir, uint64_t* bytes);
+    bool save_to_checkpoint_shared(persist& p);
+    bool load_from_checkpoint_shared(persist& p);
 
     /// Get mini-batch size
     int get_mini_batch_size() const { return m_mini_batch_size; }
@@ -81,6 +81,7 @@ class sequential_model : public model
 
     /// Add layer to sequential model
     virtual uint add(const std::string layer_name,
+                     data_layout data_dist,
                      int layer_dim,
                      activation_type activation=activation_type::RELU,
                      weight_initialization init=weight_initialization::glorot_uniform,
@@ -105,9 +106,15 @@ class sequential_model : public model
 
     /// Replace layer in sequential model
     virtual Layer* swap(int index, Layer *new_layer);
+    
+    /// Establish model layers' forward pass input pointers
+    virtual void set_fp_input(size_t start_index,size_t end_index);
+    
+    /// Establish model layers' backward pass input pointers
+    virtual void set_bp_input(size_t start_index,size_t end_index);
 
     /// Setup sequential model
-    virtual void setup(size_t start_index=0);
+    virtual void setup(size_t start_index=0,size_t end_index=0);
 
     /// Train model
     /** @param num_epochs Number of epochs to train
@@ -116,12 +123,19 @@ class sequential_model : public model
      */
     virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
     /// Training step on one mini-batch
-    virtual bool train_mini_batch(long *num_samples, long *num_errors) = 0;
+    virtual bool train_mini_batch() = 0;
+
+    /** Return true if about to start a new training epoch */
+    virtual bool at_epoch_start();
 
     /// Evaluate model
-    virtual DataType evaluate(execution_mode mode) = 0;
+    virtual void evaluate(execution_mode mode) = 0;
     /// Evaluation step on one mini-batch
-    virtual bool evaluate_mini_batch(long *num_samples, long *num_errors) = 0;
+    virtual bool evaluate_mini_batch() = 0;
+
+    /// returns the number of neurons in the most recently added layer, or -1
+    /// if there is none
+    int num_previous_neurons();
 #if 0
     /// Prediction step on one mini-batch
     /** @todo This is old and likely broken */
@@ -129,14 +143,12 @@ class sequential_model : public model
 #endif
 
   protected:
-    /// Mini-batch size
+    /// Mini-batch size (no ckpt, so user can override on restart)
     const int m_mini_batch_size;
     /// List of layers
     std::vector<Layer*> m_layers;
     /// Layer factory
     layer_factory* layer_fac;
-    /// Optimizer factory
-    Optimizer_factory* optimizer_fac;
 
   };
 }

@@ -32,6 +32,8 @@
 #include "datatype.hpp"
 #include "El.hpp"
 
+//typedef double DataType; // if you change this, also update DataTypeMPI
+// static MPI_Datatype DataTypeMPI = MPI_DOUBLE;
 typedef float DataType; // if you change this, also update DataTypeMPI
 static MPI_Datatype DataTypeMPI = MPI_FLOAT;
 
@@ -39,36 +41,119 @@ typedef El::Grid EGrid;
 typedef El::Grid Grid;
 typedef El::Matrix<DataType> Mat;
 typedef El::AbstractDistMatrix<DataType> AbsDistMat;
-typedef El::DistMatrix<DataType> DistMat;
+typedef El::DistMatrix<DataType, El::MC, El::MR> DistMat;
 typedef El::DistMatrix<DataType, El::CIRC, El::CIRC> CircMat;
 typedef El::DistMatrix<DataType, El::STAR, El::STAR> StarMat;
 typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix over columns */
+typedef El::DistMatrix<DataType, El::MC, El::STAR> RowSumMat;
 typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
+typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
+typedef El::DistMatrix<DataType, El::VC, El::STAR> ColSumStarVCMat; /* Summary matrix over columns */
 typedef El::BlockMatrix<DataType> BlockMat;
 typedef El::ElementalMatrix<DataType> ElMat;
 
 /// Distributed matrix format
-enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC};
+enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
+
+/// Data layout that is optimized for different modes of parallelism
+enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL};
+static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_layout layout) {
+  matrix_format format;
+  switch(layout) {
+  case data_layout::MODEL_PARALLEL:
+    format = matrix_format::MC_MR;
+    break;
+  case data_layout::DATA_PARALLEL:
+    /// Weights are stored in STAR_STAR and data in STAR_VC
+    format = matrix_format::STAR_STAR;
+    break;
+  default:
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid data layout selected");
+  }
+  return format;
+}
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
+static const char* __attribute__((used)) _to_string(execution_mode m) { 
+  switch(m) {
+  case execution_mode::training:
+    return "training";
+  case execution_mode::validation:
+    return "validation";
+  case execution_mode::testing:
+    return "testing";
+  case execution_mode::prediction:
+    return "prediction";
+  case execution_mode::invalid:
+    return "invalid";
+  default:
+    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+  }
+  return NULL;
+}
 
 /// Weight matrix initialization scheme
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+  //if you change the above enum, please also edit:
+  //  static std::string Layer::weight_initialization_name(weight_initialization id);
+
 
 /// Pooling layer mode
 enum class pool_mode {max, average, average_no_pad};
 
 namespace lbann
 {
-    class CUtility
-    {
-    public:
-        static void convolveMat(StarMat* Kernels, BlockMat& InputMat, BlockMat& OutputMat,
-                                uint InputWidth, uint InputHeight);
-    };
-    
-    
+
+// Forward-declaration.
+class lbann_comm;
+
+/**
+ * Initialize LBANN.
+ * This should handle all LBANN initialization that doesn't need per-model
+ * configuration.
+ * @param comm An lbann_comm instance for all the processes involved.
+ */
+void initialize(lbann_comm* comm);
+/**
+ * Perform finalization.
+ */
+void finalize();
+
+class CUtility
+{
+public:
+  static void convolveMat(StarMat* Kernels, BlockMat& InputMat, BlockMat& OutputMat,
+                          uint InputWidth, uint InputHeight);
+};
+
+}  // namespace lbann
+
+/// Print the dimensions and name of a Elemental matrix
+static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
 }
+#define DISPLAY_MATRIX(x) _display_matrix(x, #x);
+
+#ifndef DEBUG
+#define DEBUG 1 // set debug mode
+#endif
+
+#if DEBUG
+// __FILE__
+#define log_msg(...) {\
+  char str[256];\
+  sprintf(str, __VA_ARGS__);\
+  std::cout << "[" << comm->get_model_rank() << "." << comm->get_rank_in_model() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
+  }
+#define log_simple_msg(...) {\
+  char str[256];\
+  sprintf(str, __VA_ARGS__);\
+  std::cout << "[" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
+  }
+#else
+#define log_msg(...)
+#define log_simple_msg(...)
+#endif
 
 #endif // LBANN_BASE_HPP

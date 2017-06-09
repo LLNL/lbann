@@ -25,62 +25,135 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_target_layer_unsupervised.hpp"
-#include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
+#include "lbann/models/lbann_model.hpp"
 #include <string>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "lbann/utils/lbann_random.hpp"
 
 using namespace std;
 using namespace El;
 
-lbann::target_layer_unsupervised::target_layer_unsupervised(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader)
-  : target_layer(comm, mini_batch_size, data_readers, shared_data_reader),
-    distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers)
+lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
+                                                            optimizer* opt,/*needed?*/
+                                                              const uint miniBatchSize,
+                                                              Layer* original_layer,
+                                                              const weight_initialization init)
+  :  target_layer(data_dist, comm, miniBatchSize, {}, false),m_original_layer(original_layer),
+     m_weight_initialization(init)
 {
 
+  m_type = layer_type::target_unsupervised;
+  Index = index;
+  NumNeurons = original_layer->NumNeurons;
+  this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
+  aggregate_cost = 0.0;
+  num_forwardprop_steps = 0;
 }
-
-/*lbann::target_layer_unsupervised::target_layer_unsupervised(lbann_comm* comm, input_layer* in_layer)
-{
-  input_circmat(comm->get_model_grid());
-  m_input_layer = in_layer;
-}*/
 
 void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
+  target_layer::setup(num_prev_neurons);
+  Layer::setup(num_prev_neurons);
+  // Initialize weight-bias matrix
+  Zeros(*m_weights, NumNeurons, num_prev_neurons);
 
-  NumNeurons = m_input_layer->get_linearized_data_size(); //need inherittance
-  Zeros(*Ds_Temp, NumNeurons, Layer::m_mini_batch_size);
-}
-
-///@todo update this to use the new fp_linearity framework
-DataType lbann::target_layer_unsupervised::forwardProp(DataType prev_WBL2NormSum) {
-  input_mat = m_input_layer->get_local_mat();
-  //Print(*input_mat);
-  int num_errors = 0;
-  //Layer::m_mini_batch_size or get input layer num_samples in batch
-  target_layer::update_num_samples_processed(input_mat->Width());
-  //std::cout << "Input " << input_mat->Width() << input_mat->Height() << std::endl;
-  for (int mb_index= 0; mb_index < input_mat->Width(); mb_index++) { /// For each sample in mini-batch
-    DataType sum_errors=0.0;
-    for (int f_index= 0; f_index < input_mat->Height(); f_index++) {
-      //sumerrors += ((X[m][0] - XP[m][0]) * (X[m][0] - XP[m][0]));
-      DataType x = input_mat->Get(f_index,mb_index);
-      DataType x_bar = fp_input->GetLocal(f_index,mb_index);
-      //num_errors += (x-x_bar) * (x-x_bar); //a good metric?
-      sum_errors += (x-x_bar) * (x-x_bar);
-    }
-    num_errors = sum_errors;
+  // Initialize weights
+  DistMat weights;
+  View(weights, *m_weights, IR(0,NumNeurons), IR(0,num_prev_neurons));
+  switch(m_weight_initialization) {
+  case weight_initialization::uniform:
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), DataType(1));
+      break;
+  case weight_initialization::normal:
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), DataType(1));
+      break;
+  case weight_initialization::glorot_normal: {
+      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
   }
-  num_errors = Layer::comm->model_allreduce(num_errors);
-  return num_errors;
+  case weight_initialization::glorot_uniform: {
+      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+  }
+  case weight_initialization::he_normal: {
+      const DataType var = 1.0 / num_prev_neurons;
+      gaussian_fill(weights, weights.Height(), weights.Width(),
+                    DataType(0), sqrt(var));
+      break;
+  }
+    case weight_initialization::he_uniform: {
+      const DataType var = 1.0 / num_prev_neurons;
+      uniform_fill(weights, weights.Height(), weights.Width(),
+                   DataType(0), sqrt(3*var));
+      break;
+  }
+    case weight_initialization::zero: // Zero initialization is default
+    default:
+      Zero(weights);
+      break;
+  }
+
+  // Initialize other matrices
+  Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
+  Zeros(*m_weights_gradient, NumNeurons,num_prev_neurons); //clear up before filling with new results
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size); //clear up before filling with new results
+  Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+
+  // Initialize optimizer
+  if(m_optimizer != NULL) {
+    m_optimizer->setup(m_weights);
+  }
+
 }
 
-void lbann::target_layer_unsupervised::backProp() {
-  /// Copy the results to the Ds_Temp variable for access by the next lower layer
-  input_circmat = m_input_layer->get_dist_mat();
-  Copy(*input_circmat, *Ds_Temp);
+void lbann::target_layer_unsupervised::fp_linearity()
+{
+  //m_activations is linear transformation of m_weights * m_prev_activations^T
+  Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
+
+  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
+  DistMat& DsNext = DsNextProxy.Get();
+  DistMat DsNext_v;
+  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
+  //DsNext is proxy of original layer
+  // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
+  // and original layer fp_input/original input (DsNext)
+  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, DsNext_v);
+  aggregate_cost += avg_error;
+  num_forwardprop_steps++;
+}
+
+void lbann::target_layer_unsupervised::bp_linearity()
+{
+
+  /// @todo: get error signal from objective_fn object
+
+  DistMatrixReadProxy<DataType,DataType,MC,MR> DsNextProxy(*m_original_layer->m_activations);
+  DistMat& DsNext = DsNextProxy.Get();
+  // delta = (activation - y)
+  // delta_w = delta * activation_prev^T
+  //@todo: Optimize (may be we dont need this double copy)
+  //Activation in this layer is same as linear transformation of its input, no nonlinearity
+  //@todo: Optimize (check that may be we dont need this double copy)
+
+  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  DistMat DsNext_v;
+  View(DsNext_v, DsNext, IR(0, DsNext.Height()), IR(0, curr_mini_batch_size));
+  Copy(*m_activations_v, *m_prev_error_signal_v);
+  Axpy(-1., DsNext_v, *m_prev_error_signal_v); // Per-neuron error
+  // Compute the partial delta update for the next lower layer
+  Gemm(TRANSPOSE, NORMAL, (DataType) 1., *m_weights, *m_prev_error_signal_v, (DataType) 0., *m_error_signal_v);
+
+  // Compute update for activation weights
+  Gemm(NORMAL, TRANSPOSE, (DataType) 1.0/get_effective_minibatch_size(), *m_prev_error_signal_v,
+       *m_prev_activations_v, (DataType) 0., *m_weights_gradient);
 }
 
 
@@ -88,6 +161,44 @@ execution_mode lbann::target_layer_unsupervised::get_execution_mode() {
   return m_execution_mode;
 }
 
-void lbann::target_layer_unsupervised::set_input_layer(input_layer_distributed_minibatch_parallel_io* input_layer) {
-  m_input_layer = input_layer;
+bool lbann::target_layer_unsupervised::update()
+{
+  if(m_execution_mode == execution_mode::training) {
+    m_optimizer->update(m_weights_gradient);
+  }
+  return true;
+}
+
+void lbann::target_layer_unsupervised::summarize(lbann_summary& summarizer, int64_t step) {
+  Layer::summarize(summarizer, step);
+  std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
+    + "/ReconstructionCost";
+  summarizer.reduce_scalar(tag, average_cost(), step);
+}
+
+void lbann::target_layer_unsupervised::epoch_print() const {
+  double avg_cost = average_cost();
+  if (comm->am_world_master()) {
+    std::vector<double> avg_costs(comm->get_num_models());
+    comm->intermodel_gather(avg_cost, avg_costs);
+    for (size_t i = 0; i < avg_costs.size(); ++i) {
+      std::cout << "model " << i << " average reconstruction cost: " << avg_costs[i] << std::endl;
+    }
+  } else {
+    comm->intermodel_gather(avg_cost, comm->get_world_master());
+  }
+}
+
+void lbann::target_layer_unsupervised::epoch_reset() {
+  Layer::epoch_reset();
+  reset_cost();
+}
+
+void lbann::target_layer_unsupervised::reset_cost() {
+  aggregate_cost = 0.0;
+  num_forwardprop_steps = 0;
+}
+
+DataType lbann::target_layer_unsupervised::average_cost() const {
+  return aggregate_cost / num_forwardprop_steps;
 }

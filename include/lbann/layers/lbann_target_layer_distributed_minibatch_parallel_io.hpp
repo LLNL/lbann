@@ -34,11 +34,11 @@ namespace lbann
 {
   class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
   public:
-    target_layer_distributed_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader);
+    target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
 
     void setup(int num_prev_neurons);
-    DataType forwardProp(DataType prev_WBL2NormSum);
-    void backProp();
+    void fp_linearity();
+    void bp_linearity();
     bool update();
 
     int fetch_from_data_reader(Mat& M_local);
@@ -49,14 +49,6 @@ namespace lbann
   public:
     Mat Y_local;
     CircMat Ys;
-    ColSumMat YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-    StarMat YsColMaxStar;
-    Mat m_max_index;    /// Local array to hold max indicies
-    Mat m_reduced_max_indicies;  /// Local array to build global view of maximum indicies
-
-  protected:
-    void fp_linearity(ElMat&, ElMat&, ElMat&, ElMat&) {}
-    void bp_linearity() {}
   };
 }
 

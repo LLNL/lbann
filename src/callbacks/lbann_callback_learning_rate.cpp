@@ -51,7 +51,7 @@ void lbann_callback_learning_rate::setup(model* m) {
   }
 }
 
-void lbann_callback_learning_rate::on_epoch_begin(model* m) {
+void lbann_callback_learning_rate::on_epoch_end(model* m) {
   std::vector<Layer*>& layers = m->get_layers();
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer* layer = layers[l];
@@ -88,27 +88,37 @@ float lbann_callback_step_learning_rate::schedule(model* m, Layer* l) {
   }
 }
 
-lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
+lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   int64_t patience, float amt) :
-  lbann_callback_acc_learning_rate(patience, amt,
+  lbann_callback_adaptive_learning_rate(patience, amt,
                                    std::unordered_set<uint>()) {}
 
-lbann_callback_acc_learning_rate::lbann_callback_acc_learning_rate(
+lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   int64_t patience, float amt, std::unordered_set<uint> _layers) :
   lbann_callback_learning_rate(_layers), patience(patience), amt(amt),
-  last_acc(std::numeric_limits<DataType>::lowest()), wait(0) {}
+  last_score(std::numeric_limits<double>::max()), wait(0) {}
 
-float lbann_callback_acc_learning_rate::schedule(model* m, Layer* l) {
-  DataType cur_acc = m->get_test_accuracy();
+/// Monitor the objective function to see if the validation score
+/// continues to improve
+float lbann_callback_adaptive_learning_rate::schedule(model* m, Layer* l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
-  if (cur_acc > last_acc) {
-    last_acc = cur_acc;
+  double score = m->obj_fn->report_aggregate_avg_obj_fn(execution_mode::validation);
+  if (score < last_score) {
+    // if (m->get_comm()->am_model_master()) {
+    //   std::cout << "Model " << m->get_comm()->get_model_rank() <<
+    //     " adaptive learning rate: score is improving " << last_score << " >> " << score << std::endl;
+    // }
+    last_score = score;
     wait = 0;
   } else {
     if (wait >= patience) {
       if (is_last_layer(l)) {
         wait = 0;
-        last_acc = cur_acc;
+        // if (m->get_comm()->am_model_master()) {
+        //   std::cout << "Model " << m->get_comm()->get_model_rank() <<
+        //     " changing the learning rate schedule because: " << score << " score and " << last_score << " last score" << std::endl;
+        // }
+        last_score = score;
       }
       return cur_lr * amt;
     } else {

@@ -30,43 +30,49 @@
 #define LBANN_DATA_READER_IMAGENET_HPP
 
 #include "lbann_data_reader.hpp"
+#include "lbann_image_preprocessor.hpp"
 
 namespace lbann
 {
-	class DataReader_ImageNet : public DataReader
-	{
-	public:
-    DataReader_ImageNet(int batchSize, bool shuffle);
-    DataReader_ImageNet(int batchSize);
-    DataReader_ImageNet(const DataReader_ImageNet& source);
-		~DataReader_ImageNet();
+class DataReader_ImageNet : public DataReader
+{
+public:
+  DataReader_ImageNet(int batchSize, bool shuffle = true);
+  DataReader_ImageNet(const DataReader_ImageNet& source);
+  ~DataReader_ImageNet();
 
-    int fetch_data(Mat& X);
-    int fetch_label(Mat& Y);
-		int get_num_labels() { return m_num_labels; }
+  virtual int fetch_data(Mat& X);
+  virtual int fetch_label(Mat& Y);
 
-		// ImageNet specific functions
-    //		bool load(std::string FileDir, std::string ImageFile, std::string LabelFile);
-    bool load(std::string imageDir, std::string imageListFile);
-    bool load(std::string imageDir, std::string imageListFile, size_t max_sample_count, bool firstN=false);
-    bool load(std::string imageDir, std::string imageListFile, double validation_percent, bool firstN=false);
-    void free();
+  int get_num_labels() { return m_num_labels; }
 
-		int get_image_width() { return m_image_width; }
-		int get_image_height() { return m_image_height; }
-    int get_linearized_data_size() { return m_image_width * m_image_height; }
-    int get_linearized_label_size() { return m_num_labels; }
+  // ImageNet specific functions
+  virtual void load();
+  void free();
 
-    DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
+  int get_image_width() { return m_image_width; }
+  int get_image_height() { return m_image_height; }
+  int get_image_num_channels() { return m_image_num_channels; }
+  int get_linearized_data_size() { return m_image_width * m_image_height * m_image_num_channels; }
+  int get_linearized_label_size() { return m_num_labels; }
 
-	private:
-		std::string							m_image_dir; // where images are stored
-		std::vector<std::pair<std::string, int> > 	ImageList; // list of image files and labels
-		int 										m_image_width; // image width (256)
-		int 										m_image_height; // image height (256)
-		int											m_num_labels; // # labels (1000)
-    unsigned char *         m_pixels;
-	};
-}
+  DataReader_ImageNet& operator=(const DataReader_ImageNet& source);
 
-#endif // LBANN_DATA_READER_IMAGENET_HPP
+  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+    internal_save_image(pixels, filename, m_image_height, m_image_width,
+                        m_image_num_channels, scale);
+  }
+
+protected:
+  std::string m_image_dir; // where images are stored
+  std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
+  int m_image_width; // image width
+  int m_image_height; // image height
+  int m_image_num_channels; // number of image channels
+  int m_num_labels; // number of labels
+  unsigned char* m_pixels;
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_IMAGENET_HPP

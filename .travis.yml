@@ -1,0 +1,49 @@
+# This will run on Travis' 'new' container-based infrastructure
+sudo: false
+# The Trusty beta Build Environment
+dist: trusty
+
+language: cpp
+
+# Blacklist
+branches:
+  except:
+    - develop
+    - gh-pages
+
+# Environment variables (Set the gh-pages repo dir to html to match with doxygen)
+env:
+  global:
+    - GH_REPO_NAME: html
+    - DOXYFILE: $TRAVIS_BUILD_DIR/doc/Doxyfile
+    - GH_REPO_REF: github.com:LLNL/lbann.git
+    - DOXYCONFIG: $TRAVIS_BUILD_DIR/doc/Doxyfile.in
+    - SCRIPT_DIR: code_docs
+
+# Install dependencies
+addons:
+  apt:
+    packages:
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
+
+# Build your code e.g. by calling make
+script:
+  - cp $DOXYCONFIG $DOXYFILE
+  - chmod +x config/config-doxygen.sh
+  - ./config/config-doxygen.sh
+
+# Generate and deploy documentation
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - chmod +x config/publish-doxygen.sh
+  - ./config/publish-doxygen.sh
+
+before_install:
+  - openssl aes-256-cbc -K $encrypted_b9b32342f7d0_key -iv $encrypted_b9b32342f7d0_iv
+    -in config/travisci_rsa.enc -out config/travisci_rsa -d
+  - chmod 0600 config/travisci_rsa
+  - cp config/travisci_rsa ~/.ssh/id_rsa

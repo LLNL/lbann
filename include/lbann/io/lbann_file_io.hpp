@@ -42,6 +42,8 @@ namespace lbann
 
     int makedir(const char* dirname);
 
+    int exists(const char* filename);
+
     int openread(const char* filename);
     int closeread(int fd, const char* filename);
 
