@@ -83,7 +83,7 @@ else()
     GIT_REPOSITORY  ${ELEMENTAL_URL}
     GIT_TAG         ${ELEMENTAL_TAG}
     #--Update/Patch step----------
-    PATCH_COMMAND   patch -d ${ELEMENTAL_SOURCE_DIR} -p 1 < ${PROJECT_SOURCE_DIR}/external/Elemental/elemental_cublas.patch
+    PATCH_COMMAND   patch -N -s -d ${ELEMENTAL_SOURCE_DIR} -p 1 < ${PROJECT_SOURCE_DIR}/external/Elemental/elemental_cublas.patch
     #--Configure step-------------
     SOURCE_DIR      ${ELEMENTAL_SOURCE_DIR}
     BINARY_DIR      ${ELEMENTAL_BINARY_DIR}
