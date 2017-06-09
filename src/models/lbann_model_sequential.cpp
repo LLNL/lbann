@@ -51,7 +51,6 @@ using namespace El;
 lbann::sequential_model::sequential_model(const uint mini_batch_size,
     lbann_comm *comm,
     objective_functions::objective_fn *obj_fn,
-    layer_factory *_layer_fac,
     optimizer_factory *optimizer_fac)
   : model(comm, obj_fn, optimizer_fac),
     m_mini_batch_size(mini_batch_size),
@@ -247,99 +246,6 @@ int lbann::sequential_model::num_previous_neurons() {
   }
   Layer *prev_layer = m_layers.back();
   return prev_layer->NumNeurons;
-}
-
-uint lbann::sequential_model::add(const std::string layer_name,
-                                  data_layout data_dist,
-                                  const int layer_dim,
-                                  const activation_type activation,
-                                  const weight_initialization init,
-                                  std::vector<regularizer *> regularizers) {
-  const int layer_index = m_layers.size();
-  optimizer *opt = create_optimizer();
-
-  // Get properties of previous layer
-  int prev_layer_dim = -1;
-  int prev_layer_index = -1;
-  if(m_layers.size() != 0) {
-    Layer *prev_layer = m_layers.back();
-    prev_layer_dim = prev_layer->NumNeurons;
-    prev_layer_index = prev_layer->Index;
-  }
-
-  if (comm->am_model_master()) {
-    std::cout << "Adding a layer with input " << prev_layer_dim
-              << " and index " << layer_index
-              << " prev layer index " << prev_layer_index << std::endl;
-  }
-
-  if(layer_name.compare("FullyConnected") == 0) {
-    Layer *new_layer;
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      new_layer
-      = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",
-          data_dist,
-          layer_index,
-          prev_layer_dim,
-          layer_dim,
-          m_mini_batch_size,
-          activation, init,
-          comm,
-          opt,
-          regularizers);
-      break;
-    case data_layout::DATA_PARALLEL:
-      new_layer
-      = layer_fac->create_layer<FullyConnectedLayer<data_layout::DATA_PARALLEL>>("FullyConnected",
-          data_dist,
-          layer_index,
-          prev_layer_dim,
-          layer_dim,
-          m_mini_batch_size,
-          activation, init,
-          comm,
-          opt,
-          regularizers);
-      break;
-    default:
-      break;
-    }
-    m_layers.push_back(new_layer);
-  } else if(layer_name.compare("Softmax") == 0) {
-    Layer *new_layer;
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      new_layer
-      = layer_fac->create_layer<SoftmaxLayer<data_layout::MODEL_PARALLEL>>("Softmax",
-          data_dist,
-          layer_index,
-          prev_layer_dim,
-          layer_dim,
-          m_mini_batch_size,
-          init,
-          comm,
-          opt);
-      break;
-    case data_layout::DATA_PARALLEL:
-      new_layer
-      = layer_fac->create_layer<SoftmaxLayer<data_layout::DATA_PARALLEL>>("Softmax",
-          data_dist,
-          layer_index,
-          prev_layer_dim,
-          layer_dim,
-          m_mini_batch_size,
-          init,
-          comm,
-          opt);
-      break;
-    }
-    m_layers.push_back(new_layer);
-  } else {
-    std::cout << "Unknown layer type " << layer_name << std::endl;
-  }
-
-  return layer_index;
 }
 
 uint lbann::sequential_model::add(Layer *new_layer) {
