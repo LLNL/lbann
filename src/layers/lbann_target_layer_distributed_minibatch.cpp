@@ -34,7 +34,7 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
+lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(comm->get_model_grid())
 {
   m_type = layer_type::target_distributed_minibatch;
@@ -68,7 +68,7 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
 }
 
 void lbann::target_layer_distributed_minibatch::fp_linearity() {
-  DataReader *data_reader = target_layer::select_data_reader();
+  generic_data_reader *data_reader = target_layer::select_data_reader();
 
   if (comm->get_rank_in_model() == m_root) {
     Zero(Y_local);
@@ -111,7 +111,7 @@ void lbann::target_layer_distributed_minibatch::bp_linearity() {
  * Once a mini-batch is processed, resuffle the data for the next batch if necessary
  */
 bool lbann::target_layer_distributed_minibatch::update() {
-  DataReader *data_reader = target_layer::select_data_reader();
+  generic_data_reader *data_reader = target_layer::select_data_reader();
   if(m_shared_data_reader) { /// If the data reader is shared with an input layer, don't update the reader
     return true;
   }else {

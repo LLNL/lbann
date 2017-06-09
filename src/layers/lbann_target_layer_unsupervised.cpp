@@ -35,10 +35,10 @@ using namespace El;
 
 lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
                                                             optimizer* opt,/*needed?*/
-                                                              const uint miniBatchSize,
+                                                              const uint minim_batch_size,
                                                               Layer* original_layer,
                                                               const weight_initialization init)
-  :  target_layer(data_dist, comm, miniBatchSize, {}, false),m_original_layer(original_layer),
+  :  target_layer(data_dist, comm, minim_batch_size, {}, false),m_original_layer(original_layer),
      m_weight_initialization(init)
 {
 

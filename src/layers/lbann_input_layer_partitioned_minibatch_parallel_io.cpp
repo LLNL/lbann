@@ -35,7 +35,7 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer_partitioned_minibatch_parallel_io::input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs)
+lbann::input_layer_partitioned_minibatch_parallel_io::input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers, std::vector<regularizer*> regs)
   : input_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, regs),
     partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers)
 {
@@ -75,7 +75,7 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::setup(int num_prev_ne
 }
 
 void lbann::input_layer_partitioned_minibatch_parallel_io::fp_linearity() {
-  //  DataReader *data_reader = input_layer::select_data_reader();
+  //  generic_data_reader *data_reader = input_layer::select_data_reader();
   int num_parallel_readers = get_num_parallel_readers();
 
   //  DISPLAY_MATRIX(m_activations);
@@ -97,7 +97,7 @@ bool lbann::input_layer_partitioned_minibatch_parallel_io::update() {
 
 
 int lbann::input_layer_partitioned_minibatch_parallel_io::fetch_from_data_reader(Mat &M_local) {
-  DataReader *data_reader = input_layer::select_data_reader();
+  generic_data_reader *data_reader = input_layer::select_data_reader();
   return data_reader->fetch_data(M_local);
 }
 
@@ -106,7 +106,7 @@ void lbann::input_layer_partitioned_minibatch_parallel_io::preprocess_data_sampl
 }
 
 bool lbann::input_layer_partitioned_minibatch_parallel_io::update_data_reader() {
-  DataReader *data_reader = input_layer::select_data_reader();
+  generic_data_reader *data_reader = input_layer::select_data_reader();
   return data_reader->update();
 }
 

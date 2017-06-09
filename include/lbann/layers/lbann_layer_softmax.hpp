@@ -41,7 +41,7 @@ namespace lbann
                  uint index,
                  int numPrevNeurons,
                  uint numNeurons,
-                 uint miniBatchSize,
+                 uint minim_batch_size,
                  weight_initialization init,
                  lbann_comm* comm,
                  optimizer *opt);

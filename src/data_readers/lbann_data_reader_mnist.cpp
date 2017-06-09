@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - DataReader class for MNIST dataset
+// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
@@ -39,8 +39,8 @@ inline void __swapEndianInt(unsigned int& ui)
 
 
 
-lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+lbann::mnist_reader::mnist_reader(int batchSize, bool shuffle)
+  : generic_data_reader(batchSize, shuffle)
   //, lbann_image_preprocessor()
 {
   m_image_width = 28;
@@ -48,12 +48,12 @@ lbann::DataReader_MNIST::DataReader_MNIST(int batchSize, bool shuffle)
   m_num_labels = 10;
 }
 
-lbann::DataReader_MNIST::DataReader_MNIST(int batchSize)
-  : DataReader_MNIST(batchSize, true) {}
+lbann::mnist_reader::mnist_reader(int batchSize)
+  : mnist_reader(batchSize, true) {}
 
 /*
-lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
-  : DataReader((const DataReader&) source),
+lbann::mnist_reader::mnist_reader(const mnist_reader& source)
+  : generic_data_reader((const generic_data_reader&) source),
     //lbann_image_preprocessor((const lbann_image_preprocessor&) source),
     m_image_width(source.m_image_width), m_image_height(source.m_image_height),
     m_num_labels(source.m_num_labels)
@@ -64,37 +64,37 @@ lbann::DataReader_MNIST::DataReader_MNIST(const DataReader_MNIST& source)
 }
 */
 
-lbann::DataReader_MNIST::~DataReader_MNIST()
+lbann::mnist_reader::~mnist_reader()
 {
   //this->free();
 }
 
-int lbann::DataReader_MNIST::fetch_data(Mat& X)
+int lbann::mnist_reader::fetch_data(Mat& X)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
     throw lbann_exception(err.str());
   }
 
   int pixelcount = m_image_width * m_image_height;
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
 
   int n = 0, s = 0;
   std::vector<float> pixels(pixelcount);
   Zeros(m_indices_fetched_per_mb, X.Width(), 1); /// The width of the local matrix X dictates how many samples this rank will get
-  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < X.Width() && n < ShuffledIndices.size(); n+=m_sample_stride, s++) {
-    //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << CurrentPos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) <<  " and there are only samples = " << getNumData() << std::endl;
+  for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < X.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
+    //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << m_current_pos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) <<  " and there are only samples = " << getNumData() << std::endl;
 
-     // if(n >= CurrentPos + current_batch_size) {
-     //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << ShuffledIndices[n] << " and the guard is " << (n < (CurrentPos + current_batch_size)) << " and the limit is " << (CurrentPos + current_batch_size) << std::endl;
+     // if(n >= m_current_pos + current_batch_size) {
+     //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) << " and the limit is " << (m_current_pos + current_batch_size) << std::endl;
 
      // }
 
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)m_shuffled_indices.size())
       break;
 
-    int index = ShuffledIndices[n];
+    int index = m_shuffled_indices[n];
     vector<unsigned char> &tmp = m_image_data[index];
 
     m_indices_fetched_per_mb.Set(s, 0, index);
@@ -111,23 +111,23 @@ int lbann::DataReader_MNIST::fetch_data(Mat& X)
   return s;
 }
 
-int lbann::DataReader_MNIST::fetch_label(Mat& Y)
+int lbann::mnist_reader::fetch_label(Mat& Y)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   int n = 0, s = 0;
-  for (n = CurrentPos, s = 0; n < CurrentPos + current_batch_size && s < Y.Width() && n < ShuffledIndices.size(); n+=m_sample_stride, s++) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < Y.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
+    if (n >= (int)m_shuffled_indices.size())
       break;
 
     //std::cout << " Target Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << std::endl;
 
-    int index = ShuffledIndices[n];
+    int index = m_shuffled_indices[n];
     unsigned char label = m_image_data[index][0];
 
     Y.Set(label, s, 1);
@@ -140,9 +140,9 @@ int lbann::DataReader_MNIST::fetch_label(Mat& Y)
 
 //===================================================
 
-void lbann::DataReader_MNIST::load()
+void lbann::mnist_reader::load()
 {
-  if (is_master()) cerr << "starting lbann::DataReader_MNIST::load\n";
+  if (is_master()) cerr << "starting lbann::mnist_reader::load\n";
   m_image_data.clear();
 
   string FileDir = get_file_dir();
@@ -204,12 +204,12 @@ void lbann::DataReader_MNIST::load()
   fclose(fplbl);
 
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(m_image_data.size());
-  for (size_t n = 0; n < ShuffledIndices.size(); n++) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_image_data.size());
+  for (size_t n = 0; n < m_shuffled_indices.size(); n++) {
+    m_shuffled_indices[n] = n;
   }
-  if (is_master()) cerr << "calling select_subset_of_data; ShuffledIndices.size: " << ShuffledIndices.size() << endl;
+  if (is_master()) cerr << "calling select_subset_of_data; m_shuffled_indices.size: " << m_shuffled_indices.size() << endl;
   select_subset_of_data();
 }
 

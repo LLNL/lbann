@@ -37,7 +37,7 @@ namespace lbann
 {
   class partitioned_minibatch_parallel_io {
   public:
-    partitioned_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers);
+    partitioned_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers);
 
     int fetch_to_local_matrix(Mat& M_local);
     void distribute_from_local_matrix(Mat& M_local, CircMat& Ms);
@@ -45,7 +45,7 @@ namespace lbann
     int get_num_parallel_readers();
     int get_num_iterations_per_epoch();
 
-    void calculate_num_iterations_per_epoch(DataReader *data_reader);
+    void calculate_num_iterations_per_epoch(generic_data_reader *data_reader);
 
     /// @todo BVE replace this with a function pointer that is passed
     /// into the fetch_to_local_matrix function to avoid the
@@ -69,7 +69,7 @@ namespace lbann
     uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
     bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
 
-    std::map<execution_mode, DataReader*> m_data_readers;
+    std::map<execution_mode, generic_data_reader*> m_data_readers;
 
     int m_cur_step_in_epoch;
 

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_synthetic .hpp .cpp - DataReader class for synthetic (unit testing) data 
+// lbann_data_reader_synthetic .hpp .cpp - generic_data_reader class for synthetic (unit testing) data 
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
@@ -36,7 +36,7 @@ using namespace El;
 
 
 lbann::data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, int num_features, bool shuffle)
-  : DataReader(batch_size, shuffle)
+  : generic_data_reader(batch_size, shuffle)
 {
   m_num_samples = num_samples;
   m_num_features = num_features;
@@ -47,7 +47,7 @@ lbann::data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samp
 
 //copy constructor
 lbann::data_reader_synthetic::data_reader_synthetic(const data_reader_synthetic& source)
-  : DataReader((const DataReader&) source),
+  : generic_data_reader((const generic_data_reader&) source),
    m_num_samples(source.m_num_samples), m_num_features(source.m_num_features)
   { }
 
@@ -61,11 +61,11 @@ lbann::data_reader_synthetic::~data_reader_synthetic()
 //fetch one MB of data
 int lbann::data_reader_synthetic::fetch_data(Mat& X)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   //@todo: generalize to take different data distribution/generator
   El::Gaussian(X, m_num_features, current_batch_size, DataType(0), DataType(1));
   
@@ -77,8 +77,8 @@ int lbann::data_reader_synthetic::fetch_data(Mat& X)
 void lbann::data_reader_synthetic::load()
 {
   //set indices/ number of features
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(m_num_samples);
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
 
   select_subset_of_data();
 }
@@ -91,7 +91,7 @@ lbann::data_reader_synthetic& lbann::data_reader_synthetic::operator=(const data
     return *this;
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
 
   this->m_num_samples = source.m_num_samples;

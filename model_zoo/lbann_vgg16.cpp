@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // load training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true);
+        imagenet_reader imagenet_trainset(trainParams.MBSize, true);
         imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
         imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
         imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // create a validation set from the unused training data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_validation_set(imagenet_trainset); // Clone the training set object
+        imagenet_reader imagenet_validation_set(imagenet_trainset); // Clone the training set object
         imagenet_validation_set.use_unused_index_set();
 
         if (comm->am_world_master()) {
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
         ///////////////////////////////////////////////////////////////////
         // load testing data (ImageNet)
         ///////////////////////////////////////////////////////////////////
-        DataReader_ImageNet imagenet_testset(trainParams.MBSize);
+        imagenet_reader imagenet_testset(trainParams.MBSize);
         imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
         imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
         imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
 
         deep_neural_network *dnn = NULL;
         dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-        std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
+        std::map<execution_mode, generic_data_reader*> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset), 
                                                               std::make_pair(execution_mode::validation, &imagenet_validation_set), 
                                                               std::make_pair(execution_mode::testing, &imagenet_testset)};
         dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));

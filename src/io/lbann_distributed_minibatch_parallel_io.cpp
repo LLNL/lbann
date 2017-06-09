@@ -31,7 +31,7 @@
 
 using namespace std;
 
-lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers)
+lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers)
   : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size)
 {
   m_root = 0;
@@ -199,8 +199,8 @@ int lbann::distributed_minibatch_parallel_io::compute_max_num_parallel_readers(l
   }
 }
 
-void lbann::distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(DataReader *data_reader) {
-  int max_mini_batch_size = data_reader->BatchSize;
+void lbann::distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
+  int max_mini_batch_size = data_reader->m_batch_size;
   int num_parallel_readers_per_model = max(1, (data_reader->m_batch_stride / comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
 

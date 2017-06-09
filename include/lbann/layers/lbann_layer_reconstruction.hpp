@@ -36,7 +36,7 @@ namespace lbann
   public:
     reconstruction_layer(data_layout data_dist, size_t index,lbann_comm* comm,
                          optimizer* optimizer,
-                         const uint miniBatchSize,
+                         const uint minim_batch_size,
                          Layer* original_layer,
                          activation_type activation=activation_type::RELU,
                          weight_initialization init=weight_initialization::glorot_uniform);

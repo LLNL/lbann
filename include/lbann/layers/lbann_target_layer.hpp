@@ -33,10 +33,10 @@ namespace lbann
 {
   class target_layer : public io_layer {
   public:
-    target_layer(data_layout dist_data, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
+    target_layer(data_layout dist_data, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers, bool shared_data_reader, bool for_regression=false);
     DistMat *fp_output();
-    DataReader *set_training_data_reader(DataReader *data_reader, bool shared_data_reader);
-    DataReader *set_testing_data_reader(DataReader *data_reader, bool shared_data_reader);
+    generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader);
+    generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader);
 
     void setup(int num_prev_neurons);
     void fp_set_std_matrix_view();

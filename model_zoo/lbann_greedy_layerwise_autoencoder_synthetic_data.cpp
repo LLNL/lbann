@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
       layer_factory* lfac = new layer_factory();
       greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
 
-      std::map<execution_mode, DataReader*> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
+      std::map<execution_mode, generic_data_reader*> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
                                                              std::make_pair(execution_mode::validation, &synthetic_validation_set),
                                                              std::make_pair(execution_mode::testing, &synthetic_testset)};
 

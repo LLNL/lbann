@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci_regression .hpp .cpp - DataReader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci_regression .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED
@@ -36,7 +36,7 @@
 namespace lbann
 {
   //@todo rewrite data_reader class to follow coding convention
-  class data_reader_nci_regression : public DataReader
+  class data_reader_nci_regression : public generic_data_reader
   {
     private:
       //@todo add response mode {binary,ternary, continuous}
@@ -55,7 +55,7 @@ namespace lbann
 
       int fetch_data(Mat& X);
       int fetch_response(Mat& Y);
-      int getNumLabels() { return m_num_responses; } //@todo; check if used
+      int get_num_labels() { return m_num_responses; } //@todo; check if used
 
       void load();
 

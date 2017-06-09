@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNet dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
@@ -33,8 +33,8 @@
 using namespace std;
 using namespace El;
 
-lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+lbann::imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
+  : generic_data_reader(batchSize, shuffle)
 {
   m_image_width = 256;
   m_image_height = 256;
@@ -44,10 +44,10 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(int batchSize, bool shuffle)
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
 }
 
-lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& source)
-  : DataReader((const DataReader&) source),
+lbann::imagenet_reader::imagenet_reader(const imagenet_reader& source)
+  : generic_data_reader((const generic_data_reader&) source),
     m_image_dir(source.m_image_dir),
-    ImageList(source.ImageList),
+    image_list(source.image_list),
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
@@ -57,31 +57,31 @@ lbann::DataReader_ImageNet::DataReader_ImageNet(const DataReader_ImageNet& sourc
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 }
 
-lbann::DataReader_ImageNet::~DataReader_ImageNet()
+lbann::imagenet_reader::~imagenet_reader()
 {
   delete [] m_pixels;
 }
 
-int lbann::DataReader_ImageNet::fetch_data(Mat& X)
+int lbann::imagenet_reader::fetch_data(Mat& X)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
     throw lbann_exception(err.str());
   }
 
   int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  int current_batch_size = getBatchSize();
-  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
-  const int mb_size = Min(ceil((float)(end_pos - CurrentPos)/(float)m_sample_stride), X.Width());
+  int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
+  const int mb_size = Min(ceil((float)(end_pos - m_current_pos)/(float)m_sample_stride), X.Width());
 
   Zeros(X, X.Height(), X.Width());
   Zeros(m_indices_fetched_per_mb, mb_size, 1);
 #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
-    int n = CurrentPos + (s * m_sample_stride);
-    int index = ShuffledIndices[n];
-    string imagepath = m_image_dir + ImageList[index].first;
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    string imagepath = m_image_dir + image_list[index].first;
 
     int width, height;
     unsigned char* pixels = (unsigned char*) std::malloc(num_channel_values*sizeof(unsigned char));
@@ -108,7 +108,7 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
   return mb_size;
 }
 
-int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
+int lbann::imagenet_reader::fetch_label(Mat& Y)
 {
   if(!position_valid()) {
     stringstream err;
@@ -116,28 +116,28 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getBatchSize();
-  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
-  const int mb_size = Min(ceil((float)(end_pos - CurrentPos)/(float)m_sample_stride), Y.Width());
+  int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
+  const int mb_size = Min(ceil((float)(end_pos - m_current_pos)/(float)m_sample_stride), Y.Width());
   Zeros(Y, Y.Height(), Y.Width());
 
   for (int s = 0; s < mb_size; s++) {
-    int n = CurrentPos + (s * m_sample_stride);
-    int index = ShuffledIndices[n];
-    int label = ImageList[index].second;
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    int label = image_list[index].second;
 
     Y.Set(label, s, 1);
   }
   return mb_size;
 }
 
-void lbann::DataReader_ImageNet::load()
+void lbann::imagenet_reader::load()
 {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
   m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
-  ImageList.clear();
+  image_list.clear();
 
   // load image list
   FILE* fplist = fopen(imageListFile.c_str(), "rt");
@@ -152,40 +152,40 @@ void lbann::DataReader_ImageNet::load()
     int imagelabel;
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
       break;
-    ImageList.push_back(make_pair(imagepath, imagelabel));
+    image_list.push_back(make_pair(imagepath, imagelabel));
   }
   fclose(fplist);
 
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(ImageList.size());
-  for (size_t n = 0; n < ImageList.size(); n++) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(image_list.size());
+  for (size_t n = 0; n < image_list.size(); n++) {
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
 }
 
-void lbann::DataReader_ImageNet::free()
+void lbann::imagenet_reader::free()
 {
   delete [] m_pixels;
 }
 
 // Assignment operator
-lbann::DataReader_ImageNet& lbann::DataReader_ImageNet::operator=(const DataReader_ImageNet& source)
+lbann::imagenet_reader& lbann::imagenet_reader::operator=(const imagenet_reader& source)
 {
   // check for self-assignment
   if (this == &source)
     return *this;
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
   // first we need to deallocate any data that this data reader is holding!
   delete [] m_pixels;
 
   this->m_image_dir = source.m_image_dir;
-  this->ImageList = source.ImageList;
+  this->image_list = source.image_list;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
   this->m_image_num_channels = source.m_image_num_channels;

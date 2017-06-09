@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
     const lbann_data::Model &m2 = pb.model();
-    std::map<execution_mode, DataReader*> data_readers;
+    std::map<execution_mode, generic_data_reader*> data_readers;
     init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
       for (auto it : data_readers) {

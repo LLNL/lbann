@@ -36,7 +36,7 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer::target_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
+lbann::target_layer::target_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader*> data_readers, bool shared_data_reader, bool for_regression)
   : io_layer(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression)
 {
   if (is_for_regression())
@@ -66,12 +66,12 @@ DistMat *lbann::target_layer::fp_output() {
   return NULL;
 }
 
-lbann::DataReader *lbann::target_layer::set_training_data_reader(DataReader *data_reader, bool shared_data_reader) {
+lbann::generic_data_reader *lbann::target_layer::set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   m_shared_data_reader = shared_data_reader;
   return io_layer::set_training_data_reader(data_reader);
 }
 
-lbann::DataReader *lbann::target_layer::set_testing_data_reader(DataReader *data_reader, bool shared_data_reader) {
+lbann::generic_data_reader *lbann::target_layer::set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   m_shared_data_reader = shared_data_reader;
   return io_layer::set_testing_data_reader(data_reader);
 }

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci .hpp .cpp - DataReader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
@@ -36,7 +36,7 @@ using namespace El;
 
 
 lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
+  : generic_data_reader(batchSize, shuffle)
 {
   m_num_samples = 0;
   //m_num_samples = -1;
@@ -49,7 +49,7 @@ lbann::data_reader_nci::data_reader_nci(int batchSize)
 
 //copy constructor
 lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
-  : DataReader((const DataReader&) source),
+  : generic_data_reader((const generic_data_reader&) source),
   m_num_labels(source.m_num_labels), m_num_samples(source.m_num_samples),
   m_num_features(source.m_num_features),m_labels(source.m_labels),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
@@ -76,11 +76,11 @@ inline int lbann::data_reader_nci::map_label_2int(const std::string label){
 
 int lbann::data_reader_nci::fetch_data(Mat& X)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   ifstream ifs(m_infile.c_str());
   if (!ifs) { 
     stringstream err;
@@ -91,12 +91,12 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
 
   string line;
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
+    if (n >= (int)m_shuffled_indices.size())
       break;
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
 
     if(index == 0) continue; //skip header
     else std::getline(ifs.seekg(m_index_map[index-1]+index),line);
@@ -116,29 +116,29 @@ int lbann::data_reader_nci::fetch_data(Mat& X)
     }// end while loop
   } // end for loop (batch)
   ifs.close();
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
 int lbann::data_reader_nci::fetch_label(Mat& Y)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
+    if (n >= (int)m_shuffled_indices.size())
       break;
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
     int sample_label = 0;
     if(index == 0) continue; //skip header
     else sample_label = m_labels[index];
 
     Y.Set(sample_label, k, 1);
   }
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
 /*Space separated columns are as follows (in order):
@@ -181,10 +181,10 @@ void lbann::data_reader_nci::load()
   ifs.close();
   m_labels.resize(m_num_samples);
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(m_num_samples);
-  for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
+  for (size_t n = 0; n < m_shuffled_indices.size(); ++n) {
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
@@ -198,7 +198,7 @@ lbann::data_reader_nci& lbann::data_reader_nci::operator=(const data_reader_nci&
     return *this;
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
 
   this->m_num_labels = source.m_num_labels;

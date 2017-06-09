@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_DataReader_cnpy .hpp .cpp 
+// lbann_cnpy_reader .hpp .cpp 
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
@@ -35,31 +35,31 @@
 using namespace std;
 using namespace El;
 
-lbann::DataReader_cnpy::DataReader_cnpy(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle), m_num_features(0), m_num_samples(0)
+lbann::cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
+  : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0)
 {
 }
 
-lbann::DataReader_cnpy::~DataReader_cnpy()
+lbann::cnpy_reader::~cnpy_reader()
 {
   m_data.destruct();
 }
 
 
-int lbann::DataReader_cnpy::fetch_data(Mat& X)
+int lbann::cnpy_reader::fetch_data(Mat& X)
 {
-  if(!DataReader::position_valid()) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
 
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
+    if (n >= (int)m_shuffled_indices.size())
       break;
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
 
     if (m_data.word_size == 4) {
       float *tmp = (float*)m_data.data;
@@ -81,17 +81,17 @@ int lbann::DataReader_cnpy::fetch_data(Mat& X)
     }
   }
 
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
-void lbann::DataReader_cnpy::load()
+void lbann::cnpy_reader::load()
 {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) { 
     stringstream err;
     err << endl << __FILE__ << " " << __LINE__ 
-         << "  DataReader_cnpy::load() - can't open file : " << infile;  
+         << "  cnpy_reader::load() - can't open file : " << infile;  
     throw lbann_exception(err.str());
   }
   ifs.close();
@@ -101,17 +101,17 @@ void lbann::DataReader_cnpy::load()
   m_num_features = m_data.shape[1];
 
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(m_num_samples);
-  for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
+  for (size_t n = 0; n < m_shuffled_indices.size(); ++n) {
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
 }
 
-lbann::DataReader_cnpy::DataReader_cnpy(const DataReader_cnpy& source) :
-  DataReader((const DataReader&) source), m_num_features(source.m_num_features),
+lbann::cnpy_reader::cnpy_reader(const cnpy_reader& source) :
+  generic_data_reader((const generic_data_reader&) source), m_num_features(source.m_num_features),
   m_num_samples(source.m_num_samples), m_data(source.m_data) {
   int n = m_num_features * m_num_samples * m_data.word_size;
   m_data.data = new char[n];
@@ -120,7 +120,7 @@ lbann::DataReader_cnpy::DataReader_cnpy(const DataReader_cnpy& source) :
 
 
 
-lbann::DataReader_cnpy& lbann::DataReader_cnpy::operator=(const DataReader_cnpy& source)
+lbann::cnpy_reader& lbann::cnpy_reader::operator=(const cnpy_reader& source)
 {
 
   // check for self-assignment
@@ -128,7 +128,7 @@ lbann::DataReader_cnpy& lbann::DataReader_cnpy::operator=(const DataReader_cnpy&
     return *this;
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
   this->m_num_features = source.m_num_features;
   this->m_num_samples = source.m_num_samples;

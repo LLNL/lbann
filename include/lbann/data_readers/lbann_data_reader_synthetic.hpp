@@ -34,7 +34,7 @@
 
 namespace lbann
 {
-  class data_reader_synthetic : public DataReader
+  class data_reader_synthetic : public generic_data_reader
   {
     public:
       //@todo: add what data distribution to use

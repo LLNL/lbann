@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
 
-    DataReader_ImageNet_cv imagenet_trainset(trainParams.MBSize, pp, true);
+    imagenet_reader_cv imagenet_trainset(trainParams.MBSize, pp, true);
     imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
     imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
     imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     // Clone the training set object
-    DataReader_ImageNet_cv imagenet_validation_set(imagenet_trainset);
+    imagenet_reader_cv imagenet_validation_set(imagenet_trainset);
     // Swap the used and unused index sets so that it validates on the remaining data
     imagenet_validation_set.use_unused_index_set();
 
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_ImageNet_cv imagenet_testset(trainParams.MBSize, pp, true);
+    imagenet_reader_cv imagenet_testset(trainParams.MBSize, pp, true);
     imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
     imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
     imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
     layer_factory* lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm,
                             new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    std::map<execution_mode, DataReader*> data_readers = {
+    std::map<execution_mode, generic_data_reader*> data_readers = {
       std::make_pair(execution_mode::training,&imagenet_trainset), 
       std::make_pair(execution_mode::validation, &imagenet_validation_set), 
       std::make_pair(execution_mode::testing, &imagenet_testset)

@@ -58,14 +58,14 @@ lbann::FullyConnectedLayer::FullyConnectedLayer(data_layout data_dist,
                     const uint index,
                     const int numPrevNeurons,
                     const uint numNeurons,
-                    const uint miniBatchSize,
+                    const uint minim_batch_size,
                     const activation_type activationType,
                     const weight_initialization init,
                     lbann_comm* comm,
                     optimizer *opt,
                     std::vector<regularizer*> regs)
   : Layer(data_dist,
-          index, comm, opt, miniBatchSize, activationType, regs),
+          index, comm, opt, minim_batch_size, activationType, regs),
     m_weight_initialization(init)
 {
 
