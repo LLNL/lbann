@@ -32,10 +32,8 @@
 #include "datatype.hpp"
 #include "El.hpp"
 
-//typedef double DataType; // if you change this, also update DataTypeMPI
-// static MPI_Datatype DataTypeMPI = MPI_DOUBLE;
-typedef float DataType; // if you change this, also update DataTypeMPI
-static MPI_Datatype DataTypeMPI = MPI_FLOAT;
+//typedef double DataType;
+typedef float DataType;
 
 typedef El::Grid EGrid;
 typedef El::Grid Grid;
