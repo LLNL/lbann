@@ -75,23 +75,6 @@ class optimizer {
     return m_name;
   }
 
-#if 0
-  /// Checkpoint functions
-  /// @todo Implement and document
-  virtual bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-    return false;
-  }
-  virtual bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-    return false;
-  }
-  virtual bool saveToCheckpointShared(persist& p, int Index) {
-    return false;
-  }
-  virtual bool loadFromCheckpointShared(persist& p, int Index) {
-    return false;
-  }
-#endif
-
  protected:
   /// LBANN communicator
   lbann_comm *comm;
