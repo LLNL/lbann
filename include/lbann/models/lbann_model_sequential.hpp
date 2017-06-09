@@ -82,14 +82,7 @@ class sequential_model : public model {
     m_layers = layers;
   }
 
-  /// Add layer to sequential model
-  virtual uint add(const std::string layer_name,
-                   data_layout data_dist,
-                   int layer_dim,
-                   activation_type activation=activation_type::RELU,
-                   weight_initialization init=weight_initialization::glorot_uniform,
-                   std::vector<regularizer *> regularizers= {});
-
+ 
   /// Add layer to sequential model
   /** @todo Consider removing this function. The destructor
    *  deallocates all layers, so we might run into problems if a
