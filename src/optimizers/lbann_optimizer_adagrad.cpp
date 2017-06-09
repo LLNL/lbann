@@ -109,51 +109,6 @@ void lbann::adagrad::update(const AbsDistMat *gradient) {
 
 }
 
-#if 0
-bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-  //    writeDist(fd, filename, WB_D_Cache, bytes);
-  return true;
-}
-
-bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-  //    readDist(fd, filename, WB_D_Cache, bytes);
-  return true;
-}
-
-bool saveToCheckpointShared(persist& p, int Index) {
-  char name[512];
-
-  // current learning rate value
-  if (p.m_rank == 0) {
-    sprintf(name, "L%d_learning_rate", Index);
-    p.write_float(persist_type::train, name, lr);
-  }
-
-  // build the name of the checkpoint file
-  sprintf(name, "L%d_adagrad_%dx%d", Index, WB_D_Cache.Height(), WB_D_Cache.Width());
-  p.write_distmat(persist_type::train, name, (DistMat *)&WB_D_Cache);
-
-  return true;
-}
-
-bool loadFromCheckpointShared(persist& p, int Index) {
-  char name[512];
-
-  // current learning rate value
-  if (p.m_rank == 0) {
-    sprintf(name, "L%d_learning_rate", Index);
-    p.read_float(persist_type::train, name, &lr);
-  }
-  MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  // build the name of the checkpoint file
-  sprintf(name, "L%d_adagrad_%dx%d.bin", Index, WB_D_Cache.Height(), WB_D_Cache.Width());
-  p.read_distmat(persist_type::train, name, (DistMat *)&WB_D_Cache);
-
-  return true;
-}
-#endif
-
 lbann::adagrad_factory::adagrad_factory
 (lbann_comm *comm,
  DataType learning_rate,

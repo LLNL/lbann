@@ -26,22 +26,12 @@
 // lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
 ///////////////////////////////////////////////////////////////////////////////
 
-//#include <algorithm>
 #include "lbann/callbacks/lbann_callback_debug.hpp"
-
-void lbann::lbann_callback_debug::on_epoch_begin(model *m) {
-}
-
-void lbann::lbann_callback_debug::on_epoch_end(model *m) {
-}
 
 void lbann::lbann_callback_debug::on_batch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
   }
-}
-
-void lbann::lbann_callback_debug::on_batch_end(model *m) {
 }
 
 void lbann::lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {

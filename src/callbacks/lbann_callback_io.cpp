@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O
+// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/lbann_callback_io.hpp"
@@ -32,34 +32,12 @@
 
 namespace lbann {
 
-lbann_callback_io::lbann_callback_io() {}
+lbann_callback_io::lbann_callback_io() : lbann_callback() {}
 
 lbann_callback_io::lbann_callback_io(
-  std::unordered_set<uint> _layers) : layer_indices(_layers) {
+  std::unordered_set<uint> _layers) : lbann_callback(), layer_indices(_layers) {
   set_name("io");
 }
-
-// void lbann_callback_io::on_train_begin(model* m) {
-//   std::vector<Layer*>& layers = m->get_layers();
-//   for (size_t l = 0; l < layers.size(); ++l) {
-//     Layer* layer = layers[l];
-//     uint idx = layer->get_index();
-//     if (layer_indices.size() == 0 ||
-//         layer_indices.find(idx) != layer_indices.end()) {
-//       if (layer->get_optimizer() != NULL) {
-//         old_lrs[idx] = layer->get_optimizer()->get_io();
-//       }
-//     }
-//   }
-// }
-
-// void lbann_callback_io::on_epoch_begin(model* m) {
-//   std::vector<Layer*>& layers = m->get_layers();
-//   for (size_t l = 0; l < layers.size(); ++l) {
-//     Layer* layer = layers[l];
-//     uint idx = layer->get_index();
-//   }
-// }
 
 void lbann_callback_io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();

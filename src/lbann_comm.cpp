@@ -120,22 +120,6 @@ void lbann::lbann_comm::intermodel_sum_matrix(DistMat& mat) {
   bytes_received += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
 }
 
-/*void lbann::lbann_comm::nb_intermodel_sum_matrix(Mat& mat, mpi::Request& req) {
-  MPI_Iallreduce(MPI_IN_PLACE, mat.Buffer(),
-                 mat.Height() * mat.Width(), DataTypeMPI, MPI_SUM,
-                 intermodel_comm.comm, &req);
-}
-
-void lbann::lbann_comm::nb_intermodel_sum_matrix(DistMat& mat,
-                                                 mpi::Request& req) {
-  // Note: This reaches into the Elemental internals where presently
-  // mpi::Request is a typedef of MPI_Request and the MPI communicator
-  // is mpi::Comm::comm.
-  MPI_Iallreduce(MPI_IN_PLACE, mat.Buffer(),
-                 mat.LocalHeight() * mat.LocalWidth(), DataTypeMPI, MPI_SUM,
-                 intermodel_comm.comm, &req);
-                 }*/
-
 void lbann::lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
   Broadcast(mat, intermodel_comm, root);
 }
@@ -143,18 +127,6 @@ void lbann::lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
 void lbann::lbann_comm::intermodel_broadcast_matrix(DistMat& mat, int root) {
   Broadcast(mat, intermodel_comm, root);
 }
-
-/*void lbann::lbann_comm::nb_intermodel_broadcast_matrix(Mat& mat, int root,
-                                                       mpi::Request& req) {
-  MPI_Ibcast(mat.Buffer(), mat.Height() * mat.Width(), DataTypeMPI, root,
-             intermodel_comm.comm, &req);
-}
-
-void lbann::lbann_comm::nb_intermodel_broadcast_matrix(DistMat& mat, int root,
-                                                       mpi::Request& req) {
-  MPI_Ibcast(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), DataTypeMPI,
-             root, intermodel_comm.comm, &req);
-             }*/
 
 void lbann::lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
@@ -222,16 +194,6 @@ void lbann::lbann_comm::nb_recv(Mat& mat, mpi::Request<DataType>& req) {
 
 void lbann::lbann_comm::nb_recv(DistMat& mat, mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), req);
-}
-
-void lbann::lbann_comm::broadcast(Mat& mat,
-                                  std::vector<int>& dests, int root) {
-  broadcast(mat.Buffer(), mat.Height() * mat.Width(), dests, root);
-}
-
-void lbann::lbann_comm::broadcast(DistMat& mat,
-                                  std::vector<int>& dests, int root) {
-  broadcast(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), dests, root);
 }
 
 void lbann::lbann_comm::intermodel_allreduce(

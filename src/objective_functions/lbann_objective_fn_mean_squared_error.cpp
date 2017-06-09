@@ -38,10 +38,7 @@ lbann::objective_functions::mean_squared_error::mean_squared_error(lbann_comm *c
   this->type = obj_fn_type::mean_squared_error;
 }
 
-lbann::objective_functions::mean_squared_error::~mean_squared_error() {
-  //m_errors.Empty();
-  //m_errors_v.Empty();
-}
+lbann::objective_functions::mean_squared_error::~mean_squared_error() {}
 
 void lbann::objective_functions::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   Zeros(m_errors, num_neurons, mini_batch_size);

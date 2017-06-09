@@ -201,7 +201,7 @@ static void create_types(const El::DistMatrix<DataType>& M, MPI_Datatype *mattyp
   *viewtype = MPI_DATATYPE_NULL;
 
   // TODO: use TypeMap<>() and templating to figure this out
-  MPI_Datatype type = DataTypeMPI;
+  MPI_Datatype type = El::mpi::TypeMap<DataType>();
 
   // get global width and height of matrix
   Int global_width  = M.Width();
@@ -271,7 +271,7 @@ static void Write_MPI(const El::DistMatrix<DataType>& M, std::string basename = 
   // TODO: error out if format != BINARY
 
   // TODO: use TypeMap<>() and templating to figure this out
-  MPI_Datatype type = DataTypeMPI;
+  MPI_Datatype type = El::mpi::TypeMap<DataType>();
 
   // define our file name
   string filename = basename + "." + FileExtension(BINARY);
@@ -357,7 +357,7 @@ static void Read_MPI(El::DistMatrix<DataType>& M, std::string filename, El::File
   // TODO: error out if format != BINARY
 
   // TODO: use TypeMap<>() and templating to figure this out
-  MPI_Datatype type = DataTypeMPI;
+  MPI_Datatype type = El::mpi::TypeMap<DataType>();
 
   // define our file name
   const char *path = filename.c_str();

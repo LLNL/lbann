@@ -142,51 +142,6 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
 
 }
 
-#if 0
-bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-  //    writeDist(fd, filename, velocity, bytes);
-  return true;
-}
-
-bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
-  //    readDist(fd, filename, velocity, bytes);
-  return true;
-}
-
-bool saveToCheckpointShared(persist& p, int Index) {
-  char name[512];
-
-  // current learning rate value
-  if (p.m_rank == 0) {
-    sprintf(name, "L%d_learning_rate", Index);
-    p.write_float(persist_type::train, name, lr);
-  }
-
-  // build name of the checkpoint file
-  sprintf(name, "L%d_sgd_%lldx%lld", Index, velocity.Height(), velocity.Width());
-  p.write_distmat(persist_type::train, name, (DistMat *)&velocity);
-
-  return true;
-}
-
-bool loadFromCheckpointShared(persist& p, int Index) {
-  char name[512];
-
-  // current learning rate value
-  if (p.m_rank == 0) {
-    sprintf(name, "L%d_learning_rate", Index);
-    p.read_float(persist_type::train, name, &lr);
-  }
-  MPI_Bcast(&lr, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  // build name of the checkpoint file
-  sprintf(name, "L%d_sgd_%lldx%lld.bin", Index, velocity.Height(), velocity.Width());
-  p.read_distmat(persist_type::train, name, (DistMat *)&velocity);
-
-  return true;
-}
-#endif
-
 lbann::sgd_factory::sgd_factory
 (lbann_comm *comm,
  DataType learning_rate,

@@ -36,9 +36,7 @@ lbann::metrics::mean_squared_error::mean_squared_error(data_layout data_dist, lb
   this->type = metric_type::mean_squared_error;
 }
 
-lbann::metrics::mean_squared_error::~mean_squared_error() {
-  //internal_obj_fn.~mean_squared_error();
-}
+lbann::metrics::mean_squared_error::~mean_squared_error() {}
 
 void lbann::metrics::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
@@ -64,7 +62,6 @@ double lbann::metrics::mean_squared_error::report_metric(execution_mode mode) {
   double mse = error_per_epoch / samples_per_epoch;
   string score = std::to_string(mse);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << error_per_epoch << " errors and " << samples_per_epoch << " samples, a mse of " << mse << " and a score of " << score << endl;
   return mse;
 }
 
@@ -76,6 +73,5 @@ double lbann::metrics::mean_squared_error::report_lifetime_metric(execution_mode
   double mse = total_error / total_num_samples;
   string score = std::to_string(mse);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << total_error << " errors and " << total_num_samples << " samples, a mse of " << mse << " and a score of " << score << endl;
   return mse;
 }
