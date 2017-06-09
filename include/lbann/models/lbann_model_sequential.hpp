@@ -140,11 +140,6 @@ class sequential_model : public model {
   /// returns the number of neurons in the most recently added layer, or -1
   /// if there is none
   int num_previous_neurons();
-#if 0
-  /// Prediction step on one mini-batch
-  /** @todo This is old and likely broken */
-  virtual DistMat *predict_mini_batch(DistMat *X);
-#endif
 
  protected:
   /// Mini-batch size (no ckpt, so user can override on restart)

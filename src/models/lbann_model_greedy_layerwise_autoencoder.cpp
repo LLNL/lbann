@@ -189,38 +189,6 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
 
 }
 
-/*void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency)
-{
-  // compute number of layers we need to train
-  size_t num_phases = m_layers.size() - 1;
-  if (m_have_mirror) {
-    // already have a mirror layer loaded, subtract that off
-    num_phases--;
-  }
-
-  // get to training, layer by layer
-  while(m_current_phase < num_phases){
-    // add mirror layer for training
-    // (may already have this after loading checkpoint)
-    if (! m_have_mirror) {
-      insert_mirror(m_current_phase);
-    }
-
-    //debug
-    train_phase(m_current_phase, num_epochs, evaluation_frequency);
-
-    if (comm->am_world_master()) {
-      //end of phase cbs e.g., save a number of image to file
-      do_phase_end_cbs();
-    }
-
-    // drop mirror layer
-    remove_mirror(m_current_phase);
-
-    // move on to the next phase
-    m_current_phase++;
-  }
-}*/
 
 void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();

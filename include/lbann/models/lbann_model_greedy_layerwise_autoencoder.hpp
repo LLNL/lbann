@@ -69,9 +69,6 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Training step on one mini-batch
   bool train_mini_batch();
 
-  /// Training step on one mini-batch
-  //bool train_mini_batch() {return false;}
-
   ///Global evaluation (testing), provide overall cost relative to original input
   void evaluate(execution_mode mode=execution_mode::testing);
   /// Evaluate (validation) per phase
