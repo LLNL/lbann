@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
                    activation_type::ID, weight_initialization::glorot_uniform, {});
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
-    target_layer *target_layer = new target_layer_partitioned_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #else
     target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #endif
