@@ -32,10 +32,10 @@
 namespace lbann {
 class dataset {
  public:
-  dataset(DataReader *data_reader) : data_reader(data_reader), num_samples_processed(0), total_samples(0) {};
+  dataset(generic_data_reader *data_reader) : data_reader(data_reader), num_samples_processed(0), total_samples(0) {};
 
  public:
-  DataReader *data_reader;
+  generic_data_reader *data_reader;
   long num_samples_processed;
   long total_samples;
   long num_iterations_per_epoch;

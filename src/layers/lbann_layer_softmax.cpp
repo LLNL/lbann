@@ -38,11 +38,11 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
                                   const uint index,
                                   const int numPrevNeurons,
                                   const uint numNeurons,
-                                  const uint miniBatchSize,
+                                  const uint minim_batch_size,
                                   const weight_initialization init,
                                   lbann_comm *comm,
                                   optimizer *opt)
-  :  Layer(data_dist, index, comm, opt, miniBatchSize),
+  :  Layer(data_dist, index, comm, opt, minim_batch_size),
      m_weight_initialization(init) {
   m_type = layer_type::softmax;
   Index = index;

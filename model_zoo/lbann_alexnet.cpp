@@ -176,15 +176,15 @@ int main(int argc, char *argv[]) {
 
     parallel_io = 1;
 
-    std::map<execution_mode, DataReader *> data_readers;
+    std::map<execution_mode, generic_data_reader *> data_readers;
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     if (not use_new_reader) {
       if (comm->am_world_master()) {
-        cout << endl << "USING DataReader_ImageNet\n\n";
+        cout << endl << "USING imagenet_reader\n\n";
       }
-      DataReader_ImageNet *imagenet_trainset = new DataReader_ImageNet(trainParams.MBSize, true);
+      imagenet_reader *imagenet_trainset = new imagenet_reader(trainParams.MBSize, true);
       imagenet_trainset->set_firstN(false);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      DataReader_ImageNet *imagenet_validation_set = new DataReader_ImageNet(*imagenet_trainset); // Clone the training set object
+      imagenet_reader *imagenet_validation_set = new imagenet_reader(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      DataReader_ImageNet *imagenet_testset = new DataReader_ImageNet(trainParams.MBSize, true);
+      imagenet_reader *imagenet_testset = new imagenet_reader(trainParams.MBSize, true);
       imagenet_testset->set_firstN(false);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
@@ -241,12 +241,12 @@ int main(int argc, char *argv[]) {
       data_readers[execution_mode::testing] = imagenet_testset;
     } else {
       //===============================================================
-      // DataReader_ImageNetSingle
+      // imagenet_readerSingle
       //===============================================================
       if (comm->am_world_master()) {
-        cout << endl << "USING DataReader_ImageNetSingle\n\n";
+        cout << endl << "USING imagenet_readerSingle\n\n";
       }
-      DataReader_ImageNetSingle *imagenet_trainset = new DataReader_ImageNetSingle(trainParams.MBSize, true);
+      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(trainParams.MBSize, true);
       imagenet_trainset->set_firstN(false);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      DataReader_ImageNetSingle *imagenet_validation_set = new DataReader_ImageNetSingle(*imagenet_trainset); // Clone the training set object
+      imagenet_readerSingle *imagenet_validation_set = new imagenet_readerSingle(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
       ss.clear();
       ss.str("");
       ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
-      DataReader_ImageNetSingle *imagenet_testset = new DataReader_ImageNetSingle(trainParams.MBSize, true);
+      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(trainParams.MBSize, true);
       imagenet_testset->set_firstN(false);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
@@ -783,7 +783,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_ImageNet imagenet_trainset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
+    imagenet_reader imagenet_trainset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
     if (!imagenet_trainset->load(trainParams.DatasetRootDir, g_MNIST_TrainImageFile, g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile)) {
       if (comm->am_world_master()) {
         cout << "ImageNet train data error" << endl;
@@ -794,7 +794,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST imagenet_testset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
+    mnist_reader imagenet_testset(trainParams.MBSize, true, grid.Rank()*trainParams.MBSize, parallel_io*trainParams.MBSize);
     if (!imagenet_testset->load(g_MNIST_Dir, g_MNIST_TestImageFile, g_MNIST_TestLabelFile)) {
       if (comm->am_world_master()) {
         cout << "ImageNet Test data error" << endl;

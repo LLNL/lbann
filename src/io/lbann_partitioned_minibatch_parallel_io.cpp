@@ -31,7 +31,7 @@
 
 using namespace std;
 
-lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers)
+lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
   : comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size), m_data_readers(data_readers) {
   m_root = 0;
   m_num_samples_in_batch = 0;
@@ -177,7 +177,7 @@ int lbann::partitioned_minibatch_parallel_io::get_num_parallel_readers() {
 }
 
 int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
-  DataReader *data_reader;
+  generic_data_reader *data_reader;
   switch(get_execution_mode()) {
   case execution_mode::training:
     data_reader = m_data_readers[execution_mode::training];
@@ -194,8 +194,8 @@ int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
   return data_reader->m_num_iterations_per_epoch;
 }
 
-void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(DataReader *data_reader) {
-  int max_mini_batch_size = data_reader->BatchSize;
+void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
+  int max_mini_batch_size = data_reader->m_batch_size;
   int num_parallel_readers_per_model = max(1, (data_reader->m_batch_stride / comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
 

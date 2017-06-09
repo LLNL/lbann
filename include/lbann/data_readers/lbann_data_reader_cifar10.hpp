@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - DataReader class for CIFAR10 dataset
+// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_CIFAR10_HPP
@@ -34,19 +34,19 @@
 
 
 namespace lbann {
-class DataReader_CIFAR10 : public DataReader {
+class cifar10_reader : public generic_data_reader {
  public:
   /// constructor
-  DataReader_CIFAR10(int batchSize, bool shuffle = true);
+  cifar10_reader(int batchSize, bool shuffle = true);
 
   /// copy constructor
-  DataReader_CIFAR10(const DataReader_CIFAR10& source);
+  cifar10_reader(const cifar10_reader& source);
 
   /// destructor
-  ~DataReader_CIFAR10();
+  ~cifar10_reader();
 
   /// assignment operator
-  DataReader_CIFAR10& operator=(const DataReader_CIFAR10& source);
+  cifar10_reader& operator=(const cifar10_reader& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);

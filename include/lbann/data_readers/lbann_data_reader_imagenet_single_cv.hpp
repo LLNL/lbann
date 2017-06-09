@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNetSingle dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
@@ -34,13 +34,13 @@
 #include "lbann_cv_process.hpp"
 
 namespace lbann {
-class DataReader_ImageNetSingle_cv : public DataReader_ImageNet {
+class imagenet_readerSingle_cv : public imagenet_reader {
  public:
-  DataReader_ImageNetSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  DataReader_ImageNetSingle_cv(const DataReader_ImageNetSingle_cv& source);
-  ~DataReader_ImageNetSingle_cv();
+  imagenet_readerSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_readerSingle_cv(const imagenet_readerSingle_cv& source);
+  ~imagenet_readerSingle_cv();
 
-  DataReader_ImageNetSingle_cv& operator=(const DataReader_ImageNetSingle_cv& source);
+  imagenet_readerSingle_cv& operator=(const imagenet_readerSingle_cv& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
@@ -54,7 +54,7 @@ class DataReader_ImageNetSingle_cv : public DataReader_ImageNet {
   //std::vector<unsigned char> m_pixels;
   std::shared_ptr<cv_process> m_pp;
 
-  void openDataStream();
+  void open_data_stream();
 };
 
 }  // namespace lbann

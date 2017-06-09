@@ -161,7 +161,7 @@ void init_regularizers(
 
 void add_layers(
   lbann::sequential_model *model,
-  std::map<execution_mode, DataReader *>& data_readers,
+  std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p) {
   stringstream err;
@@ -374,7 +374,7 @@ void add_layers(
 void init_callbacks(
   lbann_comm *comm,
   lbann::sequential_model *model,
-  std::map<execution_mode, lbann::DataReader *>& data_readers,
+  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p) {
   stringstream err;
   bool master = comm->am_world_master();
@@ -392,7 +392,7 @@ void init_callbacks(
       const lbann_data::CallbackSaveImages& c = callback.save_images();
       string image_dir = c.image_dir();
       string extension = c.extension();
-      DataReader *reader = data_readers[execution_mode::training];
+      generic_data_reader *reader = data_readers[execution_mode::training];
       lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
     }
 
@@ -569,10 +569,10 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   return factory;
 }
 
-void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, DataReader *>& data_readers, int mini_batch_size) {
+void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, int mini_batch_size) {
   stringstream err;
 
-  const lbann_data::DataReader& d_reader = p.data_reader();
+  const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
   for (int j=0; j<size; j++) {
@@ -583,32 +583,32 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     bool shuffle = readme.shuffle();
 
-    DataReader *reader = 0;
-    DataReader *reader_validation = 0;
+    generic_data_reader *reader = 0;
+    generic_data_reader *reader_validation = 0;
 
     if (name == "mnist") {
-      reader = new DataReader_MNIST(mini_batch_size, shuffle);
+      reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
-      reader = new DataReader_ImageNet(mini_batch_size, shuffle);
+      reader = new imagenet_reader(mini_batch_size, shuffle);
       /*
       } else if (name == "imagenet_cv") {
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
       pp->set_normalizer(std::move(normalizer));
       pp->set_custom_transform2(std::move(colorizer));
-      reader = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
+      reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
       } else if (name == "imagenet_single") {
-      reader = new DataReader_ImageNet_single(mini_batch_size, shuffle);
+      reader = new imagenet_reader_single(mini_batch_size, shuffle);
       } else if (name == "imagenet_single_cv") {
-      reader = new DataReader_ImageNet_single_cv(mini_batch_size, shuffle);
+      reader = new imagenet_reader_single_cv(mini_batch_size, shuffle);
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "nci_regression") {
       reader = new data_reader_nci_regression(mini_batch_size, shuffle);
     } else if (name == "cnpy") {
-      reader = new DataReader_cnpy(mini_batch_size, shuffle);
+      reader = new cnpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
-      reader = new DataReader_CIFAR10(mini_batch_size, shuffle);
+      reader = new cifar10_reader(mini_batch_size, shuffle);
       /*
       } else if (name == "synthetic") {
       reader = new data_reader_synthetic(mini_batch_size, shuffle);
@@ -679,11 +679,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     if (readme.role() == "train") {
       if (name == "mnist") {
-        reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
-        (*(DataReader_MNIST *)reader_validation) = (*(DataReader_MNIST *)reader);
+        reader_validation = new mnist_reader(mini_batch_size, shuffle);
+        (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new DataReader_MNIST(mini_batch_size, shuffle);
-        (*(DataReader_ImageNet *)reader_validation) = (*(DataReader_ImageNet *)reader);
+        reader_validation = new mnist_reader(mini_batch_size, shuffle);
+        (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -691,10 +691,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new data_reader_nci_regression(mini_batch_size, shuffle);
         (*(data_reader_nci_regression *)reader_validation) = (*(data_reader_nci_regression *)reader);
       } else if (name == "cnpy") {
-        reader_validation = new DataReader_cnpy(mini_batch_size, shuffle);
-        (*(DataReader_cnpy *)reader_validation) = (*(DataReader_cnpy *)reader);
+        reader_validation = new cnpy_reader(mini_batch_size, shuffle);
+        (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
       } else if (name == "cifar10") {
-        reader_validation = new DataReader_CIFAR10(mini_batch_size, shuffle);
+        reader_validation = new cifar10_reader(mini_batch_size, shuffle);
         /*
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
@@ -705,12 +705,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
       pp->set_normalizer(std::move(normalizer));
       pp->set_custom_transform2(std::move(colorizer));
-      reader = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
-      reader_validation = new DataReader_ImageNet_cv(mini_batch_size, pp, shuffle);
+      reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
+      reader_validation = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
       } else if (name == "imagenet_single") {
-      reader_validation = new DataReader_ImageNet_single(mini_batch_size, shuffle);
+      reader_validation = new imagenet_reader_single(mini_batch_size, shuffle);
       } else if (name == "imagenet_single_cv") {
-      reader_validation = new DataReader_ImageNet_single_cv(mini_batch_size, shuffle);
+      reader_validation = new imagenet_reader_single_cv(mini_batch_size, shuffle);
       */
 
       reader_validation->set_role("validate");

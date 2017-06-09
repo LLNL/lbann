@@ -34,7 +34,7 @@
 using namespace std;
 using namespace El;
 
-lbann::input_layer::input_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs)
+lbann::input_layer::input_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs)
   : io_layer(data_dist, comm, mini_batch_size, data_readers) {
   NumNeurons = io_layer::get_linearized_data_size();
 }

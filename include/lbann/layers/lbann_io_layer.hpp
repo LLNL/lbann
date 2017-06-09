@@ -38,14 +38,14 @@
 namespace lbann {
 class io_layer : public Layer {
  public:
-  io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs= {}, bool data_sets_span_models=true, bool for_regression=false);
-  //    io_layer(lbann_comm* comm, uint mini_batch_size, DataReader* training_data_reader);
+  io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {}, bool data_sets_span_models=true, bool for_regression=false);
+  //    io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader* training_data_reader);
   void setup_data_readers_for_training(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
   void setup_data_readers_for_evaluation(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
-  DataReader *select_data_reader();
-  DataReader *set_training_data_reader(DataReader *data_reader);
-  DataReader *set_validation_data_reader(DataReader *data_reader);
-  DataReader *set_testing_data_reader(DataReader *data_reader);
+  generic_data_reader *select_data_reader();
+  generic_data_reader *set_training_data_reader(generic_data_reader *data_reader);
+  generic_data_reader *set_validation_data_reader(generic_data_reader *data_reader);
+  generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader);
   long update_num_samples_processed(long num_samples);
 
   long get_num_samples_trained() {

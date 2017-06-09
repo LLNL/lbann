@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNet dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
@@ -34,11 +34,11 @@
 #include "lbann_cv_process.hpp"
 
 namespace lbann {
-class DataReader_ImageNet_cv : public DataReader {
+class imagenet_reader_cv : public generic_data_reader {
  public:
-  DataReader_ImageNet_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  DataReader_ImageNet_cv(const DataReader_ImageNet_cv& source);
-  ~DataReader_ImageNet_cv();
+  imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_cv(const imagenet_reader_cv& source);
+  ~imagenet_reader_cv();
 
   virtual int fetch_data(Mat& X);
   virtual int fetch_label(Mat& Y);
@@ -67,7 +67,7 @@ class DataReader_ImageNet_cv : public DataReader {
     return m_num_labels;
   }
 
-  DataReader_ImageNet_cv& operator=(const DataReader_ImageNet_cv& source);
+  imagenet_reader_cv& operator=(const imagenet_reader_cv& source);
 
   void save_image(Mat& pixels, const std::string filename, bool scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
@@ -76,7 +76,7 @@ class DataReader_ImageNet_cv : public DataReader {
 
  protected:
   std::string m_image_dir; // where images are stored
-  std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
+  std::vector<std::pair<std::string, int> > image_list; // list of image files and labels
   int m_image_width; // image width
   int m_image_height; // image height
   int m_image_num_channels; // number of image channels

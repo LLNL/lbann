@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNetSingle dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
@@ -33,13 +33,13 @@
 #include "lbann_image_preprocessor.hpp"
 
 namespace lbann {
-class DataReader_ImageNetSingle : public DataReader_ImageNet {
+class imagenet_readerSingle : public imagenet_reader {
  public:
-  DataReader_ImageNetSingle(int batchSize, bool shuffle = true);
-  DataReader_ImageNetSingle(const DataReader_ImageNetSingle& source);
-  ~DataReader_ImageNetSingle();
+  imagenet_readerSingle(int batchSize, bool shuffle = true);
+  imagenet_readerSingle(const imagenet_readerSingle& source);
+  ~imagenet_readerSingle();
 
-  DataReader_ImageNetSingle& operator=(const DataReader_ImageNetSingle& source);
+  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
@@ -52,7 +52,7 @@ class DataReader_ImageNetSingle : public DataReader_ImageNet {
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
   std::vector<unsigned char> m_pixels;
 
-  void openDataStream();
+  void open_data_stream();
 };
 
 }  // namespace lbann

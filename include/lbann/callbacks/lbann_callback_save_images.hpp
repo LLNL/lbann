@@ -44,7 +44,7 @@ class lbann_callback_save_images : public lbann_callback {
    * @param image_dir directory to save image
    * @param image extension e.g., jpg, png, pgm......
    */
-  lbann_callback_save_images(DataReader *reader, std::string image_dir,
+  lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
                              std::string extension="jpg") :
     lbann_callback(), m_image_dir(image_dir), m_extension(extension),
     m_reader(reader) {
@@ -55,7 +55,7 @@ class lbann_callback_save_images : public lbann_callback {
  private:
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc
-  DataReader *m_reader;
+  generic_data_reader *m_reader;
   void save_image(model *m, ElMat *input, ElMat *output,uint index);
 };
 

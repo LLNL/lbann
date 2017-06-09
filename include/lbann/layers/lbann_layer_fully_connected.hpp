@@ -43,7 +43,7 @@ class FullyConnectedLayer : public Layer {
                       uint index,
                       int numPrevNeurons,
                       uint numNeurons,
-                      uint miniBatchSize,
+                      uint minim_batch_size,
                       activation_type activationType,
                       weight_initialization init,
                       lbann_comm *comm,
