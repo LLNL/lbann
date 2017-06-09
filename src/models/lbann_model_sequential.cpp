@@ -274,8 +274,11 @@ uint lbann::sequential_model::add(const std::string layer_name,
   }
 
   if(layer_name.compare("FullyConnected") == 0) {
-    Layer *new_layer
-      = layer_fac->create_layer<FullyConnectedLayer>("FullyConnected",
+    Layer *new_layer;
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      new_layer
+      = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",
           data_dist,
           layer_index,
           prev_layer_dim,
@@ -285,10 +288,30 @@ uint lbann::sequential_model::add(const std::string layer_name,
           comm,
           opt,
           regularizers);
+      break;
+    case data_layout::DATA_PARALLEL:
+      new_layer
+      = layer_fac->create_layer<FullyConnectedLayer<data_layout::DATA_PARALLEL>>("FullyConnected",
+          data_dist,
+          layer_index,
+          prev_layer_dim,
+          layer_dim,
+          m_mini_batch_size,
+          activation, init,
+          comm,
+          opt,
+          regularizers);
+      break;
+    default:
+      break;
+    }
     m_layers.push_back(new_layer);
   } else if(layer_name.compare("Softmax") == 0) {
-    Layer *new_layer
-      = layer_fac->create_layer<SoftmaxLayer>("Softmax",
+    Layer *new_layer;
+    switch(data_dist) {
+    case data_layout::MODEL_PARALLEL:
+      new_layer
+      = layer_fac->create_layer<SoftmaxLayer<data_layout::MODEL_PARALLEL>>("Softmax",
           data_dist,
           layer_index,
           prev_layer_dim,
@@ -297,6 +320,20 @@ uint lbann::sequential_model::add(const std::string layer_name,
           init,
           comm,
           opt);
+      break;
+    case data_layout::DATA_PARALLEL:
+      new_layer
+      = layer_fac->create_layer<SoftmaxLayer<data_layout::DATA_PARALLEL>>("Softmax",
+          data_dist,
+          layer_index,
+          prev_layer_dim,
+          layer_dim,
+          m_mini_batch_size,
+          init,
+          comm,
+          opt);
+      break;
+    }
     m_layers.push_back(new_layer);
   } else {
     std::cout << "Unknown layer type " << layer_name << std::endl;
