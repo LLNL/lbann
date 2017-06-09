@@ -393,7 +393,7 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
 
             if(bad_E1) {
               if(Acts_E1.Grid().Rank() == 0) {
-                printf("BAD ENTRY Acts_E1 %d x %d\n", row, col);
+                printf("BAD ENTRY Acts_E1 %lld x %lld\n", row, col);
               }
               cout.precision(20);
               Print(Acts_E1);
@@ -404,7 +404,7 @@ DataType lbann::FullyConnectedLayer::checkGradient(Layer& PrevLayer, const DataT
             }
             if(bad_E2) {
               if(Acts_E2.Grid().Rank() == 0) {
-                printf("BAD ENTRY Acts_E2 %d x %d\n", row, col);
+                printf("BAD ENTRY Acts_E2 %lld x %lld\n", row, col);
               }
               Print(Acts_E2);
             }
