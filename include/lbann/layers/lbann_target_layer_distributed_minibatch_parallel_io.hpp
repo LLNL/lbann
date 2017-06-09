@@ -45,7 +45,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   bool update_data_reader();
   execution_mode get_execution_mode();
 
- public:
+ protected:
   Mat Y_local;
   CircMat Ys;
 };

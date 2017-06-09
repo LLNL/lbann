@@ -55,7 +55,7 @@ class target_layer : public io_layer {
   bool saveToCheckpointShared(persist& p);
   bool loadFromCheckpointShared(persist& p);
 
- public:
+ protected:
   bool m_shared_data_reader;
 };
 }

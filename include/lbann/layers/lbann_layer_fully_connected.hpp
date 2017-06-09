@@ -58,11 +58,12 @@ class FullyConnectedLayer : public Layer {
   ElMat *m_bias_weights_repl;
   DataType m_bias_term;
 
- public:
+ protected:
   //Probability of dropping neuron/input used in dropout_layer
   //Range 0 to 1; default is -1 => no dropout
   DataType  WBL2NormSum;
 
+ public:
   ////////////////////////////////////////////////////////////////////////////////
   // FullyConnectedLayer : single network layer class
   ////////////////////////////////////////////////////////////////////////////////

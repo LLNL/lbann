@@ -39,11 +39,10 @@ class target_layer_distributed_minibatch : public target_layer {
   void bp_linearity();
   bool update();
 
- public:
+ protected:
   int m_root; /* Which rank is the root of the CircMat */
   Mat Y_local;
   CircMat Ys;
- protected:
 };
 }
 

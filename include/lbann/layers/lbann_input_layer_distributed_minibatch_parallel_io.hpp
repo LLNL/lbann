@@ -45,9 +45,10 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   Mat *get_local_mat();
   CircMat *get_dist_mat();
 
- public:
+ protected:
   Mat X_local; /** Local matrix that holds data from data reader */
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
+
  protected:
   /** Handle forward propagation (arguments are unused). */
   void fp_linearity();

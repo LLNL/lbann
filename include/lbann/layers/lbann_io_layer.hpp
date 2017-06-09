@@ -77,7 +77,7 @@ class io_layer : public Layer {
   bool saveToCheckpointShared(persist& p);
   bool loadFromCheckpointShared(persist& p);
 
- public:
+ protected:
   dataset m_training_dataset;
   dataset m_testing_dataset;
   dataset m_validation_dataset;
@@ -85,6 +85,7 @@ class io_layer : public Layer {
 
  private:
   const bool m_for_regression;
+
  public:
   bool is_for_regression(void) const {
     return m_for_regression;

@@ -324,11 +324,18 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
+ protected:
+  int m_current_pos;
+
+  std::vector<int> m_shuffled_indices;
+  /// Record of the indicies that are not being used for training
+  std::vector<int> m_unused_indices;
+
  public: //protected:
   int m_batch_size;
-  int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
   int m_batch_stride;
+
   /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;
@@ -341,7 +348,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_sample_stride;
 
   /// These fields are used to calculate when to use the last mini-batch
-  int m_use_alt_last_mini_batch_size;
+  int m_use_alt_last_mini_batch_size; // this can be a protected member
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
@@ -350,11 +357,9 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// @todo BVE FIXME merge this with alternate approach
   int m_num_iterations_per_epoch; /// How many iterations all readers will execute
+  int m_rank;
 
-  std::vector<int> m_shuffled_indices;
-  /// Record of the indicies that are not being used for training
-  std::vector<int> m_unused_indices;
-
+ protected:
   std::string m_file_dir;
   std::string m_data_fn;
   std::string m_label_fn;
@@ -366,7 +371,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_role;
 
   bool m_master;
-  int m_rank;
 };
 
 }  // namespace lbann

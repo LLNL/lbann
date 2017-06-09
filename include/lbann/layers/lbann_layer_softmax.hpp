@@ -40,7 +40,7 @@
 namespace lbann {
 template <data_layout DATA_DIST>
 class SoftmaxLayer: public Layer {
- public:
+ protected:
   DataType   WBL2NormSum;
 
  private:
