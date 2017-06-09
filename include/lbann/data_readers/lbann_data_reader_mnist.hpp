@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - DataReader class for MNIST dataset
+// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_MNIST_HPP
@@ -33,25 +33,25 @@
 #include "lbann_image_preprocessor.hpp"
 
 namespace lbann {
-class DataReader_MNIST : public DataReader {
+class mnist_reader : public generic_data_reader {
  public:
-  DataReader_MNIST(int batchSize, bool shuffle);
-  DataReader_MNIST(int batchSize);
-  ~DataReader_MNIST();
+  mnist_reader(int batchSize, bool shuffle);
+  mnist_reader(int batchSize);
+  ~mnist_reader();
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int getNumLabels() {
+  int get_num_labels() {
     return m_num_labels;
   }
 
   // MNIST-specific functions
   void load();
 
-  int getImageWidth() {
+  int get_image_width() {
     return m_image_width;
   }
-  int getImageHeight() {
+  int get_image_height() {
     return m_image_height;
   }
   int get_linearized_data_size() {
@@ -63,7 +63,7 @@ class DataReader_MNIST : public DataReader {
 
   //don't need this, since default ctor is adequate; eliminating
   //explict implementation reduces possible bugs
-  //DataReader_MNIST& operator=(const DataReader_MNIST& source);
+  //mnist_reader& operator=(const mnist_reader& source);
 
   void save_image(Mat& pixels, const std::string filename, bool scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width, 1,

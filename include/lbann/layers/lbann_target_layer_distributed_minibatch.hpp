@@ -32,7 +32,7 @@
 namespace lbann {
 class target_layer_distributed_minibatch : public target_layer {
  public:
-  target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression=false);
+  target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false);
 
   void setup(int num_prev_neurons);
   void fp_linearity();

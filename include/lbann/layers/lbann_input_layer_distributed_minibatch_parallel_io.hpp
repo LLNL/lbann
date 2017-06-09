@@ -33,7 +33,7 @@
 namespace lbann {
 class input_layer_distributed_minibatch_parallel_io : public input_layer, public distributed_minibatch_parallel_io {
  public:
-  input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs= {});
+  input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
 
   void setup(int num_prev_neurons);
   bool update();

@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_trainset(trainParams.MBSize);
+    mnist_reader mnist_trainset(trainParams.MBSize);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
+    mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
     mnist_validation_set.use_unused_index_set();
 
     if (comm->am_world_master()) {
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_testset(trainParams.MBSize);
+    mnist_reader mnist_testset(trainParams.MBSize);
     mnist_testset.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
     metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
     dnn.add_metric(&acc);
-    std::map<execution_mode, DataReader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
@@ -181,15 +181,15 @@ int main(int argc, char *argv[]) {
     dnn.add_callback(&timer_cb);
 
     // Duplicate model.
-    DataReader_MNIST mnist_trainset2(trainParams.MBSize);
+    mnist_reader mnist_trainset2(trainParams.MBSize);
     mnist_trainset2.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset2.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset2.set_label_filename(g_MNIST_TrainLabelFile);
     mnist_trainset2.set_validation_percent(trainParams.PercentageValidationSamples);
     mnist_trainset2.load();
-    DataReader_MNIST mnist_validation_set2(mnist_trainset2); // Clone the training set object
+    mnist_reader mnist_validation_set2(mnist_trainset2); // Clone the training set object
     mnist_validation_set2.use_unused_index_set();
-    DataReader_MNIST mnist_testset2(trainParams.MBSize);
+    mnist_reader mnist_testset2(trainParams.MBSize);
     mnist_testset2.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset2.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset2.set_label_filename(g_MNIST_TestLabelFile);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
     deep_neural_network dnn2(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac2, optimizer_fac2);
     metrics::categorical_accuracy acc2(data_layout::MODEL_PARALLEL, comm);
     dnn2.add_metric(&acc2);
-    std::map<execution_mode, DataReader *> data_readers2 = {
+    std::map<execution_mode, generic_data_reader *> data_readers2 = {
       std::make_pair(execution_mode::training,&mnist_trainset2),
       std::make_pair(execution_mode::validation, &mnist_validation_set2),
       std::make_pair(execution_mode::testing, &mnist_testset2)

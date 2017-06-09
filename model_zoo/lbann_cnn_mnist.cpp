@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_trainset(trainParams.MBSize, true);
+    mnist_reader mnist_trainset(trainParams.MBSize, true);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_validation_set(mnist_trainset); // Clone the training set object
+    mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
     mnist_validation_set.use_unused_index_set();
 
     if (comm->am_world_master()) {
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    DataReader_MNIST mnist_testset(trainParams.MBSize, true);
+    mnist_reader mnist_testset(trainParams.MBSize, true);
     mnist_testset.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    std::map<execution_mode, DataReader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };

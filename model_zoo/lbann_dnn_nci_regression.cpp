@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     metrics::mean_squared_error mse(data_layout::MODEL_PARALLEL, comm);
     dnn.add_metric(&mse);
 
-    std::map<execution_mode, DataReader *> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                            std::make_pair(execution_mode::validation, &nci_validation_set),
                                                            std::make_pair(execution_mode::testing, &nci_testset)
                                                           };

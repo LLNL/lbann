@@ -41,7 +41,7 @@ namespace lbann {
 template <data_layout DATA_DIST>
 class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch_parallel_io {
  public:
-  target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression=false)
+  target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers) {
     m_type = layer_type::target_partitioned_minibatch_parallel_io;
@@ -129,7 +129,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
 
   int fetch_from_data_reader(Mat& M_local) {
-    DataReader *data_reader = target_layer::select_data_reader();
+    generic_data_reader *data_reader = target_layer::select_data_reader();
     if (is_for_regression()) {
       return data_reader->fetch_response(M_local);
     } else {
@@ -142,7 +142,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
 
   bool update_data_reader() {
-    DataReader *data_reader = target_layer::select_data_reader();
+    generic_data_reader *data_reader = target_layer::select_data_reader();
     if(m_shared_data_reader) {
       /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
       /// or will be done on the next update of the input layer (which includes adding the stride).

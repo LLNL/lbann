@@ -35,7 +35,7 @@ using namespace std;
 using namespace El;
 
 
-lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs)
+lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs)
   : input_layer(data_dist, comm, mini_batch_size, data_readers, regs), Xs(comm->get_model_grid()) {
 
   m_type = layer_type::input_distributed_minibatch;
@@ -61,7 +61,7 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
 }
 
 void lbann::input_layer_distributed_minibatch::fp_linearity() {
-  DataReader *data_reader = input_layer::select_data_reader();
+  generic_data_reader *data_reader = input_layer::select_data_reader();
   int num_samples_in_batch = 0;
 
   if (comm->get_rank_in_model() == m_root) {
@@ -92,6 +92,6 @@ void lbann::input_layer_distributed_minibatch::fp_linearity() {
  * Once a mini-batch is processed, resuffle the data for the next batch if necessary
  */
 bool lbann::input_layer_distributed_minibatch::update() {
-  DataReader *data_reader = input_layer::select_data_reader();
+  generic_data_reader *data_reader = input_layer::select_data_reader();
   return !data_reader->update();
 }

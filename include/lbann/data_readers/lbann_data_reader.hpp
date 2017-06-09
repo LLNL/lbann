@@ -53,10 +53,10 @@
  */
 namespace lbann {
 
-class DataReader : public lbann_image_preprocessor {
+class generic_data_reader : public lbann_image_preprocessor {
  public:
-  DataReader(int batchSize, bool shuffle = true) :
-    BatchSize(batchSize), CurrentPos(0),
+  generic_data_reader(int batchSize, bool shuffle = true) :
+    m_batch_size(batchSize), m_current_pos(0),
     m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
@@ -72,7 +72,7 @@ class DataReader : public lbann_image_preprocessor {
   //default does everything we need; eliminating our explicit
   //code helps minimize sources of error -dHysom
 
-  virtual ~DataReader() {}
+  virtual ~generic_data_reader() {}
 
   /** @name Methods related to construction and loading
    *  These methods are used in drivers (front ends) to construct data readers,
@@ -194,7 +194,7 @@ class DataReader : public lbann_image_preprocessor {
   }
 
   /**
-   * Pure abstract virtual function; all DataReaders *must* implement.
+   * Pure abstract virtual function; all generic_data_readers *must* implement.
    */
   virtual void load() = 0;
 
@@ -239,7 +239,7 @@ class DataReader : public lbann_image_preprocessor {
    */
   virtual bool update();
 
-  virtual int getNumLabels() {
+  virtual int get_num_labels() {
     return 0;
   }
   virtual int getNumResponses() {
@@ -256,21 +256,21 @@ class DataReader : public lbann_image_preprocessor {
   }
 
   bool position_valid() {
-    return (CurrentPos < (int)ShuffledIndices.size());
+    return (m_current_pos < (int)m_shuffled_indices.size());
   }
   bool at_new_epoch() {
     return (m_current_mini_batch_idx == 0);
   }
-  int getBatchSize();
+  int getm_batch_size();
   int getPosition() {
-    return CurrentPos;
+    return m_current_pos;
   }
   int get_next_position();
   int *getIndices() {
-    return &ShuffledIndices[0];
+    return &m_shuffled_indices[0];
   }
   int getNumData() {
-    return (int)ShuffledIndices.size();
+    return (int)m_shuffled_indices.size();
   }
   int get_num_unused_data() {
     return (int)m_unused_indices.size();
@@ -312,7 +312,7 @@ class DataReader : public lbann_image_preprocessor {
    */
   void use_unused_index_set();
 
-  DataReader& operator=(const DataReader& source);
+  generic_data_reader& operator=(const generic_data_reader& source);
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool saveToCheckpointShared(persist& p, const char *name);
@@ -325,8 +325,8 @@ class DataReader : public lbann_image_preprocessor {
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
  public: //protected:
-  int BatchSize;
-  int CurrentPos;
+  int m_batch_size;
+  int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
   int m_batch_stride;
   /// If there are multiple instances of the reader,
@@ -351,7 +351,7 @@ class DataReader : public lbann_image_preprocessor {
   /// @todo BVE FIXME merge this with alternate approach
   int m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
-  std::vector<int> ShuffledIndices;
+  std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
   std::vector<int> m_unused_indices;
 

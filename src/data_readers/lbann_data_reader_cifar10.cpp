@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - DataReader class for CIFAR10 dataset
+// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
@@ -33,26 +33,26 @@ using namespace El;
 using namespace lbann;
 
 
-DataReader_CIFAR10::DataReader_CIFAR10(int batchSize, bool shuffle)
+cifar10_reader::cifar10_reader(int batchSize, bool shuffle)
   : m_image_width(32), m_image_height(32), m_image_num_channels(3),
-    DataReader(batchSize, shuffle) {
+    generic_data_reader(batchSize, shuffle) {
 }
 
-DataReader_CIFAR10::DataReader_CIFAR10(const DataReader_CIFAR10& source)
-  : DataReader((const DataReader&) source),
+cifar10_reader::cifar10_reader(const cifar10_reader& source)
+  : generic_data_reader((const generic_data_reader&) source),
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
     m_data(source.m_data) {
 }
 
-DataReader_CIFAR10& DataReader_CIFAR10::operator=(const DataReader_CIFAR10& source) {
+cifar10_reader& cifar10_reader::operator=(const cifar10_reader& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
   }
 
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
   m_image_width = source.m_image_width;
   m_image_height = source.m_image_height;
   m_image_num_channels = source.m_image_num_channels;
@@ -61,9 +61,9 @@ DataReader_CIFAR10& DataReader_CIFAR10::operator=(const DataReader_CIFAR10& sour
   return (*this);
 }
 
-DataReader_CIFAR10::~DataReader_CIFAR10() { }
+cifar10_reader::~cifar10_reader() { }
 
-void DataReader_CIFAR10::load() {
+void cifar10_reader::load() {
   stringstream err;
 
   //open data file
@@ -106,28 +106,28 @@ void DataReader_CIFAR10::load() {
   }
   in.close();
 
-  ShuffledIndices.resize(m_data.size());
+  m_shuffled_indices.resize(m_data.size());
   for (size_t n = 0; n < m_data.size(); n++) {
-    ShuffledIndices[n] = n;
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
 }
 
 
-int lbann::DataReader_CIFAR10::fetch_data(Mat& X) {
+int lbann::cifar10_reader::fetch_data(Mat& X) {
   stringstream err;
 
-  if(!DataReader::position_valid()) {
-    err << __FILE__ << " " << __LINE__ << " :: lbann::DataReader_ImageNet::fetch_data() - !DataReader::position_valid()";
+  if(!generic_data_reader::position_valid()) {
+    err << __FILE__ << " " << __LINE__ << " :: lbann::imagenet_reader::fetch_data() - !generic_data_reader::position_valid()";
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getBatchSize();
-  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
-  for (int n = CurrentPos; n < end_pos; ++n) {
-    int k = n - CurrentPos;
-    int idx = ShuffledIndices[n];
+  int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
+  for (int n = m_current_pos; n < end_pos; ++n) {
+    int k = n - m_current_pos;
+    int idx = m_shuffled_indices[n];
     for (size_t p = 1; p<m_data[idx].size(); p++) {
       X.Set(p-1, k, m_data[idx][p]);
     }
@@ -137,26 +137,26 @@ int lbann::DataReader_CIFAR10::fetch_data(Mat& X) {
     normalize(pixel_col, m_image_num_channels);
   }
 
-  return end_pos - CurrentPos;
+  return end_pos - m_current_pos;
 }
 
-int lbann::DataReader_CIFAR10::fetch_label(Mat& Y) {
+int lbann::cifar10_reader::fetch_label(Mat& Y) {
   if(!position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size()) {
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; n++) {
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
     }
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
     int label = (int)m_data[index][0];
     Y.Set(label, k, 1);
   }
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }

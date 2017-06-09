@@ -410,6 +410,8 @@ void lbann::lbann_comm::pe_ring_allreduce(
       MPI_Waitany(reduces_this_step, raw_reqs.data(), &completed_idx,
                   MPI_STATUS_IGNORE);
       double recv_tot = get_time() - recv_start;
+      ar_recv_time += recv_tot;
+      ar_rs_recv_time += recv_tot;
       double recv_apply_trans_start = get_time();
       int recv_size = recv_apply_transform(
                         recv_buffers[completed_idx], accum_view, local_recvs[completed_idx]);

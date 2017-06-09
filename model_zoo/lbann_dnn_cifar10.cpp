@@ -123,9 +123,9 @@ int main(int argc, char *argv[]) {
     // load training data
     ///////////////////////////////////////////////////////////////////
     if (comm->am_world_master()) {
-      cout << endl << "USING DataReader_CIFAR10\n\n";
+      cout << endl << "USING cifar10_reader\n\n";
     }
-    DataReader_CIFAR10 cifar10_trainset(trainParams.MBSize, true);
+    cifar10_reader cifar10_trainset(trainParams.MBSize, true);
     cifar10_trainset.set_firstN(false);
     cifar10_trainset.set_role("train");
     cifar10_trainset.set_master(comm->am_world_master());
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_CIFAR10 cifar10_validation_set(cifar10_trainset); // Clone the training set object
+    cifar10_reader cifar10_validation_set(cifar10_trainset); // Clone the training set object
     cifar10_validation_set.set_role("validation");
     cifar10_validation_set.use_unused_index_set();
 
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_CIFAR10 cifar10_testset(trainParams.MBSize, true);
+    cifar10_reader cifar10_testset(trainParams.MBSize, true);
     cifar10_testset.set_firstN(false);
     cifar10_testset.set_role("test");
     cifar10_testset.set_master(comm->am_world_master());
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     layer_factory *lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
-    std::map<execution_mode, DataReader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
                                                            std::make_pair(execution_mode::validation, &cifar10_validation_set),
                                                            std::make_pair(execution_mode::testing, &cifar10_testset)
                                                           };

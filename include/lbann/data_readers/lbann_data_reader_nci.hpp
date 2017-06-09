@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci .hpp .cpp - DataReader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_NCI_HPP
@@ -35,7 +35,7 @@
 
 namespace lbann {
 //@todo rewrite data_reader class to follow coding convention
-class data_reader_nci : public DataReader {
+class data_reader_nci : public generic_data_reader {
  public:
   data_reader_nci(int batchSize, bool shuffle);
   data_reader_nci(int batchSize);
@@ -45,7 +45,7 @@ class data_reader_nci : public DataReader {
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int getNumLabels() {
+  int get_num_labels() {
     return m_num_labels;  //@todo; check if used
   }
 

@@ -36,7 +36,7 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression)
+lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
     distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Ys(comm->get_model_grid()) {
@@ -133,7 +133,7 @@ bool lbann::target_layer_distributed_minibatch_parallel_io::update() {
 }
 
 int lbann::target_layer_distributed_minibatch_parallel_io::fetch_from_data_reader(Mat& M_local) {
-  DataReader *data_reader = target_layer::select_data_reader();
+  generic_data_reader *data_reader = target_layer::select_data_reader();
   if (is_for_regression()) {
     return data_reader->fetch_response(M_local);
   } else {
@@ -146,7 +146,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::preprocess_data_samp
 }
 
 bool lbann::target_layer_distributed_minibatch_parallel_io::update_data_reader() {
-  DataReader *data_reader = target_layer::select_data_reader();
+  generic_data_reader *data_reader = target_layer::select_data_reader();
   if(m_shared_data_reader) {
     /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
     /// or will be done on the next update of the input layer (which includes adding the stride).

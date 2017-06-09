@@ -34,7 +34,7 @@
 using namespace std;
 using namespace El;
 
-lbann::io_layer::io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs, bool data_sets_span_models, bool for_regression)
+lbann::io_layer::io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs, bool data_sets_span_models, bool for_regression)
   : Layer(data_dist, 0, comm, NULL, mini_batch_size, activation_type::ID, regs),
     m_training_dataset(data_readers[execution_mode::training]),
     m_testing_dataset(data_readers[execution_mode::testing]),
@@ -54,13 +54,13 @@ lbann::io_layer::io_layer(data_layout data_dist, lbann_comm *comm, uint mini_bat
   }
 }
 
-// lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, DataReader *training_data_reader)
+// lbann::io_layer::io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader *training_data_reader)
 //   : io_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}
 
-lbann::DataReader *lbann::io_layer::set_training_data_reader(DataReader *data_reader) {
+lbann::generic_data_reader *lbann::io_layer::set_training_data_reader(generic_data_reader *data_reader) {
   /// @todo put in a check to make sure that this is a data reader
   /// that matches what was already there
-  DataReader *old_data_reader = m_training_dataset.data_reader;
+  generic_data_reader *old_data_reader = m_training_dataset.data_reader;
   m_training_dataset.data_reader = data_reader;
   m_training_dataset.num_samples_processed = 0;
   m_training_dataset.total_samples = data_reader->getNumData();
@@ -68,10 +68,10 @@ lbann::DataReader *lbann::io_layer::set_training_data_reader(DataReader *data_re
   return old_data_reader;
 }
 
-lbann::DataReader *lbann::io_layer::set_validation_data_reader(DataReader *data_reader) {
+lbann::generic_data_reader *lbann::io_layer::set_validation_data_reader(generic_data_reader *data_reader) {
   /// @todo put in a check to make sure that this is a data reader
   /// that matches what was already there
-  DataReader *old_data_reader = m_validation_dataset.data_reader;
+  generic_data_reader *old_data_reader = m_validation_dataset.data_reader;
   m_validation_dataset.data_reader = data_reader;
   m_validation_dataset.num_samples_processed = 0;
   m_validation_dataset.total_samples = data_reader->getNumData();
@@ -79,10 +79,10 @@ lbann::DataReader *lbann::io_layer::set_validation_data_reader(DataReader *data_
   return old_data_reader;
 }
 
-lbann::DataReader *lbann::io_layer::set_testing_data_reader(DataReader *data_reader) {
+lbann::generic_data_reader *lbann::io_layer::set_testing_data_reader(generic_data_reader *data_reader) {
   /// @todo put in a check to make sure that this is a data reader
   /// that matches what was already there
-  DataReader *old_data_reader = m_testing_dataset.data_reader;
+  generic_data_reader *old_data_reader = m_testing_dataset.data_reader;
   m_testing_dataset.data_reader = data_reader;
   m_testing_dataset.num_samples_processed = 0;
   m_testing_dataset.total_samples = data_reader->getNumData();
@@ -90,7 +90,7 @@ lbann::DataReader *lbann::io_layer::set_testing_data_reader(DataReader *data_rea
   return old_data_reader;
 }
 
-lbann::DataReader *lbann::io_layer::select_data_reader() {
+lbann::generic_data_reader *lbann::io_layer::select_data_reader() {
   switch(m_execution_mode) {
   case execution_mode::training:
     return m_training_dataset.data_reader;
