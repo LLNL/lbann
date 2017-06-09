@@ -43,9 +43,6 @@
 static mode_t mode_dir = S_IRWXU | S_IRWXG;
 static MPI_Comm comm = MPI_COMM_WORLD;
 
-//lbann::mode_dir  = S_IRWXU | S_IRWXG;
-//lbann::mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
-
 /* creates directory given in dir (absolute path),
  * rank 0 creates directory, all other procs get result via bcast,
  * returns 1 if dir was created, 0 otherwise */
@@ -102,12 +99,6 @@ int lbann::openread(const char *file) {
   // open the file for writing
   int fd = open(file, O_RDONLY);
   if (fd == -1) {
-    /*
-    fprintf(stderr, "ERROR: Failed to open file `%s' (%d: %s) @ %s:%d\n",
-            file, errno, strerror(errno), __FILE__, __LINE__
-    );
-    fflush(stderr);
-    */
   }
   return fd;
 }
