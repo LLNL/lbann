@@ -64,14 +64,21 @@ class distributed_minibatch_parallel_io {
 
  public:
   lbann_comm *comm;
-  int m_root; /** Which rank is the root of the CircMat */
-  int m_num_parallel_readers_training; /** Number of parallel readers (I/O streams) for training data */
-  int m_num_parallel_readers_validating; /** Number of parallel readers (I/O streams) for testing data  */
-  int m_num_parallel_readers_testing; /** Number of parallel readers (I/O streams) for testing data  */
+  /** Which rank is the root of the CircMat */
+  int m_root; 
+  /** Number of parallel readers (I/O streams) for training data */
+  int m_num_parallel_readers_training; 
+  /** Number of parallel readers (I/O streams) for validation data  */
+  int m_num_parallel_readers_validating;
+  /** Number of parallel readers (I/O streams) for testing data  */
+  int m_num_parallel_readers_testing; 
   int m_local_reader_done;
-  uint m_max_mini_batch_size; /** Maximum size of the mini-batch */
-  uint m_num_samples_in_batch; /** Number of samples in the current mini-batch */
-  bool m_local_data_valid; /** Has the layer copied valid data into the local matrix */
+  /** Maximum size of the mini-batch */
+  uint m_max_mini_batch_size;
+  /** Number of samples in the current mini-batch */
+  uint m_num_samples_in_batch; 
+  /** Has the layer copied valid data into the local matrix */
+  bool m_local_data_valid; 
 
   long m_num_data_per_epoch;
   int m_num_valid_readers;

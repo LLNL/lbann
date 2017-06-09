@@ -47,10 +47,6 @@ class deep_neural_network : public sequential_model {
   /// Destructor
   ~deep_neural_network();
 
-  /// Check error in gradients
-  /** @todo This is very old and probably broken
-   */
-  void check_gradient(CircMat& X, CircMat& Y, double *gradient_errors);
 
   /// Compute layer summaries
   void summarize(lbann_summary& summarizer);

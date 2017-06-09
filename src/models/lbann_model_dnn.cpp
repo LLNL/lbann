@@ -64,27 +64,6 @@ lbann::deep_neural_network::deep_neural_network(const uint mini_batch_size,
 
 lbann::deep_neural_network::~deep_neural_network() {}
 
-void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double *gradient_errors) {
-  // setup input (last/additional row should always be 1)
-  Copy(X, *(m_layers[0]->m_activations));
-
-  // forward propagation (mini-batch)
-  DataType L2NormSum = 0;
-  for (size_t l = 1; l < m_layers.size(); l++) {
-    m_layers[l]->forwardProp();
-  }
-
-  // backward propagation (mini-batch)
-  for (size_t l = m_layers.size() - 1; l >= 1; l--) {
-    m_layers[l]->backProp();
-  }
-
-  // check gradient
-  gradient_errors[0] = 0;
-  for (size_t l = 1; l < m_layers.size(); l++) {
-    gradient_errors[l] = m_layers[l]->checkGradientMB(*m_layers[l-1]);
-  }
-}
 
 void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
@@ -92,12 +71,6 @@ void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
   }
 }
 
-//deep copy
-/*void lbann::deep_neural_network::copy_layers(vector<Layer*> layers) {
-  //m_layers.clear();
-  m_layers = new vector<Layers*>(layers.size());
-  for(auto&l:layers) m_layers.push_back(l);
-}*/
 
 void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();

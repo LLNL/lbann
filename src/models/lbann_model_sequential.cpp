@@ -92,75 +92,6 @@ bool lbann::sequential_model::save_to_file(const string file_dir) {
       return false;
     }
 
-#if 0
-  // define filename for this rank
-  char filename[256];
-  sprintf(filename, "%s/params.%d", dir, m_rank);
-
-  // open the file for writing
-  mode_t mode = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
-  int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, mode);
-  int open_success = (fd != -1);
-  if (! open_success) {
-    fprintf(stderr, "ERROR: Failed to create file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  // determine whether everyone opened their file
-  int all_success;
-  MPI_Allreduce(&open_success, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-  if (! all_success) {
-    // someone failed to create their file
-    // TODO: delete our file if we created one?
-    return false;
-  }
-
-  // write number of ranks (we'll check this on read)
-  ssize_t write_rc = write(fd, &m_ranks, sizeof(int));
-  if (write_rc != sizeof(int)) {
-    fprintf(stderr, "ERROR: Failed to write number of ranks to file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  // write number of layers (we'll check this on read)
-  int layers = m_layers.size();
-  write_rc = write(fd, &layers, sizeof(int));
-  if (write_rc != sizeof(int)) {
-    fprintf(stderr, "ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  // write out details for each layer
-  for (size_t l = 1; l < m_layers.size(); l++)
-    if (!m_layers[l]->saveToFile(fd, filename)) {
-      return false;
-    }
-
-  // fsync file
-  int fsync_rc = fsync(fd);
-  if (fsync_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to fsync file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  // close our file
-  int close_rc = close(fd);
-  if (close_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-#endif
-
   // stop timer
   MPI_Barrier(MPI_COMM_WORLD);
   if (m_rank == 0) {
@@ -191,70 +122,6 @@ bool lbann::sequential_model::load_from_file(const string file_dir) {
     if (!m_layers[l]->loadFromFile(-1, dir)) {
       return false;
     }
-
-#if 0
-  // define filename for this rank
-  char filename[256];
-  sprintf(filename, "%s/params.%d", dir, m_rank);
-
-  // open the file for reading
-  int fd = open(filename, O_RDONLY);
-  int open_success = (fd != -1);
-  if (! open_success) {
-    fprintf(stderr, "ERROR: Failed to open file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  // determine whether everyone opened their file
-  int all_success;
-  MPI_Allreduce(&open_success, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-  if (! all_success) {
-    // someone failed to open their file
-    return false;
-  }
-
-  // read number of ranks
-  int file_ranks;
-  ssize_t read_rc = read(fd, &file_ranks, sizeof(int));
-  if (read_rc != sizeof(int)) {
-    fprintf(stderr, "ERROR: Failed to read number of ranks from file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  if (file_ranks != m_ranks) {
-  }
-
-  // read number of layers
-  int file_layers;
-  read_rc = read(fd, &file_layers, sizeof(int));
-  if (read_rc != sizeof(int)) {
-    fprintf(stderr, "ERROR: Failed to read number of layers from file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-
-  if (file_layers != m_layers.size()) {
-  }
-
-  for (size_t l = 1; l < m_layers.size(); l++)
-    if (!m_layers[l]->loadFromFile(fd, filename)) {
-      return false;
-    }
-
-  // close our file
-  int close_rc = close(fd);
-  if (close_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
-            filename, errno, strerror(errno), __FILE__, __LINE__
-           );
-    fflush(stderr);
-  }
-#endif
 
   // stop timer
   MPI_Barrier(MPI_COMM_WORLD);
@@ -520,17 +387,3 @@ bool lbann::sequential_model::at_epoch_start() {
   return flag;
 }
 
-#if 0
-DistMat *lbann::sequential_model::predict_mini_batch(DistMat *X) {
-  // setup input for forward, backward pass (last/additional row should always be 1)
-  //    this->setup(X, NULL);
-
-  // forward propagation (mini-batch)
-  DataType L2NormSum = 0;
-  for (size_t l = 1; l < m_layers.size(); l++) {
-    L2NormSum = m_layers[l]->forwardProp(L2NormSum);
-  }
-
-  return m_layers[m_layers.size()-1]->fp_output();
-}
-#endif
