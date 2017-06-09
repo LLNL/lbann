@@ -120,7 +120,6 @@ int main(int argc, char* argv[])
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
     const lbann_data::Model &m2 = pb.model();
-    cerr << "calling init_data_readers: " << pb_model->mini_batch_size() << " " << m2.mini_batch_size() << endl << endl;
     std::map<execution_mode, DataReader*> data_readers;
     init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
@@ -129,7 +128,6 @@ int main(int argc, char* argv[])
              << " num data: " << it.second->getNumData() << endl;
       }
     }
-    cerr << "DONE calling init_data_readers: " << pb_model->mini_batch_size() << " " << m2.mini_batch_size() << endl << endl;
 
     //user feedback
     if (comm->am_world_master()) {
@@ -164,7 +162,7 @@ int main(int argc, char* argv[])
 #endif
     sequential_model * model = init_model(comm, optimizer_fac, pb);
     add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, pb);
+    init_callbacks(comm, model, data_readers, pb);
     model->setup();
 
     // restart model from checkpoint if we have one
@@ -175,8 +173,7 @@ int main(int argc, char* argv[])
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
-      model->train(1, true);
-      model->evaluate(execution_mode::testing);
+      model->train(1, pb_model->evaluation_frequency());
     }
 
     // @todo: figure out and implement coherent strategy

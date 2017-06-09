@@ -35,7 +35,7 @@ using namespace El;
 namespace lbann {
 
 dropout::dropout(data_layout data_dist, lbann_comm* comm, float keep_prob) :
-  comm(comm), m_keep_prob(keep_prob)
+  m_comm(comm), m_keep_prob(keep_prob)
 {
   // Setup the data distribution
   switch(data_dist) {
@@ -59,7 +59,7 @@ dropout::~dropout() {
 /// Matrices should be in MC,MR distributions
 void dropout::initialize_model_parallel_distribution() {
 #ifdef LBANN_PROCDET_DROPOUT
-  m_cur_mask = new DistMat(comm->get_model_grid());
+  m_cur_mask = new DistMat(m_comm->get_model_grid());
 #else
   m_cur_mask = new Mat;
 #endif
@@ -68,7 +68,7 @@ void dropout::initialize_model_parallel_distribution() {
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void dropout::initialize_data_parallel_distribution() {
 #ifdef LBANN_PROCDET_DROPOUT
-  m_cur_mask = new StarMat(comm->get_model_grid());
+  m_cur_mask = new StarMat(m_comm->get_model_grid());
 #else
   m_cur_mask = new Mat;
 #endif

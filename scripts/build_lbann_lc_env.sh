@@ -28,6 +28,9 @@ fi
 # Detect the cuda toolkit version loaded or use default
 if [ "${HasGPU}" == "" ] ; then
   echo "This platform has no GPU"
+elif [ "${ARCH}" == "ppc64le" ]; then
+  CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+  CUDATOOLKIT_VERSION=`ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2`
 elif [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
   # use default
   CUDATOOLKIT_VERSION=8.0
@@ -37,9 +40,6 @@ elif [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
   elif [ -d /opt/cudatoolkit-$CUDATOOLKIT_VERSION ] ; then
       CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-$CUDATOOLKIT_VERSION
   fi
-elif [ "${ARCH}" == "ppc64le" ]; then
-  CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
-  CUDATOOLKIT_VERSION=`ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2`
 else
   CUDATOOLKIT_VERSION=`basename "$CUDA_PATH" | sed 's/cudatoolkit-//'`
   CUDA_TOOLKIT_ROOT_DIR=$CUDA_PATH
@@ -72,7 +72,7 @@ fi
 if [ "${ARCH}" == "x86_64" ]; then
   cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 elif [ "${ARCH}" == "ppc64le" ]; then
-  cuDNN_DIR=""
+  cuDNN_DIR="/usr/gapps/brain/cuda/targets/ppc64le-linux"
 fi
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON

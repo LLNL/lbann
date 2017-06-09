@@ -23,6 +23,7 @@
 #include "lbann/callbacks/lbann_callback_dump_weights.hpp"
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+#include "lbann/callbacks/lbann_callback_save_images.hpp"
 
 #include "lbann/regularization/lbann_regularizer.hpp"
 #include "lbann/regularization/lbann_batch_normalization.hpp"
@@ -255,7 +256,7 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: convolution
+    // LAYER: Convolution
     //////////////////////////////////////////////////////////////////
     if (layer.has_convolution()) {
       const lbann_data::Convolution &ell = layer.convolution();
@@ -353,7 +354,11 @@ void add_layers(
   }
 }
 
-void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lbann_data::LbannPB &p) {
+void init_callbacks(
+  lbann_comm *comm, 
+  lbann::sequential_model *model, 
+  std::map<execution_mode, lbann::DataReader*> &data_readers,
+  const lbann_data::LbannPB &p) {
   stringstream err;
   bool master = comm->am_world_master();
 
@@ -365,6 +370,14 @@ void init_callbacks(lbann_comm *comm, lbann::sequential_model *model, const lban
   int size = m.callback_size();
   for (int j=0; j<size; j++) {
     const lbann_data::Callback &callback = m.callback(j);
+
+    if (callback.has_save_images()) {
+      const lbann_data::CallbackSaveImages &c = callback.save_images();
+      string image_dir = c.image_dir();
+      string extension = c.extension();
+      DataReader *reader = data_readers[execution_mode::training];
+      lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
+    }
 
     if (callback.has_print()) {
       const lbann_data::CallbackPrint &c = callback.print();
@@ -447,14 +460,6 @@ sequential_model * init_model(lbann_comm *comm, optimizer_factory *optimizer_fac
   sequential_model * model;
 
   layer_factory* lfac = new layer_factory();
-
-#if __LIB_CUDNN
-  //cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm, num_gpus);
-  // num_gpus is a user input and '-1' by default (using all available gpus)
-  cudnn::cudnn_manager* cudnn = new cudnn::cudnn_manager(comm);
-#else // __LIB_CUDNN
-  cudnn::cudnn_manager* cudnn = NULL;
-#endif // __LIB_CUDNN
 
   const lbann_data::Model &m = p.model();
   const string name = m.name();
