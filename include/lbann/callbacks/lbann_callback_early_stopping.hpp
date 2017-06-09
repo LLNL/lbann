@@ -37,10 +37,6 @@ namespace lbann {
 
 /**
  * Stop training after validation error stops improving.
- * @warning This currently is just a framework because we have no way to
- * actually stop training.
- * @note This currently uses test error as a basis, but if we ever have
- * validation sets, it would be better to use those.
  */
 class lbann_callback_early_stopping : public lbann_callback {
  public:
@@ -52,11 +48,11 @@ class lbann_callback_early_stopping : public lbann_callback {
   void on_validation_end(model *m);
  private:
   /** Number of epochs to wait for improvements. */
-  int64_t patience;
+  int64_t m_patience;
   /** Last recorded score. */
-  double last_score;
+  double m_last_score = std::numeric_limits<double>::max();
   /** Current number of epochs without improvement. */
-  int64_t wait;
+  int64_t m_wait = 0;
 };
 
 }  // namespace lbann
