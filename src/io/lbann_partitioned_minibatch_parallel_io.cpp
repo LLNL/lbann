@@ -78,13 +78,6 @@ lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lban
     m_num_parallel_readers_validating = mini_batch_size;
     m_num_parallel_readers_testing = mini_batch_size;
   }
-
-  /// Check to make sure that there is enough data for all of the parallel readers
-  m_num_parallel_readers_training = compute_max_num_parallel_readers(training_data_set_size, mini_batch_size, m_num_parallel_readers_training);
-
-  m_num_parallel_readers_validating = compute_max_num_parallel_readers(validation_data_set_size, mini_batch_size, m_num_parallel_readers_validating);
-
-  m_num_parallel_readers_testing = compute_max_num_parallel_readers(testing_data_set_size, mini_batch_size, m_num_parallel_readers_testing);
 }
 
 int lbann::partitioned_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local) {
@@ -202,25 +195,6 @@ int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
   return data_reader->m_num_iterations_per_epoch;
 }
 
-int lbann::partitioned_minibatch_parallel_io::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {
-  /// Check to make sure that there is enough data for all of the parallel readers
-  if(data_set_size != 0) {
-    int max_num_parallel_readers = num_parallel_readers;
-    while(ceil((float)data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
-      max_num_parallel_readers--;
-    }
-    if(max_num_parallel_readers != num_parallel_readers) {
-      std::cout << "Warning the training data set size " << data_set_size
-                << " is too small for the number of requested parallel readers "
-                << num_parallel_readers << ", using " << max_num_parallel_readers << "." 
-                << std::endl;
-    }
-    return max_num_parallel_readers;
-  }else {
-    return 0;
-  }
-}
-
 void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(DataReader *data_reader) {
   int max_mini_batch_size = data_reader->BatchSize;
   int num_parallel_readers_per_model = max(1, (data_reader->m_batch_stride / comm->get_num_models()) / max_mini_batch_size);
@@ -273,8 +247,7 @@ void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoc
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(/*comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch && */per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
-  data_reader->m_last_mini_batch_stride = (data_reader->m_last_mini_batch_threshold - data_reader->m_base_offset - data_reader->m_model_offset - last_mini_batch_offset); 
-  //    + comm->get_model_rank() * per_model_partial_mini_batch_size + world_master_remainder_adjustment; /// BVE 10/18/16
+  data_reader->m_last_mini_batch_stride = (data_reader->m_last_mini_batch_threshold - data_reader->m_base_offset - data_reader->m_model_offset - last_mini_batch_offset) + comm->get_rank_in_model();
   }
 
   cout << "[" << comm->get_rank_in_world() << "] " << comm->get_model_rank() << " model rank, "<< comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " num_whole_mini_batches_per_reader " << num_whole_mini_batches_per_reader << "(m_num_mini_batches_per_reader=" << data_reader->m_num_mini_batches_per_reader << ") parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->m_last_mini_batch_size << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << data_reader->m_last_mini_batch_threshold << " with a last stride of " << data_reader->m_last_mini_batch_stride << " and stride of " << data_reader->m_batch_stride << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->m_base_offset << " model offset " << data_reader->m_model_offset <<endl;

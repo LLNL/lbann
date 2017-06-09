@@ -73,11 +73,13 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
   int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int current_batch_size = getBatchSize();
   const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+  const int mb_size = Min(ceil((float)(end_pos - CurrentPos)/(float)m_sample_stride), X.Width());
 
+  Zeros(X, X.Height(), X.Width());
+  Zeros(m_indices_fetched_per_mb, mb_size, 1);
 #pragma omp parallel for
-  for (int n = CurrentPos; n < end_pos; ++n) {
-
-    int k = n - CurrentPos;
+  for (int s = 0; s < mb_size; s++) {
+    int n = CurrentPos + (s * m_sample_stride);
     int index = ShuffledIndices[n];
     string imagepath = m_image_dir + ImageList[index].first;
 
@@ -91,17 +93,19 @@ int lbann::DataReader_ImageNet::fetch_data(Mat& X)
       throw lbann_exception("ImageNet: mismatch data size -- either width or height");
     }
 
+    m_indices_fetched_per_mb.Set(s, 0, index);
+
     for (int p = 0; p < num_channel_values; p++) {
-      X.Set(p, k, pixels[p]);
+      X.Set(p, s, pixels[p]);
     }
     std::free(pixels);
 
-    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
+    auto pixel_col = X(IR(0, X.Height()), IR(s, s + 1));
     augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
     normalize(pixel_col, m_image_num_channels);
   }
 
-  return end_pos - CurrentPos;
+  return mb_size;
 }
 
 int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
@@ -113,18 +117,18 @@ int lbann::DataReader_ImageNet::fetch_label(Mat& Y)
   }
 
   int current_batch_size = getBatchSize();
-  int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
-      break;
+  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+  const int mb_size = Min(ceil((float)(end_pos - CurrentPos)/(float)m_sample_stride), Y.Width());
+  Zeros(Y, Y.Height(), Y.Width());
 
-    int k = n - CurrentPos;
+  for (int s = 0; s < mb_size; s++) {
+    int n = CurrentPos + (s * m_sample_stride);
     int index = ShuffledIndices[n];
     int label = ImageList[index].second;
 
-    Y.Set(label, k, 1);
+    Y.Set(label, s, 1);
   }
-  return (n - CurrentPos);
+  return mb_size;
 }
 
 void lbann::DataReader_ImageNet::load()

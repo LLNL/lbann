@@ -45,9 +45,7 @@ namespace lbann
     int get_num_parallel_readers();
     int get_num_iterations_per_epoch();
 
-    int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
     void calculate_num_iterations_per_epoch(DataReader *data_reader);
-
 
     /// @todo BVE replace this with a function pointer that is passed
     /// into the fetch_to_local_matrix function to avoid the
