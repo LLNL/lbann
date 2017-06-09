@@ -166,19 +166,7 @@ void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
   pending_histograms.emplace_back(
     tag, step, buckets, local_min, local_max, mat.Height() * mat.Width(),
     sum, sqsum);
-  /*// Currently, only support the histogram on model 0.
-  if (comm->get_model_rank() == 0) {
-    // Move all data to the model master.
-    CircMat local_copy(mat);
-    if (comm->am_model_master()) {
-      const DataType* buf = local_copy.LockedBuffer();
-      std::vector<float>::const_iterator first(buf);
-      std::vector<float>::const_iterator last(buf + local_copy.AllocatedMemory());
-      sw->add_histogram(prepend_model(tag, comm->get_model_rank()),
-                        first, last,
-                        step);
-    }
-    }*/
+  // TODO: Support histograms on multiple models.
 }
 
 void lbann_summary::flush() {
