@@ -44,7 +44,7 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-
+#define PARTITIONED
 
 // train/test data info
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
@@ -189,6 +189,7 @@ if (not use_new_reader) {
         imagenet_trainset->set_master(comm->am_world_master());
         imagenet_trainset->set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
         imagenet_trainset->set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
+        imagenet_trainset->set_use_percent(trainParams.PercentageTrainingSamples);
         imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
         imagenet_trainset->load();
 
@@ -335,7 +336,11 @@ if (not use_new_reader) {
         dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
         dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
         // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
+#ifdef PARTITIONED
+    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+#else
         input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+#endif
         dnn->add(input_layer);
 
         // Layer 1 (convolutional)
@@ -566,7 +571,11 @@ if (not use_new_reader) {
                  {new l2_regularization(0.0005)});
 
         // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+#ifdef PARTITIONED
+    target_layer *target_layer = new target_layer_partitioned_minibatch_parallel_io(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+#else
         target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+#endif
         dnn->add(target_layer);
 
 
