@@ -53,9 +53,8 @@ using namespace El;
 lbann::stacked_autoencoder::stacked_autoencoder(const uint mini_batch_size,
     lbann_comm *comm,
     objective_functions::objective_fn *obj_fn,
-    layer_factory *_layer_fac,
     optimizer_factory *_optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn,  _layer_fac, _optimizer_fac),
+  : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_name("stacked_autoencoder") {
   //m_target_layer = new target_layer_unsupervised(comm,mini_batch_size);
 }
@@ -86,39 +85,39 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     // create first hidden layer
     if(layer_name == "FullyConnected") {
       optimizer *new_optimizer = create_optimizer();
-      Layer *new_layer
+      /*Layer *new_layer
         = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
             comm,new_optimizer, regularizers);
-      m_layers.push_back(new_layer);
+            m_layers.push_back(new_layer);*/
       // create output/mirror layer
       optimizer *mirror_optimizer = create_optimizer();
-      Layer *mirror_layer
+      /*Layer *mirror_layer
         = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
             comm,mirror_optimizer,regularizers);
-      m_layers.push_back(mirror_layer);
+            m_layers.push_back(mirror_layer);*/
     }
   } else {
     // create hiden layer
     if(layer_name == "FullyConnected") {
       optimizer *hidden_optimizer = create_optimizer();
-      Layer *hidden_layer
+      /*Layer *hidden_layer
         = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
             comm,hidden_optimizer, regularizers);
-      m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);
+            m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);*/
       // create mirror layer
       optimizer *mirror_hidden_optimizer = create_optimizer();
-      Layer *mirror_hidden_layer
+      /*Layer *mirror_hidden_layer
         = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
             comm,mirror_hidden_optimizer,regularizers);
-      m_layers.insert(m_layers.begin() + mid + 2, mirror_hidden_layer);
+            m_layers.insert(m_layers.begin() + mid + 2, mirror_hidden_layer);*/
 
     }
     // re-number layer index

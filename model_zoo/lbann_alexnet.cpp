@@ -325,9 +325,6 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
     }
 
-    // Initialize layer factory
-    layer_factory *lfac = new layer_factory();
-
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
@@ -336,7 +333,7 @@ int main(int argc, char *argv[]) {
 #endif // __LIB_CUDNN
 
     deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+   dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
 #ifdef PARTITIONED

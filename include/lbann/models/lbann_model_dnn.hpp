@@ -41,7 +41,6 @@ class deep_neural_network : public sequential_model {
   deep_neural_network(uint mini_batch_size,
                       lbann_comm *comm,
                       objective_functions::objective_fn *obj_fn,
-                      layer_factory *_layer_fac,
                       optimizer_factory *_optimizer_fac);
 
   /// Destructor

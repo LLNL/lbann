@@ -44,7 +44,7 @@ pool_mode get_pool_mode(const string& s) {
   } else if (s == "average_no_pad") {
     return pool_mode::average_no_pad;
   } else {
-    stringstream err;
+    std::stringstream err;
     err << __FILE__ << " " <<__LINE__
         << " :: unkown pool_mode: " << s
         << " should be one of: max, average, average_no_pad";
@@ -81,7 +81,7 @@ activation_type get_activation_type(const string& s) {
   } else if (s == "elu") {
     return activation_type::ELU;
   } else {
-    stringstream err;
+    std::stringstream err;
     err << __FILE__ << " " <<__LINE__
         << " :: unkown activation_type: " << s
         << " should be one of: sigmoid tanh relu id leaky_relu softplus smooth_relu elu";
@@ -105,7 +105,7 @@ weight_initialization get_weight_initialization(const string& s) {
   } else if (s == "he_uniform") {
     return weight_initialization::he_uniform;
   } else {
-    stringstream err;
+    std::stringstream err;
     err << __FILE__ << " " <<__LINE__
         << " :: unkown weight_initialization: " << s
         << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
@@ -119,7 +119,7 @@ data_layout get_data_layout(const string& s, const char *file, int line) {
   } else if (s == "data_parallel") {
     return data_layout::DATA_PARALLEL;
   } else {
-    stringstream err;
+    std::stringstream err;
     err << file << " " << line
         << " :: unknown value for data_layout; should be model_parallel"
         << " or data_parallel; we got: " << s;
@@ -164,7 +164,7 @@ void add_layers(
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p) {
-  stringstream err;
+  std::stringstream err;
   lbann_comm *comm = model->get_comm();
   bool master = comm->am_world_master();
 
@@ -249,7 +249,7 @@ void add_layers(
 
       vector<int> input_dims;
       int i;
-      stringstream ss(ell.input_dims());
+      std::stringstream ss(ell.input_dims());
       while (ss >> i) {
         input_dims.push_back(i);
       }
@@ -299,7 +299,7 @@ void add_layers(
       const lbann_data::Convolution& ell = layer.convolution();
 
       vector<Int> input_dims;
-      stringstream ss(ell.input_dims());
+      std::stringstream ss(ell.input_dims());
       int i;
       while (ss >> i) {
         input_dims.push_back(i);
@@ -414,7 +414,7 @@ void init_callbacks(
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p) {
-  stringstream err;
+  std::stringstream err;
   bool master = comm->am_world_master();
 
   const lbann_data::Model& m = p.model();
@@ -510,11 +510,9 @@ void init_callbacks(
 
 
 sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p) {
-  stringstream err;
+  std::stringstream err;
 
   sequential_model *model;
-
-  layer_factory *lfac = new layer_factory();
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();
@@ -536,11 +534,11 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 
   //instantiate the network; layers will be added in a separate function call
   if (name == "dnn") {
-    model = new deep_neural_network(mini_batch_size, comm, obj, lfac, optimizer_fac);
+    model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
   } else if (name == "stacked_autoencoder") {
-    model = new stacked_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac);
+    model = new stacked_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else if (name == "greedy_layerwise_autoencoder") {
-    model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, lfac, optimizer_fac);
+    model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else {
     err << __FILE__ << " " << __LINE__
         << " :: init_model() - unknown model name: " << name << endl
@@ -597,7 +595,7 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   } else if (name == "sgd") {
     factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
   } else {
-    stringstream err;
+    std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: unknown name for optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
         << "instead we found: " << name;
@@ -608,7 +606,7 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
 }
 
 void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, int mini_batch_size) {
-  stringstream err;
+  std::stringstream err;
 
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
@@ -769,7 +767,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 }
 
 void readPrototextFile(string fn, lbann_data::LbannPB& pb) {
-  stringstream err;
+  std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
     err <<  __FILE__ << " " << __LINE__ << " :: failed to open " << fn << " for reading";

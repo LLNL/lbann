@@ -53,8 +53,8 @@ lbann::sequential_model::sequential_model(const uint mini_batch_size,
     objective_functions::objective_fn *obj_fn,
     optimizer_factory *optimizer_fac)
   : model(comm, obj_fn, optimizer_fac),
-    m_mini_batch_size(mini_batch_size),
-    layer_fac(_layer_fac) {}
+    m_mini_batch_size(mini_batch_size)
+    {}
 
 lbann::sequential_model::~sequential_model() {
   // Free layers

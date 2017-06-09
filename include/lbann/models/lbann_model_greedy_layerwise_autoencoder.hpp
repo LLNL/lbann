@@ -41,7 +41,6 @@ class greedy_layerwise_autoencoder : public sequential_model {
   greedy_layerwise_autoencoder(uint mini_batch_size,
                                lbann_comm *comm,
                                objective_functions::objective_fn *obj_fn,
-                               layer_factory *_layer_fac,
                                optimizer_factory *_optimizer_fac);
 
   /// Destructor

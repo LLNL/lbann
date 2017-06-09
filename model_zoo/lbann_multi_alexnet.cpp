@@ -235,9 +235,6 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, false);
     }
 
-    // Initialize layer factory
-    layer_factory *lfac = new layer_factory();
-
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
@@ -246,7 +243,7 @@ int main(int argc, char *argv[]) {
 #endif // __LIB_CUDNN
 
     deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset),
                                                            std::make_pair(execution_mode::validation, &imagenet_validation_set),
                                                            std::make_pair(execution_mode::testing, &imagenet_testset)
