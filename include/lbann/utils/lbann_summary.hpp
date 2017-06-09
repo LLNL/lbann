@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -54,19 +54,19 @@ namespace lbann {
  * Distributed matrices should be distributed by model.
  * This class automatically prepends "modelN/" to each tag. The tag is only
  * relevant at the world master process.
- * 
+ *
  * @note WHEN YOU UPDATE THE PUBLIC API HERE, REMEMBER TO UPDATE THE KLUDGE FOR
  * NON-TENSORBOARD BUILDS BELOW!
  */
 class lbann_summary {
-public:
+ public:
 
   /**
    * Create a new summary manager.
    * @param logdir The directory to output events to.
    * @param comm Communicator to use.
    */
-  lbann_summary(std::string logdir, lbann_comm* comm);
+  lbann_summary(std::string logdir, lbann_comm *comm);
   ~lbann_summary();
 
   /** Report the mean of mat. */
@@ -91,9 +91,9 @@ public:
    */
   void flush();
 
-private:
-  lbann_comm* comm;
-  TBinf::SummaryWriter* sw;
+ private:
+  lbann_comm *comm;
+  TBinf::SummaryWriter *sw;
 
   /** Represent a pending summary operation. */
   struct pending_op {
@@ -186,8 +186,8 @@ private:
 
 /** Dummy class when TBinf is not present. */
 class lbann_summary {
-public:
-  lbann_summary(std::string logdir, lbann_comm* comm) {}
+ public:
+  lbann_summary(std::string logdir, lbann_comm *comm) {}
 
   void reduce_mean(const std::string tag, const ElMat& mat, int64_t step) {}
   void reduce_min(const std::string tag, const ElMat& mat, int64_t step) {}

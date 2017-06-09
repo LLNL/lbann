@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -43,14 +43,14 @@ namespace lbann {
  * validation sets, it would be better to use those.
  */
 class lbann_callback_early_stopping : public lbann_callback {
-public:
+ public:
   /**
    * Continue training until score has not improved for patience epochs.
    */
   lbann_callback_early_stopping(int64_t patience);
   /** Update validation score and check for early stopping. */
-  void on_validation_end(model* m);
-private:
+  void on_validation_end(model *m);
+ private:
   /** Number of epochs to wait for improvements. */
   int64_t patience;
   /** Last recorded score. */

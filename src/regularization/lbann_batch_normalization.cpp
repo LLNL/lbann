@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,8 +36,8 @@ using namespace El;
 namespace lbann {
 
 batch_normalization::batch_normalization(data_layout data_dist,
-                                         lbann_comm* comm, DataType decay,
-                                         DataType gamma, DataType beta) :
+    lbann_comm *comm, DataType decay,
+    DataType gamma, DataType beta) :
   m_comm(comm), m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
   // Setup the data distribution
   switch(data_dist) {
@@ -89,7 +89,7 @@ void batch_normalization::initialize_data_parallel_distribution() {
 
 void batch_normalization::fp_weights() {
   // Get output from linearity.
-  ElMat* acts = m_layer->m_activations_v;
+  ElMat *acts = m_layer->m_activations_v;
   Int mbsize = acts->Width();
   Mat& acts_local = acts->Matrix();
   Mat& gamma_local = m_gamma->Matrix();
@@ -102,7 +102,7 @@ void batch_normalization::fp_weights() {
     Mat& mean_local = m_mean->Matrix();
     Mat& stdev_local = m_stdev->Matrix();
     // Compute transformed activations xhat = (x-mean)/stdev
-#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
         // Normalize.
@@ -123,7 +123,7 @@ void batch_normalization::fp_weights() {
     // Use the running mean/standard deviation to normalize.
     const Mat& mean_local = m_running_mean->LockedMatrix();
     const Mat& stdev_local = m_running_stdev->LockedMatrix();
-#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for (Int col = 0; col < local_width; ++col) {
       for (Int row = 0; row < local_height; ++row) {
         // Normalize.
@@ -139,10 +139,12 @@ void batch_normalization::fp_weights() {
 
 void batch_normalization::bp_weights() {
   // No backprop when not training.
-  if (m_layer->m_execution_mode != execution_mode::training) return;
-  ElMat* bpsignal = m_layer->m_prev_error_signal_v;
+  if (m_layer->m_execution_mode != execution_mode::training) {
+    return;
+  }
+  ElMat *bpsignal = m_layer->m_prev_error_signal_v;
   // "activations" here are from *before* the nonlinearity is applied.
-  const ElMat* acts = m_layer->m_weighted_sum_v;
+  const ElMat *acts = m_layer->m_weighted_sum_v;
   const Int mbsize = acts->Width();
   Mat& bp_local = bpsignal->Matrix();
   const Mat& acts_local = acts->LockedMatrix();
@@ -154,7 +156,7 @@ void batch_normalization::bp_weights() {
   Mat& dgamma_local = m_dgamma->Matrix();
   Mat& dbeta_local = m_dbeta->Matrix();
   // Compute the derivatives of gamma and beta.
-#pragma omp parallel for
+  #pragma omp parallel for
   for (Int row = 0; row < local_height; ++row) {
     dbeta_local(row, 0) = 0.0;
     dgamma_local(row, 0) = 0.0;
@@ -169,7 +171,7 @@ void batch_normalization::bp_weights() {
   AllReduce(*m_dbeta, m_dbeta->RedundantComm(), mpi::SUM);
   AllReduce(*m_dgamma, m_dgamma->RedundantComm(), mpi::SUM);
   // Update the backprop gradient signal.
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for (Int row = 0; row < local_height; ++row) {
     for (Int col = 0; col < local_width; ++col) {
       bp_local(row, col) = mbsize * bp_local(row, col);
@@ -186,7 +188,7 @@ void batch_normalization::bp_weights() {
   }
 }
 
-void batch_normalization::setup(Layer* l) {
+void batch_normalization::setup(Layer *l) {
   regularizer::setup(l);
   Ones(*m_gamma, l->NumNeurons, 1);
   Scale(m_gamma_init, *m_gamma);

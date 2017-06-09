@@ -35,8 +35,7 @@ using namespace El;
 
 
 lbann::DataReader_ImageNetSingle::DataReader_ImageNetSingle(int batchSize, bool shuffle)
-  : DataReader_ImageNet(batchSize, shuffle) 
-{
+  : DataReader_ImageNet(batchSize, shuffle) {
   m_pixels.resize(m_image_width * m_image_height * m_image_num_channels);
 }
 
@@ -48,15 +47,13 @@ lbann::DataReader_ImageNetSingle::DataReader_ImageNetSingle(const DataReader_Ima
 }
 
 
-lbann::DataReader_ImageNetSingle::~DataReader_ImageNetSingle() 
-{
+lbann::DataReader_ImageNetSingle::~DataReader_ImageNetSingle() {
   m_data_filestream.close();
 }
 
 
-int lbann::DataReader_ImageNetSingle::fetch_label(Mat& Y)
-{
-//@todo only one line is different from ImageNet: 
+int lbann::DataReader_ImageNetSingle::fetch_label(Mat& Y) {
+//@todo only one line is different from ImageNet:
 //label = ... should be refactored to eliminate duplicate code
   if(!position_valid()) {
     stringstream err;
@@ -67,8 +64,9 @@ int lbann::DataReader_ImageNetSingle::fetch_label(Mat& Y)
   int current_batch_size = getBatchSize();
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)ShuffledIndices.size()) {
       break;
+    }
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
@@ -79,15 +77,16 @@ int lbann::DataReader_ImageNetSingle::fetch_label(Mat& Y)
   return (n - CurrentPos);
 }
 
-void lbann::DataReader_ImageNetSingle::load()
-{
+void lbann::DataReader_ImageNetSingle::load() {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
 
   //open offsets file, with error checking
   stringstream b;
   b << image_dir << "/" << base_filename << "_offsets.txt";
-  if (is_master()) cout << "opening: " << b.str() << " " << endl;
+  if (is_master()) {
+    cout << "opening: " << b.str() << " " << endl;
+  }
   ifstream in(b.str().c_str());
   if (not in.is_open() and in.good()) {
     stringstream err;
@@ -99,7 +98,9 @@ void lbann::DataReader_ImageNetSingle::load()
   //read the offsets file
   int n;
   in >> n;
-  if (is_master()) cout << "num images: " << n << endl;
+  if (is_master()) {
+    cout << "num images: " << n << endl;
+  }
   m_offsets.reserve(n);
   m_offsets.push_back(make_pair(0,0));
   size_t last_offset = 0;
@@ -129,8 +130,7 @@ void lbann::DataReader_ImageNetSingle::load()
 }
 
 
-int lbann::DataReader_ImageNetSingle::fetch_data(Mat &X)
-{
+int lbann::DataReader_ImageNetSingle::fetch_data(Mat& X) {
   stringstream err;
 
   if(!DataReader::position_valid()) {
@@ -166,7 +166,7 @@ int lbann::DataReader_ImageNetSingle::fetch_data(Mat &X)
 
     m_work_buffer.resize(ssz);
     m_data_filestream.seekg(start);
-    m_data_filestream.read((char*)&m_work_buffer[0], ssz);
+    m_data_filestream.read((char *)&m_work_buffer[0], ssz);
 
     unsigned char *p = &m_pixels[0];
     bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, p);
@@ -195,11 +195,11 @@ int lbann::DataReader_ImageNetSingle::fetch_data(Mat &X)
 }
 
 // Assignment operator
-lbann::DataReader_ImageNetSingle& lbann::DataReader_ImageNetSingle::operator=(const DataReader_ImageNetSingle& source)
-{
+lbann::DataReader_ImageNetSingle& lbann::DataReader_ImageNetSingle::operator=(const DataReader_ImageNetSingle& source) {
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   DataReader_ImageNet::operator=(source);
@@ -216,7 +216,9 @@ void lbann::DataReader_ImageNetSingle::openDataStream() {
   string base_filename = get_data_filename();
   stringstream b;
   b << image_dir << "/" << base_filename << "_data.bin";
-  if (is_master()) cout << "opening: " << b.str() << " " << endl;
+  if (is_master()) {
+    cout << "opening: " << b.str() << " " << endl;
+  }
   m_data_filestream.open(b.str().c_str(), ios::in | ios::binary);
   if (not m_data_filestream.is_open() and m_data_filestream.good()) {
     stringstream err;

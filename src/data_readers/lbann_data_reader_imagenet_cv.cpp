@@ -34,8 +34,7 @@ using namespace std;
 using namespace El;
 
 lbann::DataReader_ImageNet_cv::DataReader_ImageNet_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
-  : DataReader(batchSize, shuffle), m_pp(pp)
-{
+  : DataReader(batchSize, shuffle), m_pp(pp) {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -56,16 +55,13 @@ lbann::DataReader_ImageNet_cv::DataReader_ImageNet_cv(const DataReader_ImageNet_
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
     m_num_labels(source.m_num_labels),
-    m_pp(source.m_pp)
-{
+    m_pp(source.m_pp) {
 }
 
-lbann::DataReader_ImageNet_cv::~DataReader_ImageNet_cv()
-{
+lbann::DataReader_ImageNet_cv::~DataReader_ImageNet_cv() {
 }
 
-int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X)
-{
+int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X) {
   if(!DataReader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
@@ -76,7 +72,7 @@ int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X)
   const int current_batch_size = getBatchSize();
   const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for (int n = CurrentPos; n < end_pos; ++n) {
 
     int k = n - CurrentPos;
@@ -99,8 +95,7 @@ int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X)
   return end_pos - CurrentPos;
 }
 
-int lbann::DataReader_ImageNet_cv::fetch_label(Mat& Y)
-{
+int lbann::DataReader_ImageNet_cv::fetch_label(Mat& Y) {
   if(!position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
@@ -110,8 +105,9 @@ int lbann::DataReader_ImageNet_cv::fetch_label(Mat& Y)
   int current_batch_size = getBatchSize();
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)ShuffledIndices.size()) {
       break;
+    }
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
@@ -122,8 +118,7 @@ int lbann::DataReader_ImageNet_cv::fetch_label(Mat& Y)
   return (n - CurrentPos);
 }
 
-void lbann::DataReader_ImageNet_cv::load()
-{
+void lbann::DataReader_ImageNet_cv::load() {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
@@ -131,7 +126,7 @@ void lbann::DataReader_ImageNet_cv::load()
   ImageList.clear();
 
   // load image list
-  FILE* fplist = fopen(imageListFile.c_str(), "rt");
+  FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
     stringstream err;
     err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
@@ -141,8 +136,9 @@ void lbann::DataReader_ImageNet_cv::load()
   while (!feof(fplist)) {
     char imagepath[512];
     int imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
+    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
+    }
     ImageList.push_back(make_pair(imagepath, imagelabel));
   }
   fclose(fplist);
@@ -157,16 +153,15 @@ void lbann::DataReader_ImageNet_cv::load()
   select_subset_of_data();
 }
 
-void lbann::DataReader_ImageNet_cv::free()
-{
+void lbann::DataReader_ImageNet_cv::free() {
 }
 
 // Assignment operator
-lbann::DataReader_ImageNet_cv& lbann::DataReader_ImageNet_cv::operator=(const DataReader_ImageNet_cv& source)
-{
+lbann::DataReader_ImageNet_cv& lbann::DataReader_ImageNet_cv::operator=(const DataReader_ImageNet_cv& source) {
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   DataReader::operator=(source);

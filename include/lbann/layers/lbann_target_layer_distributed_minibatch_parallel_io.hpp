@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,26 +30,25 @@
 #include "lbann/layers/lbann_target_layer.hpp"
 #include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
 
-namespace lbann
-{
-  class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
-  public:
-    target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
+namespace lbann {
+class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
+ public:
+  target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression=false);
 
-    void setup(int num_prev_neurons);
-    void fp_linearity();
-    void bp_linearity();
-    bool update();
+  void setup(int num_prev_neurons);
+  void fp_linearity();
+  void bp_linearity();
+  bool update();
 
-    int fetch_from_data_reader(Mat& M_local);
-    void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-    bool update_data_reader();
-    execution_mode get_execution_mode();
+  int fetch_from_data_reader(Mat& M_local);
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
+  bool update_data_reader();
+  execution_mode get_execution_mode();
 
-  public:
-    Mat Y_local;
-    CircMat Ys;
-  };
+ public:
+  Mat Y_local;
+  CircMat Ys;
+};
 }
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

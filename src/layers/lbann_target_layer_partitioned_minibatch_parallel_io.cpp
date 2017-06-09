@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,10 +36,9 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_partitioned_minibatch_parallel_io::target_layer_partitioned_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
-  : target_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), 
-    partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers)
-{
+lbann::target_layer_partitioned_minibatch_parallel_io::target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression)
+  : target_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
+    partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers) {
   m_type = layer_type::target_partitioned_minibatch_parallel_io;
   //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
 }
@@ -53,21 +52,21 @@ void lbann::target_layer_partitioned_minibatch_parallel_io::setup(int num_prev_n
       int model_offset = Layer::comm->get_model_rank() * Layer::m_mini_batch_size;
       cout << "Setting up target layer, with " << Layer::comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << endl;
       io_layer::setup_data_readers_for_training(base_offset,
-                                                batch_stride,
-                                                m_num_parallel_readers_training,
-                                                model_offset);
+          batch_stride,
+          m_num_parallel_readers_training,
+          model_offset);
       partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(m_training_dataset.data_reader);
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
       io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
-                                                  Layer::m_mini_batch_size,
-                                                  m_num_parallel_readers_testing);
-    }else {
+          Layer::m_mini_batch_size,
+          m_num_parallel_readers_testing);
+    } else {
       io_layer::setup_data_readers_for_training(Layer::comm->get_rank_in_model(),
-                                                Layer::m_mini_batch_size,
-                                                m_num_parallel_readers_training);
+          Layer::m_mini_batch_size,
+          m_num_parallel_readers_training);
       io_layer::setup_data_readers_for_evaluation(Layer::comm->get_rank_in_model(),
-                                                  Layer::m_mini_batch_size,
-                                                  m_num_parallel_readers_testing);
+          Layer::m_mini_batch_size,
+          m_num_parallel_readers_testing);
     }
   }
 
@@ -112,9 +111,9 @@ void lbann::target_layer_partitioned_minibatch_parallel_io::bp_linearity() {
 
   // Compute initial error signal
   neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
-                                                          *m_prev_activations_v,
-                                                          *m_activations_v,
-                                                          *m_error_signal_v);
+      *m_prev_activations_v,
+      *m_activations_v,
+      *m_error_signal_v);
 }
 
 /**
@@ -124,12 +123,13 @@ bool lbann::target_layer_partitioned_minibatch_parallel_io::update() {
   return is_data_set_processed();
 }
 
-int lbann::target_layer_partitioned_minibatch_parallel_io::fetch_from_data_reader(Mat &M_local) {
+int lbann::target_layer_partitioned_minibatch_parallel_io::fetch_from_data_reader(Mat& M_local) {
   DataReader *data_reader = target_layer::select_data_reader();
-  if (is_for_regression())
+  if (is_for_regression()) {
     return data_reader->fetch_response(M_local);
-  else
+  } else {
     return data_reader->fetch_label(M_local);
+  }
 }
 
 void lbann::target_layer_partitioned_minibatch_parallel_io::preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
@@ -138,17 +138,17 @@ void lbann::target_layer_partitioned_minibatch_parallel_io::preprocess_data_samp
 
 bool lbann::target_layer_partitioned_minibatch_parallel_io::update_data_reader() {
   DataReader *data_reader = target_layer::select_data_reader();
-  if(m_shared_data_reader) { 
+  if(m_shared_data_reader) {
     /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
     /// or will be done on the next update of the input layer (which includes adding the stride).
     /// Note that target layers are always update before input layers, which is why the position
     /// is not up to date yet.
     return (data_reader->get_next_position() < data_reader->getNumData());
-  }else {
+  } else {
     return data_reader->update();
   }
 }
-  
+
 execution_mode lbann::target_layer_partitioned_minibatch_parallel_io::get_execution_mode() {
   return m_execution_mode;
 }

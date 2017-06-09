@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,7 +32,7 @@ namespace lbann {
 
 #if __HAVE_TBINF
 
-lbann_summary::lbann_summary(std::string logdir, lbann_comm* comm)
+lbann_summary::lbann_summary(std::string logdir, lbann_comm *comm)
   : comm(comm) {
   if (comm->am_world_master()) {
     sw = new TBinf::SummaryWriter(logdir);
@@ -61,8 +61,7 @@ void lbann_summary::reduce_mean(const std::string tag, const ElMat& mat,
     if(comm->am_model_master()) {
       sum = local_sum(mat.LockedMatrix());
     }
-  }
-  else {
+  } else {
     // Compute local sum on all processes if matrix is in MC,MR;
     // Star,VC; or similar format
     // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
@@ -81,7 +80,7 @@ void lbann_summary::reduce_min(const std::string tag, const ElMat& mat,
 }
 
 void lbann_summary::reduce_max(const std::string tag, const ElMat& mat,
-                                      int64_t step) {
+                               int64_t step) {
   DataType local_max = El::Max(mat.LockedMatrix());
   pending_maxes.emplace_back(tag, step, local_max);
 }
@@ -100,8 +99,7 @@ void lbann_summary::reduce_stdev(const std::string tag, const ElMat& mat,
       sum = local_sum(mat.LockedMatrix());
       sqsum = local_sqsum(mat.LockedMatrix());
     }
-  }
-  else {
+  } else {
     // Compute local sums on all processes if matrix is in MC,MR;
     // Star,VC; or similar format
     // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
@@ -141,8 +139,7 @@ void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
       sum = local_sum(mat.LockedMatrix());
       sqsum = local_sqsum(mat.LockedMatrix());
     }
-  }
-  else {
+  } else {
     // Compute local sums on all processes if matrix is in MC,MR;
     // Star,VC; or similar format
     // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
@@ -155,13 +152,13 @@ void lbann_summary::reduce_histogram(const std::string tag, const ElMat& mat,
   const Int height = mat.LockedMatrix().Height();
   const Int width = mat.LockedMatrix().Width();
   const Int ldim = mat.LockedMatrix().LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedMatrix().LockedBuffer();
+  const DataType *__restrict__ mat_buf = mat.LockedMatrix().LockedBuffer();
   for (Int row = 0; row < height; ++row) {
     for (Int col = 0; col < width; ++col) {
       // Note: This could be optimized; upper_bound takes O(logn) time.
       Int bucket = std::upper_bound(
-        histogram_buckets.begin(), histogram_buckets.end(),
-        mat_buf[row + col * ldim]) - histogram_buckets.begin();
+                     histogram_buckets.begin(), histogram_buckets.end(),
+                     mat_buf[row + col * ldim]) - histogram_buckets.begin();
       buckets[bucket] += 1.0f;
     }
   }
@@ -286,9 +283,9 @@ void lbann_summary::flush_stdevs() {
     // Re-use the global_sums vector for the standard deviation.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
       global_sums[i] = std::sqrt(
-        (global_sqsums[i] -
-         global_sums[i] * global_sums[i] / pending_stdevs[i].num) /
-        (pending_stdevs[i].num - 1));
+                         (global_sqsums[i] -
+                          global_sums[i] * global_sums[i] / pending_stdevs[i].num) /
+                         (pending_stdevs[i].num - 1));
     }
     gather_scalar_summary(pending_stdevs, global_sums);
   } else {
@@ -433,7 +430,7 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
   const Int height = mat.Height();
   const Int width = mat.Width();
   const Int ldim = mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   for (Int row = 0; row < height; ++row) {
     for (Int col = 0; col < width; ++col) {
       sum += mat_buf[row + col * ldim];
@@ -448,7 +445,7 @@ DataType lbann_summary::local_sqsum(const Mat& mat) const {
   const Int height = mat.Height();
   const Int width = mat.Width();
   const Int ldim = mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   for (Int row = 0; row < height; ++row) {
     for (Int col = 0; col < width; ++col) {
       const Int pos = row + col * ldim;
@@ -459,7 +456,7 @@ DataType lbann_summary::local_sqsum(const Mat& mat) const {
 }
 
 std::string lbann_summary::prepend_model(const std::string tag,
-                                         int model) const {
+    int model) const {
   return "model" + std::to_string(model) + "/" + tag;
 }
 
@@ -481,7 +478,7 @@ void lbann_summary::gather_scalar_summary(
 }
 
 void lbann_summary::gather_scalar_summary(const std::string tag, DataType s,
-                                          int64_t step) {
+    int64_t step) {
   if (comm->am_world_master()) {
     std::vector<DataType> data(comm->get_num_models());
     comm->intermodel_gather(s, data);

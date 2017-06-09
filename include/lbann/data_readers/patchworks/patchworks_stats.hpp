@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// patchworks_stats.hpp - LBANN PATCHWORKS header for pixel statistics 
+// patchworks_stats.hpp - LBANN PATCHWORKS header for pixel statistics
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -44,7 +44,7 @@ namespace patchworks {
 /// Pixel statistics of an image
 struct image_stats {
   size_t cnt; ///< number of values (pixels)
-  size_t cntZeros; ///< number of zero values 
+  size_t cntZeros; ///< number of zero values
   pw_fp_t min; ///< minimum intensity of a pixel
   pw_fp_t max; ///< maximum intensity of a pixel
   pw_fp_t median; ///< median intensity of a pixel
@@ -75,7 +75,7 @@ struct image_stats {
 
 /// Stream out the image statistics
 inline std::ostream& operator<<(std::ostream& os, const image_stats& stats) {
-    return stats.Print(os);
+  return stats.Print(os);
 }
 
 /// Compute the pixel statistics for a mono channel image

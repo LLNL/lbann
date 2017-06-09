@@ -33,14 +33,13 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
-                                                            optimizer* opt,/*needed?*/
-                                                              const uint miniBatchSize,
-                                                              Layer* original_layer,
-                                                              const weight_initialization init)
+lbann::target_layer_unsupervised::target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm *comm,
+    optimizer *opt,/*needed?*/
+    const uint miniBatchSize,
+    Layer *original_layer,
+    const weight_initialization init)
   :  target_layer(data_dist, comm, miniBatchSize, {}, false),m_original_layer(original_layer),
-     m_weight_initialization(init)
-{
+m_weight_initialization(init) {
 
   m_type = layer_type::target_unsupervised;
   Index = index;
@@ -61,41 +60,41 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
   View(weights, *m_weights, IR(0,NumNeurons), IR(0,num_prev_neurons));
   switch(m_weight_initialization) {
   case weight_initialization::uniform:
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), DataType(1));
-      break;
+    uniform_fill(weights, weights.Height(), weights.Width(),
+                 DataType(0), DataType(1));
+    break;
   case weight_initialization::normal:
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), DataType(1));
-      break;
+    gaussian_fill(weights, weights.Height(), weights.Width(),
+                  DataType(0), DataType(1));
+    break;
   case weight_initialization::glorot_normal: {
-      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
+    const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
+    gaussian_fill(weights, weights.Height(), weights.Width(),
+                  DataType(0), sqrt(var));
+    break;
   }
   case weight_initialization::glorot_uniform: {
-      const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
+    const DataType var = 2.0 / (num_prev_neurons + NumNeurons);
+    uniform_fill(weights, weights.Height(), weights.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
   }
   case weight_initialization::he_normal: {
-      const DataType var = 1.0 / num_prev_neurons;
-      gaussian_fill(weights, weights.Height(), weights.Width(),
-                    DataType(0), sqrt(var));
-      break;
+    const DataType var = 1.0 / num_prev_neurons;
+    gaussian_fill(weights, weights.Height(), weights.Width(),
+                  DataType(0), sqrt(var));
+    break;
   }
-    case weight_initialization::he_uniform: {
-      const DataType var = 1.0 / num_prev_neurons;
-      uniform_fill(weights, weights.Height(), weights.Width(),
-                   DataType(0), sqrt(3*var));
-      break;
+  case weight_initialization::he_uniform: {
+    const DataType var = 1.0 / num_prev_neurons;
+    uniform_fill(weights, weights.Height(), weights.Width(),
+                 DataType(0), sqrt(3*var));
+    break;
   }
-    case weight_initialization::zero: // Zero initialization is default
-    default:
-      Zero(weights);
-      break;
+  case weight_initialization::zero: // Zero initialization is default
+  default:
+    Zero(weights);
+    break;
   }
 
   // Initialize other matrices
@@ -112,8 +111,7 @@ void lbann::target_layer_unsupervised::setup(int num_prev_neurons) {
 
 }
 
-void lbann::target_layer_unsupervised::fp_linearity()
-{
+void lbann::target_layer_unsupervised::fp_linearity() {
   //m_activations is linear transformation of m_weights * m_prev_activations^T
   Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
 
@@ -130,8 +128,7 @@ void lbann::target_layer_unsupervised::fp_linearity()
   num_forwardprop_steps++;
 }
 
-void lbann::target_layer_unsupervised::bp_linearity()
-{
+void lbann::target_layer_unsupervised::bp_linearity() {
 
   /// @todo: get error signal from objective_fn object
 
@@ -161,8 +158,7 @@ execution_mode lbann::target_layer_unsupervised::get_execution_mode() {
   return m_execution_mode;
 }
 
-bool lbann::target_layer_unsupervised::update()
-{
+bool lbann::target_layer_unsupervised::update() {
   if(m_execution_mode == execution_mode::training) {
     m_optimizer->update(m_weights_gradient);
   }
@@ -172,7 +168,7 @@ bool lbann::target_layer_unsupervised::update()
 void lbann::target_layer_unsupervised::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
   std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
-    + "/ReconstructionCost";
+                    + "/ReconstructionCost";
   summarizer.reduce_scalar(tag, average_cost(), step);
 }
 

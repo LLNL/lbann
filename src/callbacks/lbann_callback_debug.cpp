@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,40 +29,40 @@
 //#include <algorithm>
 #include "lbann/callbacks/lbann_callback_debug.hpp"
 
-void lbann::lbann_callback_debug::on_epoch_begin(model* m) {
+void lbann::lbann_callback_debug::on_epoch_begin(model *m) {
 }
 
-void lbann::lbann_callback_debug::on_epoch_end(model* m) {
+void lbann::lbann_callback_debug::on_epoch_end(model *m) {
 }
 
-void lbann::lbann_callback_debug::on_batch_begin(model* m) {
+void lbann::lbann_callback_debug::on_batch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
   }
 }
 
-void lbann::lbann_callback_debug::on_batch_end(model* m) {
+void lbann::lbann_callback_debug::on_batch_end(model *m) {
 }
 
-void lbann::lbann_callback_debug::on_forward_prop_begin(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->Index << std::endl;
   }
 }
 
-void lbann::lbann_callback_debug::on_forward_prop_end(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_forward_prop_end(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->Index << std::endl;
   }
 }
 
-void lbann::lbann_callback_debug::on_backward_prop_begin(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting backward propagation for layer " << l->Index << std::endl;
   }
 }
 
-void lbann::lbann_callback_debug::on_backward_prop_end(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending backward propagation for layer " << l->Index << std::endl;
   }
@@ -71,7 +71,7 @@ void lbann::lbann_callback_debug::on_backward_prop_end(model* m, Layer* l) {
 ////////////////////////////////////////////////////////////////////////////////
 // Evaluation phase debugging
 ////////////////////////////////////////////////////////////////////////////////
-void lbann::lbann_callback_debug::on_batch_evaluate_begin(model* m) {
+void lbann::lbann_callback_debug::on_batch_evaluate_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     int64_t step;
     switch(m->get_execution_mode()) {
@@ -88,7 +88,7 @@ void lbann::lbann_callback_debug::on_batch_evaluate_begin(model* m) {
   }
 }
 
-void lbann::lbann_callback_debug::on_batch_evaluate_end(model* m) {
+void lbann::lbann_callback_debug::on_batch_evaluate_end(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     int64_t step;
     switch(m->get_execution_mode()) {
@@ -105,7 +105,7 @@ void lbann::lbann_callback_debug::on_batch_evaluate_end(model* m) {
   }
 }
 
-void lbann::lbann_callback_debug::on_evaluate_forward_prop_begin(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     int64_t step;
     switch(m->get_execution_mode()) {
@@ -122,7 +122,7 @@ void lbann::lbann_callback_debug::on_evaluate_forward_prop_begin(model* m, Layer
   }
 }
 
-void lbann::lbann_callback_debug::on_evaluate_forward_prop_end(model* m, Layer* l) {
+void lbann::lbann_callback_debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
     int64_t step;
     switch(m->get_execution_mode()) {

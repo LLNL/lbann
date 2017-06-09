@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,51 +40,50 @@
 using namespace std;
 using namespace El;
 
-lbann::Layer::Layer(data_layout data_dist, const uint index, 
-                    lbann_comm* comm, optimizer *opt,
+lbann::Layer::Layer(data_layout data_dist, const uint index,
+                    lbann_comm *comm, optimizer *opt,
                     uint mbsize, activation_type activation,
-                    std::vector<regularizer*> regs)
+                    std::vector<regularizer *> regs)
   : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
     m_cudnn(nullptr), regularizers(regs), m_mini_batch_size(mbsize),
-    m_effective_mbsize(mbsize)
-{
+    m_effective_mbsize(mbsize) {
 
-    m_type = layer_type::INVALID;
-    m_prev_layer_type = layer_type::INVALID;
-    m_next_layer_type = layer_type::INVALID;    
+  m_type = layer_type::INVALID;
+  m_prev_layer_type = layer_type::INVALID;
+  m_next_layer_type = layer_type::INVALID;
 
-    Index = index;
-    m_execution_mode = execution_mode::training;
-    fp_input = NULL;
-    bp_input = NULL;
-    neural_network_model = NULL;
+  Index = index;
+  m_execution_mode = execution_mode::training;
+  fp_input = NULL;
+  bp_input = NULL;
+  neural_network_model = NULL;
 
-    m_using_gpus = false;
-    m_prev_layer_using_gpus = false;
-    m_next_layer_using_gpus = false;
+  m_using_gpus = false;
+  m_prev_layer_using_gpus = false;
+  m_next_layer_using_gpus = false;
 #ifdef __LIB_CUDNN
-    fp_input_d = NULL;
-    bp_input_d = NULL;
+  fp_input_d = NULL;
+  bp_input_d = NULL;
 #endif
 
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
+  // Setup the data distribution
+  switch(data_dist) {
+  case data_layout::MODEL_PARALLEL:
+    initialize_model_parallel_distribution();
+    break;
+  case data_layout::DATA_PARALLEL:
+    initialize_data_parallel_distribution();
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
 
-    // Initialize activation function
-    m_activation_fn = new_activation(activation);
+  // Initialize activation function
+  m_activation_fn = new_activation(activation);
 
-    reset_counters();
+  reset_counters();
 
 }
 
@@ -113,7 +112,7 @@ void lbann::Layer::initialize_model_parallel_distribution() {
   m_activations         = new DistMat(comm->get_model_grid());
   m_prev_error_signal   = new DistMat(comm->get_model_grid());
   m_error_signal        = new DistMat(comm->get_model_grid());
-  
+
   /// Instantiate these view objects but do not allocate data for them
   m_weighted_sum_v      = new DistMat(comm->get_model_grid());
   m_prev_activations_v  = new DistMat(comm->get_model_grid());
@@ -131,7 +130,7 @@ void lbann::Layer::initialize_data_parallel_distribution() {
   m_activations         = new StarVCMat(comm->get_model_grid());
   m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
   m_error_signal        = new StarVCMat(comm->get_model_grid());
-  
+
   /// Instantiate these view objects but do not allocate data for them
   m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
   m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
@@ -148,10 +147,9 @@ void lbann::Layer::forwardProp() {
     DistData curr_dist = m_prev_activations->DistData();
     DistData prev_dist = fp_input->DistData();
     if(curr_dist.colDist == prev_dist.colDist
-       && curr_dist.rowDist == prev_dist.rowDist) {
+        && curr_dist.rowDist == prev_dist.rowDist) {
       View(*m_prev_activations, *fp_input);
-    }
-    else {
+    } else {
       *m_prev_activations = *fp_input;
     }
   }
@@ -166,8 +164,7 @@ void lbann::Layer::forwardProp() {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
-    }
-    else {
+    } else {
       m_prev_activations_d = *fp_input_d;
     }
   }
@@ -223,14 +220,13 @@ void lbann::Layer::backProp() {
     DistData curr_dist = m_prev_error_signal->DistData();
     DistData next_dist = bp_input->DistData();
     if(curr_dist.colDist == next_dist.colDist
-       && curr_dist.rowDist == next_dist.rowDist) {
+        && curr_dist.rowDist == next_dist.rowDist) {
       View(*m_prev_error_signal, *bp_input);
       View(*m_prev_error_signal_v,
            *m_prev_error_signal,
            ALL,
            IR(0, m_prev_error_signal_v->Width()));
-    }
-    else {
+    } else {
       *m_prev_error_signal = *bp_input;
     }
   }
@@ -242,8 +238,7 @@ void lbann::Layer::backProp() {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
-    }
-    else {
+    } else {
       m_prev_error_signal_d = *bp_input_d;
     }
   }
@@ -330,7 +325,9 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
-  for (regularizer* reg : regularizers) reg->setup(this);
+  for (regularizer *reg : regularizers) {
+    reg->setup(this);
+  }
 }
 
 void lbann::Layer::check_setup() {
@@ -351,49 +348,45 @@ ElMat *lbann::Layer::bp_output() {
   return m_error_signal;
 }
 
-void lbann::Layer::setup_fp_input(ElMat *fp_input)
-{
+void lbann::Layer::setup_fp_input(ElMat *fp_input) {
   this->fp_input = fp_input;
 }
 
-void lbann::Layer::setup_bp_input(ElMat *bp_input)
-{
+void lbann::Layer::setup_bp_input(ElMat *bp_input) {
   this->bp_input = bp_input;
 }
 
 #ifdef __LIB_CUDNN
-std::vector<DataType*> *lbann::Layer::fp_output_d() {
-  if(m_using_gpus)
+std::vector<DataType *> *lbann::Layer::fp_output_d() {
+  if(m_using_gpus) {
     return &m_activations_d;
-  else
+  } else {
     return NULL;
+  }
 }
 
-std::vector<DataType*> *lbann::Layer::bp_output_d() {
-  if(m_using_gpus)
+std::vector<DataType *> *lbann::Layer::bp_output_d() {
+  if(m_using_gpus) {
     return &m_error_signal_d;
-  else
+  } else {
     return NULL;
+  }
 }
 
-void lbann::Layer::setup_fp_input_d(std::vector<DataType*> *fp_input_d)
-{
+void lbann::Layer::setup_fp_input_d(std::vector<DataType *> *fp_input_d) {
   this->fp_input_d = fp_input_d;
 }
 
-void lbann::Layer::setup_bp_input_d(std::vector<DataType*> *bp_input_d)
-{
+void lbann::Layer::setup_bp_input_d(std::vector<DataType *> *bp_input_d) {
   this->bp_input_d = bp_input_d;
 }
 #endif
 
-void lbann::Layer::set_prev_layer_type(layer_type type)
-{
+void lbann::Layer::set_prev_layer_type(layer_type type) {
   this->m_prev_layer_type = type;
 }
 
-void lbann::Layer::set_next_layer_type(layer_type type)
-{
+void lbann::Layer::set_next_layer_type(layer_type type) {
   this->m_next_layer_type = type;
 }
 
@@ -401,81 +394,73 @@ bool lbann::Layer::using_gpus() const {
   return m_using_gpus;
 }
 
-void lbann::Layer::set_prev_layer_using_gpus(bool using_gpus)
-{
+void lbann::Layer::set_prev_layer_using_gpus(bool using_gpus) {
   m_prev_layer_using_gpus = using_gpus;
 }
 
-void lbann::Layer::set_next_layer_using_gpus(bool using_gpus)
-{
+void lbann::Layer::set_next_layer_using_gpus(bool using_gpus) {
   m_next_layer_using_gpus = using_gpus;
 }
 
-bool lbann::Layer::saveToFile(int fd, const char* dirname)
-{
-    char filepath[512];
-    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+bool lbann::Layer::saveToFile(int fd, const char *dirname) {
+  char filepath[512];
+  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
 
-    uint64_t bytes;
-    return lbann::write_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
+  uint64_t bytes;
+  return lbann::write_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
 }
 
-bool lbann::Layer::loadFromFile(int fd, const char* dirname)
-{
-    char filepath[512];
-    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+bool lbann::Layer::loadFromFile(int fd, const char *dirname) {
+  char filepath[512];
+  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
 
-    uint64_t bytes;
-    return lbann::read_distmat(-1, filepath, (DistMat*)m_weights, &bytes);
+  uint64_t bytes;
+  return lbann::read_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
 }
 
-bool lbann::Layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
-    //writeDist(fd, filename, *m_weights, bytes);
+bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  //writeDist(fd, filename, *m_weights, bytes);
 
-    // Need to catch return value from function
-    // m_optimizer->saveToCheckpoint(fd, filename, bytes);
-    return true;
+  // Need to catch return value from function
+  // m_optimizer->saveToCheckpoint(fd, filename, bytes);
+  return true;
 }
 
-bool lbann::Layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
-    // TODO: implement reader for other matrix distributions
-    //readDist(fd, filename, (DistMat&) *m_weights, bytes);
+bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  // TODO: implement reader for other matrix distributions
+  //readDist(fd, filename, (DistMat&) *m_weights, bytes);
 
-    // Need to catch return value from function
-    // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
-    return true;
+  // Need to catch return value from function
+  // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
+  return true;
 }
 
-bool lbann::Layer::saveToCheckpointShared(lbann::persist& p)
-{
-    // define name to store our parameters
-    char name[512];
-    sprintf(name, "weights_L%d_%lldx%lld", Index, m_weights->Height(), m_weights->Width());
+bool lbann::Layer::saveToCheckpointShared(lbann::persist& p) {
+  // define name to store our parameters
+  char name[512];
+  sprintf(name, "weights_L%d_%lldx%lld", Index, m_weights->Height(), m_weights->Width());
 
-    // write out our weights to the model file
-    p.write_distmat(persist_type::model, name, (DistMat*)m_weights);
+  // write out our weights to the model file
+  p.write_distmat(persist_type::model, name, (DistMat *)m_weights);
 
-    // if saving training state, also write out state of optimizer
-    // m_optimizer->saveToCheckpointShared(p, Index);
+  // if saving training state, also write out state of optimizer
+  // m_optimizer->saveToCheckpointShared(p, Index);
 
-    return true;
+  return true;
 }
 
-bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p)
-{
-    // define name to store our parameters
-    char name[512];
-    sprintf(name, "weights_L%d_%lldx%lld.bin", Index, m_weights->Height(), m_weights->Width());
+bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
+  // define name to store our parameters
+  char name[512];
+  sprintf(name, "weights_L%d_%lldx%lld.bin", Index, m_weights->Height(), m_weights->Width());
 
-    // read our weights from model file
-    p.read_distmat(persist_type::model, name, (DistMat*)m_weights);
+  // read our weights from model file
+  p.read_distmat(persist_type::model, name, (DistMat *)m_weights);
 
-    // if loading training state, read in state of optimizer
-    // m_optimizer->loadFromCheckpointShared(p, Index);
+  // if loading training state, read in state of optimizer
+  // m_optimizer->loadFromCheckpointShared(p, Index);
 
-    return true;
+  return true;
 }
 
 void lbann::Layer::fp_set_std_matrix_view() {
@@ -501,8 +486,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
     // models to figure out the entire size of the complete mini-batch
     Int total_mini_batch_size = comm->intermodel_allreduce((Int) cur_mini_batch_size);
     set_effective_minibatch_size(total_mini_batch_size);
-  }
-  else {
+  } else {
     set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
   }
 }
@@ -526,7 +510,7 @@ void lbann::Layer::bp_set_std_matrix_view() {
     int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
     //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
     set_effective_minibatch_size(total_mini_batch_size);
-  }else {
+  } else {
     set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
   }
 }
@@ -546,23 +530,30 @@ void lbann::Layer::bp_nonlinearity() {
 
 std::string lbann::Layer::weight_initialization_name(weight_initialization id) {
   switch(id) {
-    case weight_initialization::zero : return "zero";
-         break;
-    case weight_initialization::uniform : return "uniform";
-         break;
-    case weight_initialization::normal : return "normal";
-         break;
-    case weight_initialization::glorot_normal : return "glorot_normal";
-         break;
-    case weight_initialization::glorot_uniform : return "glorot_uniform";
-         break;
-    case weight_initialization::he_normal : return "he_normal";
-         break;
-    case weight_initialization::he_uniform : return "he_uniform";
-         break;
-    default:
-      char b[1024];
-      sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
-      throw lbann_exception(b);
+  case weight_initialization::zero :
+    return "zero";
+    break;
+  case weight_initialization::uniform :
+    return "uniform";
+    break;
+  case weight_initialization::normal :
+    return "normal";
+    break;
+  case weight_initialization::glorot_normal :
+    return "glorot_normal";
+    break;
+  case weight_initialization::glorot_uniform :
+    return "glorot_uniform";
+    break;
+  case weight_initialization::he_normal :
+    return "he_normal";
+    break;
+  case weight_initialization::he_uniform :
+    return "he_uniform";
+    break;
+  default:
+    char b[1024];
+    sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
+    throw lbann_exception(b);
   }
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,7 +40,7 @@ namespace lbann {
  * automatically called by layers.
  */
 class regularizer {
-public:
+ public:
   /**
    * Forward-propagation regularization of incoming connections.
    * This is called before applying a layer's linearity.
@@ -73,10 +73,12 @@ public:
   virtual void update() {}
 
   /** Set up to regularize layer l. */
-  virtual void setup(Layer* l) { m_layer = l; }
-protected:
+  virtual void setup(Layer *l) {
+    m_layer = l;
+  }
+ protected:
   /** Layer being regularized. */
-  Layer* m_layer;
+  Layer *m_layer;
 };
 
 }  // namespace lbann

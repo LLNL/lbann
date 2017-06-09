@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,23 +29,22 @@
 
 #include "lbann/layers/lbann_target_layer.hpp"
 
-namespace lbann
-{
-  class target_layer_distributed_minibatch : public target_layer {
-  public:
-    target_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression=false);
+namespace lbann {
+class target_layer_distributed_minibatch : public target_layer {
+ public:
+  target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression=false);
 
-    void setup(int num_prev_neurons);
-    void fp_linearity();
-    void bp_linearity();
-    bool update();
+  void setup(int num_prev_neurons);
+  void fp_linearity();
+  void bp_linearity();
+  bool update();
 
-  public:
-    int m_root; /* Which rank is the root of the CircMat */
-    Mat Y_local;
-    CircMat Ys;
-  protected:
-  };
+ public:
+  int m_root; /* Which rank is the root of the CircMat */
+  Mat Y_local;
+  CircMat Ys;
+ protected:
+};
 }
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED

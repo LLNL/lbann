@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,79 +34,77 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
-  /// Pooling layer
-  class local_response_normalization_layer : public Layer
-  {
-  
-  public:
+/// Pooling layer
+class local_response_normalization_layer : public Layer {
 
-    /// Constructor
-    local_response_normalization_layer
-    (uint index,
-     int num_dims,
-     int num_channels,
-     const int* input_dims,
-     Int window_width,
-     DataType lrn_alpha,
-     DataType lrn_beta,
-     DataType lrn_k,
-     uint mini_batch_size,
-     lbann_comm* comm,
-     cudnn::cudnn_manager* cudnn=NULL);
+ public:
 
-    /// Destructor
-    ~local_response_normalization_layer();
+  /// Constructor
+  local_response_normalization_layer
+  (uint index,
+   int num_dims,
+   int num_channels,
+   const int *input_dims,
+   Int window_width,
+   DataType lrn_alpha,
+   DataType lrn_beta,
+   DataType lrn_k,
+   uint mini_batch_size,
+   lbann_comm *comm,
+   cudnn::cudnn_manager *cudnn=NULL);
 
-    void setup(int num_prev_neurons);
+  /// Destructor
+  ~local_response_normalization_layer();
 
-    bool update();
+  void setup(int num_prev_neurons);
 
-  protected:
-    
-    void fp_linearity();
-    void bp_linearity();
+  bool update();
 
-  private:
+ protected:
 
-    /// Number of data dimensions
-    const Int m_num_dims;
-    /// Number of channels
-    const Int m_num_channels;
-    /// Data dimensions
-    /** In HW or DHW format */
-    std::vector<Int> m_dims;
-    /// Normalization window width
-    Int m_window_width;
-    /// LRN alpha scaling parameter
-    DataType m_lrn_alpha;
-    /// LRN beta power parameter
-    DataType m_lrn_beta;
-    /// LRN k parameter
-    DataType m_lrn_k;
+  void fp_linearity();
+  void bp_linearity();
+
+ private:
+
+  /// Number of data dimensions
+  const Int m_num_dims;
+  /// Number of channels
+  const Int m_num_channels;
+  /// Data dimensions
+  /** In HW or DHW format */
+  std::vector<Int> m_dims;
+  /// Normalization window width
+  Int m_window_width;
+  /// LRN alpha scaling parameter
+  DataType m_lrn_alpha;
+  /// LRN beta power parameter
+  DataType m_lrn_beta;
+  /// LRN k parameter
+  DataType m_lrn_k;
 
 #ifdef __LIB_CUDNN
-    /// Data tensor descriptor
-    cudnnTensorDescriptor_t m_tensor_desc;
-    /// Pooling descriptor
-    cudnnLRNDescriptor_t m_lrn_desc;
+  /// Data tensor descriptor
+  cudnnTensorDescriptor_t m_tensor_desc;
+  /// Pooling descriptor
+  cudnnLRNDescriptor_t m_lrn_desc;
 #endif // __LIB_CUDNN
 
-    /// Initialize GPU objects
-    void setup_gpu();
+  /// Initialize GPU objects
+  void setup_gpu();
 
-    /// CPU implementation of forward propagation linearity
-    void fp_linearity_cpu();
-    /// GPU implementation of forward propagation linearity
-    void fp_linearity_gpu();
-    /// CPU implementation of backward propagation linearity
-    void bp_linearity_cpu();
-    /// GPU implementation of backward propagation linearity
-    void bp_linearity_gpu();
+  /// CPU implementation of forward propagation linearity
+  void fp_linearity_cpu();
+  /// GPU implementation of forward propagation linearity
+  void fp_linearity_gpu();
+  /// CPU implementation of backward propagation linearity
+  void bp_linearity_cpu();
+  /// GPU implementation of backward propagation linearity
+  void bp_linearity_gpu();
 
-  };
+};
 
 }
 

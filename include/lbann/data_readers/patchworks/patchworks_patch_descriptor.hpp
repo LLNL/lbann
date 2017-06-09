@@ -54,7 +54,7 @@ class patch_descriptor {
    *  0: place the center patch anywhere within the image
    *  1: place the center patch anywhere allowing the space for all 8 neighbor patches
    *  the rest: place the center patch at the center of the image
-   */  
+   */
   unsigned int m_mode_center;
 
   /** chromatic aberration correction mode
@@ -77,21 +77,29 @@ class patch_descriptor {
   std::vector<ROI> m_positions;
 
  public:
-  patch_descriptor(void) { init(); } ///< Default constructor
+  patch_descriptor(void) {
+    init();  ///< Default constructor
+  }
   void init(void); ///< Initializer
 
   /// Set patch size
   void set_size(const int w, const int h);
   /// Set the gap between neighboring patches
-  void set_gap(const unsigned int g) { m_gap = g; }
+  void set_gap(const unsigned int g) {
+    m_gap = g;
+  }
   /// Set poisiton radomization parameter, the maximum jitter
   void set_jitter(const unsigned int j);
 
   /// Set mode to place center patch
-  void set_mode_centering(const unsigned int m) { m_mode_center = m; }
+  void set_mode_centering(const unsigned int m) {
+    m_mode_center = m;
+  }
 
   /// Set correction mode for chromatic aberration
-  void set_mode_chromatic_aberration(const unsigned int m) { m_mode_chrom = m; }
+  void set_mode_chromatic_aberration(const unsigned int m) {
+    m_mode_chrom = m;
+  }
 
   /// Declare the size of the image to take patches from, and implicitly set the area to sample as the entire image
   bool set_sample_image(const unsigned int w, const unsigned int h);
@@ -99,22 +107,27 @@ class patch_descriptor {
   bool set_sample_area(const ROI& area);
 
   /// Set the file extention of patch files
-  void set_file_ext(const std::string e) { m_ext = e; }
+  void set_file_ext(const std::string e) {
+    m_ext = e;
+  }
 
   /// A function that populates the list of displacements from the base patch to the next one
   virtual void define_patch_set(void);
 
   /// transform each pixel by B = I - a'*a/(a*a') where a=[-1 2 -1] to mitigate chromatic aberration
-  bool is_to_correct_chromatic_aberration_at_pixel(void) const
-  { return (m_mode_chrom == 1); }
+  bool is_to_correct_chromatic_aberration_at_pixel(void) const {
+    return (m_mode_chrom == 1);
+  }
 
   /// randomly drop two channels to avoid chromatic aberration impact
-  bool is_to_drop_2channels(void) const
-  { return (m_mode_chrom == 2); }
+  bool is_to_drop_2channels(void) const {
+    return (m_mode_chrom == 2);
+  }
 
   /// Allow read-only access to the patch displacements
-  const std::vector<displacement_type>& get_displacements(void) const
-  { return m_displacements; }
+  const std::vector<displacement_type>& get_displacements(void) const {
+    return m_displacements;
+  }
 
   /// Compute the position of the first patch
   virtual bool get_first_patch(ROI& patch);
@@ -124,7 +137,9 @@ class patch_descriptor {
   virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
 
   /// Allow read-only access to the positions of the patches generated
-  const std::vector<ROI>& access_positions(void) const { return m_positions; }
+  const std::vector<ROI>& access_positions(void) const {
+    return m_positions;
+  }
   /// print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };

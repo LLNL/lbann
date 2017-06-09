@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,29 +40,28 @@ lbann::SoftmaxLayer::SoftmaxLayer(data_layout data_dist,
                                   const uint numNeurons,
                                   const uint miniBatchSize,
                                   const weight_initialization init,
-                                  lbann_comm* comm,
+                                  lbann_comm *comm,
                                   optimizer *opt)
   :  Layer(data_dist, index, comm, opt, miniBatchSize),
-     m_weight_initialization(init)
-{
-    m_type = layer_type::softmax;
-    Index = index;
-    NumNeurons = numNeurons;
-    WBL2NormSum = 0.0;
+     m_weight_initialization(init) {
+  m_type = layer_type::softmax;
+  Index = index;
+  NumNeurons = numNeurons;
+  WBL2NormSum = 0.0;
 
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
+  // Setup the data distribution
+  switch(data_dist) {
+  case data_layout::MODEL_PARALLEL:
+    initialize_model_parallel_distribution();
+    break;
+  case data_layout::DATA_PARALLEL:
+    initialize_data_parallel_distribution();
+    break;
+  default:
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          "Invalid data layout selected");
+  }
 }
 
 lbann::SoftmaxLayer::~SoftmaxLayer() {
@@ -85,25 +84,25 @@ void lbann::SoftmaxLayer::initialize_data_parallel_distribution() {
 void lbann::SoftmaxLayer::setup(int numPrevNeurons) {
   Layer::setup(numPrevNeurons);
 
-    // Zero the weight-bias matrix
-    Zeros(*m_weights, NumNeurons, numPrevNeurons);
+  // Zero the weight-bias matrix
+  Zeros(*m_weights, NumNeurons, numPrevNeurons);
 
-    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, NumNeurons);
+  /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+  initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, NumNeurons);
 
-    // Initialize other matrices
-    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
-    Zeros(*m_workspace, 1, m_mini_batch_size);
+  // Initialize other matrices
+  Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);
+  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+  Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
+  Zeros(*m_workspace, 1, m_mini_batch_size);
 
-    // Initialize optimizer
-    if(m_optimizer != NULL) {
-      m_optimizer->setup(m_weights);
-    }
+  // Initialize optimizer
+  if(m_optimizer != NULL) {
+    m_optimizer->setup(m_weights);
+  }
 
 }
 
@@ -113,8 +112,7 @@ void lbann::SoftmaxLayer::fp_set_std_matrix_view() {
   View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
 }
 
-void lbann::SoftmaxLayer::fp_linearity()
-{
+void lbann::SoftmaxLayer::fp_linearity() {
 
   // Apply weight matrix
   switch(m_data_layout) {
@@ -139,8 +137,7 @@ void lbann::SoftmaxLayer::fp_linearity()
 
 }
 
-void lbann::SoftmaxLayer::fp_nonlinearity()
-{
+void lbann::SoftmaxLayer::fp_nonlinearity() {
 
   // Get local matrices and parameters
   Mat& workspace_local = m_workspace_v->Matrix();
@@ -149,7 +146,7 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
   const Int local_width = activations_local.Width();
 
   // Find maximum entry in each column
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int c=0; c<local_width; ++c) {
     DataType max_entry = -INFINITY;
     for(Int r=0; r<local_height; ++r) {
@@ -164,12 +161,12 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
   //   up. Large negative values underflow to 0.
   IndexDependentMap(activations_local,
                     (std::function<DataType(Int,Int,const DataType&)>)
-                    ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
-                      return Exp(z - workspace_local.Get(Int(0), c));
-                    }));
+  ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
+    return Exp(z - workspace_local.Get(Int(0), c));
+  }));
 
   // Compute column sums
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int c=0; c<local_width; ++c) {
     DataType sum = 0;
     for(Int r=0; r<local_height; ++r) {
@@ -185,15 +182,14 @@ void lbann::SoftmaxLayer::fp_nonlinearity()
   // impact floating point performance.
   IndexDependentMap(activations_local,
                     (std::function<DataType(Int,Int,const DataType&)>)
-                    ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
-                      const DataType v = z / workspace_local.Get(Int(0), c);
-                      return Abs(v) < 1e-8 ? DataType(1e-8) : v;
-                    }));
-  
+  ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
+    const DataType v = z / workspace_local.Get(Int(0), c);
+    return Abs(v) < 1e-8 ? DataType(1e-8) : v;
+  }));
+
 }
 
-void lbann::SoftmaxLayer::bp_linearity()
-{
+void lbann::SoftmaxLayer::bp_linearity() {
 
   switch(m_data_layout) {
   case data_layout::MODEL_PARALLEL:
@@ -231,16 +227,15 @@ void lbann::SoftmaxLayer::bp_linearity()
 
 }
 
-void lbann::SoftmaxLayer::bp_nonlinearity()
-{
+void lbann::SoftmaxLayer::bp_nonlinearity() {
 
   // Stop early if objective function is categorical cross entropy
   // Note: error signal is already computed in objective function object
   if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
-     && (m_next_layer_type == layer_type::target_distributed_minibatch
-         || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
-         || m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
-         // || m_next_layer_type == layer_type::target_unsupervised
+      && (m_next_layer_type == layer_type::target_distributed_minibatch
+          || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
+          || m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
+          // || m_next_layer_type == layer_type::target_unsupervised
          )) {
     return;
   }
@@ -266,11 +261,11 @@ void lbann::SoftmaxLayer::bp_nonlinearity()
   IndexDependentMap(prev_error_signal_local,
                     (std::function<DataType(Int,Int,const DataType&)>)
                     ([this,&activations_local,&workspace_local]
-                     (Int r, Int c, const DataType& z)->DataType {
-                      const DataType activations_entry = activations_local.Get(r,c);
-                      const DataType dot_product_entry = workspace_local.Get(Int(0),c);
-                      return activations_entry * (z - dot_product_entry);
-                    }));
+  (Int r, Int c, const DataType& z)->DataType {
+    const DataType activations_entry = activations_local.Get(r,c);
+    const DataType dot_product_entry = workspace_local.Get(Int(0),c);
+    return activations_entry * (z - dot_product_entry);
+  }));
 
 }
 
@@ -279,11 +274,14 @@ DataType lbann::SoftmaxLayer::WBL2norm() {
   return nrm2 * nrm2;
 }
 
-inline DataType _sq(DataType x) { return (x * x); }
-inline DataType _sqrt(DataType x) { return (1 / sqrt(x + 1e-8)); }
+inline DataType _sq(DataType x) {
+  return (x * x);
+}
+inline DataType _sqrt(DataType x) {
+  return (1 / sqrt(x + 1e-8));
+}
 
-bool lbann::SoftmaxLayer::update()
-{
+bool lbann::SoftmaxLayer::update() {
   double start = get_time();
   Layer::update();
   if(m_execution_mode == execution_mode::training) {
@@ -293,27 +291,22 @@ bool lbann::SoftmaxLayer::update()
   return true;
 }
 
-DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon)
-{
+DataType lbann::SoftmaxLayer::checkGradient(Layer& PrevLayer, const DataType Epsilon) {
   return 0.0;
 }
 
-bool lbann::SoftmaxLayer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
+bool lbann::SoftmaxLayer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   return Layer::saveToCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::SoftmaxLayer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
+bool lbann::SoftmaxLayer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::SoftmaxLayer::saveToCheckpointShared(lbann::persist& p)
-{
+bool lbann::SoftmaxLayer::saveToCheckpointShared(lbann::persist& p) {
   return Layer::saveToCheckpointShared(p);
 }
 
-bool lbann::SoftmaxLayer::loadFromCheckpointShared(lbann::persist& p)
-{
-    return Layer::loadFromCheckpointShared(p);
+bool lbann::SoftmaxLayer::loadFromCheckpointShared(lbann::persist& p) {
+  return Layer::loadFromCheckpointShared(p);
 }

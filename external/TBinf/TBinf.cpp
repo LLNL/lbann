@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -61,8 +61,8 @@ SummaryWriter::~SummaryWriter() {
 void SummaryWriter::add_scalar(const std::string tag, float value,
                                int64_t step) {
   // Allocation is freed after the event takes ownership.
-  tensorflow::Summary* s = new tensorflow::Summary();
-  tensorflow::Summary::Value* v = s->add_value();
+  tensorflow::Summary *s = new tensorflow::Summary();
+  tensorflow::Summary::Value *v = s->add_value();
   v->set_tag(tag);
   v->set_simple_value(value);
   write_summary_event(s, step);
@@ -96,10 +96,10 @@ void SummaryWriter::add_histogram(const std::string tag,
     sqsum += val * val;
   }
   // Set up the summary object.
-  tensorflow::Summary* s = new tensorflow::Summary();
-  tensorflow::Summary::Value* v = s->add_value();
+  tensorflow::Summary *s = new tensorflow::Summary();
+  tensorflow::Summary::Value *v = s->add_value();
   v->set_tag(tag);
-  tensorflow::HistogramProto* histo = v->mutable_histo();
+  tensorflow::HistogramProto *histo = v->mutable_histo();
   histo->Clear();
   histo->set_min(min);
   histo->set_max(max);
@@ -131,10 +131,10 @@ void SummaryWriter::add_histogram(const std::string tag,
                                   double sum, double sqsum,
                                   int64_t step) {
   // Set up the summary object.
-  tensorflow::Summary* s = new tensorflow::Summary();
-  tensorflow::Summary::Value* v = s->add_value();
+  tensorflow::Summary *s = new tensorflow::Summary();
+  tensorflow::Summary::Value *v = s->add_value();
   v->set_tag(tag);
-  tensorflow::HistogramProto* histo = v->mutable_histo();
+  tensorflow::HistogramProto *histo = v->mutable_histo();
   histo->Clear();
   histo->set_min(min);
   histo->set_max(max);
@@ -188,7 +188,7 @@ void SummaryWriter::flush() {
   file.flush();
 }
 
-void SummaryWriter::write_summary_event(tensorflow::Summary* s, int64_t step) {
+void SummaryWriter::write_summary_event(tensorflow::Summary *s, int64_t step) {
   tensorflow::Event e;
   e.set_wall_time(get_time_in_seconds());
   if (step >= 0) {

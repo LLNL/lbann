@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -37,19 +37,18 @@ local_response_normalization_layer::local_response_normalization_layer
 (uint index,
  int num_dims,
  int num_channels,
- const int* dims,
+ const int *dims,
  Int window_width,
  DataType lrn_alpha,
  DataType lrn_beta,
  DataType lrn_k,
  uint mini_batch_size,
- lbann_comm* comm,
- cudnn::cudnn_manager* cudnn)
+ lbann_comm *comm,
+ cudnn::cudnn_manager *cudnn)
   : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
-    m_num_dims(num_dims), m_num_channels(num_channels),
-    m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
-    m_lrn_k(lrn_k)
-{
+m_num_dims(num_dims), m_num_channels(num_channels),
+m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
+m_lrn_k(lrn_k) {
   m_type = layer_type::local_response_normalization;
 
   // Initialize data dimensions
@@ -84,32 +83,34 @@ local_response_normalization_layer::local_response_normalization_layer
 
 }
 
-local_response_normalization_layer::~local_response_normalization_layer()
-{
+local_response_normalization_layer::~local_response_normalization_layer() {
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
 
     // Destroy cuDNN objects
-    if(m_tensor_desc)
+    if(m_tensor_desc) {
       checkCUDNN(cudnnDestroyTensorDescriptor(m_tensor_desc));
-    if(m_lrn_desc)
+    }
+    if(m_lrn_desc) {
       checkCUDNN(cudnnDestroyLRNDescriptor(m_lrn_desc));
+    }
 
     // Deallocate GPU memory
     m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(!m_prev_layer_using_gpus)
+    if(!m_prev_layer_using_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    if(!m_next_layer_using_gpus)
+    }
+    if(!m_next_layer_using_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    }
 
   }
 #endif // __LIB_CUDNN
 }
 
-void local_response_normalization_layer::setup(const int num_prev_neurons)
-{
+void local_response_normalization_layer::setup(const int num_prev_neurons) {
   Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
@@ -122,8 +123,9 @@ void local_response_normalization_layer::setup(const int num_prev_neurons)
 #ifdef LBANN_DEBUG
   // Check if input dimensions are valid
   int num_inputs = m_num_channels;
-  for(int i=0; i<m_num_dims; ++i)
+  for(int i=0; i<m_num_dims; ++i) {
     num_inputs *= m_dims[i];
+  }
   if(num_inputs != num_prev_neurons) {
     throw lbann_exception("lbann_layer_local_response_normalization: unexpected number of input neurons");
   }
@@ -151,12 +153,14 @@ void lbann::local_response_normalization_layer::setup_gpu() {
   std::vector<int> dims(m_num_dims+2);
   dims[0] = m_mini_batch_size_per_gpu;
   dims[1] = m_num_channels;
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     dims[i+2] = m_dims[i];
+  }
   std::vector<int> strides(m_num_dims+2);
   strides[m_num_dims + 1] = 1;
-  for(Int i=m_num_dims; i>=0; --i)
+  for(Int i=m_num_dims; i>=0; --i) {
     strides[i] = strides[i+1] * dims[i+1];
+  }
   checkCUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
                                         m_cudnn->get_cudnn_data_type(),
                                         m_num_dims+2,
@@ -197,8 +201,7 @@ void lbann::local_response_normalization_layer::setup_gpu() {
 void lbann::local_response_normalization_layer::fp_linearity() {
   if(m_using_gpus) {
     fp_linearity_gpu();
-  }
-  else {
+  } else {
     fp_linearity_cpu();
   }
 }
@@ -206,8 +209,7 @@ void lbann::local_response_normalization_layer::fp_linearity() {
 void lbann::local_response_normalization_layer::bp_linearity() {
   if(m_using_gpus) {
     bp_linearity_gpu();
-  }
-  else {
+  } else {
     bp_linearity_cpu();
   }
 }
@@ -263,9 +265,9 @@ void lbann::local_response_normalization_layer::fp_linearity_cpu() {
   //   = k + alpha / window_width * sum( prev_activations(j) ^ 2 )
   // Note: The sum is over entries in the normalization window.
   ////////////////////////////////////////////////////////////////
-  
+
   // Iterate through data samples in mini-batch
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
     // Iterate through positions in sample
     for(Int pos = 0; pos < num_per_channel; ++pos) {
@@ -291,7 +293,7 @@ void lbann::local_response_normalization_layer::fp_linearity_cpu() {
         const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
         const DataType output_entry = input_entry * Pow(scale_factor, -m_lrn_beta);
         weighted_sum_local.Set(index, sample, output_entry);
-        
+
         // Shift normalization window by one entry
         if(window_start >= 0) {
           const Int i = pos + num_per_channel*window_start;
@@ -309,7 +311,7 @@ void lbann::local_response_normalization_layer::fp_linearity_cpu() {
       }
 
     }
-    
+
   }
 
   // weighted_sum and output are identical after fp linearity step
@@ -321,7 +323,7 @@ void lbann::local_response_normalization_layer::bp_linearity_gpu() {
 #ifndef __LIB_CUDNN
   throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
 #else
-  
+
   // Useful constants
   const DataType one = 1;
   const DataType zero = 0;
@@ -368,17 +370,17 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
 
   ////////////////////////////////////////////////////////////////
   // error_signal(i)
-  //   = prev_error_signal(i) / scale_factor(i) ^ beta 
-  //     - 2 * alpha * beta / window_width * prev_activations(i) 
+  //   = prev_error_signal(i) / scale_factor(i) ^ beta
+  //     - 2 * alpha * beta / window_width * prev_activations(i)
   //       * sum( prev_error_signal(j) * activations(j)
   //              / scale_factor(j) )
   // Note: See comments in fp_linearity_cpu for a definition of
   //   scale_factor. The sum is over entries in the normalization
   //   window.
   ////////////////////////////////////////////////////////////////
-  
+
   // Iterate through data samples in mini-batch
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
     // Iterate through positions in sample
     for(Int pos = 0; pos < num_per_channel; ++pos) {
@@ -420,7 +422,7 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
                * prev_error_signal_entry * activations_entry / scale_factor);
           error_signal_local.Update(i, sample, error_signal_update);
         }
-        
+
         // Shift normalization window by one entry
         if(window_start >= 0) {
           const Int i = pos + num_per_channel*window_start;
@@ -438,13 +440,12 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
       }
 
     }
-    
+
   }
 
 }
 
-bool local_response_normalization_layer::update()
-{
+bool local_response_normalization_layer::update() {
   double start = get_time();
   Layer::update();
   update_time += get_time() - start;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////xecu
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -75,7 +75,7 @@ static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_lay
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
-static const char* __attribute__((used)) _to_string(execution_mode m) { 
+static const char *__attribute__((used)) _to_string(execution_mode m) {
   switch(m) {
   case execution_mode::training:
     return "training";
@@ -95,15 +95,14 @@ static const char* __attribute__((used)) _to_string(execution_mode m) {
 
 /// Weight matrix initialization scheme
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-  //if you change the above enum, please also edit:
-  //  static std::string Layer::weight_initialization_name(weight_initialization id);
+//if you change the above enum, please also edit:
+//  static std::string Layer::weight_initialization_name(weight_initialization id);
 
 
 /// Pooling layer mode
 enum class pool_mode {max, average, average_no_pad};
 
-namespace lbann
-{
+namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
@@ -114,16 +113,15 @@ class lbann_comm;
  * configuration.
  * @param comm An lbann_comm instance for all the processes involved.
  */
-void initialize(lbann_comm* comm);
+void initialize(lbann_comm *comm);
 /**
  * Perform finalization.
  */
 void finalize();
 
-class CUtility
-{
-public:
-  static void convolveMat(StarMat* Kernels, BlockMat& InputMat, BlockMat& OutputMat,
+class CUtility {
+ public:
+  static void convolveMat(StarMat *Kernels, BlockMat& InputMat, BlockMat& OutputMat,
                           uint InputWidth, uint InputHeight);
 };
 

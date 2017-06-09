@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,14 +34,14 @@
 namespace lbann {
 
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
-                                             lbann_summary* _summarizer) :
+    lbann_summary *_summarizer) :
   lbann_callback(1, _summarizer), default_ct(ct) {
-  set_name("imcomm");  
+  set_name("imcomm");
 }
 
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
-                                             std::unordered_set<uint> _layers,
-                                             lbann_summary* _summarizer) :
+    std::unordered_set<uint> _layers,
+    lbann_summary *_summarizer) :
   lbann_callback_imcomm(NONE, _summarizer) {
   for (const auto& layer : _layers) {
     param_choices[layer] = {};
@@ -68,8 +68,8 @@ void lbann_callback_imcomm::set_layer_threshold(
   param_choices[layer].neg_thresh = neg_thresh;
 }
 
-void lbann_callback_imcomm::setup(model* m) {
-  std::vector<Layer*>& layers = m->get_layers();
+void lbann_callback_imcomm::setup(model *m) {
+  std::vector<Layer *>& layers = m->get_layers();
   layer_params.resize(layers.size());
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     imcomm_params& params = layer_params[layer];
@@ -91,11 +91,11 @@ void lbann_callback_imcomm::setup(model* m) {
       // Check if reshaping is needed.
       // Currently only automatically reshapes conv layers. (But ignores bias.)
       if (layers[layer]->m_type == layer_type::convolution) {
-        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        convolutional_layer *conv_layer = (convolutional_layer *) layers[layer];
         params.reshape_height = conv_layer->m_num_input_channels *
-          std::accumulate(conv_layer->m_filter_dims.begin(),
-                          conv_layer->m_filter_dims.end(),
-                          Int(1), std::multiplies<Int>());
+                                std::accumulate(conv_layer->m_filter_dims.begin(),
+                                                conv_layer->m_filter_dims.end(),
+                                                Int(1), std::multiplies<Int>());
         params.reshape_width = conv_layer->m_num_output_channels;
       }
       if (ct_does_quantization(params.ct)) {
@@ -110,13 +110,13 @@ void lbann_callback_imcomm::setup(model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_epoch_end(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_imcomm::on_epoch_end(model *m) {
+  lbann_comm *comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
-  std::vector<Layer*>& layers = m->get_layers();
+  std::vector<Layer *>& layers = m->get_layers();
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     imcomm_params& params = layer_params[layer];
     if (ct_does_quantization(params.ct)) {
@@ -137,23 +137,25 @@ void lbann_callback_imcomm::on_epoch_end(model* m) {
   }
 }
 
-void lbann_callback_imcomm::on_backward_prop_end(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_imcomm::on_backward_prop_end(model *m) {
+  lbann_comm *comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
-  std::vector<Layer*>& layers = m->get_layers();
+  std::vector<Layer *>& layers = m->get_layers();
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     double start_time = get_time();
     imcomm_params& params = layer_params[layer];
-    if (params.ct == NONE) continue;
+    if (params.ct == NONE) {
+      continue;
+    }
     Mat& local_gradients =
       layers[layer]->get_weights_biases_gradient().Matrix();
-    Mat* reshaped = &local_gradients;
+    Mat *reshaped = &local_gradients;
     if (params.reshape_height > 0 && ct_does_quantization(params.ct)) {
       if (layers[layer]->m_type == layer_type::convolution) {
-        convolutional_layer* conv_layer = (convolutional_layer*) layers[layer];
+        convolutional_layer *conv_layer = (convolutional_layer *) layers[layer];
         // Currently ignores the bias.
         Mat grad_view = local_gradients(IR(0, conv_layer->m_filter_size), ALL);
         reshape_mat(grad_view, *reshaped, params.reshape_height,
@@ -187,13 +189,15 @@ void lbann_callback_imcomm::on_backward_prop_end(model* m) {
   }
 }
 
-void lbann_callback_imcomm::do_summary(model* m, Layer* layer,
+void lbann_callback_imcomm::do_summary(model *m, Layer *layer,
                                        double im_time) {
-  if (summarizer == nullptr) return;
+  if (summarizer == nullptr) {
+    return;
+  }
   uint idx = layer->get_index();
-  lbann_comm* comm = m->get_comm();
+  lbann_comm *comm = m->get_comm();
   std::string prefix = "layer" + std::to_string(
-    static_cast<long long>(idx)) + "/imcomm_";
+                         static_cast<long long>(idx)) + "/imcomm_";
   summarizer->reduce_scalar(prefix + "time",
                             im_time, m->get_cur_step());
   size_t bytes_sent = 0;

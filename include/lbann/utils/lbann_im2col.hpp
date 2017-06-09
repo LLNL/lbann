@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -38,9 +38,9 @@ namespace lbann {
  *  flattening.
  *  @param im               Input tensor, represented as a column
  *                          vector.
- *  @param col              Output matrix. Height should be equal 
+ *  @param col              Output matrix. Height should be equal
  *                          to window size and width equal to number
- *                          of window shifts. Data should be 
+ *                          of window shifts. Data should be
  *                          contiguous.
  *  @param im_dims          Input tensor dimensions.
  *  @param im_pads          Zero pads for input tensor.
@@ -84,8 +84,8 @@ void col2im(const Mat& col,
 /** This is an optimized implementation of im2col for 2D data. im2col
  *  will automatically call this routine if it detects 2D data.
  */
-void im2col_2d(const DataType* __restrict__ input_buffer,
-               DataType* __restrict__ output_buffer,
+void im2col_2d(const DataType *__restrict__ input_buffer,
+               DataType *__restrict__ output_buffer,
                int input_dim_x,
                int input_dim_y,
                int input_pad_x,
@@ -100,8 +100,8 @@ void im2col_2d(const DataType* __restrict__ input_buffer,
 /** This is an optimized implementation of col2im for 2D data. col2im
  *  will automatically call this routine if it detects 2D data.
  */
-void col2im_2d(const DataType* __restrict__ input_buffer,
-               DataType* __restrict__ output_buffer,
+void col2im_2d(const DataType *__restrict__ input_buffer,
+               DataType *__restrict__ output_buffer,
                int output_dim_x,
                int output_dim_y,
                int output_pad_x,

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,8 +32,8 @@ using namespace std;
 
 namespace lbann {
 
-  void DataReader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset, 
-                       lbann_comm* comm) {
+void DataReader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
+                       lbann_comm *comm) {
   m_model_offset = model_offset;
   m_base_offset = base_offset;
   m_batch_stride = batch_stride;
@@ -49,7 +49,7 @@ namespace lbann {
   if(comm != NULL) {
     m_use_alt_last_mini_batch_size = true;
     m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
-  }else {
+  } else {
     /// By default each data reader will plan to process the entire data set
     m_num_iterations_per_epoch = ceil((float) this->getNumData() / (float) BatchSize);
   }
@@ -73,11 +73,11 @@ bool DataReader::update() {
   if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
     //    std::cout << "Data reader last update update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_last_mini_batch_stride) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
     CurrentPos += m_last_mini_batch_stride;
-  }else {
+  } else {
     //    std::cout << "Data reader update the current position is " << CurrentPos << " and the next postion is going to be " << (CurrentPos + m_batch_stride) << " and the number of samples total is " << ShuffledIndices.size() << std::endl;
     CurrentPos += m_batch_stride;
   }
-  
+
   /// Maintain the current width of the matrix
   Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
@@ -100,7 +100,7 @@ int DataReader::getBatchSize() {
       m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
     return m_last_mini_batch_size;
   } else {
-    return BatchSize; 
+    return BatchSize;
   }
 }
 
@@ -127,7 +127,7 @@ void DataReader::select_subset_of_data() {
     size_t count = get_max_sample_count();
     if(count > getNumData()) {
       stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << " :: DataReader::select_subset_of_data() - max_sample_count=" << count
           << " is > getNumData=" << getNumData();
       throw lbann_exception(err.str());
@@ -178,123 +178,121 @@ DataReader& DataReader::operator=(const DataReader& source) {
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool DataReader::saveToCheckpointShared(persist& p, const char* name)
-{
-    // rank 0 writes the training state file
-    if (p.m_rank == 0) {
-        char fieldname[1024];
+bool DataReader::saveToCheckpointShared(persist& p, const char *name) {
+  // rank 0 writes the training state file
+  if (p.m_rank == 0) {
+    char fieldname[1024];
 
-        // record minibatch index
-        snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-        p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
+    // record minibatch index
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
 
-        // get size of list of training examples
-        int size = ShuffledIndices.size();
+    // get size of list of training examples
+    int size = ShuffledIndices.size();
 
-        // record size of ShuffleIndices
-        snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-        p.write_uint64(persist_type::train, fieldname, (uint64_t) size);
+    // record size of ShuffleIndices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.write_uint64(persist_type::train, fieldname, (uint64_t) size);
 
-        // TODO: each model may have a different position, need to gather and write these
-        // record current position within training data
-        snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-        p.write_uint64(persist_type::train, fieldname, (uint64_t) CurrentPos);
+    // TODO: each model may have a different position, need to gather and write these
+    // record current position within training data
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.write_uint64(persist_type::train, fieldname, (uint64_t) CurrentPos);
 
-        // write list of indices
-        snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-        p.write_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
-    }
+    // write list of indices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.write_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
+  }
 
-    return true;
+  return true;
 }
 
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char* name)
-{
-    // rank 0 reads the training state file
-    if (p.m_rank == 0) {
-        char fieldname[1024];
+bool lbann::DataReader::loadFromCheckpointShared(persist& p, const char *name) {
+  // rank 0 reads the training state file
+  if (p.m_rank == 0) {
+    char fieldname[1024];
 
-        // record minibatch index
-        uint64_t val;
-        snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-        p.read_uint64(persist_type::train, fieldname, &val);
-        m_current_mini_batch_idx = (int) val;
+    // record minibatch index
+    uint64_t val;
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.read_uint64(persist_type::train, fieldname, &val);
+    m_current_mini_batch_idx = (int) val;
 
-        // get size of ShuffleIndices
-        snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-        p.read_uint64(persist_type::train, fieldname, &val);
-        int size = (int) val;
+    // get size of ShuffleIndices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.read_uint64(persist_type::train, fieldname, &val);
+    int size = (int) val;
 
-        // get current position within data
-        snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-        p.read_uint64(persist_type::train, fieldname, &val);
-        CurrentPos = (int) val;
-
-        // resize shuffled index array to hold values
-        ShuffledIndices.resize(size);
-
-        // read list of indices
-        snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-        p.read_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
-    }
-
-    // broadcast minibatch index
-    MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // TODO: with multiple readers, make this a scatter
-    // broadcast current position
-    MPI_Bcast(&CurrentPos, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // broadcast values from rank 0
-    int size = ShuffledIndices.size();
-    MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // get current position within data
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.read_uint64(persist_type::train, fieldname, &val);
+    CurrentPos = (int) val;
 
     // resize shuffled index array to hold values
-    if (p.m_rank != 0) {
-        ShuffledIndices.resize(size);
-    }
+    ShuffledIndices.resize(size);
 
-    // broadcast index array
-    MPI_Bcast(&ShuffledIndices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
+    // read list of indices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.read_int32_contig(persist_type::train, fieldname, &ShuffledIndices[0], (uint64_t) size);
+  }
 
-    return true;
+  // broadcast minibatch index
+  MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // TODO: with multiple readers, make this a scatter
+  // broadcast current position
+  MPI_Bcast(&CurrentPos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // broadcast values from rank 0
+  int size = ShuffledIndices.size();
+  MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // resize shuffled index array to hold values
+  if (p.m_rank != 0) {
+    ShuffledIndices.resize(size);
+  }
+
+  // broadcast index array
+  MPI_Bcast(&ShuffledIndices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
+
+  return true;
 }
 
-void DataReader::set_file_dir(std::string s) { 
-  m_file_dir = s; 
+void DataReader::set_file_dir(std::string s) {
+  m_file_dir = s;
 }
 
-std::string DataReader::get_file_dir() { 
-  return m_file_dir; 
+std::string DataReader::get_file_dir() {
+  return m_file_dir;
 }
 
-void DataReader::set_data_filename(std::string s) { 
-  m_data_fn = s; 
+void DataReader::set_data_filename(std::string s) {
+  m_data_fn = s;
 }
 
-std::string DataReader::get_data_filename() { 
-    if (m_data_fn == "") {
-      std::stringstream s;
-      s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-        << "set_data_filename; this is an error!";
-      throw lbann_exception(s.str());
-    }
-    return m_data_fn; 
+std::string DataReader::get_data_filename() {
+  if (m_data_fn == "") {
+    std::stringstream s;
+    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
+      << "set_data_filename; this is an error!";
+    throw lbann_exception(s.str());
+  }
+  return m_data_fn;
 }
 
-void DataReader::set_label_filename(std::string s) { 
-  m_label_fn = s; 
+void DataReader::set_label_filename(std::string s) {
+  m_label_fn = s;
 }
 
-string DataReader::get_label_filename() { 
-    if (m_label_fn == "") {
-      std::stringstream s;
-      s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-        << "set_label_filename; this is an error!";
-      throw lbann_exception(s.str());
-    }
-    return m_label_fn; 
+string DataReader::get_label_filename() {
+  if (m_label_fn == "") {
+    std::stringstream s;
+    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
+      << "set_label_filename; this is an error!";
+    throw lbann_exception(s.str());
+  }
+  return m_label_fn;
 }
 
 void DataReader::set_max_sample_count(size_t s) {
@@ -328,7 +326,9 @@ void DataReader::set_validation_percent(double s) {
 }
 
 bool DataReader::has_validation_percent() {
-  if (m_validation_percent == -1) return false;
+  if (m_validation_percent == -1) {
+    return false;
+  }
   return true;
 }
 
@@ -346,7 +346,9 @@ void DataReader::set_use_percent(double s) {
 }
 
 bool DataReader::has_use_percent() {
-  if (m_use_percent == -1) return false;
+  if (m_use_percent == -1) {
+    return false;
+  }
   return true;
 }
 
@@ -356,7 +358,7 @@ double DataReader::get_use_percent() {
     err << __FILE__ << " " << __LINE__ << " :: you must call set_use_percent()"
         << " but apparently have not done so";
     throw lbann_exception(err.str());
-  }  
+  }
   return m_use_percent;
 }
 

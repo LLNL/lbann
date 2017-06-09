@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,7 +34,7 @@ namespace lbann {
 
 /** Represent the type of activation function. */
 enum class activation_type {
-  //if you add or change the following enums, please also edit the 
+  //if you add or change the following enums, please also edit the
   //activation_name() method in the Activation class
   SIGMOID = 1,
   TANH,
@@ -48,7 +48,7 @@ enum class activation_type {
 
 /** Base activation function class. */
 class Activation {
-public:
+ public:
   virtual ~Activation() {}
   /** Apply the activation function elementwise to m. */
   virtual void forwardProp(ElMat& m);
@@ -60,7 +60,7 @@ public:
    */
   virtual void backwardPropError(const ElMat& m, ElMat& prev_error_signal);
   static const std::string activation_name(activation_type id);
-protected:
+ protected:
   /** The activation function. */
   virtual DataType act(const DataType& z) = 0;
   /** The derivative of the activation function. */
@@ -72,7 +72,7 @@ protected:
  * See: https://en.wikipedia.org/wiki/Sigmoid_function
  */
 class sigmoid_layer : public Activation {
-protected:
+ protected:
   DataType act(const DataType& z) {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
   }
@@ -84,7 +84,7 @@ protected:
 
 /** Hyperbolic tangent activation function. */
 class tanh_layer : public Activation {
-protected:
+ protected:
   DataType act(const DataType& z) {
     return std::tanh(z);
   }
@@ -99,7 +99,7 @@ protected:
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 class reLU_layer : public Activation {
-protected:
+ protected:
   DataType act(const DataType& z) {
     return std::max(DataType(0), z);
   }
@@ -113,9 +113,13 @@ class id_layer : public Activation {
   void forwardProp(ElMat& m) {}
   void backwardProp(ElMat& m) {}
   void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {}
-protected:
-  DataType act(const DataType& z) { return z; }
-  DataType act_prime(const DataType& z) { return z; }
+ protected:
+  DataType act(const DataType& z) {
+    return z;
+  }
+  DataType act_prime(const DataType& z) {
+    return z;
+  }
 };
 
 /**
@@ -126,17 +130,17 @@ protected:
  * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
  */
 class leaky_reLU_layer : public Activation {
-public:
+ public:
   /** Leak is the amount of signal to permit for negative values. */
   leaky_reLU_layer(DataType leak = 0.01f) : m_leak(leak) {}
-protected:
+ protected:
   DataType act(const DataType& z) {
     return std::max(m_leak * z, z);
   }
   DataType act_prime(const DataType& z) {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
-private:
+ private:
   DataType m_leak;
 };
 
@@ -146,7 +150,7 @@ private:
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 class softplus_layer : public Activation {
-protected:
+ protected:
   DataType act(const DataType& z) {
     // Warning: Not numerically stable.
     // Better approach is to determine a threshold so that for large z,
@@ -163,7 +167,7 @@ protected:
  * This is an approximation to the softplus.
  */
 class smooth_reLU_layer : public Activation {
-protected:
+ protected:
   DataType act(const DataType& z) {
     return z / (DataType(1) + std::exp(-z));
   }
@@ -184,7 +188,7 @@ protected:
  * ICLR 2016.
  */
 class ELU_layer : public Activation {
-public:
+ public:
   /**
    * alpha controls the value to which the ELU saturates for negative inputs.
    * alpha must be >= 0.
@@ -192,20 +196,20 @@ public:
    * Paper uses alpha = 1.0 as a good starting point.
    */
   ELU_layer(DataType alpha = 1.0f) : m_alpha(alpha) {}
-protected:
+ protected:
   DataType act(const DataType& z) {
     return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));
   }
   DataType act_prime(const DataType& z) {
     return (z > DataType(0)) ? DataType(1) : (m_alpha*std::expm1(z) + m_alpha);
   }
-private:
+ private:
   DataType m_alpha;
 };
 
 /** Return a new Activation class of type act_fn. */
 template<typename... Args>
-Activation* new_activation(activation_type act_fn, Args... params) {
+Activation *new_activation(activation_type act_fn, Args... params) {
   switch (act_fn) {
   case activation_type::SIGMOID:
     return new sigmoid_layer();

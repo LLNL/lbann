@@ -35,61 +35,63 @@
 #include <vector>
 #include <string>
 
-namespace lbann
-{
-  class stacked_autoencoder : public sequential_model
-  {
-  public:
-    /// Constructor
-    stacked_autoencoder(uint mini_batch_size,
-                        lbann_comm* comm,
-                        objective_functions::objective_fn* obj_fn,
-                        layer_factory* _layer_fac,
-                        optimizer_factory* _optimizer_fac);
+namespace lbann {
+class stacked_autoencoder : public sequential_model {
+ public:
+  /// Constructor
+  stacked_autoencoder(uint mini_batch_size,
+                      lbann_comm *comm,
+                      objective_functions::objective_fn *obj_fn,
+                      layer_factory *_layer_fac,
+                      optimizer_factory *_optimizer_fac);
 
-    /// Destructor
-    ~stacked_autoencoder();
+  /// Destructor
+  ~stacked_autoencoder();
 
-    void begin_stack(const std::string layer_name,
-                     data_layout data_dist,
-                     int layer_dim,
-                     activation_type activation=activation_type::RELU,
-                     weight_initialization init=weight_initialization::glorot_uniform,
-                     std::vector<regularizer*> regularizers={});
+  void begin_stack(const std::string layer_name,
+                   data_layout data_dist,
+                   int layer_dim,
+                   activation_type activation=activation_type::RELU,
+                   weight_initialization init=weight_initialization::glorot_uniform,
+                   std::vector<regularizer *> regularizers= {});
 
-    //void setup();
-    /// Compute layer summaries
-    void summarize(lbann_summary& summarizer);
+  //void setup();
+  /// Compute layer summaries
+  void summarize(lbann_summary& summarizer);
 
-    /// pre train stacked autoencoder neural network
-    /** Half of the layers is pretrained and the remaining ones
-     * are initialized with the transpose of the other layer W^1= W^k^T
-     * @param num_epochs Number of epochs to train
-     */
-    void train(int num_epochs, int evaluation_frequency=0);
-    /// Training step on one mini-batch
-    bool train_mini_batch();
+  /// pre train stacked autoencoder neural network
+  /** Half of the layers is pretrained and the remaining ones
+   * are initialized with the transpose of the other layer W^1= W^k^T
+   * @param num_epochs Number of epochs to train
+   */
+  void train(int num_epochs, int evaluation_frequency=0);
+  /// Training step on one mini-batch
+  bool train_mini_batch();
 
-    /// Evaluate neural network
-    void evaluate(execution_mode mode=execution_mode::testing) { }
-    /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch() {return false;}
+  /// Evaluate neural network
+  void evaluate(execution_mode mode=execution_mode::testing) { }
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch() {
+    return false;
+  }
 
-    /// Reconstruction uses unsupervised target layer
-    void reconstruction();
-    bool reconstruction_mini_batch();
+  /// Reconstruction uses unsupervised target layer
+  void reconstruction();
+  bool reconstruction_mini_batch();
 
-    /// Returns the model's name
-    const std::string & name() { return m_name; }
+  /// Returns the model's name
+  const std::string& name() {
+    return m_name;
+  }
 
-    //vector<Layer>& get_layers() const {return m_layers;}
+  //vector<Layer>& get_layers() const {return m_layers;}
 
-  protected:
-    size_t m_num_layers;
-    target_layer_unsupervised* m_target_layer;
-    /// the Model's name
-    std::string m_name;
-  };
+ protected:
+  size_t m_num_layers;
+  target_layer_unsupervised *m_target_layer;
+  /// the Model's name
+  std::string m_name;
+};
 }
 
 

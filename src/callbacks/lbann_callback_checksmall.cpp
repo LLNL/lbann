@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,48 +31,48 @@
 
 namespace lbann {
 
-void lbann_callback_checksmall::on_forward_prop_end(model* m, Layer* l) {
+void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
   // Skip output layer.
   if (l->get_index() == m->get_layers().size() - 1) {
     return;
   }
   ElMat& acts = l->get_activations();
   if (!is_good(acts)) {
-    lbann_comm* comm = m->get_comm();
+    lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-      l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
-      std::endl;
+              l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
+              std::endl;
     throw lbann_exception("checksmall: error in activations");
   }
 }
 
-void lbann_callback_checksmall::on_backward_prop_end(model* m, Layer* l) {
+void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
   // Skip input/output layers.
   if (l->get_index() == 0 || l->get_index() == m->get_layers().size() - 1) {
     return;
   }
   ElMat& grad = l->get_weights_biases_gradient();
   if (!is_good(grad)) {
-    lbann_comm* comm = m->get_comm();
+    lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-      l->get_index() << " gradients (shape=" << grad.Height() << "x" <<
-      grad.Width() << " step=" << m->get_cur_step() << ")" <<
-      std::endl;
+              l->get_index() << " gradients (shape=" << grad.Height() << "x" <<
+              grad.Width() << " step=" << m->get_cur_step() << ")" <<
+              std::endl;
     throw lbann_exception("checksmall: error in gradients");
   }
 }
 
-void lbann_callback_checksmall::on_batch_end(model* m) {
-  std::vector<Layer*>& layers = m->get_layers();
+void lbann_callback_checksmall::on_batch_end(model *m) {
+  std::vector<Layer *>& layers = m->get_layers();
   // Skip input/output layers-- they don't have weights.
   for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer* l = layers[i];
+    Layer *l = layers[i];
     ElMat& weights = l->get_weights_biases();
     if (!is_good(weights)) {
-      lbann_comm* comm = m->get_comm();
+      lbann_comm *comm = m->get_comm();
       std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-        l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
-        std::endl;
+                l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
+                std::endl;
       throw lbann_exception("checksmall: error in weights");
     }
   }
@@ -87,7 +87,7 @@ bool lbann_callback_checksmall::is_good(const ElMat& m) {
       const DataType val = Abs(local_mat(row, col));
       if (val > 0 && val <= threshold) {
         std::cout << "Found small value " << val << " at (" << row << "," <<
-          col << ")!" << std::endl;
+                  col << ")!" << std::endl;
         return false;
       }
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,7 +30,7 @@
 #include <omp.h>
 #include <hwloc.h>
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
-  #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
 
 #include "lbann/lbann_base.hpp"
@@ -38,7 +38,7 @@
 
 namespace lbann {
 
-void initialize(lbann_comm* comm) {
+void initialize(lbann_comm *comm) {
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
   hwloc_topology_init(&topo);
@@ -46,7 +46,7 @@ void initialize(lbann_comm* comm) {
   int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
   if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
     std::cout << comm->get_rank_in_world() <<
-      ": cannot determine hwloc NUMA-node depth" << std::endl;
+              ": cannot determine hwloc NUMA-node depth" << std::endl;
   }
   int num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
   // Warn if there are more NUMA nodes than processes per node.
@@ -56,9 +56,9 @@ void initialize(lbann_comm* comm) {
   if (num_numa_nodes > ppn) {
     if (comm->get_rank_in_node() == 0) {
       std::cout << comm->get_rank_in_world() <<
-        ": WARNING: node has " << num_numa_nodes <<
-        " NUMA nodes but you have " << ppn << " processes per node" <<
-        std::endl;
+                ": WARNING: node has " << num_numa_nodes <<
+                " NUMA nodes but you have " << ppn << " processes per node" <<
+                std::endl;
     }
   }
 #ifdef _OPENMP

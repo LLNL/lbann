@@ -30,39 +30,38 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/layers/lbann_target_layer.hpp"
 
-namespace lbann
-{
-  class target_layer_unsupervised : public target_layer{
-  public:
-    target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm* comm,
-                              optimizer* opt,
-                              const uint miniBatchSize,
-                              Layer* original_layer,
-                              weight_initialization init=weight_initialization::glorot_uniform);
+namespace lbann {
+class target_layer_unsupervised : public target_layer {
+ public:
+  target_layer_unsupervised(data_layout data_dist, size_t index,lbann_comm *comm,
+                            optimizer *opt,
+                            const uint miniBatchSize,
+                            Layer *original_layer,
+                            weight_initialization init=weight_initialization::glorot_uniform);
 
-    void setup(int num_prev_neurons);
-    bool update();
-    void summarize(lbann_summary& summarizer, int64_t step);
-    void epoch_print() const;
-    void epoch_reset();
-    execution_mode get_execution_mode();
-    DataType reconstruction_cost(const DistMat& Y);
-    void reset_cost();
-    DataType average_cost() const;
+  void setup(int num_prev_neurons);
+  bool update();
+  void summarize(lbann_summary& summarizer, int64_t step);
+  void epoch_print() const;
+  void epoch_reset();
+  execution_mode get_execution_mode();
+  DataType reconstruction_cost(const DistMat& Y);
+  void reset_cost();
+  DataType average_cost() const;
 
 
-  protected:
-    void fp_linearity();
-    void bp_linearity();
-    void fp_nonlinearity() {}
-    void bp_nonlinearity() {}
+ protected:
+  void fp_linearity();
+  void bp_linearity();
+  void fp_nonlinearity() {}
+  void bp_nonlinearity() {}
 
-  private:
-    Layer* m_original_layer;
-    DataType aggregate_cost;
-    long num_forwardprop_steps;
-    weight_initialization m_weight_initialization;
-  };
+ private:
+  Layer *m_original_layer;
+  DataType aggregate_cost;
+  long num_forwardprop_steps;
+  weight_initialization m_weight_initialization;
+};
 }
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_UNSUPERVISED_HPP_INCLUDED

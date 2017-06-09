@@ -38,118 +38,122 @@
 #include <vector>
 #include <string>
 
-namespace lbann
-{
-class sequential_model : public model
-  {
-  public:
+namespace lbann {
+class sequential_model : public model {
+ public:
 
-    /// Constructor
-    sequential_model(const uint mini_batch_size,
-                     lbann_comm* comm,
-                     objective_functions::objective_fn* obj_fn,
-                     layer_factory* layer_fac,
-                     optimizer_factory* optimizer_fac);
+  /// Constructor
+  sequential_model(const uint mini_batch_size,
+                   lbann_comm *comm,
+                   objective_functions::objective_fn *obj_fn,
+                   layer_factory *layer_fac,
+                   optimizer_factory *optimizer_fac);
 
-    /// Destructor
-    ~sequential_model();
+  /// Destructor
+  ~sequential_model();
 
-    /// Save model to file
-    /** @todo This is old and likely broken */
-    bool save_to_file(const std::string file_dir);
-    /// Load model from file
-    /** @todo This is old and likely broken */
-    bool load_from_file(const std::string file_dir);
+  /// Save model to file
+  /** @todo This is old and likely broken */
+  bool save_to_file(const std::string file_dir);
+  /// Load model from file
+  /** @todo This is old and likely broken */
+  bool load_from_file(const std::string file_dir);
 
-    /// Save model to checkpoint
-    /** @todo This is old and likely broken */
-    bool save_to_checkpoint(int fd, const char* filename, uint64_t* bytes);
-    /// Load model from checkpoint
-    /** @todo This is old and likely broken */
-    bool load_from_checkpoint(int fd, const char* filename, uint64_t* bytes);
+  /// Save model to checkpoint
+  /** @todo This is old and likely broken */
+  bool save_to_checkpoint(int fd, const char *filename, uint64_t *bytes);
+  /// Load model from checkpoint
+  /** @todo This is old and likely broken */
+  bool load_from_checkpoint(int fd, const char *filename, uint64_t *bytes);
 
-    bool save_to_checkpoint_shared(persist& p);
-    bool load_from_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p);
 
-    /// Get mini-batch size
-    int get_mini_batch_size() const { return m_mini_batch_size; }
-    /// Get list of layers
-    virtual std::vector<Layer*>& get_layers() { return m_layers; }
+  /// Get mini-batch size
+  int get_mini_batch_size() const {
+    return m_mini_batch_size;
+  }
+  /// Get list of layers
+  virtual std::vector<Layer *>& get_layers() {
+    return m_layers;
+  }
 
-    /// Set layers
-    virtual void set_layers(vector<Layer*>& layers) {m_layers = layers;}
+  /// Set layers
+  virtual void set_layers(vector<Layer *>& layers) {
+    m_layers = layers;
+  }
 
-    /// Add layer to sequential model
-    virtual uint add(const std::string layer_name,
-                     data_layout data_dist,
-                     int layer_dim,
-                     activation_type activation=activation_type::RELU,
-                     weight_initialization init=weight_initialization::glorot_uniform,
-                     std::vector<regularizer*> regularizers={});
+  /// Add layer to sequential model
+  virtual uint add(const std::string layer_name,
+                   data_layout data_dist,
+                   int layer_dim,
+                   activation_type activation=activation_type::RELU,
+                   weight_initialization init=weight_initialization::glorot_uniform,
+                   std::vector<regularizer *> regularizers= {});
 
-    /// Add layer to sequential model
-    /** @todo Consider removing this function. The destructor
-     *  deallocates all layers, so we might run into problems if a
-     *  layer is deallocated externally. */
-    virtual uint add(Layer *new_layer);
+  /// Add layer to sequential model
+  /** @todo Consider removing this function. The destructor
+   *  deallocates all layers, so we might run into problems if a
+   *  layer is deallocated externally. */
+  virtual uint add(Layer *new_layer);
 
-    /// Remove layer from sequential model
-    /** @todo This will mess up layer indices */
-    virtual void remove(int index);
+  /// Remove layer from sequential model
+  /** @todo This will mess up layer indices */
+  virtual void remove(int index);
 
-    /// Insert layer in sequential model
-    /** @todo This will mess up layer indices.
-     *  @todo Consider removing this function. The destructor
-     *  deallocates all layers, so we might run into problems if a
-     *  layer is deallocated externally. */
-    virtual void insert(int index, Layer *new_layer);
+  /// Insert layer in sequential model
+  /** @todo This will mess up layer indices.
+   *  @todo Consider removing this function. The destructor
+   *  deallocates all layers, so we might run into problems if a
+   *  layer is deallocated externally. */
+  virtual void insert(int index, Layer *new_layer);
 
-    /// Replace layer in sequential model
-    virtual Layer* swap(int index, Layer *new_layer);
-    
-    /// Establish model layers' forward pass input pointers
-    virtual void set_fp_input(size_t start_index,size_t end_index);
-    
-    /// Establish model layers' backward pass input pointers
-    virtual void set_bp_input(size_t start_index,size_t end_index);
+  /// Replace layer in sequential model
+  virtual Layer *swap(int index, Layer *new_layer);
 
-    /// Setup sequential model
-    virtual void setup(size_t start_index=0,size_t end_index=0);
+  /// Establish model layers' forward pass input pointers
+  virtual void set_fp_input(size_t start_index,size_t end_index);
 
-    /// Train model
-    /** @param num_epochs Number of epochs to train
-     *  @param evaluation_frequency How often to evaluate model on
-     *  validation set. A value less than 1 will disable evaluation.
-     */
-    virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
-    /// Training step on one mini-batch
-    virtual bool train_mini_batch() = 0;
+  /// Establish model layers' backward pass input pointers
+  virtual void set_bp_input(size_t start_index,size_t end_index);
 
-    /** Return true if about to start a new training epoch */
-    virtual bool at_epoch_start();
+  /// Setup sequential model
+  virtual void setup(size_t start_index=0,size_t end_index=0);
 
-    /// Evaluate model
-    virtual void evaluate(execution_mode mode) = 0;
-    /// Evaluation step on one mini-batch
-    virtual bool evaluate_mini_batch() = 0;
+  /// Train model
+  /** @param num_epochs Number of epochs to train
+   *  @param evaluation_frequency How often to evaluate model on
+   *  validation set. A value less than 1 will disable evaluation.
+   */
+  virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
+  /// Training step on one mini-batch
+  virtual bool train_mini_batch() = 0;
 
-    /// returns the number of neurons in the most recently added layer, or -1
-    /// if there is none
-    int num_previous_neurons();
+  /** Return true if about to start a new training epoch */
+  virtual bool at_epoch_start();
+
+  /// Evaluate model
+  virtual void evaluate(execution_mode mode) = 0;
+  /// Evaluation step on one mini-batch
+  virtual bool evaluate_mini_batch() = 0;
+
+  /// returns the number of neurons in the most recently added layer, or -1
+  /// if there is none
+  int num_previous_neurons();
 #if 0
-    /// Prediction step on one mini-batch
-    /** @todo This is old and likely broken */
-    virtual DistMat* predict_mini_batch(DistMat* X);
+  /// Prediction step on one mini-batch
+  /** @todo This is old and likely broken */
+  virtual DistMat *predict_mini_batch(DistMat *X);
 #endif
 
-  protected:
-    /// Mini-batch size (no ckpt, so user can override on restart)
-    const int m_mini_batch_size;
-    /// List of layers
-    std::vector<Layer*> m_layers;
-    /// Layer factory
-    layer_factory* layer_fac;
+ protected:
+  /// Mini-batch size (no ckpt, so user can override on restart)
+  const int m_mini_batch_size;
+  /// List of layers
+  std::vector<Layer *> m_layers;
+  /// Layer factory
+  layer_factory *layer_fac;
 
-  };
+};
 }
 #endif  //  LBANN_MODEL_SEQUENTIAL_HPP

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,11 +33,9 @@
 #include "lbann_image_preprocessor.hpp"
 #include "lbann_cv_process.hpp"
 
-namespace lbann
-{
-class DataReader_ImageNetSingle_cv : public DataReader_ImageNet
-{
-public:
+namespace lbann {
+class DataReader_ImageNetSingle_cv : public DataReader_ImageNet {
+ public:
   DataReader_ImageNetSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
   DataReader_ImageNetSingle_cv(const DataReader_ImageNetSingle_cv& source);
   ~DataReader_ImageNetSingle_cv();
@@ -48,7 +46,7 @@ public:
   int fetch_label(Mat& Y);
   void load();
 
-private:
+ private:
   std::ifstream m_data_filestream;
   size_t m_file_size;
   std::vector<unsigned char> m_work_buffer;

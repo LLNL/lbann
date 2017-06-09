@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,22 +33,21 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-namespace lbann
-{
-    //mode_t mode_dir;
-    //mode_t mode_file;
-    //mode_t mode_dir  = S_IRWXU | S_IRWXG;
-    //mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
+namespace lbann {
+//mode_t mode_dir;
+//mode_t mode_file;
+//mode_t mode_dir  = S_IRWXU | S_IRWXG;
+//mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
 
-    int makedir(const char* dirname);
+int makedir(const char *dirname);
 
-    int exists(const char* filename);
+int exists(const char *filename);
 
-    int openread(const char* filename);
-    int closeread(int fd, const char* filename);
+int openread(const char *filename);
+int closeread(int fd, const char *filename);
 
-    int openwrite(const char* filename);
-    int closewrite(int fd, const char* filename);
+int openwrite(const char *filename);
+int closewrite(int fd, const char *filename);
 }
 
 #endif // LBANN_IO_H

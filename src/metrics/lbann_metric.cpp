@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,7 +29,7 @@
 
 using namespace std;
 
-lbann::metrics::statistics* lbann::metrics::metric::get_statistics(execution_mode mode) {
+lbann::metrics::statistics *lbann::metrics::metric::get_statistics(execution_mode mode) {
   statistics *stats;
 
   switch(mode) {
@@ -251,7 +251,7 @@ void lbann::metrics::metric::reset_metric() {
 //     '''
 //   if beta < 0:
 //             raise ValueError('The lowest choosable beta is zero (only precision).')
-        
+
 // # If there are no true positives, fix the F score at 0 like sklearn.
 //               if K.sum(K.round(K.clip(y_true, 0, 1))) == 0:
 //         return 0

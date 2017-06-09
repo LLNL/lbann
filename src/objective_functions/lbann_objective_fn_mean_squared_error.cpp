@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,11 +31,10 @@
 using namespace std;
 using namespace El;
 
-lbann::objective_functions::mean_squared_error::mean_squared_error(lbann_comm* comm)
-  : objective_fn("mean_squared_error"), 
+lbann::objective_functions::mean_squared_error::mean_squared_error(lbann_comm *comm)
+  : objective_fn("mean_squared_error"),
     m_errors(comm->get_model_grid()),
-    m_errors_v(comm->get_model_grid())
-{
+    m_errors_v(comm->get_model_grid()) {
   this->type = obj_fn_type::mean_squared_error;
 }
 
@@ -56,7 +55,7 @@ void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int6
 /// Compute mean squared error
 /** MSE = (predictions-groundtruth)^T (predictions-groundtruth)
  */
-double lbann::objective_functions::mean_squared_error::compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v) {
+double lbann::objective_functions::mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v) {
   const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
@@ -64,7 +63,7 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
 }
 
 /// Compute the average mean squared error over the mini-batch
-double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v) {
+double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
   Int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
@@ -76,9 +75,9 @@ double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat &pre
 
 /// Compute derivative of mean squared error objective function
 void lbann::objective_functions::mean_squared_error::compute_obj_fn_derivative(layer_type prev_layer_type,
-                                                                               ElMat &predictions_v,
-                                                                               ElMat &groundtruth_v,
-                                                                               ElMat &error_signal_v) {
+    ElMat& predictions_v,
+    ElMat& groundtruth_v,
+    ElMat& error_signal_v) {
   const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, error_signal_v);
   Axpy(DataType(-1), groundtruth_v, error_signal_v);

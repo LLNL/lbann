@@ -38,8 +38,7 @@
 namespace lbann {
 namespace patchworks {
 
-void patch_descriptor::init(void)
-{
+void patch_descriptor::init(void) {
   m_width = 0u;
   m_height = 0u;
   m_gap = 0u;
@@ -50,29 +49,27 @@ void patch_descriptor::init(void)
   m_cur_patch_idx = 0u;
 }
 
-void patch_descriptor::set_size(const int width, const int height)
-{
+void patch_descriptor::set_size(const int width, const int height) {
   m_width = width;
   m_height = height;
 }
 
-bool patch_descriptor::set_sample_area(const ROI& area)
-{
-  if (!area.is_valid()) return false;
+bool patch_descriptor::set_sample_area(const ROI& area) {
+  if (!area.is_valid()) {
+    return false;
+  }
   m_sample_area = area;
   return true;
 }
 
-bool patch_descriptor::set_sample_image(const unsigned int img_width, const unsigned int img_height)
-{
+bool patch_descriptor::set_sample_image(const unsigned int img_width, const unsigned int img_height) {
   ROI whole_image;
   whole_image.set_by_corners(0, 0, img_width, img_height);
 
   return set_sample_area(whole_image);
 }
 
-void patch_descriptor::define_patch_set(void)
-{
+void patch_descriptor::define_patch_set(void) {
   const int wdisp = m_width + m_gap;
   const int hdisp = m_height + m_gap;
   m_displacements.clear();
@@ -86,13 +83,11 @@ void patch_descriptor::define_patch_set(void)
   m_displacements.push_back(std::make_pair( wdisp,  hdisp));
 }
 
-void patch_descriptor::set_jitter(const unsigned int j)
-{
+void patch_descriptor::set_jitter(const unsigned int j) {
   m_jitter = j;
 }
 
-bool patch_descriptor::get_first_patch(ROI& patch)
-{
+bool patch_descriptor::get_first_patch(ROI& patch) {
   int x_center = (m_sample_area.width()+1)/2 + m_sample_area.left();
   int y_center = (m_sample_area.height()+1)/2 + m_sample_area.top();
   int x_margin = 0;
@@ -115,14 +110,16 @@ bool patch_descriptor::get_first_patch(ROI& patch)
     // area where the center of a center patch can be in
     ROI center_patch_area;
     bool ok = center_patch_area.set_by_corners(x_margin + m_sample_area.left(),
-                                               y_margin + m_sample_area.top(),
-                                               m_sample_area.width() - x_margin,
-                                               m_sample_area.height() - y_margin);
+              y_margin + m_sample_area.top(),
+              m_sample_area.width() - x_margin,
+              m_sample_area.height() - y_margin);
     if (!ok) {
-        std::cout << "invalid center patch area: " << center_patch_area << std::endl;
-        return false;
+      std::cout << "invalid center patch area: " << center_patch_area << std::endl;
+      return false;
     }
-    if (!center_patch_area.is_valid()) return false;
+    if (!center_patch_area.is_valid()) {
+      return false;
+    }
 
     // randomly generate the center coordinate within the center patch area
     std::uniform_int_distribution<int> rg_center_x(0, center_patch_area.width()-1);
@@ -141,8 +138,9 @@ bool patch_descriptor::get_first_patch(ROI& patch)
   // set the center patch
   ROI p;
   if (!p.set_by_center(x_center, y_center, m_width, m_height) ||
-      !(m_sample_area >= p))
+      !(m_sample_area >= p)) {
     return false;
+  }
 
   m_patch_center = p;
   patch = p;
@@ -153,8 +151,7 @@ bool patch_descriptor::get_first_patch(ROI& patch)
   return true;
 }
 
-bool patch_descriptor::get_next_patch(ROI& patch)
-{
+bool patch_descriptor::get_next_patch(ROI& patch) {
   bool got_one = false;
 
   ::lbann::rng_gen& gen = ::lbann::get_generator();
@@ -162,7 +159,9 @@ bool patch_descriptor::get_next_patch(ROI& patch)
   do {
     ROI p = m_patch_center;
 
-    if (m_cur_patch_idx >= m_displacements.size()) return false;
+    if (m_cur_patch_idx >= m_displacements.size()) {
+      return false;
+    }
     p.move(m_displacements[m_cur_patch_idx++]);
 
     if (m_jitter > 0u) {
@@ -174,8 +173,8 @@ bool patch_descriptor::get_next_patch(ROI& patch)
     }
 
     if (p.is_valid() && (m_sample_area >= p)) {
-        patch = p;
-        got_one = true;
+      patch = p;
+      got_one = true;
     }
   } while (!got_one);
 
@@ -183,14 +182,17 @@ bool patch_descriptor::get_next_patch(ROI& patch)
   return true;
 }
 
-bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches)
-{
+bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches) {
   patches.clear();
-  if (img.data == NULL) return false;
+  if (img.data == NULL) {
+    return false;
+  }
 
   ROI roi;
   bool ok = get_first_patch(roi);
-  if (!ok) return false;
+  if (!ok) {
+    return false;
+  }
 
   patches.push_back(img(roi.rect()).clone());
 
@@ -200,12 +202,13 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
     patches.push_back(img(roi.rect()).clone());
     i++;
   }
-  if (i == 1u) return false;
+  if (i == 1u) {
+    return false;
+  }
   return true;
 }
 
-std::ostream& patch_descriptor::print(std::ostream& os) const
-{
+std::ostream& patch_descriptor::print(std::ostream& os) const {
   os << "patch descriptor:" << std::endl
      << '\t' << "m_width: " << m_width << std::endl
      << '\t' << "m_height: " << m_height << std::endl
@@ -230,7 +233,9 @@ std::ostream& patch_descriptor::print(std::ostream& os) const
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd) { return pd.print(os); }
+std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd) {
+  return pd.print(os);
+}
 
 } // end of namespace patchworks
 } // end of namespace lbann

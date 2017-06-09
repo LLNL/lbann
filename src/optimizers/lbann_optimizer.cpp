@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,33 +32,33 @@ using namespace std;
 using namespace El;
 
 lbann::optimizer::optimizer
-(lbann_comm* comm, const std::string name, DataType learning_rate)
+(lbann_comm *comm, const std::string name, DataType learning_rate)
   : comm(comm), m_learning_rate(learning_rate), m_name(name) {}
 
 lbann::optimizer::~optimizer() {}
 
-void lbann::optimizer::setup(AbsDistMat* parameters)
-{
+void lbann::optimizer::setup(AbsDistMat *parameters) {
   m_parameters = parameters;
   m_height = m_parameters->Height();
   m_width = m_parameters->Width();
   DistData dist(*m_parameters);
-  if(dist.colDist == MC && dist.rowDist == MR)
+  if(dist.colDist == MC && dist.rowDist == MR) {
     m_matrix_format = matrix_format::MC_MR;
-  else if(dist.colDist == CIRC && dist.rowDist == CIRC)
+  } else if(dist.colDist == CIRC && dist.rowDist == CIRC) {
     m_matrix_format = matrix_format::CIRC_CIRC;
-  else if(dist.colDist == STAR && dist.rowDist == STAR)
+  } else if(dist.colDist == STAR && dist.rowDist == STAR) {
     m_matrix_format = matrix_format::STAR_STAR;
-  else if(dist.colDist == STAR && dist.rowDist == VC)
+  } else if(dist.colDist == STAR && dist.rowDist == VC) {
     m_matrix_format = matrix_format::STAR_VC;
-  else if(dist.colDist == MC && dist.rowDist == STAR)
+  } else if(dist.colDist == MC && dist.rowDist == STAR) {
     m_matrix_format = matrix_format::MC_STAR;
-  else
+  } else {
     m_matrix_format = matrix_format::invalid;
+  }
 }
 
 lbann::optimizer_factory::optimizer_factory
-(lbann_comm* comm,
+(lbann_comm *comm,
  const std::string name)
   : comm(comm), m_name(name) {}
 

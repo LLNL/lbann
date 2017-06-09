@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,12 +33,12 @@
 
 namespace lbann {
 
-  void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model* m, Layer* l, int64_t step) {
+void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
   const std::string prefix = basename + _to_string(m->get_execution_mode()) + "-model" +
-    std::to_string(m->get_comm()->get_model_rank()) +
-    "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-    "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-    std::to_string(step) + "-layer";
+                             std::to_string(m->get_comm()->get_model_rank()) +
+                             "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
+                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
+                             std::to_string(step) + "-layer";
 
   if (_layer_type_to_category(l->m_type) != layer_category::io ||  l->get_index() != 0) {
     return;
@@ -65,11 +65,11 @@ namespace lbann {
   }
 }
 
-void lbann_callback_dump_minibatch_sample_indices::on_forward_prop_end(model* m, Layer* l) {
+void lbann_callback_dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {
   dump_to_file(m, l, m->get_cur_step());
 }
 
-void lbann_callback_dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model* m, Layer* l) {
+void lbann_callback_dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model *m, Layer *l) {
   switch(m->get_execution_mode()) {
   case execution_mode::validation:
     dump_to_file(m, l, m->get_cur_validation_step());

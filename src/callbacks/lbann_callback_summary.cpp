@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,19 +30,19 @@
 
 namespace lbann {
 
-lbann_callback_summary::lbann_callback_summary(lbann_summary* _summarizer,
-                                               int _batch_interval) :
+lbann_callback_summary::lbann_callback_summary(lbann_summary *_summarizer,
+    int _batch_interval) :
   lbann_callback(_batch_interval, _summarizer) {
-  set_name("summary");  
+  set_name("summary");
 }
 
-void lbann_callback_summary::on_batch_end(model* m) {
+void lbann_callback_summary::on_batch_end(model *m) {
   m->summarize(*summarizer);
   // Note that these comm stats are a running sum, so they count from the last
   // time we reset and thus are over the whole batch_interval period.
   // Bytes sent/received are the sum of the bytes sent/received by every rank
   // in a model.
-  lbann_comm* comm = m->get_comm();
+  lbann_comm *comm = m->get_comm();
   size_t bytes_sent = comm->get_bytes_sent();
   size_t bytes_received = comm->get_bytes_received();
   size_t model_barriers = comm->get_num_model_barriers();
@@ -60,7 +60,7 @@ void lbann_callback_summary::on_batch_end(model* m) {
                             m->get_cur_step());
 }
 
-void lbann_callback_summary::on_epoch_end(model* m) {
+void lbann_callback_summary::on_epoch_end(model *m) {
   for (auto&& metric : m->metrics) {
     double train_score = metric->report_metric(execution_mode::training);
     string phase = "train_";
@@ -75,8 +75,8 @@ void lbann_callback_summary::on_epoch_end(model* m) {
   summarizer->flush();
 }
 
-void lbann_callback_summary::on_test_end(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_summary::on_test_end(model *m) {
+  lbann_comm *comm = m->get_comm();
   for (auto&& metric : m->metrics) {
     double test_score = metric->report_metric(execution_mode::testing);
     string phase = "test_";

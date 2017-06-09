@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,8 +32,7 @@
 
 using std::shared_ptr;
 
-namespace lbann
-{
+namespace lbann {
 
 /**
 * lbann_base_factory.h  - base factory from which different methods (for layers, optimizer)
@@ -43,34 +42,32 @@ namespace lbann
 */
 
 template <typename Method>
-class base_factory
- {
-  public:
+class base_factory {
+ public:
   typedef shared_ptr<Method> method_pointer;
   typedef std::map<pair<string,int>, shared_ptr<Method> > method_container;
-	base_factory() {}
-	virtual ~base_factory() {}
+  base_factory() {}
+  virtual ~base_factory() {}
 
 
-	void add_method(string sname, shared_ptr<Method> m, int index = 0)
-	{
+  void add_method(string sname, shared_ptr<Method> m, int index = 0) {
     std::pair<string,int> name(sname,index);
     if(methods.find(name) != methods.end())
-			cerr << "\n LBANN Warning, method list already has a method pointer associated with \""
-            << name.first << " at index " << name.second << "\", not added to method list\n";
-		else
-			methods[name] = m;
-	}
+      cerr << "\n LBANN Warning, method list already has a method pointer associated with \""
+           << name.first << " at index " << name.second << "\", not added to method list\n";
+    else {
+      methods[name] = m;
+    }
+  }
 
   //remove method()
 
-	shared_ptr<Method> get_method(string sname, int index = 0)
-  {
+  shared_ptr<Method> get_method(string sname, int index = 0) {
     std::pair<string,int> name(sname,index);
     return methods[name];
-	}
+  }
 
-  protected:
+ protected:
 
   method_container methods;
 

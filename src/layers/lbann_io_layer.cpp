@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,14 +34,13 @@
 using namespace std;
 using namespace El;
 
-lbann::io_layer::io_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs, bool data_sets_span_models, bool for_regression)
-  : Layer(data_dist, 0, comm, NULL, mini_batch_size, activation_type::ID, regs), 
-    m_training_dataset(data_readers[execution_mode::training]),  
-    m_testing_dataset(data_readers[execution_mode::testing]), 
-    m_validation_dataset(data_readers[execution_mode::validation]), 
-    m_data_sets_span_models(data_sets_span_models), 
-    m_for_regression(for_regression)
-{
+lbann::io_layer::io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs, bool data_sets_span_models, bool for_regression)
+  : Layer(data_dist, 0, comm, NULL, mini_batch_size, activation_type::ID, regs),
+    m_training_dataset(data_readers[execution_mode::training]),
+    m_testing_dataset(data_readers[execution_mode::testing]),
+    m_validation_dataset(data_readers[execution_mode::validation]),
+    m_data_sets_span_models(data_sets_span_models),
+    m_for_regression(for_regression) {
   if(m_training_dataset.data_reader != NULL) {
     m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
   }
@@ -181,7 +180,9 @@ long lbann::io_layer::get_linearized_data_size() {
 }
 
 long lbann::io_layer::get_linearized_label_size() {
-  if (is_for_regression()) return static_cast<long>(1);
+  if (is_for_regression()) {
+    return static_cast<long>(1);
+  }
 
   long linearized_label_size = -1;
 
@@ -220,7 +221,7 @@ void lbann::io_layer::setup_data_readers_for_training(int base_offset, int batch
   }
 }
 
-/** Do not spread data readers that are used for evaluation across multiple models.  
+/** Do not spread data readers that are used for evaluation across multiple models.
  * Allow each model instance to use the full data set for evaluation so that each model is fairly compared.
  */
 void lbann::io_layer::setup_data_readers_for_evaluation(int base_offset, int batch_stride, int sample_stride, int model_offset) {
@@ -234,62 +235,60 @@ void lbann::io_layer::setup_data_readers_for_evaluation(int base_offset, int bat
   return;
 }
 
-bool lbann::io_layer::saveToCheckpointShared(persist& p)
-{
-    // rank 0 writes the file
-    if (p.m_rank == 0) {
-        p.write_uint64(persist_type::train, "reader_train_processed",
-            (uint64_t) m_training_dataset.num_samples_processed);
-        p.write_uint64(persist_type::train, "reader_train_total",
-            (uint64_t) m_training_dataset.total_samples);
+bool lbann::io_layer::saveToCheckpointShared(persist& p) {
+  // rank 0 writes the file
+  if (p.m_rank == 0) {
+    p.write_uint64(persist_type::train, "reader_train_processed",
+                   (uint64_t) m_training_dataset.num_samples_processed);
+    p.write_uint64(persist_type::train, "reader_train_total",
+                   (uint64_t) m_training_dataset.total_samples);
 
-        p.write_uint64(persist_type::train, "reader_test_processed",
-            (uint64_t) m_testing_dataset.num_samples_processed);
-        p.write_uint64(persist_type::train, "reader_test_total",
-            (uint64_t) m_testing_dataset.total_samples);
+    p.write_uint64(persist_type::train, "reader_test_processed",
+                   (uint64_t) m_testing_dataset.num_samples_processed);
+    p.write_uint64(persist_type::train, "reader_test_total",
+                   (uint64_t) m_testing_dataset.total_samples);
 
-        p.write_uint64(persist_type::train, "reader_validate_processed",
-            (uint64_t) m_validation_dataset.num_samples_processed);
-        p.write_uint64(persist_type::train, "reader_validate_total",
-            (uint64_t) m_validation_dataset.total_samples);
-    }
+    p.write_uint64(persist_type::train, "reader_validate_processed",
+                   (uint64_t) m_validation_dataset.num_samples_processed);
+    p.write_uint64(persist_type::train, "reader_validate_total",
+                   (uint64_t) m_validation_dataset.total_samples);
+  }
 
-    return true;
+  return true;
 }
 
 struct dataset_header {
-    uint64_t train_proc;
-    uint64_t train_total;
-    uint64_t test_proc;
-    uint64_t test_total;
-    uint64_t validate_proc;
-    uint64_t validate_total;
+  uint64_t train_proc;
+  uint64_t train_total;
+  uint64_t test_proc;
+  uint64_t test_total;
+  uint64_t validate_proc;
+  uint64_t validate_total;
 };
 
-bool lbann::io_layer::loadFromCheckpointShared(persist& p)
-{
-    // rank 0 reads the file
-    dataset_header header;
-    if (p.m_rank == 0) {
-        p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-        p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-        p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-        p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-        p.read_uint64(persist_type::train, "reader_validate_processed", &header.validate_proc);
-        p.read_uint64(persist_type::train, "reader_validate_total",     &header.validate_total);
-    }
+bool lbann::io_layer::loadFromCheckpointShared(persist& p) {
+  // rank 0 reads the file
+  dataset_header header;
+  if (p.m_rank == 0) {
+    p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
+    p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
+    p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
+    p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
+    p.read_uint64(persist_type::train, "reader_validate_processed", &header.validate_proc);
+    p.read_uint64(persist_type::train, "reader_validate_total",     &header.validate_total);
+  }
 
-    // TODO: assumes homogeneous hardware
-    // broadcast data from rank 0
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  // TODO: assumes homogeneous hardware
+  // broadcast data from rank 0
+  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-    // set our fields
-    m_training_dataset.num_samples_processed   = (long) header.train_proc;
-    m_training_dataset.total_samples           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed    = (long) header.test_proc;
-    m_testing_dataset.total_samples            = (long) header.test_total;
-    m_validation_dataset.num_samples_processed = (long) header.validate_proc;
-    m_validation_dataset.total_samples         = (long) header.validate_total;
+  // set our fields
+  m_training_dataset.num_samples_processed   = (long) header.train_proc;
+  m_training_dataset.total_samples           = (long) header.train_total;
+  m_testing_dataset.num_samples_processed    = (long) header.test_proc;
+  m_testing_dataset.total_samples            = (long) header.test_total;
+  m_validation_dataset.num_samples_processed = (long) header.validate_proc;
+  m_validation_dataset.total_samples         = (long) header.validate_total;
 
-    return true;
+  return true;
 }

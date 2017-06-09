@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,30 +31,27 @@
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 
-namespace lbann
-{
-  namespace metrics
-  {
-    class mean_squared_error : public metric
-    {
-    public:
-      /// Constructor
-      mean_squared_error(data_layout data_dist, lbann_comm* comm);
-    
-      /// Destructor
-      ~mean_squared_error();
+namespace lbann {
+namespace metrics {
+class mean_squared_error : public metric {
+ public:
+  /// Constructor
+  mean_squared_error(data_layout data_dist, lbann_comm *comm);
 
-      void setup(int num_neurons, int mini_batch_size);
-      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-      double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
+  /// Destructor
+  ~mean_squared_error();
 
-      double report_metric(execution_mode mode);
-      double report_lifetime_metric(execution_mode mode);
+  void setup(int num_neurons, int mini_batch_size);
+  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
-    protected:
-      lbann::objective_functions::mean_squared_error internal_obj_fn;
-    };
-  }
+  double report_metric(execution_mode mode);
+  double report_lifetime_metric(execution_mode mode);
+
+ protected:
+  lbann::objective_functions::mean_squared_error internal_obj_fn;
+};
+}
 }
 
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,7 +34,7 @@
 namespace lbann {
 
 hypergradient_adam::hypergradient_adam(
-  lbann_comm* comm,
+  lbann_comm *comm,
   DataType init_learning_rate,
   DataType hyper_learning_rate,
   DataType beta1,
@@ -57,7 +57,7 @@ hypergradient_adam::~hypergradient_adam() {
   }
 }
 
-void hypergradient_adam::setup(AbsDistMat* parameters) {
+void hypergradient_adam::setup(AbsDistMat *parameters) {
   optimizer::setup(parameters);
 
   // Initialize running averages.
@@ -91,24 +91,24 @@ void hypergradient_adam::setup(AbsDistMat* parameters) {
   Zeros(*m_old_gradient, m_height, m_width);
 }
 
-void hypergradient_adam::update(const AbsDistMat* gradient) {
+void hypergradient_adam::update(const AbsDistMat *gradient) {
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
   // Precompute the bias correction.
   const DataType correction = Sqrt(DataType(1) - m_current_beta2) /
-    (DataType(1) - m_current_beta1);
+                              (DataType(1) - m_current_beta1);
 
   const Int local_height = m_parameters->LocalHeight();
   const Int local_width = m_parameters->LocalWidth();
-  DataType* parameters_buffer = m_parameters->Buffer();
+  DataType *parameters_buffer = m_parameters->Buffer();
   const Int parameters_ldim = m_parameters->LDim();
-  const DataType* gradient_buffer = gradient->LockedBuffer();
+  const DataType *gradient_buffer = gradient->LockedBuffer();
   const Int gradient_ldim = gradient->LDim();
-  DataType* moment1_buffer = m_moment1->Buffer();
+  DataType *moment1_buffer = m_moment1->Buffer();
   const Int moment1_ldim = m_moment1->LDim();
-  DataType* moment2_buffer = m_moment2->Buffer();
+  DataType *moment2_buffer = m_moment2->Buffer();
   const Int moment2_ldim = m_moment2->LDim();
-  DataType* old_gradient_buffer = m_old_gradient->Buffer();
+  DataType *old_gradient_buffer = m_old_gradient->Buffer();
   const Int old_gradient_ldim = m_old_gradient->LDim();
 
   // Compute the learning rate update.
@@ -122,7 +122,7 @@ void hypergradient_adam::update(const AbsDistMat* gradient) {
       || moment2_ldim != local_height
       || old_gradient_ldim != local_height) {
     // Non-contiguous data.
-#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for (Int j = 0; j < local_width; ++j) {
       for (Int i = 0; i < local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
@@ -138,7 +138,7 @@ void hypergradient_adam::update(const AbsDistMat* gradient) {
     }
   } else {
     // Contiguous data.
-#pragma omp parallel for
+    #pragma omp parallel for
     for (Int i = 0; i < local_height * local_width; ++i) {
       DataType& x = parameters_buffer[i];
       // Add eps here to avoid denormalized floats.
@@ -158,7 +158,7 @@ void hypergradient_adam::update(const AbsDistMat* gradient) {
 }
 
 hypergradient_adam_factory::hypergradient_adam_factory(
-  lbann_comm* comm,
+  lbann_comm *comm,
   DataType init_learning_rate, DataType hyper_learning_rate,
   DataType beta1, DataType beta2, DataType eps) :
   optimizer_factory(comm, "hypergradient_adam"),
@@ -170,7 +170,7 @@ hypergradient_adam_factory::hypergradient_adam_factory(
 
 hypergradient_adam_factory::~hypergradient_adam_factory() {}
 
-optimizer* hypergradient_adam_factory::create_optimizer() {
+optimizer *hypergradient_adam_factory::create_optimizer() {
   return new hypergradient_adam(comm, m_learning_rate, m_hyper_learning_rate,
                                 m_beta1, m_beta2, m_eps);
 }

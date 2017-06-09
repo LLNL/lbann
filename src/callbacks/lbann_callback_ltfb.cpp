@@ -32,22 +32,22 @@
 namespace lbann {
 
 lbann_callback_ltfb::lbann_callback_ltfb(
-  uint round_size, model* remote_model, lbann_summary* _summarizer) :
+  uint round_size, model *remote_model, lbann_summary *_summarizer) :
   lbann_callback(1, _summarizer), m_round_size(round_size),
   m_remote_model(remote_model) {
 }
 
 lbann_callback_ltfb::~lbann_callback_ltfb() {
-  
+
 }
 
-void lbann_callback_ltfb::setup(model* m) {
+void lbann_callback_ltfb::setup(model *m) {
   comm = m->get_comm();
   // Validate that the round size divides the number of minibatches.
   // Duplicate model.
 }
 
-void lbann_callback_ltfb::on_batch_end(model* m) {
+void lbann_callback_ltfb::on_batch_end(model *m) {
   if (m->get_cur_step() % m_round_size != 0) {
     return;  // Not the end of a round.
   }
@@ -61,9 +61,9 @@ void lbann_callback_ltfb::on_batch_end(model* m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  deep_neural_network* dnn = static_cast<deep_neural_network*>(m);
-  deep_neural_network* remote_dnn =
-    static_cast<deep_neural_network*>(m_remote_model);
+  deep_neural_network *dnn = static_cast<deep_neural_network *>(m);
+  deep_neural_network *remote_dnn =
+    static_cast<deep_neural_network *>(m_remote_model);
   dnn->evaluate(execution_mode::validation);
   remote_dnn->evaluate(execution_mode::validation);
   // Reset the execution mode.
@@ -88,7 +88,7 @@ void lbann_callback_ltfb::on_batch_end(model* m) {
   if (remote_acc > local_acc) {
     if (comm->am_model_master()) {
       std::cout << comm->get_model_rank() << ": (step " << m->get_cur_step() << ") Replacing local model (" << local_acc << ") with " <<
-        "model " << partner << " (" << remote_acc << ")" << std::endl;
+                "model " << partner << " (" << remote_acc << ")" << std::endl;
     }
     replace_with_remote(m);
   }
@@ -122,18 +122,18 @@ int lbann_callback_ltfb::select_partner() {
     El::mpi::Scatter(partners.data(), 1, &my_partner, 1, 0,
                      El::mpi::COMM_WORLD);
   } else {
-    El::mpi::Scatter((int*) nullptr, 0, &my_partner, 1, 0, El::mpi::COMM_WORLD);
+    El::mpi::Scatter((int *) nullptr, 0, &my_partner, 1, 0, El::mpi::COMM_WORLD);
   }
   return my_partner;
 }
 
-void lbann_callback_ltfb::exchange(model* m, int partner) {
-  std::vector<Layer*>& layers = m->get_layers();
-  std::vector<Layer*>& remote_layers = m_remote_model->get_layers();
+void lbann_callback_ltfb::exchange(model *m, int partner) {
+  std::vector<Layer *>& layers = m->get_layers();
+  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
   // Skip input/target layers.
   for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer* layer = layers[i];
-    Layer* remote_layer = remote_layers[i];
+    Layer *layer = layers[i];
+    Layer *remote_layer = remote_layers[i];
     // TODO: Support sending optimizer state.
     ElMat& weights = layer->get_weights_biases();
     ElMat& remote_weights = remote_layer->get_weights_biases();
@@ -148,13 +148,13 @@ void lbann_callback_ltfb::exchange(model* m, int partner) {
   }
 }
 
-void lbann_callback_ltfb::replace_with_remote(model* m) {
-  std::vector<Layer*>& layers = m->get_layers();
-  std::vector<Layer*>& remote_layers = m_remote_model->get_layers();
+void lbann_callback_ltfb::replace_with_remote(model *m) {
+  std::vector<Layer *>& layers = m->get_layers();
+  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
   // Skip input/target layers.
   for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer* layer = layers[i];
-    Layer* remote_layer = remote_layers[i];
+    Layer *layer = layers[i];
+    Layer *remote_layer = remote_layers[i];
     // TODO: Update optimizers.
     layer->get_weights_biases().Matrix() =
       remote_layer->get_weights_biases().Matrix();

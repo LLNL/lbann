@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -68,163 +68,161 @@
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef __LIB_CUDNN
 
-namespace cudnn
-{
+namespace cudnn {
 
-  /** cuDNN manager class */
-  class cudnn_manager
-  {
+/** cuDNN manager class */
+class cudnn_manager {
 #ifdef __LIB_CUDNN
 
-  public:
-    /** Constructor
-     *  @param _comm         Pointer to LBANN communicator
-     *  @param max_num_gpus  Maximum Number of available GPUs. If
-     *                       negative, then use all available GPUs.
-     */
-    cudnn_manager(lbann::lbann_comm* _comm, Int max_num_gpus = -1);
+ public:
+  /** Constructor
+   *  @param _comm         Pointer to LBANN communicator
+   *  @param max_num_gpus  Maximum Number of available GPUs. If
+   *                       negative, then use all available GPUs.
+   */
+  cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus = -1);
 
-    /** Destructor */
-    ~cudnn_manager();
+  /** Destructor */
+  ~cudnn_manager();
 
-    /** Print cuDNN version information to standard output. */
-    void print_version() const;
-    /** Get cuDNN data type associated with C++ data type. */
-    cudnnDataType_t get_cudnn_data_type() const;
+  /** Print cuDNN version information to standard output. */
+  void print_version() const;
+  /** Get cuDNN data type associated with C++ data type. */
+  cudnnDataType_t get_cudnn_data_type() const;
 
-    /** Get number of GPUs assigned to current process. */
-    Int get_num_gpus() const;
-    /** Get number of GPUs on current node. */
-    Int get_num_total_gpus() const;
-    /** Get GPUs. */
-    std::vector<int>& get_gpus();
-    /** Get GPUs (const). */
-    const std::vector<int>& get_gpus() const;
-    /** Get ith GPU. */
-    int get_gpu(Int i=0) const;
-    /** Get GPU memory allocator. */
-    cub::CachingDeviceAllocator& get_gpu_memory();
-    /** Get GPU memory allocator (const). */
-    const cub::CachingDeviceAllocator& get_gpu_memory() const;
-    /** Get CUDA streams. */
-    std::vector<cudaStream_t>& get_streams();
-    /** Get CUDA streams (const). */
-    const std::vector<cudaStream_t>& get_streams() const;
-    /** Get ith CUDA stream. */
-    cudaStream_t& get_stream(Int i=0);
-    /** Get ith CUDA stream (const). */
-    const cudaStream_t& get_stream(Int i=0) const;
-    /** Get cuDNN handles. */
-    std::vector<cudnnHandle_t>& get_handles();
-    /** Get cuDNN handles (const). */
-    const std::vector<cudnnHandle_t>& get_handles() const;
-    /** Get ith cuDNN handle. */
-    cudnnHandle_t& get_handle(Int i=0);
-    /** Get ith cuDNN handle (const). */
-    const cudnnHandle_t& get_handle(Int i=0) const;
-    /** Get GPU work spaces. */
-    std::vector<void*> get_work_spaces();
-    /** Get ith GPU work space. */
-    void* get_work_space(Int i=0);
-    /** Get GPU work space sizes (in bytes). */
-    std::vector<size_t> get_work_space_sizes();
-    /** Get GPU work space sizes (in bytes) (const). */
-    const std::vector<size_t> get_work_space_sizes() const;
-    /** Get ith GPU work space size (in bytes). */
-    const size_t get_work_space_size(Int i=0) const;
-    /** Set ith GPU work space size (in bytes). */
-    void set_work_space_size(Int i, size_t size);
+  /** Get number of GPUs assigned to current process. */
+  Int get_num_gpus() const;
+  /** Get number of GPUs on current node. */
+  Int get_num_total_gpus() const;
+  /** Get GPUs. */
+  std::vector<int>& get_gpus();
+  /** Get GPUs (const). */
+  const std::vector<int>& get_gpus() const;
+  /** Get ith GPU. */
+  int get_gpu(Int i=0) const;
+  /** Get GPU memory allocator. */
+  cub::CachingDeviceAllocator& get_gpu_memory();
+  /** Get GPU memory allocator (const). */
+  const cub::CachingDeviceAllocator& get_gpu_memory() const;
+  /** Get CUDA streams. */
+  std::vector<cudaStream_t>& get_streams();
+  /** Get CUDA streams (const). */
+  const std::vector<cudaStream_t>& get_streams() const;
+  /** Get ith CUDA stream. */
+  cudaStream_t& get_stream(Int i=0);
+  /** Get ith CUDA stream (const). */
+  const cudaStream_t& get_stream(Int i=0) const;
+  /** Get cuDNN handles. */
+  std::vector<cudnnHandle_t>& get_handles();
+  /** Get cuDNN handles (const). */
+  const std::vector<cudnnHandle_t>& get_handles() const;
+  /** Get ith cuDNN handle. */
+  cudnnHandle_t& get_handle(Int i=0);
+  /** Get ith cuDNN handle (const). */
+  const cudnnHandle_t& get_handle(Int i=0) const;
+  /** Get GPU work spaces. */
+  std::vector<void *> get_work_spaces();
+  /** Get ith GPU work space. */
+  void *get_work_space(Int i=0);
+  /** Get GPU work space sizes (in bytes). */
+  std::vector<size_t> get_work_space_sizes();
+  /** Get GPU work space sizes (in bytes) (const). */
+  const std::vector<size_t> get_work_space_sizes() const;
+  /** Get ith GPU work space size (in bytes). */
+  const size_t get_work_space_size(Int i=0) const;
+  /** Set ith GPU work space size (in bytes). */
+  void set_work_space_size(Int i, size_t size);
 
-    /** Allocate memory on GPUs. */
-    void allocate_on_gpus(std::vector<DataType*>& gpu_data,
-                          Int height,
-                          Int width_per_gpu);
-    /** Deallocate memory on GPUs. */
-    void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
+  /** Allocate memory on GPUs. */
+  void allocate_on_gpus(std::vector<DataType *>& gpu_data,
+                        Int height,
+                        Int width_per_gpu);
+  /** Deallocate memory on GPUs. */
+  void deallocate_on_gpus(std::vector<DataType *>& gpu_data);
 
-    /** Zero out memory on GPUs. */
-    void clear_on_gpus(std::vector<DataType*>& gpu_data,
-                       Int height,
+  /** Zero out memory on GPUs. */
+  void clear_on_gpus(std::vector<DataType *>& gpu_data,
+                     Int height,
+                     Int width_per_gpu);
+  /** Zero out memory corresponding to unused columns on GPUs. */
+  void clear_unused_columns_on_gpus(std::vector<DataType *>& gpu_data,
+                                    Int height,
+                                    Int width,
+                                    Int width_per_gpu);
+
+  /** Copy data on GPUs. */
+  void copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
+                    const std::vector<DataType *>& gpu_src_data,
+                    Int height,
+                    Int width_per_gpu);
+  /** Copy data from CPU to GPUs.
+   *  Matrix columns are scattered amongst GPUs.
+   */
+  void scatter_to_gpus(std::vector<DataType *>& gpu_data,
+                       const Mat& cpu_data,
                        Int width_per_gpu);
-    /** Zero out memory corresponding to unused columns on GPUs. */
-    void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
-                                      Int height,
-                                      Int width,
-                                      Int width_per_gpu);
+  /** Copy data from GPUs to CPU.
+   *  Matrix columns are gathered from GPUs.
+   */
+  void gather_from_gpus(Mat& cpu_data,
+                        const std::vector<DataType *>& gpu_data,
+                        Int width_per_gpu);
+  /** Copy data from CPU to GPUs.
+   *  Data is duplicated across GPUs.
+   */
+  void broadcast_to_gpus(std::vector<DataType *>& gpu_data,
+                         const Mat& cpu_data);
+  /** Copy data from GPUs to CPU and reduce.
+   */
+  void reduce_from_gpus(Mat& cpu_data,
+                        const std::vector<DataType *>& gpu_data);
 
-    /** Copy data on GPUs. */
-    void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
-                      const std::vector<DataType*>& gpu_src_data,
-                      Int height,
-                      Int width_per_gpu);
-    /** Copy data from CPU to GPUs.
-     *  Matrix columns are scattered amongst GPUs.
-     */
-    void scatter_to_gpus(std::vector<DataType*>& gpu_data,
-                         const Mat& cpu_data,
-                         Int width_per_gpu);
-    /** Copy data from GPUs to CPU.
-     *  Matrix columns are gathered from GPUs.
-     */
-    void gather_from_gpus(Mat& cpu_data,
-                          const std::vector<DataType*>& gpu_data,
-                          Int width_per_gpu);
-    /** Copy data from CPU to GPUs.
-     *  Data is duplicated across GPUs.
-     */
-    void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
-                           const Mat& cpu_data);
-    /** Copy data from GPUs to CPU and reduce.
-     */
-    void reduce_from_gpus(Mat& cpu_data,
-                          const std::vector<DataType*>& gpu_data);
+  /** Synchronize GPUs. */
+  void synchronize();
 
-    /** Synchronize GPUs. */
-    void synchronize();
+  /// Register a block of memory to pin
+  void pin_ptr(void *ptr, size_t sz);
+  /// Pin the memory block of a matrix and return the block size
+  size_t pin_memory_block(ElMat *mat);
+  /// Unpin the memory block of a matrix
+  void unpin_memory_block(ElMat *mat);
+  /// Unregister a block of pinnedmemory
+  void unpin_ptr(void *ptr);
+  /// Unregister all the memories registered to pin
+  void unpin_ptrs(void);
+  /// report the total size of memory blocks pinned
+  size_t get_total_size_of_pinned_blocks(void) const;
 
-    /// Register a block of memory to pin
-    void pin_ptr(void* ptr, size_t sz);
-    /// Pin the memory block of a matrix and return the block size
-    size_t pin_memory_block(ElMat *mat);
-    /// Unpin the memory block of a matrix
-    void unpin_memory_block(ElMat *mat);
-    /// Unregister a block of pinnedmemory
-    void unpin_ptr(void* ptr);
-    /// Unregister all the memories registered to pin
-    void unpin_ptrs(void);
-    /// report the total size of memory blocks pinned
-    size_t get_total_size_of_pinned_blocks(void) const;
+ private:
 
-  private:
+  /** LBANN communicator. */
+  lbann::lbann_comm *comm;
 
-    /** LBANN communicator. */
-    lbann::lbann_comm* comm;
+  /** Number of GPUs for current process. */
+  Int m_num_gpus;
+  /** Number of available GPUs. */
+  Int m_num_total_gpus;
 
-    /** Number of GPUs for current process. */
-    Int m_num_gpus;
-    /** Number of available GPUs. */
-    Int m_num_total_gpus;
+  /** GPU memory allocator.
+   *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
+  cub::CachingDeviceAllocator *m_gpu_memory;
 
-    /** GPU memory allocator.
-     *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
-    cub::CachingDeviceAllocator* m_gpu_memory;
+  /** List of GPUs. */
+  std::vector<int> m_gpus;
+  /** List of CUDA streams. */
+  std::vector<cudaStream_t> m_streams;
+  /** List of cuDNN handles. */
+  std::vector<cudnnHandle_t> m_handles;
+  /** Pinned memory addresses. */
+  std::map<void *, size_t> pinned_ptr;
 
-    /** List of GPUs. */
-    std::vector<int> m_gpus;
-    /** List of CUDA streams. */
-    std::vector<cudaStream_t> m_streams;
-    /** List of cuDNN handles. */
-    std::vector<cudnnHandle_t> m_handles;
-    /** Pinned memory addresses. */
-    std::map<void*, size_t> pinned_ptr;
-
-    /** List of GPU work spaces. */
-    std::vector<void*> m_work_spaces;
-    /** List of GPU work space sizes. */
-    std::vector<size_t> m_work_space_sizes;
+  /** List of GPU work spaces. */
+  std::vector<void *> m_work_spaces;
+  /** List of GPU work space sizes. */
+  std::vector<size_t> m_work_space_sizes;
 
 #endif // #ifdef __LIB_CUDNN
-  };
+};
 
 }
 

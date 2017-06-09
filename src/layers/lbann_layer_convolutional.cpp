@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,9 +40,12 @@ using namespace lbann;
 /// Get cuDNN activation mode
 cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
   switch(type) {
-  case activation_type::SIGMOID: return CUDNN_ACTIVATION_SIGMOID;
-  case activation_type::RELU:    return CUDNN_ACTIVATION_RELU;
-  case activation_type::TANH:    return CUDNN_ACTIVATION_TANH;
+  case activation_type::SIGMOID:
+    return CUDNN_ACTIVATION_SIGMOID;
+  case activation_type::RELU:
+    return CUDNN_ACTIVATION_RELU;
+  case activation_type::TANH:
+    return CUDNN_ACTIVATION_TANH;
   default:
     throw lbann_exception("convolutional_layer: invalid activation type for cuDNN");
   }
@@ -50,26 +53,25 @@ cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
 #endif // #ifdef __LIB_CUDNN
 
 convolutional_layer::convolutional_layer(const uint index,
-                                         const Int num_dims,
-                                         const Int num_input_channels,
-                                         const Int* input_dims,
-                                         const Int num_output_channels,
-                                         const Int* filter_dims,
-                                         const Int* conv_pads,
-                                         const Int* conv_strides,
-                                         const Int mini_batch_size,
-                                         const activation_type activation,
-                                         const weight_initialization init,
-                                         lbann_comm* comm,
-                                         optimizer* opt,
-                                         std::vector<regularizer*> regs,
-                                         cudnn::cudnn_manager* cudnn)
+    const Int num_dims,
+    const Int num_input_channels,
+    const Int *input_dims,
+    const Int num_output_channels,
+    const Int *filter_dims,
+    const Int *conv_pads,
+    const Int *conv_strides,
+    const Int mini_batch_size,
+    const activation_type activation,
+    const weight_initialization init,
+    lbann_comm *comm,
+    optimizer *opt,
+    std::vector<regularizer *> regs,
+    cudnn::cudnn_manager *cudnn)
   : Layer(data_layout::DATA_PARALLEL, index, comm, opt, mini_batch_size, activation, regs),
     m_weight_initialization(init),
     m_num_dims(num_dims),
     m_num_input_channels(num_input_channels),
-    m_num_output_channels(num_output_channels)
-{
+    m_num_output_channels(num_output_channels) {
   m_type = layer_type::convolution;
 
   // Initialize input dimensions and convolution parameters
@@ -125,7 +127,7 @@ convolutional_layer::convolutional_layer(const uint index,
     const Int num_processes = comm->get_procs_per_model();
     const Int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-    
+
     // Default behavior set to pin memory blocks used by cuDNN
     pin_mem();
   }
@@ -134,24 +136,29 @@ convolutional_layer::convolutional_layer(const uint index,
 
 }
 
-convolutional_layer::~convolutional_layer()
-{
+convolutional_layer::~convolutional_layer() {
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
 
     // Destroy cuDNN objects
-    if(m_input_desc)
+    if(m_input_desc) {
       checkCUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
-    if(m_output_desc)
+    }
+    if(m_output_desc) {
       checkCUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
-    if(m_bias_desc)
+    }
+    if(m_bias_desc) {
       checkCUDNN(cudnnDestroyTensorDescriptor(m_bias_desc));
-    if(m_filter_desc)
+    }
+    if(m_filter_desc) {
       checkCUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
-    if(m_convolution_desc)
+    }
+    if(m_convolution_desc) {
       checkCUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
-    if(m_activation_desc)
+    }
+    if(m_activation_desc) {
       checkCUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
+    }
 
     // Unpin pinned memory blocks
     unpin_mem();
@@ -162,17 +169,18 @@ convolutional_layer::~convolutional_layer()
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(!m_prev_layer_using_gpus)
+    if(!m_prev_layer_using_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    if(!m_next_layer_using_gpus)
+    }
+    if(!m_next_layer_using_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    }
 
   }
 #endif // #ifdef __LIB_CUDNN
 }
 
-void convolutional_layer::setup(const int num_prev_neurons)
-{
+void convolutional_layer::setup(const int num_prev_neurons) {
   Layer::setup(num_prev_neurons);
 
 #ifdef __LIB_CUDNN
@@ -185,8 +193,9 @@ void convolutional_layer::setup(const int num_prev_neurons)
 #ifdef LBANN_DEBUG
   // Check if input dimensions are valid
   Int num_inputs = m_num_input_channels;
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     num_inputs *= m_input_dims[i];
+  }
   if(num_inputs != m_num_prev_neurons) {
     throw lbann_exception("lbann_layer_convolutional: unexpected number of input neurons");
   }
@@ -216,13 +225,13 @@ void convolutional_layer::setup(const int num_prev_neurons)
   initialize_matrix(filter, m_weight_initialization, fan_in, fan_out);
 
   // Initialize optimizer
-  if(m_optimizer != NULL)
+  if(m_optimizer != NULL) {
     m_optimizer->setup(m_weights);
-  
+  }
+
 }
 
-void lbann::convolutional_layer::setup_gpu()
-{
+void lbann::convolutional_layer::setup_gpu() {
 #ifndef __LIB_CUDNN
   throw lbann_exception("lbann_layer_convolutional: cuDNN not detected");
 #else
@@ -243,12 +252,14 @@ void lbann::convolutional_layer::setup_gpu()
   std::vector<int> input_dims(m_num_dims+2);
   input_dims[0] = m_mini_batch_size_per_gpu;
   input_dims[1] = m_num_input_channels;
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     input_dims[i+2] = m_input_dims[i];
+  }
   std::vector<int> input_strides(m_num_dims+2);
   input_strides[m_num_dims + 1]  = 1;
-  for(Int i=m_num_dims; i>=0; --i)
+  for(Int i=m_num_dims; i>=0; --i) {
     input_strides[i] = input_strides[i+1] * input_dims[i+1];
+  }
   checkCUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
                                         m_cudnn->get_cudnn_data_type(),
                                         m_num_dims+2,
@@ -259,8 +270,9 @@ void lbann::convolutional_layer::setup_gpu()
   std::vector<int> filter_dims(m_num_dims+2);
   filter_dims[0] = m_num_output_channels;
   filter_dims[1] = m_num_input_channels;
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     filter_dims[i+2] = m_filter_dims[i];
+  }
   checkCUDNN(cudnnSetFilterNdDescriptor(m_filter_desc,
                                         m_cudnn->get_cudnn_data_type(),
                                         CUDNN_TENSOR_NCHW,
@@ -271,31 +283,35 @@ void lbann::convolutional_layer::setup_gpu()
   // Note: upscales are not supported as of cuDNN v5.1
   std::vector<int> conv_upscales(m_num_dims, 1);
   std::vector<int> conv_pads(m_num_dims);
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     conv_pads[i] = m_conv_pads[i];
+  }
   std::vector<int> conv_strides(m_num_dims);
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     conv_strides[i] = m_conv_strides[i];
+  }
   checkCUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_desc,
-                                             m_num_dims,
-                                             conv_pads.data(),
-                                             conv_strides.data(),
-                                             conv_upscales.data(),
-                                             CUDNN_CONVOLUTION,
-                                             m_cudnn->get_cudnn_data_type()));
+             m_num_dims,
+             conv_pads.data(),
+             conv_strides.data(),
+             conv_upscales.data(),
+             CUDNN_CONVOLUTION,
+             m_cudnn->get_cudnn_data_type()));
 
   // Set output tensor descriptor
   std::vector<int> output_dims(m_num_dims+2);
 #ifdef LBANN_DEBUG
   checkCUDNN(cudnnGetConvolutionNdForwardOutputDim(m_convolution_desc,
-                                                   m_input_desc,
-                                                   m_filter_desc,
-                                                   m_num_dims+2,
-                                                   output_dims.data()));
-  if(output_dims[0] != m_mini_batch_size_per_gpu)
+             m_input_desc,
+             m_filter_desc,
+             m_num_dims+2,
+             output_dims.data()));
+  if(output_dims[0] != m_mini_batch_size_per_gpu) {
     throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
-  if(output_dims[1] != m_num_output_channels)
+  }
+  if(output_dims[1] != m_num_output_channels) {
     throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
+  }
   for(Int i=0; i<m_num_dims; ++i) {
     if(output_dims[i+2] != m_output_dims[i]) {
       throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
@@ -304,13 +320,15 @@ void lbann::convolutional_layer::setup_gpu()
 #else
   output_dims[0] = m_mini_batch_size_per_gpu;
   output_dims[1] = m_num_output_channels;
-  for(Int i=0; i<m_num_dims; ++i)
+  for(Int i=0; i<m_num_dims; ++i) {
     output_dims[i+2] = m_output_dims[i];
+  }
 #endif // #ifdef LBANN_DEBUG
   std::vector<int> output_strides(m_num_dims+2);
   output_strides[m_num_dims + 1]  = 1;
-  for(Int i=m_num_dims; i>=0; --i)
+  for(Int i=m_num_dims; i>=0; --i) {
     output_strides[i] = output_strides[i+1] * output_dims[i+1];
+  }
   checkCUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
                                         m_cudnn->get_cudnn_data_type(),
                                         m_num_dims+2,
@@ -327,63 +345,64 @@ void lbann::convolutional_layer::setup_gpu()
                                         m_num_dims+2,
                                         bias_dims.data(),
                                         bias_strides.data()));
-  
+
   // Choose algorithms
   checkCUDNN(cudnnGetConvolutionForwardAlgorithm(m_cudnn->get_handle(),
-                                                 m_input_desc,
-                                                 m_filter_desc,
-                                                 m_convolution_desc,
-                                                 m_output_desc,
-                                                 CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-                                                 device_props.totalGlobalMem/2,
-                                                 &m_forward_algo));
+             m_input_desc,
+             m_filter_desc,
+             m_convolution_desc,
+             m_output_desc,
+             CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+             device_props.totalGlobalMem/2,
+             &m_forward_algo));
   checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(m_cudnn->get_handle(),
-                                                        m_input_desc,
-                                                        m_output_desc,
-                                                        m_convolution_desc,
-                                                        m_filter_desc,
-                                                        CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                        device_props.totalGlobalMem/2,
-                                                        &m_backward_filter_algo));
+             m_input_desc,
+             m_output_desc,
+             m_convolution_desc,
+             m_filter_desc,
+             CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+             device_props.totalGlobalMem/2,
+             &m_backward_filter_algo));
   checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(m_cudnn->get_handle(),
-                                                      m_filter_desc,
-                                                      m_output_desc,
-                                                      m_convolution_desc,
-                                                      m_input_desc,
-                                                      CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
-                                                      device_props.totalGlobalMem/2,
-                                                      &m_backward_data_algo));
+             m_filter_desc,
+             m_output_desc,
+             m_convolution_desc,
+             m_input_desc,
+             CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+             device_props.totalGlobalMem/2,
+             &m_backward_data_algo));
 
   // Initialize work space
   size_t max_work_space = 0;
   size_t required_work_space;
   checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(m_cudnn->get_handle(),
-                                                     m_input_desc,
-                                                     m_filter_desc,
-                                                     m_convolution_desc,
-                                                     m_output_desc,
-                                                     m_forward_algo,
-                                                     &required_work_space));
+             m_input_desc,
+             m_filter_desc,
+             m_convolution_desc,
+             m_output_desc,
+             m_forward_algo,
+             &required_work_space));
   max_work_space = Max(max_work_space, required_work_space);
   checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(m_cudnn->get_handle(),
-                                                            m_input_desc,
-                                                            m_output_desc,
-                                                            m_convolution_desc,
-                                                            m_filter_desc,
-                                                            m_backward_filter_algo,
-                                                            &required_work_space));
+             m_input_desc,
+             m_output_desc,
+             m_convolution_desc,
+             m_filter_desc,
+             m_backward_filter_algo,
+             &required_work_space));
   max_work_space = Max(max_work_space, required_work_space);
   checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(m_cudnn->get_handle(),
-                                                          m_filter_desc,
-                                                          m_output_desc,
-                                                          m_convolution_desc,
-                                                          m_input_desc,
-                                                          m_backward_data_algo,
-                                                          &required_work_space));
+             m_filter_desc,
+             m_output_desc,
+             m_convolution_desc,
+             m_input_desc,
+             m_backward_data_algo,
+             &required_work_space));
   max_work_space = Max(max_work_space, required_work_space);
   for(Int i=0; i<m_cudnn->get_num_gpus(); ++i) {
-    if(max_work_space > m_cudnn->get_work_space_size(i))
+    if(max_work_space > m_cudnn->get_work_space_size(i)) {
       m_cudnn->set_work_space_size(i, max_work_space);
+    }
   }
 
   // Set activation descriptor
@@ -449,61 +468,63 @@ void lbann::convolutional_layer::unpin_mem(void) {
 #endif
 }
 
-void lbann::convolutional_layer::pin_memory_blocks_fwd(void)
-{
+void lbann::convolutional_layer::pin_memory_blocks_fwd(void) {
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   total_size += m_cudnn->pin_memory_block(m_weights);
   if(!m_prev_layer_using_gpus) {
     total_size += m_cudnn->pin_memory_block(m_prev_activations);
   }
-  if(!m_next_layer_using_gpus)
+  if(!m_next_layer_using_gpus) {
     total_size += m_cudnn->pin_memory_block(m_activations);
-  //std::cout << total_size << " bytes pinned by convolutional layer " 
+  }
+  //std::cout << total_size << " bytes pinned by convolutional layer "
   //          << get_index() << " forward " << std::endl;
 
   is_pinned_fwd = true;
 #endif // #ifdef __LIB_CUDNN
 }
 
-void lbann::convolutional_layer::pin_memory_blocks_bwd(void)
-{
+void lbann::convolutional_layer::pin_memory_blocks_bwd(void) {
 #ifdef __LIB_CUDNN
   size_t total_size = 0u;
   total_size += m_cudnn->pin_memory_block(&m_weights_gradient_per_gpu);
   if(!m_next_layer_using_gpus) {
     total_size += m_cudnn->pin_memory_block(m_prev_error_signal);
   }
-  if(!m_prev_layer_using_gpus)
+  if(!m_prev_layer_using_gpus) {
     total_size += m_cudnn->pin_memory_block(m_error_signal);
-  //std::cout << total_size << " bytes pinned by convolutional layer " 
+  }
+  //std::cout << total_size << " bytes pinned by convolutional layer "
   //          << get_index() << " backward " << std::endl;
 
   is_pinned_bwd = true;
 #endif // #ifdef __LIB_CUDNN
 }
 
-void lbann::convolutional_layer::unpin_memory_blocks_fwd(void)
-{
+void lbann::convolutional_layer::unpin_memory_blocks_fwd(void) {
 #ifdef __LIB_CUDNN
   m_cudnn->unpin_memory_block(m_weights);
-  if(!m_prev_layer_using_gpus)
+  if(!m_prev_layer_using_gpus) {
     m_cudnn->unpin_memory_block(m_prev_activations);
-  if(!m_next_layer_using_gpus)
+  }
+  if(!m_next_layer_using_gpus) {
     m_cudnn->unpin_memory_block(m_activations);
+  }
 
   is_pinned_fwd = false;
 #endif
 }
 
-void lbann::convolutional_layer::unpin_memory_blocks_bwd(void)
-{
+void lbann::convolutional_layer::unpin_memory_blocks_bwd(void) {
 #ifdef __LIB_CUDNN
   m_cudnn->unpin_memory_block(&m_weights_gradient_per_gpu);
-  if(!m_next_layer_using_gpus)
+  if(!m_next_layer_using_gpus) {
     m_cudnn->unpin_memory_block(m_prev_error_signal);
-  if(!m_prev_layer_using_gpus)
+  }
+  if(!m_prev_layer_using_gpus) {
     m_cudnn->unpin_memory_block(m_error_signal);
+  }
 
   is_pinned_bwd = false;
 #endif
@@ -516,8 +537,9 @@ void lbann::convolutional_layer::forwardProp() {
 
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
-  if(to_pin_fwd && !is_pinned_fwd)
+  if(to_pin_fwd && !is_pinned_fwd) {
     pin_memory_blocks_fwd();
+  }
 #endif // #ifdef __LIB_CUDNN
 
 }
@@ -529,8 +551,9 @@ void lbann::convolutional_layer::backProp() {
 
 #ifdef __LIB_CUDNN
   // Pin memory blocks at the first step
-  if(to_pin_bwd && !is_pinned_bwd)
+  if(to_pin_bwd && !is_pinned_bwd) {
     pin_memory_blocks_bwd();
+  }
 #endif // #ifdef __LIB_CUDNN
 
 }
@@ -539,8 +562,7 @@ void lbann::convolutional_layer::backProp() {
 void lbann::convolutional_layer::fp_linearity() {
   if(m_using_gpus) {
     fp_linearity_gpu();
-  }
-  else {
+  } else {
     fp_linearity_cpu_gemm();
   }
 }
@@ -550,8 +572,7 @@ void lbann::convolutional_layer::bp_linearity() {
 
   if(m_using_gpus) {
     bp_linearity_gpu();
-  }
-  else {
+  } else {
     bp_linearity_cpu_gemm();
   }
 
@@ -560,8 +581,7 @@ void lbann::convolutional_layer::bp_linearity() {
 void lbann::convolutional_layer::fp_nonlinearity() {
   if(m_using_gpus) {
     fp_nonlinearity_gpu();
-  }
-  else {
+  } else {
     Layer::fp_nonlinearity();
   }
 }
@@ -569,8 +589,7 @@ void lbann::convolutional_layer::fp_nonlinearity() {
 void lbann::convolutional_layer::bp_nonlinearity() {
   if(m_using_gpus) {
     bp_nonlinearity_gpu();
-  }
-  else {
+  } else {
     Layer::bp_nonlinearity();
   }
 }
@@ -652,7 +671,7 @@ void lbann::convolutional_layer::fp_nonlinearity_gpu() {
   }
 
 #endif // #ifndef __LIB_CUDNN
-}  
+}
 
 void lbann::convolutional_layer::fp_linearity_cpu_direct() {
 
@@ -674,7 +693,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
 
   // Apply bias
   for(Int i=0; i<m_num_output_channels; ++i) {
-    Mat weighted_sum_channel 
+    Mat weighted_sum_channel
       = View(weighted_sum_local,
              IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
              ALL);
@@ -688,7 +707,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
   ////////////////////////////////////////////////////////////////
 
   // Iterate through samples, output channels, and input channels
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
@@ -730,7 +749,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
             bool valid_input_entry = true;
             for(Int d = 0; d < m_num_dims; ++d) {
               if(filter_offsets[d] + filter_pos[d] < 0
-                 || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
+                  || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
                 valid_input_entry = false;
                 break;
               }
@@ -744,7 +763,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
               const DataType input_entry = prev_activations_local(input_index, sample);
               output_entry += filter_entry*input_entry;
             }
-          
+
             // Move to next filter entry
             ++filter_pos[m_num_dims-1];
             for(Int d = m_num_dims - 1; d > 0; --d) {
@@ -753,7 +772,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
                 ++filter_pos[d-1];
               }
             }
-          
+
           }
 
           // Move to next filter offset and output entry
@@ -773,7 +792,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
 
   // weighted_sum and output are identical after fp linearity step
   Copy(weighted_sum_local, activations_local);
-  
+
 }
 
 void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
@@ -796,7 +815,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
 
   // Apply bias
   for(Int i=0; i<m_num_output_channels; ++i) {
-    Mat weighted_sum_channel 
+    Mat weighted_sum_channel
       = View(weighted_sum_local,
              IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
              ALL);
@@ -822,7 +841,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
   const Int filter_offset_x_stride = m_conv_strides[1];
 
   // Iterate through samples, output channels, and input channels
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
@@ -850,23 +869,27 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
                 filter_pos_y < filter_dim_y;
                 ++filter_pos_y) {
               const Int pos_y = filter_offset_y + filter_pos_y;
-              if(pos_y < Int(0) || pos_y >= dim_y) continue;
+              if(pos_y < Int(0) || pos_y >= dim_y) {
+                continue;
+              }
               for(Int filter_pos_x = 0;
                   filter_pos_x < filter_dim_x;
                   ++filter_pos_x) {
                 const Int pos_x = filter_offset_x + filter_pos_x;
-                if(pos_x < Int(0) || pos_x >= dim_x) continue;
+                if(pos_x < Int(0) || pos_x >= dim_x) {
+                  continue;
+                }
 
                 // Get indices
                 const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
                 const Int input_index = input_index_start + pos_y*dim_x + pos_x;
-                
+
                 // Update output entry
                 const DataType filter_entry = filter_local(filter_index,0);
                 const DataType input_entry = prev_activations_local(input_index, sample);
                 output_entry += filter_entry*input_entry;
 
-              }              
+              }
             }
 
             // Move to next output entry
@@ -904,7 +927,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_gemm() {
 
   // Apply bias
   for(Int i=0; i<m_num_output_channels; ++i) {
-    Mat weighted_sum_channel 
+    Mat weighted_sum_channel
       = View(weighted_sum_local,
              IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
              ALL);
@@ -970,18 +993,18 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
                                             m_bias_desc,
                                             m_weights_gradient_d[i] + m_filter_size));
     checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->get_handle(i),
-                                              &one,
-                                              m_input_desc,
-                                              m_prev_activations_d[i],
-                                              m_output_desc,
-                                              m_prev_error_signal_d[i],
-                                              m_convolution_desc,
-                                              m_backward_filter_algo,
-                                              m_cudnn->get_work_space(i),
-                                              m_cudnn->get_work_space_size(i),
-                                              &zero,
-                                              m_filter_desc,
-                                              m_weights_gradient_d[i]));
+               &one,
+               m_input_desc,
+               m_prev_activations_d[i],
+               m_output_desc,
+               m_prev_error_signal_d[i],
+               m_convolution_desc,
+               m_backward_filter_algo,
+               m_cudnn->get_work_space(i),
+               m_cudnn->get_work_space_size(i),
+               &zero,
+               m_filter_desc,
+               m_weights_gradient_d[i]));
     checkCUDNN(cudnnConvolutionBackwardData(m_cudnn->get_handle(i),
                                             &one,
                                             m_filter_desc,
@@ -1052,7 +1075,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct() {
   Mat& weights_gradient_local = m_weights_gradient->Matrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
-  // Get filters and bias  
+  // Get filters and bias
   const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
   Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_filter_size), ALL);
   Mat bias_gradient_local = View(weights_gradient_local, IR(m_filter_size,END), ALL);
@@ -1088,7 +1111,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct() {
   ////////////////////////////////////////////////////////////////
 
   // Iterate through samples, output channels, and input channels
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int input_channel = 0;
       input_channel < m_num_input_channels;
       ++input_channel) {
@@ -1129,7 +1152,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct() {
             bool valid_input_entry = true;
             for(Int d = 0; d < m_num_dims; ++d) {
               if(filter_offsets[d] + filter_pos[d] < 0
-                 || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
+                  || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
                 valid_input_entry = false;
                 break;
               }
@@ -1154,7 +1177,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct() {
               filter_gradient_entry += prev_error_signal_entry * prev_activations_entry;
 
             }
-          
+
             // Move to next filter entry
             ++filter_pos[m_num_dims-1];
             for(Int d = m_num_dims - 1; d > 0; --d) {
@@ -1197,7 +1220,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct_2d() {
   Mat& weights_gradient_local = m_weights_gradient->Matrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
-  // Get filters and bias  
+  // Get filters and bias
   const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
   Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_filter_size), ALL);
   Mat bias_gradient_local = View(weights_gradient_local, IR(m_filter_size,END), ALL);
@@ -1245,7 +1268,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct_2d() {
   const Int filter_offset_x_stride = m_conv_strides[1];
 
   // Iterate through samples, output channels, and input channels
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int input_channel = 0;
       input_channel < m_num_input_channels;
       ++input_channel) {
@@ -1272,12 +1295,16 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct_2d() {
                 filter_pos_y < filter_dim_y;
                 ++filter_pos_y) {
               const Int pos_y = filter_offset_y + filter_pos_y;
-              if(pos_y < Int(0) || pos_y >= dim_y) continue;
+              if(pos_y < Int(0) || pos_y >= dim_y) {
+                continue;
+              }
               for(Int filter_pos_x = 0;
                   filter_pos_x < filter_dim_x;
                   ++filter_pos_x) {
                 const Int pos_x = filter_offset_x + filter_pos_x;
-                if(pos_x < Int(0) || pos_x >= dim_x) continue;
+                if(pos_x < Int(0) || pos_x >= dim_x) {
+                  continue;
+                }
 
                 // Get indices
                 const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
@@ -1325,7 +1352,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_gemm() {
   Mat& weights_gradient_local = m_weights_gradient->Matrix();
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
-  // Get filters and bias  
+  // Get filters and bias
   const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
   Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_filter_size), ALL);
   Mat bias_gradient_local = View(weights_gradient_local, IR(m_filter_size,END), ALL);
@@ -1340,7 +1367,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_gemm() {
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
   // Compute bias gradient
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int output_channel = 0;
       output_channel < m_num_output_channels;
       ++output_channel) {
@@ -1401,8 +1428,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_gemm() {
 
 }
 
-bool convolutional_layer::update()
-{
+bool convolutional_layer::update() {
   double start = get_time();
 
   // Regularize gradients and update regularizers

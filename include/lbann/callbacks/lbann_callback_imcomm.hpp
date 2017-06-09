@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -44,7 +44,7 @@ namespace lbann {
  * in order to reduce bandwidth requirements.
  */
 class lbann_callback_imcomm : public lbann_callback {
-public:
+ public:
   enum comm_type {
     NONE,  /** Do no gradient updates. */
     NORMAL,  /** Simply sum gradient updates. */
@@ -57,13 +57,13 @@ public:
    * Initialize with ct being used for every layer.
    */
   lbann_callback_imcomm(comm_type ct = NORMAL,
-                        lbann_summary* _summarizer = nullptr);
+                        lbann_summary *_summarizer = nullptr);
   /**
    * Convenience initialization to do one update type for a set of layers.
    * Implies no inter-model updates for other layers.
    */
   lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> _layers,
-                        lbann_summary* _summarizer = nullptr);
+                        lbann_summary *_summarizer = nullptr);
 
   /** Choose comm type ct for layer. */
   void set_layer_comm(uint layer, comm_type ct);
@@ -74,13 +74,13 @@ public:
                            DataType neg_thresh);
 
   /** Do initialization for this model. */
-  void setup(model* m);
+  void setup(model *m);
   /** Clear out remaining error if needed. */
-  void on_epoch_end(model* m);
+  void on_epoch_end(model *m);
   /** Do inter-model gradient updates. */
-  void on_backward_prop_end(model* m);
+  void on_backward_prop_end(model *m);
 
-private:
+ private:
   /** Parameters for a given layer. */
   struct imcomm_params {
     /** Type of communication done. */
@@ -121,7 +121,7 @@ private:
   }
 
   /** Summarize relevant statistics. */
-  void do_summary(model* m, Layer* layer, double im_time);
+  void do_summary(model *m, Layer *layer, double im_time);
 };
 
 }  // namespace lbann

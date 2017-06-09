@@ -33,15 +33,14 @@
 using namespace std;
 using namespace El;
 
-lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t index,lbann_comm* comm,
-                                                  optimizer* opt,/*needed?*/
-                                                  const uint miniBatchSize,
-                                                  Layer* original_layer,
-                                                  activation_type activation,
-                                                  const weight_initialization init)
+lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t index,lbann_comm *comm,
+    optimizer *opt,/*needed?*/
+    const uint miniBatchSize,
+    Layer *original_layer,
+    activation_type activation,
+    const weight_initialization init)
   :  target_layer(data_dist, comm, miniBatchSize, {}, false),m_original_layer(original_layer),
-     m_weight_initialization(init)
-{
+m_weight_initialization(init) {
 
   m_type = layer_type::reconstruction;
   Index = index;
@@ -90,8 +89,7 @@ void lbann::reconstruction_layer::setup(int num_prev_neurons) {
 
 }
 
-void lbann::reconstruction_layer::fp_linearity()
-{
+void lbann::reconstruction_layer::fp_linearity() {
   //m_activations is linear transformation of m_weights * m_prev_activations^T
   Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
 
@@ -106,25 +104,24 @@ void lbann::reconstruction_layer::fp_linearity()
   num_forwardprop_steps++;
 }
 
-void lbann::reconstruction_layer::bp_linearity()
-{
+void lbann::reconstruction_layer::bp_linearity() {
 
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
 
   int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
   DistMat original_layer_act_v;
-  
+
   //view of original layer
   View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
-  
+
   // Compute error signal
   neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
 
   //m_prev_error_signal_v is the error computed by objective function
   //is really not previous, but computed in this layer
   //@todo: rename as obj_error_signal
-  
+
   // Compute the partial delta update for the next lower layer
   Gemm(TRANSPOSE, NORMAL, DataType(1), *m_weights, *m_prev_error_signal_v, DataType(0), *m_error_signal_v);
 
@@ -138,8 +135,7 @@ execution_mode lbann::reconstruction_layer::get_execution_mode() {
   return m_execution_mode;
 }
 
-bool lbann::reconstruction_layer::update()
-{
+bool lbann::reconstruction_layer::update() {
   double start = get_time();
   Layer::update();
   if(m_execution_mode == execution_mode::training) {
@@ -152,7 +148,7 @@ bool lbann::reconstruction_layer::update()
 void lbann::reconstruction_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
   std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
-    + "/ReconstructionCost";
+                    + "/ReconstructionCost";
   summarizer.reduce_scalar(tag, average_cost(), step);
 }
 

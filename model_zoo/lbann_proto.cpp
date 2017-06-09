@@ -33,10 +33,9 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   Initialize(argc, argv);
-  lbann_comm* comm = NULL;
+  lbann_comm *comm = NULL;
 
   try {
 
@@ -100,7 +99,7 @@ int main(int argc, char* argv[])
     init_random(42);
     init_data_seq_random(42);
 
-    const lbann_data::DataReader &d_reader = pb.data_reader();
+    const lbann_data::DataReader& d_reader = pb.data_reader();
     int parallel_io = pb_model->num_parallel_readers();
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
@@ -119,8 +118,8 @@ int main(int argc, char* argv[])
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
-    const lbann_data::Model &m2 = pb.model();
-    std::map<execution_mode, DataReader*> data_readers;
+    const lbann_data::Model& m2 = pb.model();
+    std::map<execution_mode, DataReader *> data_readers;
     init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
       for (auto it : data_readers) {
@@ -143,7 +142,7 @@ int main(int argc, char* argv[])
     // @todo: not all callbacks code is in place
     ///////////////////////////////////////////////////////////////////
     optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
-    cudnn::cudnn_manager* cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (comm->am_world_master()) {
@@ -156,11 +155,11 @@ int main(int argc, char* argv[])
       }
     }
 #else
-  if (comm->am_world_master()) {
-    cerr << "code was NOT compiled with __LIB_CUDNN\n";
-  }
+    if (comm->am_world_master()) {
+      cerr << "code was NOT compiled with __LIB_CUDNN\n";
+    }
 #endif
-    sequential_model * model = init_model(comm, optimizer_fac, pb);
+    sequential_model *model = init_model(comm, optimizer_fac, pb);
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();

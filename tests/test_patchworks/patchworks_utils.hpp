@@ -1,4 +1,4 @@
-/*  
+/*
  *  Utility routines
  *  Author: Jae-Seung Yeom
  */
@@ -12,7 +12,7 @@
 unsigned int get_screen_resolution(std::vector<std::pair<int, int> >& res);
 
 /// Split a file path into the directory and the file name under it
-bool split_path(const std::string &path, std::string &dir, std::string &name);
+bool split_path(const std::string& path, std::string& dir, std::string& name);
 
 /// return the file name without extention
 std::string name_with_no_extention(const std::string filename);

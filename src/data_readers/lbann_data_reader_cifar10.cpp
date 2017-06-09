@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,22 +33,20 @@ using namespace El;
 using namespace lbann;
 
 
-DataReader_CIFAR10::DataReader_CIFAR10(int batchSize, bool shuffle) 
-	: m_image_width(32), m_image_height(32), m_image_num_channels(3),
-    DataReader(batchSize, shuffle)
-{
+DataReader_CIFAR10::DataReader_CIFAR10(int batchSize, bool shuffle)
+  : m_image_width(32), m_image_height(32), m_image_num_channels(3),
+    DataReader(batchSize, shuffle) {
 }
 
-DataReader_CIFAR10::DataReader_CIFAR10(const DataReader_CIFAR10 &source) 
+DataReader_CIFAR10::DataReader_CIFAR10(const DataReader_CIFAR10& source)
   : DataReader((const DataReader&) source),
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
-    m_data(source.m_data)
-{
+    m_data(source.m_data) {
 }
 
-DataReader_CIFAR10 & DataReader_CIFAR10::operator=(const DataReader_CIFAR10 &source) {
+DataReader_CIFAR10& DataReader_CIFAR10::operator=(const DataReader_CIFAR10& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
@@ -65,8 +63,7 @@ DataReader_CIFAR10 & DataReader_CIFAR10::operator=(const DataReader_CIFAR10 &sou
 
 DataReader_CIFAR10::~DataReader_CIFAR10() { }
 
-void DataReader_CIFAR10::load()
-{
+void DataReader_CIFAR10::load() {
   stringstream err;
 
   //open data file
@@ -74,7 +71,9 @@ void DataReader_CIFAR10::load()
   string filename = get_data_filename();
   stringstream b;
   b << image_dir << "/" << filename;
-  if (is_master()) cout << "opening: " << b.str() << endl;
+  if (is_master()) {
+    cout << "opening: " << b.str() << endl;
+  }
   ifstream in(b.str().c_str(), ios::binary);
   if (not in.good()) {
     err << __FILE__ << " " << __LINE__
@@ -103,7 +102,7 @@ void DataReader_CIFAR10::load()
   //read in the images; each image is 1 byte, which is the
   //label (0-9), and 2072 pixels
   for (size_t h=0; h<m_data.size(); h++) {
-    in.read((char*)&(m_data[h][0]), n);
+    in.read((char *)&(m_data[h][0]), n);
   }
   in.close();
 
@@ -116,8 +115,7 @@ void DataReader_CIFAR10::load()
 }
 
 
-int lbann::DataReader_CIFAR10::fetch_data(Mat &X)
-{
+int lbann::DataReader_CIFAR10::fetch_data(Mat& X) {
   stringstream err;
 
   if(!DataReader::position_valid()) {

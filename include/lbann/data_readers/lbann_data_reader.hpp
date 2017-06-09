@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -51,15 +51,13 @@
 /**
  * @todo - add support for save and restore
  */
-namespace lbann
-{
+namespace lbann {
 
-class DataReader : public lbann_image_preprocessor
-{
-public:
+class DataReader : public lbann_image_preprocessor {
+ public:
   DataReader(int batchSize, bool shuffle = true) :
     BatchSize(batchSize), CurrentPos(0),
-    m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0), 
+    m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
@@ -69,7 +67,7 @@ public:
     m_max_sample_count_was_set(false), m_use_percent(1.0),
     m_master(false)
   {}
-    
+
   //developer's note: I eliminated the copy ctor, since the
   //default does everything we need; eliminating our explicit
   //code helps minimize sources of error -dHysom
@@ -82,7 +80,7 @@ public:
    *  These are all non-virtual methods.
    */
 
-  /** 
+  /**
    * Set base directory for your data. Optional: if given,
    * then get_data_filename will concatenate the value passed
    * to this method with the value passed to set_data_filename,
@@ -91,7 +89,7 @@ public:
   void set_file_dir(std::string s);
 
   /**
-   * Returns the base directory for your data. 
+   * Returns the base directory for your data.
    * If set_file_dir was not called, returns the empty string
    */
   std::string get_file_dir();
@@ -101,20 +99,20 @@ public:
    * This may either be a complete filepath, or a subdirectory;
    * see note for set_file_dir(). Also, use this method
    * for cases where the file contains a list of files (e.g, imagenet)
-   */ 
+   */
   void set_data_filename(std::string s);
 
   /**
    * Returns the complete filepath to you data file.
    * See not for set_file_dir()
    */
-  std::string get_data_filename(); 
+  std::string get_data_filename();
 
   /**
    * Set the filename for your data (images, etc).
    * This may either be a complete filepath, or a subdirectory;
    * see note for set_file_dir()
-   */ 
+   */
   void set_label_filename(std::string s);
 
   /**
@@ -122,7 +120,7 @@ public:
    * See not for set_file_dir(). Note: some pipelines (autoencoders)
    * will not make use of this method.
    */
-  std::string get_label_filename(); 
+  std::string get_label_filename();
 
   /**
    * if set to true, indices (data samples) are not shuffled;
@@ -171,7 +169,7 @@ public:
 
   /** returns true if set_validation_percent was called;
    *  this method will likely be deprecated in the future
-   */  
+   */
   bool has_validation_percent();
 
   /** returns the percentage of the data set that is to be
@@ -183,13 +181,17 @@ public:
    *  "train," "test," or validate. This is primarily for internal use:
    *  end users can ignore.
    */
-  void set_role(std::string role) { m_role = role; }
+  void set_role(std::string role) {
+    m_role = role;
+  }
 
   /** returns the role ("train," "test," "validate," or "error"
    *  This is primarily for internal use:
    *  end users can ignore.
    */
-  std::string get_role() { return m_role; }
+  std::string get_role() {
+    return m_role;
+  }
 
   /**
    * Pure abstract virtual function; all DataReaders *must* implement.
@@ -211,23 +213,23 @@ public:
   void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
-  virtual int fetch_data(Mat& X) { 
+  virtual int fetch_data(Mat& X) {
     NOT_IMPLEMENTED("fetch_data");
-    return 0; 
+    return 0;
   }
 
-  virtual int fetch_label(Mat& Y) { 
+  virtual int fetch_label(Mat& Y) {
     NOT_IMPLEMENTED("fetch_label");
-    return 0; 
+    return 0;
   }
 
-  virtual int fetch_response(Mat& Y) { 
+  virtual int fetch_response(Mat& Y) {
     NOT_IMPLEMENTED("fetch_response");
-    return 0; 
+    return 0;
   }
 
-  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) { 
-   NOT_IMPLEMENTED("save_image"); 
+  virtual void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+    NOT_IMPLEMENTED("save_image");
   }
 
   /**
@@ -237,39 +239,75 @@ public:
    */
   virtual bool update();
 
-  virtual int getNumLabels() { return 0; }
-  virtual int getNumResponses() { return 1; }
-  virtual int get_linearized_data_size() { return 0; }
-  virtual int get_linearized_label_size() { return 0; }
-  virtual int get_linearized_response_size() { return 1; }
+  virtual int getNumLabels() {
+    return 0;
+  }
+  virtual int getNumResponses() {
+    return 1;
+  }
+  virtual int get_linearized_data_size() {
+    return 0;
+  }
+  virtual int get_linearized_label_size() {
+    return 0;
+  }
+  virtual int get_linearized_response_size() {
+    return 1;
+  }
 
-  bool position_valid() { return (CurrentPos < (int)ShuffledIndices.size()); }
-  bool at_new_epoch() { return (m_current_mini_batch_idx == 0); }
+  bool position_valid() {
+    return (CurrentPos < (int)ShuffledIndices.size());
+  }
+  bool at_new_epoch() {
+    return (m_current_mini_batch_idx == 0);
+  }
   int getBatchSize();
-  int getPosition() { return CurrentPos; }
+  int getPosition() {
+    return CurrentPos;
+  }
   int get_next_position();
-  int* getIndices() { return &ShuffledIndices[0]; }
-  int getNumData() { return (int)ShuffledIndices.size(); }
-  int get_num_unused_data() { return (int)m_unused_indices.size(); }
-  int* get_unused_data() { return &m_unused_indices[0]; }
-  int set_num_iterations_per_epoch(int num_iterations_per_epoch) { m_num_iterations_per_epoch = num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
-  int get_num_iterations_per_epoch() { return m_num_iterations_per_epoch; } /// @todo BVE FIXME merge this with alternate approach
+  int *getIndices() {
+    return &ShuffledIndices[0];
+  }
+  int getNumData() {
+    return (int)ShuffledIndices.size();
+  }
+  int get_num_unused_data() {
+    return (int)m_unused_indices.size();
+  }
+  int *get_unused_data() {
+    return &m_unused_indices[0];
+  }
+  int set_num_iterations_per_epoch(int num_iterations_per_epoch) {
+    m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
+  }
+  int get_num_iterations_per_epoch() {
+    return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
+  }
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
-  void set_master(bool m) { m_master = m; }
+  void set_master(bool m) {
+    m_master = m;
+  }
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
-  bool is_master() { return m_master; }
+  bool is_master() {
+    return m_master;
+  }
 
   /// for use during development and debugging
-  void set_rank(int rank) { m_rank = rank; }
+  void set_rank(int rank) {
+    m_rank = rank;
+  }
 
   /// for use during development and debugging
-  int get_rank() { return m_rank; }
+  int get_rank() {
+    return m_rank;
+  }
 
   void select_subset_of_data();
 
-  /** \brief Replace the shuffled index set with the unused index set 
+  /** \brief Replace the shuffled index set with the unused index set
    *  The unused index set is emptied.
    */
   void use_unused_index_set();
@@ -277,24 +315,24 @@ public:
   DataReader& operator=(const DataReader& source);
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char* name);
+  bool saveToCheckpointShared(persist& p, const char *name);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool loadFromCheckpointShared(persist& p, const char* name);
+  bool loadFromCheckpointShared(persist& p, const char *name);
 
-public:
+ public:
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
-public: //protected:
+ public: //protected:
   int BatchSize;
   int CurrentPos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
   int m_batch_stride;
-  /// If there are multiple instances of the reader, 
+  /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;
-  /// If there are multiple models with multiple instances of the reader, 
+  /// If there are multiple models with multiple instances of the reader,
   /// each model's set of readers may not reset to zero
   /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
   int m_model_offset;

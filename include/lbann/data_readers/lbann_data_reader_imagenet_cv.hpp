@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,11 +33,9 @@
 #include "lbann_image_preprocessor.hpp"
 #include "lbann_cv_process.hpp"
 
-namespace lbann
-{
-class DataReader_ImageNet_cv : public DataReader
-{
-public:
+namespace lbann {
+class DataReader_ImageNet_cv : public DataReader {
+ public:
   DataReader_ImageNet_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
   DataReader_ImageNet_cv(const DataReader_ImageNet_cv& source);
   ~DataReader_ImageNet_cv();
@@ -45,17 +43,29 @@ public:
   virtual int fetch_data(Mat& X);
   virtual int fetch_label(Mat& Y);
 
-  int get_num_labels() { return m_num_labels; }
+  int get_num_labels() {
+    return m_num_labels;
+  }
 
   // ImageNet specific functions
   virtual void load();
   void free();
 
-  int get_image_width() { return m_image_width; }
-  int get_image_height() { return m_image_height; }
-  int get_image_num_channels() { return m_image_num_channels; }
-  int get_linearized_data_size() { return m_image_width * m_image_height * m_image_num_channels; }
-  int get_linearized_label_size() { return m_num_labels; }
+  int get_image_width() {
+    return m_image_width;
+  }
+  int get_image_height() {
+    return m_image_height;
+  }
+  int get_image_num_channels() {
+    return m_image_num_channels;
+  }
+  int get_linearized_data_size() {
+    return m_image_width * m_image_height * m_image_num_channels;
+  }
+  int get_linearized_label_size() {
+    return m_num_labels;
+  }
 
   DataReader_ImageNet_cv& operator=(const DataReader_ImageNet_cv& source);
 
@@ -64,7 +74,7 @@ public:
                         m_image_num_channels, scale);
   }
 
-protected:
+ protected:
   std::string m_image_dir; // where images are stored
   std::vector<std::pair<std::string, int> > ImageList; // list of image files and labels
   int m_image_width; // image width

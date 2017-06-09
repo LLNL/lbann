@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,41 +36,37 @@ using namespace std;
 
 
 
-namespace lbann
-{
+namespace lbann {
 /**
 * lbann_layer_factory.h -factory to create/hold different type of layers
 *  available to a model
 */
-class layer_factory: private base_factory<Layer>
-{
+class layer_factory: private base_factory<Layer> {
 
-  private:
-    typedef base_factory<Layer> layer_types;
+ private:
+  typedef base_factory<Layer> layer_types;
 
-  public:
-    typedef typename layer_types::method_pointer layer_pointer;
-    typedef typename layer_types::method_container layer_container;
-
-
-    layer_factory(){}
+ public:
+  typedef typename layer_types::method_pointer layer_pointer;
+  typedef typename layer_types::method_container layer_container;
 
 
-    ~layer_factory(){}
+  layer_factory() {}
 
 
-    //Access methods
+  ~layer_factory() {}
+
+
+  //Access methods
   template <class Derived, class... Args>
-  Layer* create_layer(string layer_label, data_layout data_dist, int layer_index, Args&&... args)
-  {
-    Layer* in_ptr = new Derived(data_dist, layer_index, std::forward<Args>(args)...);
+  Layer *create_layer(string layer_label, data_layout data_dist, int layer_index, Args&& ... args) {
+    Layer *in_ptr = new Derived(data_dist, layer_index, std::forward<Args>(args)...);
     layer_types::add_method(layer_label, layer_pointer(in_ptr),layer_index);
     return in_ptr;
   }
 
 
-  layer_pointer get_layer(string layer_label,int layer_index=0)
-  {
+  layer_pointer get_layer(string layer_label,int layer_index=0) {
     layer_pointer lp = layer_types::get_method(layer_label,layer_index);
     if(lp.get() == NULL) {
       exit(-1);
@@ -80,18 +76,17 @@ class layer_factory: private base_factory<Layer>
 
   //void remove_layer(index)
 
-  inline size_t size()
-  {
+  inline size_t size() {
     return layer_types::methods.size();
   }
 
   //Debug: Layers in my world
-  void print() const
-  {
+  void print() const {
     cout << "Layers in my World (label:index): " << endl;
-      for(auto& i:layer_types::methods)
-        cout << i.first.first << " " << i.first.second << endl;
-      //it->second.print()
+    for(auto& i:layer_types::methods) {
+      cout << i.first.first << " " << i.first.second << endl;
+    }
+    //it->second.print()
   }
 
 

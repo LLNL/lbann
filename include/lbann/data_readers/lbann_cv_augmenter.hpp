@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -39,8 +39,7 @@
 #include <string>
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
 /**
  * Supports the following transforms:
@@ -49,8 +48,7 @@ namespace lbann
  * - Random horizontal and vertical shifts
  * - Random shearing
  */
-class cv_augmenter : public cv_transform
-{
+class cv_augmenter : public cv_transform {
  protected:
   /** Whether to do horizontal flips. */
   bool m_do_horizontal_flip;
@@ -79,11 +77,11 @@ class cv_augmenter : public cv_transform
   cv_augmenter(void);
   cv_augmenter(const cv_augmenter& rhs);
   cv_augmenter& operator=(const cv_augmenter& rhs);
-  virtual cv_augmenter* clone(void) const;
+  virtual cv_augmenter *clone(void) const;
 
   /// Set the parameters all at once
-  virtual void set(const bool hflip, const bool vflip, const float rot, 
-           const float hshift, const float vshift, const float shear);
+  virtual void set(const bool hflip, const bool vflip, const float rot,
+                   const float hshift, const float vshift, const float shear);
 
   /// Reset all the parameters to the default values
   virtual void reset(void);
@@ -103,7 +101,9 @@ class cv_augmenter : public cv_transform
   virtual bool apply(cv::Mat& image);
 
   /// The augmentation is nonreversible.
-  bool determine_inverse_transform(void) { return false; }
+  bool determine_inverse_transform(void) {
+    return false;
+  }
 
   virtual std::ostream& print(std::ostream& os) const;
 };

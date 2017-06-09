@@ -30,29 +30,28 @@
 #include "lbann/layers/lbann_input_layer.hpp"
 #include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
 
-namespace lbann
-{
-  class input_layer_distributed_minibatch_parallel_io : public input_layer, public distributed_minibatch_parallel_io {
-  public:
-    input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+namespace lbann {
+class input_layer_distributed_minibatch_parallel_io : public input_layer, public distributed_minibatch_parallel_io {
+ public:
+  input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs= {});
 
-    void setup(int num_prev_neurons);
-    bool update();
+  void setup(int num_prev_neurons);
+  bool update();
 
-    int fetch_from_data_reader(Mat& M_local);
-    void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-    bool update_data_reader();
-    execution_mode get_execution_mode();
-    Mat* get_local_mat();
-    CircMat* get_dist_mat();
+  int fetch_from_data_reader(Mat& M_local);
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
+  bool update_data_reader();
+  execution_mode get_execution_mode();
+  Mat *get_local_mat();
+  CircMat *get_dist_mat();
 
-  public:
-    Mat X_local; /** Local matrix that holds data from data reader */
-    CircMat Xs; /** Distributed matrix used to stage local data to layer output */
-  protected:
-    /** Handle forward propagation (arguments are unused). */
-    void fp_linearity();
-  };
+ public:
+  Mat X_local; /** Local matrix that holds data from data reader */
+  CircMat Xs; /** Distributed matrix used to stage local data to layer output */
+ protected:
+  /** Handle forward propagation (arguments are unused). */
+  void fp_linearity();
+};
 }
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

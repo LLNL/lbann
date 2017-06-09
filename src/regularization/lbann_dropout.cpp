@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,9 +34,8 @@ using namespace El;
 
 namespace lbann {
 
-dropout::dropout(data_layout data_dist, lbann_comm* comm, float keep_prob) :
-  m_comm(comm), m_keep_prob(keep_prob)
-{
+dropout::dropout(data_layout data_dist, lbann_comm *comm, float keep_prob) :
+  m_comm(comm), m_keep_prob(keep_prob) {
   // Setup the data distribution
   switch(data_dist) {
   case data_layout::MODEL_PARALLEL:
@@ -77,10 +76,12 @@ void dropout::initialize_data_parallel_distribution() {
 void dropout::fp_activations() {
   // Terminate early if dropout is disabled
   if (m_layer->m_execution_mode != execution_mode::training
-      || m_keep_prob < 0.0f) return;
+      || m_keep_prob < 0.0f) {
+    return;
+  }
 
   // Get local activations
-  ElMat* acts = m_layer->m_activations;
+  ElMat *acts = m_layer->m_activations;
   const Int local_height = acts->LocalHeight();
   const Int local_width = acts->LocalWidth();
   const Int global_height = acts->Height();
@@ -103,11 +104,11 @@ void dropout::fp_activations() {
   m_cur_mask->Resize(local_height, local_width);
   EntrywiseMap(*m_cur_mask,
                (std::function<DataType(const DataType&)>)
-               ([this](const DataType& z)->DataType {
-                 auto& gen = get_fast_generator();
-                 std::bernoulli_distribution dist(m_keep_prob);
-                 return dist(gen) ? DataType(1) / m_keep_prob : DataType(0);
-               }));
+  ([this](const DataType& z)->DataType {
+    auto& gen = get_fast_generator();
+    std::bernoulli_distribution dist(m_keep_prob);
+    return dist(gen) ? DataType(1) / m_keep_prob : DataType(0);
+  }));
   // Apply dropout mask to local activations
   Hadamard(local_acts, *m_cur_mask, local_acts);
 #endif  // LBANN_PROCDET_DROPOUT
@@ -116,7 +117,9 @@ void dropout::fp_activations() {
 void dropout::bp_activations() {
   // Terminate early if dropout is disabled
   if (m_layer->m_execution_mode != execution_mode::training
-      || m_keep_prob < 0.0f) return;
+      || m_keep_prob < 0.0f) {
+    return;
+  }
 
 #ifdef LBANN_PROCDET_DROPOUT
   Hadamard(*(m_layer->m_prev_error_signal), *m_cur_mask, *(m_layer->m_prev_error_signal));

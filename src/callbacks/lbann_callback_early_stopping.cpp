@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -35,12 +35,12 @@ lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
 
 /// Monitor the objective function to see if the validation score
 /// continues to improve
-void lbann_callback_early_stopping::on_validation_end(model* m) {
+void lbann_callback_early_stopping::on_validation_end(model *m) {
   double score = m->obj_fn->report_aggregate_avg_obj_fn(execution_mode::validation);
   if (score < last_score) {
     if (m->get_comm()->am_model_master()) {
       std::cout << "Model " << m->get_comm()->get_model_rank() <<
-        " early stopping: score is improving " << last_score << " >> " << score << std::endl;
+                " early stopping: score is improving " << last_score << " >> " << score << std::endl;
     }
     last_score = score;
     wait = 0;
@@ -49,7 +49,7 @@ void lbann_callback_early_stopping::on_validation_end(model* m) {
       m->set_terminate_training(true);
       if (m->get_comm()->am_model_master()) {
         std::cout << "Model " << m->get_comm()->get_model_rank() <<
-          " terminating training due to early stopping: " << score << " score and " << last_score << " last score" << std::endl;
+                  " terminating training due to early stopping: " << score << " score and " << last_score << " last score" << std::endl;
       }
     } else {
       ++wait;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,15 +33,15 @@
 #include "lbann_opencv.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
-class cv_transform
-{
+class cv_transform {
  protected:
   bool m_enabled;
 
-  virtual bool check_to_enable(void) const { return true; }
+  virtual bool check_to_enable(void) const {
+    return true;
+  }
 
  public:
   enum cv_flipping {_both_axes_=-1, _vertical_=0, _horizontal_=1, _no_flip_=2};
@@ -52,29 +52,43 @@ class cv_transform
   cv_transform(void) : m_enabled(false) {}
   cv_transform(const cv_transform& rhs);
   cv_transform& operator=(const cv_transform& rhs);
-  virtual cv_transform* clone(void) const;
+  virtual cv_transform *clone(void) const;
 
   virtual ~cv_transform(void) {}
 
-  virtual bool determine_transform(const cv::Mat& image)
-  { m_enabled = check_to_enable(); return m_enabled; }
+  virtual bool determine_transform(const cv::Mat& image) {
+    m_enabled = check_to_enable();
+    return m_enabled;
+  }
 
-  virtual bool determine_inverse_transform(void)
-  { m_enabled = false; return false; }
+  virtual bool determine_inverse_transform(void) {
+    m_enabled = false;
+    return false;
+  }
 
   virtual bool apply(cv::Mat& image) = 0;
 
   virtual void set(void) {}
-  virtual void enable(void) { m_enabled = true; }
-  virtual void disable(void) { m_enabled = false; }
-  virtual void reset(void) { m_enabled = false; }
-  virtual bool is_enabled(void) const { return m_enabled; }
+  virtual void enable(void) {
+    m_enabled = true;
+  }
+  virtual void disable(void) {
+    m_enabled = false;
+  }
+  virtual void reset(void) {
+    m_enabled = false;
+  }
+  virtual bool is_enabled(void) const {
+    return m_enabled;
+  }
 
-  virtual std::ostream& print(std::ostream& os) const { return os; }
+  virtual std::ostream& print(std::ostream& os) const {
+    return os;
+  }
 };
 
 inline cv_transform::cv_transform(const cv_transform& rhs)
-: m_enabled(rhs.m_enabled) {}
+  : m_enabled(rhs.m_enabled) {}
 
 inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
   m_enabled = rhs.m_enabled;
@@ -86,8 +100,8 @@ inline bool cv_transform::apply(cv::Mat& image) {
   return true;
 }
 
-inline cv_transform* cv_transform::clone(void) const {
-  return static_cast<cv_transform*>(NULL);
+inline cv_transform *cv_transform::clone(void) const {
+  return static_cast<cv_transform *>(NULL);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {

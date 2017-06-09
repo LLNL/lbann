@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,51 +33,48 @@
 namespace El {
 
 template<typename F>
-void ColumnSum( const Matrix<F>& X, Matrix<F>& sums )
-{
+void ColumnSum( const Matrix<F>& X, Matrix<F>& sums ) {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
-  
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F* XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
 
-    // Initialize output
-    Zeros( sums, n, 1 );
-    F* sumsBuf = sums.Buffer();
+  // Input matrix parameters
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F *XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
 
-    // Compute sum over each column
-    EL_PARALLEL_FOR
-    for( Int j=0; j<n; ++j )
-    {
-        for( Int i=0; i<m; ++i ) {
-            sumsBuf[j] += XBuf[i+j*XLDim];
-        }
+  // Initialize output
+  Zeros( sums, n, 1 );
+  F *sumsBuf = sums.Buffer();
+
+  // Compute sum over each column
+  EL_PARALLEL_FOR
+  for( Int j=0; j<n; ++j ) {
+    for( Int i=0; i<m; ++i ) {
+      sumsBuf[j] += XBuf[i+j*XLDim];
     }
+  }
 
 }
 
 template<typename F,Dist U,Dist V,DistWrap W>
 void ColumnSum
-( const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums )
-{
+( const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums ) {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
-    const Int n = A.Width();
-    sums.AlignWith( A );
-    sums.Resize( n, 1 );
-    ColumnSum( A.LockedMatrix(), sums.Matrix() );
-    AllReduce( sums.Matrix(), A.ColComm(), mpi::SUM );
+  const Int n = A.Width();
+  sums.AlignWith( A );
+  sums.Resize( n, 1 );
+  ColumnSum( A.LockedMatrix(), sums.Matrix() );
+  AllReduce( sums.Matrix(), A.ColComm(), mpi::SUM );
 }
 
 template<typename F>
 void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
   const Int m = X.Height();
   const Int n = X.Width();
-  const F* XBuf = X.LockedBuffer();
+  const F *XBuf = X.LockedBuffer();
   const Int XLDim = X.LDim();
   Zeros(sums, m, 1);
-  F* sumsBuf = sums.Buffer();
+  F *sumsBuf = sums.Buffer();
   // Note: Iterating over columns helps cache locality for X but means we can't
   // naively parallelize the outer loop (race conditions).
   // Could probably do a local accumulation to avoid this.

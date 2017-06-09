@@ -35,60 +35,58 @@
 
 
 
-namespace lbann
-{
-    // FullyConnectedLayer : dense layer class
-    class FullyConnectedLayer : public Layer
-    {
-    public:
-      FullyConnectedLayer(data_layout data_dist,
-                          uint index,
-                          int numPrevNeurons,
-                          uint numNeurons,
-                          uint miniBatchSize,
-                          activation_type activationType,
-                          weight_initialization init,
-                          lbann_comm* comm,
-                          optimizer *opt,
-                          std::vector<regularizer*> regs={});
-      ~FullyConnectedLayer();
-      void initialize_model_parallel_distribution();
-      void initialize_data_parallel_distribution();
-      void setup(int numPrevNeurons);
-      void fp_set_std_matrix_view();
-      bool update();
-      DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
-      DataType computeCost(DistMat &deltas);
-      DataType WBL2norm();
+namespace lbann {
+// FullyConnectedLayer : dense layer class
+class FullyConnectedLayer : public Layer {
+ public:
+  FullyConnectedLayer(data_layout data_dist,
+                      uint index,
+                      int numPrevNeurons,
+                      uint numNeurons,
+                      uint miniBatchSize,
+                      activation_type activationType,
+                      weight_initialization init,
+                      lbann_comm *comm,
+                      optimizer *opt,
+                      std::vector<regularizer *> regs= {});
+  ~FullyConnectedLayer();
+  void initialize_model_parallel_distribution();
+  void initialize_data_parallel_distribution();
+  void setup(int numPrevNeurons);
+  void fp_set_std_matrix_view();
+  bool update();
+  DataType checkGradient(Layer& PrevLayer, const DataType Epsilon=1e-4);
+  DataType computeCost(DistMat& deltas);
+  DataType WBL2norm();
 
-        // bool saveToFile(std::string FileDir);
-        // bool loadFromFile(std::string FileDir);
+  // bool saveToFile(std::string FileDir);
+  // bool loadFromFile(std::string FileDir);
 
-    private:
+ private:
 
-      const weight_initialization m_weight_initialization;
+  const weight_initialization m_weight_initialization;
 
-      /// Views of the weight matrix that allow you to separate activation weights from bias weights
-      ElMat *m_activation_weights_v;
-      ElMat *m_bias_weights_v;
-      ElMat *m_activation_weights_gradient_v;
-      ElMat *m_bias_weights_gradient_v;
+  /// Views of the weight matrix that allow you to separate activation weights from bias weights
+  ElMat *m_activation_weights_v;
+  ElMat *m_bias_weights_v;
+  ElMat *m_activation_weights_gradient_v;
+  ElMat *m_bias_weights_gradient_v;
 
-      /// Special matrices to allow backprop across the bias term
-      ElMat *m_bias_bp_t;
-      ElMat *m_bias_bp_t_v;
-      ElMat *m_bias_weights_repl;
-      DataType m_bias_term;
+  /// Special matrices to allow backprop across the bias term
+  ElMat *m_bias_bp_t;
+  ElMat *m_bias_bp_t_v;
+  ElMat *m_bias_weights_repl;
+  DataType m_bias_term;
 
-    public:
-      //Probability of dropping neuron/input used in dropout_layer
-      //Range 0 to 1; default is -1 => no dropout
-      DataType  WBL2NormSum;
+ public:
+  //Probability of dropping neuron/input used in dropout_layer
+  //Range 0 to 1; default is -1 => no dropout
+  DataType  WBL2NormSum;
 
-    protected:
-      void fp_linearity();
-      void bp_linearity();
-    };
+ protected:
+  void fp_linearity();
+  void bp_linearity();
+};
 
 }
 

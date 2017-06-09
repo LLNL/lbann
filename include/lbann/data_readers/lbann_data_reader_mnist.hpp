@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,26 +32,34 @@
 #include "lbann_data_reader.hpp"
 #include "lbann_image_preprocessor.hpp"
 
-namespace lbann
-{
-class DataReader_MNIST : public DataReader
-{
-public:
+namespace lbann {
+class DataReader_MNIST : public DataReader {
+ public:
   DataReader_MNIST(int batchSize, bool shuffle);
   DataReader_MNIST(int batchSize);
   ~DataReader_MNIST();
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int getNumLabels() { return m_num_labels; }
+  int getNumLabels() {
+    return m_num_labels;
+  }
 
   // MNIST-specific functions
   void load();
 
-  int getImageWidth() { return m_image_width; }
-  int getImageHeight() { return m_image_height; }
-  int get_linearized_data_size() { return m_image_width * m_image_height; }
-  int get_linearized_label_size() { return m_num_labels; }
+  int getImageWidth() {
+    return m_image_width;
+  }
+  int getImageHeight() {
+    return m_image_height;
+  }
+  int get_linearized_data_size() {
+    return m_image_width * m_image_height;
+  }
+  int get_linearized_label_size() {
+    return m_num_labels;
+  }
 
   //don't need this, since default ctor is adequate; eliminating
   //explict implementation reduces possible bugs
@@ -62,7 +70,7 @@ public:
                         scale);
   }
 
-private:
+ private:
 
   std::vector<std::vector<unsigned char> > m_image_data;
   int m_image_width;

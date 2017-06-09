@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -35,147 +35,145 @@
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 // Forward declaration.
 class lbann_callback_imcomm;
 
-  /// Convolutional layer
-  class convolutional_layer : public Layer
-  {
-  public:
+/// Convolutional layer
+class convolutional_layer : public Layer {
+ public:
 
-    /// Constructor
-    convolutional_layer(uint index,
-                        Int num_dims,
-                        Int num_input_channels,
-                        const Int* input_dims,
-                        Int num_output_channels,
-                        const Int* filter_dims,
-                        const Int* conv_pads,
-                        const Int* conv_strides,
-                        Int mini_batch_size,
-                        activation_type activation,
-                        weight_initialization init,
-                        lbann_comm* comm,
-                        optimizer* opt,
-                        std::vector<regularizer*> regs={},
-                        cudnn::cudnn_manager* cudnn=NULL);
+  /// Constructor
+  convolutional_layer(uint index,
+                      Int num_dims,
+                      Int num_input_channels,
+                      const Int *input_dims,
+                      Int num_output_channels,
+                      const Int *filter_dims,
+                      const Int *conv_pads,
+                      const Int *conv_strides,
+                      Int mini_batch_size,
+                      activation_type activation,
+                      weight_initialization init,
+                      lbann_comm *comm,
+                      optimizer *opt,
+                      std::vector<regularizer *> regs= {},
+                      cudnn::cudnn_manager *cudnn=NULL);
 
-    /// Destructor
-    ~convolutional_layer();
+  /// Destructor
+  ~convolutional_layer();
 
-    void setup(int num_prev_neurons);
+  void setup(int num_prev_neurons);
 
-    void forwardProp();
-    void backProp();
+  void forwardProp();
+  void backProp();
 
-    bool update();
-    void pin_mem(void);
-    void unpin_mem(void);
+  bool update();
+  void pin_mem(void);
+  void unpin_mem(void);
 
-  protected:
+ protected:
 
-    void fp_linearity();
-    void fp_nonlinearity();
-    void bp_linearity();
-    void bp_nonlinearity();
+  void fp_linearity();
+  void fp_nonlinearity();
+  void bp_linearity();
+  void bp_nonlinearity();
 
-  private:
+ private:
 
-    friend class lbann_callback_imcomm;
+  friend class lbann_callback_imcomm;
 
-    /// Weight initialization scheme
-    const weight_initialization m_weight_initialization;
-    /// Number of data dimensions
-    const Int m_num_dims;
-    /// Number of input channels
-    const Int m_num_input_channels;
-    /// Input dimensions
-    /** In HW or DHW format */
-    std::vector<Int> m_input_dims;
-    /// Number of output channels
-    const Int m_num_output_channels;
-    /// Output dimensions
-    std::vector<Int> m_output_dims;
-    /// Filter dimensions
-    std::vector<Int> m_filter_dims;
-    /// Number of filter weights
-    Int m_filter_size;
-    /// Convolution padding
-    std::vector<Int> m_conv_pads;
-    /// Convolution strides
-    std::vector<Int> m_conv_strides;
+  /// Weight initialization scheme
+  const weight_initialization m_weight_initialization;
+  /// Number of data dimensions
+  const Int m_num_dims;
+  /// Number of input channels
+  const Int m_num_input_channels;
+  /// Input dimensions
+  /** In HW or DHW format */
+  std::vector<Int> m_input_dims;
+  /// Number of output channels
+  const Int m_num_output_channels;
+  /// Output dimensions
+  std::vector<Int> m_output_dims;
+  /// Filter dimensions
+  std::vector<Int> m_filter_dims;
+  /// Number of filter weights
+  Int m_filter_size;
+  /// Convolution padding
+  std::vector<Int> m_conv_pads;
+  /// Convolution strides
+  std::vector<Int> m_conv_strides;
 
 #ifdef __LIB_CUDNN
 
-    /// Input tensor descriptor
-    cudnnTensorDescriptor_t m_input_desc;
-    /// Output tensor descriptor
-    cudnnTensorDescriptor_t m_output_desc;
-    /// Bias tensor descriptor
-    cudnnTensorDescriptor_t m_bias_desc;
-    /// Filter descriptor
-    cudnnFilterDescriptor_t m_filter_desc;
-    /// Convolution descriptor
-    cudnnConvolutionDescriptor_t m_convolution_desc;
-    /// Activation descriptor
-    cudnnActivationDescriptor_t m_activation_desc;
+  /// Input tensor descriptor
+  cudnnTensorDescriptor_t m_input_desc;
+  /// Output tensor descriptor
+  cudnnTensorDescriptor_t m_output_desc;
+  /// Bias tensor descriptor
+  cudnnTensorDescriptor_t m_bias_desc;
+  /// Filter descriptor
+  cudnnFilterDescriptor_t m_filter_desc;
+  /// Convolution descriptor
+  cudnnConvolutionDescriptor_t m_convolution_desc;
+  /// Activation descriptor
+  cudnnActivationDescriptor_t m_activation_desc;
 
-    /// Forward pass algorithm
-    cudnnConvolutionFwdAlgo_t m_forward_algo;
-    /// Backward pass filter algorithm
-    /** Compute gradient w.r.t. filter. */
-    cudnnConvolutionBwdFilterAlgo_t m_backward_filter_algo;
-    /// Backward pass data algorithm
-    /** Compute gradient w.r.t. data, which is passed to previous layer. */
-    cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
+  /// Forward pass algorithm
+  cudnnConvolutionFwdAlgo_t m_forward_algo;
+  /// Backward pass filter algorithm
+  /** Compute gradient w.r.t. filter. */
+  cudnnConvolutionBwdFilterAlgo_t m_backward_filter_algo;
+  /// Backward pass data algorithm
+  /** Compute gradient w.r.t. data, which is passed to previous layer. */
+  cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
 
-    /// GPU memory for convolution filters and bias
-    std::vector<DataType*> m_weights_d;
-    /// GPU memory for convolution filters gradient and bias gradient
-    std::vector<DataType*> m_weights_gradient_d;
+  /// GPU memory for convolution filters and bias
+  std::vector<DataType *> m_weights_d;
+  /// GPU memory for convolution filters gradient and bias gradient
+  std::vector<DataType *> m_weights_gradient_d;
 
-    /// Filter and bias gradients computed on each GPU
-    StarMat m_weights_gradient_per_gpu;
+  /// Filter and bias gradients computed on each GPU
+  StarMat m_weights_gradient_per_gpu;
 
 #endif // __LIB_CUDNN
 
-    /// Initialize GPU objects
-    void setup_gpu();
+  /// Initialize GPU objects
+  void setup_gpu();
 
-    /// CPU implementation of direct convolution
-    void fp_linearity_cpu_direct();
-    /// CPU implementation of direct convolution on 2D data
-    void fp_linearity_cpu_direct_2d();
-    /// CPU implementation of im2col GEMM convolution
-    void fp_linearity_cpu_gemm();
-    /// GPU implementation of convolution
-    void fp_linearity_gpu();
-    /// GPU implementation of forward propagation nonlinearity
-    void fp_nonlinearity_gpu();
-    /// CPU implementation of direct convolution backward propagation
-    void bp_linearity_cpu_direct();
-    /// CPU implementation of direct convolution backward propagation on 2D data
-    void bp_linearity_cpu_direct_2d();
-    /// CPU implementation of im2col GEMM convolution backward propagation
-    void bp_linearity_cpu_gemm();
-    /// GPU implementation of convolution backward propagation
-    void bp_linearity_gpu();
-    /// GPU implementation of backward propagation nonlinearity
-    void bp_nonlinearity_gpu();
+  /// CPU implementation of direct convolution
+  void fp_linearity_cpu_direct();
+  /// CPU implementation of direct convolution on 2D data
+  void fp_linearity_cpu_direct_2d();
+  /// CPU implementation of im2col GEMM convolution
+  void fp_linearity_cpu_gemm();
+  /// GPU implementation of convolution
+  void fp_linearity_gpu();
+  /// GPU implementation of forward propagation nonlinearity
+  void fp_nonlinearity_gpu();
+  /// CPU implementation of direct convolution backward propagation
+  void bp_linearity_cpu_direct();
+  /// CPU implementation of direct convolution backward propagation on 2D data
+  void bp_linearity_cpu_direct_2d();
+  /// CPU implementation of im2col GEMM convolution backward propagation
+  void bp_linearity_cpu_gemm();
+  /// GPU implementation of convolution backward propagation
+  void bp_linearity_gpu();
+  /// GPU implementation of backward propagation nonlinearity
+  void bp_nonlinearity_gpu();
 
-    bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
-    bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path
-    bool is_pinned_fwd; ///< indicate if the memory blocks for cudnn forward path are pinned
-    bool is_pinned_bwd; ///< indicate if the memory blocks for cudnn backward path are pinned
-    void pin_memory_blocks_fwd(void); ///< pin the memory used by cudnn forward path
-    void pin_memory_blocks_bwd(void); ///< pin the memory used by cudnn backward path
-    void unpin_memory_blocks_fwd(void); ///< unpin the memory used by cudnn forward path
-    void unpin_memory_blocks_bwd(void); ///< unpin the memory used by cudnn backward path
-    void* get_cudnn_manager(void); ///< returns the pointer to cudnn_manager if available, otherwise NULL
-  };
+  bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
+  bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path
+  bool is_pinned_fwd; ///< indicate if the memory blocks for cudnn forward path are pinned
+  bool is_pinned_bwd; ///< indicate if the memory blocks for cudnn backward path are pinned
+  void pin_memory_blocks_fwd(void); ///< pin the memory used by cudnn forward path
+  void pin_memory_blocks_bwd(void); ///< pin the memory used by cudnn backward path
+  void unpin_memory_blocks_fwd(void); ///< unpin the memory used by cudnn forward path
+  void unpin_memory_blocks_bwd(void); ///< unpin the memory used by cudnn backward path
+  void *get_cudnn_manager(void); ///< returns the pointer to cudnn_manager if available, otherwise NULL
+};
 
 }
 

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_DataReader_cnpy .hpp .cpp 
+// lbann_DataReader_cnpy .hpp .cpp
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
@@ -36,18 +36,15 @@ using namespace std;
 using namespace El;
 
 lbann::DataReader_cnpy::DataReader_cnpy(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle), m_num_features(0), m_num_samples(0)
-{
+  : DataReader(batchSize, shuffle), m_num_features(0), m_num_samples(0) {
 }
 
-lbann::DataReader_cnpy::~DataReader_cnpy()
-{
+lbann::DataReader_cnpy::~DataReader_cnpy() {
   m_data.destruct();
 }
 
 
-int lbann::DataReader_cnpy::fetch_data(Mat& X)
-{
+int lbann::DataReader_cnpy::fetch_data(Mat& X) {
   if(!DataReader::position_valid()) {
     return 0;
   }
@@ -55,20 +52,21 @@ int lbann::DataReader_cnpy::fetch_data(Mat& X)
 
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)ShuffledIndices.size()) {
       break;
+    }
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
 
     if (m_data.word_size == 4) {
-      float *tmp = (float*)m_data.data;
+      float *tmp = (float *)m_data.data;
       float *data = tmp + index;
       for (int j=0; j<m_num_features; j++) {
         X.Set(j, k, data[j]);
       }
     } else if (m_data.word_size == 8) {
-      double *tmp = (double*)m_data.data;
+      double *tmp = (double *)m_data.data;
       double *data = tmp + index;
       for (int j=0; j<m_num_features; j++) {
         X.Set(j, k, data[j]);
@@ -84,14 +82,13 @@ int lbann::DataReader_cnpy::fetch_data(Mat& X)
   return (n - CurrentPos);
 }
 
-void lbann::DataReader_cnpy::load()
-{
+void lbann::DataReader_cnpy::load() {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
-  if (!ifs) { 
+  if (!ifs) {
     stringstream err;
-    err << endl << __FILE__ << " " << __LINE__ 
-         << "  DataReader_cnpy::load() - can't open file : " << infile;  
+    err << endl << __FILE__ << " " << __LINE__
+        << "  DataReader_cnpy::load() - can't open file : " << infile;
     throw lbann_exception(err.str());
   }
   ifs.close();
@@ -120,12 +117,12 @@ lbann::DataReader_cnpy::DataReader_cnpy(const DataReader_cnpy& source) :
 
 
 
-lbann::DataReader_cnpy& lbann::DataReader_cnpy::operator=(const DataReader_cnpy& source)
-{
+lbann::DataReader_cnpy& lbann::DataReader_cnpy::operator=(const DataReader_cnpy& source) {
 
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   DataReader::operator=(source);

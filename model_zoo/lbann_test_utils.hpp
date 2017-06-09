@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// http://github.com/LBANN. 
+// http://github.com/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,48 +32,48 @@
 #include <vector>
 
 template <typename T, typename U>
-inline void assert_eq(T x, U y, const char* xname, const char* yname,
-                      const char* file, size_t line) {
+inline void assert_eq(T x, U y, const char *xname, const char *yname,
+                      const char *file, size_t line) {
   if (x != y) {
     std::cout << "ASSERT EQ failure: " << xname << " (" << x <<
-      ") != " << yname << " (" << y << ") at " << file << ":" << line <<
-      std::endl;
+              ") != " << yname << " (" << y << ") at " << file << ":" << line <<
+              std::endl;
     exit(1);
   }
 }
 
 template <typename T, typename U>
-inline void assert_neq(T x, U y, const char* xname, const char* yname,
-                       const char* file, size_t line) {
+inline void assert_neq(T x, U y, const char *xname, const char *yname,
+                       const char *file, size_t line) {
   if (x == y) {
     std::cout << "ASSERT NEQ failure: " << xname << " (" << x <<
-      ") == " << yname << " (" << y << ") at " << file << ":" << line <<
-      std::endl;
+              ") == " << yname << " (" << y << ") at " << file << ":" << line <<
+              std::endl;
     exit(1);
   }
 }
 
-inline void assert_true(bool x, const char* xname, const char* file,
+inline void assert_true(bool x, const char *xname, const char *file,
                         size_t line) {
   if (!x) {
     std::cout << "ASSERT TRUE failure: " << xname << " (" << x << ") at " <<
-      file << ":" << line << std::endl;
+              file << ":" << line << std::endl;
     exit(1);
   }
 }
 
-inline void assert_false(bool x, const char* xname, const char* file,
+inline void assert_false(bool x, const char *xname, const char *file,
                          size_t line) {
   if (x) {
     std::cout << "ASSERT FALSE failure: " << xname << " (" << x << ") at " <<
-      file << ":" << line << std::endl;
+              file << ":" << line << std::endl;
     exit(1);
   }
 }
 
 inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
-                          const char* xname, const char* yname,
-                          const char* file, size_t line) {
+                          const char *xname, const char *yname,
+                          const char *file, size_t line) {
   // There are better ways to compare floating point values, but this should be
   // sufficient for now. Google Test has a very comprehensive and well-tested
   // floating-point almost-equal method if needed.
@@ -83,9 +83,9 @@ inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
     for (int j = 0; j < x.Width(); ++j) {
       if (fabs(x.Get(i, j) - y.Get(i, j)) > tol) {
         std::cout << "ASSERT_MAT_EQ failure: " << xname << "(" << i << ", " <<
-          j << ") [" << x.Get(i, j) << "] != " << yname << "(" << i << ", " <<
-          j << ") [" << y.Get(i, j) << "] at " << file << ":" << line <<
-          std::endl;
+                  j << ") [" << x.Get(i, j) << "] != " << yname << "(" << i << ", " <<
+                  j << ") [" << y.Get(i, j) << "] at " << file << ":" << line <<
+                  std::endl;
         exit(1);
       }
     }
@@ -93,15 +93,15 @@ inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
 }
 
 inline void assert_mat_eq(const DistMat& x, const DistMat& y, DataType tol,
-                          const char* xname, const char* yname,
-                          const char* file, size_t line) {
+                          const char *xname, const char *yname,
+                          const char *file, size_t line) {
   assert_mat_eq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
                 line);
 }
 
 inline void assert_mat_neq(const Mat& x, const Mat& y, DataType tol,
-                           const char* xname, const char* yname,
-                           const char* file, size_t line) {
+                           const char *xname, const char *yname,
+                           const char *file, size_t line) {
   // Still ensure these matrices are the same size.
   assert_eq(x.Height(), y.Height(), xname, yname, file, line);
   assert_eq(x.Width(), y.Width(), xname, yname, file, line);
@@ -113,27 +113,27 @@ inline void assert_mat_neq(const Mat& x, const Mat& y, DataType tol,
     }
   }
   std::cout << "ASSERT_MAT_NEQ failure: " << xname << " == " << yname <<
-    " at " << file << ":" << line << std::endl;
+            " at " << file << ":" << line << std::endl;
   exit(1);
 }
 
 inline void assert_mat_neq(const DistMat& x, const DistMat& y, DataType tol,
-                           const char* xname, const char* yname,
-                           const char* file, size_t line) {
+                           const char *xname, const char *yname,
+                           const char *file, size_t line) {
   assert_mat_neq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
                  line);
 }
 
 template <typename T>
 inline void assert_vector_eq(const std::vector<T> x, const std::vector<T> y,
-                             const char* xname, const char* yname,
-                             const char* file, size_t line) {
+                             const char *xname, const char *yname,
+                             const char *file, size_t line) {
   assert_eq(x.size(), y.size(), xname, yname, file, line);
   for (size_t i = 0; i < x.size(); ++i) {
     if (x[i] != y[i]) {
       std::cout << "ASSERT_VECTOR_EQ failure: " << xname << "[" << i <<
-        "] != " << yname << "[" << i << "] at " << file << ":" << line <<
-        std::endl;
+                "] != " << yname << "[" << i << "] at " << file << ":" << line <<
+                std::endl;
       exit(1);
     }
   }
@@ -141,8 +141,8 @@ inline void assert_vector_eq(const std::vector<T> x, const std::vector<T> y,
 
 template <typename T>
 inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
-                              const char* xname, const char* yname,
-                              const char* file, size_t line) {
+                              const char *xname, const char *yname,
+                              const char *file, size_t line) {
   assert_eq(x.size(), y.size(), xname, yname, file, line);
   for (size_t i = 0; i < x.size(); ++i) {
     if (x[i] != y[i]) {
@@ -150,7 +150,7 @@ inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
     }
   }
   std::cout << "ASSERT_VECTOR_NEQ failure: " << xname << " == " << yname <<
-    " at " << file << ":" << line << std::endl;
+            " at " << file << ":" << line << std::endl;
 }
 
 #define ASSERT_EQ(x, y) assert_eq(x, y, #x, #y, __FILE__, __LINE__)
@@ -175,7 +175,9 @@ DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
   elemerr -= approx_val;
   DataType abs_err = El::EntrywiseNorm(elemerr, 1);
   El::EntrywiseMap(elemerr, std::function<DataType(const DataType&)>(
-                     [](const DataType& x) { return fabs(x); }));
+  [](const DataType& x) {
+    return fabs(x);
+  }));
   return abs_err;
 }
 
@@ -190,7 +192,9 @@ DataType relative_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
   DataType rel_err = abs_err / El::EntrywiseNorm(true_val, 1);
   Mat true_copy(true_val);
   El::EntrywiseMap(true_copy, std::function<DataType(const DataType&)>(
-                     [](const DataType& x) { return 1.0f / fabs(x); }));
+  [](const DataType& x) {
+    return 1.0f / fabs(x);
+  }));
   Mat elemerr_copy(elemerr);
   El::Hadamard(elemerr_copy, true_copy, elemerr);
   return rel_err;

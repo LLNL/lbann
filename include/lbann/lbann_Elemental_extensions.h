@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// http://github.com/LBANN. 
+// http://github.com/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,7 +30,7 @@ namespace El {
 
 template<typename F>
 void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
-  
+
 template<typename F,Dist U,Dist V,DistWrap W>
 void ColumnSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums);
 
@@ -73,7 +73,7 @@ void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums);
 /* #define EL_ENABLE_QUAD */
 /* #include "El/macros/Instantiate.h" */
 
-#ifndef LBANN_PROTO_REAL 
+#ifndef LBANN_PROTO_REAL
 # define LBANN_PROTO_REAL(T) LBANN_PROTO(T)
 #endif
 

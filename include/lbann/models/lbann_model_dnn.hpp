@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,50 +34,50 @@
 #include <vector>
 #include <string>
 
-namespace lbann
-{
-  class deep_neural_network : public sequential_model
-  {
-  public:
-    /// Constructor
-    deep_neural_network(uint mini_batch_size,
-                        lbann_comm* comm, 
-                        objective_functions::objective_fn* obj_fn,
-                        layer_factory* _layer_fac,
-                        optimizer_factory* _optimizer_fac);
-    
-    /// Destructor
-    ~deep_neural_network();
+namespace lbann {
+class deep_neural_network : public sequential_model {
+ public:
+  /// Constructor
+  deep_neural_network(uint mini_batch_size,
+                      lbann_comm *comm,
+                      objective_functions::objective_fn *obj_fn,
+                      layer_factory *_layer_fac,
+                      optimizer_factory *_optimizer_fac);
 
-    /// Check error in gradients
-    /** @todo This is very old and probably broken
-     */
-    void check_gradient(CircMat& X, CircMat& Y, double* gradient_errors);
+  /// Destructor
+  ~deep_neural_network();
 
-    /// Compute layer summaries
-    void summarize(lbann_summary& summarizer);
+  /// Check error in gradients
+  /** @todo This is very old and probably broken
+   */
+  void check_gradient(CircMat& X, CircMat& Y, double *gradient_errors);
 
-    /// Train neural network
-    /** @param num_epochs Number of epochs to train
-     *  @param evaluation_frequency How often to evaluate model on
-     *  validation set. A value less than 1 will disable evaluation.
-     */
-    void train(int num_epochs, int evaluation_frequency=0);
-    /// Training step on one mini-batch
-    bool train_mini_batch();
+  /// Compute layer summaries
+  void summarize(lbann_summary& summarizer);
 
-    /// Evaluate neural network
-    void evaluate(execution_mode mode=execution_mode::testing);
-    /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch();
+  /// Train neural network
+  /** @param num_epochs Number of epochs to train
+   *  @param evaluation_frequency How often to evaluate model on
+   *  validation set. A value less than 1 will disable evaluation.
+   */
+  void train(int num_epochs, int evaluation_frequency=0);
+  /// Training step on one mini-batch
+  bool train_mini_batch();
 
-    /// Returns the model's name
-    const string & name() { return m_name; }
+  /// Evaluate neural network
+  void evaluate(execution_mode mode=execution_mode::testing);
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch();
 
-  protected:
-    ///string name
-    std::string m_name;
-  };
+  /// Returns the model's name
+  const string& name() {
+    return m_name;
+  }
+
+ protected:
+  ///string name
+  std::string m_name;
+};
 }
 
 

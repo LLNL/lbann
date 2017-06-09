@@ -30,27 +30,26 @@
 #include "lbann/layers/lbann_input_layer.hpp"
 #include "lbann/io/lbann_partitioned_minibatch_parallel_io.hpp"
 
-namespace lbann
-{
-  class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch_parallel_io {
-  public:
-    input_layer_partitioned_minibatch_parallel_io(lbann_comm* comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+namespace lbann {
+class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch_parallel_io {
+ public:
+  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs= {});
 
-    void setup(int num_prev_neurons);
-    bool update();
+  void setup(int num_prev_neurons);
+  bool update();
 
-    int fetch_from_data_reader(Mat& M_local);
-    void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-    bool update_data_reader();
-    execution_mode get_execution_mode();
-    // Mat* get_local_mat();
-    // CircMat* get_dist_mat();
+  int fetch_from_data_reader(Mat& M_local);
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
+  bool update_data_reader();
+  execution_mode get_execution_mode();
+  // Mat* get_local_mat();
+  // CircMat* get_dist_mat();
 
-  public:
-  protected:
-    /** Handle forward propagation (arguments are unused). */
-    void fp_linearity();
-  };
+ public:
+ protected:
+  /** Handle forward propagation (arguments are unused). */
+  void fp_linearity();
+};
 }
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

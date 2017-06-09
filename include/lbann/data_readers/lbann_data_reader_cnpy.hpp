@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,11 +32,9 @@
 #include "lbann_data_reader.hpp"
 #include <cnpy.h>
 
-namespace lbann
-{
-class DataReader_cnpy : public DataReader
-{
-public:
+namespace lbann {
+class DataReader_cnpy : public DataReader {
+ public:
   DataReader_cnpy(int batchSize, bool shuffle = true);
   DataReader_cnpy(const DataReader_cnpy& source);
   ~DataReader_cnpy();
@@ -47,9 +45,11 @@ public:
   int fetch_data(Mat& X);
   void load();
 
-  int get_linearized_data_size() { return m_num_features; }
+  int get_linearized_data_size() {
+    return m_num_features;
+  }
 
-private:
+ private:
   int m_num_features;
   int m_num_samples;
   cnpy::NpyArray m_data;

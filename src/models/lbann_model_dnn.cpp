@@ -54,25 +54,25 @@ using namespace El;
 ////////////////////////////////////////////////////////////////////////////////
 
 lbann::deep_neural_network::deep_neural_network(const uint mini_batch_size,
-                                                lbann_comm* comm,
-                                                objective_functions::objective_fn* obj_fn,
-                                                layer_factory* _layer_fac,
-                                                optimizer_factory* _optimizer_fac)
+    lbann_comm *comm,
+    objective_functions::objective_fn *obj_fn,
+    layer_factory *_layer_fac,
+    optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _layer_fac, _optimizer_fac),
     m_name("deep_neural_network") {
-    }
+}
 
 lbann::deep_neural_network::~deep_neural_network() {}
 
-void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double* gradient_errors)
-{
+void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double *gradient_errors) {
   // setup input (last/additional row should always be 1)
   Copy(X, *(m_layers[0]->m_activations));
 
   // forward propagation (mini-batch)
   DataType L2NormSum = 0;
-  for (size_t l = 1; l < m_layers.size(); l++)
+  for (size_t l = 1; l < m_layers.size(); l++) {
     m_layers[l]->forwardProp();
+  }
 
   // backward propagation (mini-batch)
   for (size_t l = m_layers.size() - 1; l >= 1; l--) {
@@ -81,8 +81,9 @@ void lbann::deep_neural_network::check_gradient(CircMat& X, CircMat& Y, double* 
 
   // check gradient
   gradient_errors[0] = 0;
-  for (size_t l = 1; l < m_layers.size(); l++)
+  for (size_t l = 1; l < m_layers.size(); l++) {
     gradient_errors[l] = m_layers[l]->checkGradientMB(*m_layers[l-1]);
+  }
 }
 
 void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
@@ -98,14 +99,15 @@ void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
   for(auto&l:layers) m_layers.push_back(l);
 }*/
 
-void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
-{
+void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();
 
   // Epoch main loop
   for (int epoch = 0; epoch < num_epochs; ++epoch) {
     // Check if training has been terminated
-    if (get_terminate_training()) break;
+    if (get_terminate_training()) {
+      break;
+    }
 
     // due to restart, may not always be at start of epoch
     // use mini batch index in data reader to signify start of epoch
@@ -122,7 +124,9 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    for (auto&& m : metrics) { m->reset_metric(); }
+    for (auto&& m : metrics) {
+      m->reset_metric();
+    }
     bool finished_epoch;
     do {
       finished_epoch = train_mini_batch();
@@ -133,8 +137,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
       }
     } while(!finished_epoch);
     if(evaluation_frequency > 0
-       && (epoch + 1) % evaluation_frequency == 0)
-    {
+        && (epoch + 1) % evaluation_frequency == 0) {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();
@@ -150,7 +153,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     do_epoch_end_cbs();
 
-    for (Layer* layer : m_layers) {
+    for (Layer *layer : m_layers) {
       layer->epoch_reset();
     }
 
@@ -163,8 +166,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
   do_train_end_cbs();
 }
 
-bool lbann::deep_neural_network::train_mini_batch()
-{
+bool lbann::deep_neural_network::train_mini_batch() {
   do_batch_begin_cbs();
 
   // Forward propagation
@@ -197,13 +199,14 @@ bool lbann::deep_neural_network::train_mini_batch()
   return data_set_processed;
 }
 
-void lbann::deep_neural_network::evaluate(execution_mode mode)
-{
+void lbann::deep_neural_network::evaluate(execution_mode mode) {
   switch(mode) {
   case execution_mode::validation:
-    do_validation_begin_cbs(); break;
+    do_validation_begin_cbs();
+    break;
   case execution_mode::testing:
-    do_test_begin_cbs(); break;
+    do_test_begin_cbs();
+    break;
   default:
     throw lbann_exception("Illegal execution mode in evaluate function");
   }
@@ -216,7 +219,9 @@ void lbann::deep_neural_network::evaluate(execution_mode mode)
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  for (auto&& m : metrics) { m->reset_metric(); }
+  for (auto&& m : metrics) {
+    m->reset_metric();
+  }
   bool finished_epoch;
   do {
     finished_epoch = evaluate_mini_batch();
@@ -224,11 +229,12 @@ void lbann::deep_neural_network::evaluate(execution_mode mode)
 
   switch(mode) {
   case execution_mode::validation:
-    do_validation_end_cbs(); break;
+    do_validation_end_cbs();
+    break;
   case execution_mode::testing:
     do_test_end_cbs();
     // Reset after testing.
-    for (Layer* layer : m_layers) {
+    for (Layer *layer : m_layers) {
       layer->epoch_reset();
     }
     break;
@@ -239,8 +245,7 @@ void lbann::deep_neural_network::evaluate(execution_mode mode)
   return;
 }
 
-bool lbann::deep_neural_network::evaluate_mini_batch()
-{
+bool lbann::deep_neural_network::evaluate_mini_batch() {
   do_batch_evaluate_begin_cbs();
 
   // forward propagation (mini-batch)

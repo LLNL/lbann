@@ -33,22 +33,20 @@
 
 
 
-namespace lbann
-{
-class DataReader_CIFAR10 : public DataReader
-{
-public:
+namespace lbann {
+class DataReader_CIFAR10 : public DataReader {
+ public:
   /// constructor
   DataReader_CIFAR10(int batchSize, bool shuffle = true);
 
   /// copy constructor
-  DataReader_CIFAR10(const DataReader_CIFAR10 &source);
+  DataReader_CIFAR10(const DataReader_CIFAR10& source);
 
   /// destructor
   ~DataReader_CIFAR10();
 
   /// assignment operator
-  DataReader_CIFAR10& operator=(const DataReader_CIFAR10 &source);
+  DataReader_CIFAR10& operator=(const DataReader_CIFAR10& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
@@ -64,7 +62,9 @@ public:
     return m_image_height;
   }
 
-  int get_num_labels() { return 10; }
+  int get_num_labels() {
+    return 10;
+  }
 
   /// returns image depth (which should be 3)
   int get_image_num_channels() {
@@ -76,12 +76,12 @@ public:
     return m_image_width * m_image_height * m_image_num_channels;
   }
 
-  /// returns 
+  /// returns
   int get_linearized_label_size() {
     return 10;
   }
 
-private:
+ private:
   std::vector<std::vector<unsigned char> > m_data;
   int m_image_width;
   int m_image_height;

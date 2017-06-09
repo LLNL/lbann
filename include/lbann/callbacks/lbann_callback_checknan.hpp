@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -38,15 +38,17 @@ namespace lbann {
  * This will kill the rank if such values are discovered.
  */
 class lbann_callback_checknan : public lbann_callback {
-public:
-  lbann_callback_checknan() : lbann_callback() { set_name("checknan"); }
+ public:
+  lbann_callback_checknan() : lbann_callback() {
+    set_name("checknan");
+  }
   /** Check that activations are good. */
-  void on_forward_prop_end(model* m, Layer* l);
+  void on_forward_prop_end(model *m, Layer *l);
   /** Check that gradients are good. */
-  void on_backward_prop_end(model* m, Layer* l);
+  void on_backward_prop_end(model *m, Layer *l);
   /** Check that weights are good. */
-  void on_batch_end(model* m);
-private:
+  void on_batch_end(model *m);
+ private:
   /** Return true if there are no problems with m. */
   bool is_good(const DistMat& m);
 };

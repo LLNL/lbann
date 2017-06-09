@@ -48,27 +48,27 @@ namespace lbann {
  * - Requires a manually-created model duplicate.
  */
 class lbann_callback_ltfb : public lbann_callback {
-public:
+ public:
   /**
    * Initialize LFTB.
    * @param round_size The number of minibatches in each round.
    * @param remote_model A duplicate of the model being trained (temp workaround).
    */
-  lbann_callback_ltfb(uint round_size, model* remote_model,
-                      lbann_summary* _summarizer = nullptr);
+  lbann_callback_ltfb(uint round_size, model *remote_model,
+                      lbann_summary *_summarizer = nullptr);
   ~lbann_callback_ltfb();
   /** Set up LTFB. */
-  void setup(model* m);
+  void setup(model *m);
   /**
    * Potentially run an LTFB round.
    */
-  void on_batch_end(model* m);
-private:
-  lbann_comm* comm;
+  void on_batch_end(model *m);
+ private:
+  lbann_comm *comm;
   /** Number of minibatches in a round. */
   uint m_round_size;
   /** Second model for doing the tournament. */
-  model* m_remote_model = nullptr;
+  model *m_remote_model = nullptr;
 
   /**
    * Global operation that selects partners for the current tournament.
@@ -80,11 +80,11 @@ private:
   /**
    * Exchange local model data with partner's.
    */
-  void exchange(model* m, int partner);
+  void exchange(model *m, int partner);
   /**
    * Replace the local model m with the remote model data.
    */
-  void replace_with_remote(model* m);
+  void replace_with_remote(model *m);
 };
 
 }  // namespace lbann

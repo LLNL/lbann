@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,13 +36,13 @@
 using namespace std;
 using namespace El;
 
-lbann::target_layer::target_layer(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, bool shared_data_reader, bool for_regression)
-  : io_layer(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression)
-{
-  if (is_for_regression())
+lbann::target_layer::target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, bool shared_data_reader, bool for_regression)
+  : io_layer(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression) {
+  if (is_for_regression()) {
     NumNeurons = io_layer::get_linearized_response_size();
-  else
+  } else {
     NumNeurons = io_layer::get_linearized_label_size();
+  }
   m_shared_data_reader = shared_data_reader;
 }
 
@@ -88,7 +88,7 @@ void lbann::target_layer::fp_set_std_matrix_view() {
 void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
   std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
-    + "/CrossEntropyCost";
+                    + "/CrossEntropyCost";
   summarizer.reduce_scalar(tag, neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
 }
 
@@ -99,7 +99,7 @@ void lbann::target_layer::epoch_print() const {
     comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
     for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
       std::cout << "Model " << i << " average " << _to_string(neural_network_model->obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
-        std::endl;
+                std::endl;
     }
   } else {
     comm->intermodel_gather(obj_cost, comm->get_world_master());
@@ -115,46 +115,42 @@ void lbann::target_layer::resetCost() {
   neural_network_model->obj_fn->reset_obj_fn();
 }
 
-bool lbann::target_layer::saveToCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
+bool lbann::target_layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   /// @todo should probably save m_shared_data_reader
   return Layer::saveToCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::target_layer::loadFromCheckpoint(int fd, const char* filename, uint64_t* bytes)
-{
+bool lbann::target_layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   /// @todo should probably save m_shared_data_reader
   return Layer::loadFromCheckpoint(fd, filename, bytes);
 }
 
-bool lbann::target_layer::saveToCheckpointShared(persist& p)
-{
-    // rank 0 writes softmax cost to file
-    if (p.m_rank == 0) {
-        // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
-        // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
-    }
-  
-    return true;
+bool lbann::target_layer::saveToCheckpointShared(persist& p) {
+  // rank 0 writes softmax cost to file
+  if (p.m_rank == 0) {
+    // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
+    // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
+  }
+
+  return true;
 }
 
-bool lbann::target_layer::loadFromCheckpointShared(persist& p)
-{
-    // rank 0 writes softmax cost to file
-    // if (p.m_rank == 0) {
-    //     double dval;
-    //     p.read_double(persist_type::train, "aggregate cost", &dval);
-    //     aggregate_cost = (DataType) dval;
+bool lbann::target_layer::loadFromCheckpointShared(persist& p) {
+  // rank 0 writes softmax cost to file
+  // if (p.m_rank == 0) {
+  //     double dval;
+  //     p.read_double(persist_type::train, "aggregate cost", &dval);
+  //     aggregate_cost = (DataType) dval;
 
-    //     uint64_t val;
-    //     p.read_uint64(persist_type::train, "num backprop steps", &val);
-    //     num_backprop_steps = (long) val;
-    // }
+  //     uint64_t val;
+  //     p.read_uint64(persist_type::train, "num backprop steps", &val);
+  //     num_backprop_steps = (long) val;
+  // }
 
-    // // get values from rank 0
-    // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
-    // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+  // // get values from rank 0
+  // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
+  // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-    //return Layer::loadFromCheckpointShared(dir, bytes);
-    return true;
+  //return Layer::loadFromCheckpointShared(dir, bytes);
+  return true;
 }

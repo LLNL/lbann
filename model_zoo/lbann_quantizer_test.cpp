@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -89,7 +89,7 @@ void test_adaptive_quantization(const Mat& mat, bool exact) {
   std::vector<uint16_t> qmat;
   // Handle different datatype sizes.
   typedef std::conditional<sizeof(DataType) <= sizeof(uint32_t),
-    uint32_t, uint64_t>::type colT;
+          uint32_t, uint64_t>::type colT;
   quantizer.adaptive_quantize<colT, uint16_t>(mat, qmat, qerror, 3);
   quantizer.adaptive_unquantize<colT, uint16_t>(qmat.data(), uqmat);
   check_quantized_mat(mat, qerror, uqmat, exact);
@@ -97,7 +97,7 @@ void test_adaptive_quantization(const Mat& mat, bool exact) {
 
 // Test quantized allreduces.
 
-void check_allreduced_mat(lbann_comm* comm, const DistMat& mat,
+void check_allreduced_mat(lbann_comm *comm, const DistMat& mat,
                           const DistMat& exact_sum, const Mat& qerror,
                           bool exact) {
   if (exact) {
@@ -112,9 +112,11 @@ void check_allreduced_mat(lbann_comm* comm, const DistMat& mat,
 }
 
 /** Test onebit quantized allreduce. */
-void test_onebit_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+void test_onebit_quantize_allreduce(lbann_comm *comm, DistMat& mat,
                                     bool exact) {
-  if (comm->am_world_master()) std::cout << "Testing onebit" << std::endl;
+  if (comm->am_world_master()) {
+    std::cout << "Testing onebit" << std::endl;
+  }
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
@@ -125,23 +127,27 @@ void test_onebit_quantize_allreduce(lbann_comm* comm, DistMat& mat,
 }
 
 /** Test threshold quantized allreduce. */
-void test_threshold_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+void test_threshold_quantize_allreduce(lbann_comm *comm, DistMat& mat,
                                        bool exact) {
-  if (comm->am_world_master()) std::cout << "Testing threshold" << std::endl;
+  if (comm->am_world_master()) {
+    std::cout << "Testing threshold" << std::endl;
+  }
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   lbann_quantizer quantizer;
   quantizer.intermodel_sum_threshold_quantized(comm, mat, qerror,
-                                               DataType(2.0), DataType(-2.0));
+      DataType(2.0), DataType(-2.0));
   comm->intermodel_sum_matrix(exact_sum);
   check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
 /** Test adaptively quantized allreduce. */
-void test_adaptive_quantize_allreduce(lbann_comm* comm, DistMat& mat,
+void test_adaptive_quantize_allreduce(lbann_comm *comm, DistMat& mat,
                                       bool exact) {
-  if (comm->am_world_master()) std::cout << "Testing adaptive" << std::endl;
+  if (comm->am_world_master()) {
+    std::cout << "Testing adaptive" << std::endl;
+  }
   DistMat exact_sum(mat);
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
@@ -182,9 +188,10 @@ void test_local() {
 
 /** Test global allreduce operations. */
 void test_allreduces() {
-  lbann_comm* comm = new lbann_comm(1);
-  if (comm->am_world_master())
+  lbann_comm *comm = new lbann_comm(1);
+  if (comm->am_world_master()) {
     std::cout << "Testing quantized allreduces" << std::endl;
+  }
   // Note: Threshold quantized allreduce not currently supported.
   for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
     // Test Rademacher matrix (should be exact);
@@ -200,8 +207,8 @@ void test_allreduces() {
       El::Scale(-1, rademacher_mat);
     }
     DistMat onebit_rademacher(rademacher_mat),
-      threshold_rademacher(rademacher_mat),
-      adaptive_rademacher(rademacher_mat);
+            threshold_rademacher(rademacher_mat),
+            adaptive_rademacher(rademacher_mat);
     if (comm->get_model_rank() % 2 == 1) {
       // Adaptive quantization disregards 0s, so we need this to sum to a
       // different value instead.
@@ -210,15 +217,16 @@ void test_allreduces() {
         El::Scale(2, adaptive_rademacher);
       }
     }
-    if (comm->am_world_master())
+    if (comm->am_world_master()) {
       std::cout << "Rademacher " << mat_size << "x" << mat_size << std::endl;
+    }
     test_onebit_quantize_allreduce(comm, onebit_rademacher, true);
     //test_threshold_quantize_allreduce(comm, threshold_rademacher, false);
     test_adaptive_quantize_allreduce(comm, adaptive_rademacher, true);
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   El::Initialize(argc, argv);
   if (El::mpi::Rank() == 0) {
     test_local();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,11 +30,10 @@
 using namespace std;
 using namespace El;
 
-lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm* comm)
+lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
     YsColMaxStar(comm->get_model_grid()),
-    YsColMaxStar_v(comm->get_model_grid())
-{
+    YsColMaxStar_v(comm->get_model_grid()) {
   this->type = metric_type::categorical_accuracy;
 
   // Setup the data distribution
@@ -101,7 +100,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
     ColumnMaxNorms((DistMat) predictions_v, *((ColSumMat *) YsColMax_v));
     break;
   case data_layout::DATA_PARALLEL:
-    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v)); 
+    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v));
     break;
   default:
     throw lbann_exception(std::string{} + __FILE__ + " " +
@@ -153,7 +152,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
       }
     }
   }
-  
+
   num_errors = comm->model_allreduce(num_errors);
   return num_errors;
 }

@@ -29,26 +29,29 @@
 
 #include "lbann/layers/lbann_input_layer.hpp"
 
-namespace lbann
-{
-  class input_layer_distributed_minibatch : public input_layer {
-  public:
-    input_layer_distributed_minibatch(data_layout data_dist, lbann_comm* comm, uint mini_batch_size, std::map<execution_mode, DataReader*> data_readers, std::vector<regularizer*> regs={});
+namespace lbann {
+class input_layer_distributed_minibatch : public input_layer {
+ public:
+  input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, DataReader *> data_readers, std::vector<regularizer *> regs= {});
 
-    void setup(int num_prev_neurons);
-    bool update();
-    Mat* get_local_mat() { return &X_local;};
-    CircMat* get_dist_mat() { return &Xs;};
-
-  public:
-    int m_root; /* Which rank is the root of the CircMat */
-    Mat X_local;
-    CircMat Xs;
-    long m_num_data_per_epoch;
-  protected:
-    /** Handle forward propagation (arguments are unused.) */
-    void fp_linearity();
+  void setup(int num_prev_neurons);
+  bool update();
+  Mat *get_local_mat() {
+    return &X_local;
   };
+  CircMat *get_dist_mat() {
+    return &Xs;
+  };
+
+ public:
+  int m_root; /* Which rank is the root of the CircMat */
+  Mat X_local;
+  CircMat Xs;
+  long m_num_data_per_epoch;
+ protected:
+  /** Handle forward propagation (arguments are unused.) */
+  void fp_linearity();
+};
 }
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED

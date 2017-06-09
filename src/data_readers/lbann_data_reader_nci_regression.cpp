@@ -36,8 +36,7 @@ using namespace El;
 
 
 lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
-{
+  : DataReader(batchSize, shuffle) {
   m_num_samples = 0;
   //m_num_samples = -1;
   m_num_features = 0;
@@ -56,26 +55,28 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_
 }
 */
 
-lbann::data_reader_nci_regression::~data_reader_nci_regression()
-{
+lbann::data_reader_nci_regression::~data_reader_nci_regression() {
 }
 
 
-int lbann::data_reader_nci_regression::fetch_data(Mat& X)
-{
+int lbann::data_reader_nci_regression::fetch_data(Mat& X) {
   if(!DataReader::position_valid()) {
     return 0;
   }
 
   int current_batch_size = getBatchSize();
   ifstream ifs(m_infile.c_str());
-  if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
+  if (!ifs) {
+    std::cout << "\n In load: can't open file : " << m_infile;
+    exit(1);
+  }
 
   string line;
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)ShuffledIndices.size()) {
       break;
+    }
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
@@ -88,15 +89,17 @@ int lbann::data_reader_nci_regression::fetch_data(Mat& X)
     while(getline(lstream, field, ' ')) {
       col++;
       if (col == 3) {
-        if (field.empty())
+        if (field.empty()) {
           break;
-        else
+        } else {
           m_responses[index] = static_cast<DataType>(stof(field));
+        }
       } else if (col > 5) {
-        if(field.empty())
-            X.Set(f, k, static_cast<DataType>(0));
-        else
-            X.Set(f,k,stof(field));
+        if(field.empty()) {
+          X.Set(f, k, static_cast<DataType>(0));
+        } else {
+          X.Set(f,k,stof(field));
+        }
         f++;
       }//end if col > 5
     }// end while loop
@@ -105,16 +108,16 @@ int lbann::data_reader_nci_regression::fetch_data(Mat& X)
   return (n - CurrentPos);
 }
 
-int lbann::data_reader_nci_regression::fetch_response(Mat& Y)
-{
+int lbann::data_reader_nci_regression::fetch_response(Mat& Y) {
   if(!DataReader::position_valid()) {
     return 0;
   }
   int current_batch_size = getBatchSize();
   int n = 0;
   for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+    if (n >= (int)ShuffledIndices.size()) {
       break;
+    }
 
     int k = n - CurrentPos;
     int index = ShuffledIndices[n];
@@ -133,11 +136,10 @@ int lbann::data_reader_nci_regression::fetch_response(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-void lbann::data_reader_nci_regression::load()
-{
+void lbann::data_reader_nci_regression::load() {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
-  if (!ifs) { 
+  if (!ifs) {
     stringstream err;
     err << __FILE__ << " " << __LINE__
         << "\n In load: can't open file : " << infile;
@@ -159,9 +161,9 @@ void lbann::data_reader_nci_regression::load()
     static const std::string whitespaces(" \t\f\v\n\r");
     std::size_t pos = line.find_first_not_of(whitespaces);
     if ((pos == std::string::npos) || (line[pos] == '#')) {
-        m_index_map.pop_back();
-        m_index_map.push_back(ifs.tellg());
-        continue;
+      m_index_map.pop_back();
+      m_index_map.push_back(ifs.tellg());
+      continue;
     }
 #endif
 
@@ -194,12 +196,12 @@ void lbann::data_reader_nci_regression::load()
 }
 
 #if 0
-lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(const data_reader_nci_regression& source)
-{
+lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(const data_reader_nci_regression& source) {
 
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   DataReader::operator=(source);

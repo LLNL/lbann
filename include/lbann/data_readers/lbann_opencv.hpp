@@ -39,24 +39,24 @@
 
 #include <opencv2/core/version.hpp>
 #if (!defined(CV_VERSION_EPOCH) && (CV_VERSION_MAJOR >= 3))
-  #include <opencv2/core.hpp>
-  #include <opencv2/highgui.hpp>
-  #include <opencv2/imgproc.hpp>
-  #define _LBANN_CV_UNCHANGED_ cv::IMREAD_UNCHANGED
-  #define _LBANN_CV_GRAYSCALE_ cv::IMREAD_GRAYSCALE
-  #define _LBANN_CV_COLOR_     cv::IMREAD_COLOR
-  #define _LBANN_CV_ANYDEPTH_  cv::IMREAD_ANYDEPTH
-  #define _LBANN_CV_ANYCOLOR_  cv::IMREAD_ANYCOLOR
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#define _LBANN_CV_UNCHANGED_ cv::IMREAD_UNCHANGED
+#define _LBANN_CV_GRAYSCALE_ cv::IMREAD_GRAYSCALE
+#define _LBANN_CV_COLOR_     cv::IMREAD_COLOR
+#define _LBANN_CV_ANYDEPTH_  cv::IMREAD_ANYDEPTH
+#define _LBANN_CV_ANYCOLOR_  cv::IMREAD_ANYCOLOR
 #else
-  #include <opencv2/core/core.hpp>
-  #include <opencv2/core/core_c.h>
-  #include <opencv2/highgui/highgui.hpp>
-  #include <opencv2/imgproc/imgproc.hpp>
-  #define _LBANN_CV_UNCHANGED_ CV_LOAD_IMAGE_UNCHANGED
-  #define _LBANN_CV_GRAYSCALE_ CV_LOAD_IMAGE_GRAYSCALE
-  #define _LBANN_CV_COLOR_     CV_LOAD_IMAGE_COLOR
-  #define _LBANN_CV_ANYDEPTH_  CV_LOAD_IMAGE_ANYDEPTH
-  #define _LBANN_CV_ANYCOLOR_  CV_LOAD_IMAGE_ANYCOLOR
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#define _LBANN_CV_UNCHANGED_ CV_LOAD_IMAGE_UNCHANGED
+#define _LBANN_CV_GRAYSCALE_ CV_LOAD_IMAGE_GRAYSCALE
+#define _LBANN_CV_COLOR_     CV_LOAD_IMAGE_COLOR
+#define _LBANN_CV_ANYDEPTH_  CV_LOAD_IMAGE_ANYDEPTH
+#define _LBANN_CV_ANYCOLOR_  CV_LOAD_IMAGE_ANYCOLOR
 #endif
 
 #define _LBANN_CV_BLUE_  0
