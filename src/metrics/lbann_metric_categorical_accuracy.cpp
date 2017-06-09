@@ -58,14 +58,14 @@ lbann::metrics::categorical_accuracy::~categorical_accuracy() {
 
 /// Workspace matrices should be in MR,Star distributions
 void lbann::metrics::categorical_accuracy::initialize_model_parallel_distribution() {
-  YsColMax = new ColSumMat(comm->get_model_grid());
-  YsColMax_v = new ColSumMat(comm->get_model_grid());
+  YsColMax = new ColSumMat(m_comm->get_model_grid());
+  YsColMax_v = new ColSumMat(m_comm->get_model_grid());
 }
 
 /// Workspace matrices should be in VC,Star distributions
 void lbann::metrics::categorical_accuracy::initialize_data_parallel_distribution() {
-  YsColMax = new ColSumStarVCMat(comm->get_model_grid());
-  YsColMax_v = new ColSumStarVCMat(comm->get_model_grid());
+  YsColMax = new ColSumStarVCMat(m_comm->get_model_grid());
+  YsColMax_v = new ColSumStarVCMat(m_comm->get_model_grid());
 }
 
 void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
@@ -125,7 +125,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
   /// Note that this has to operate on the raw buffer, not the view
-  comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
+  m_comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
 
   /// Check to see if the predicted results match the target results
   int num_errors = 0;
@@ -153,7 +153,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
     }
   }
 
-  num_errors = comm->model_allreduce(num_errors);
+  num_errors = m_comm->model_allreduce(num_errors);
   return num_errors;
 }
 

@@ -109,12 +109,11 @@ class statistics {
 class metric {
  public:
   /// Constructor
-  metric(data_layout data_dist, lbann_comm *comm) {
+  metric(data_layout data_dist, lbann_comm *comm) :
+    m_comm(comm) {
     m_training_stats.init_stats();
     m_validation_stats.init_stats();
     m_testing_stats.init_stats();
-    this->comm = comm;
-    this->type = metric_type::INVALID;
 
     m_data_layout = data_dist;
   }
@@ -144,9 +143,9 @@ class metric {
   statistics m_validation_stats;
   statistics m_testing_stats;
 
-  lbann_comm *comm;
+  lbann_comm *m_comm;
   model *neural_network_model;
-  metric_type type;
+  metric_type type = metric_type::INVALID;
 
   data_layout m_data_layout;
 };

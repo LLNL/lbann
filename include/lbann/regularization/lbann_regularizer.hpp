@@ -41,6 +41,7 @@ namespace lbann {
  */
 class regularizer {
  public:
+  virtual ~regularizer() {}
   /**
    * Forward-propagation regularization of incoming connections.
    * This is called before applying a layer's linearity.
