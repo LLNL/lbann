@@ -46,7 +46,6 @@ class sequential_model : public model {
   sequential_model(const uint mini_batch_size,
                    lbann_comm *comm,
                    objective_functions::objective_fn *obj_fn,
-                   layer_factory *layer_fac,
                    optimizer_factory *optimizer_fac);
 
   /// Destructor
@@ -146,8 +145,6 @@ class sequential_model : public model {
   const int m_mini_batch_size;
   /// List of layers
   std::vector<Layer *> m_layers;
-  /// Layer factory
-  layer_factory *layer_fac;
 
 };
 }
