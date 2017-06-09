@@ -174,42 +174,6 @@ void test_send_recv_mat() {
   fini_comm(comm);
 }
 
-/** Verify broadcasting blob data works. */
-void test_broadcast_blob() {
-  lbann_comm *comm = init_comm();
-  int send_data = 0;
-  if (comm->get_model_rank() == 0) {
-    send_data = 42;
-  }
-  std::vector<int> dests(3);
-  dests[0] = comm->get_world_rank(1, comm->get_rank_in_model());
-  dests[1] = comm->get_world_rank(2, comm->get_rank_in_model());
-  dests[2] = comm->get_world_rank(3, comm->get_rank_in_model());
-  comm->broadcast(&send_data, 1, dests,
-                  comm->get_world_rank(0, comm->get_rank_in_model()));
-  ASSERT_EQ(send_data, 42);
-  fini_comm(comm);
-}
-
-/** Verify broadcasting matrices works. */
-void test_broadcast_mat() {
-  lbann_comm *comm = init_comm();
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    create_mat(mat, (DataType) 42.0);
-  } else {
-    create_mat(mat, (float) 0.0);
-  }
-  std::vector<int> dests(3);
-  dests[0] = comm->get_world_rank(1, comm->get_rank_in_model());
-  dests[1] = comm->get_world_rank(2, comm->get_rank_in_model());
-  dests[2] = comm->get_world_rank(3, comm->get_rank_in_model());
-  comm->broadcast(mat, dests,
-                  comm->get_world_rank(0, comm->get_rank_in_model()));
-  validate_mat(mat, (DataType) 42.0);
-  fini_comm(comm);
-}
-
 // Run with srun -n8 --tasks-per-node=12
 int main(int argc, char **argv) {
   El::Initialize(argc, argv);
@@ -223,8 +187,6 @@ int main(int argc, char **argv) {
     test_intermodel_broadcast_matrix();
     test_send_recv_blob();
     test_send_recv_mat();
-    test_broadcast_blob();
-    test_broadcast_mat();
     El::mpi::Barrier(El::mpi::COMM_WORLD);
     if (El::mpi::Rank(El::mpi::COMM_WORLD) == 0) {
       std::cout << "All tests passed" << std::endl;

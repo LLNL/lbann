@@ -120,16 +120,9 @@ class lbann_comm {
   /** Perform a sum reduction of mat over the inter-model communicator. */
   void intermodel_sum_matrix(Mat& mat);
   void intermodel_sum_matrix(DistMat& mat);
-  /** Non-blocking intermodel_sum_matrix. */
-  //void nb_intermodel_sum_matrix(Mat& mat, mpi::Request& req);
-  //void nb_intermodel_sum_matrix(DistMat& mat, mpi::Request& req);
   /** Broadcast mat over the inter-model communicator starting from root. */
   void intermodel_broadcast_matrix(Mat& mat, int root);
   void intermodel_broadcast_matrix(DistMat& mat, int root);
-  /** Non-blocking intermodel_broadcast_matrix. */
-  //void nb_intermodel_broadcast_matrix(Mat& mat, int root, mpi::Request& req);
-  //void nb_intermodel_broadcast_matrix(DistMat& mat, int root,
-  //                                    mpi::Request& req);
   /**
    * Inter-model broadcast, returns the broadcast value.
    * Root process specifies root and val, other processes just root.
@@ -381,31 +374,6 @@ class lbann_comm {
     return get_count<T>(model, rank_in_model);
   }
 
-  /**
-   * Broadcast data to the ranks in dests, beginning from root.
-   * @todo Can probably optimize this.
-   */
-  template <typename T>
-  void broadcast(T *data, int count, std::vector<int>& dests, int root) {
-    mpi::Group bcast_group;
-    mpi::Comm bcast_comm;
-    std::vector<int> ranks;
-    ranks.push_back(root);
-    ranks.insert(ranks.end(), dests.begin(), dests.end());
-    create_group(ranks, bcast_group);
-    // Elemental doesn't expose this, so we have to reach into its internals.
-    // This lets us create a communicator without involving all of COMM_WORLD.
-    // Use a tag of 0; should not matter unless we're multi-threaded.
-    MPI_Comm_create_group(mpi::COMM_WORLD.comm, bcast_group.group, 0,
-                          &(bcast_comm.comm));
-    int translated_root = mpi::Translate(mpi::COMM_WORLD, root, bcast_comm);
-    mpi::Broadcast(data, count, translated_root, bcast_comm);
-    mpi::Free(bcast_comm);
-    mpi::Free(bcast_group);
-  }
-  void broadcast(Mat& mat, std::vector<int>& dests, int root);
-  void broadcast(DistMat& mat, std::vector<int>& dests, int root);
-
   // Statistics methods.
   /** Return the number of model barriers performed. */
   inline size_t get_num_model_barriers() const {
@@ -566,9 +534,14 @@ class lbann_comm {
     int max_reduces = 1;
   };
 
+  /** Get the default allreduce algorithm to use (may be DYNAMIC). */
   allreduce_algorithm get_default_allreduce_algorithm() const {
     return default_allreduce_algo;
   }
+  /**
+   * Set the default allreduce algorithm to algo.
+   * Do *not* set it to DEFAULT.
+   */
   void set_default_allreduce_algorithm(allreduce_algorithm algo) {
     default_allreduce_algo = algo;
   }
