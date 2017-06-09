@@ -118,9 +118,6 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
   execution_mode get_execution_mode() {
     return m_execution_mode;
   }
-
-
-  //  input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
 };
 }
 
