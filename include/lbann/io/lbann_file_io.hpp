@@ -34,10 +34,6 @@
 #include <fcntl.h>
 
 namespace lbann {
-//mode_t mode_dir;
-//mode_t mode_file;
-//mode_t mode_dir  = S_IRWXU | S_IRWXG;
-//mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
 
 int makedir(const char *dirname);
 
