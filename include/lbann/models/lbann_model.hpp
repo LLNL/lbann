@@ -100,7 +100,7 @@ class model {
     m_execution_mode = mode;
     std::vector<Layer *>& layers = get_layers();
     for (auto&& l : layers) {
-      l->m_execution_mode = mode;
+      l->set_execution_mode(mode);
     }
   }
   inline int64_t set_current_mini_batch_size(int64_t mini_batch_size) {

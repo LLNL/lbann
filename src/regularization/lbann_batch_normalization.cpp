@@ -96,7 +96,7 @@ void batch_normalization::fp_weights() {
   Mat& beta_local = m_beta->Matrix();
   const Int local_width = acts_local.Width();
   const Int local_height = acts_local.Height();
-  if (m_layer->m_execution_mode == execution_mode::training) {
+  if (m_layer->get_execution_mode() == execution_mode::training) {
     // Compute row-wise mean and standard deviation
     rowwise_mean_and_stdev(*acts, *m_mean, *m_stdev);
     Mat& mean_local = m_mean->Matrix();
@@ -118,8 +118,8 @@ void batch_normalization::fp_weights() {
     Scale(m_decay, *m_running_stdev);
     Axpy(DataType(1) - m_decay, *m_mean, *m_running_mean);
     Axpy(DataType(1) - m_decay, *m_stdev, *m_running_stdev);
-  } else if (m_layer->m_execution_mode == execution_mode::validation ||
-             m_layer->m_execution_mode == execution_mode::testing) {
+  } else if (m_layer->get_execution_mode() == execution_mode::validation ||
+             m_layer->get_execution_mode() == execution_mode::testing) {
     // Use the running mean/standard deviation to normalize.
     const Mat& mean_local = m_running_mean->LockedMatrix();
     const Mat& stdev_local = m_running_stdev->LockedMatrix();
@@ -139,7 +139,7 @@ void batch_normalization::fp_weights() {
 
 void batch_normalization::bp_weights() {
   // No backprop when not training.
-  if (m_layer->m_execution_mode != execution_mode::training) {
+  if (m_layer->get_execution_mode() != execution_mode::training) {
     return;
   }
   ElMat *bpsignal = m_layer->m_prev_error_signal_v;
@@ -208,7 +208,7 @@ void batch_normalization::setup(Layer *l) {
 
 void batch_normalization::update() {
   regularizer::update();
-  if (m_layer->m_execution_mode == execution_mode::training) {
+  if (m_layer->get_execution_mode() == execution_mode::training) {
     m_gamma_optimizer->update(m_dgamma);
     m_beta_optimizer->update(m_dbeta);
   }

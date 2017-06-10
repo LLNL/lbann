@@ -75,7 +75,7 @@ void dropout::initialize_data_parallel_distribution() {
 
 void dropout::fp_activations() {
   // Terminate early if dropout is disabled
-  if (m_layer->m_execution_mode != execution_mode::training
+  if (m_layer->get_execution_mode() != execution_mode::training
       || m_keep_prob < 0.0f) {
     return;
   }
@@ -116,7 +116,7 @@ void dropout::fp_activations() {
 
 void dropout::bp_activations() {
   // Terminate early if dropout is disabled
-  if (m_layer->m_execution_mode != execution_mode::training
+  if (m_layer->get_execution_mode() != execution_mode::training
       || m_keep_prob < 0.0f) {
     return;
   }

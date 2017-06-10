@@ -154,7 +154,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
   //Supervised target to compute reconstruction cost
   /*m_target_layer->set_input_layer((input_layer_distributed_minibatch_parallel_io*)m_layers[0]);
 
-  //m_target_layer->m_execution_mode = m_execution_mode;
+  //m_target_layer->set_execution_mode(m_execution_mode);
   add(m_target_layer);
   m_target_layer->setup(m_layers[0]->get_num_neurons());*/
   //replace with this
@@ -176,7 +176,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
     /// Set the execution mode to training
     for (size_t l = 0; l < m_num_layers; ++l) {
       //for (size_t l = 0; l <= m_num_layers / 2; ++l) {
-      m_layers[l]->m_execution_mode = m_execution_mode;
+      m_layers[l]->set_execution_mode(m_execution_mode);
     }
 
     // Train on mini-batches until data set is traversed

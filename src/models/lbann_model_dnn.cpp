@@ -91,7 +91,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < m_layers.size(); ++l) {
-      m_layers[l]->m_execution_mode = execution_mode::training;
+      m_layers[l]->set_execution_mode(execution_mode::training);
     }
 
     // Train on mini-batches until data set is traversed
@@ -119,7 +119,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
       // Set execution mode back to training
       m_execution_mode = execution_mode::training;
       for (size_t l = 0; l < m_layers.size(); l++) {
-        m_layers[l]->m_execution_mode = execution_mode::training;
+        m_layers[l]->set_execution_mode(execution_mode::training);
       }
     }
 
@@ -186,7 +186,7 @@ void lbann::deep_neural_network::evaluate(execution_mode mode) {
   // Set the execution mode
   m_execution_mode = mode;
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->m_execution_mode = mode;
+    m_layers[l]->set_execution_mode(mode);
   }
 
   // Evaluate on mini-batches until data set is traversed

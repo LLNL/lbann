@@ -217,7 +217,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
     for (size_t l =0; l < m_layers.size(); l++) {
-      m_layers[l]->m_execution_mode = execution_mode::training;
+      m_layers[l]->set_execution_mode(execution_mode::training);
     }
 
     // Train on mini-batches until data set is traversed
@@ -265,7 +265,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
     // Reset execution mode back to training
     m_execution_mode = execution_mode::training;
     for (Layer *layer : m_layers) {
-      layer->m_execution_mode = execution_mode::training;
+      layer->set_execution_mode(execution_mode::training);
     }
 
     // save checkpoint after epoch
@@ -318,7 +318,7 @@ void lbann::greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
   // Set the execution mode
   m_execution_mode = mode;
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->m_execution_mode = mode;
+    m_layers[l]->set_execution_mode(mode);
   }
 
   // Evaluate on mini-batches until data set is traversed

@@ -176,6 +176,14 @@ class Layer {
   inline uint get_num_neurons(void) const {
     return m_num_neurons;
   }
+  /** Return the execution mode of this layer */
+  inline execution_mode get_execution_mode(void) const {
+    return m_execution_mode;
+  }
+  /** Set the execution mode of this layer */
+  inline void set_execution_mode(const execution_mode mode) {
+    m_execution_mode = mode;
+  }
   /** Return (a view of) the weights/biases matrix for this layer. */
   virtual ElMat& get_weights_biases(void) {
     return *m_weights;
@@ -258,32 +266,33 @@ class Layer {
   uint m_num_neurons;           ///< Number of neurons
   Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
 
- public:
   execution_mode  m_execution_mode;
+
+ public:
   data_layout m_data_layout;
 
-  ElMat *m_weights;            /// Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
-  ElMat *m_weights_gradient;   /// Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
-  ElMat *m_weighted_sum;       /// Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
-  ElMat *m_prev_error_signal;  /// Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
+  ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
+  ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
+  ElMat *m_prev_error_signal;   ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
 
-  ElMat *m_activations;        /// Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
+  ElMat *m_activations;         ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
 
   /// Create a view of each matrix so that it can accomodate partial mini-batches
   ElMat *m_weighted_sum_v;
   ElMat *m_prev_error_signal_v;
   ElMat *m_activations_v;
 
-  ElMat *fp_input;            /// Pointer to input for the forward propagation - no local storage
-  ElMat *bp_input;            /// Pointer to the input for the backward propagation - no local storage
+  ElMat *fp_input;              ///< Pointer to input for the forward propagation - no local storage
+  ElMat *bp_input;              ///< Pointer to the input for the backward propagation - no local storage
 
   model *neural_network_model;
 
  protected:
   activation_type m_activation_type;
 
-  ElMat *m_error_signal;       /// Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
-  ElMat *m_prev_activations;   /// Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
+  ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
+  ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
 
   ElMat *m_error_signal_v;
   ElMat *m_prev_activations_v;
