@@ -520,13 +520,13 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   std::vector<std::vector<rowT>> quant_slices(4);
   auto send_transform =
     [&qerror, &quant, &quant_slices, proportion, this]
-  (Mat& mat, IR h, IR w, int& count, bool const_data, int call_idx) {
-    auto to_send = mat(h, w);
+  (Mat& to_trans, IR h, IR w, int& count, bool const_data, int call_idx) {
+    auto to_send = to_trans(h, w);
     auto to_send_qerr = qerror(h, w);
     if (const_data) {
       // In this case we can quantize the entire matrix then slice it.
       if (quant.empty()) {
-        adaptive_quantize<colT, rowT>(mat, quant, qerror, proportion);
+        adaptive_quantize<colT, rowT>(to_trans, quant, qerror, proportion);
       }
       std::vector<rowT>& quant_slice = quant_slices[call_idx];
       quant_slice.clear();

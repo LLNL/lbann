@@ -216,9 +216,9 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   }
   std::vector<QuantizedMatrix> qmats(4);
   auto send_transform =
-    [&qerror, &qmats, this] (Mat& mat, IR h, IR w, int& count, bool const_data,
-  int call_idx) {
-    auto to_send = mat(h, w);
+    [&qerror, &qmats, this] (Mat& to_trans, IR h, IR w, int& count,
+                             bool const_data, int call_idx) {
+    auto to_send = to_trans(h, w);
     auto to_send_qerr = qerror(h, w);
     QuantizedMatrix& qmat = qmats[call_idx];
     onebit_quantize(to_send, qmat, to_send_qerr);

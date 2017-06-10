@@ -92,14 +92,14 @@ class lbann_summary {
   void flush();
 
  private:
-  lbann_comm *comm;
-  TBinf::SummaryWriter *sw;
+  lbann_comm *m_comm;
+  TBinf::SummaryWriter *m_sw;
 
   /** Represent a pending summary operation. */
   struct pending_op {
-    pending_op(const std::string tag, int64_t step, DataType local,
-               DataType local2 = 0.0f, int num = 0) :
-      tag(tag), step(step), local(local), local2(local2), num(num) {}
+    pending_op(const std::string tag_, int64_t step_, DataType local_,
+               DataType local2_ = 0.0f, int num_ = 0) :
+      tag(tag_), step(step_), local(local_), local2(local2_), num(num_) {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -113,12 +113,12 @@ class lbann_summary {
   };
   /** Represent a pending histogram operation. */
   struct pending_histogram {
-    pending_histogram(const std::string tag, int64_t step,
-                      std::vector<float> buckets,
-                      DataType min, DataType max, DataType num,
-                      DataType sum, DataType sqsum) :
-      tag(tag), step(step), buckets(buckets), min(min), max(max), num(num),
-      sum(sum), sqsum(sqsum) {}
+    pending_histogram(const std::string tag_, int64_t step_,
+                      std::vector<float> buckets_,
+                      DataType min_, DataType max_, DataType num_,
+                      DataType sum_, DataType sqsum_) :
+      tag(tag_), step(step_), buckets(buckets_), min(min_), max(max_),
+      num(num_), sum(sum_), sqsum(sqsum_) {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -138,21 +138,21 @@ class lbann_summary {
   };
 
   /** Currently-pending reduce_means. */
-  std::vector<pending_op> pending_means;
+  std::vector<pending_op> m_pending_means;
   /** Currently-pending reduce_mins. */
-  std::vector<pending_op> pending_mins;
+  std::vector<pending_op> m_pending_mins;
   /** Currently-pending reduce_maxes. */
-  std::vector<pending_op> pending_maxes;
+  std::vector<pending_op> m_pending_maxes;
   /** Currently-pending reduce_stdevs. */
-  std::vector<pending_op> pending_stdevs;
+  std::vector<pending_op> m_pending_stdevs;
   /** Currently-pending reduce_scalars. */
-  std::vector<pending_op> pending_scalars;
+  std::vector<pending_op> m_pending_scalars;
   /** Currently-pending sum_reduce_scalars. */
-  std::vector<pending_op> pending_sum_scalars;
+  std::vector<pending_op> m_pending_sum_scalars;
   /** Buckets for histograms. */
-  std::vector<double> histogram_buckets;
+  std::vector<double> m_histogram_buckets;
   /** Currently-pending reduce_histograms. */
-  std::vector<pending_histogram> pending_histograms;
+  std::vector<pending_histogram> m_pending_histograms;
 
   /** Execute all pending mean operations. */
   void flush_means();
