@@ -31,7 +31,6 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
-
 using namespace std;
 using namespace lbann;
 using namespace El;
@@ -201,28 +200,37 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    layer_factory *lfac = new layer_factory();
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm),optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy(data_layout::MODEL_PARALLEL, comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
 
-    //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
 
     //first layer
     input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     //second layer
-    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
-    //third layer
-    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
+    FullyConnectedLayer<data_layout::MODEL_PARALLEL> *fc1 = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 1,
+                                                                    mnist_trainset.get_linearized_data_size(), 100,trainParams.MBSize,trainParams.ActivationType,
+                                                                    weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
+                                                                    {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    dnn.add(fc1);
+    
+    //third layer 
+    FullyConnectedLayer<data_layout::MODEL_PARALLEL> *fc2 = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 2, 
+                                                                   100, 30,trainParams.MBSize,trainParams.ActivationType,
+                                                                    weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
+                                                                    {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    dnn.add(fc2);
+    
     //fourth layer
-    dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
+    SoftmaxLayer<data_layout::MODEL_PARALLEL> *sl = new SoftmaxLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 3, 
+                                                          30, 10,trainParams.MBSize,
+                                                          weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    dnn.add(sl);
 
     //fifth layer
     target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
