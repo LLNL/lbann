@@ -119,10 +119,12 @@ class objective_fn {
     return m_name;
   }
 
+ protected:
   statistics m_training_stats;
   statistics m_validation_stats;
   statistics m_testing_stats;
 
+ public:
   obj_fn_type type;
 
  private:

@@ -138,15 +138,18 @@ class metric {
   void record_error(double error, long num_samples);
   void reset_metric();
 
- public:
+ protected:
   statistics m_training_stats;
   statistics m_validation_stats;
   statistics m_testing_stats;
 
   lbann_comm *m_comm;
+
+ public:
   model *neural_network_model;
   metric_type type = metric_type::INVALID;
 
+ protected:
   data_layout m_data_layout;
 };
 }
