@@ -315,7 +315,7 @@ void lbann_image_preprocessor::affine_trans(cv::Mat& sqpixels,
 
 void lbann_image_preprocessor::internal_save_image(
   Mat& pixels, const std::string filename, unsigned imheight, unsigned imwidth,
-  unsigned num_channels, bool scale) {
+  unsigned num_channels, bool do_scale) {
   cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
   cv::Mat converted_pixels;
   int dst_type = 0;
@@ -324,7 +324,7 @@ void lbann_image_preprocessor::internal_save_image(
   } else if (num_channels == 3) {
     dst_type = CV_8UC3;
   }  // cv_pixels ensures no other case happens.
-  sqpixels.convertTo(converted_pixels, dst_type, scale ? 255.0f : 1.0f);
+  sqpixels.convertTo(converted_pixels, dst_type, do_scale ? 255.0f : 1.0f);
   cv::imwrite(filename, converted_pixels);
 }
 

@@ -502,7 +502,7 @@ struct lbann_model_header {
 
 bool lbann::model::save_to_checkpoint_shared(lbann::persist& p) {
   // write out fields we need to save for model
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
@@ -517,7 +517,7 @@ bool lbann::model::load_from_checkpoint_shared(lbann::persist& p) {
   // have rank 0 read the file
   // read state from file
   struct lbann_model_header header;
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);

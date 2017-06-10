@@ -62,11 +62,11 @@ class partitioned_minibatch_parallel_io {
 
   /// Is this rank the current root node for the Elemental Distribution
   bool is_current_root() {
-    return (comm->get_rank_in_model() == m_root);
+    return (m_comm->get_rank_in_model() == m_root);
   }
 
  protected:
-  lbann_comm *comm;
+  lbann_comm *m_comm;
   /** Which rank is the root of the CircMat */
   int m_root;
   /** Number of parallel readers (I/O streams) for training data */

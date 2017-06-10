@@ -127,7 +127,7 @@ bool lbann::target_layer::loadFromCheckpoint(int fd, const char *filename, uint6
 
 bool lbann::target_layer::saveToCheckpointShared(persist& p) {
   // rank 0 writes softmax cost to file
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
     // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
   }
@@ -137,7 +137,7 @@ bool lbann::target_layer::saveToCheckpointShared(persist& p) {
 
 bool lbann::target_layer::loadFromCheckpointShared(persist& p) {
   // rank 0 writes softmax cost to file
-  // if (p.m_rank == 0) {
+  // if (p.get_rank() == 0) {
   //     double dval;
   //     p.read_double(persist_type::train, "aggregate cost", &dval);
   //     aggregate_cost = (DataType) dval;

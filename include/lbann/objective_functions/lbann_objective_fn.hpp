@@ -95,7 +95,7 @@ class objective_fn {
     m_testing_stats.init_stats();
     this->type = obj_fn_type::INVALID;
   }
-  objective_fn(std::string name): m_name(name) {
+  objective_fn(std::string nm): m_name(nm) {
     objective_fn();
   }
   virtual ~objective_fn() {}

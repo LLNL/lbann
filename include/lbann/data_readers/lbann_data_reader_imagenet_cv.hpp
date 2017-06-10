@@ -69,9 +69,9 @@ class imagenet_reader_cv : public generic_data_reader {
 
   imagenet_reader_cv& operator=(const imagenet_reader_cv& source);
 
-  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
-                        m_image_num_channels, scale);
+                        m_image_num_channels, do_scale);
   }
 
  protected:

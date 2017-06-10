@@ -118,29 +118,29 @@ class ROI {
   }
 
   /// Check if this ROI is exactly the same as the given rectangular area
-  bool operator==(const ROI& area) const;
+  bool operator==(const ROI& rarea) const;
   /// Check if this ROI is not exactly the same as the given rectangular area
-  bool operator!=(const ROI& area) const;
+  bool operator!=(const ROI& rarea) const;
   /// Check if the given rectangular region contains this ROI but is not the same
-  bool operator<(const ROI& area) const;
+  bool operator<(const ROI& rarea) const;
   /// Check if the given rectangular region contains this ROI
-  bool operator<=(const ROI& area) const;
+  bool operator<=(const ROI& rarea) const;
   /// Check if this ROI  contains the given rectangular region but is not the same
-  bool operator>(const ROI& area) const;
+  bool operator>(const ROI& rarea) const;
   /// Check if this ROI  contains the given rectangular region
-  bool operator>=(const ROI& area) const;
+  bool operator>=(const ROI& rarea) const;
 };
 
-inline bool ROI::operator<=(const ROI& area) const {
-  return (((area.m_left <= m_left) && (area.m_top <= m_top)) &&
-          ((m_right <= area.m_right) && (m_bottom <= area.m_bottom)) &&
+inline bool ROI::operator<=(const ROI& rarea) const {
+  return (((rarea.m_left <= m_left) && (rarea.m_top <= m_top)) &&
+          ((m_right <= rarea.m_right) && (m_bottom <= rarea.m_bottom)) &&
           is_valid());
 }
 
-inline bool ROI::operator>=(const ROI& area) const {
-  return (((m_left <= area.m_left) && (m_top <= area.m_top)) &&
-          ((area.m_right <= m_right) && (area.m_bottom <= m_bottom)) &&
-          area.is_valid());
+inline bool ROI::operator>=(const ROI& rarea) const {
+  return (((m_left <= rarea.m_left) && (m_top <= rarea.m_top)) &&
+          ((rarea.m_right <= m_right) && (rarea.m_bottom <= m_bottom)) &&
+          rarea.is_valid());
 }
 
 std::ostream& operator<<(std::ostream& os, const ROI& roi);

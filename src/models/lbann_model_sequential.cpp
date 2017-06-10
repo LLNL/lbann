@@ -190,7 +190,7 @@ bool lbann::sequential_model::save_to_checkpoint_shared(lbann::persist& p) {
   // write a single header describing layers and sizes?
 
   // have rank 0 write the network file
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     uint32_t layers = m_layers.size();
     p.write_uint32(persist_type::model, "layers", (uint32_t) layers);
 
@@ -213,7 +213,7 @@ bool lbann::sequential_model::load_from_checkpoint_shared(lbann::persist& p) {
 
   // have rank 0 read the network file
   struct lbann_model_sequential_header header;
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.read_uint32(persist_type::model, "layers", &header.layers);
 
     // TODO: read back each layer type and size

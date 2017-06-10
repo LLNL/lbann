@@ -134,7 +134,7 @@ class lbann_image_preprocessor {
    * @param scale Whether pixels has been scaled (default true).
    */
   virtual void save_image(Mat& pixels, const std::string filename,
-                          bool scale = true) {}
+                          bool do_scale = true) {}
 
  protected:
   /** Whether to do horizontal flips. */
@@ -187,7 +187,7 @@ class lbann_image_preprocessor {
    */
   void internal_save_image(Mat& pixels, const std::string filename,
                            unsigned imheight, unsigned imwidth,
-                           unsigned num_channels, bool scale);
+                           unsigned num_channels, bool do_scale);
 };
 
 }  // namespace lbann

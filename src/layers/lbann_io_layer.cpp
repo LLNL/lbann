@@ -233,7 +233,7 @@ void lbann::io_layer::setup_data_readers_for_evaluation(int base_offset, int bat
 
 bool lbann::io_layer::saveToCheckpointShared(persist& p) {
   // rank 0 writes the file
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.write_uint64(persist_type::train, "reader_train_processed",
                    (uint64_t) m_training_dataset.num_samples_processed);
     p.write_uint64(persist_type::train, "reader_train_total",
@@ -265,7 +265,7 @@ struct dataset_header {
 bool lbann::io_layer::loadFromCheckpointShared(persist& p) {
   // rank 0 reads the file
   dataset_header header;
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
     p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
     p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);

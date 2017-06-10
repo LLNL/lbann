@@ -65,9 +65,9 @@ class mnist_reader : public generic_data_reader {
   //explict implementation reduces possible bugs
   //mnist_reader& operator=(const mnist_reader& source);
 
-  void save_image(Mat& pixels, const std::string filename, bool scale = true) {
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width, 1,
-                        scale);
+                        do_scale);
   }
 
  private:

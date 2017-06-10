@@ -125,21 +125,21 @@ void ROI::move(const std::pair<int, int>  displ) {
   m_bottom += displ.second;
 }
 
-bool ROI::operator==(const ROI& area) const {
-  return ((area.m_left == m_left) && (area.m_top == m_top) &&
-          (m_right == area.m_right) && (m_bottom == area.m_bottom));
+bool ROI::operator==(const ROI& rarea) const {
+  return ((rarea.m_left == m_left) && (rarea.m_top == m_top) &&
+          (m_right == rarea.m_right) && (m_bottom == rarea.m_bottom));
 }
 
-bool ROI::operator!=(const ROI& area) const {
-  return !(*this == area);
+bool ROI::operator!=(const ROI& rarea) const {
+  return !(*this == rarea);
 }
 
-bool ROI::operator<(const ROI& area) const {
-  return ((*this <= area) && !(*this == area));
+bool ROI::operator<(const ROI& rarea) const {
+  return ((*this <= rarea) && !(*this == rarea));
 }
 
-bool ROI::operator>(const ROI& area) const {
-  return ((*this >= area) && !(*this == area));
+bool ROI::operator>(const ROI& rarea) const {
+  return ((*this >= rarea) && !(*this == rarea));
 }
 
 /// Stream out the content of the region of interest

@@ -348,10 +348,10 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
       ch = ch % NCh;
     } while ((++ptr) != ptrend);
 
-    for (int ch = 0; ch < NCh; ++ch) {
-      const double shifted_mean = sum[ch] / num_pixels;
-      mean[ch] = shifted_mean + shift[ch];
-      stddev[ch] = sqrt(sqsum[ch]/num_pixels - shifted_mean * shifted_mean);
+    for (int c = 0; c < NCh; ++c) {
+      const double shifted_mean = sum[c] / num_pixels;
+      mean[c] = shifted_mean + shift[c];
+      stddev[c] = sqrt(sqsum[c]/num_pixels - shifted_mean * shifted_mean);
     }
   } else {
     const int stride = image.cols*NCh;

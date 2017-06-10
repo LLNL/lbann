@@ -153,93 +153,93 @@ class lbann_comm {
   }
   /** Inter-model gather (for non-root processes). */
   template <typename T>
-  void intermodel_gather(T send, int root) {
+  void intermodel_gather(T snd, int root) {
     bytes_sent += sizeof(T);
-    mpi::Gather(&send, 1, (T *) NULL, 0, root, intermodel_comm);
+    mpi::Gather(&snd, 1, (T *) NULL, 0, root, intermodel_comm);
   }
   /** Inter-model gather (for root processes). */
   template <typename T>
-  void intermodel_gather(T send, std::vector<T>& recv) {
-    mpi::Gather(&send, 1, recv.data(), 1, get_model_rank(),
+  void intermodel_gather(T snd, std::vector<T>& rcv) {
+    mpi::Gather(&snd, 1, rcv.data(), 1, get_model_rank(),
                 intermodel_comm);
     bytes_received += sizeof(T) * (get_num_models() - 1);
   }
   /** Inter-model scalar-array gather (for non-root processes). */
   template <typename T>
-  void intermodel_gather(T *send, int count, int root) {
+  void intermodel_gather(T *snd, int count, int root) {
     bytes_sent += sizeof(T) * count;
-    mpi::Gather(send, count, (T *) NULL, 0, root, intermodel_comm);
+    mpi::Gather(snd, count, (T *) NULL, 0, root, intermodel_comm);
   }
   /** Inter-model scalar-array gather (for root processes). */
   template <typename T>
-  void intermodel_gather(T *send, int count, T *recv) {
-    mpi::Gather(send, count, recv, count, get_model_rank(), intermodel_comm);
+  void intermodel_gather(T *snd, int count, T *rcv) {
+    mpi::Gather(snd, count, rcv, count, get_model_rank(), intermodel_comm);
     bytes_received += sizeof(T) * count * (get_num_models() - 1);
   }
   /** Inter-model reduce (for non-root processes). */
   template <typename T>
-  void intermodel_reduce(T send, int root, mpi::Op op = mpi::SUM) {
+  void intermodel_reduce(T snd, int root, mpi::Op op = mpi::SUM) {
     bytes_sent += sizeof(T);
-    mpi::Reduce(&send, (T *) NULL, 0, op, root, intermodel_comm);
+    mpi::Reduce(&snd, (T *) NULL, 0, op, root, intermodel_comm);
   }
   /** Inter-model reduce (for root processes). */
   template <typename T>
-  T intermodel_reduce(T send, mpi::Op op = mpi::SUM) {
+  T intermodel_reduce(T snd, mpi::Op op = mpi::SUM) {
     T val;
-    mpi::Reduce(&send, &val, 1, op, get_model_rank(),
+    mpi::Reduce(&snd, &val, 1, op, get_model_rank(),
                 intermodel_comm);
     bytes_received += sizeof(T) * (get_num_models() - 1);
     return val;
   }
   /** Inter-model all-reduce. */
   template <typename T>
-  T intermodel_allreduce(T send, mpi::Op op = mpi::SUM) {
+  T intermodel_allreduce(T snd, mpi::Op op = mpi::SUM) {
     T val;
     bytes_sent += sizeof(T);
-    mpi::AllReduce(&send, &val, 1, op, intermodel_comm);
+    mpi::AllReduce(&snd, &val, 1, op, intermodel_comm);
     bytes_received += sizeof(T) * (get_num_models() - 1);
     return val;
   }
   /** Within-model reduce (for non-root processes). */
   template <typename T>
-  void model_reduce(T send, int root, mpi::Op op = mpi::SUM) {
+  void model_reduce(T snd, int root, mpi::Op op = mpi::SUM) {
     bytes_sent += sizeof(T);
-    mpi::Reduce(&send, (T *) NULL, 1, op, root, model_comm);
+    mpi::Reduce(&snd, (T *) NULL, 1, op, root, model_comm);
   }
   /** Within-model reduce (for root processes). */
   template <typename T>
-  T model_reduce(T send, mpi::Op op = mpi::SUM) {
+  T model_reduce(T snd, mpi::Op op = mpi::SUM) {
     T val;
-    mpi::Reduce(&send, &val, 1, op, get_rank_in_model(), model_comm);
+    mpi::Reduce(&snd, &val, 1, op, get_rank_in_model(), model_comm);
     bytes_received += sizeof(T) * (get_procs_per_model() - 1);
     return val;
   }
   /** Within-model scalar array reduce (for non-root processes). */
   template <typename T>
-  void model_reduce(T *send, int count, int root, mpi::Op op = mpi::SUM) {
+  void model_reduce(T *snd, int count, int root, mpi::Op op = mpi::SUM) {
     bytes_sent += sizeof(T) * count;
-    mpi::Reduce(send, (T *) NULL, count, op, root, model_comm);
+    mpi::Reduce(snd, (T *) NULL, count, op, root, model_comm);
   }
   /** Within-model scalar array reduce (for root processes). */
   template <typename T>
-  void model_reduce(T *send, int count, T *recv, mpi::Op op = mpi::SUM) {
-    mpi::Reduce(send, recv, count, op, get_rank_in_model(), model_comm);
+  void model_reduce(T *snd, int count, T *rcv, mpi::Op op = mpi::SUM) {
+    mpi::Reduce(snd, rcv, count, op, get_rank_in_model(), model_comm);
     bytes_received += sizeof(T) * count * (get_procs_per_model() - 1);
   }
   /** Within-model all-reduce. */
   template <typename T>
-  T model_allreduce(T send, mpi::Op op = mpi::SUM) {
+  T model_allreduce(T snd, mpi::Op op = mpi::SUM) {
     T val;
     bytes_sent += sizeof(T);
-    mpi::AllReduce(&send, &val, 1, op, model_comm);
+    mpi::AllReduce(&snd, &val, 1, op, model_comm);
     bytes_received += sizeof(T) * (get_procs_per_model() - 1);
     return val;
   }
   /** Scalar array within-model all-reduce. */
   template <typename T>
-  void model_allreduce(T *send, int count, T *recv, mpi::Op op = mpi::SUM) {
+  void model_allreduce(T *snd, int count, T *rcv, mpi::Op op = mpi::SUM) {
     bytes_sent += count * sizeof(T);
-    mpi::AllReduce(send, recv, count, op, model_comm);
+    mpi::AllReduce(snd, rcv, count, op, model_comm);
     bytes_received += count * sizeof(T) * (get_procs_per_model() - 1);
   }
 
@@ -348,19 +348,19 @@ class lbann_comm {
 
   /** Send/recv to/from ranks. */
   template <typename T>
-  void sendrecv(const T *send, int send_count, int send_model, int send_rank,
-                T *recv, int recv_count, int recv_model, int recv_rank) {
+  void sendrecv(const T *snd, int send_count, int send_model, int send_rank,
+                T *rcv, int recv_count, int recv_model, int recv_rank) {
     bytes_sent += sizeof(T) * send_count;
     bytes_received += sizeof(T) * recv_count;
-    mpi::SendRecv(send, send_count, get_world_rank(send_model, send_rank),
-                  recv, recv_count, get_world_rank(recv_model, recv_rank),
+    mpi::SendRecv(snd, send_count, get_world_rank(send_model, send_rank),
+                  rcv, recv_count, get_world_rank(recv_model, recv_rank),
                   mpi::COMM_WORLD);
   }
   template <typename T>
-  void sendrecv(const T *send, int send_count, int send_model,
-                T *recv, int recv_count, int recv_model) {
-    sendrecv(send, send_count, send_model, rank_in_model,
-             recv, recv_count, recv_model, rank_in_model);
+  void sendrecv(const T *snd, int send_count, int send_model,
+                T *rcv, int recv_count, int recv_model) {
+    sendrecv(snd, send_count, send_model, rank_in_model,
+             rcv, recv_count, recv_model, rank_in_model);
   }
 
   /** Determine the size (count) of an incoming message. */

@@ -59,7 +59,7 @@ void lbann::greedy_layerwise_autoencoder::reset_phase() {
 bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persist& p) {
   // have rank 0 write record whether we have a mirror layer inserted
   // we do this first, because we need to insert it again when reading back
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.write_uint32(persist_type::train, "gla_phase_index", (uint32_t) m_current_phase);
     p.write_uint32(persist_type::train, "gla_have_mirror", (uint32_t) m_have_mirror);
   }
@@ -73,7 +73,7 @@ bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persi
 bool lbann::greedy_layerwise_autoencoder::load_from_checkpoint_shared(lbann::persist& p) {
   // have rank 0 read whether we have a mirror layer inserted
   struct lbann_model_greedy_layerwise_autoencoder_header header;
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     p.read_uint32(persist_type::train, "gla_phase_index", &header.phase_index);
     p.read_uint32(persist_type::train, "gla_have_mirror", &header.have_mirror);
   }

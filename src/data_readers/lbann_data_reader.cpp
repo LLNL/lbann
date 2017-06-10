@@ -180,7 +180,7 @@ generic_data_reader& generic_data_reader::operator=(const generic_data_reader& s
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) {
   // rank 0 writes the training state file
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     char fieldname[1024];
 
     // record minibatch index
@@ -210,7 +210,7 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) {
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char *name) {
   // rank 0 reads the training state file
-  if (p.m_rank == 0) {
+  if (p.get_rank() == 0) {
     char fieldname[1024];
 
     // record minibatch index
@@ -249,7 +249,7 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
   MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   // resize shuffled index array to hold values
-  if (p.m_rank != 0) {
+  if (p.get_rank() != 0) {
     m_shuffled_indices.resize(size);
   }
 

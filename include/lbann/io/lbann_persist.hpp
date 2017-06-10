@@ -40,12 +40,8 @@ enum class persist_type {
 };
 
 class persist {
- public:
-  // eventually, we'll move most of these to be private,
-  // but we expose them for now while converting old code to new code
-  int m_rank;
-
  protected:
+  int m_rank;
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
@@ -59,6 +55,9 @@ class persist {
   persist();
   ~persist() {};
 
+  int get_rank(void) {
+    return m_rank;
+  }
   void open_checkpoint(const char *dir);
   void close_checkpoint(void);
 
