@@ -35,7 +35,7 @@ namespace lbann {
 lbann_callback_io::lbann_callback_io() : lbann_callback() {}
 
 lbann_callback_io::lbann_callback_io(
-  std::unordered_set<uint> _layers) : lbann_callback(), layer_indices(_layers) {
+  std::unordered_set<uint> layers) : lbann_callback(), m_layer_indices(layers) {
   set_name("io");
 }
 
@@ -45,8 +45,8 @@ void lbann_callback_io::on_epoch_end(model *m) {
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
-    if (layer_indices.size() == 0 ||
-        layer_indices.find(idx) != layer_indices.end()) {
+    if (m_layer_indices.size() == 0 ||
+        m_layer_indices.find(idx) != m_layer_indices.end()) {
 
       input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layer);
       if(input != NULL) {
@@ -72,8 +72,8 @@ void lbann_callback_io::on_test_end(model *m) {
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
-    if (layer_indices.size() == 0 ||
-        layer_indices.find(idx) != layer_indices.end()) {
+    if (m_layer_indices.size() == 0 ||
+        m_layer_indices.find(idx) != m_layer_indices.end()) {
 
       input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layer);
       if(input != NULL) {

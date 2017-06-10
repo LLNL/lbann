@@ -38,7 +38,7 @@ namespace lbann {
  */
 class lbann_callback_print : public lbann_callback {
  public:
-  lbann_callback_print(int _batch_interval = 1) : lbann_callback(_batch_interval) {
+  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {
     set_name("print");
   }
   void setup(model *m);

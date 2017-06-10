@@ -33,22 +33,22 @@
 namespace lbann {
 
 void lbann_callback_timer::on_epoch_begin(model *m) {
-  epoch_start = get_time();
+  m_epoch_start = get_time();
 }
 
 void lbann_callback_timer::on_epoch_end(model *m) {
   double end = get_time();
-  double epoch_time = end - epoch_start;
+  double epoch_time = end - m_epoch_start;
   // Compute minibatch stats.
-  double mean = std::accumulate(batch_times.begin(), batch_times.end(), 0.0) /
-                batch_times.size();
-  auto minmax = std::minmax_element(batch_times.begin(), batch_times.end());
+  double mean = std::accumulate(m_batch_times.begin(), m_batch_times.end(), 0.0) /
+                m_batch_times.size();
+  auto minmax = std::minmax_element(m_batch_times.begin(), m_batch_times.end());
   double stdev = 0.0;
-  for (const auto& t : batch_times) {
+  for (const auto& t : m_batch_times) {
     stdev += (t - mean) * (t - mean);
   }
-  stdev = sqrt(stdev / (batch_times.size() - 1));
-  batch_times.clear();
+  stdev = sqrt(stdev / (m_batch_times.size() - 1));
+  m_batch_times.clear();
 
   // Output.
   lbann_comm *comm = m->get_comm();
@@ -82,15 +82,15 @@ void lbann_callback_timer::on_epoch_end(model *m) {
 }
 
 void lbann_callback_timer::on_batch_begin(model *m) {
-  batch_start = get_time();
+  m_batch_start = get_time();
 }
 
 void lbann_callback_timer::on_batch_end(model *m) {
   double end = get_time();
-  double mb_time = end - batch_start;
-  batch_times.push_back(mb_time);
-  if (summarizer != nullptr) {
-    summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step());
+  double mb_time = end - m_batch_start;
+  m_batch_times.push_back(mb_time);
+  if (m_summarizer != nullptr) {
+    m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step());
   }
 }
 

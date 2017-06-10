@@ -44,8 +44,8 @@ class lbann_callback_debug : public lbann_callback {
    * Debug a particular phase; use invalid to debug every phase.
    */
   lbann_callback_debug(execution_mode phase = execution_mode::invalid,
-                       lbann_summary *_summarizer = nullptr) :
-    lbann_callback(1, _summarizer), m_debug_phase(phase) {
+                       lbann_summary *summarizer = nullptr) :
+    lbann_callback(1, summarizer), m_debug_phase(phase) {
     set_name("debug");
   }
   /** Print that a batch is being started. */

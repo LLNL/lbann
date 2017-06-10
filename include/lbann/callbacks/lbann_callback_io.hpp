@@ -42,13 +42,13 @@ class lbann_callback_io : public lbann_callback {
  public:
   lbann_callback_io();
   /** Only apply to specific layers. */
-  lbann_callback_io(std::unordered_set<uint> _layers);
+  lbann_callback_io(std::unordered_set<uint> layers);
   /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m);
   void on_test_end(model *m);
  private:
   /** Indicies of layers to monitor. */
-  std::unordered_set<uint> layer_indices;
+  std::unordered_set<uint> m_layer_indices;
 };
 
 }  // namespace lbann

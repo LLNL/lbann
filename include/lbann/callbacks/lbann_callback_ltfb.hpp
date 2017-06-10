@@ -55,7 +55,7 @@ class lbann_callback_ltfb : public lbann_callback {
    * @param remote_model A duplicate of the model being trained (temp workaround).
    */
   lbann_callback_ltfb(uint round_size, model *remote_model,
-                      lbann_summary *_summarizer = nullptr);
+                      lbann_summary *summarizer = nullptr);
   ~lbann_callback_ltfb();
   /** Set up LTFB. */
   void setup(model *m);
@@ -64,7 +64,7 @@ class lbann_callback_ltfb : public lbann_callback {
    */
   void on_batch_end(model *m);
  private:
-  lbann_comm *comm;
+  lbann_comm *m_comm;
   /** Number of minibatches in a round. */
   uint m_round_size;
   /** Second model for doing the tournament. */
