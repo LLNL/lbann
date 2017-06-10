@@ -32,7 +32,7 @@
 namespace lbann {
 
 void lbann_callback_dump_gradients::on_backward_prop_end(model *m, Layer *l) {
-  const std::string prefix = basename + "model" +
+  const std::string prefix = m_basename + "model" +
                              std::to_string(m->get_comm()->get_model_rank()) +
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
                              std::to_string(m->get_cur_step()) + "-layer";

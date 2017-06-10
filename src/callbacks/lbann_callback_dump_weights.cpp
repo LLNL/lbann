@@ -33,7 +33,7 @@ namespace lbann {
 
 void lbann_callback_dump_weights::on_epoch_end(model *m) {
   auto layers = m->get_layers();
-  const std::string prefix = basename + "model" +
+  const std::string prefix = m_basename + "model" +
                              std::to_string(m->get_comm()->get_model_rank()) +
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-layer";
   // Skip the input/output layers.

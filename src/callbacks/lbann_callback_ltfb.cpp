@@ -32,8 +32,8 @@
 namespace lbann {
 
 lbann_callback_ltfb::lbann_callback_ltfb(
-  uint round_size, model *remote_model, lbann_summary *_summarizer) :
-  lbann_callback(1, _summarizer), m_round_size(round_size),
+  uint round_size, model *remote_model, lbann_summary *summarizer) :
+  lbann_callback(1, summarizer), m_round_size(round_size),
   m_remote_model(remote_model) {
 }
 
@@ -42,7 +42,7 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 }
 
 void lbann_callback_ltfb::setup(model *m) {
-  comm = m->get_comm();
+  m_comm = m->get_comm();
   // Validate that the round size divides the number of minibatches.
   // Duplicate model.
 }
@@ -53,7 +53,7 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   }
 
   int partner = select_partner();
-  if (partner == comm->get_model_rank()) {
+  if (partner == m_comm->get_model_rank()) {
     // No partner this round, skip.
     return;
   }
@@ -86,8 +86,8 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   }
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
-    if (comm->am_model_master()) {
-      std::cout << comm->get_model_rank() << ": (step " << m->get_cur_step() << ") Replacing local model (" << local_acc << ") with " <<
+    if (m_comm->am_model_master()) {
+      std::cout << m_comm->get_model_rank() << ": (step " << m->get_cur_step() << ") Replacing local model (" << local_acc << ") with " <<
                 "model " << partner << " (" << remote_acc << ")" << std::endl;
     }
     replace_with_remote(m);
@@ -97,27 +97,27 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
 int lbann_callback_ltfb::select_partner() {
   int my_partner = 0;
   // Master generates partners for everyone.
-  if (comm->am_world_master()) {
-    std::vector<int> ranks(comm->get_num_models());
+  if (m_comm->am_world_master()) {
+    std::vector<int> ranks(m_comm->get_num_models());
     std::iota(ranks.begin(), ranks.end(), 0);
     std::shuffle(ranks.begin(), ranks.end(), get_fast_generator());
     // Adjacent pairs become partners.
     // Dilate so that we can do one scatter to every process.
     std::vector<int> partners(
-      comm->get_num_models() * comm->get_procs_per_model());
+      m_comm->get_num_models() * m_comm->get_procs_per_model());
     for (size_t i = 0; i < (ranks.size() & ~1); i += 2) {
       int rank1 = ranks[i];
       int rank2 = ranks[i+1];
-      std::fill_n(partners.begin() + rank1*comm->get_procs_per_model(),
-                  comm->get_procs_per_model(), rank2);
-      std::fill_n(partners.begin() + rank2*comm->get_procs_per_model(),
-                  comm->get_procs_per_model(), rank1);
+      std::fill_n(partners.begin() + rank1*m_comm->get_procs_per_model(),
+                  m_comm->get_procs_per_model(), rank2);
+      std::fill_n(partners.begin() + rank2*m_comm->get_procs_per_model(),
+                  m_comm->get_procs_per_model(), rank1);
     }
     // Handle the last rank if needed.
     if (partners.size() % 2 != 0) {
       int last_rank = ranks[ranks.size() - 1];
-      std::fill_n(partners.begin() + last_rank*comm->get_procs_per_model(),
-                  comm->get_procs_per_model(), last_rank);
+      std::fill_n(partners.begin() + last_rank*m_comm->get_procs_per_model(),
+                  m_comm->get_procs_per_model(), last_rank);
     }
     El::mpi::Scatter(partners.data(), 1, &my_partner, 1, 0,
                      El::mpi::COMM_WORLD);
@@ -138,12 +138,12 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
     ElMat& weights = layer->get_weights_biases();
     ElMat& remote_weights = remote_layer->get_weights_biases();
     if (weights.Height() > 0) {
-      comm->sendrecv(weights.LockedBuffer(),
-                     weights.LocalHeight()*weights.LocalWidth(),
-                     partner,
-                     remote_weights.Buffer(),
-                     weights.LocalHeight()*weights.LocalWidth(),
-                     partner);
+      m_comm->sendrecv(weights.LockedBuffer(),
+                       weights.LocalHeight()*weights.LocalWidth(),
+                       partner,
+                       remote_weights.Buffer(),
+                       weights.LocalHeight()*weights.LocalWidth(),
+                       partner);
     }
   }
 }

@@ -57,13 +57,13 @@ class lbann_callback_imcomm : public lbann_callback {
    * Initialize with ct being used for every layer.
    */
   lbann_callback_imcomm(comm_type ct = NORMAL,
-                        lbann_summary *_summarizer = nullptr);
+                        lbann_summary *summarizer = nullptr);
   /**
    * Convenience initialization to do one update type for a set of layers.
    * Implies no inter-model updates for other layers.
    */
-  lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> _layers,
-                        lbann_summary *_summarizer = nullptr);
+  lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> layers,
+                        lbann_summary *summarizer = nullptr);
 
   /** Choose comm type ct for layer. */
   void set_layer_comm(uint layer, comm_type ct);
@@ -97,13 +97,13 @@ class lbann_callback_imcomm : public lbann_callback {
     DataType neg_thresh = -1.0;
   };
   /** Default communication type. */
-  comm_type default_ct;
+  comm_type m_default_ct;
   /** Per-layer parameters. */
-  std::vector<imcomm_params> layer_params;
+  std::vector<imcomm_params> m_layer_params;
   /** Quantizer for quantization of updates, if needed. */
-  lbann_quantizer quantizer;
+  lbann_quantizer m_quantizer;
   /** Record param choices for specific layers for setup. */
-  std::unordered_map<uint, imcomm_params> param_choices;
+  std::unordered_map<uint, imcomm_params> m_param_choices;
 
   /** Return true if the comm type does quantization. */
   inline bool ct_does_quantization(comm_type ct) const {

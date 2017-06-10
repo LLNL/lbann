@@ -39,7 +39,7 @@ namespace lbann {
  */
 class lbann_callback_summary : public lbann_callback {
  public:
-  lbann_callback_summary(lbann_summary *summarizer, int _batch_interval = 1);
+  lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1);
   void on_batch_end(model *m);
   void on_epoch_end(model *m);
   void on_test_end(model *m);

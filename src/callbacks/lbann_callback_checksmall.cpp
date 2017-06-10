@@ -85,7 +85,7 @@ bool lbann_callback_checksmall::is_good(const ElMat& m) {
   for (Int col = 0; col < width; ++col) {
     for (Int row = 0; row < height; ++row) {
       const DataType val = Abs(local_mat(row, col));
-      if (val > 0 && val <= threshold) {
+      if (val > 0 && val <= m_threshold) {
         std::cout << "Found small value " << val << " at (" << row << "," <<
                   col << ")!" << std::endl;
         return false;

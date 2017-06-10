@@ -97,7 +97,7 @@ static const char *__attribute__((used)) _layer_type_to_string(layer_type l) {
   return NULL;
 }
 
-static const layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
+static layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
   switch(l) {
   case layer_type::fully_connected:
   case layer_type::softmax:
@@ -225,7 +225,7 @@ class Layer {
   void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
 #endif
 
-  virtual El::Matrix<El::Int>& get_sample_indices_per_mb() {};
+  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
   bool saveToFile(int fd, const char *filename);
   bool loadFromFile(int fd, const char *filename);

@@ -46,12 +46,12 @@ namespace lbann {
 class lbann_callback {
  public:
   /** Initialize a callback with an optional batch interval and summarizer. */
-  lbann_callback(int _batch_interval = 1,
-                 lbann_summary *_summarizer = nullptr) :
-    batch_interval(_batch_interval), summarizer(_summarizer) {}
+  lbann_callback(int batch_interval = 1,
+                 lbann_summary *summarizer = nullptr) :
+    m_batch_interval(batch_interval), m_summarizer(summarizer) {}
   virtual ~lbann_callback() {}
-  void set_summarizer(lbann_summary *_summarizer) {
-    summarizer = _summarizer;
+  void set_summarizer(lbann_summary *summarizer) {
+    m_summarizer = summarizer;
   }
   /** Called once to set up the callback (after all layers are set up). */
   virtual void setup(model *m) {};
@@ -108,7 +108,7 @@ class lbann_callback {
   virtual void on_evaluate_forward_prop_end(model *m, Layer *l) {}
 
   /** Batch methods should once every this many steps. */
-  const int batch_interval;
+  const int m_batch_interval;
 
   /** sets the callback's name **/
   void set_name(std::string name) {
@@ -121,7 +121,7 @@ class lbann_callback {
   }
  protected:
   /** Optional summarizer for the callbacks to use. */
-  lbann_summary *summarizer;
+  lbann_summary *m_summarizer;
   /** string representation of the callback, for use with protocol buffers **/
   std::string m_name;
 };

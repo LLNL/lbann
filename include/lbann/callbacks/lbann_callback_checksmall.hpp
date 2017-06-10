@@ -54,7 +54,7 @@ class lbann_callback_checksmall : public lbann_callback {
   void on_batch_end(model *m);
  private:
   /** Smallest allowable value. */
-  const DataType threshold = std::sqrt(std::numeric_limits<DataType>::min());
+  const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());
   /** Return true if there are no problems with m. */
   bool is_good(const ElMat& m);
 };

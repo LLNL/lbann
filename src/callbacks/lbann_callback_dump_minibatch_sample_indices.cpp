@@ -34,7 +34,7 @@
 namespace lbann {
 
 void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
-  const std::string prefix = basename + _to_string(m->get_execution_mode()) + "-model" +
+  const std::string prefix = m_basename + _to_string(m->get_execution_mode()) + "-model" +
                              std::to_string(m->get_comm()->get_model_rank()) +
                              "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
@@ -44,21 +44,10 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
     return;
   }
 
-  El::Matrix<El::Int>& indices = l->get_sample_indices_per_mb();
+  El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
 
-  if(indices.Height() != 0 && indices.Width() != 0) {
-#if 0
-    std::cout << " Fetched indices: @step " << std::to_string(step) << std::endl;
-    for(int i = 0; i < indices.Height(); i++) {
-      std::cout << std::setw(6) << i << " ";
-    }
-    std::cout << std::endl;
-    for(int i = 0; i < indices.Height(); i++) {
-      std::cout  << std::setw(6) << indices.Get(i,0) << " ";
-    }
-    std::cout << std::endl;
-#endif
-    El::Write(indices,
+  if(indices->Height() != 0 && indices->Width() != 0) {
+    El::Write(*indices,
               prefix + std::to_string(l->get_index()) +
               "-MB_Sample_Indices",
               El::ASCII);

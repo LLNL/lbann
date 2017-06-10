@@ -61,7 +61,7 @@ class io_layer : public Layer {
     return m_testing_dataset.total_samples;
   }
 
-  El::Matrix<El::Int>& get_sample_indices_per_mb();
+  El::Matrix<El::Int>* get_sample_indices_per_mb();
 
   bool at_new_epoch() {
     return m_training_dataset.data_reader->at_new_epoch();
