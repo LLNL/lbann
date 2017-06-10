@@ -36,7 +36,7 @@ using namespace El;
 
 
 lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs)
-  : input_layer(data_dist, comm, mini_batch_size, data_readers, regs), Xs(comm->get_model_grid()) {
+  : input_layer(data_dist, comm, mini_batch_size, data_readers, regs), Xs(m_comm->get_model_grid()) {
 
   m_type = layer_type::input_distributed_minibatch;
 
@@ -48,8 +48,8 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data
 
 void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
   if(io_layer::m_data_sets_span_models) {
-    io_layer::setup_data_readers_for_training(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
-        Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+    io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
+        Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
     io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
   } else {
     io_layer::setup_data_readers_for_training(0, m_mini_batch_size);
@@ -64,7 +64,7 @@ void lbann::input_layer_distributed_minibatch::fp_linearity() {
   generic_data_reader *data_reader = input_layer::select_data_reader();
   int num_samples_in_batch = 0;
 
-  if (comm->get_rank_in_model() == m_root) {
+  if (m_comm->get_rank_in_model() == m_root) {
     Zero(X_local);
     num_samples_in_batch = data_reader->fetch_data(X_local);
     bool data_valid = (num_samples_in_batch > 0);
@@ -75,15 +75,15 @@ void lbann::input_layer_distributed_minibatch::fp_linearity() {
 
   /// Let each rank know this size of the current mini-batch
   /// Note that this field has to be updated before distributing the data
-  neural_network_model->set_current_mini_batch_size(Layer::comm->model_broadcast(m_root, num_samples_in_batch));
+  neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(m_root, num_samples_in_batch));
 
-  if (comm->get_rank_in_model() == m_root) {
+  if (m_comm->get_rank_in_model() == m_root) {
     CopyFromRoot(X_local, Xs);
   } else {
     CopyFromNonRoot(Xs);
   }
 
-  comm->model_barrier();
+  m_comm->model_barrier();
 
   Copy(Xs, *m_activations);
 }

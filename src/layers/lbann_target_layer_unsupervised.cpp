@@ -174,14 +174,14 @@ void lbann::target_layer_unsupervised::summarize(lbann_summary& summarizer, int6
 
 void lbann::target_layer_unsupervised::epoch_print() const {
   double avg_cost = average_cost();
-  if (comm->am_world_master()) {
-    std::vector<double> avg_costs(comm->get_num_models());
-    comm->intermodel_gather(avg_cost, avg_costs);
+  if (m_comm->am_world_master()) {
+    std::vector<double> avg_costs(m_comm->get_num_models());
+    m_comm->intermodel_gather(avg_cost, avg_costs);
     for (size_t i = 0; i < avg_costs.size(); ++i) {
       std::cout << "model " << i << " average reconstruction cost: " << avg_costs[i] << std::endl;
     }
   } else {
-    comm->intermodel_gather(avg_cost, comm->get_world_master());
+    m_comm->intermodel_gather(avg_cost, m_comm->get_world_master());
   }
 }
 

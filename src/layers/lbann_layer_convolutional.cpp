@@ -98,7 +98,7 @@ convolutional_layer::convolutional_layer(const uint index,
   }
 
 #ifdef __LIB_CUDNN
-  m_weights_gradient_per_gpu = StarMat(comm->get_model_grid());
+  m_weights_gradient_per_gpu = StarMat(m_comm->get_model_grid());
 #endif // #ifdef __LIB_CUDNN
 
 #ifdef __LIB_CUDNN
@@ -124,7 +124,7 @@ convolutional_layer::convolutional_layer(const uint index,
     m_using_gpus = true;
     m_cudnn = cudnn;
     const Int num_gpus = m_cudnn->get_num_gpus();
-    const Int num_processes = comm->get_procs_per_model();
+    const Int num_processes = m_comm->get_procs_per_model();
     const Int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 

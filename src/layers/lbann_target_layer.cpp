@@ -94,15 +94,15 @@ void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::target_layer::epoch_print() const {
   double obj_cost = neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
-  if (comm->am_world_master()) {
-    std::vector<double> avg_obj_fn_costs(comm->get_num_models());
-    comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
+  if (m_comm->am_world_master()) {
+    std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
+    m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
     for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
       std::cout << "Model " << i << " average " << _to_string(neural_network_model->obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
                 std::endl;
     }
   } else {
-    comm->intermodel_gather(obj_cost, comm->get_world_master());
+    m_comm->intermodel_gather(obj_cost, m_comm->get_world_master());
   }
 }
 

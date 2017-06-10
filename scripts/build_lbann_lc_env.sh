@@ -407,7 +407,7 @@ fi
 if [ "${HasGPU}" != "" ] ; then
   WITH_CUDA=ON
   WITH_CUDNN=ON
-  ELEMENTAL_USE_CUBLAS=1
+  ELEMENTAL_USE_CUBLAS=0
 fi
 
 

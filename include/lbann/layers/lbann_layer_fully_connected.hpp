@@ -129,28 +129,28 @@ class FullyConnectedLayer : public Layer {
 
   /// Matrices should be in MC,MR distributions
   void initialize_model_parallel_distribution() {
-    m_bias_bp_t                      = new DistMat(comm->get_model_grid());
-    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(comm->get_model_grid());
+    m_bias_bp_t                      = new DistMat(m_comm->get_model_grid());
+    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(m_comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new DistMat(comm->get_model_grid());
-    m_bias_weights_v                 = new DistMat(comm->get_model_grid());
-    m_activation_weights_gradient_v  = new DistMat(comm->get_model_grid());
-    m_bias_weights_gradient_v        = new DistMat(comm->get_model_grid());
-    m_bias_bp_t_v                    = new DistMat(comm->get_model_grid());
+    m_activation_weights_v           = new DistMat(m_comm->get_model_grid());
+    m_bias_weights_v                 = new DistMat(m_comm->get_model_grid());
+    m_activation_weights_gradient_v  = new DistMat(m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new DistMat(m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new DistMat(m_comm->get_model_grid());
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
   void initialize_data_parallel_distribution() {
-    m_bias_bp_t                      = new StarVCMat(comm->get_model_grid());
-    m_bias_weights_repl              = new StarMat(comm->get_model_grid());
+    m_bias_bp_t                      = new StarVCMat(m_comm->get_model_grid());
+    m_bias_weights_repl              = new StarMat(m_comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new StarMat(comm->get_model_grid());
-    m_bias_weights_v                 = new StarMat(comm->get_model_grid());
-    m_activation_weights_gradient_v  = new StarMat(comm->get_model_grid());
-    m_bias_weights_gradient_v        = new StarMat(comm->get_model_grid());
-    m_bias_bp_t_v                    = new StarVCMat(comm->get_model_grid());
+    m_activation_weights_v           = new StarMat(m_comm->get_model_grid());
+    m_bias_weights_v                 = new StarMat(m_comm->get_model_grid());
+    m_activation_weights_gradient_v  = new StarMat(m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new StarMat(m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new StarVCMat(m_comm->get_model_grid());
   }
 
   void setup(int numPrevNeurons) {

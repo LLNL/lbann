@@ -184,6 +184,10 @@ class Layer {
   inline void set_execution_mode(const execution_mode mode) {
     m_execution_mode = mode;
   }
+  /** Return the data layout of this layer */
+  inline data_layout get_data_layout(void) const {
+    return m_data_layout;
+  }
   /** Return (a view of) the weights/biases matrix for this layer. */
   virtual ElMat& get_weights_biases(void) {
     return *m_weights;
@@ -267,10 +271,13 @@ class Layer {
   Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
 
   execution_mode  m_execution_mode;
-
- public:
+  activation_type m_activation_type;
   data_layout m_data_layout;
 
+  optimizer *m_optimizer;
+  lbann_comm *m_comm;
+
+ public:
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
   ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
@@ -289,7 +296,6 @@ class Layer {
   model *neural_network_model;
 
  protected:
-  activation_type m_activation_type;
 
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
@@ -297,9 +303,6 @@ class Layer {
   ElMat *m_error_signal_v;
   ElMat *m_prev_activations_v;
 
-  optimizer *m_optimizer;
-
-  lbann_comm *comm;
 
  protected:
 

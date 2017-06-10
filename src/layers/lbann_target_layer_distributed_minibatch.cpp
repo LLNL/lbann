@@ -35,7 +35,7 @@ using namespace std;
 using namespace El;
 
 lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression)
-  : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(comm->get_model_grid()) {
+  : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(m_comm->get_model_grid()) {
   m_type = layer_type::target_distributed_minibatch;
   //  m_index = index;
   m_root = 0;
@@ -46,8 +46,8 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
   target_layer::setup(num_prev_neurons);
   if(!m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
     if(io_layer::m_data_sets_span_models) {
-      io_layer::setup_data_readers_for_training(0, Layer::comm->get_num_models() * Layer::m_mini_batch_size,
-          Layer::comm->get_model_rank() * Layer::m_mini_batch_size);
+      io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
+          Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
       io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
     } else {
       io_layer::setup_data_readers_for_training(0, m_mini_batch_size);
@@ -69,18 +69,18 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
 void lbann::target_layer_distributed_minibatch::fp_linearity() {
   generic_data_reader *data_reader = target_layer::select_data_reader();
 
-  if (comm->get_rank_in_model() == m_root) {
+  if (m_comm->get_rank_in_model() == m_root) {
     Zero(Y_local);
     data_reader->fetch_label(Y_local);
   }
 
-  if (comm->get_rank_in_model() == m_root) {
+  if (m_comm->get_rank_in_model() == m_root) {
     CopyFromRoot(Y_local, Ys);
   } else {
     CopyFromNonRoot(Ys);
   }
 
-  comm->model_barrier();
+  m_comm->model_barrier();
   Copy(Ys, *m_activations);
 
   /// Compute and record the objective function score

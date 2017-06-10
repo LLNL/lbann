@@ -74,7 +74,7 @@ m_lrn_k(lrn_k) {
     const int num_gpus = m_cudnn->get_num_gpus();
 
     // Get number of columns per GPU
-    const int num_processes = comm->get_procs_per_model();
+    const int num_processes = m_comm->get_procs_per_model();
     const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 

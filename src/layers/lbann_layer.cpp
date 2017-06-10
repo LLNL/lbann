@@ -44,7 +44,8 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
                     lbann_comm *comm, optimizer *opt,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer *> regs)
-  : m_activation_type(activation), m_data_layout(data_dist), m_optimizer(opt), comm(comm),
+  : m_execution_mode(execution_mode::training), m_activation_type(activation), m_data_layout(data_dist),
+    m_comm(comm), m_optimizer(opt),
     m_cudnn(nullptr), regularizers(regs), m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize) {
 
@@ -53,7 +54,6 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
   m_next_layer_type = layer_type::INVALID;
 
   m_index = index;
-  m_execution_mode = execution_mode::training;
   fp_input = NULL;
   bp_input = NULL;
   neural_network_model = NULL;
@@ -105,38 +105,38 @@ lbann::Layer::~Layer() {
 
 /// Matrices should be in MC,MR distributions
 void lbann::Layer::initialize_model_parallel_distribution() {
-  m_weights             = new DistMat(comm->get_model_grid());
-  m_weights_gradient    = new DistMat(comm->get_model_grid());
-  m_weighted_sum        = new DistMat(comm->get_model_grid());
-  m_prev_activations    = new DistMat(comm->get_model_grid());
-  m_activations         = new DistMat(comm->get_model_grid());
-  m_prev_error_signal   = new DistMat(comm->get_model_grid());
-  m_error_signal        = new DistMat(comm->get_model_grid());
+  m_weights             = new DistMat(m_comm->get_model_grid());
+  m_weights_gradient    = new DistMat(m_comm->get_model_grid());
+  m_weighted_sum        = new DistMat(m_comm->get_model_grid());
+  m_prev_activations    = new DistMat(m_comm->get_model_grid());
+  m_activations         = new DistMat(m_comm->get_model_grid());
+  m_prev_error_signal   = new DistMat(m_comm->get_model_grid());
+  m_error_signal        = new DistMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new DistMat(comm->get_model_grid());
-  m_prev_activations_v  = new DistMat(comm->get_model_grid());
-  m_activations_v       = new DistMat(comm->get_model_grid());
-  m_prev_error_signal_v = new DistMat(comm->get_model_grid());
-  m_error_signal_v      = new DistMat(comm->get_model_grid());
+  m_weighted_sum_v      = new DistMat(m_comm->get_model_grid());
+  m_prev_activations_v  = new DistMat(m_comm->get_model_grid());
+  m_activations_v       = new DistMat(m_comm->get_model_grid());
+  m_prev_error_signal_v = new DistMat(m_comm->get_model_grid());
+  m_error_signal_v      = new DistMat(m_comm->get_model_grid());
 }
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::Layer::initialize_data_parallel_distribution() {
-  m_weights             = new StarMat(comm->get_model_grid());
-  m_weights_gradient    = new StarMat(comm->get_model_grid());
-  m_weighted_sum        = new StarVCMat(comm->get_model_grid());
-  m_prev_activations    = new StarVCMat(comm->get_model_grid());
-  m_activations         = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(comm->get_model_grid());
-  m_error_signal        = new StarVCMat(comm->get_model_grid());
+  m_weights             = new StarMat(m_comm->get_model_grid());
+  m_weights_gradient    = new StarMat(m_comm->get_model_grid());
+  m_weighted_sum        = new StarVCMat(m_comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
+  m_activations         = new StarVCMat(m_comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(m_comm->get_model_grid());
+  m_error_signal        = new StarVCMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new StarVCMat(comm->get_model_grid());
-  m_prev_activations_v  = new StarVCMat(comm->get_model_grid());
-  m_activations_v       = new StarVCMat(comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(comm->get_model_grid());
+  m_weighted_sum_v      = new StarVCMat(m_comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(m_comm->get_model_grid());
+  m_activations_v       = new StarVCMat(m_comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
 
 void lbann::Layer::forwardProp() {
@@ -484,10 +484,10 @@ void lbann::Layer::fp_set_std_matrix_view() {
   if(cur_mini_batch_size != m_mini_batch_size || 1) {
     // When the current mini-batch is partial, check with the other
     // models to figure out the entire size of the complete mini-batch
-    Int total_mini_batch_size = comm->intermodel_allreduce((Int) cur_mini_batch_size);
+    Int total_mini_batch_size = m_comm->intermodel_allreduce((Int) cur_mini_batch_size);
     set_effective_minibatch_size(total_mini_batch_size);
   } else {
-    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+    set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
   }
 }
 
@@ -507,11 +507,11 @@ void lbann::Layer::bp_set_std_matrix_view() {
 
   // Update the layer's effective mini-batch size so it averages properly.
   if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
-    int total_mini_batch_size = comm->intermodel_allreduce((int) cur_mini_batch_size);
-    //    cout << "[" << comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+    int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
+    //    cout << "[" << m_comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
     set_effective_minibatch_size(total_mini_batch_size);
   } else {
-    set_effective_minibatch_size(cur_mini_batch_size * comm->get_num_models());
+    set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
   }
 }
 #endif
