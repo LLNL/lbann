@@ -119,7 +119,7 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   insert(mirror_index, mirror_layer);
 
   //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
-  //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
+  //assume that necessary layer parameters are set e.g., m_num_neurons when layers were constructed
   setup(layer_index, mirror_index+1);  //set up  all active layers
 
   // set flag to indicate that we have a mirror layer inserted
@@ -139,7 +139,7 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
     if (comm->am_world_master()) {
       std::cout << "Phase [" << layer_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) {
-        std::cout << "Layer [ " << l->Index << "] #NumNeurons: " << l->NumNeurons << std::endl;
+        std::cout << "Layer [ " << l->get_index() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
       }
     }
     setup();
@@ -166,7 +166,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
       insert(m_phase_end,mirror_layer);
     }
     //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
-    //assume that necessary layer parameters are set e.g., NumNeurons when layers were constructed
+    //assume that necessary layer parameters are set e.g., m_num_neurons when layers were constructed
     setup(m_phase_end,m_phase_end+1);  //set up just the added (new) layers
     train_phase(num_epochs,evaluation_frequency);
 
@@ -364,7 +364,7 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   size_t mls = m_layers.size();
   size_t mrs_index = mls-m_reconstruction_layers.size()+1; //reconstruction layers start index
   for(size_t l = mrs_index; l < mls; ++l) {
-    m_layers[l]->Index = l;
+    m_layers[l]->set_index(l);
   }
   set_fp_input(mrs_index,mls);
 

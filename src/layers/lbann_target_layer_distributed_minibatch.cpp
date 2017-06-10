@@ -37,9 +37,9 @@ using namespace El;
 lbann::target_layer_distributed_minibatch::target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression)
   : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(comm->get_model_grid()) {
   m_type = layer_type::target_distributed_minibatch;
-  //  Index = index;
+  //  m_index = index;
   m_root = 0;
-  //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
+  //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
 }
 
 void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
@@ -56,13 +56,13 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
   }
 
   /// @todo put in warning about bad target size
-  if(num_prev_neurons != NumNeurons) {
+  if(num_prev_neurons != m_num_neurons) {
     throw -1;
   }
 
-  Zeros(*m_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(Y_local, NumNeurons, m_mini_batch_size);
-  Zeros(Ys, NumNeurons, m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_neurons, m_mini_batch_size);
+  Zeros(Y_local, m_num_neurons, m_mini_batch_size);
+  Zeros(Ys, m_num_neurons, m_mini_batch_size);
 
 }
 

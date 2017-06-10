@@ -64,8 +64,8 @@ void lbann::input_layer_distributed_minibatch_parallel_io::setup(int num_prev_ne
         m_num_parallel_readers_training * Layer::m_mini_batch_size);
   }
 
-  Zeros(*m_activations, NumNeurons, Layer::m_mini_batch_size);
-  Zeros(X_local, NumNeurons, Layer::m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, Layer::m_mini_batch_size);
+  Zeros(X_local, m_num_neurons, Layer::m_mini_batch_size);
 
   m_local_data_valid = false;
   m_local_reader_done = false;

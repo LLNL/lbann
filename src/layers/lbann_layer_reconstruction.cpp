@@ -39,12 +39,12 @@ lbann::reconstruction_layer::reconstruction_layer(data_layout data_dist, size_t 
     Layer *original_layer,
     activation_type activation,
     const weight_initialization init)
-  :  target_layer(data_dist, comm, minim_batch_size, {}, false),m_original_layer(original_layer),
+  :  target_layer(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer),
 m_weight_initialization(init) {
 
   m_type = layer_type::reconstruction;
-  Index = index;
-  NumNeurons = original_layer->NumNeurons;
+  m_index = index;
+  m_num_neurons = original_layer->get_num_neurons();
   this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
   aggregate_cost = 0.0;
   num_forwardprop_steps = 0;
@@ -70,16 +70,16 @@ void lbann::reconstruction_layer::setup(int num_prev_neurons) {
   Layer::setup(num_prev_neurons);
 
   // Initialize weight-bias matrix
-  Zeros(*m_weights, NumNeurons, num_prev_neurons);
+  Zeros(*m_weights, m_num_neurons, num_prev_neurons);
 
   // Initialize weights
-  initialize_matrix(*m_weights, m_weight_initialization, num_prev_neurons, NumNeurons);
+  initialize_matrix(*m_weights, m_weight_initialization, num_prev_neurons, m_num_neurons);
 
   // Initialize other matrices
   Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
-  Zeros(*m_weights_gradient, NumNeurons,num_prev_neurons); //clear up before filling with new results
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size); //clear up before filling with new results
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
+  Zeros(*m_weights_gradient, m_num_neurons,num_prev_neurons); //clear up before filling with new results
+  Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size); //clear up before filling with new results
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
 
   // Initialize optimizer
@@ -147,7 +147,7 @@ bool lbann::reconstruction_layer::update() {
 
 void lbann::reconstruction_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
-  std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
+  std::string tag = "layer" + std::to_string(static_cast<long long>(m_index))
                     + "/ReconstructionCost";
   summarizer.reduce_scalar(tag, average_cost(), step);
 }

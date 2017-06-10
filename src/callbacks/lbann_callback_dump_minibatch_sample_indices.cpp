@@ -40,7 +40,7 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
                              std::to_string(step) + "-layer";
 
-  if (_layer_type_to_category(l->m_type) != layer_category::io ||  l->get_index() != 0) {
+  if (_layer_type_to_category(l->get_type()) != layer_category::io ||  l->get_index() != 0) {
     return;
   }
 

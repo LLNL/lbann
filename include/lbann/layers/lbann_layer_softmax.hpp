@@ -60,8 +60,8 @@ class SoftmaxLayer: public Layer {
     :  Layer(data_dist, index, comm, opt, minim_batch_size),
        m_weight_initialization(init) {
     m_type = layer_type::softmax;
-    Index = index;
-    NumNeurons = numNeurons;
+    m_index = index;
+    m_num_neurons = numNeurons;
     WBL2NormSum = 0.0;
 
     // Setup the data distribution
@@ -100,17 +100,17 @@ class SoftmaxLayer: public Layer {
     Layer::setup(numPrevNeurons);
 
     // Zero the weight-bias matrix
-    Zeros(*m_weights, NumNeurons, numPrevNeurons);
+    Zeros(*m_weights, m_num_neurons, numPrevNeurons);
 
     /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, NumNeurons);
+    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, m_num_neurons);
 
     // Initialize other matrices
-    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons);
+    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
     Zeros(*m_workspace, 1, m_mini_batch_size);
 

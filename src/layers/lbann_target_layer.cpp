@@ -39,9 +39,9 @@ using namespace El;
 lbann::target_layer::target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression)
   : io_layer(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression) {
   if (is_for_regression()) {
-    NumNeurons = io_layer::get_linearized_response_size();
+    m_num_neurons = io_layer::get_linearized_response_size();
   } else {
-    NumNeurons = io_layer::get_linearized_label_size();
+    m_num_neurons = io_layer::get_linearized_label_size();
   }
   m_shared_data_reader = shared_data_reader;
 }
@@ -50,13 +50,13 @@ void lbann::target_layer::setup(int num_prev_neurons) {
   if(neural_network_model->obj_fn == NULL) {
     throw lbann_exception("target layer has invalid objective function pointer");
   }
-  neural_network_model->obj_fn->setup(NumNeurons, m_mini_batch_size);
+  neural_network_model->obj_fn->setup(m_num_neurons, m_mini_batch_size);
   for (auto&& m : neural_network_model->metrics) {
-    m->setup(NumNeurons, m_mini_batch_size);
+    m->setup(m_num_neurons, m_mini_batch_size);
     m->neural_network_model = neural_network_model;
   }
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
 }
 
 /**
@@ -87,7 +87,7 @@ void lbann::target_layer::fp_set_std_matrix_view() {
 
 void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
-  std::string tag = "layer" + std::to_string(static_cast<long long>(Index))
+  std::string tag = "layer" + std::to_string(static_cast<long long>(m_index))
                     + "/CrossEntropyCost";
   summarizer.reduce_scalar(tag, neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
 }

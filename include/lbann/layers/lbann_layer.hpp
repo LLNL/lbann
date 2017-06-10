@@ -129,58 +129,71 @@ class Layer {
         uint mbsize, activation_type activation=activation_type::ID,
         std::vector<regularizer *> regs= {});
 
-  virtual ~Layer();
+  virtual ~Layer(void);
 
   static std::string weight_initialization_name(weight_initialization id);
 
-  void initialize_model_parallel_distribution();
-  void initialize_data_parallel_distribution();
+  void initialize_model_parallel_distribution(void);
+  void initialize_data_parallel_distribution(void);
 
-  virtual void forwardProp();
-  virtual void backProp();
-  virtual bool update();
+  virtual void forwardProp(void);
+  virtual void backProp(void);
+  virtual bool update(void);
   virtual void summarize(lbann_summary& summarizer, int64_t step);
   /**
    * Print information at the end of an epoch.
    * This is always called on the model masters and should synchronize
    * printing if needed.
    */
-  virtual void epoch_print() const {}
+  virtual void epoch_print(void) const {}
   /**
    * Called on every layer at the end of each epoch to give it the chance to
    * reset/clean up.
    */
-  virtual void epoch_reset() {}
+  virtual void epoch_reset(void) {}
   virtual DataType checkGradientMB(Layer& PrevLayer, const DataType Epsilon=1e-4) {
     return 0.0;
   };
 
   virtual void setup(int);
   /** Validate that the setup is reasonable. */
-  virtual void check_setup();
+  virtual void check_setup(void);
+
+  /** Return the type of this layer. */
+  inline layer_type get_type(void) const {
+    return m_type;
+  }
 
   /** Return the index of this layer. */
-  inline uint get_index() const {
-    return Index;
+  inline uint get_index(void) const {
+    return m_index;
+  }
+  /** Set the index of this layer. */
+  inline void set_index(const uint i) {
+    m_index = i;
+  }
+  /** Return the number of neurons of this layer. */
+  inline uint get_num_neurons(void) const {
+    return m_num_neurons;
   }
   /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases() {
+  virtual ElMat& get_weights_biases(void) {
     return *m_weights;
   }
   /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient() {
+  virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
   }
   /** Return (a view of) the activations matrix for this layer. */
-  virtual ElMat& get_activations() {
+  virtual ElMat& get_activations(void) {
     return *m_activations;
   }
   /** Return the layer's optimizer. */
-  virtual optimizer *get_optimizer() const {
+  virtual optimizer *get_optimizer(void) const {
     return m_optimizer;
   }
   /** Reset layer stat counters. */
-  virtual void reset_counters() {
+  virtual void reset_counters(void) {
     fp_time = 0.0;
     fp_linearity_time = 0.0;
     fp_nonlinearity_time = 0.0;
@@ -191,7 +204,7 @@ class Layer {
   }
 
   /** Return the size of mini-batch this layer uses. */
-  virtual uint get_minibatch_size() const {
+  virtual uint get_minibatch_size(void) const {
     return m_mini_batch_size;
   }
   /**
@@ -200,7 +213,7 @@ class Layer {
    * contributed than the local mini-batch size implies (e.g. when doing
    * inter-model updates).
    */
-  virtual uint get_effective_minibatch_size() const {
+  virtual uint get_effective_minibatch_size(void) const {
     return m_effective_mbsize;
   }
   /** Set the effective size of a mini-batch to size. */
@@ -236,13 +249,16 @@ class Layer {
   virtual bool saveToCheckpointShared(persist& p);
   virtual bool loadFromCheckpointShared(persist& p);
 
+ protected:
+  layer_type m_type;            ///< Type of this layer
+  layer_type m_prev_layer_type; ///< Type of previous layer
+  layer_type m_next_layer_type; ///< Type of next layer
+
+  uint m_index;                 ///< Layer index (start with 0)
+  uint m_num_neurons;           ///< Number of neurons
+  Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
+
  public:
-
-  /// Layer type
-  layer_type m_type;
-
-  uint Index;      // Layer index (start with 0)
-  uint NumNeurons; // # neurons
   execution_mode  m_execution_mode;
   data_layout m_data_layout;
 
@@ -264,12 +280,6 @@ class Layer {
   model *neural_network_model;
 
  protected:
-  /// Type of previous layer
-  layer_type m_prev_layer_type;
-  /// Type of next layer
-  layer_type m_next_layer_type;
-
-  Int m_num_prev_neurons; /// Number of neurons in previous layer
   activation_type m_activation_type;
 
   ElMat *m_error_signal;       /// Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)

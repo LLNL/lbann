@@ -97,8 +97,8 @@ class FullyConnectedLayer : public Layer {
 
     m_type = layer_type::fully_connected;
 
-    Index = index;
-    NumNeurons = numNeurons;
+    m_index = index;
+    m_num_neurons = numNeurons;
     WBL2NormSum = 0.0;
     m_bias_term = 1.0;
 
@@ -158,12 +158,12 @@ class FullyConnectedLayer : public Layer {
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
-    Zeros(*m_weights, NumNeurons, numPrevNeurons+1);
-    Zeros(*m_weights_gradient, NumNeurons, numPrevNeurons + 1);
+    Zeros(*m_weights, m_num_neurons, numPrevNeurons+1);
+    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons + 1);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-    Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
+    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations and bias terms
@@ -175,7 +175,7 @@ class FullyConnectedLayer : public Layer {
     View(*m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
 
     /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, NumNeurons);
+    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, m_num_neurons);
 
     /// Create a "transposed" vector of the bias term for use in backprop
     Ones(*m_bias_bp_t, 1, m_mini_batch_size);
@@ -355,7 +355,7 @@ class FullyConnectedLayer : public Layer {
     }
     for (Int row = 0; row < m_weights->Height(); row++) {
       for (Int col = 0; col < m_weights->Width(); col++) {
-        //          printf("Updating %d: %d x %d\n", Index, row, col);
+        //          printf("Updating %d: %d x %d\n", m_index, row, col);
         if(WB_E1.IsLocal(prow, pcol)) {
           Int _prow = WB_E1.LocalRow(prow);
           Int _pcol = WB_E1.LocalCol(pcol);

@@ -150,8 +150,6 @@ El::Matrix<El::Int>* lbann::io_layer::get_sample_indices_per_mb() {
 long lbann::io_layer::get_linearized_data_size() {
   long linearized_data_size = -1;
 
-  /// @todo NumNeurons should be hidden inside of an accessor function
-
   if(m_training_dataset.data_reader != NULL) {
     long tmp_linearized_data_size = m_training_dataset.data_reader->get_linearized_data_size();
     if(linearized_data_size != -1 && linearized_data_size != tmp_linearized_data_size) {
@@ -185,8 +183,6 @@ long lbann::io_layer::get_linearized_label_size() {
   }
 
   long linearized_label_size = -1;
-
-  /// @todo NumNeurons should be hidden inside of an accessor function
 
   if(m_training_dataset.data_reader != NULL) {
     long tmp_linearized_label_size = m_training_dataset.data_reader->get_linearized_label_size();

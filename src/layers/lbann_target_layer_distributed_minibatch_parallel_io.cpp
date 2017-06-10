@@ -41,7 +41,7 @@ lbann::target_layer_distributed_minibatch_parallel_io::target_layer_distributed_
     distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
     Ys(comm->get_model_grid()) {
   m_type = layer_type::target_distributed_minibatch_parallel_io;
-  //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
+  //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
 }
 
 void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_neurons) {
@@ -68,19 +68,19 @@ void lbann::target_layer_distributed_minibatch_parallel_io::setup(int num_prev_n
   }
 
   /// @todo put in warning about bad target size
-  if(num_prev_neurons != NumNeurons) {
+  if(num_prev_neurons != m_num_neurons) {
     stringstream err;
     err << __FILE__ << " " << __LINE__
-        << " ::  lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer (" << num_prev_neurons << ") does not match the number of neurons in the target layer (" << NumNeurons <<  ")";
+        << " ::  lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer (" << num_prev_neurons << ") does not match the number of neurons in the target layer (" << m_num_neurons <<  ")";
     throw lbann_exception(err.str());
   }
 
-  Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
-  Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
-  Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
+  Zeros(*m_error_signal, m_num_neurons, Layer::m_mini_batch_size);
+  Zeros(Y_local, m_num_neurons, Layer::m_mini_batch_size);
+  Zeros(Ys, m_num_neurons, Layer::m_mini_batch_size);
   Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
 
   m_local_data_valid = false;
   m_local_reader_done = false;

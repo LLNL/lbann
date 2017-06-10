@@ -40,7 +40,7 @@ lbann::input_layer_distributed_minibatch::input_layer_distributed_minibatch(data
 
   m_type = layer_type::input_distributed_minibatch;
 
-  //  Index = index;
+  //  m_index = index;
   m_root = 0;
   m_num_data_per_epoch = 0;
 
@@ -56,8 +56,8 @@ void lbann::input_layer_distributed_minibatch::setup(int num_prev_neurons) {
     io_layer::setup_data_readers_for_evaluation(0, m_mini_batch_size);
   }
 
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(X_local, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  Zeros(X_local, m_num_neurons, m_mini_batch_size);
 }
 
 void lbann::input_layer_distributed_minibatch::fp_linearity() {

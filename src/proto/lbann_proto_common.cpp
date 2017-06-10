@@ -58,7 +58,7 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
   prev_num_neurons = -1;
   if(layers.size() != 0) {
     Layer *prev_layer = layers.back();
-    prev_num_neurons = prev_layer->NumNeurons;
+    prev_num_neurons = prev_layer->get_num_neurons();
   }
   cur_index = layers.size();
 }

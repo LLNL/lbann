@@ -78,8 +78,8 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
   int cur_size = m_layers.size();
   int mid = cur_size / 2;
   Layer *mid_layer = m_layers[mid];
-  //int mid_num_neurons = mid_layer->NumNeurons;
-  int prev_layer_dim = mid_layer->NumNeurons;
+  //int mid_num_neurons = mid_layer->get_num_neurons();
+  int prev_layer_dim = mid_layer->get_num_neurons();
 
   if (cur_size == 1) {
     // create first hidden layer
@@ -123,7 +123,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     // re-number layer index
     for (size_t n = 0; n < m_layers.size(); n++) {
       Layer *layer = m_layers[n];
-      layer->Index = n;
+      layer->set_index(n);
     }
   }
 
@@ -132,7 +132,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     //cout << "#Layers " << m_layers.size() << endl;
     //cout << "Layer Index and Layer Dim: " << endl;
     for(auto& layer:m_layers) {
-      cout << "[ " << layer->Index << "]" << layer->NumNeurons << endl;
+      cout << "[ " << layer->get_index() << "]" << layer->get_num_neurons() << endl;
     }
   }
 
@@ -156,7 +156,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
 
   //m_target_layer->m_execution_mode = m_execution_mode;
   add(m_target_layer);
-  m_target_layer->setup(m_layers[0]->NumNeurons);*/
+  m_target_layer->setup(m_layers[0]->get_num_neurons());*/
   //replace with this
 //target_layer_unsupervised mirror_layer(phase_index+2, comm, optimizer, m_mini_batch_size,sibling_layer);
 

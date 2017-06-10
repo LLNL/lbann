@@ -45,7 +45,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     : target_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::comm->get_procs_per_model()), mini_batch_size, data_readers) {
     m_type = layer_type::target_partitioned_minibatch_parallel_io;
-    //  NumNeurons = m_training_data_reader->get_linearized_label_size(); /// @todo NumNeurons should be hidden inside of an accessor function
+    //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
   void setup(int num_prev_neurons) {
@@ -76,16 +76,16 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     }
 
     /// @todo put in warning about bad target size
-    if(num_prev_neurons != NumNeurons) {
+    if(num_prev_neurons != m_num_neurons) {
       throw lbann_exception("lbann_target_layer_partitioned_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
     }
 
-    Zeros(*m_error_signal, NumNeurons, Layer::m_mini_batch_size);
-    // Zeros(Y_local, NumNeurons, Layer::m_mini_batch_size);
-    // Zeros(Ys, NumNeurons, Layer::m_mini_batch_size);
+    Zeros(*m_error_signal, m_num_neurons, Layer::m_mini_batch_size);
+    // Zeros(Y_local, m_num_neurons, Layer::m_mini_batch_size);
+    // Zeros(Ys, m_num_neurons, Layer::m_mini_batch_size);
     Zeros(*m_prev_activations, num_prev_neurons, Layer::m_mini_batch_size); // I am not sure that this is good
-    Zeros(*m_weighted_sum, NumNeurons, Layer::m_mini_batch_size);
-    Zeros(*m_activations, NumNeurons, Layer::m_mini_batch_size);
+    Zeros(*m_weighted_sum, m_num_neurons, Layer::m_mini_batch_size);
+    Zeros(*m_activations, m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;

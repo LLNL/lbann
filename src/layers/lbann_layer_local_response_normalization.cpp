@@ -53,10 +53,10 @@ m_lrn_k(lrn_k) {
 
   // Initialize data dimensions
   m_dims.resize(num_dims);
-  NumNeurons = num_channels;
+  m_num_neurons = num_channels;
   for(int i=0; i<num_dims; ++i) {
     m_dims[i] = dims[i];
-    NumNeurons *= dims[i];
+    m_num_neurons *= dims[i];
   }
 
 #ifdef __LIB_CUDNN
@@ -134,9 +134,9 @@ void local_response_normalization_layer::setup(const int num_prev_neurons) {
   // Initialize matrices
   Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
   Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
 
 }
 
@@ -176,10 +176,10 @@ void lbann::local_response_normalization_layer::setup_gpu() {
 
   // Allocate GPU memory
   m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_activations_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
@@ -191,7 +191,7 @@ void lbann::local_response_normalization_layer::setup_gpu() {
   }
   if(!m_next_layer_using_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                              NumNeurons,
+                              m_num_neurons,
                               m_mini_batch_size_per_gpu);
   }
 
@@ -243,7 +243,7 @@ void lbann::local_response_normalization_layer::fp_linearity_gpu() {
   // Copy result to output matrix
   m_cudnn->copy_on_gpus(m_activations_d,
                         m_weighted_sum_d,
-                        NumNeurons,
+                        m_num_neurons,
                         m_mini_batch_size_per_gpu);
 
 #endif // #ifndef __LIB_CUDNN
@@ -257,7 +257,7 @@ void lbann::local_response_normalization_layer::fp_linearity_cpu() {
   Mat& activations_local = m_activations_v->Matrix();
 
   // Input and output entries are divided amongst channels
-  const Int num_per_channel = NumNeurons / m_num_channels;
+  const Int num_per_channel = m_num_neurons / m_num_channels;
 
   ////////////////////////////////////////////////////////////////
   // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
@@ -366,7 +366,7 @@ void lbann::local_response_normalization_layer::bp_linearity_cpu() {
   Zero(error_signal_local);
 
   // Input and output entries are divided amongst channels
-  const Int num_per_channel = NumNeurons / m_num_channels;
+  const Int num_per_channel = m_num_neurons / m_num_channels;
 
   ////////////////////////////////////////////////////////////////
   // error_signal(i)

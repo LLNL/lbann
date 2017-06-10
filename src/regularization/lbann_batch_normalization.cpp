@@ -190,16 +190,16 @@ void batch_normalization::bp_weights() {
 
 void batch_normalization::setup(Layer *l) {
   regularizer::setup(l);
-  Ones(*m_gamma, l->NumNeurons, 1);
+  Ones(*m_gamma, l->get_num_neurons(), 1);
   Scale(m_gamma_init, *m_gamma);
-  Ones(*m_beta, l->NumNeurons, 1);
+  Ones(*m_beta, l->get_num_neurons(), 1);
   Scale(m_beta_init, *m_beta);
-  Zeros(*m_dgamma, l->NumNeurons, 1);
-  Zeros(*m_dbeta, l->NumNeurons, 1);
-  Zeros(*m_mean, l->NumNeurons, 1);
-  Zeros(*m_stdev, l->NumNeurons, 1);
-  Zeros(*m_running_mean, l->NumNeurons, 1);
-  Zeros(*m_running_stdev, l->NumNeurons, 1);
+  Zeros(*m_dgamma, l->get_num_neurons(), 1);
+  Zeros(*m_dbeta, l->get_num_neurons(), 1);
+  Zeros(*m_mean, l->get_num_neurons(), 1);
+  Zeros(*m_stdev, l->get_num_neurons(), 1);
+  Zeros(*m_running_mean, l->get_num_neurons(), 1);
+  Zeros(*m_running_stdev, l->get_num_neurons(), 1);
   m_gamma_optimizer = l->neural_network_model->create_optimizer();
   m_beta_optimizer = l->neural_network_model->create_optimizer();
   m_gamma_optimizer->setup(m_gamma);

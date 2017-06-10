@@ -52,7 +52,7 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
   m_prev_layer_type = layer_type::INVALID;
   m_next_layer_type = layer_type::INVALID;
 
-  Index = index;
+  m_index = index;
   m_execution_mode = execution_mode::training;
   fp_input = NULL;
   bp_input = NULL;
@@ -293,26 +293,26 @@ bool lbann::Layer::update() {
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights/";
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
   // TODO: implement summarizer functions for other matrix distributions
   const ElMat& wb = get_weights_biases();
   summarizer.reduce_mean(prefix + "mean", wb, step);
   summarizer.reduce_min(prefix + "min", wb, step);
   summarizer.reduce_max(prefix + "max", wb, step);
   summarizer.reduce_stdev(prefix + "stdev", wb, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/weights_gradient/";
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights_gradient/";
   const ElMat& wb_d = get_weights_biases_gradient();
   summarizer.reduce_mean(prefix + "mean", wb_d, step);
   summarizer.reduce_min(prefix + "min", wb_d, step);
   summarizer.reduce_max(prefix + "max", wb_d, step);
   summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/activations/";
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/activations/";
   const ElMat& acts = get_activations();
   summarizer.reduce_mean(prefix + "mean", acts, step);
   summarizer.reduce_min(prefix + "min", acts, step);
   summarizer.reduce_max(prefix + "max", acts, step);
   summarizer.reduce_stdev(prefix + "stdev", acts, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(Index)) + "/";
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "fp_linearity_time", fp_linearity_time, step);
   summarizer.reduce_scalar(prefix + "fp_nonlinearity_time", fp_nonlinearity_time, step);
@@ -404,7 +404,7 @@ void lbann::Layer::set_next_layer_using_gpus(bool using_gpus) {
 
 bool lbann::Layer::saveToFile(int fd, const char *dirname) {
   char filepath[512];
-  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
 
   uint64_t bytes;
   return lbann::write_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
@@ -412,7 +412,7 @@ bool lbann::Layer::saveToFile(int fd, const char *dirname) {
 
 bool lbann::Layer::loadFromFile(int fd, const char *dirname) {
   char filepath[512];
-  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, Index, m_weights->Height()-1, m_weights->Width()-1);
+  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
 
   uint64_t bytes;
   return lbann::read_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
@@ -438,13 +438,13 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *by
 bool lbann::Layer::saveToCheckpointShared(lbann::persist& p) {
   // define name to store our parameters
   char name[512];
-  sprintf(name, "weights_L%d_%lldx%lld", Index, m_weights->Height(), m_weights->Width());
+  sprintf(name, "weights_L%d_%lldx%lld", m_index, m_weights->Height(), m_weights->Width());
 
   // write out our weights to the model file
   p.write_distmat(persist_type::model, name, (DistMat *)m_weights);
 
   // if saving training state, also write out state of optimizer
-  // m_optimizer->saveToCheckpointShared(p, Index);
+  // m_optimizer->saveToCheckpointShared(p, m_index);
 
   return true;
 }
@@ -452,13 +452,13 @@ bool lbann::Layer::saveToCheckpointShared(lbann::persist& p) {
 bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
   // define name to store our parameters
   char name[512];
-  sprintf(name, "weights_L%d_%lldx%lld.bin", Index, m_weights->Height(), m_weights->Width());
+  sprintf(name, "weights_L%d_%lldx%lld.bin", m_index, m_weights->Height(), m_weights->Width());
 
   // read our weights from model file
   p.read_distmat(persist_type::model, name, (DistMat *)m_weights);
 
   // if loading training state, read in state of optimizer
-  // m_optimizer->loadFromCheckpointShared(p, Index);
+  // m_optimizer->loadFromCheckpointShared(p, m_index);
 
   return true;
 }

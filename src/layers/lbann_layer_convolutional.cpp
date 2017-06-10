@@ -90,11 +90,11 @@ convolutional_layer::convolutional_layer(const uint index,
 
   // Calculate output dimensions
   m_output_dims.resize(num_dims);
-  NumNeurons = num_output_channels;
+  m_num_neurons = num_output_channels;
   for(Int i=0; i<num_dims; ++i) {
     m_output_dims[i] = input_dims[i]+2*conv_pads[i]-filter_dims[i]+1;
     m_output_dims[i] = (m_output_dims[i]+conv_strides[i]-1)/conv_strides[i];
-    NumNeurons *= m_output_dims[i];
+    m_num_neurons *= m_output_dims[i];
   }
 
 #ifdef __LIB_CUDNN
@@ -213,9 +213,9 @@ void convolutional_layer::setup(const int num_prev_neurons) {
 #endif // #ifdef __LIB_CUDNN
   Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
   Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
 
   // Initialize filters
   StarMat filter;
@@ -421,10 +421,10 @@ void lbann::convolutional_layer::setup_gpu() {
                             m_filter_size+m_num_output_channels,
                             1);
   m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_activations_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
@@ -436,7 +436,7 @@ void lbann::convolutional_layer::setup_gpu() {
   }
   if(!m_next_layer_using_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                              NumNeurons,
+                              m_num_neurons,
                               m_mini_batch_size_per_gpu);
   }
 
@@ -637,7 +637,7 @@ void lbann::convolutional_layer::fp_linearity_gpu() {
   // Copy result to output matrix
   m_cudnn->copy_on_gpus(m_activations_d,
                         m_weighted_sum_d,
-                        NumNeurons,
+                        m_num_neurons,
                         m_mini_batch_size_per_gpu);
 
 #endif // #ifndef __LIB_CUDNN
@@ -686,7 +686,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct() {
   const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
@@ -808,7 +808,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_direct_2d() {
   const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
@@ -920,7 +920,7 @@ void lbann::convolutional_layer::fp_linearity_cpu_gemm() {
   const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
@@ -975,7 +975,7 @@ void lbann::convolutional_layer::bp_linearity_gpu() {
 
   // Clear unused columns
   m_cudnn->clear_unused_columns_on_gpus(m_prev_error_signal_d,
-                                        NumNeurons,
+                                        m_num_neurons,
                                         m_prev_error_signal_v->LocalWidth(),
                                         m_mini_batch_size_per_gpu);
 
@@ -1085,7 +1085,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct() {
   Zero(error_signal_local);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
@@ -1230,7 +1230,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_direct_2d() {
   Zero(error_signal_local);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
@@ -1361,7 +1361,7 @@ void lbann::convolutional_layer::bp_linearity_cpu_gemm() {
   Zero(weights_gradient_local);
 
   // Input, output, and filter entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_output_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
   const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
   const Int current_filter_size = m_filter_size / m_num_output_channels;
   const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;

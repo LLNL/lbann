@@ -82,11 +82,11 @@ m_num_dims(num_dims), m_num_channels(num_channels) {
 
   // Calculate output dimensions
   m_output_dims.resize(num_dims);
-  NumNeurons = num_channels;
+  m_num_neurons = num_channels;
   for(int i=0; i<num_dims; ++i) {
     m_output_dims[i] = input_dims[i]+2*pool_pads[i]-pool_dims[i]+1;
     m_output_dims[i] = (m_output_dims[i]+pool_strides[i]-1)/pool_strides[i];
-    NumNeurons *= m_output_dims[i];
+    m_num_neurons *= m_output_dims[i];
   }
 
 #ifdef __LIB_CUDNN
@@ -177,9 +177,9 @@ void pooling_layer::setup(const int num_prev_neurons) {
   // Initialize matrices
   Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
   Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-  Zeros(*m_activations, NumNeurons, m_mini_batch_size);
-  Zeros(*m_prev_error_signal, NumNeurons, m_mini_batch_size);
-  Zeros(*m_weighted_sum, NumNeurons, m_mini_batch_size);
+  Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
+  Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
 
 }
 
@@ -266,10 +266,10 @@ void lbann::pooling_layer::setup_gpu() {
 
   // Allocate GPU memory
   m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_activations_d,
-                            NumNeurons,
+                            m_num_neurons,
                             m_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
@@ -281,7 +281,7 @@ void lbann::pooling_layer::setup_gpu() {
   }
   if(!m_next_layer_using_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                              NumNeurons,
+                              m_num_neurons,
                               m_mini_batch_size_per_gpu);
   }
 
@@ -449,7 +449,7 @@ void lbann::pooling_layer::fp_linearity_gpu() {
   // Copy result to output matrix
   m_cudnn->copy_on_gpus(m_activations_d,
                         m_weighted_sum_d,
-                        NumNeurons,
+                        m_num_neurons,
                         m_mini_batch_size_per_gpu);
 
 #endif // #ifndef __LIB_CUDNN
@@ -469,7 +469,7 @@ void lbann::pooling_layer::fp_linearity_cpu() {
   Mat& activations_local = m_activations_v->Matrix();
 
   // Output entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_channels;
 
   // Initialize im2col matrix
   Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
@@ -573,7 +573,7 @@ void lbann::pooling_layer::bp_linearity_cpu() {
   Mat& error_signal_local = m_error_signal_v->Matrix();
 
   // Output entries are divided amongst channels
-  const Int num_per_output_channel = NumNeurons / m_num_channels;
+  const Int num_per_output_channel = m_num_neurons / m_num_channels;
 
   // Initialize im2col matrix
   Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
