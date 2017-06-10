@@ -44,12 +44,16 @@ class persist {
   // eventually, we'll move most of these to be private,
   // but we expose them for now while converting old code to new code
   int m_rank;
+
+ protected:
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
-  char m_checkpoint_dir[1024];
   char m_model_filename[1024];
   char m_train_filename[1024];
+
+ public:
+  char m_checkpoint_dir[1024];
 
  public:
   persist();

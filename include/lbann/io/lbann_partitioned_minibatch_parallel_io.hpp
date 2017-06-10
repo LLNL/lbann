@@ -65,7 +65,7 @@ class partitioned_minibatch_parallel_io {
     return (comm->get_rank_in_model() == m_root);
   }
 
- public:
+ protected:
   lbann_comm *comm;
   /** Which rank is the root of the CircMat */
   int m_root;
