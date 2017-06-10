@@ -68,7 +68,7 @@ class cv_transform {
 
   virtual bool apply(cv::Mat& image) = 0;
 
-  virtual void set(void) {}
+  //virtual void set(void) {}
   virtual void enable(void) {
     m_enabled = true;
   }

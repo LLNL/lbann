@@ -39,7 +39,7 @@ lbann::cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
   : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0) {
 }
 
-lbann::cnpy_reader::~cnpy_reader() {
+lbann::cnpy_reader::~cnpy_reader(void) {
   m_data.destruct();
 }
 
@@ -82,7 +82,7 @@ int lbann::cnpy_reader::fetch_data(Mat& X) {
   return (n - m_current_pos);
 }
 
-void lbann::cnpy_reader::load() {
+void lbann::cnpy_reader::load(void) {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) {

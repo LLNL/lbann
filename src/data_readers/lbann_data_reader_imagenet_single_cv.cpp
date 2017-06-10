@@ -52,7 +52,7 @@ lbann::imagenet_readerSingle_cv::imagenet_readerSingle_cv(const imagenet_readerS
 }
 
 
-lbann::imagenet_readerSingle_cv::~imagenet_readerSingle_cv() {
+lbann::imagenet_readerSingle_cv::~imagenet_readerSingle_cv(void) {
   m_data_filestream.close();
 }
 
@@ -82,7 +82,7 @@ int lbann::imagenet_readerSingle_cv::fetch_label(Mat& Y) {
   return (n - m_current_pos);
 }
 
-void lbann::imagenet_readerSingle_cv::load() {
+void lbann::imagenet_readerSingle_cv::load(void) {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
 
@@ -225,7 +225,7 @@ lbann::imagenet_readerSingle_cv& lbann::imagenet_readerSingle_cv::operator=(cons
   return (*this);
 }
 
-void lbann::imagenet_readerSingle_cv::open_data_stream() {
+void lbann::imagenet_readerSingle_cv::open_data_stream(void) {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
   stringstream b;

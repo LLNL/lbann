@@ -81,7 +81,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
 
   void fp_linearity(void) {
     //  generic_data_reader *data_reader = input_layer::select_data_reader();
-    int num_parallel_readers = get_num_parallel_readers();
+    //int num_parallel_readers = get_num_parallel_readers();
 
     //  DISPLAY_MATRIX(m_activations);
     int num_samples_in_batch = fetch_to_local_matrix(m_activations->Matrix());

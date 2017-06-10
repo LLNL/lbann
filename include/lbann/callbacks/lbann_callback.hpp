@@ -111,8 +111,8 @@ class lbann_callback {
   const int m_batch_interval;
 
   /** sets the callback's name **/
-  void set_name(std::string name) {
-    m_name = name;
+  void set_name(std::string nm) {
+    m_name = nm;
   }
 
   /** Returns the callback's name **/

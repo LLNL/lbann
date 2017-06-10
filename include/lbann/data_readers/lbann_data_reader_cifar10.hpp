@@ -43,7 +43,7 @@ class cifar10_reader : public generic_data_reader {
   cifar10_reader(const cifar10_reader& source);
 
   /// destructor
-  ~cifar10_reader();
+  ~cifar10_reader(void);
 
   /// assignment operator
   cifar10_reader& operator=(const cifar10_reader& source);
@@ -53,31 +53,31 @@ class cifar10_reader : public generic_data_reader {
   void load();
 
   /// returns image width (which should be 32)
-  int get_image_width() {
+  int get_image_width(void) const {
     return m_image_width;
   }
 
   /// returns image height (which should be 32)
-  int get_image_height() {
+  int get_image_height(void) const {
     return m_image_height;
   }
 
-  int get_num_labels() {
+  int get_num_labels(void) const {
     return 10;
   }
 
   /// returns image depth (which should be 3)
-  int get_image_num_channels() {
+  int get_image_num_channels(void) const {
     return m_image_num_channels;
   }
 
   /// returns the number of pixels in the image (should be 3072)
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_image_width * m_image_height * m_image_num_channels;
   }
 
   /// returns
-  int get_linearized_label_size() {
+  int get_linearized_label_size(void) const {
     return 10;
   }
 

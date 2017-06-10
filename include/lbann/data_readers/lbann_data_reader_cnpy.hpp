@@ -37,15 +37,15 @@ class cnpy_reader : public generic_data_reader {
  public:
   cnpy_reader(int batchSize, bool shuffle = true);
   cnpy_reader(const cnpy_reader& source);
-  ~cnpy_reader();
+  ~cnpy_reader(void);
 
   cnpy_reader& operator=(const cnpy_reader& source);
 
 
   int fetch_data(Mat& X);
-  void load();
+  void load(void);
 
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_num_features;
   }
 

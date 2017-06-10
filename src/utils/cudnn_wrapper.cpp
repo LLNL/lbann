@@ -103,7 +103,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
 
 cudnn_manager::~cudnn_manager() {
   // Free work spaces
-  for(Int i=0; i<m_gpus.size(); ++i) {
+  for(size_t i=0u; i<m_gpus.size(); ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
     if(m_work_space_sizes[i]) {
       checkCUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
@@ -115,7 +115,7 @@ cudnn_manager::~cudnn_manager() {
   delete m_gpu_memory;
 
   // Destroy cuDNN handles
-  for(Int i=0; i<m_gpus.size(); ++i) {
+  for(size_t i=0u; i<m_gpus.size(); ++i) {
     checkCUDA(cudaSetDevice(m_gpus[i]));
     if(m_streams[i]) {
       checkCUDA(cudaStreamDestroy(m_streams[i]));
@@ -565,7 +565,7 @@ std::vector<size_t> cudnn_manager::get_work_space_sizes() {
   return m_work_space_sizes;
 };
 
-const size_t cudnn_manager::get_work_space_size(Int i) const {
+size_t cudnn_manager::get_work_space_size(Int i) const {
   return m_work_space_sizes[i];
 }
 

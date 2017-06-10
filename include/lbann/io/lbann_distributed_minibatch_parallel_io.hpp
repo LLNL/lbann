@@ -37,6 +37,7 @@ namespace lbann {
 class distributed_minibatch_parallel_io {
  public:
   distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  virtual ~distributed_minibatch_parallel_io(void) {}
 
   int fetch_to_local_matrix(Mat& M_local);
   void distribute_from_local_matrix(Mat& M_local, CircMat& Ms);
