@@ -36,14 +36,14 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
 
   void setup(int num_prev_neurons);
-  bool update();
+  bool update(void);
 
   int fetch_from_data_reader(Mat& M_local);
   void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-  bool update_data_reader();
-  execution_mode get_execution_mode();
-  Mat *get_local_mat();
-  CircMat *get_dist_mat();
+  bool update_data_reader(void);
+  execution_mode get_execution_mode(void);
+  Mat *get_local_mat(void);
+  CircMat *get_dist_mat(void);
 
  protected:
   Mat X_local; /** Local matrix that holds data from data reader */
@@ -51,7 +51,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
 
  protected:
   /** Handle forward propagation (arguments are unused). */
-  void fp_linearity();
+  void fp_linearity(void);
 };
 }
 

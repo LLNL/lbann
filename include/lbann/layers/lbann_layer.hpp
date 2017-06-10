@@ -233,24 +233,32 @@ class Layer {
     m_effective_mbsize = size;
   }
 
-  ElMat *fp_output();
-  ElMat *bp_output();
+  ElMat *fp_output(void);
+  ElMat *bp_output(void);
   void setup_fp_input(ElMat *fp_input);
   void setup_bp_input(ElMat *bp_input);
 
   void set_prev_layer_type(layer_type type);
   void set_next_layer_type(layer_type type);
-  bool using_gpus() const;
+  bool using_gpus(void) const;
   void set_prev_layer_using_gpus(bool using_gpus);
   void set_next_layer_using_gpus(bool using_gpus);
 #ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d();
-  std::vector<DataType *> *bp_output_d();
+  std::vector<DataType *> *fp_output_d(void);
+  std::vector<DataType *> *bp_output_d(void);
   void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
   void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
 #endif
 
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
+  /** Return the neural network model of this layer. */
+  inline model* get_neural_network_model(void) const {
+    return m_neural_network_model;
+  }
+  /** Set the neural network model of this layer. */
+  inline void set_neural_network_model(model* const m) {
+    m_neural_network_model = m;
+  }
+  virtual El::Matrix<El::Int>* get_sample_indices_per_mb(void) { return nullptr; };
 
   bool saveToFile(int fd, const char *filename);
   bool loadFromFile(int fd, const char *filename);
@@ -262,25 +270,27 @@ class Layer {
   virtual bool loadFromCheckpointShared(persist& p);
 
  protected:
+  data_layout m_data_layout;
+  uint m_index;                 ///< Layer index (start with 0)
+
+  lbann_comm *m_comm;
+  optimizer  *m_optimizer;
+
   layer_type m_type;            ///< Type of this layer
   layer_type m_prev_layer_type; ///< Type of previous layer
   layer_type m_next_layer_type; ///< Type of next layer
 
-  uint m_index;                 ///< Layer index (start with 0)
   uint m_num_neurons;           ///< Number of neurons
   Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
 
   execution_mode  m_execution_mode;
   activation_type m_activation_type;
-  data_layout m_data_layout;
 
-  optimizer *m_optimizer;
-  lbann_comm *m_comm;
-
- public:
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
   ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
+
+ public:
   ElMat *m_prev_error_signal;   ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
 
   ElMat *m_activations;         ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
@@ -293,7 +303,7 @@ class Layer {
   ElMat *fp_input;              ///< Pointer to input for the forward propagation - no local storage
   ElMat *bp_input;              ///< Pointer to the input for the backward propagation - no local storage
 
-  model *neural_network_model;
+  model *m_neural_network_model;
 
  protected:
 
@@ -307,19 +317,19 @@ class Layer {
  protected:
 
   /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view();
+  virtual void fp_set_std_matrix_view(void);
 #if 0
   /** Setup views of the matrices for the layer's backward propagation. */
-  virtual void bp_set_std_matrix_view();
+  virtual void bp_set_std_matrix_view(void);
 #endif
   /** Apply the layer's linear update in forward propagation. */
-  virtual void fp_linearity() {}
+  virtual void fp_linearity(void) {}
   /** Handle the layer's linearity in backward propagation. */
-  virtual void bp_linearity() {}
+  virtual void bp_linearity(void) {}
   /** Apply the layer's nonlinearity in forward propagation. */
-  virtual void fp_nonlinearity();
+  virtual void fp_nonlinearity(void);
   /** Handle the layer's nonlinearity in backward propagation. */
-  virtual void bp_nonlinearity();
+  virtual void bp_nonlinearity(void);
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;

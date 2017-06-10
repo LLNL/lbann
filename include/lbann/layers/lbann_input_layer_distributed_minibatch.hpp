@@ -35,11 +35,11 @@ class input_layer_distributed_minibatch : public input_layer {
   input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
 
   void setup(int num_prev_neurons);
-  bool update();
-  Mat *get_local_mat() {
+  bool update(void);
+  Mat *get_local_mat(void) {
     return &X_local;
   };
-  CircMat *get_dist_mat() {
+  CircMat *get_dist_mat(void) {
     return &Xs;
   };
 
@@ -50,7 +50,7 @@ class input_layer_distributed_minibatch : public input_layer {
   long m_num_data_per_epoch;
  protected:
   /** Handle forward propagation (arguments are unused.) */
-  void fp_linearity();
+  void fp_linearity(void);
 };
 }
 

@@ -79,7 +79,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
     m_num_data_per_epoch = 0;
   }
 
-  void fp_linearity() {
+  void fp_linearity(void) {
     //  generic_data_reader *data_reader = input_layer::select_data_reader();
     int num_parallel_readers = get_num_parallel_readers();
 
@@ -90,13 +90,13 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
 
     /// Let each rank know this size of the current mini-batch
     /// Note that this field has to be updated before distributing the data
-    neural_network_model->set_current_mini_batch_size(num_samples_in_batch);
+    m_neural_network_model->set_current_mini_batch_size(num_samples_in_batch);
   }
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update(void) {
     return is_data_set_processed();
   }
 
@@ -110,12 +110,12 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
     return;
   }
 
-  bool update_data_reader() {
+  bool update_data_reader(void) {
     generic_data_reader *data_reader = input_layer::select_data_reader();
     return data_reader->update();
   }
 
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode(void) {
     return m_execution_mode;
   }
 };

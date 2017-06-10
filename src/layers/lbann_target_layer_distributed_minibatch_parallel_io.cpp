@@ -94,7 +94,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
     target_layer::update_num_samples_processed(num_samples_in_batch);
   }
 
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
     throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
   }
@@ -103,10 +103,10 @@ void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
   Copy(Ys, *m_activations);
 
   /// Compute and record the objective function score
-  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-  neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+  DataType avg_error = m_neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+  m_neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
 
-  for (auto&& m : neural_network_model->metrics) {
+  for (auto&& m : m_neural_network_model->metrics) {
     double num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
     m->record_error(num_errors, curr_mini_batch_size);
   }
@@ -118,7 +118,7 @@ void lbann::target_layer_distributed_minibatch_parallel_io::fp_linearity() {
 void lbann::target_layer_distributed_minibatch_parallel_io::bp_linearity() {
 
   // Compute initial error signal
-  neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
+  m_neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
       *m_prev_activations_v,
       *m_activations_v,
       *m_error_signal_v);

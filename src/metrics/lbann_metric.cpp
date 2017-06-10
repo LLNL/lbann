@@ -49,13 +49,13 @@ lbann::metrics::statistics *lbann::metrics::metric::get_statistics(execution_mod
 }
 
 void lbann::metrics::metric::record_error(double error, long num_samples) {
-  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
+  statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
   stats->m_error_per_epoch += error;
   stats->m_samples_per_epoch += num_samples;
   return;
 }
 
 void lbann::metrics::metric::reset_metric() {
-  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
+  statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
   stats->reset_stats();
 }

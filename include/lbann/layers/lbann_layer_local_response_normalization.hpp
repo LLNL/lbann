@@ -56,16 +56,16 @@ class local_response_normalization_layer : public Layer {
    cudnn::cudnn_manager *cudnn=NULL);
 
   /// Destructor
-  ~local_response_normalization_layer();
+  ~local_response_normalization_layer(void);
 
   void setup(int num_prev_neurons);
 
-  bool update();
+  bool update(void);
 
  protected:
 
-  void fp_linearity();
-  void bp_linearity();
+  void fp_linearity(void);
+  void bp_linearity(void);
 
  private:
 
@@ -93,16 +93,16 @@ class local_response_normalization_layer : public Layer {
 #endif // __LIB_CUDNN
 
   /// Initialize GPU objects
-  void setup_gpu();
+  void setup_gpu(void);
 
   /// CPU implementation of forward propagation linearity
-  void fp_linearity_cpu();
+  void fp_linearity_cpu(void);
   /// GPU implementation of forward propagation linearity
-  void fp_linearity_gpu();
+  void fp_linearity_gpu(void);
   /// CPU implementation of backward propagation linearity
-  void bp_linearity_cpu();
+  void bp_linearity_cpu(void);
   /// GPU implementation of backward propagation linearity
-  void bp_linearity_gpu();
+  void bp_linearity_gpu(void);
 
 };
 

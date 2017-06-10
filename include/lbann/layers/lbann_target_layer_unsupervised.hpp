@@ -40,21 +40,21 @@ class target_layer_unsupervised : public target_layer {
                             weight_initialization init=weight_initialization::glorot_uniform);
 
   void setup(int num_prev_neurons);
-  bool update();
+  bool update(void);
   void summarize(lbann_summary& summarizer, int64_t step);
-  void epoch_print() const;
-  void epoch_reset();
-  execution_mode get_execution_mode();
+  void epoch_print(void) const;
+  void epoch_reset(void);
+  execution_mode get_execution_mode(void);
   DataType reconstruction_cost(const DistMat& Y);
-  void reset_cost();
-  DataType average_cost() const;
+  void reset_cost(void);
+  DataType average_cost(void) const;
 
 
  protected:
-  void fp_linearity();
-  void bp_linearity();
-  void fp_nonlinearity() {}
-  void bp_nonlinearity() {}
+  void fp_linearity(void);
+  void bp_linearity(void);
+  void fp_nonlinearity(void) {}
+  void bp_nonlinearity(void) {}
 
  private:
   Layer *m_original_layer;

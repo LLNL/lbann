@@ -92,18 +92,18 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     m_num_data_per_epoch = 0;
   }
 
-  void fp_linearity() {
+  void fp_linearity(void) {
     int num_samples_in_batch = fetch_to_local_matrix(m_activations->Matrix());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 
-    int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+    int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
 
     /// Compute and record the objective function score
-    DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-    neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+    DataType avg_error = m_neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+    m_neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
 
-    for (auto&& m : neural_network_model->metrics) {
+    for (auto&& m : m_neural_network_model->metrics) {
       double num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
@@ -112,10 +112,10 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
 
 
-  void bp_linearity() {
+  void bp_linearity(void) {
 
     // Compute initial error signal
-    neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
+    m_neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
                                                             *m_prev_activations_v,
                                                             *m_activations_v,
                                                             *m_error_signal_v);
@@ -124,7 +124,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update(void) {
     return is_data_set_processed();
   }
 
@@ -141,7 +141,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     return;
   }
 
-  bool update_data_reader() {
+  bool update_data_reader(void) {
     generic_data_reader *data_reader = target_layer::select_data_reader();
     if(m_shared_data_reader) {
       /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done

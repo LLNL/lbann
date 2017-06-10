@@ -75,7 +75,7 @@ void lbann::input_layer_distributed_minibatch::fp_linearity() {
 
   /// Let each rank know this size of the current mini-batch
   /// Note that this field has to be updated before distributing the data
-  neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(m_root, num_samples_in_batch));
+  m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(m_root, num_samples_in_batch));
 
   if (m_comm->get_rank_in_model() == m_root) {
     CopyFromRoot(X_local, Xs);

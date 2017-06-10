@@ -117,7 +117,7 @@ class FullyConnectedLayer : public Layer {
     }
   }
 
-  ~FullyConnectedLayer() {
+  ~FullyConnectedLayer(void) {
     delete m_bias_bp_t;
     delete m_bias_weights_repl;
     delete m_activation_weights_v;
@@ -128,7 +128,7 @@ class FullyConnectedLayer : public Layer {
   }
 
   /// Matrices should be in MC,MR distributions
-  void initialize_model_parallel_distribution() {
+  void initialize_model_parallel_distribution(void) {
     m_bias_bp_t                      = new DistMat(m_comm->get_model_grid());
     m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(m_comm->get_model_grid());
 
@@ -141,7 +141,7 @@ class FullyConnectedLayer : public Layer {
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  void initialize_data_parallel_distribution() {
+  void initialize_data_parallel_distribution(void) {
     m_bias_bp_t                      = new StarVCMat(m_comm->get_model_grid());
     m_bias_weights_repl              = new StarMat(m_comm->get_model_grid());
 
@@ -187,8 +187,8 @@ class FullyConnectedLayer : public Layer {
 
   }
 
-  void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  void fp_set_std_matrix_view(void) {
+    int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
 
     Layer::fp_set_std_matrix_view();
 
@@ -197,7 +197,7 @@ class FullyConnectedLayer : public Layer {
     View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
   }
 
-  void fp_linearity() {
+  void fp_linearity(void) {
     // Apply forward prop linearity
 
     // Apply bias
@@ -232,7 +232,7 @@ class FullyConnectedLayer : public Layer {
 
   }
 
-  void bp_linearity() {
+  void bp_linearity(void) {
 
     switch(m_data_layout) {
     case data_layout::MODEL_PARALLEL:
@@ -297,7 +297,7 @@ class FullyConnectedLayer : public Layer {
     return avg_error;
   }
 
-  DataType WBL2norm() {
+  DataType WBL2norm(void) {
     DataType nrm2 = Nrm2(*m_weights);
     return nrm2 * nrm2;
   }
@@ -309,7 +309,7 @@ class FullyConnectedLayer : public Layer {
     return (1 / sqrt(x + 1e-8));
   }
 
-  bool update() {
+  bool update(void) {
     double start = get_time();
     Layer::update();
     if(m_execution_mode == execution_mode::training) {

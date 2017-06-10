@@ -62,23 +62,23 @@ class convolutional_layer : public Layer {
                       cudnn::cudnn_manager *cudnn=NULL);
 
   /// Destructor
-  ~convolutional_layer();
+  ~convolutional_layer(void);
 
   void setup(int num_prev_neurons);
 
-  void forwardProp();
-  void backProp();
+  void forwardProp(void);
+  void backProp(void);
 
-  bool update();
+  bool update(void);
   void pin_mem(void);
   void unpin_mem(void);
 
  protected:
 
-  void fp_linearity();
-  void fp_nonlinearity();
-  void bp_linearity();
-  void bp_nonlinearity();
+  void fp_linearity(void);
+  void fp_nonlinearity(void);
+  void bp_linearity(void);
+  void bp_nonlinearity(void);
 
  private:
 
@@ -141,28 +141,28 @@ class convolutional_layer : public Layer {
 #endif // __LIB_CUDNN
 
   /// Initialize GPU objects
-  void setup_gpu();
+  void setup_gpu(void);
 
   /// CPU implementation of direct convolution
-  void fp_linearity_cpu_direct();
+  void fp_linearity_cpu_direct(void);
   /// CPU implementation of direct convolution on 2D data
-  void fp_linearity_cpu_direct_2d();
+  void fp_linearity_cpu_direct_2d(void);
   /// CPU implementation of im2col GEMM convolution
-  void fp_linearity_cpu_gemm();
+  void fp_linearity_cpu_gemm(void);
   /// GPU implementation of convolution
-  void fp_linearity_gpu();
+  void fp_linearity_gpu(void);
   /// GPU implementation of forward propagation nonlinearity
-  void fp_nonlinearity_gpu();
+  void fp_nonlinearity_gpu(void);
   /// CPU implementation of direct convolution backward propagation
-  void bp_linearity_cpu_direct();
+  void bp_linearity_cpu_direct(void);
   /// CPU implementation of direct convolution backward propagation on 2D data
-  void bp_linearity_cpu_direct_2d();
+  void bp_linearity_cpu_direct_2d(void);
   /// CPU implementation of im2col GEMM convolution backward propagation
-  void bp_linearity_cpu_gemm();
+  void bp_linearity_cpu_gemm(void);
   /// GPU implementation of convolution backward propagation
-  void bp_linearity_gpu();
+  void bp_linearity_gpu(void);
   /// GPU implementation of backward propagation nonlinearity
-  void bp_nonlinearity_gpu();
+  void bp_nonlinearity_gpu(void);
 
   bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
   bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path

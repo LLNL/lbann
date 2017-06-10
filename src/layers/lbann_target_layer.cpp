@@ -47,13 +47,13 @@ lbann::target_layer::target_layer(data_layout data_dist, lbann_comm *comm, uint 
 }
 
 void lbann::target_layer::setup(int num_prev_neurons) {
-  if(neural_network_model->obj_fn == NULL) {
+  if(m_neural_network_model->obj_fn == NULL) {
     throw lbann_exception("target layer has invalid objective function pointer");
   }
-  neural_network_model->obj_fn->setup(m_num_neurons, m_mini_batch_size);
-  for (auto&& m : neural_network_model->metrics) {
+  m_neural_network_model->obj_fn->setup(m_num_neurons, m_mini_batch_size);
+  for (auto&& m : m_neural_network_model->metrics) {
     m->setup(m_num_neurons, m_mini_batch_size);
-    m->neural_network_model = neural_network_model;
+    m->m_neural_network_model = m_neural_network_model;
   }
   Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
   Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
@@ -77,10 +77,10 @@ lbann::generic_data_reader *lbann::target_layer::set_testing_data_reader(generic
 }
 
 void lbann::target_layer::fp_set_std_matrix_view() {
-  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   Layer::fp_set_std_matrix_view();
-  neural_network_model->obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
-  for (auto&& m : neural_network_model->metrics) {
+  m_neural_network_model->obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
+  for (auto&& m : m_neural_network_model->metrics) {
     m->fp_set_std_matrix_view(cur_mini_batch_size);
   }
 }
@@ -89,16 +89,16 @@ void lbann::target_layer::summarize(lbann_summary& summarizer, int64_t step) {
   Layer::summarize(summarizer, step);
   std::string tag = "layer" + std::to_string(static_cast<long long>(m_index))
                     + "/CrossEntropyCost";
-  summarizer.reduce_scalar(tag, neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
+  summarizer.reduce_scalar(tag, m_neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
 }
 
 void lbann::target_layer::epoch_print() const {
-  double obj_cost = neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
+  double obj_cost = m_neural_network_model->obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
   if (m_comm->am_world_master()) {
     std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
     m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
     for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
-      std::cout << "Model " << i << " average " << _to_string(neural_network_model->obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
+      std::cout << "Model " << i << " average " << _to_string(m_neural_network_model->obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
                 std::endl;
     }
   } else {
@@ -112,7 +112,7 @@ void lbann::target_layer::epoch_reset() {
 }
 
 void lbann::target_layer::resetCost() {
-  neural_network_model->obj_fn->reset_obj_fn();
+  m_neural_network_model->obj_fn->reset_obj_fn();
 }
 
 bool lbann::target_layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {

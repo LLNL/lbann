@@ -42,33 +42,33 @@ class io_layer : public Layer {
   //    io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader* training_data_reader);
   void setup_data_readers_for_training(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
   void setup_data_readers_for_evaluation(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0);
-  generic_data_reader *select_data_reader();
+  generic_data_reader *select_data_reader(void);
   generic_data_reader *set_training_data_reader(generic_data_reader *data_reader);
   generic_data_reader *set_validation_data_reader(generic_data_reader *data_reader);
   generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader);
   long update_num_samples_processed(long num_samples);
 
-  long get_num_samples_trained() {
+  long get_num_samples_trained(void) {
     return m_training_dataset.num_samples_processed;
   }
-  long get_num_samples_tested() {
+  long get_num_samples_tested(void) {
     return m_testing_dataset.num_samples_processed;
   }
-  long get_total_num_training_samples() {
+  long get_total_num_training_samples(void) {
     return m_training_dataset.total_samples;
   }
-  long get_total_num_testing_samples() {
+  long get_total_num_testing_samples(void) {
     return m_testing_dataset.total_samples;
   }
 
-  El::Matrix<El::Int>* get_sample_indices_per_mb();
+  El::Matrix<El::Int>* get_sample_indices_per_mb(void);
 
-  bool at_new_epoch() {
+  bool at_new_epoch(void) {
     return m_training_dataset.data_reader->at_new_epoch();
   }
 
-  long get_linearized_data_size();
-  long get_linearized_label_size();
+  long get_linearized_data_size(void);
+  long get_linearized_label_size(void);
   long get_linearized_response_size(void) const {
     return static_cast<long>(1);
   }

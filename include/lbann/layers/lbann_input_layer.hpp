@@ -33,15 +33,15 @@ namespace lbann {
 class input_layer : public io_layer {
  public:
   input_layer(data_layout dist_data, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
-  DistMat *bp_output();
+  DistMat *bp_output(void);
 
   /** No setting the standard view of the matrix -- it defines the standard view */
-  void fp_set_std_matrix_view() {}
+  void fp_set_std_matrix_view(void) {}
 
   /** No non-linearity */
-  void fp_nonlinearity() {}
+  void fp_nonlinearity(void) {}
   /** No non-linearity */
-  void bp_nonlinearity() {}
+  void bp_nonlinearity(void) {}
 
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {

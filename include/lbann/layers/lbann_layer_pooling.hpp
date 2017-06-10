@@ -55,21 +55,21 @@ class pooling_layer : public Layer {
                 cudnn::cudnn_manager *cudnn=NULL);
 
   /// Destructor
-  ~pooling_layer();
+  ~pooling_layer(void);
 
   void setup(int num_prev_neurons);
 
-  void forwardProp();
-  void backProp();
+  void forwardProp(void);
+  void backProp(void);
 
-  bool update();
+  bool update(void);
   void pin_mem(void);
   void unpin_mem(void);
 
  protected:
 
-  void fp_linearity();
-  void bp_linearity();
+  void fp_linearity(void);
+  void bp_linearity(void);
 
  private:
 
@@ -104,16 +104,16 @@ class pooling_layer : public Layer {
 #endif // __LIB_CUDNN
 
   /// Initialize GPU objects
-  void setup_gpu();
+  void setup_gpu(void);
 
   /// CPU implementation of forward propagation linearity
-  void fp_linearity_cpu();
+  void fp_linearity_cpu(void);
   /// GPU implementation of forward propagation linearity
-  void fp_linearity_gpu();
+  void fp_linearity_gpu(void);
   /// CPU implementation of backward propagation linearity
-  void bp_linearity_cpu();
+  void bp_linearity_cpu(void);
   /// GPU implementation of backward propagation linearity
-  void bp_linearity_gpu();
+  void bp_linearity_gpu(void);
 
   bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
   bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path

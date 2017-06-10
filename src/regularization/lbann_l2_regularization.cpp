@@ -39,7 +39,8 @@ l2_regularization::l2_regularization(DataType lambda)
 l2_regularization::~l2_regularization() {}
 
 void l2_regularization::update_gradients() {
-  Axpy(m_lambda, *(m_layer->m_weights), *(m_layer->m_weights_gradient));
+  //Axpy(m_lambda, *(m_layer->m_weights), *(m_layer->m_weights_gradient));
+  Axpy(m_lambda, m_layer->get_weights_biases(), m_layer->get_weights_biases_gradient());
 }
 
 }  // namespace lbann

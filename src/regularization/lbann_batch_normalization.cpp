@@ -200,8 +200,8 @@ void batch_normalization::setup(Layer *l) {
   Zeros(*m_stdev, l->get_num_neurons(), 1);
   Zeros(*m_running_mean, l->get_num_neurons(), 1);
   Zeros(*m_running_stdev, l->get_num_neurons(), 1);
-  m_gamma_optimizer = l->neural_network_model->create_optimizer();
-  m_beta_optimizer = l->neural_network_model->create_optimizer();
+  m_gamma_optimizer = l->get_neural_network_model()->create_optimizer();
+  m_beta_optimizer = l->get_neural_network_model()->create_optimizer();
   m_gamma_optimizer->setup(m_gamma);
   m_beta_optimizer->setup(m_beta);
 }

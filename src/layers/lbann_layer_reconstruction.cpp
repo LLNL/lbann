@@ -93,13 +93,13 @@ void lbann::reconstruction_layer::fp_linearity() {
   //m_activations is linear transformation of m_weights * m_prev_activations^T
   Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
 
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   DistMat original_layer_act_v;
   //view of original layer
   View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
   // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
   // and original layer fp_input/original input
-  DataType avg_error = neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, original_layer_act_v);
+  DataType avg_error = m_neural_network_model->obj_fn->compute_obj_fn(*m_activations_v, original_layer_act_v);
   aggregate_cost += avg_error;
   num_forwardprop_steps++;
 }
@@ -109,14 +109,14 @@ void lbann::reconstruction_layer::bp_linearity() {
   // delta = (activation - y)
   // delta_w = delta * activation_prev^T
 
-  int64_t curr_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   DistMat original_layer_act_v;
 
   //view of original layer
   View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
 
   // Compute error signal
-  neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
+  m_neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
 
   //m_prev_error_signal_v is the error computed by objective function
   //is really not previous, but computed in this layer

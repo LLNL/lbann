@@ -146,7 +146,7 @@ class metric {
   lbann_comm *m_comm;
 
  public:
-  model *neural_network_model;
+  model *m_neural_network_model;
   metric_type type = metric_type::INVALID;
 
  protected:

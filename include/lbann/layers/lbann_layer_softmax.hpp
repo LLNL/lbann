@@ -79,19 +79,19 @@ class SoftmaxLayer: public Layer {
     }
   }
 
-  ~SoftmaxLayer() {
+  ~SoftmaxLayer(void) {
     delete m_workspace;
     delete m_workspace_v;
   }
 
   /// Matrices should be in MC,MR distributions
-  void initialize_model_parallel_distribution() {
+  void initialize_model_parallel_distribution(void) {
     m_workspace = new StarMRMat(m_comm->get_model_grid());
     m_workspace_v = new StarMRMat(m_comm->get_model_grid());
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  void initialize_data_parallel_distribution() {
+  void initialize_data_parallel_distribution(void) {
     m_workspace = new StarVCMat(m_comm->get_model_grid());
     m_workspace_v = new StarVCMat(m_comm->get_model_grid());
   }
@@ -121,13 +121,13 @@ class SoftmaxLayer: public Layer {
 
   }
 
-  void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  void fp_set_std_matrix_view(void) {
+    int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
   }
 
-  void fp_linearity() {
+  void fp_linearity(void) {
 
     // Apply weight matrix
     switch(m_data_layout) {
@@ -152,7 +152,7 @@ class SoftmaxLayer: public Layer {
 
   }
 
-  void fp_nonlinearity() {
+  void fp_nonlinearity(void) {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
@@ -204,7 +204,7 @@ class SoftmaxLayer: public Layer {
 
   }
 
-  void bp_linearity() {
+  void bp_linearity(void) {
 
     switch(m_data_layout) {
     case data_layout::MODEL_PARALLEL:
@@ -242,11 +242,11 @@ class SoftmaxLayer: public Layer {
 
   }
 
-  void bp_nonlinearity() {
+  void bp_nonlinearity(void) {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
-    if(neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
+    if(m_neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
        && (m_next_layer_type == layer_type::target_distributed_minibatch
            || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
            || m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
@@ -284,7 +284,7 @@ class SoftmaxLayer: public Layer {
 
   }
 
-  DataType WBL2norm() {
+  DataType WBL2norm(void) {
     DataType nrm2 = Nrm2(*m_weights);
     return nrm2 * nrm2;
   }
@@ -296,7 +296,7 @@ class SoftmaxLayer: public Layer {
     return (1 / sqrt(x + 1e-8));
   }
 
-  bool update() {
+  bool update(void) {
     double start = get_time();
     Layer::update();
     if(m_execution_mode == execution_mode::training) {

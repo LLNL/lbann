@@ -44,19 +44,18 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
                     lbann_comm *comm, optimizer *opt,
                     uint mbsize, activation_type activation,
                     std::vector<regularizer *> regs)
-  : m_execution_mode(execution_mode::training), m_activation_type(activation), m_data_layout(data_dist),
+  : m_data_layout(data_dist), m_index(index),
     m_comm(comm), m_optimizer(opt),
-    m_cudnn(nullptr), regularizers(regs), m_mini_batch_size(mbsize),
-    m_effective_mbsize(mbsize) {
+    m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
+    m_execution_mode(execution_mode::training), m_activation_type(activation),
+    m_cudnn(nullptr), regularizers(regs),
+    m_mini_batch_size(mbsize),
+    m_effective_mbsize(mbsize)
+{
 
-  m_type = layer_type::INVALID;
-  m_prev_layer_type = layer_type::INVALID;
-  m_next_layer_type = layer_type::INVALID;
-
-  m_index = index;
   fp_input = NULL;
   bp_input = NULL;
-  neural_network_model = NULL;
+  m_neural_network_model = NULL;
 
   m_using_gpus = false;
   m_prev_layer_using_gpus = false;
@@ -464,7 +463,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
 }
 
 void lbann::Layer::fp_set_std_matrix_view() {
-  Int cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
 
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   if (m_prev_error_signal->Height() > 0) {
@@ -493,7 +492,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
 
 #if 0
 void lbann::Layer::bp_set_std_matrix_view() {
-  int64_t cur_mini_batch_size = neural_network_model->get_current_mini_batch_size();
+  int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
 
   if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
     View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));

@@ -49,7 +49,7 @@ enum class activation_type {
 /** Base activation function class. */
 class Activation {
  public:
-  virtual ~Activation() {}
+  virtual ~Activation(void) {}
   /** Apply the activation function elementwise to m. */
   virtual void forwardProp(ElMat& m);
   /** Apply the activation derivative function elementwise to m. */

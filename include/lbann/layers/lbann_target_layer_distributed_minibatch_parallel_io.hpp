@@ -36,14 +36,14 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false);
 
   void setup(int num_prev_neurons);
-  void fp_linearity();
-  void bp_linearity();
-  bool update();
+  void fp_linearity(void);
+  void bp_linearity(void);
+  bool update(void);
 
   int fetch_from_data_reader(Mat& M_local);
   void preprocess_data_samples(Mat& M_local, int num_samples_in_batch);
-  bool update_data_reader();
-  execution_mode get_execution_mode();
+  bool update_data_reader(void);
+  execution_mode get_execution_mode(void);
 
  protected:
   Mat Y_local;
