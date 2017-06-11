@@ -40,7 +40,7 @@
 
 namespace lbann {
 // fully_connected_layer : dense layer class
-template <data_layout DATA_DIST>
+template <class T_layout>
 class fully_connected_layer : public Layer {
  private:
 
@@ -81,7 +81,7 @@ class fully_connected_layer : public Layer {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  fully_connected_layer(data_layout data_dist,
+  fully_connected_layer(T_layout data_dist,
                       const uint index,
                       const int numPrevNeurons,
                       const uint numNeurons,
