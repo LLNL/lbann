@@ -359,10 +359,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      Layer *layer;
-      switch(get_data_layout(ell.data_layout(), __FILE__, __LINE__)){
-      case data_layout::MODEL_PARALLEL:
-        layer = new SoftmaxLayer<data_layout::MODEL_PARALLEL>(
+      Layer *layer = new SoftmaxLayer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -372,22 +369,6 @@ void add_layers(
           comm,
           model->create_optimizer()
         );
-        break;
-      case data_layout::DATA_PARALLEL:
-        layer = new SoftmaxLayer<data_layout::DATA_PARALLEL>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
-          layer_id,
-          prev_num_neurons,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
-          comm,
-          model->create_optimizer()
-        );
-        break;
-      default:
-        break;
-      }
       model->add(layer);
     }
 

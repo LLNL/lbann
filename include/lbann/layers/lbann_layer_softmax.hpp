@@ -38,7 +38,7 @@
 #include <string>
 
 namespace lbann {
-template <data_layout DATA_DIST>
+template <class T_layout>
 class SoftmaxLayer: public Layer {
  protected:
   DataType   WBL2NormSum;
@@ -49,7 +49,7 @@ class SoftmaxLayer: public Layer {
   AbsDistMat *m_workspace_v;
 
  public:
-  SoftmaxLayer(data_layout data_dist,
+  SoftmaxLayer(T_layout data_dist,
                const uint index,
                const int numPrevNeurons,
                const uint numNeurons,

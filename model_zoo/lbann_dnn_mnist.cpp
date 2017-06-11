@@ -227,9 +227,13 @@ int main(int argc, char *argv[]) {
     dnn.add(fc2);
     
     //fourth layer
-    SoftmaxLayer<data_layout::MODEL_PARALLEL> *sl = new SoftmaxLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 3, 
-                                                          30, 10,trainParams.MBSize,
-                                                          weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    SoftmaxLayer<data_layout> *sl = new SoftmaxLayer<data_layout>(
+      data_layout::MODEL_PARALLEL, 
+      3, 30, 10,
+      trainParams.MBSize, 
+      weight_initialization::glorot_uniform, 
+      comm, optimizer_fac->create_optimizer()
+    );
     dnn.add(sl);
 
     //fifth layer
