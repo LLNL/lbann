@@ -207,10 +207,7 @@ void add_layers(
       const lbann_data::FullyConnected& ell = layer.fully_connected();
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
-      Layer *layer;
-      switch(get_data_layout(ell.data_layout(), __FILE__, __LINE__)){
-      case data_layout::MODEL_PARALLEL:
-        layer = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(
+      Layer *layer = new fully_connected_layer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -221,23 +218,6 @@ void add_layers(
           comm,
           model->create_optimizer(),
           regs);
-        break;
-      case data_layout::DATA_PARALLEL:
-        layer = new FullyConnectedLayer<data_layout::DATA_PARALLEL>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
-          layer_id,
-          prev_num_neurons,
-          ell.num_neurons(),
-          mb_size,
-          get_activation_type(ell.activation_type()),
-          get_weight_initialization(ell.weight_initialization()),
-          comm,
-          model->create_optimizer(),
-          regs);
-        break;
-      default:
-        break;
-      }
       model->add(layer);
     }
 
@@ -359,10 +339,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      Layer *layer;
-      switch(get_data_layout(ell.data_layout(), __FILE__, __LINE__)){
-      case data_layout::MODEL_PARALLEL:
-        layer = new SoftmaxLayer<data_layout::MODEL_PARALLEL>(
+      Layer *layer = new softmax_layer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -372,22 +349,6 @@ void add_layers(
           comm,
           model->create_optimizer()
         );
-        break;
-      case data_layout::DATA_PARALLEL:
-        layer = new SoftmaxLayer<data_layout::DATA_PARALLEL>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
-          layer_id,
-          prev_num_neurons,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
-          comm,
-          model->create_optimizer()
-        );
-        break;
-      default:
-        break;
-      }
       model->add(layer);
     }
 

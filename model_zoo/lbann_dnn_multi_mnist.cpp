@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
                     trainParams.ActivationType, weight_initialization::glorot_uniform,
     {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
     uint smidx = dnn.add(
-                   "Softmax", DATA_LAYOUT, 10,
+                   "softmax", DATA_LAYOUT, 10,
                    activation_type::ID, weight_initialization::glorot_uniform, {});
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED

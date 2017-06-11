@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
     // Fully connected and output layers
     dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 128, activation_type::RELU,
     weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
-    dnn.add("Softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID,
+    dnn.add("softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID,
             weight_initialization::glorot_uniform, {});
 
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);

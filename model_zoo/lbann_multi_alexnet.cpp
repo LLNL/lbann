@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
     });
 
     // Layer 13 (softmax)
-    dnn->add("Softmax",
+    dnn->add("softmax",
              data_layout::MODEL_PARALLEL,
              1000,
              activation_type::ID,

@@ -565,7 +565,7 @@ int main(int argc, char *argv[]) {
     });
 
     // Layer 13 (softmax)
-    dnn->add("Softmax",
+    dnn->add("softmax",
              data_layout::MODEL_PARALLEL,
              1000,
              activation_type::ID,
@@ -824,7 +824,7 @@ int main(int argc, char *argv[]) {
           networkType = "FullyConnected";
         } else {
           // Add a softmax layer to the end
-          networkType = "Softmax";
+          networkType = "softmax";
         }
         dnn->add(networkType, netParams.Network[l], trainParams.ActivationType, {new dropout(trainParams.DropOut)});
       }
@@ -979,8 +979,8 @@ int main(int argc, char *argv[]) {
       }
 
       if (!restarted) {
-        ((SoftmaxLayer *)dnn->get_layers()[dnn->get_layers().size()-1])->resetCost();
-        //              dnn->Softmax->resetCost();
+        ((softmax_layer *)dnn->get_layers()[dnn->get_layers().size()-1])->resetCost();
+        //              dnn->softmax->resetCost();
       }
 
       // TODO: need to save this in checkpoint?
@@ -1144,9 +1144,9 @@ int main(int argc, char *argv[]) {
           double sec_each_lbann = sec_mbatch_lbann / trainParams.MBSize;
           double sec_each_total = (sec_mbatch_io + sec_mbatch_lbann) / trainParams.MBSize;
 
-          double avg_cost = ((SoftmaxLayer *)dnn->get_layers()[dnn->get_layers().size()-1])->avgCost();
-          //                    double avg_cost = dnn->Softmax->avgCost();
-          cout << "Average Softmax Cost: " << avg_cost << endl;
+          double avg_cost = ((softmax_layer *)dnn->get_layers()[dnn->get_layers().size()-1])->avgCost();
+          //                    double avg_cost = dnn->softmax->avgCost();
+          cout << "Average softmax Cost: " << avg_cost << endl;
           cout << "#, Host, Nodes, Processes, Cores, TasksPerNode, Epoch, Training Samples, Mini-Batch Size, Mini-Batch Count, Total Time, Total I/O, Total lbann, MB Time, MB I/O, MB lbann, Sample Time, Sample I/O, Sample lbann" << endl;
           cout << "# [RESULT], " << sysParams.HostName << ", " << sysParams.NumNodes << ", " << grid.Size() << ", " << sysParams.NumCores << ", " << sysParams.TasksPerNode << ", " << epoch << ", ";
           cout << numTrainData << ", " << trainParams.MBSize << ", " << MBCount << ", ";
