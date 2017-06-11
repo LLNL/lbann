@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_layer_softmax .hpp .cpp - Softmax layer
+// lbann_layer_softmax .hpp .cpp - softmax layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
@@ -39,7 +39,7 @@
 
 namespace lbann {
 template <class T_layout>
-class SoftmaxLayer: public Layer {
+class softmax_layer: public Layer {
  protected:
   DataType   WBL2NormSum;
 
@@ -49,7 +49,7 @@ class SoftmaxLayer: public Layer {
   AbsDistMat *m_workspace_v;
 
  public:
-  SoftmaxLayer(T_layout data_dist,
+  softmax_layer(T_layout data_dist,
                const uint index,
                const int numPrevNeurons,
                const uint numNeurons,
@@ -79,7 +79,7 @@ class SoftmaxLayer: public Layer {
     }
   }
 
-  ~SoftmaxLayer(void) {
+  ~softmax_layer(void) {
     delete m_workspace;
     delete m_workspace_v;
   }

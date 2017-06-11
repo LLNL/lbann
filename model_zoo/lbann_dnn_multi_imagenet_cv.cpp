@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
         {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
       } else {
         // Add a softmax layer to the end
-        idx = dnn.add("Softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
+        idx = dnn.add("softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       activation_type::ID,
                       weight_initialization::glorot_uniform,
                       {});

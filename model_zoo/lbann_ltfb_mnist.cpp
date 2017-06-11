@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
       trainParams.ActivationType, weight_initialization::glorot_uniform,
       {});
     dnn.add(
-      "Softmax", data_layout::MODEL_PARALLEL, 10,
+      "softmax", data_layout::MODEL_PARALLEL, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
     target_layer *target_layer_ = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer_);
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       trainParams.ActivationType, weight_initialization::glorot_uniform,
       {});
     dnn2.add(
-      "Softmax", data_layout::MODEL_PARALLEL, 10,
+      "softmax", data_layout::MODEL_PARALLEL, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
     target_layer *target_layer2 = new target_layer_distributed_minibatch_parallel_io(
       data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers2, true);

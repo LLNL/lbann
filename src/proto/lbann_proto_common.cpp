@@ -359,7 +359,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      Layer *layer = new SoftmaxLayer<data_layout>(
+      Layer *layer = new softmax_layer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
