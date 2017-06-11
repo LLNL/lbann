@@ -80,6 +80,7 @@ class patch_descriptor {
   patch_descriptor(void) {
     init();  ///< Default constructor
   }
+  virtual ~patch_descriptor() {}
   void init(void); ///< Initializer
 
   /// Set patch size
