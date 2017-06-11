@@ -41,33 +41,33 @@ class data_reader_nci : public generic_data_reader {
   data_reader_nci(int batchSize);
   data_reader_nci(const data_reader_nci& source); //copy constructor
   data_reader_nci& operator=(const data_reader_nci& source); //assignment operator
-  ~data_reader_nci();
+  ~data_reader_nci(void);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int get_num_labels() {
+  int get_num_labels(void) const {
     return m_num_labels;  //@todo; check if used
   }
 
-  void load();
+  void load(void);
 
-  size_t get_num_samples() {
+  size_t get_num_samples(void) const {
     return m_num_samples;
   }
-  size_t get_num_features() {
+  size_t get_num_features(void) const {
     return m_num_features;
   }
   inline int map_label_2int(const std::string label);
 
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_num_features;
   }
-  int get_linearized_label_size() {
+  int get_linearized_label_size(void) const {
     return m_num_labels;
   }
 
  private:
-  //@todo add response mode {binary,ternary, continuous}
+  //@todo add response mode {binary, ternary, continuous}
   int m_num_labels;  //2 for binary response mode
   size_t m_num_samples; //rows
   size_t m_num_features; //cols

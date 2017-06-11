@@ -54,7 +54,7 @@ lbann::data_reader_nci::data_reader_nci(const data_reader_nci& source)
     m_index_map(source.m_index_map),m_infile(source.m_infile)
 { }
 
-lbann::data_reader_nci::~data_reader_nci() {
+lbann::data_reader_nci::~data_reader_nci(void) {
 
 }
 
@@ -160,7 +160,7 @@ int lbann::data_reader_nci::fetch_label(Mat& Y) {
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-void lbann::data_reader_nci::load() {
+void lbann::data_reader_nci::load(void) {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) {

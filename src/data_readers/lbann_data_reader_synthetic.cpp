@@ -50,7 +50,7 @@ lbann::data_reader_synthetic::data_reader_synthetic(const data_reader_synthetic&
     m_num_samples(source.m_num_samples), m_num_features(source.m_num_features)
 { }
 
-lbann::data_reader_synthetic::~data_reader_synthetic() {
+lbann::data_reader_synthetic::~data_reader_synthetic(void) {
 
 }
 
@@ -71,7 +71,7 @@ int lbann::data_reader_synthetic::fetch_data(Mat& X) {
 
 
 
-void lbann::data_reader_synthetic::load() {
+void lbann::data_reader_synthetic::load(void) {
   //set indices/ number of features
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);

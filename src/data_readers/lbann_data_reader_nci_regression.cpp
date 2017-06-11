@@ -55,7 +55,7 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_
 }
 */
 
-lbann::data_reader_nci_regression::~data_reader_nci_regression() {
+lbann::data_reader_nci_regression::~data_reader_nci_regression(void) {
 }
 
 
@@ -136,7 +136,7 @@ int lbann::data_reader_nci_regression::fetch_response(Mat& Y) {
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-void lbann::data_reader_nci_regression::load() {
+void lbann::data_reader_nci_regression::load(void) {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
   if (!ifs) {

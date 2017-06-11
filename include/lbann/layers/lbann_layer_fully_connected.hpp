@@ -339,7 +339,7 @@ class FullyConnectedLayer : public Layer {
     Copy(*m_weights, WB_E1);
     Copy(*m_weights, WB_E2);
 
-    DataType sum_error = 0;
+    //DataType sum_error = 0;
     Int prow = 0;
     Int pcol = 0;
 

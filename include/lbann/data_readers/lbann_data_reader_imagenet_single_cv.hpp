@@ -38,13 +38,13 @@ class imagenet_readerSingle_cv : public imagenet_reader {
  public:
   imagenet_readerSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_readerSingle_cv(const imagenet_readerSingle_cv& source);
-  ~imagenet_readerSingle_cv();
+  ~imagenet_readerSingle_cv(void);
 
   imagenet_readerSingle_cv& operator=(const imagenet_readerSingle_cv& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  void load();
+  void load(void);
 
  private:
   std::ifstream m_data_filestream;
@@ -54,7 +54,7 @@ class imagenet_readerSingle_cv : public imagenet_reader {
   //std::vector<unsigned char> m_pixels;
   std::shared_ptr<cv_process> m_pp;
 
-  void open_data_stream();
+  void open_data_stream(void);
 };
 
 }  // namespace lbann

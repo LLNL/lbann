@@ -90,7 +90,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
 
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
-    for (size_t l = 0; l < m_layers.size(); ++l) {
+    for (size_t l = 0u; l < m_layers.size(); ++l) {
       m_layers[l]->set_execution_mode(execution_mode::training);
     }
 
@@ -143,8 +143,8 @@ bool lbann::deep_neural_network::train_mini_batch() {
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  DataType L2NormSum = 0;
-  for (size_t l = 0; l < m_layers.size(); ++l) {
+  //DataType L2NormSum = 0;
+  for (size_t l = 0u; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forwardProp();
     do_layer_forward_prop_end_cbs(m_layers[l]);
@@ -153,7 +153,7 @@ bool lbann::deep_neural_network::train_mini_batch() {
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
-  for (size_t l = m_layers.size(); l-- > 0;) {
+  for (size_t l = m_layers.size(); l-- > 0u;) {
     do_layer_backward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->backProp();
     do_layer_backward_prop_end_cbs(m_layers[l]);
@@ -161,7 +161,7 @@ bool lbann::deep_neural_network::train_mini_batch() {
   do_model_backward_prop_end_cbs();
 
   /// Update layers
-  for (size_t l = m_layers.size() - 1; l > 0; --l) {
+  for (size_t l = m_layers.size() - 1; l > 0u; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
@@ -185,7 +185,7 @@ void lbann::deep_neural_network::evaluate(execution_mode mode) {
 
   // Set the execution mode
   m_execution_mode = mode;
-  for (size_t l = 0; l < m_layers.size(); ++l) {
+  for (size_t l = 0u; l < m_layers.size(); ++l) {
     m_layers[l]->set_execution_mode(mode);
   }
 
@@ -222,7 +222,7 @@ bool lbann::deep_neural_network::evaluate_mini_batch() {
 
   // forward propagation (mini-batch)
   do_model_evaluate_forward_prop_begin_cbs();
-  for (size_t l = 0; l < m_layers.size(); l++) {
+  for (size_t l = 0u; l < m_layers.size(); l++) {
     do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forwardProp();
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
@@ -231,7 +231,7 @@ bool lbann::deep_neural_network::evaluate_mini_batch() {
 
   // Update layers
   // Note: should only affect the input and target layers
-  for (size_t l = m_layers.size() - 1; l > 0; --l) {
+  for (size_t l = m_layers.size() - 1; l > 0u; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();

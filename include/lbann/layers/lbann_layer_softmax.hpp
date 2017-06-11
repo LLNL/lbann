@@ -259,7 +259,7 @@ class softmax_layer: public Layer {
     const Mat& activations_local = m_activations_v->LockedMatrix();
     Mat& workspace_local = m_workspace_v->Matrix();
     Mat& prev_error_signal_local = m_prev_error_signal_v->Matrix();
-    const Int local_height = activations_local.Height();
+    //const Int local_height = activations_local.Height();
     const Int local_width = activations_local.Width();
 
     // Compute dot products

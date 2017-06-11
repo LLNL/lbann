@@ -56,7 +56,7 @@ void lbann::target_layer_distributed_minibatch::setup(int num_prev_neurons) {
   }
 
   /// @todo put in warning about bad target size
-  if(num_prev_neurons != m_num_neurons) {
+  if(static_cast<uint>(num_prev_neurons) != m_num_neurons) {
     throw -1;
   }
 

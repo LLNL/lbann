@@ -49,24 +49,24 @@ class data_reader_nci_regression : public generic_data_reader {
   data_reader_nci_regression(int batchSize, bool shuffle=true);
   //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
   //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
-  ~data_reader_nci_regression();
+  ~data_reader_nci_regression(void);
 
   int fetch_data(Mat& X);
   int fetch_response(Mat& Y);
-  int get_num_labels() {
+  int get_num_labels(void) const {
     return m_num_responses;  //@todo; check if used
   }
 
-  void load();
+  void load(void);
 
-  size_t get_num_samples() {
+  size_t get_num_samples(void) const {
     return m_num_samples;
   }
-  size_t get_num_features() {
+  size_t get_num_features(void) const {
     return m_num_features;
   }
 
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_num_features;
   }
   int get_linearized_response_size(void) const {

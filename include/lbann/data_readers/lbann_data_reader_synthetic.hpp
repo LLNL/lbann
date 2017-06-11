@@ -40,20 +40,20 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic(int batchSize, int num_samples, int num_features);
   data_reader_synthetic(const data_reader_synthetic& source); //copy constructor
   data_reader_synthetic& operator=(const data_reader_synthetic& source); //assignment operator
-  ~data_reader_synthetic();
+  ~data_reader_synthetic(void);
 
   int fetch_data(Mat& X);
 
-  void load();
+  void load(void);
 
-  int get_num_samples() {
+  int get_num_samples(void) const {
     return m_num_samples;
   }
-  int get_num_features() {
+  int get_num_features(void) const {
     return m_num_features;
   }
 
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_num_features;
   }
 

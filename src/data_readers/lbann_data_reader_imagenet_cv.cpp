@@ -58,7 +58,7 @@ lbann::imagenet_reader_cv::imagenet_reader_cv(const imagenet_reader_cv& source)
     m_pp(source.m_pp) {
 }
 
-lbann::imagenet_reader_cv::~imagenet_reader_cv() {
+lbann::imagenet_reader_cv::~imagenet_reader_cv(void) {
 }
 
 int lbann::imagenet_reader_cv::fetch_data(Mat& X) {
@@ -118,7 +118,7 @@ int lbann::imagenet_reader_cv::fetch_label(Mat& Y) {
   return (n - m_current_pos);
 }
 
-void lbann::imagenet_reader_cv::load() {
+void lbann::imagenet_reader_cv::load(void) {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
@@ -153,7 +153,7 @@ void lbann::imagenet_reader_cv::load() {
   select_subset_of_data();
 }
 
-void lbann::imagenet_reader_cv::free() {
+void lbann::imagenet_reader_cv::free(void) {
 }
 
 // Assignment operator
