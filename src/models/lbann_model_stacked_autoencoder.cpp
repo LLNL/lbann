@@ -86,7 +86,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     if(layer_name == "FullyConnected") {
       optimizer *new_optimizer = create_optimizer();
       /*Layer *new_layer
-        = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
+        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
             comm,new_optimizer, regularizers);
@@ -94,7 +94,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
       // create output/mirror layer
       optimizer *mirror_optimizer = create_optimizer();
       /*Layer *mirror_layer
-        = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
+        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
             comm,mirror_optimizer,regularizers);
@@ -105,7 +105,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
     if(layer_name == "FullyConnected") {
       optimizer *hidden_optimizer = create_optimizer();
       /*Layer *hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
+        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
             comm,hidden_optimizer, regularizers);
@@ -113,7 +113,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
       // create mirror layer
       optimizer *mirror_hidden_optimizer = create_optimizer();
       /*Layer *mirror_hidden_layer
-        = layer_fac->create_layer<FullyConnectedLayer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
+        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
             comm,mirror_hidden_optimizer,regularizers);

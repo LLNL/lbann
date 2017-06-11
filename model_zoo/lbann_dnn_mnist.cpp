@@ -213,14 +213,14 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     //second layer
-    FullyConnectedLayer<data_layout::MODEL_PARALLEL> *fc1 = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 1,
+    fully_connected_layer<data_layout::MODEL_PARALLEL> *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 1,
                                                                     mnist_trainset.get_linearized_data_size(), 100,trainParams.MBSize,trainParams.ActivationType,
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
                                                                     {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     dnn.add(fc1);
     
     //third layer 
-    FullyConnectedLayer<data_layout::MODEL_PARALLEL> *fc2 = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 2, 
+    fully_connected_layer<data_layout::MODEL_PARALLEL> *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(data_layout::MODEL_PARALLEL, 2, 
                                                                    100, 30,trainParams.MBSize,trainParams.ActivationType,
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
                                                                     {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});

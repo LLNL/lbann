@@ -210,7 +210,7 @@ void add_layers(
       Layer *layer;
       switch(get_data_layout(ell.data_layout(), __FILE__, __LINE__)){
       case data_layout::MODEL_PARALLEL:
-        layer = new FullyConnectedLayer<data_layout::MODEL_PARALLEL>(
+        layer = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -223,7 +223,7 @@ void add_layers(
           regs);
         break;
       case data_layout::DATA_PARALLEL:
-        layer = new FullyConnectedLayer<data_layout::DATA_PARALLEL>(
+        layer = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,

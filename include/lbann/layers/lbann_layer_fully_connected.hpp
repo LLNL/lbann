@@ -39,9 +39,9 @@
 #include <unistd.h>
 
 namespace lbann {
-// FullyConnectedLayer : dense layer class
+// fully_connected_layer : dense layer class
 template <data_layout DATA_DIST>
-class FullyConnectedLayer : public Layer {
+class fully_connected_layer : public Layer {
  private:
 
   const weight_initialization m_weight_initialization;
@@ -65,7 +65,7 @@ class FullyConnectedLayer : public Layer {
 
  public:
   ////////////////////////////////////////////////////////////////////////////////
-  // FullyConnectedLayer : single network layer class
+  // fully_connected_layer : single network layer class
   ////////////////////////////////////////////////////////////////////////////////
   // WB structure: (num units "neurons / filters" x (num features + 1))
   // Each row represents a neuron / filter
@@ -81,7 +81,7 @@ class FullyConnectedLayer : public Layer {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  FullyConnectedLayer(data_layout data_dist,
+  fully_connected_layer(data_layout data_dist,
                       const uint index,
                       const int numPrevNeurons,
                       const uint numNeurons,
@@ -117,7 +117,7 @@ class FullyConnectedLayer : public Layer {
     }
   }
 
-  ~FullyConnectedLayer(void) {
+  ~fully_connected_layer(void) {
     delete m_bias_bp_t;
     delete m_bias_weights_repl;
     delete m_activation_weights_v;
