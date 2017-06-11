@@ -50,16 +50,16 @@ void lbann::adagrad::setup(AbsDistMat *parameters) {
   // Initialize AdaGrad cache
   switch(m_matrix_format) {
   case matrix_format::MC_MR:
-    m_cache = new DistMat(comm->get_model_grid());
+    m_cache = new DistMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_STAR:
-    m_cache = new StarMat(comm->get_model_grid());
+    m_cache = new StarMat(m_comm->get_model_grid());
     break;
   case matrix_format::MC_STAR:
-    m_cache = new RowSumMat(comm->get_model_grid());
+    m_cache = new RowSumMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_VC:
-    m_cache = new StarVCMat(comm->get_model_grid());
+    m_cache = new StarVCMat(m_comm->get_model_grid());
     break;
   default:
     throw lbann_exception("lbann_optimizer_adagrad: invalid data layout");
@@ -121,5 +121,5 @@ lbann::adagrad_factory::adagrad_factory
 lbann::adagrad_factory::~adagrad_factory() {}
 
 lbann::optimizer *lbann::adagrad_factory::create_optimizer() {
-  return new adagrad(comm, m_learning_rate, m_eps);
+  return new adagrad(m_comm, m_learning_rate, m_eps);
 }

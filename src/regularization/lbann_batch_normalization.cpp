@@ -90,7 +90,6 @@ void batch_normalization::initialize_data_parallel_distribution() {
 void batch_normalization::fp_weights() {
   // Get output from linearity.
   ElMat *acts = m_layer->m_activations_v;
-  Int mbsize = acts->Width();
   Mat& acts_local = acts->Matrix();
   Mat& gamma_local = m_gamma->Matrix();
   Mat& beta_local = m_beta->Matrix();

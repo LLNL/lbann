@@ -63,24 +63,24 @@ void hypergradient_adam::setup(AbsDistMat *parameters) {
   // Initialize running averages.
   switch (m_matrix_format) {
   case matrix_format::MC_MR:
-    m_moment1 = new DistMat(comm->get_model_grid());
-    m_moment2 = new DistMat(comm->get_model_grid());
-    m_old_gradient = new DistMat(comm->get_model_grid());
+    m_moment1 = new DistMat(m_comm->get_model_grid());
+    m_moment2 = new DistMat(m_comm->get_model_grid());
+    m_old_gradient = new DistMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_STAR:
-    m_moment1 = new StarMat(comm->get_model_grid());
-    m_moment2 = new StarMat(comm->get_model_grid());
-    m_old_gradient = new StarMat(comm->get_model_grid());
+    m_moment1 = new StarMat(m_comm->get_model_grid());
+    m_moment2 = new StarMat(m_comm->get_model_grid());
+    m_old_gradient = new StarMat(m_comm->get_model_grid());
     break;
   case matrix_format::MC_STAR:
-    m_moment1 = new RowSumMat(comm->get_model_grid());
-    m_moment2 = new RowSumMat(comm->get_model_grid());
-    m_old_gradient = new RowSumMat(comm->get_model_grid());
+    m_moment1 = new RowSumMat(m_comm->get_model_grid());
+    m_moment2 = new RowSumMat(m_comm->get_model_grid());
+    m_old_gradient = new RowSumMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_VC:
-    m_moment1 = new StarVCMat(comm->get_model_grid());
-    m_moment2 = new StarVCMat(comm->get_model_grid());
-    m_old_gradient = new StarVCMat(comm->get_model_grid());
+    m_moment1 = new StarVCMat(m_comm->get_model_grid());
+    m_moment2 = new StarVCMat(m_comm->get_model_grid());
+    m_old_gradient = new StarVCMat(m_comm->get_model_grid());
     break;
   default:
     throw lbann_exception(
@@ -171,7 +171,7 @@ hypergradient_adam_factory::hypergradient_adam_factory(
 hypergradient_adam_factory::~hypergradient_adam_factory() {}
 
 optimizer *hypergradient_adam_factory::create_optimizer() {
-  return new hypergradient_adam(comm, m_learning_rate, m_hyper_learning_rate,
+  return new hypergradient_adam(m_comm, m_learning_rate, m_hyper_learning_rate,
                                 m_beta1, m_beta2, m_eps);
 }
 

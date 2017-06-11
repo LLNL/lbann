@@ -59,16 +59,16 @@ void lbann::sgd::setup(AbsDistMat *parameters) {
   if(m_momentum != DataType(0)) {
     switch(m_matrix_format) {
     case matrix_format::MC_MR:
-      m_velocity = new DistMat(comm->get_model_grid());
+      m_velocity = new DistMat(m_comm->get_model_grid());
       break;
     case matrix_format::STAR_STAR:
-      m_velocity = new StarMat(comm->get_model_grid());
+      m_velocity = new StarMat(m_comm->get_model_grid());
       break;
     case matrix_format::MC_STAR:
-      m_velocity = new RowSumMat(comm->get_model_grid());
+      m_velocity = new RowSumMat(m_comm->get_model_grid());
       break;
     case matrix_format::STAR_VC:
-      m_velocity = new StarVCMat(comm->get_model_grid());
+      m_velocity = new StarVCMat(m_comm->get_model_grid());
       break;
     default:
       throw lbann_exception("lbann_optimizer_sgd: invalid data layout");
@@ -157,5 +157,5 @@ lbann::sgd_factory::sgd_factory
 lbann::sgd_factory::~sgd_factory() {}
 
 lbann::optimizer *lbann::sgd_factory::create_optimizer() {
-  return new sgd(comm, m_learning_rate, m_momentum, m_decay, m_nesterov);
+  return new sgd(m_comm, m_learning_rate, m_momentum, m_decay, m_nesterov);
 }

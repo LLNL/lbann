@@ -77,7 +77,7 @@ class optimizer {
 
  protected:
   /// LBANN communicator
-  lbann_comm *comm;
+  lbann_comm *m_comm;
   /// Parameters to optimize
   AbsDistMat *m_parameters;
   /// Parameter matrix height
@@ -112,7 +112,7 @@ class optimizer_factory {
   };
  protected:
   /// LBANN communicator
-  lbann_comm *comm;
+  lbann_comm *m_comm;
  private:
   /// Optimizer name
   const std::string m_name;

@@ -84,9 +84,9 @@ void dropout::fp_activations() {
   ElMat *acts = m_layer->m_activations;
   const Int local_height = acts->LocalHeight();
   const Int local_width = acts->LocalWidth();
-  const Int global_height = acts->Height();
 
 #ifdef LBANN_PROCDET_DROPOUT
+  const Int global_height = acts->Height();
   bernoulli_fill_procdet(*m_cur_mask, acts->Height(), acts->Width(),
                          m_keep_prob);
   *m_cur_mask *= 1.0 / m_keep_prob;

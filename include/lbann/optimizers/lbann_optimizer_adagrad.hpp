@@ -40,7 +40,7 @@ class adagrad : public optimizer {
   adagrad
   (lbann_comm *comm,
    DataType learning_rate,
-   DataType m_eps = DataType(1e-8));
+   DataType eps = DataType(1e-8));
   /// Destructor
   ~adagrad();
   /// Set parameters to optimize and initialize optimizer

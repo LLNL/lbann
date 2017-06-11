@@ -53,16 +53,16 @@ void lbann::rmsprop::setup(AbsDistMat *parameters) {
   // Initialize RMSprop cache
   switch(m_matrix_format) {
   case matrix_format::MC_MR:
-    m_cache = new DistMat(comm->get_model_grid());
+    m_cache = new DistMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_STAR:
-    m_cache = new StarMat(comm->get_model_grid());
+    m_cache = new StarMat(m_comm->get_model_grid());
     break;
   case matrix_format::MC_STAR:
-    m_cache = new RowSumMat(comm->get_model_grid());
+    m_cache = new RowSumMat(m_comm->get_model_grid());
     break;
   case matrix_format::STAR_VC:
-    m_cache = new StarVCMat(comm->get_model_grid());
+    m_cache = new StarVCMat(m_comm->get_model_grid());
     break;
   default:
     throw lbann_exception("lbann_optimizer_rmsprop: invalid data layout");
@@ -125,5 +125,5 @@ lbann::rmsprop_factory::rmsprop_factory
 lbann::rmsprop_factory::~rmsprop_factory() {}
 
 lbann::optimizer *lbann::rmsprop_factory::create_optimizer() {
-  return new rmsprop(comm, m_learning_rate, m_decay_rate, m_eps);
+  return new rmsprop(m_comm, m_learning_rate, m_decay_rate, m_eps);
 }
