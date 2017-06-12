@@ -274,8 +274,11 @@ static void Write_MPI(const El::DistMatrix<DataType>& M, std::string basename = 
   MPI_Datatype type = El::mpi::TypeMap<DataType>();
 
   // define our file name
+  // Note: hackily copy path to a non-const array since some MPI
+  // routines don't take const argument
   string filename = basename + "." + FileExtension(BINARY);
-  const char *path = filename.c_str();
+  char path[BUFSIZ];
+  strcpy(path, filename.c_str());
 
   // get MPI communicator
   MPI_Comm comm = M.Grid().Comm().comm;
@@ -292,6 +295,8 @@ static void Write_MPI(const El::DistMatrix<DataType>& M, std::string basename = 
         fflush(stderr);
     }
     */
+    // Hackily copy path to non-const array since MPI_File_delete
+    // doesn't always take const inputs
     MPI_File_delete(path, MPI_INFO_NULL);
   }
 
@@ -339,7 +344,7 @@ static void Write_MPI(const El::DistMatrix<DataType>& M, std::string basename = 
 
   // write our portion of the matrix, since we set our view using create_darray,
   // all procs write at offset 0, the file view will take care of interleaving appropriately
-  const char *buf = (const char *) M.LockedBuffer();
+  char *buf = (char *) M.LockedBuffer();
   MPI_File_write_at_all(fh, 0, buf, 1, mattype, &status);
 
   // close file
@@ -360,7 +365,10 @@ static void Read_MPI(El::DistMatrix<DataType>& M, std::string filename, El::File
   MPI_Datatype type = El::mpi::TypeMap<DataType>();
 
   // define our file name
-  const char *path = filename.c_str();
+  // Note: hackily copy path to a non-const array since some MPI
+  // routines don't take const argument
+  char path[BUFSIZ];
+  strcpy(path, filename.c_str());
 
   // get MPI communicator
   MPI_Comm comm = M.Grid().Comm().comm;
