@@ -96,12 +96,12 @@ void lbann::imagenet_readerSingle::load(void) {
   }
 
   //read the offsets file
-  int n;
-  in >> n;
+  int num_images;
+  in >> num_images;
   if (is_master()) {
-    cout << "num images: " << n << endl;
+    cout << "num images: " << num_images << endl;
   }
-  m_offsets.reserve(n);
+  m_offsets.reserve(num_images);
   m_offsets.push_back(make_pair(0,0));
   size_t last_offset = 0;
   size_t offset;
@@ -111,10 +111,10 @@ void lbann::imagenet_readerSingle::load(void) {
     last_offset = m_offsets.back().first;
   }
 
-  if (n+1 != m_offsets.size()) {
+  if (num_images+1 != m_offsets.size()) {
     stringstream err;
     err << __FILE__ << " " << __LINE__
-        << " ::  we read " << m_offsets.size() << " offsets, but should have read " << n;
+        << " ::  we read " << m_offsets.size() << " offsets, but should have read " << num_images;
     throw lbann_exception(err.str());
   }
   in.close();
@@ -168,16 +168,14 @@ int lbann::imagenet_readerSingle::fetch_data(Mat& X) {
     m_data_filestream.seekg(start);
     m_data_filestream.read((char *)&m_work_buffer[0], ssz);
 
-    unsigned char *p = &m_pixels[0];
-    bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, p);
+    unsigned char *pixel_buf = m_pixels.data();
+    bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, pixel_buf);
 
     if(!ret) {
-      stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << idx;
       throw lbann_exception(err.str());
     }
     if(width != m_image_width || height != m_image_height) {
-      stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
       throw lbann_exception(err.str());
     }

@@ -158,7 +158,6 @@ void lbann_image_preprocessor::mean_subtraction(Mat& pixels,
     unsigned num_channels) {
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType *pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
@@ -178,7 +177,6 @@ void lbann_image_preprocessor::unit_variance(
   // Get image parameters
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType *pixels_buffer = pixels.Buffer();
 
   // Scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
@@ -211,7 +209,6 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
   // Get image parameters
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType *pixels_buffer = pixels.Buffer();
 
   // Shift and scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
