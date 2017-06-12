@@ -72,13 +72,13 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   // Assume there is a categorical accuracy metric.
   double local_acc = 0;
   double remote_acc = 0;
-  for (auto&& metric : m->metrics) {
+  for (auto&& metric : m->m_metrics) {
     if (metric->type == metrics::metric_type::categorical_accuracy) {
       local_acc = metric->report_metric(execution_mode::validation);
       break;
     }
   }
-  for (auto&& metric : m_remote_model->metrics) {
+  for (auto&& metric : m_remote_model->m_metrics) {
     if (metric->type == metrics::metric_type::categorical_accuracy) {
       remote_acc = metric->report_metric(execution_mode::validation);
       break;

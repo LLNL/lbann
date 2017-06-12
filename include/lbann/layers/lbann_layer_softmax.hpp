@@ -246,7 +246,7 @@ class softmax_layer: public Layer {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
-    if(m_neural_network_model->obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
+    if(m_neural_network_model->m_obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
        && (m_next_layer_type == layer_type::target_distributed_minibatch
            || m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
            || m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
