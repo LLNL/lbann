@@ -30,7 +30,7 @@
 
 #include "lbann/models/lbann_model_sequential.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
+#include "lbann/layers/lbann_layer_reconstruction.hpp"
 //#include "lbann/lbann.hpp"
 #include <vector>
 #include <string>
@@ -87,7 +87,7 @@ class stacked_autoencoder : public sequential_model {
 
  protected:
   size_t m_num_layers;
-  target_layer_unsupervised *m_target_layer;
+  reconstruction_layer<data_layout> *m_target_layer;
   /// the Model's name
   std::string m_name;
 };
