@@ -353,9 +353,9 @@ int main(int argc, char *argv[]) {
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer<data_layout> *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer<data_layout> *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #endif
     dnn->add(input_layer);
 
