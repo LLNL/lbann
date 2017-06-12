@@ -251,7 +251,7 @@ void add_layers(
         pool_strides.push_back(i);
       }
 
-      pooling_layer *new_layer = new pooling_layer(
+      pooling_layer<data_layout> *new_layer = new pooling_layer<data_layout>(
         layer_id,
         ell.num_dims(),
         ell.num_channels(),
@@ -309,7 +309,7 @@ void add_layers(
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
 
-      convolutional_layer *new_layer = new convolutional_layer(
+      convolutional_layer<data_layout> *new_layer = new convolutional_layer<data_layout>(
         layer_id,
         num_dims,
         num_input_channels,

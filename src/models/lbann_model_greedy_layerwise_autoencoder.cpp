@@ -113,7 +113,7 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   // build mirror layer
   Layer *original_layer = m_layers[layer_index];
   optimizer *opt = create_optimizer();
-  reconstruction_layer *mirror_layer = new reconstruction_layer(original_layer->get_data_layout(), mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
+  reconstruction_layer<data_layout> *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
 
   // insert mirror layer into model
   insert(mirror_index, mirror_layer);
@@ -157,7 +157,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     m_phase_end = m_current_phase+2;
     Layer *original_layer = m_layers[m_current_phase];
     optimizer *opt = create_optimizer();
-    reconstruction_layer  *mirror_layer = new reconstruction_layer(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
+    reconstruction_layer<data_layout>  *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
     Layer *tmp = nullptr;
     //if not at the last layer/phase, swap otherwise insert new
     if(m_current_phase < num_phases-1) {

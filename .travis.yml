@@ -8,6 +8,7 @@ language: cpp
 # Blacklist
 branches:
   except:
+    - release-v0.93
     - develop
     - gh-pages
 

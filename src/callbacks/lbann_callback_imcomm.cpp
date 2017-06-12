@@ -91,7 +91,7 @@ void lbann_callback_imcomm::setup(model *m) {
       // Check if reshaping is needed.
       // Currently only automatically reshapes conv layers. (But ignores bias.)
       if (layers[layer]->get_type() == layer_type::convolution) {
-        convolutional_layer *conv_layer = (convolutional_layer *) layers[layer];
+        convolutional_layer<data_layout> *conv_layer = (convolutional_layer<data_layout> *) layers[layer];
         params.reshape_height = conv_layer->m_num_input_channels *
                                 std::accumulate(conv_layer->m_filter_dims.begin(),
                                                 conv_layer->m_filter_dims.end(),
@@ -155,7 +155,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     Mat *reshaped = &local_gradients;
     if (params.reshape_height > 0 && ct_does_quantization(params.ct)) {
       if (layers[layer]->get_type() == layer_type::convolution) {
-        convolutional_layer *conv_layer = (convolutional_layer *) layers[layer];
+        convolutional_layer<data_layout> *conv_layer = (convolutional_layer<data_layout> *) layers[layer];
         // Currently ignores the bias.
         Mat grad_view = local_gradients(IR(0, conv_layer->m_filter_size), ALL);
         reshape_mat(grad_view, *reshaped, params.reshape_height,

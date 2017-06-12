@@ -189,20 +189,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    layer_factory *lfac = new layer_factory();
 #if __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
     dnn.add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm,  (int) trainParams.MBSize, data_readers);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     // First convolution layer
@@ -216,8 +215,8 @@ int main(int argc, char *argv[]) {
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
 
-      convolutional_layer *layer
-        = new convolutional_layer(1, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(1, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -238,8 +237,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(2, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(2, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -259,8 +258,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(3, numDims, channels, inputDim,
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(3, numDims, channels, inputDim,
                             poolWindowDims, poolPads, poolStrides, poolMode,
                             trainParams.MBSize,
                             comm,
@@ -268,14 +267,36 @@ int main(int argc, char *argv[]) {
       dnn.add(layer);
     }
 
-    // Fully connected and output layers
-    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 128, activation_type::RELU,
-    weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
-    dnn.add("softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID,
-            weight_initialization::glorot_uniform, {});
+    // Fully connected layer
+    {
+      fully_connected_layer<data_layout> *fc1
+        = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL,
+                                                 4,
+                                                 4608,
+                                                 128,
+                                                 trainParams.MBSize,
+                                                 activation_type::RELU,
+                                                 weight_initialization::glorot_uniform,
+                                                 comm,
+                                                 optimizer_fac->create_optimizer(),
+          {new dropout(data_layout::MODEL_PARALLEL, comm, 0.5)});
+      dnn.add(fc1);
+    }
 
-    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    // Softmax layer
+    {
+      softmax_layer<data_layout> *sl
+        = new softmax_layer<data_layout>(data_layout::MODEL_PARALLEL, 
+                                         4,
+                                         128,
+                                         10,
+                                         trainParams.MBSize, 
+                                         weight_initialization::glorot_uniform, 
+                                         comm, optimizer_fac->create_optimizer());
+      dnn.add(sl);
+    }
+
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -318,7 +339,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Free dynamically allocated memory
-    // delete lfac;  // Causes segfault
     delete optimizer_fac;
     // delete comm;  // Causes error
 
