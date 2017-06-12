@@ -44,6 +44,22 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
+//#define PARTITIONED
+#if defined(PARTITIONED)
+#define DATA_LAYOUT data_layout::DATA_PARALLEL
+#else
+#define DATA_LAYOUT data_layout::MODEL_PARALLEL
+#endif
+
+void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index) {
+  std::vector<Layer *>& layers = model->get_layers();
+  prev_num_neurons = -1;
+  if(layers.size() != 0) {
+    Layer *prev_layer = layers.back();
+    prev_num_neurons = prev_layer->get_num_neurons();
+  }
+  cur_index = layers.size();
+}
 #define PARTITIONED
 
 // train/test data info
@@ -96,7 +112,7 @@ int main(int argc, char *argv[]) {
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
     // Number of GPUs
-    Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+    //Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
     // Number of class labels
     Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
@@ -143,9 +159,9 @@ int main(int argc, char *argv[]) {
     Timer timer_io;
     Timer timer_lbann;
     Timer timer_val;
-    double sec_all_io = 0;
-    double sec_all_lbann = 0;
-    double sec_all_val = 0;
+    //double sec_all_io = 0;
+    //double sec_all_lbann = 0;
+    //double sec_all_val = 0;
 
     // Set up the communicator and get the grid.
     comm = new lbann_comm(trainParams.ProcsPerModel);
@@ -353,8 +369,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {11, 11};
       Int convPads[] = {0, 0};
       Int convStrides[] = {4, 4};
-      convolutional_layer *layer
-        = new convolutional_layer(1, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(1, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -391,8 +407,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(3, numDims, channels, inputDim,
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(3, numDims, channels, inputDim,
                             poolWindowDims, poolPads, poolStrides, poolMode,
                             trainParams.MBSize,
                             comm,
@@ -410,8 +426,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {5, 5};
       Int convPads[] = {2, 2};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(4, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(4, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -448,8 +464,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(6, numDims, channels, inputDim,
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(6, numDims, channels, inputDim,
                             poolWindowDims, poolPads, poolStrides, poolMode,
                             trainParams.MBSize,
                             comm,
@@ -467,8 +483,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(7, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(7, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -490,8 +506,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(8, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(8, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -513,8 +529,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(9, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(9, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -535,8 +551,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(10, numDims, channels, inputDim,
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(10, numDims, channels, inputDim,
                             poolWindowDims, poolPads, poolStrides, poolMode,
                             trainParams.MBSize,
                             comm,
@@ -545,32 +561,56 @@ int main(int argc, char *argv[]) {
     }
 
     // Layer 11 (fully-connected)
-    dnn->add("FullyConnected",
-             data_layout::MODEL_PARALLEL,
-             4096,
-             activation_type::RELU,
-    weight_initialization::he_normal, {
-      new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
-      new l2_regularization(0.0005)
-    });
+    int prev_num_neurons;
+    int layer_id;
+    get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
+    Layer *new_layer = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT,
+       layer_id,
+       prev_num_neurons,
+       4096,
+       trainParams.MBSize,
+       activation_type::RELU,
+       weight_initialization::he_normal,
+       comm,
+       dnn->create_optimizer(),
+       {
+         new dropout(DATA_LAYOUT, comm, trainParams.DropOut),
+         new l2_regularization(0.0005)
+        });
+    dnn->add(new_layer);
 
     // Layer 12 (fully-connected)
-    dnn->add("FullyConnected",
-             data_layout::MODEL_PARALLEL,
-             4096,
-             activation_type::RELU,
-    weight_initialization::he_normal, {
-      new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
-      new l2_regularization(0.0005)
-    });
+    get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
+    Layer *new_layer_2 = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT,
+       layer_id,
+       prev_num_neurons,
+       4096,
+       trainParams.MBSize,
+       activation_type::RELU,
+       weight_initialization::he_normal,
+       comm,
+       dnn->create_optimizer(),
+       {
+         new dropout(DATA_LAYOUT, comm, 0.5),
+         new l2_regularization(0.0005)
+        });
+    dnn->add(new_layer_2);
 
     // Layer 13 (softmax)
-    dnn->add("softmax",
-             data_layout::MODEL_PARALLEL,
-             1000,
-             activation_type::ID,
-             weight_initialization::he_normal,
-    {new l2_regularization(0.0005)});
+    get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
+    Layer *softmax = new softmax_layer<data_layout>(
+       DATA_LAYOUT,
+       layer_id,
+       prev_num_neurons,
+       1000,
+       trainParams.MBSize,
+       weight_initialization::he_normal,
+       comm,
+       dnn->create_optimizer()
+      );
+    dnn->add(softmax);
 
     // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
@@ -598,9 +638,11 @@ int main(int argc, char *argv[]) {
 
     if (grid.Rank() == 0) {
       cout << "Layer initialized:" << endl;
+      /*
       for (uint n = 0; n < dnn->get_layers().size(); n++) {
-        cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->NumNeurons << endl;
+        cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->get_num_neurons << endl;
       }
+      */
       cout << endl;
     }
 
@@ -689,7 +731,7 @@ int main(int argc, char *argv[]) {
     // read training state from checkpoint file if we have one
     //************************************************************************
     int epochStart = 0; // epoch number we should start at
-    int trainStart; // index into indices we should start at
+    //int trainStart; // index into indices we should start at
 
     //************************************************************************
     // mainloop for train/validate
@@ -717,7 +759,6 @@ int main(int argc, char *argv[]) {
 
   // free all resources by El and MPI
   Finalize();
-
   return 0;
 }
 
