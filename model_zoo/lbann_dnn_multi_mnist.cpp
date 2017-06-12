@@ -44,6 +44,17 @@ using namespace El;
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
 const uint g_NumLayers = g_LayerDim.size(); // # layers
 
+void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index) {
+  std::vector<Layer *>& layers = model->get_layers();
+  prev_num_neurons = -1;
+  if(layers.size() != 0) {
+    Layer *prev_layer = layers.back();
+    prev_num_neurons = prev_layer->get_num_neurons();
+  }
+  cur_index = layers.size();
+}
+
+
 int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
@@ -174,8 +185,8 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    layer_factory *lfac = new layer_factory();
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    //layer_factory *lfac = new layer_factory();
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
     metrics::categorical_accuracy acc(data_layout::DATA_PARALLEL, comm);
     dnn.add_metric(&acc);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
@@ -186,29 +197,75 @@ int main(int argc, char *argv[]) {
 #ifdef PARTITIONED
     input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #endif
     dnn.add(input_layer);
-    uint fcidx1 = dnn.add(
-                    "FullyConnected", DATA_LAYOUT, 1024,
-                    trainParams.ActivationType, weight_initialization::glorot_uniform,
-    {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
-    uint fcidx2 = dnn.add(
-                    "FullyConnected", DATA_LAYOUT, 1024,
-                    trainParams.ActivationType, weight_initialization::glorot_uniform,
-    {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
-    uint fcidx3 = dnn.add(
-                    "FullyConnected", DATA_LAYOUT, 1024,
-                    trainParams.ActivationType, weight_initialization::glorot_uniform,
-    {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
-    uint smidx = dnn.add(
-                   "softmax", DATA_LAYOUT, 10,
-                   activation_type::ID, weight_initialization::glorot_uniform, {});
+
+    int prev_num_neurons;
+    int layer_id;
+    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    uint fcidx1 = layer_id;
+    Layer *new_layer = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT, 
+       layer_id,
+       prev_num_neurons,
+       1024,
+       trainParams.MBSize,
+       trainParams.ActivationType,
+       weight_initialization::glorot_uniform,
+       comm,
+       dnn.create_optimizer(),
+       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+    dnn.add(new_layer);
+
+    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    uint fcidx2 = layer_id;
+    Layer *new_layer_2 = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT, 
+       layer_id,
+       prev_num_neurons,
+       1024,
+       trainParams.MBSize,
+       trainParams.ActivationType,
+       weight_initialization::glorot_uniform,
+       comm,
+       dnn.create_optimizer(),
+       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+    dnn.add(new_layer_2);
+
+    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    uint fcidx3 = layer_id;
+    Layer *new_layer_3 = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT, 
+       layer_id,
+       prev_num_neurons,
+       1024,
+       trainParams.MBSize,
+       trainParams.ActivationType,
+       weight_initialization::glorot_uniform,
+       comm,
+       dnn.create_optimizer(),
+       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+    dnn.add(new_layer_3);
+
+    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    uint smidx = layer_id;
+    Layer *softmax = new softmax_layer<data_layout>(
+       DATA_LAYOUT,
+       layer_id,
+       prev_num_neurons,
+       10,
+       trainParams.MBSize,
+       weight_initialization::glorot_uniform,
+       comm,
+       dnn.create_optimizer() 
+      );
+    dnn.add(softmax);
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
     target_layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #else
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #endif
     dnn.add(target_layer);
 

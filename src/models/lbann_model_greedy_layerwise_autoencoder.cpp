@@ -158,7 +158,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     Layer *original_layer = m_layers[m_current_phase];
     optimizer *opt = create_optimizer();
     reconstruction_layer<data_layout>  *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
-    Layer *tmp;
+    Layer *tmp = nullptr;
     //if not at the last layer/phase, swap otherwise insert new
     if(m_current_phase < num_phases-1) {
       tmp = swap(m_phase_end,mirror_layer);
