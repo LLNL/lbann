@@ -30,10 +30,20 @@
 #include "lbann/layers/lbann_io_layer.hpp"
 
 namespace lbann {
+template <class T_layout>
 class input_layer : public io_layer {
  public:
-  input_layer(data_layout dist_data, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {});
-  DistMat *bp_output(void);
+  input_layer(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs = {})
+    : io_layer(data_dist, comm, mini_batch_size, data_readers) {
+    m_num_neurons = io_layer::get_linearized_data_size();
+  }
+
+  /**
+   * Input layers are not able to return output matrices for backward propagation
+   */
+  DistMat *bp_output() {
+    return NULL;
+  }
 
   /** No setting the standard view of the matrix -- it defines the standard view */
   void fp_set_std_matrix_view(void) {}
@@ -68,8 +78,6 @@ class input_layer : public io_layer {
 
     return true;
   }
-
- public:
 };
 }
 

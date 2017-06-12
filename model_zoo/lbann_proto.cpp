@@ -34,7 +34,7 @@ using namespace lbann;
 using namespace El;
 
 int main(int argc, char *argv[]) {
-#if 0
+#if 1
   Initialize(argc, argv);
   lbann_comm *comm = NULL;
 
