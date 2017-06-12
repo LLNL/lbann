@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
 
-      convolutional_layer *layer
-        = new convolutional_layer(1, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(1, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -237,8 +237,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(2, numDims, inputChannels, inputDims,
+      convolutional_layer<data_layout> *layer
+        = new convolutional_layer<data_layout>(2, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -258,8 +258,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(3, numDims, channels, inputDim,
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(3, numDims, channels, inputDim,
                             poolWindowDims, poolPads, poolStrides, poolMode,
                             trainParams.MBSize,
                             comm,
