@@ -48,13 +48,14 @@ void lbann_callback_io::on_epoch_end(model *m) {
     if (m_layer_indices.size() == 0 ||
         m_layer_indices.find(idx) != m_layer_indices.end()) {
 
-      input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layer);
+      input_layer<data_layout> *input = (input_layer<data_layout> *) dynamic_cast<input_layer<data_layout> *> (layer);
       if(input != NULL) {
         cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
              << input->get_num_samples_trained() << " training samples of "
              << input->get_total_num_training_samples() << " ("
              << input->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << endl;
       }
+#if 1
       target_layer *target = (target_layer *) dynamic_cast<target_layer *> (layer);
       if(target != NULL) {
         cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
@@ -62,6 +63,15 @@ void lbann_callback_io::on_epoch_end(model *m) {
              << target->get_total_num_training_samples() << " ("
              << target->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << endl;
       }
+#else
+      target_layer<data_layout::MODEL_PARALLEL> *target = (target_layer<data_layout::MODEL_PARALLEL> *) dynamic_cast<target_layer<data_layout::MODEL_PARALLEL> *> (layer);
+      if(target != NULL) {
+        cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
+             << target->get_num_samples_trained() << " training labels of "
+             << target->get_total_num_training_samples() << " ("
+             << target->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << endl;
+      }
+#endif
     }
   }
 }
@@ -75,13 +85,14 @@ void lbann_callback_io::on_test_end(model *m) {
     if (m_layer_indices.size() == 0 ||
         m_layer_indices.find(idx) != m_layer_indices.end()) {
 
-      input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layer);
+      input_layer<data_layout> *input = (input_layer<data_layout> *) dynamic_cast<input_layer<data_layout> *> (layer);
       if(input != NULL) {
         cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
              << input->get_num_samples_tested() << " test samples of "
              << input->get_total_num_testing_samples() << " ("
              << input->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << endl;
       }
+#if 1
       target_layer *target = (target_layer *) dynamic_cast<target_layer *> (layer);
       if(target != NULL) {
         cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
@@ -89,6 +100,15 @@ void lbann_callback_io::on_test_end(model *m) {
              << target->get_total_num_testing_samples() << " ("
              << target->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << endl;
       }
+#else
+      target_layer<data_layout> *target = (target_layer<data_layout> *) dynamic_cast<target_layer<data_layout> *> (layer);
+      if(target != NULL) {
+        cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
+             << target->get_num_samples_tested() << " test labels of "
+             << target->get_total_num_testing_samples() << " ("
+             << target->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << endl;
+      }
+#endif
     }
   }
 }

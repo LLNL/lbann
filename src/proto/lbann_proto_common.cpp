@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include "lbann/proto/lbann_proto_common.hpp"
 
 #include "lbann/lbann_base.hpp"
@@ -186,7 +186,7 @@ void add_layers(
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
-      input_layer *d = new input_layer_distributed_minibatch_parallel_io<data_layout>(
+      input_layer<data_layout> *d = new input_layer_distributed_minibatch_parallel_io<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           comm,
           m.num_parallel_readers(),
