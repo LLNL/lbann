@@ -54,6 +54,13 @@ class lbann_comm {
   lbann_comm(int procs_per_model = 0);
   ~lbann_comm();
 
+  /**
+   * Split communicators so each model has procs_per_model processes.
+   * If you call this multiple times, it will invalidate existing grids
+   * and communicators.
+   */
+  void split_models(int procs_per_model);
+
   /** Get which model this process is in. */
   inline int get_model_rank() const {
     return model_rank;
@@ -690,13 +697,6 @@ class lbann_comm {
   double ar_rs_recv_time;
   double ar_ag_send_time;
   double ar_ag_recv_time;
-
-  /** Create a new group from a list of ranks. (Needs to be freed.) */
-  inline void create_group(std::vector<int>& ranks, mpi::Group& g) {
-    mpi::Group world_group;
-    mpi::CommGroup(mpi::COMM_WORLD, world_group);
-    mpi::Incl(world_group, (int) ranks.size(), ranks.data(), g);
-  }
 
   /** Setup communicator for processes in the same compute node.
    *  We obtain a string specifying the compute node. The string is

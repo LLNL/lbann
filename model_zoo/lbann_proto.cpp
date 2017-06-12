@@ -29,14 +29,11 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto_common.hpp"
 
-using namespace std;
 using namespace lbann;
-using namespace El;
 
 int main(int argc, char *argv[]) {
 #if 1
-  Initialize(argc, argv);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
 
@@ -87,18 +84,13 @@ int main(int argc, char *argv[]) {
     SetBlocksize(pb_model->block_size());
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(pb_model->procs_per_model());
+    comm->split_models(pb_model->procs_per_model());
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
       cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
       cout << endl;
     }
-
-    // Initialize lbann with the communicator.
-    lbann::initialize(comm);
-    init_random(42);
-    init_data_seq_random(42);
 
     int parallel_io = pb_model->num_parallel_readers();
     if (parallel_io == 0) {
@@ -183,7 +175,7 @@ int main(int argc, char *argv[]) {
   }
 
   // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
 #endif
   return 0;

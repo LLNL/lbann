@@ -107,15 +107,17 @@ class lbann_comm;
 
 /**
  * Initialize LBANN.
- * This should handle all LBANN initialization that doesn't need per-model
- * configuration.
- * @param comm An lbann_comm instance for all the processes involved.
+ * The comm instance this returns places every process in one model. This can be
+ * changed with lbann_comm::split_models afterward.
+ * @param argc The program's argc.
+ * @param argv The program's argv.
+ * @param seed Optional seed for random number generators.
  */
-void initialize(lbann_comm *comm);
+lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
 /**
  * Perform finalization.
  */
-void finalize();
+void finalize(lbann_comm* comm = nullptr);
 
 class CUtility {
  public:
