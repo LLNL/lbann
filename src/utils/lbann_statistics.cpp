@@ -233,7 +233,6 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
   // Matrix dimensions
   const Int height = data.Height();
-  const Int width = data.Width();
   const Int local_height = data.LocalHeight();
   const Int local_width = data.LocalWidth();
 
