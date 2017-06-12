@@ -250,7 +250,7 @@ void add_layers(
         pool_strides.push_back(i);
       }
 
-      pooling_layer *new_layer = new pooling_layer(
+      pooling_layer<data_layout> *new_layer = new pooling_layer<data_layout>(
         layer_id,
         ell.num_dims(),
         ell.num_channels(),
