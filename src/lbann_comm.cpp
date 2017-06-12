@@ -52,20 +52,38 @@ using namespace El;
 #define checkMPI(status) status
 #endif // #ifdef LBANN_DEBUG
 
-lbann::lbann_comm::lbann_comm(int _procs_per_model) :
-  procs_per_model(_procs_per_model), num_model_barriers(0),
+lbann::lbann_comm::lbann_comm(int ppm) :
+  procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 
-  // Initialize parameters
+  // Set up the initial model split.
+  split_models(procs_per_model);
+
+  // Initialize node communicators
+  setup_node_comm();
+  procs_per_node = mpi::Size(node_comm);
+  rank_in_node = mpi::Rank(node_comm);
+}
+
+lbann::lbann_comm::~lbann_comm() {
+  delete grid;
+  mpi::Free(model_comm);
+  mpi::Free(intermodel_comm);
+  mpi::Free(node_comm);
+  for (auto&& buf_vec : collective_bufs) {
+    for (auto&& buf : buf_vec.second) {
+      delete[] buf;
+    }
+  }
+}
+
+void lbann::lbann_comm::split_models(int ppm) {
   int world_size = mpi::Size(mpi::COMM_WORLD);
-  if (procs_per_model == 0) {
+  procs_per_model = ppm;
+  if (ppm == 0) {
     procs_per_model = world_size;
   }
-  num_models = world_size / procs_per_model;
-  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
-
   // Check if parameters are valid
   if (procs_per_model > world_size) {
     stringstream err;
@@ -82,30 +100,19 @@ lbann::lbann_comm::lbann_comm(int _procs_per_model) :
     throw lbann_exception(err.str());
   }
 
+  num_models = world_size / procs_per_model;
+  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
+  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
+
   // Initialize model and intermodel communicators
   mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
   mpi::Split(mpi::COMM_WORLD, rank_in_model, model_rank, intermodel_comm);
 
   // Initialize Elemental grid
-  grid = new Grid(model_comm);
-
-  // Initialize node communicators
-  setup_node_comm();
-  procs_per_node = mpi::Size(node_comm);
-  rank_in_node = mpi::Rank(node_comm);
-
-}
-
-lbann::lbann_comm::~lbann_comm() {
-  delete grid;
-  mpi::Free(model_comm);
-  mpi::Free(intermodel_comm);
-  mpi::Free(node_comm);
-  for (auto&& buf_vec : collective_bufs) {
-    for (auto&& buf : buf_vec.second) {
-      delete[] buf;
-    }
+  if (grid != nullptr) {
+    delete grid;
   }
+  grid = new Grid(model_comm);
 }
 
 void lbann::lbann_comm::intermodel_sum_matrix(Mat& mat) {
