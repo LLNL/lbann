@@ -308,7 +308,7 @@ void add_layers(
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
 
-      convolutional_layer *new_layer = new convolutional_layer(
+      convolutional_layer<data_layout> *new_layer = new convolutional_layer<data_layout>(
         layer_id,
         num_dims,
         num_input_channels,
