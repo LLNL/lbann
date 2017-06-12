@@ -184,19 +184,15 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
-      data_layout layout = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
-
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
-
-      input_layer *d = new input_layer_distributed_minibatch_parallel_io(
-                                                                                                      //      input_layer *d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
-        layout, //data_layout
-        comm,
-        m.num_parallel_readers(),
-        mb_size,
-        data_readers,
-        regs);
+      input_layer *d = new input_layer_distributed_minibatch_parallel_io<data_layout>(
+          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          regs);
       model->add(d);
     }
 
