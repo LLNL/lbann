@@ -242,9 +242,9 @@ int main(int argc, char *argv[]) {
 
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
-    lbann_callback_dump_weights *dump_weights_cb;
-    lbann_callback_dump_activations *dump_activations_cb;
-    lbann_callback_dump_gradients *dump_gradients_cb;
+    lbann_callback_dump_weights *dump_weights_cb = nullptr;
+    lbann_callback_dump_activations *dump_activations_cb = nullptr;
+    lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
     if (trainParams.DumpWeights) {
       dump_weights_cb = new lbann_callback_dump_weights(
         trainParams.DumpDir);
@@ -300,31 +300,8 @@ int main(int argc, char *argv[]) {
 
     // train/test
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-#if 0
-      // optionally check gradients
-      if (n > 0 && n % 10000 == 0) {
-        printf("Checking gradients...\n");
-        double errors[g_NumLayers];
-        dnn.checkGradient(Xs, Ys, errors);
-        printf("gradient errors: ");
-        for (uint l = 0; l < g_NumLayers; l++) {
-          printf("%lf ", errors[l]);
-        }
-        printf("\n");
-      }
-#endif
-
       dnn.train(1, true);
-
-      // Update the learning rate on each epoch
-      // trainParams.LearnRate = trainParams.LearnRate * trainParams.LrDecayRate;
-      // if(grid.Rank() == 0) {
-      //   cout << "Changing the learning rate to " << trainParams.LearnRate << " after processing " << (t+1) << " epochs" << endl;
-      // }
-
       // testing
-      int numerrors = 0;
-
       dnn.evaluate(execution_mode::testing);
     }
 
