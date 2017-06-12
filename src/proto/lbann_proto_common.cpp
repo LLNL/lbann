@@ -166,7 +166,6 @@ void add_layers(
   const lbann_data::LbannPB& p) {
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
-  bool master = comm->am_world_master();
 
   const lbann_data::Model& m = p.model();
   int mb_size = m.mini_batch_size();
@@ -203,7 +202,7 @@ void add_layers(
       const lbann_data::FullyConnected& ell = layer.fully_connected();
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
-      Layer *layer = new fully_connected_layer<data_layout>(
+      Layer *new_layer = new fully_connected_layer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -214,7 +213,7 @@ void add_layers(
           comm,
           model->create_optimizer(),
           regs);
-      model->add(layer);
+      model->add(new_layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -251,7 +250,7 @@ void add_layers(
         pool_strides.push_back(i);
       }
 
-      pooling_layer *layer = new pooling_layer(
+      pooling_layer *new_layer = new pooling_layer(
         layer_id,
         ell.num_dims(),
         ell.num_channels(),
@@ -265,7 +264,7 @@ void add_layers(
         cudnn
       );
 
-      model->add(layer);
+      model->add(new_layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -309,7 +308,7 @@ void add_layers(
       vector<regularizer *> regs;
       init_regularizers(regs, comm, ell.regularizer());
 
-      convolutional_layer *layer = new convolutional_layer(
+      convolutional_layer *new_layer = new convolutional_layer(
         layer_id,
         num_dims,
         num_input_channels,
@@ -327,7 +326,7 @@ void add_layers(
         cudnn
       );
 
-      model->add(layer);
+      model->add(new_layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -335,7 +334,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      Layer *layer = new softmax_layer<data_layout>(
+      Layer *new_layer = new softmax_layer<data_layout>(
           get_data_layout(ell.data_layout(), __FILE__, __LINE__),
           layer_id,
           prev_num_neurons,
@@ -345,7 +344,7 @@ void add_layers(
           comm,
           model->create_optimizer()
         );
-      model->add(layer);
+      model->add(new_layer);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -389,6 +388,7 @@ void init_callbacks(
       string extension = c.extension();
       generic_data_reader *reader = data_readers[execution_mode::training];
       lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
+      model->add_callback(image_cb);
     }
 
     if (callback.has_print()) {
@@ -665,10 +665,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (readme.role() == "test") {
       data_readers[execution_mode::testing] = reader;
     }
-
-    //double validation_percent = readme.validation_percent();
-    //TODO remove this hack!
-    double validation_percent = 1.0 - readme.validation_percent();
 
     if (readme.role() == "train") {
       if (name == "mnist") {

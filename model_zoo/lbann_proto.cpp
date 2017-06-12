@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
     init_random(42);
     init_data_seq_random(42);
 
-    const lbann_data::DataReader & d_reader = pb.data_reader();
     int parallel_io = pb_model->num_parallel_readers();
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
@@ -118,7 +117,6 @@ int main(int argc, char *argv[]) {
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
-    const lbann_data::Model& m2 = pb.model();
     std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
