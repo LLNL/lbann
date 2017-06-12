@@ -1,35 +1,9 @@
 #!/bin/bash
 
-
-# Detect OS version
+# Detect system parameters
+CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
-
-if [ "${TOSS}" == "3.10.0" ]; then
-  if [ "${ARCH}" == "x86_64" ]; then
-    module load cmake/3.5.2
-  elif [ "${ARCH}" == "ppc64le" ]; then
-    module load cmake/3.7.2
-  fi
-else
-  # need to initialize modules on earlier versions of TOSS
-  . /usr/share/[mM]odules/init/bash
-fi
-
-# Detect the cuda toolkit version loaded or use default
-if [ "$CUDA_PATH" == "" ] || [ `basename "$CUDA_PATH"` == "" ] ; then
-  # use default
-  CUDATOOLKIT_VERSION=8.0
-  module load cudatoolkit/$CUDATOOLKIT_VERSION
-  if [ -d /opt/cudatoolkit/$CUDATOOLKIT_VERSION ] ; then
-      CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit/$CUDATOOLKIT_VERSION
-  elif [ -d /opt/cudatoolkit-$CUDATOOLKIT_VERSION ] ; then
-      CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-$CUDATOOLKIT_VERSION
-  fi
-else
-  CUDATOOLKIT_VERSION=`basename "$CUDA_PATH" | sed 's/cudatoolkit-//'`
-  CUDA_TOOLKIT_ROOT_DIR=$CUDA_PATH
-fi
 
 ################################################################
 # Default options
@@ -37,40 +11,41 @@ fi
 
 COMPILER=gnu
 if [ "${ARCH}" == "x86_64" ]; then
-  MPI=mvapich2
+    MPI=mvapich2
 elif [ "${ARCH}" == "ppc64le" ]; then
-  MPI=spectrum
+    MPI=spectrum
 fi
-COMPILER_CC_NAME_VERSION=
 BUILD_TYPE=Release
 Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
-  OpenCV_DIR=""
-  if [ "${ARCH}" == "x86_64" ]; then
-    VTUNE_DIR=/usr/tce/packages/vtune/default
-  elif [ "${ARCH}" == "ppc64le" ]; then
-    VTUNE_DIR=""
-  fi
+    OpenCV_DIR=""
+    if [ "${ARCH}" == "x86_64" ]; then
+        VTUNE_DIR=/usr/tce/packages/vtune/default
+    elif [ "${ARCH}" == "ppc64le" ]; then
+        VTUNE_DIR=
+    fi
 else
-  OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-  VTUNE_DIR=/usr/local/tools/vtune
+    OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+    VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-  cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+    cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
 elif [ "${ARCH}" == "ppc64le" ]; then
-  cuDNN_DIR=""
+    cuDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 ELEMENTAL_MATH_LIBS=
-CMAKE_C_FLAGS=
-CMAKE_CXX_FLAGS=-DLBANN_SET_EL_RNG
-CMAKE_Fortran_FLAGS=
+PATCH_OPENBLAS=ON
+C_FLAGS=
+CXX_FLAGS=-DLBANN_SET_EL_RNG
+Fortran_FLAGS=
 CLEAN_BUILD=0
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 GEN_DOC=0
 INSTALL_LBANN=0
-ALTERNATE_BUILD_DIR=none
+BUILD_DIR=
+INSTALL_DIR=
 BUILD_SUFFIX=
 SEQ_INIT=OFF
 
@@ -82,15 +57,27 @@ WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratche/brainusr/libjpeg-turbo"
 #LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
 
+function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+
+if [ "${CLUSTER}" == "surface" ]; then
+    AUTOCONF_CUSTOM_DIR=/p/lscratche/brainusr/autoconf/bin
+    AUTOCONF_VER_DEFAULT=`autoconf --version | awk '(FNR==1){print $NF}'`
+    AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
+
+    if version_gt ${AUTOCONF_VER_CUSTOM} ${AUTOCONF_VER_DEFAULT}; then
+        export PATH=${AUTOCONF_CUSTOM_DIR}:${PATH}
+    fi
+fi
+
 ################################################################
 # Help message
 ################################################################
 
 function help_message {
-  local SCRIPT=$(basename ${0})
-  local N=$(tput sgr0)    # Normal text
-  local C=$(tput setf 4)  # Colored text
-cat << EOF
+    local SCRIPT=$(basename ${0})
+    local N=$(tput sgr0)    # Normal text
+    local C=$(tput setf 4)  # Colored text
+    cat << EOF
 Build LBANN on an LLNL LC system.
 Can be called anywhere in the LBANN project tree.
 Usage: ${SCRIPT} [options]
@@ -116,205 +103,300 @@ EOF
 ################################################################
 
 while :; do
-  case ${1} in
-    -h|--help)
-      # Help message
-      help_message
-      exit 0
-      ;;
-    --build)
-      # Change default build directory
-      if [ -n "${2}" ]; then
-        ALTERNATE_BUILD_DIR=${2}
-        shift
-      else
-        echo "\"${1}\" option requires a non-empty option argument" >&2
-        exit 1
-      fi  
-      ;;
-    --suffix)
-      # Specify suffix for build directory
-       if [ -n "${2}" ]; then
-         BUILD_SUFFIX=${2}
-         shift
-       else
-         echo "\"${1}\" option requires a non-empty option argument" >&2
-         exit 1
-       fi
-       ;;
-    --compiler)
-      # Choose compiler
-      if [ -n "${2}" ]; then
-        COMPILER=${2}
-        shift
-      else
-        echo "\"${1}\" option requires a non-empty option argument" >&2
-        exit 1
-      fi
-      ;;
-    --mpi)
-      # Choose mpi library
-      if [ -n "${2}" ]; then
-        MPI=${2}
-        shift
-      else
-        echo "\"${1}\" option requires a non-empty option argument" >&2
-        exit 1
-      fi
-      ;;
-    -v|--verbose)
-      # Verbose output
-      VERBOSE=1
-      CMAKE_INSTALL_MESSAGE=ALWAYS
-      ;;
-    -d|--debug)
-      # Debug mode
-      BUILD_TYPE=Debug
-      SEQ_INIT=ON
-      ;;
-    --tbinf)
-      # Tensorboard interface
-      WITH_TBINF=ON
-      ;;
-    --vtune)
-      # VTune libraries
-      WITH_VTUNE=ON
-      ;;
-    --clean-build|--build-clean)
-      # Clean build directory
-      CLEAN_BUILD=1
-      ;;
-    -j|--make-processes)
-      if [ -n "${2}" ]; then
-        MAKE_NUM_PROCESSES=${2}
-        shift
-      else
-        echo "\"${1}\" option requires a non-empty option argument" >&2
-        exit 1
-      fi
-      ;;
-    --doc)
-      # Generate documentation
-      GEN_DOC=1
-      ;;
-    -i|--install-lbann)
-      INSTALL_LBANN=1
-      ;;
-    -?*)
-      # Unknown option
-      echo "Unknown option (${1})" >&2
-      exit 1
-      ;;
-    *)
-      # Break loop if there are no more options
-      break
-  esac
-  shift
+    case ${1} in
+        -h|--help)
+            # Help message
+            help_message
+            exit 0
+            ;;
+        --build)
+            # Change default build directory
+            if [ -n "${2}" ]; then
+                ALTERNATE_BUILD_DIR=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi  
+            ;;
+        --suffix)
+            # Specify suffix for build directory
+            if [ -n "${2}" ]; then
+                BUILD_SUFFIX=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --compiler)
+            # Choose compiler
+            if [ -n "${2}" ]; then
+                COMPILER=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --mpi)
+            # Choose mpi library
+            if [ -n "${2}" ]; then
+                MPI=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        -v|--verbose)
+            # Verbose output
+            VERBOSE=1
+            CMAKE_INSTALL_MESSAGE=ALWAYS
+            ;;
+        -d|--debug)
+            # Debug mode
+            BUILD_TYPE=Debug
+            SEQ_INIT=ON
+            ;;
+        --tbinf)
+            # Tensorboard interface
+            WITH_TBINF=ON
+            ;;
+        --vtune)
+            # VTune libraries
+            WITH_VTUNE=ON
+            ;;
+        --clean-build|--build-clean)
+            # Clean build directory
+            CLEAN_BUILD=1
+            ;;
+        -j|--make-processes)
+            if [ -n "${2}" ]; then
+                MAKE_NUM_PROCESSES=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --doc)
+            # Generate documentation
+            GEN_DOC=1
+            ;;
+        -i|--install-lbann)
+            INSTALL_LBANN=1
+            ;;
+        -?*)
+            # Unknown option
+            echo "Unknown option (${1})" >&2
+            exit 1
+            ;;
+        *)
+            # Break loop if there are no more options
+            break
+    esac
+    shift
 done
 
 ################################################################
-# Load modules
+# Initialize package system
 ################################################################
 
-if [ "${TOSS}" != "3.10.0" ]; then
-  module load git
-fi
-
-################################################################
-# Initialize variables
-################################################################
-
-# Detect computing system
-CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-
-# Build and install directories
-ROOT_DIR=$(git rev-parse --show-toplevel)
-if [ "${ALTERNATE_BUILD_DIR}" !=  "none" ]; then
-  BUILD_DIR=${ALTERNATE_BUILD_DIR}/${CLUSTER}.llnl.gov
+# Determine whether system uses modules
+USE_MODULES=0
+if [ "${TOSS}" == "3.10.0" ]; then
+    USE_MODULES=1
+elif [ "${TOSS}" == "2.6.32" ]; then
+    USE_MODULES=0
 else
-  BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+    # Initialize modules
+    . /usr/share/[mM]odules/init/bash
+    USE_MODULES=1
 fi
-INSTALL_DIR=${BUILD_DIR}
 
+# Initialize Dotkit if system doesn't use modules
+if [ ${USE_MODULES} -eq 0 ]; then
+    . /usr/local/tools/dotkit/init.sh
+fi
+
+# Load packages
+if [ ${USE_MODULES} -ne 0 ]; then
+    module load git
+    module load cmake
+else
+    use git
+    use cmake
+fi
+
+################################################################
+# Initialize directories
+################################################################
+
+# Get LBANN root directory
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Initialize build directory
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+fi
 if [ -n "${BUILD_SUFFIX}" ]; then
-  BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX} 
-  INSTALL_DIR=${BUILD_DIR}
+    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
 fi
-
 mkdir -p ${BUILD_DIR}
+
+# Initialize install directory
+if [ -z "${INSTALL_DIR}" ]; then
+    INSTALL_DIR=${BUILD_DIR}
+fi
 mkdir -p ${INSTALL_DIR}
 
-# Get C/C++/Fortran compilers and corresponding top-level MPI directory
-if [ "${COMPILER}" == "gnu" ]; then
-  # GNU compilers
-  if [ "${TOSS}" == "3.10.0" ]; then
-    if [ "${ARCH}" == "x86_64" ]; then
-      GNU_DIR=/usr/tce/packages/gcc/gcc-4.9.3/bin
-      GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-      if [ "${MPI}" == "mvapich2" ]; then
-        MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
-      elif [ "${MPI}" == "openmpi" ]; then
-        MPI_DIR=/usr/tce/packages/openmpi/openmpi-2.0.0-gcc-4.9.3
-      else
-        echo "Invalid MPI library selected ${MPI}"
-        exit 1
-      fi
-    elif [ "${ARCH}" == "ppc64le" ]; then
-      GNU_DIR=/usr/tcetmp/packages/gcc/gcc-4.9.3/bin
-      GFORTRAN_LIB=/usr/tcetmp/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-      if [ "${MPI}" == "spectrum" ]; then
-        MPI_DIR=/opt/ibm/spectrum_mpi
-      else
-        echo "Invalid MPI library selected ${MPI}"
-        exit 1
-      fi
+################################################################
+# Initialize C/C++/Fortran compilers
+################################################################
+
+# Get compiler directory
+COMPILER_=${COMPILER}
+if [ ${USE_MODULES} -ne 0 ]; then
+    if [ "${COMPILER_}" == "gnu" ]; then
+        COMPILER_=gcc
     fi
-  else
-    GNU_DIR=/opt/rh/devtoolset-3/root/usr/bin
-    #GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
-    GFORTRAN_LIB=/opt/rh/devtoolset-3/root/usr/lib/gcc/x86_64-redhat-linux/4.9.2
-    MPI_DIR=/usr/local/tools/mvapich2-gnu-2.1
-  fi
-  CMAKE_C_COMPILER=${GNU_DIR}/gcc
-  CMAKE_CXX_COMPILER=${GNU_DIR}/g++
-  CMAKE_Fortran_COMPILER=${GNU_DIR}/gfortran
-
-#  COMPILER_VERSION=
-#  COMPILER_CC_NAME_VERSION=gcc
-
-elif [ "${COMPILER}" == "intel" ]; then
-  # Intel compilers
-  if [ "${TOSS}" == "3.10.0" ]; then
-    INTEL_DIR=/usr/tce/packages/intel/intel-17.0.2/bin
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.2
-  else
-    INTEL_DIR=/opt/intel-16.0/linux/bin/intel64
-    MPI_DIR=/usr/local/tools/mvapich2-intel-2.1
-  fi
-  CMAKE_C_COMPILER=${INTEL_DIR}/icc
-  CMAKE_CXX_COMPILER=${INTEL_DIR}/icpc
-  CMAKE_Fortran_COMPILER=${INTEL_DIR}/ifort
-
-elif [ "${COMPILER}" == "clang" ]; then
-  if [ "${TOSS}" == "3.10.0" ]; then
-    # (dah) clang is not currently installed on catalyst, so this will fail ...
-    GNU_DIR=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin
-    GFORTRAN_LIB=/usr/tce/packages/gcc/gcc-4.9.3/lib64/libgfortran.so
-    MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
-  else
-    GNU_DIR=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin
-    GFORTRAN_LIB=/opt/rh/devtoolset-2/root/usr/lib/gcc/x86_64-redhat-linux/4.8.2/libgfortran.so
-    MPI_DIR=/usr/local/tools/mvapich2-gnu-2.1
-  fi
-  CMAKE_CXX_FLAGS="-DLBANN_SET_EL_RNG"
-  CMAKE_C_COMPILER=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin/clang
-  CMAKE_CXX_COMPILER=/usr/global/tools/clang/chaos_5_x86_64_ib/clang-3.8.0/bin/clang++
-  CMAKE_Fortran_COMPILER=/opt/rh/devtoolset-3/root/usr/bin/gfortran
-
+    if [ -z "$(module list 2> /dev/stdout | grep ${COMPILER_})" ]; then
+        module load ${COMPILER_}
+    fi
+    if [ -z "$(module list 2> /dev/stdout | grep ${COMPILER_})" ]; then
+        echo "Could not load module (${COMPILER_})"
+        exit 1
+    fi
+    COMPILER_BASE="$(module show ${COMPILER_} 2> /dev/stdout | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')"
 else
-  # Unrecognized compiler
-  echo "Unrecognized compiler (${COMPILER})"
-  exit 1
+    if [ "${COMPILER_}" == "intel" ]; then
+        COMPILER_=ic-17.0.174
+    fi
+    if [ "${COMPILER_}" == "gnu" ]; then
+        COMPILER_=gcc-4.9.3p
+    fi
+    if [ -z "$(use | grep ${COMPILER_})" ]; then
+        use ${COMPILER_}
+    fi
+    COMPILER_="$(use | sed 's/ //g' | egrep -e "^${COMPILER_}")"
+    if [ -z "${COMPILER_}" ]; then
+        echo "Could not load dotkit for ${COMPILER_}"
+        exit 1
+    fi
+    COMPILER_BASE="$(use -hv ${COMPILER_} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')"
+fi
+
+# Get compiler paths
+if [ "${COMPILER}" == "gnu" ]; then
+    # GNU compilers
+    C_COMPILER=${COMPILER_BASE}/bin/gcc
+    CXX_COMPILER=${COMPILER_BASE}/bin/g++
+    Fortran_COMPILER=${COMPILER_BASE}/bin/gfortran
+    COMPILER_VERSION=$(${C_COMPILER} --version | head -n 1 | awk '{print $3}')
+    FORTRAN_LIB=${COMPILER_BASE}/lib64/libgfortran.so
+elif [ "${COMPILER}" == "intel" ]; then
+    # Intel compilers
+    C_COMPILER=${COMPILER_BASE}/bin/icc
+    CXX_COMPILER=${COMPILER_BASE}/bin/icpc
+    Fortran_COMPILER=${COMPILER_BASE}/bin/ifort
+    COMPILER_VERSION=$(${C_COMPILER} --version | head -n 1 | awk '{print $3}')
+    FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcore.so
+elif [ "${COMPILER}" == "clang" ]; then
+    # clang
+    # clang depends on gnu fortran library. so, find the dependency
+    if [ "${CLUSTER}" == "ray" ]; then
+        #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
+        #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
+        # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
+        GCC_VERSION=4.9.3
+        GNU_DIR=/usr/tcetmp/packages/gcc/gcc-${GCC_VERSION}
+    elif [ ${USE_MODULES} -ne 0 ]; then
+        GCC_VERSION=$(ldd ${COMPILER_BASE}/lib/libclang.so | grep gcc- | awk 'BEGIN{FS="/"} {for (i=1;i<=NF; i++) if ($i~/^gcc-/) print $i}' | tail -n 1)
+        GNU_DIR=/usr/tce/packages/gcc/${GCC_VERSION}
+    else
+        GCC_VERSION=$(ldd ${COMPILER_BASE}/lib/libclang.so | grep gnu | awk 'BEGIN{FS="/"} {for (i=1;i<=NF; i++) if ($i~/^gnu$/) print $(i+1)}' | tail -n 1)
+        GNU_DIR=/usr/apps/gnu/${GCC_VERSION}
+    fi
+    C_COMPILER=${COMPILER_BASE}/bin/clang
+    CXX_COMPILER=${COMPILER_BASE}/bin/clang++
+    Fortran_COMPILER=${GNU_DIR}/bin/gfortran
+    FORTRAN_LIB=${GNU_DIR}/lib64/libgfortran.so
+    COMPILER_VERSION=$(${C_COMPILER} --version | awk '(($1=="clang")&&($2=="version")){print $3}')
+    export MPICH_FC=${GNU_DIR}/bin/gfortran
+    #MPI_Fortran_COMPILER="${MPI_DIR}/bin/mpifort -fc=${Fortran_COMPILER}" $ done by exporting MPICH_FC
+else
+    # Unrecognized compiler
+    echo "Unrecognized compiler (${COMPILER})"
+    exit 1
+fi
+
+# Add compiler optimization flags
+if [ "${BUILD_TYPE}" == "Release" ]; then
+    if [ "${COMPILER}" == "gnu" ]; then
+        C_FLAGS="${C_FLAGS} -O3"
+        CXX_FLAGS="${CXX_FLAGS} -O3"
+        Fortran_FLAGS="${Fortran_FLAGS} -O3"
+        if [ "${CLUSTER}" == "catalyst" ]; then
+            C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
+            CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+        elif [ "${CLUSTER}" == "surface" ]; then
+            C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
+            CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+        fi
+    fi
+else 
+    if [ "${COMPILER}" == "gnu" ]; then
+        C_FLAGS="${C_FLAGS} -g"
+        CXX_FLAGS="${CXX_FLAGS} -g"
+        Fortran_FLAGS="${Fortran_FLAGS} -g"
+    fi
+fi
+
+# Set environment variables
+export CC=${C_COMPILER}
+export CXX=${CXX_COMPILER}
+
+################################################################
+# Initialize MPI compilers
+################################################################
+
+# Invalid MPI libraries
+if [ "${ARCH}" == "x86_64" ] && [ "${MPI}" != "mvapich2" ] && [ "${MPI}" != "openmpi" ]; then
+    echo "Invalid MPI library selected (${MPI})"
+    exit 1
+fi
+if [ "${ARCH}" == "ppc64le" ] && [ "${MPI}" != "spectrum" ]; then
+    echo "Invalid MPI library selected (${MPI})"
+    exit 1
+fi
+
+if [ "${MPI}" == "spectrum" ]; then
+    MPI=spectrum-mpi
+fi
+
+if [ ${USE_MODULES} -ne 0 ]; then
+    if [ -z "$(module list 2> /dev/stdout | grep ${MPI})" ]; then
+        module load ${MPI}
+    fi
+    if [ -z "$(module list 2> /dev/stdout | grep ${MPI})" ]; then
+        echo "Could not load module (${MPI})"
+        exit 1
+    fi
+    MPI_DIR=$(module show ${MPI} 2> /dev/stdout | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
+else
+    MPI_VER=${MPI}-${COMPILER}
+    if [ -z "$(use | grep ${MPI_VER})" ]; then
+        use ${MPI}-${COMPILER}
+    fi
+    if [ -z "$(use | grep ${MPI_VER})" ]; then
+        echo "Could not load dotkit (${MPI_VER})"
+        exit 1
+    fi
+    MPI_VER="$(use | grep ${MPI_VER})"
+    MPI_DIR=$(use -hv ${MPI_VER} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
 fi
 
 # Get MPI compilers
@@ -322,11 +404,93 @@ MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 
-# Get CUDA and cuDNN
-if [ "${CLUSTER}" == "surface" ]; then
-  WITH_CUDA=ON
-  WITH_CUDNN=ON
-  ELEMENTAL_USE_CUBLAS=1
+################################################################
+# Initialize GPU libraries
+################################################################
+
+if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
+    HAS_GPU=1
+    WITH_CUDA=ON
+    WITH_CUDNN=ON
+    ELEMENTAL_USE_CUBLAS=OFF
+    if [ "${ARCH}" == "ppc64le" ]; then
+        CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+        CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
+    elif [ -n "${CUDA_PATH}" ]; then
+        CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
+        CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+    else
+        CUDATOOLKIT_VERSION=8.0
+        if [ ${USE_MODULES} -ne 0 ]; then
+            module load cudatoolkit/${CUDATOOLKIT_VERSION}
+        fi
+        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+    fi
+else
+    HAS_GPU=0
+    WITH_CUDA=OFF
+    WITH_CUDNN=OFF
+    ELEMENTAL_USE_CUBLAS=OFF
+fi
+
+################################################################
+# Display parameters
+################################################################
+
+# Function to print variable
+function print_variable {
+    echo "${1}=${!1}"
+}
+
+# Print parameters
+if [ ${VERBOSE} -ne 0 ]; then
+    echo ""
+    echo "----------------------"
+    echo "System parameters"
+    echo "----------------------"
+    print_variable CLUSTER
+    print_variable TOSS
+    print_variable ARCH
+    print_variable HAS_GPU
+    print_variable USE_MODULES
+    echo ""
+    echo "----------------------"
+    echo "Compiler parameters"
+    echo "----------------------"
+    print_variable COMPILER
+    print_variable COMPILER_VERSION
+    print_variable MPI
+    print_variable C_COMPILER
+    print_variable CXX_COMPILER
+    print_variable Fortran_COMPILER
+    print_variable MPI_C_COMPILER
+    print_variable MPI_CXX_COMPILER
+    print_variable MPI_Fortran_COMPILER
+    print_variable C_FLAGS
+    print_variable CXX_FLAGS
+    print_variable Fortran_FLAGS
+    echo ""
+    echo "----------------------"
+    echo "Build parameters"
+    echo "----------------------"
+    print_variable BUILD_TYPE
+    print_variable BUILD_SUFFIX
+    print_variable BUILD_DIR
+    print_variable INSTALL_DIR
+    print_variable Elemental_DIR
+    print_variable OpenCV_DIR
+    print_variable VTUNE_DIR
+    print_variable WITH_CUDA
+    print_variable WITH_CUDNN
+    print_variable ELEMENTAL_USE_CUBLAS
+    print_variable ELEMENTAL_MATH_LIBS
+    print_variable PATCH_OPENBLAS
+    print_variable SEQ_INIT
+    print_variable CLEAN_BUILD
+    print_variable VERBOSE
+    print_variable MAKE_NUM_PROCESSES
+    print_variable GEN_DOC
+    echo ""
 fi
 
 ################################################################
@@ -336,34 +500,34 @@ fi
 # Work in build directory
 pushd ${BUILD_DIR}
 
-  # Clean up build directory
-  if [ ${CLEAN_BUILD} -ne 0 ]; then
+# Clean up build directory
+if [ ${CLEAN_BUILD} -ne 0 ]; then
     CLEAN_COMMAND="rm -rf ${BUILD_DIR}/*"
     if [ ${VERBOSE} -ne 0 ]; then
-      echo "${CLEAN_COMMAND}"
+        echo "${CLEAN_COMMAND}"
     fi
-    ${CLEAN_COMMAND}
-  fi
+    eval ${CLEAN_COMMAND}
+fi
 
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
-  # Configure build with CMake
-  CONFIGURE_COMMAND=$(cat << EOF
+# Configure build with CMake
+CONFIGURE_COMMAND=$(cat << EOF
 cmake \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
--D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
--D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
--D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} \
--D GFORTRAN_LIB=${GFORTRAN_LIB} \
--D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
+-D CMAKE_C_COMPILER=${C_COMPILER} \
+-D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
+-D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
+-D GFORTRAN_LIB=${FORTRAN_LIB} \
 -D MPI_C_COMPILER=${MPI_C_COMPILER} \
+-D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
 -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
--D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} \
--D CMAKE_C_FLAGS=${CMAKE_C_FLAGS} \
--D CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS} \
+-D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+-D CMAKE_C_FLAGS="${C_FLAGS}" \
+-D CMAKE_Fortran_FLAGS="${Fortran_FLAGS}" \
 -D WITH_CUDA=${WITH_CUDA} \
 -D WITH_CUDNN=${WITH_CUDNN} \
 -D WITH_TBINF=${WITH_TBINF} \
@@ -377,65 +541,68 @@ cmake \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 -D LBANN_HOME=${ROOT_DIR} \
 -D SEQ_INIT=${SEQ_INIT} \
--D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
+-D COMPILER_VERSION=${COMPILER_VERSION} \
+-D COMPILER_BASE=${COMPILER_BASE} \
 -D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
 -D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
+-D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
+-D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS}
 ${ROOT_DIR}
 EOF
 )
-
-  if [ ${VERBOSE} -ne 0 ]; then
+if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}"
-  fi
-  ${CONFIGURE_COMMAND}
-  if [ $? -ne 0 ] ; then
+fi
+eval ${CONFIGURE_COMMAND}
+if [ $? -ne 0 ]; then
     echo "--------------------"
     echo "CONFIGURE FAILED"
     echo "--------------------"
     exit 1
-  fi
+fi
 
-  # Build LBANN with make
-  BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-  if [ ${VERBOSE} -ne 0 ]; then
+# Build LBANN with make
+BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
-  fi
-  ${BUILD_COMMAND}
-  if [ $? -ne 0 ] ; then
+fi
+eval ${BUILD_COMMAND}
+if [ $? -ne 0 ]; then
     echo "--------------------"
     echo "MAKE FAILED"
     echo "--------------------"
     exit 1
-  fi
+fi
 
-  # Install LBANN with make
-  if [ ${INSTALL_LBANN} -ne 0 ]; then
-      INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
-      if [ ${VERBOSE} -ne 0 ]; then
-          echo "${INSTALL_COMMAND}"
-      fi
-      ${INSTALL_COMMAND}
-      if [ $? -ne 0 ] ; then
-          echo "--------------------"
-          echo "MAKE INSTALL FAILED"
-          echo "--------------------"
-          exit 1
-      fi
-  fi
+# Install LBANN with make
+if [ ${INSTALL_LBANN} -ne 0 ]; then
+    INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+    if [ ${VERBOSE} -ne 0 ]; then
+        echo "${INSTALL_COMMAND}"
+    fi
+    eval ${INSTALL_COMMAND}
+    if [ $? -ne 0 ]; then
+        echo "--------------------"
+        echo "MAKE INSTALL FAILED"
+        echo "--------------------"
+        exit 1
+    fi
+fi
 
-  # Generate documentation with make
-  if [ ${GEN_DOC} -ne 0 ]; then
+# Generate documentation with make
+if [ ${GEN_DOC} -ne 0 ]; then
     DOC_COMMAND="make doc"
     if [ ${VERBOSE} -ne 0 ]; then
-      echo "${DOC_COMMAND}"
+        echo "${DOC_COMMAND}"
     fi
-    ${DOC_COMMAND}
-    if [ $? -ne 0 ] ; then
-      echo "--------------------"
-      echo "MAKE DOC FAILED"
-      echo "--------------------"
-      exit 1
+    eval ${DOC_COMMAND}
+    if [ $? -ne 0 ]; then
+        echo "--------------------"
+        echo "MAKE DOC FAILED"
+        echo "--------------------"
+        exit 1
     fi
-  fi
-  
-popd
+fi
+
+# Return to original directory
+dirs -c
