@@ -129,7 +129,6 @@ void col2im(const Mat& col,
   const int num_channels = num_im_channels;
   const int num_dims = im_dims.size();
   const int input_height = col.Height();
-  const int input_width = col.Width();
   const int output_size = im.Height() * im.Width();
   const DataType *__restrict__ input_buffer = col.LockedBuffer();
   DataType *__restrict__ output_buffer = im.Buffer();
@@ -243,7 +242,6 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
   const int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
   const int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
   const int output_height = num_channels * window_dim_x * window_dim_y;
-  const int output_width = offset_num_x * offset_num_y;
 
   // Iterate through output matrix entries
   #pragma omp parallel for collapse(5)
@@ -309,8 +307,6 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
   const int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
   const int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
   const int input_height = num_channels * window_dim_x * window_dim_y;
-  const int input_width = offset_num_x * offset_num_y;
-  const int output_size = num_channels * output_dim_x * output_dim_y;
 
   // Iterate through output entries
   #pragma omp parallel for collapse(3)

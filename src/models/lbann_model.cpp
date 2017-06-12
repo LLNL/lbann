@@ -39,13 +39,13 @@ using namespace El;
 
 lbann::model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
                     optimizer_factory *optimizer_fac) :
-  obj_fn(obj_fn),
+  m_obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
   m_current_validation_step(0), m_current_testing_step(0),
   m_current_mini_batch_size(0),m_current_phase(0),
-  comm(comm),
+  m_comm(comm),
   m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
   m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
   m_optimizer_fac(optimizer_fac) {
@@ -58,51 +58,51 @@ lbann::model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
 }
 
 void lbann::model::add_callback(lbann::lbann_callback *cb) {
-  callbacks.push_back(cb);
+  m_callbacks.push_back(cb);
 }
 
 void lbann::model::setup_callbacks() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->setup(this);
   }
 }
 
 void lbann::model::add_metric(lbann::metrics::metric *m) {
-  metrics.push_back(m);
+  m_metrics.push_back(m);
 }
 
 void lbann::model::do_train_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_train_begin(this);
   }
 }
 
 void lbann::model::do_train_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_train_end(this);
   }
 }
 
 void lbann::model::do_phase_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_phase_end(this);
   }
 }
 
 void lbann::model::do_epoch_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_epoch_begin(this);
   }
 }
 
 void lbann::model::do_epoch_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_epoch_end(this);
   }
 }
 
 void lbann::model::do_batch_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_batch_begin(this);
     }
@@ -110,7 +110,7 @@ void lbann::model::do_batch_begin_cbs() {
 }
 
 void lbann::model::do_batch_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_batch_end(this);
     }
@@ -118,31 +118,31 @@ void lbann::model::do_batch_end_cbs() {
 }
 
 void lbann::model::do_test_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_test_begin(this);
   }
 }
 
 void lbann::model::do_test_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_test_end(this);
   }
 }
 
 void lbann::model::do_validation_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_validation_begin(this);
   }
 }
 
 void lbann::model::do_validation_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_validation_end(this);
   }
 }
 
 void lbann::model::do_model_forward_prop_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_forward_prop_begin(this);
     }
@@ -150,7 +150,7 @@ void lbann::model::do_model_forward_prop_begin_cbs() {
 }
 
 void lbann::model::do_layer_forward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_forward_prop_begin(this, l);
     }
@@ -158,7 +158,7 @@ void lbann::model::do_layer_forward_prop_begin_cbs(Layer *l) {
 }
 
 void lbann::model::do_model_forward_prop_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_forward_prop_end(this);
     }
@@ -166,7 +166,7 @@ void lbann::model::do_model_forward_prop_end_cbs() {
 }
 
 void lbann::model::do_layer_forward_prop_end_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_forward_prop_end(this, l);
     }
@@ -174,7 +174,7 @@ void lbann::model::do_layer_forward_prop_end_cbs(Layer *l) {
 }
 
 void lbann::model::do_model_backward_prop_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_backward_prop_begin(this);
     }
@@ -182,7 +182,7 @@ void lbann::model::do_model_backward_prop_begin_cbs() {
 }
 
 void lbann::model::do_layer_backward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_backward_prop_begin(this, l);
     }
@@ -190,7 +190,7 @@ void lbann::model::do_layer_backward_prop_begin_cbs(Layer *l) {
 }
 
 void lbann::model::do_model_backward_prop_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_backward_prop_end(this);
     }
@@ -198,7 +198,7 @@ void lbann::model::do_model_backward_prop_end_cbs() {
 }
 
 void lbann::model::do_layer_backward_prop_end_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_backward_prop_end(this, l);
     }
@@ -210,7 +210,7 @@ void lbann::model::do_layer_backward_prop_end_cbs(Layer *l) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void lbann::model::do_batch_evaluate_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_batch_evaluate_begin(this);
     }
@@ -218,7 +218,7 @@ void lbann::model::do_batch_evaluate_begin_cbs() {
 }
 
 void lbann::model::do_batch_evaluate_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->m_batch_interval == 0) {
       cb->on_batch_evaluate_end(this);
     }
@@ -226,25 +226,25 @@ void lbann::model::do_batch_evaluate_end_cbs() {
 }
 
 void lbann::model::do_model_evaluate_forward_prop_begin_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_begin(this);
   }
 }
 
 void lbann::model::do_layer_evaluate_forward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_begin(this, l);
   }
 }
 
 void lbann::model::do_model_evaluate_forward_prop_end_cbs() {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_end(this);
   }
 }
 
 void lbann::model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
-  for (auto&& cb : callbacks) {
+  for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_end(this, l);
   }
 }

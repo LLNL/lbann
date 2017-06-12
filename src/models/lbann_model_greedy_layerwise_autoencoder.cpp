@@ -113,7 +113,7 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   // build mirror layer
   Layer *original_layer = m_layers[layer_index];
   optimizer *opt = create_optimizer();
-  reconstruction_layer<data_layout> *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), mirror_index, comm, opt, m_mini_batch_size, original_layer);
+  reconstruction_layer<data_layout> *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
 
   // insert mirror layer into model
   insert(mirror_index, mirror_layer);
@@ -136,7 +136,7 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
     remove(mirror_index); ///any delete on heap, vector resize?
 
     // call base model setup again to reindex and set appropriate fp and bp input
-    if (comm->am_world_master()) {
+    if (m_comm->am_world_master()) {
       std::cout << "Phase [" << layer_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) {
         std::cout << "Layer [ " << l->get_index() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
@@ -157,7 +157,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     m_phase_end = m_current_phase+2;
     Layer *original_layer = m_layers[m_current_phase];
     optimizer *opt = create_optimizer();
-    reconstruction_layer<data_layout>  *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), m_phase_end, comm, opt, m_mini_batch_size,original_layer);
+    reconstruction_layer<data_layout>  *mirror_layer = new reconstruction_layer<data_layout>(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
     Layer *tmp;
     //if not at the last layer/phase, swap otherwise insert new
     if(m_current_phase < num_phases-1) {
@@ -170,7 +170,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     setup(m_phase_end,m_phase_end+1);  //set up just the added (new) layers
     train_phase(num_epochs,evaluation_frequency);
 
-    if (comm->am_world_master()) {
+    if (m_comm->am_world_master()) {
       //end of phase cbs e.g., save a number of image to file
       do_phase_end_cbs();
     }
@@ -207,7 +207,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
     }
 
     //Overide default print callback
-    if (comm->am_world_master()) {
+    if (m_comm->am_world_master()) {
       //std::cout << "-----------------------------------------------------------" << std::endl;
       //std::cout << "Phase [" << m_current_phase  << "] Epoch [" << m_current_epoch << "]" <<  std::endl;
       std::cout << "\n Training hidden layer [" << m_current_phase+1  << "] at layer-wise epoch [" << m_current_epoch << "]" <<  std::endl;
@@ -222,7 +222,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    for (auto&& m : metrics) {
+    for (auto&& m : m_metrics) {
       m->reset_metric();
     }
     bool finished_epoch;
@@ -237,7 +237,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
 
 
     //print training reconstruction cost
-    if (comm->am_world_master()) {
+    if (m_comm->am_world_master()) {
       std::cout << "Layer-wise training ";
     }
     m_layers[m_phase_end]->epoch_print();
@@ -252,7 +252,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
     evaluate_phase(execution_mode::validation);
 
     //print validation reconstruction cost
-    if (comm->am_world_master()) {
+    if (m_comm->am_world_master()) {
       std::cout << "Layer-wise validation ";
     }
     m_layers[m_phase_end]->epoch_print();
@@ -323,7 +323,7 @@ void lbann::greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  for (auto&& m : metrics) {
+  for (auto&& m : m_metrics) {
     m->reset_metric();
   }
   bool finished_epoch;
@@ -372,7 +372,7 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   m_phase_end = mls-1;
   evaluate_phase(mode);
 
-  if (comm->am_world_master()) {
+  if (m_comm->am_world_master()) {
     std::cout << "Global (rel. to all (in + hidden) layers) testing ";
   }
   m_layers[m_phase_end]->epoch_print();

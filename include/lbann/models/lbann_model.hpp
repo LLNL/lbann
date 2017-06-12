@@ -72,7 +72,7 @@ class model {
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
-    return comm;
+    return m_comm;
   }
   /** Get the current epoch for the model. */
   inline int64_t get_cur_epoch() const {
@@ -140,13 +140,13 @@ class model {
    * training and can be used to adapt training via either early termination or
    * adaptive learning rates.
    */
-  objective_functions::objective_fn *obj_fn;
+  objective_functions::objective_fn *m_obj_fn;
   /**
    * A metric is a function that is used to judge the performance of your model.
    * A metric function is similar to an objective function, except that the
    * results from evaluating a metric are not used when training the model.
    */
-  std::vector<metrics::metric *> metrics;
+  std::vector<metrics::metric *> m_metrics;
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -194,13 +194,13 @@ class model {
   /** current phase (multiple of epoch counts) in training a model */
   size_t m_current_phase;
   /** Communicator for the model. */
-  lbann_comm *comm;
+  lbann_comm *m_comm;
   /** Global rank of process in MPI_COMM_WORLD */
   int m_rank;
   /** Size of MPI_COMM_WORLD */
   int m_ranks;
   /** Current callbacks to process. */
-  std::vector<lbann_callback *> callbacks;
+  std::vector<lbann_callback *> m_callbacks;
 
   /** Directory where we should save checkpoints */
   std::string m_checkpoint_dir;

@@ -76,47 +76,47 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
   // get prev neurons
   //int mid = (int)Layers.size() / 2;
   int cur_size = m_layers.size();
-  int mid = cur_size / 2;
-  Layer *mid_layer = m_layers[mid];
+  //int mid = cur_size / 2;
+  //Layer *mid_layer = m_layers[mid];
   //int mid_num_neurons = mid_layer->get_num_neurons();
-  int prev_layer_dim = mid_layer->get_num_neurons();
+  //int prev_layer_dim = mid_layer->get_num_neurons();
 
   if (cur_size == 1) {
     // create first hidden layer
     if(layer_name == "FullyConnected") {
-      optimizer *new_optimizer = create_optimizer();
-      /*Layer *new_layer
+      /*optimizer *new_optimizer = create_optimizer();
+      Layer *new_layer
         = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
-            comm,new_optimizer, regularizers);
-            m_layers.push_back(new_layer);*/
+            m_comm,new_optimizer, regularizers);
+            m_layers.push_back(new_layer);
       // create output/mirror layer
       optimizer *mirror_optimizer = create_optimizer();
-      /*Layer *mirror_layer
+      Layer *mirror_layer
         = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
-            comm,mirror_optimizer,regularizers);
+            m_comm,mirror_optimizer,regularizers);
             m_layers.push_back(mirror_layer);*/
     }
   } else {
     // create hiden layer
     if(layer_name == "FullyConnected") {
-      optimizer *hidden_optimizer = create_optimizer();
-      /*Layer *hidden_layer
+      /*optimizer *hidden_optimizer = create_optimizer();
+      Layer *hidden_layer
         = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
             prev_layer_dim,layer_dim,
             m_mini_batch_size, activation, init,
-            comm,hidden_optimizer, regularizers);
-            m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);*/
+            m_comm,hidden_optimizer, regularizers);
+            m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);
       // create mirror layer
       optimizer *mirror_hidden_optimizer = create_optimizer();
-      /*Layer *mirror_hidden_layer
+      Layer *mirror_hidden_layer
         = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
             layer_dim,prev_layer_dim,
             m_mini_batch_size,activation, init,
-            comm,mirror_hidden_optimizer,regularizers);
+            m_comm,mirror_hidden_optimizer,regularizers);
             m_layers.insert(m_layers.begin() + mid + 2, mirror_hidden_layer);*/
 
     }
@@ -128,7 +128,7 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
   }
 
   //sanity check
-  if(comm->am_world_master()) {
+  if(m_comm->am_world_master()) {
     //cout << "#Layers " << m_layers.size() << endl;
     //cout << "Layer Index and Layer Dim: " << endl;
     for(auto& layer:m_layers) {
@@ -158,7 +158,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
   add(m_target_layer);
   m_target_layer->setup(m_layers[0]->get_num_neurons());*/
   //replace with this
-//target_layer_unsupervised mirror_layer(phase_index+2, comm, optimizer, m_mini_batch_size,sibling_layer);
+//target_layer_unsupervised mirror_layer(phase_index+2, m_comm, optimizer, m_mini_batch_size,sibling_layer);
 
   do_train_begin_cbs();
 
@@ -181,7 +181,7 @@ void lbann::stacked_autoencoder::train(int num_epochs, int evaluation_frequency)
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    for (auto&& m : metrics) {
+    for (auto&& m : m_metrics) {
       m->reset_metric();
     }
     bool finished_epoch;

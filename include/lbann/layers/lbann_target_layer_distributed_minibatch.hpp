@@ -93,11 +93,11 @@ class target_layer_distributed_minibatch : public target_layer {
     Copy(Ys, *m_activations);
 
     /// Compute and record the objective function score
-    DataType avg_error = m_neural_network_model->obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
-    m_neural_network_model->obj_fn->record_obj_fn(m_execution_mode, avg_error);
+    DataType avg_error = m_neural_network_model->m_obj_fn->compute_obj_fn(*m_prev_activations_v, *m_activations_v);
+    m_neural_network_model->m_obj_fn->record_obj_fn(m_execution_mode, avg_error);
 
     int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-    for (auto&& m : m_neural_network_model->metrics) {
+    for (auto&& m : m_neural_network_model->m_metrics) {
       double cur_num_errors = (int) m->compute_metric(*m_prev_activations_v, *m_activations_v);
       m->record_error(cur_num_errors, curr_mini_batch_size);
     }
@@ -108,10 +108,10 @@ class target_layer_distributed_minibatch : public target_layer {
   void bp_linearity() {
 
     // Compute initial error signal
-    m_neural_network_model->obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
-                                                              *m_prev_activations_v,
-                                                              *m_activations_v,
-                                                              *m_error_signal_v);
+    m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer_type,
+                                                                *m_prev_activations_v,
+                                                                *m_activations_v,
+                                                                *m_error_signal_v);
 
   }
 
