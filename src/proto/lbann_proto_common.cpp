@@ -353,7 +353,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO& ell = layer.target_distributed_minibatch_parallel_io();
-      target_layer *t = new  target_layer_distributed_minibatch_parallel_io(
+      target_layer *t = new  target_layer_distributed_minibatch_parallel_io<data_layout>(
         get_data_layout(ell.data_layout(), __FILE__, __LINE__),
         comm,
         m.num_parallel_readers(),
