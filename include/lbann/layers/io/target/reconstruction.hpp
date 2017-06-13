@@ -43,13 +43,13 @@ class reconstruction_layer : public target_layer<T_layout> {
   DataType aggregate_cost;
   long num_forwardprop_steps;
   weight_initialization m_weight_initialization;
+  DistMat original_layer_act_v;
 
  public:
   reconstruction_layer(T_layout data_dist, size_t index,lbann_comm *comm,
                        optimizer *opt,/*needed?*/
                        const uint minim_batch_size,
                        Layer *original_layer,
-                       activation_type activation=activation_type::RELU,
                        const weight_initialization init=weight_initialization::glorot_uniform)
     :  target_layer<T_layout>(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer),
        m_weight_initialization(init) {
@@ -102,14 +102,18 @@ class reconstruction_layer : public target_layer<T_layout> {
   }
 
  protected:
-  void fp_linearity() {
-    //m_activations is linear transformation of m_weights * m_prev_activations^T
-    Gemm(NORMAL, NORMAL, (DataType) 1., *this->m_weights, *this->m_prev_activations_v, (DataType) 0.0, *this->m_activations_v);
+  void fp_set_std_matrix_view() {
+    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    this->fp_set_std_matrix_view();
+
     DistMat original_layer_act_v;
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
+  }
+
+
+  void fp_compute() {
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
     DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_activations_v, original_layer_act_v);
@@ -117,30 +121,13 @@ class reconstruction_layer : public target_layer<T_layout> {
     num_forwardprop_steps++;
   }
 
-  void bp_linearity() {
-
-    // delta = (activation - y)
-    // delta_w = delta * activation_prev^T
-
-    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    DistMat original_layer_act_v;
-
-    //view of original layer
-    View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
-
+  void bp_compute() {
     // Compute error signal
     this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_activations_v, original_layer_act_v,*this->m_prev_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer
     //@todo: rename as obj_error_signal
-
-    // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, DataType(1), *this->m_weights, *this->m_prev_error_signal_v, DataType(0), *this->m_error_signal_v);
-
-    // Compute update for activation weights
-    Gemm(NORMAL, TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(), *this->m_prev_error_signal_v,
-         *this->m_prev_activations_v,DataType(0), *this->m_weights_gradient);
   }
 
  public:
@@ -148,7 +135,7 @@ class reconstruction_layer : public target_layer<T_layout> {
     return this->m_execution_mode;
   }
 
-  bool update() {
+  bool update_compute() {
     double start = get_time();
     Layer::update();
     if(this->m_execution_mode == execution_mode::training) {
@@ -192,19 +179,6 @@ class reconstruction_layer : public target_layer<T_layout> {
     return aggregate_cost / num_forwardprop_steps;
   }
 
- protected:
-  void fp_nonlinearity() {
-    // Forward propagation
-    this->m_activation_fn->forwardProp(*this->m_activations_v);
-  }
-
-  void bp_nonlinearity() {
-    // Backward propagation
-    this->m_activation_fn->backwardProp(*this->m_weighted_sum_v);
-    if (this->m_activation_type != activation_type::ID) {
-      Hadamard(*this->m_prev_error_signal_v, *this->m_weighted_sum_v, *this->m_prev_error_signal_v);
-    }
-  }
 };
 }
 
