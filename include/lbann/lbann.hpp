@@ -53,7 +53,7 @@
 /// Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/learning/convolutional.hpp"
+#include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 
 /// Regularization layers.
