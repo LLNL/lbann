@@ -36,7 +36,7 @@
 
 namespace lbann {
 template <class T_layout>
-class reconstruction_layer : public target_layer {
+class reconstruction_layer : public target_layer<T_layout> {
  private:
   Layer *m_original_layer;
   DataType aggregate_cost;
@@ -50,17 +50,17 @@ class reconstruction_layer : public target_layer {
                        Layer *original_layer,
                        activation_type activation=activation_type::RELU,
                        const weight_initialization init=weight_initialization::glorot_uniform)
-    :  target_layer(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer),
+    :  target_layer<T_layout>(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer),
        m_weight_initialization(init) {
 
-    m_type = layer_type::reconstruction;
-    m_index = index;
-    m_num_neurons = original_layer->get_num_neurons();
+    this->m_type = layer_type::reconstruction;
+    this->m_index = index;
+    this->m_num_neurons = original_layer->get_num_neurons();
     this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
     // Initialize activation function
-    m_activation_fn = new_activation(activation);
+    this->m_activation_fn = new_activation(activation);
     // Done in base layer constructor
     /*switch(data_dist) {
       case data_layout::MODEL_PARALLEL:
@@ -77,25 +77,25 @@ class reconstruction_layer : public target_layer {
   }
 
   void setup(int num_prev_neurons) {
-    target_layer::setup(num_prev_neurons);
+    target_layer<T_layout>::setup(num_prev_neurons);
     Layer::setup(num_prev_neurons);
 
     // Initialize weight-bias matrix
-    Zeros(*m_weights, m_num_neurons, num_prev_neurons);
+    Zeros(*this->m_weights, this->m_num_neurons, num_prev_neurons);
 
     // Initialize weights
-    initialize_matrix(*m_weights, m_weight_initialization, num_prev_neurons, m_num_neurons);
+    initialize_matrix(*this->m_weights, m_weight_initialization, num_prev_neurons, this->m_num_neurons);
 
     // Initialize other matrices
-    Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size); //clear up m_activations before copying fp_input to it
-    Zeros(*m_weights_gradient, m_num_neurons,num_prev_neurons); //clear up before filling with new results
-    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size); //clear up before filling with new results
-    Zeros(*m_prev_activations, num_prev_neurons, m_mini_batch_size);
+    Zeros(*this->m_error_signal, num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
+    Zeros(*this->m_weights_gradient, this->m_num_neurons,num_prev_neurons); //clear up before filling with new results
+    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
+    Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
 
     // Initialize optimizer
-    if(m_optimizer != NULL) {
-      m_optimizer->setup(m_weights);
+    if(this->m_optimizer != NULL) {
+      this->m_optimizer->setup(this->m_weights);
     }
 
   }
@@ -103,15 +103,15 @@ class reconstruction_layer : public target_layer {
  protected:
   void fp_linearity() {
     //m_activations is linear transformation of m_weights * m_prev_activations^T
-    Gemm(NORMAL, NORMAL, (DataType) 1., *m_weights, *m_prev_activations_v, (DataType) 0.0, *m_activations_v);
+    Gemm(NORMAL, NORMAL, (DataType) 1., *this->m_weights, *this->m_prev_activations_v, (DataType) 0.0, *this->m_activations_v);
 
-    int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     DistMat original_layer_act_v;
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
-    DataType avg_error = m_neural_network_model->m_obj_fn->compute_obj_fn(*m_activations_v, original_layer_act_v);
+    DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_activations_v, original_layer_act_v);
     aggregate_cost += avg_error;
     num_forwardprop_steps++;
   }
@@ -121,59 +121,59 @@ class reconstruction_layer : public target_layer {
     // delta = (activation - y)
     // delta_w = delta * activation_prev^T
 
-    int64_t curr_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     DistMat original_layer_act_v;
 
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
 
     // Compute error signal
-    m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer_type, *m_activations_v, original_layer_act_v,*m_prev_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_activations_v, original_layer_act_v,*this->m_prev_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer
     //@todo: rename as obj_error_signal
 
     // Compute the partial delta update for the next lower layer
-    Gemm(TRANSPOSE, NORMAL, DataType(1), *m_weights, *m_prev_error_signal_v, DataType(0), *m_error_signal_v);
+    Gemm(TRANSPOSE, NORMAL, DataType(1), *this->m_weights, *this->m_prev_error_signal_v, DataType(0), *this->m_error_signal_v);
 
     // Compute update for activation weights
-    Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(), *m_prev_error_signal_v,
-         *m_prev_activations_v,DataType(0), *m_weights_gradient);
+    Gemm(NORMAL, TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(), *this->m_prev_error_signal_v,
+         *this->m_prev_activations_v,DataType(0), *this->m_weights_gradient);
   }
 
  public:
   execution_mode get_execution_mode() {
-    return m_execution_mode;
+    return this->m_execution_mode;
   }
 
   bool update() {
     double start = get_time();
     Layer::update();
-    if(m_execution_mode == execution_mode::training) {
-      m_optimizer->update(m_weights_gradient);
+    if(this->m_execution_mode == execution_mode::training) {
+      this->m_optimizer->update(this->m_weights_gradient);
     }
-    update_time += get_time() - start;
+    this->update_time += get_time() - start;
     return true;
   }
 
   void summarize(lbann_summary& summarizer, int64_t step) {
     Layer::summarize(summarizer, step);
-    std::string tag = "layer" + std::to_string(static_cast<long long>(m_index))
+    std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, average_cost(), step);
   }
 
   void epoch_print() const {
     double avg_cost = average_cost();
-    if (m_comm->am_world_master()) {
-      std::vector<double> avg_costs(m_comm->get_num_models());
-      m_comm->intermodel_gather(avg_cost, avg_costs);
+    if (this->m_comm->am_world_master()) {
+      std::vector<double> avg_costs(this->m_comm->get_num_models());
+      this->m_comm->intermodel_gather(avg_cost, avg_costs);
       for (size_t i = 0; i < avg_costs.size(); ++i) {
         std::cout << "model " << i << " average reconstruction cost: " << avg_costs[i] << std::endl;
       }
     } else {
-      m_comm->intermodel_gather(avg_cost, m_comm->get_world_master());
+      this->m_comm->intermodel_gather(avg_cost, this->m_comm->get_world_master());
     }
   }
 
@@ -194,14 +194,14 @@ class reconstruction_layer : public target_layer {
  protected:
   void fp_nonlinearity() {
     // Forward propagation
-    m_activation_fn->forwardProp(*m_activations_v);
+    this->m_activation_fn->forwardProp(*this->m_activations_v);
   }
 
   void bp_nonlinearity() {
     // Backward propagation
-    m_activation_fn->backwardProp(*m_weighted_sum_v);
-    if (m_activation_type != activation_type::ID) {
-      Hadamard(*m_prev_error_signal_v, *m_weighted_sum_v, *m_prev_error_signal_v);
+    this->m_activation_fn->backwardProp(*this->m_weighted_sum_v);
+    if (this->m_activation_type != activation_type::ID) {
+      Hadamard(*this->m_prev_error_signal_v, *this->m_weighted_sum_v, *this->m_prev_error_signal_v);
     }
   }
 };
