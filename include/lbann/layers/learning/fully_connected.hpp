@@ -85,15 +85,13 @@ class fully_connected_layer : public learning<T_layout> {
                       const int numPrevNeurons,
                       const uint numNeurons,
                       const uint mini_batch_size,
-                      const activation_type activationType,
                       const weight_initialization init,
                       lbann_comm *comm,
                       optimizer *opt,
-                      std::vector<regularizer *> regs = {})
     : learning<T_layout>(data_dist,
                          index, numPrevNeurons, 
                          numNeurons, mini_batch_size, 
-                         comm, opt, activationType, regs),
+                         comm, opt),
     m_weight_initialization(init) {
 
     this->m_type = layer_type::fully_connected;
@@ -198,7 +196,7 @@ class fully_connected_layer : public learning<T_layout> {
     View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
   }
 
-  void fp_linearity(void) {
+  void fp_compute(void) {
     // Apply forward prop linearity
 
     // Apply bias
@@ -233,7 +231,7 @@ class fully_connected_layer : public learning<T_layout> {
 
   }
 
-  void bp_linearity(void) {
+  void bp_compute(void) {
 
     switch(this->m_data_layout) {
     case data_layout::MODEL_PARALLEL:
@@ -310,7 +308,7 @@ class fully_connected_layer : public learning<T_layout> {
     return (1 / sqrt(x + 1e-8));
   }
 
-  bool update(void) {
+  bool update_compute(void) {
     double start = get_time();
     Layer::update();
     if(this->m_execution_mode == execution_mode::training) {
@@ -320,129 +318,6 @@ class fully_connected_layer : public learning<T_layout> {
     return true;
   }
 
-  DataType checkGradient(Layer& PrevLayer, const DataType Epsilon) {
-    DistMat WB_E1(this->m_weights->Grid());
-    DistMat WB_E2(this->m_weights->Grid());
-    DistMat Zs_E1(this->m_weighted_sum->Grid());
-    DistMat Zs_E2(this->m_weighted_sum->Grid());
-    DistMat Acts_E1(this->m_activations->Grid());
-    DistMat Acts_E2(this->m_activations->Grid());
-    DataType grad_diff = 0;
-    DataType grad_sum = 0;
-
-    Zeros(WB_E1, this->m_weights->Height(), this->m_weights->Width());
-    Zeros(WB_E2, this->m_weights->Height(), this->m_weights->Width());
-    Zeros(Zs_E1, this->m_weighted_sum->Height(), this->m_weighted_sum->Width());
-    Zeros(Zs_E2, this->m_weighted_sum->Height(), this->m_weighted_sum->Width());
-    Zeros(Acts_E1, this->m_activations->Height(), this->m_activations->Width());
-    Zeros(Acts_E2, this->m_activations->Height(), this->m_activations->Width());
-
-    Copy(*this->m_weights, WB_E1);
-    Copy(*this->m_weights, WB_E2);
-
-    //DataType sum_error = 0;
-    Int prow = 0;
-    Int pcol = 0;
-
-    if(WB_E1.IsLocal(prow, pcol)) {
-      Int _prow = WB_E1.LocalRow(prow);
-      Int _pcol = WB_E1.LocalCol(pcol);
-      WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) + Epsilon);
-    }
-    if(WB_E2.IsLocal(prow, pcol)) {
-      Int _prow = WB_E2.LocalRow(prow);
-      Int _pcol = WB_E2.LocalCol(pcol);
-      WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) - Epsilon);
-    }
-    for (Int row = 0; row < this->m_weights->Height(); row++) {
-      for (Int col = 0; col < this->m_weights->Width(); col++) {
-        //          printf("Updating %d: %d x %d\n", m_index, row, col);
-        if(WB_E1.IsLocal(prow, pcol)) {
-          Int _prow = WB_E1.LocalRow(prow);
-          Int _pcol = WB_E1.LocalCol(pcol);
-          WB_E1.SetLocal(_prow, _pcol, WB_E1.GetLocal(_prow, _pcol) - Epsilon);
-        }
-        if(WB_E2.IsLocal(prow, pcol)) {
-          Int _prow = WB_E2.LocalRow(prow);
-          Int _pcol = WB_E2.LocalCol(pcol);
-          WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) + Epsilon);
-        }
-        if(WB_E1.IsLocal(row, col)) {
-          Int _row = WB_E1.LocalRow(row);
-          Int _col = WB_E1.LocalCol(col);
-          WB_E1.SetLocal(_row,  _col,  WB_E1.GetLocal(_row, _col)   + Epsilon);
-        }
-        if(WB_E2.IsLocal(row, col)) {
-          Int _row = WB_E2.LocalRow(row);
-          Int _col = WB_E2.LocalCol(col);
-          WB_E2.SetLocal(_row,  _col,  WB_E2.GetLocal(_row, _col)   - Epsilon);
-        }
-
-        // J(theta)
-        //            this->fp_linearity(*WB, *(PrevLayer.Acts), *Zs, *Acts);
-        //this->fp_nonlinearity(*Acts);
-
-        // J(thetaPlus(i))
-        //            this->fp_linearity(WB_E1, *(PrevLayer.Acts), Zs_E1, Acts_E1);
-        //this->fp_nonlinearity(Acts_E1);
-
-        // J(thetaMinus(i))
-        //            this->fp_linearity(WB_E2, *(PrevLayer.Acts), Zs_E2, Acts_E2);
-        //this->fp_nonlinearity(Acts_E2);
-
-        //            this->getCost();
-
-        // gradApprox(i) = J(thetaPlus(i)) - J(thetaMinus(i)) / (2*Epsilon)
-        Axpy(-1.0, *this->m_activations, Acts_E1);
-        Axpy(-1.0, *this->m_activations, Acts_E2);
-
-        bool bad_E1 = false, bad_E2 = false;
-        for(Int r = 0; r < this->m_activations->Height(); r++) {
-          for(Int c = 0; c < this->m_activations->Width(); c++) {
-            if(Acts_E1.IsLocal(r,c)) {
-              Int _r = Acts_E1.LocalRow(r);
-              Int _c = Acts_E1.LocalCol(c);
-              if((Acts_E1.GetLocal(_r,_c) > 1e-12 || Acts_E1.GetLocal(_r,_c) < -1e-12) && r != row) {
-                bad_E1 = true;
-                //                    cout << "Acts_E1=["<< r << "," << c << "]="<<Acts_E1.GetLocal(_r,_c)<<endl;
-              }
-            }
-            if(Acts_E2.IsLocal(r,c)) {
-              Int _r = Acts_E2.LocalRow(r);
-              Int _c = Acts_E2.LocalCol(c);
-              if((Acts_E2.GetLocal(_r,_c) > 1e-12 || Acts_E2.GetLocal(_r,_c) < -1e-12) && r != row) {
-                bad_E2 = true;
-                //                    cout << "Acts_E2=["<< r << "," << c << "]="<<Acts_E2.GetLocal(_r,_c)<<endl;
-              }
-            }
-          }
-        }
-
-        if(bad_E1) {
-          if(Acts_E1.Grid().Rank() == 0) {
-            printf("BAD ENTRY Acts_E1 %lld x %lld\n", row, col);
-          }
-          cout.precision(20);
-          Print(Acts_E1);
-          if(Acts_E1.Grid().Rank() == 0) {
-            printf("Acts\n");
-          }
-          Print(*this->m_activations);
-        }
-        if(bad_E2) {
-          if(Acts_E2.Grid().Rank() == 0) {
-            printf("BAD ENTRY Acts_E2 %lld x %lld\n", row, col);
-          }
-          Print(Acts_E2);
-        }
-
-        prow = row;
-        pcol = col;
-      }
-    }
-    DataType grad_error = sqrt(grad_diff / grad_sum);
-    return grad_error;
-  }
 };
 
 }
