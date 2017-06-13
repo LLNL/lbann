@@ -48,7 +48,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
 
   // Determine number of available GPUs
   int num_total_gpus;
-  checkCUDA(cudaGetDeviceCount(&num_total_gpus));
+  CHECK_CUDA(cudaGetDeviceCount(&num_total_gpus));
   m_num_total_gpus = num_total_gpus;
   if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
     m_num_total_gpus = max_num_gpus;
@@ -65,15 +65,15 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
   if(m_num_total_gpus >= procs_per_node) {
     int gpu = rank_in_node;
     while(gpu < m_num_total_gpus) {
-      checkCUDA(cudaSetDevice(gpu));
+      CHECK_CUDA(cudaSetDevice(gpu));
       m_gpus.push_back(gpu);
       m_streams.push_back(NULL);
       m_handles.push_back(NULL);
       cudaStream_t& stream = m_streams.back();
       cudnnHandle_t& handle = m_handles.back();
-      checkCUDA(cudaStreamCreate(&stream));
-      checkCUDNN(cudnnCreate(&handle));
-      checkCUDNN(cudnnSetStream(handle, stream));
+      CHECK_CUDA(cudaStreamCreate(&stream));
+      CHECK_CUDNN(cudnnCreate(&handle));
+      CHECK_CUDNN(cudnnSetStream(handle, stream));
       gpu += procs_per_node;
     }
   }
@@ -81,15 +81,15 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
   // Case where compute node has fewers GPUs than MPI ranks
   else {
     const int gpu = rank_in_node % m_num_total_gpus;
-    checkCUDA(cudaSetDevice(gpu));
+    CHECK_CUDA(cudaSetDevice(gpu));
     m_gpus.push_back(gpu);
     m_streams.push_back(NULL);
     m_handles.push_back(NULL);
     cudaStream_t& stream = m_streams.back();
     cudnnHandle_t& handle = m_handles.back();
-    checkCUDA(cudaStreamCreate(&stream));
-    checkCUDNN(cudnnCreate(&handle));
-    checkCUDNN(cudnnSetStream(handle, stream));
+    CHECK_CUDA(cudaStreamCreate(&stream));
+    CHECK_CUDNN(cudnnCreate(&handle));
+    CHECK_CUDNN(cudnnSetStream(handle, stream));
   }
 
   // Get number of GPUs for current MPI rank
@@ -104,9 +104,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
 cudnn_manager::~cudnn_manager() {
   // Free work spaces
   for(size_t i=0u; i<m_gpus.size(); ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     if(m_work_space_sizes[i]) {
-      checkCUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
+      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
     }
   }
 
@@ -116,12 +116,12 @@ cudnn_manager::~cudnn_manager() {
 
   // Destroy cuDNN handles
   for(size_t i=0u; i<m_gpus.size(); ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     if(m_streams[i]) {
-      checkCUDA(cudaStreamDestroy(m_streams[i]));
+      CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
     }
     if(m_handles[i]) {
-      checkCUDNN(cudnnDestroy(m_handles[i]));
+      CHECK_CUDNN(cudnnDestroy(m_handles[i]));
     }
   }
   unpin_ptrs();
@@ -150,10 +150,10 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   gpu_data.resize(m_num_gpus, NULL);
   for(Int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
-      checkCUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                             (void **) &gpu_data[i],
-                                             height*width_per_gpu*sizeof(DataType),
-                                             m_streams[i]));
+      CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
+                                              (void **) &gpu_data[i],
+                                              height*width_per_gpu*sizeof(DataType),
+                                              m_streams[i]));
     }
 
   }
@@ -177,7 +177,7 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
   // Deallocate GPU memory
   for(Int i=0; i<m_num_gpus; ++i) {
     if(gpu_data[i] != NULL) {
-      checkCUDA(m_gpu_memory->DeviceFree(m_gpus[i], gpu_data[i]));
+      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], gpu_data[i]));
     }
   }
 
@@ -192,11 +192,11 @@ void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType *>& gpu_da
 
   // Clear memory on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
-    checkCUDA(cudaMemsetAsync(gpu_data[i],
-                              0,
-                              height*width_per_gpu*sizeof(DataType),
-                              m_streams[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaMemsetAsync(gpu_data[i],
+                               0,
+                               height*width_per_gpu*sizeof(DataType),
+                               m_streams[i]));
   }
 
 }
@@ -208,7 +208,7 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
 
   // Iterate through GPUs
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns on each GPU
     const Int first_pos = Min(i * width_per_gpu, width);
@@ -217,10 +217,10 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
 
     // Set unused GPU memory to zero
     if(current_width < width_per_gpu) {
-      checkCUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
-                                0,
-                                height*(width_per_gpu-current_width)*sizeof(DataType),
-                                m_streams[i]));
+      CHECK_CUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
+                                 0,
+                                 height*(width_per_gpu-current_width)*sizeof(DataType),
+                                 m_streams[i]));
     }
 
   }
@@ -234,12 +234,12 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst
 
   // Perform memory transfer on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
-    checkCUDA(cudaMemcpyAsync(gpu_dst_data[i],
-                              gpu_src_data[i],
-                              height*width_per_gpu*sizeof(DataType),
-                              cudaMemcpyDeviceToDevice,
-                              m_streams[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaMemcpyAsync(gpu_dst_data[i],
+                               gpu_src_data[i],
+                               height*width_per_gpu*sizeof(DataType),
+                               cudaMemcpyDeviceToDevice,
+                               m_streams[i]));
   }
 
 }
@@ -255,7 +255,7 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
 
   // Perform memory transfer on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns to transfer to current GPU
     const Int first_pos = Min(i * width_per_gpu, width);
@@ -265,29 +265,29 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
     // Transfer data to current GPU
     if(current_width > 0) {
       if(cpu_ldim > height) {
-        checkCUDA(cudaMemcpy2DAsync(gpu_data[i],
-                                    height*sizeof(DataType),
-                                    cpu_data.LockedBuffer(0,first_pos),
-                                    cpu_ldim*sizeof(DataType),
-                                    height*sizeof(DataType),
-                                    current_width,
-                                    cudaMemcpyHostToDevice,
-                                    m_streams[i]));
+        CHECK_CUDA(cudaMemcpy2DAsync(gpu_data[i],
+                                     height*sizeof(DataType),
+                                     cpu_data.LockedBuffer(0,first_pos),
+                                     cpu_ldim*sizeof(DataType),
+                                     height*sizeof(DataType),
+                                     current_width,
+                                     cudaMemcpyHostToDevice,
+                                     m_streams[i]));
       } else {
-        checkCUDA(cudaMemcpyAsync(gpu_data[i],
-                                  cpu_data.LockedBuffer(0,first_pos),
-                                  height*current_width*sizeof(DataType),
-                                  cudaMemcpyHostToDevice,
-                                  m_streams[i]));
+        CHECK_CUDA(cudaMemcpyAsync(gpu_data[i],
+                                   cpu_data.LockedBuffer(0,first_pos),
+                                   height*current_width*sizeof(DataType),
+                                   cudaMemcpyHostToDevice,
+                                   m_streams[i]));
       }
     }
 
     // Set unused GPU memory to zero
     if(current_width < width_per_gpu) {
-      checkCUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
-                                0,
-                                height*(width_per_gpu-current_width)*sizeof(DataType),
-                                m_streams[i]));
+      CHECK_CUDA(cudaMemsetAsync(gpu_data[i] + height*current_width,
+                                 0,
+                                 height*(width_per_gpu-current_width)*sizeof(DataType),
+                                 m_streams[i]));
     }
 
   }
@@ -305,7 +305,7 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
 
   // Perform memory transfer on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns to transfer to current GPU
     const Int first_pos = Min(i * width_per_gpu, width);
@@ -315,20 +315,20 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
     // Transfer data from current GPU
     if(current_width > 0) {
       if(cpu_ldim > height) {
-        checkCUDA(cudaMemcpy2DAsync(cpu_data.Buffer(0,first_pos),
-                                    cpu_ldim*sizeof(DataType),
-                                    gpu_data[i],
-                                    height*sizeof(DataType),
-                                    height*sizeof(DataType),
-                                    current_width,
-                                    cudaMemcpyDeviceToHost,
-                                    m_streams[i]));
+        CHECK_CUDA(cudaMemcpy2DAsync(cpu_data.Buffer(0,first_pos),
+                                     cpu_ldim*sizeof(DataType),
+                                     gpu_data[i],
+                                     height*sizeof(DataType),
+                                     height*sizeof(DataType),
+                                     current_width,
+                                     cudaMemcpyDeviceToHost,
+                                     m_streams[i]));
       } else {
-        checkCUDA(cudaMemcpyAsync(cpu_data.Buffer(0,first_pos),
-                                  gpu_data[i],
-                                  height*current_width*sizeof(DataType),
-                                  cudaMemcpyDeviceToHost,
-                                  m_streams[i]));
+        CHECK_CUDA(cudaMemcpyAsync(cpu_data.Buffer(0,first_pos),
+                                   gpu_data[i],
+                                   height*current_width*sizeof(DataType),
+                                   cudaMemcpyDeviceToHost,
+                                   m_streams[i]));
       }
     }
 
@@ -346,24 +346,24 @@ void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gp
 
   // Perform memory transfer on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Transfer data to current GPU
     if(cpu_ldim > height) {
-      checkCUDA(cudaMemcpy2DAsync(gpu_data[i],
-                                  height*sizeof(DataType),
-                                  cpu_data.LockedBuffer(),
-                                  cpu_ldim*sizeof(DataType),
-                                  height*sizeof(DataType),
-                                  width,
-                                  cudaMemcpyHostToDevice,
-                                  m_streams[i]));
+      CHECK_CUDA(cudaMemcpy2DAsync(gpu_data[i],
+                                   height*sizeof(DataType),
+                                   cpu_data.LockedBuffer(),
+                                   cpu_ldim*sizeof(DataType),
+                                   height*sizeof(DataType),
+                                   width,
+                                   cudaMemcpyHostToDevice,
+                                   m_streams[i]));
     } else {
-      checkCUDA(cudaMemcpyAsync(gpu_data[i],
-                                cpu_data.LockedBuffer(),
-                                height*width*sizeof(DataType),
-                                cudaMemcpyHostToDevice,
-                                m_streams[i]));
+      CHECK_CUDA(cudaMemcpyAsync(gpu_data[i],
+                                 cpu_data.LockedBuffer(),
+                                 height*width*sizeof(DataType),
+                                 cudaMemcpyHostToDevice,
+                                 m_streams[i]));
     }
 
   }
@@ -393,8 +393,8 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
 
 void cudnn_manager::cudnn_manager::synchronize() {
   for(Int i=0; i<m_num_gpus; ++i) {
-    checkCUDA(cudaSetDevice(m_gpus[i]));
-    checkCUDA(cudaStreamSynchronize(m_streams[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaStreamSynchronize(m_streams[i]));
   }
 }
 
@@ -406,7 +406,7 @@ void cudnn_manager::pin_ptr(void *ptr, size_t sz) {
   if (it == pinned_ptr.end()) {
     //std::cout << "adding a new ptr " << reinterpret_cast<unsigned long long>(ptr) << std::endl;
     pinned_ptr[ptr] = sz;
-    checkCUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
+    CHECK_CUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
   } else {
     // TODO: We can check here if the block defined by (ptr,sz) overlaps with an existing one.
   }
@@ -434,7 +434,7 @@ void cudnn_manager::unpin_memory_block(ElMat *mat) {
 void cudnn_manager::unpin_ptr(void *const ptr) {
   std::map<void *, size_t>::iterator it = pinned_ptr.find(ptr);
   if (it != pinned_ptr.end()) {
-    checkCUDA(cudaHostUnregister(it->first));
+    CHECK_CUDA(cudaHostUnregister(it->first));
     pinned_ptr.erase(it);
   }
 }
@@ -444,7 +444,7 @@ void cudnn_manager::unpin_ptrs(void) {
   std::map<void *, size_t>::iterator itend = pinned_ptr.end();
 
   for(; it != itend; ++it) {
-    checkCUDA(cudaHostUnregister(it->first));
+    CHECK_CUDA(cudaHostUnregister(it->first));
   }
   pinned_ptr.clear();
 }
@@ -542,10 +542,10 @@ const cudnnHandle_t& cudnn_manager::get_handle(Int i) const {
 std::vector<void *> cudnn_manager::get_work_spaces() {
   for(Int i=0; i<m_num_gpus; ++i) {
     if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
-      checkCUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                             &m_work_spaces[i],
-                                             m_work_space_sizes[i],
-                                             m_streams[i]));
+      CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
+                                              &m_work_spaces[i],
+                                              m_work_space_sizes[i],
+                                              m_streams[i]));
     }
   }
   return m_work_spaces;
@@ -553,10 +553,10 @@ std::vector<void *> cudnn_manager::get_work_spaces() {
 
 void *cudnn_manager::get_work_space(Int i) {
   if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
-    checkCUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                           &m_work_spaces[i],
-                                           m_work_space_sizes[i],
-                                           m_streams[i]));
+    CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
+                                            &m_work_spaces[i],
+                                            m_work_space_sizes[i],
+                                            m_streams[i]));
   }
   return m_work_spaces[i];
 }
@@ -573,7 +573,7 @@ void cudnn_manager::set_work_space_size(Int i, size_t size) {
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != NULL) {
-      checkCUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
+      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
       m_work_spaces[i] = NULL;
     }
   }
