@@ -1,4 +1,4 @@
-#if 1
+#if 0
 #include "lbann/proto/lbann_proto_common.hpp"
 
 #include "lbann/lbann_base.hpp"

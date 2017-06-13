@@ -59,7 +59,6 @@ message Model {
   int64 num_parallel_readers = 52;
   int64 num_gpus = 53;
   int64 evaluation_frequency = 54;
-  repeated Regularizer regularizer = 55;
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
@@ -142,33 +141,6 @@ message CallbackImComm {
 }
 
 //========================================================================
-// Regularizers
-//========================================================================
-
-message Regularizer {
-  //a Regularizer should contain exactly one of the following
-  BatchNormalization batch_normalization = 1;
-  Dropout dropout = 2;
-  L2Regularization l2_regularization = 3; 
-}
-
-message BatchNormalization {
-  string data_layout = 1;
-  double decay = 2;
-  double gamma = 3;
-  double beta = 4;
-}
-
-message Dropout {
-  string data_layout = 1;
-  double keep_prob = 2;
-}
-
-message L2Regularization {
-  double lambda = 3;
-}
-
-//========================================================================
 // start of Layer types
 //========================================================================
 //
@@ -190,11 +162,21 @@ message L2Regularization {
 message Layer {
    int64 index = 2; 
    int64 parent = 3;
-   int64 child = 4;
 
-   // a Layer should contain exactly one of the following
-   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;
-   InputDistributedMiniBatch input_distributed_minibatch = 9;
+   // a Layer should contain exactly one of the following;
+   // this may or may not be properly checked for in lbann_proto_common.cpp
+
+   // input Layers
+   InputDistributed input_distributed = 1;
+   InputDistributedParallel input_distributed_parallel = 2;
+   InputPartitionedParallel input_partitioned_parallel = 3;
+
+   // target Layers
+   TargetDistributed target_distributed = 100;
+   TargetDistributedParallel target_distributed_parallel = 101;
+   TargetParititionedParellel target_partitioned_parallel = 101;
+
+
    FullyConnected fully_connected = 11;
    Pooling pooling = 12;
    Convolution convolution = 13;
@@ -203,17 +185,90 @@ message Layer {
    TargetParallel target_parallel = 16;
    TargetDistributedMinibatch target_distributed_minibatch = 17;
    TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
+
+   // regularization Layers
+   BatchNormalization batch_normalization = 19;
+   LocalResponseNormalization local_response_normalization = 20;
+   Dropout dropout = 21;
+
+   // activation Layers
+   ELU elu = 30;
+   ID id = 31;
+   LeakyRelu leaky_relu = 32;
+   Relu relu = 33;
+   Sigmoid sigmoid = 34;
+   SmoothRelu smooth_relu = 35;
+   Softplus soft_plus = 36;
+}
+
+///////////////////////
+// Activation Layers //
+///////////////////////
+message ELU {
+  double alpha = 1.0; //default: 1.0; must be >= 0
+}
+
+message ID {
+}
+
+message LeakyRelu {
+  double leak = 1; //default: 0.01
+}
+
+message Relu {
+}
+
+message Sigmoid {
+}
+
+message SmoothRelu {
+}
+
+message Softplus {
+}
+
+message Tanh {
+}
+
+///////////////////////////
+// Regularization Layers //
+///////////////////////////
+message BatchNormalization {
+  string data_layout = 1;
+  double decay = 2; //default: 0.9
+  double gamma = 3; //default: 1.0
+  double beta = 4;  //default: 0.0
+}
+
+message LocalResponseNormalization {
+  int64 num_dims = 1;
+  int64 num_channels = 2;
+  string dims = 3;  //e.g, "2 2 2"
+  int64 window_width = 4;
+  double lrn_alphs = 5;
+  double lrn_beta = 6;
+  double lrn_k = 7;
+}
+
+message Dropout {
+  string data_layout = 1;
+  double keep_prob = 2;  //default: 0.5
 }
 
 
-message InputDistributedMiniBatchParallelIO {
-  string data_layout = 3;
-  repeated Regularizer regularizer = 2;
+//////////////////
+// Input Layers //
+//////////////////
+message InputDistributed input_distributed {
+  string data_layout = 1;
 }
 
+message InputDistributedParallel input_distributed_parallel {
+  string data_layout = 1;
+}
 
-message InputDistributedMiniBatch {
-  //@TODO
+message InputPartitionedParallel input_partitioned_parallel {
+  int64 num_parallel_readers = 2;
 }
 
 
@@ -224,7 +279,6 @@ message FullyConnected {
   string activation_type = 4;
   string weight_initialization = 5;
   //string optimizer = 10; 
-  repeated Regularizer regularizer = 11;
 }
 
 
@@ -252,7 +306,6 @@ message Convolution {
   int64 mini_batch_size = 8;
   string weight_initialization = 9;
   string activation_type = 10;
-  repeated Regularizer regularizer = 11;
 }
 
 message Softmax {

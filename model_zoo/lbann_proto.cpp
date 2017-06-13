@@ -32,7 +32,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-#if 1
+#if 0
   lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
