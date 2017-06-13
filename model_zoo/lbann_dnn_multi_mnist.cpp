@@ -29,9 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
 
-using namespace std;
 using namespace lbann;
-using namespace El;
 
 //#define PARTITIONED
 #if defined(PARTITIONED)
@@ -39,10 +37,6 @@ using namespace El;
 #else
 #define DATA_LAYOUT data_layout::MODEL_PARALLEL
 #endif
-
-// layer definition
-const std::vector<int> g_LayerDim = {784, 100, 30, 10};
-const uint g_NumLayers = g_LayerDim.size(); // # layers
 
 void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index) {
   std::vector<Layer *>& layers = model->get_layers();
@@ -56,11 +50,7 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
 
 
 int main(int argc, char *argv[]) {
-  // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  init_random(42);  // Deterministic initialization across every model.
-  init_data_seq_random(42);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
     // Get data files.
@@ -105,25 +95,25 @@ int main(int argc, char *argv[]) {
     El::GemmUseGPU(512,512,512);
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      cout << "Number of models: " << comm->get_num_models() <<
-           " (" << comm->get_procs_per_model() << " procs per model)" << endl;
-      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
+      std::cout << "Number of models: " << comm->get_num_models() <<
+           " (" << comm->get_procs_per_model() << " procs per model)" << std::endl;
+      std::cout << "Grid is " << grid.Height() << " x " << grid.Width() << std::endl;
+      std::cout << std::endl;
     }
 
     int parallel_io = perfParams.MaxParIOSize;
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-             " (Limited to # Processes)" << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+             " (Limited to # Processes)" << std::endl;
       }
       parallel_io = comm->get_procs_per_model();
     } else {
       if (comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
       }
     }
 
@@ -149,8 +139,8 @@ int main(int argc, char *argv[]) {
       size_t num_validate = mnist_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+      std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << std::endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -164,9 +154,9 @@ int main(int argc, char *argv[]) {
     mnist_testset.load();
 
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
            "% of the testing data set, which is " << mnist_testset.getNumData() <<
-           " samples." << endl;
+           " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -195,9 +185,9 @@ int main(int argc, char *argv[]) {
                                                           };
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer<data_layout> *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #else
-    input_layer<data_layout> *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #endif
     dnn.add(input_layer);
 
@@ -295,18 +285,10 @@ int main(int argc, char *argv[]) {
     //dnn.add_callback(&stopping_cb);
 
     if (comm->am_world_master()) {
-      cout << "Layer initialized:" << endl;
-      for (uint n = 0; n < g_NumLayers; n++) {
-        cout << "\tLayer[" << n << "]: " << g_LayerDim[n] << endl;
-      }
-      cout << endl;
-    }
-
-    if (comm->am_world_master()) {
-      cout << "Parameter settings:" << endl;
-      cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-      cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
-      cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+      std::cout << "Parameter settings:" << std::endl;
+      std::cout << "\tMini-batch size: " << trainParams.MBSize << std::endl;
+      std::cout << "\tLearning rate: " << trainParams.LearnRate << std::endl << std::endl;
+      std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl;
     }
 
     comm->global_barrier();
@@ -334,8 +316,7 @@ int main(int argc, char *argv[]) {
     ReportException(e);
   }
 
-  // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
   return 0;
 }

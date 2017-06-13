@@ -31,26 +31,16 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
-using namespace std;
+
 using namespace lbann;
-using namespace El;
-
-
-// layer definition
-const std::vector<int> g_LayerDim = {784, 100, 30, 10};
-const uint g_NumLayers = g_LayerDim.size(); // # layers
 
 /// Main function
 int main(int argc, char *argv[]) {
-  // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   El::GemmUseGPU(32,32,32);
 
   try {
-
-
     // Get data files
     const string g_MNIST_TrainLabelFile = Input("--train-label-file",
                                           "MNIST training set label file",
@@ -92,14 +82,9 @@ int main(int argc, char *argv[]) {
     PerformanceParams perfParams;
     perfParams.BlockSize = 256;
 
-    //NetworkParams network_params;
-    //SystemParams system_params;
-
     // Parse command-line inputs
     trainParams.parse_params();
     perfParams.parse_params();
-    //network_params.parse_params();
-    //system_params.parse_params();
 
     ProcessInput();
     PrintInputReport();
@@ -108,30 +93,24 @@ int main(int argc, char *argv[]) {
     SetBlocksize(perfParams.BlockSize);
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      cout << "Number of models: " << comm->get_num_models() << endl;
-      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
+      std::cout << "Number of models: " << comm->get_num_models() << std::endl;
+      std::cout << "Grid is " << grid.Height() << " x " << grid.Width() << std::endl;
+      std::cout << std::endl;
     }
-
-    // Initialize lbann with the communicator.
-    lbann::initialize(comm);
-    init_random(42);
-    init_data_seq_random(42);
-
 
     int parallel_io = perfParams.MaxParIOSize;
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-             " (Limited to # Processes)" << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+             " (Limited to # Processes)" << std::endl;
       }
       parallel_io = comm->get_procs_per_model();
     } else {
       if (comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
       }
     }
 
@@ -160,8 +139,8 @@ int main(int argc, char *argv[]) {
       size_t num_validate = mnist_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+      std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << std::endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -180,7 +159,7 @@ int main(int argc, char *argv[]) {
     mnist_testset.z_score(z_score);
 
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -209,25 +188,25 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    input_layer<data_layout> *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     //second layer
-    fully_connected_layer<data_layout> *fc1 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 1,
+    Layer *fc1 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 1,
                                                                     mnist_trainset.get_linearized_data_size(), 100,trainParams.MBSize,trainParams.ActivationType,
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
                                                                     {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     dnn.add(fc1);
     
     //third layer 
-    fully_connected_layer<data_layout> *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 2, 
+    Layer *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 2, 
                                                                    100, 30,trainParams.MBSize,trainParams.ActivationType,
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer(),
                                                                     {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     dnn.add(fc2);
     
     //fourth layer
-    softmax_layer<data_layout> *sl = new softmax_layer<data_layout>(
+    Layer *sl = new softmax_layer<data_layout>(
       data_layout::MODEL_PARALLEL, 
       3, 30, 10,
       trainParams.MBSize, 
@@ -268,18 +247,10 @@ int main(int argc, char *argv[]) {
     //        dnn.add_callback(&debug_cb);
 
     if (comm->am_world_master()) {
-      cout << "Layer initialized:" << endl;
-      for (uint n = 0; n < g_NumLayers; n++) {
-        cout << "\tLayer[" << n << "]: " << g_LayerDim[n] << endl;
-      }
-      cout << endl;
-    }
-
-    if (comm->am_world_master()) {
-      cout << "Parameter settings:" << endl;
-      cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-      cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
-      cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+      std::cout << "Parameter settings:" << std::endl;
+      std::cout << "\tMini-batch size: " << trainParams.MBSize << std::endl;
+      std::cout << "\tLearning rate: " << trainParams.LearnRate << std::endl << std::endl;
+      std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -319,15 +290,13 @@ int main(int argc, char *argv[]) {
       delete dump_gradients_cb;
     }
     delete optimizer_fac;
-    delete comm;
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   } catch (exception& e) {
     ReportException(e);  /// Elemental exceptions
   }
 
-  // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
   return 0;
 }

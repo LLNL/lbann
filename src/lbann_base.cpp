@@ -35,10 +35,16 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/utils/lbann_random.hpp"
 
 namespace lbann {
 
-void initialize(lbann_comm *comm) {
+lbann_comm* initialize(int& argc, char**& argv, int seed) {
+  // Initialize Elemental.
+  El::Initialize(argc, argv);
+  // Create a new comm object.
+  // Initial creation with every process in one model.
+  lbann_comm* comm = new lbann_comm(0);
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
   hwloc_topology_init(&topo);
@@ -71,10 +77,17 @@ void initialize(lbann_comm *comm) {
     omp_set_num_threads(threads_per_rank);
   }
 #endif  // _OPENMP
+  // Initialize local random number generators.
+  init_random(seed);
+  init_data_seq_random(seed);
+  return comm;
 }
 
-void finalize() {
-
+void finalize(lbann_comm* comm) {
+  if (comm != nullptr) {
+    delete comm;
+  }
+  El::Finalize();
 }
 
 }  // namespace lbann

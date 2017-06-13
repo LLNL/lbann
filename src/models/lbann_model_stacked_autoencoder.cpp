@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_stacked_autoencoder.hpp"
-#include "lbann/layers/lbann_layer_fully_connected.hpp"
+#include "lbann/layers/lbann_layer_reconstruction.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
@@ -56,70 +56,31 @@ lbann::stacked_autoencoder::stacked_autoencoder(const uint mini_batch_size,
     optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_name("stacked_autoencoder") {
-  //m_target_layer = new target_layer_unsupervised(comm,mini_batch_size);
 }
 
 lbann::stacked_autoencoder::~stacked_autoencoder() {
-  //delete m_target_layer;
 }
 
 
 //This add hidden layers and their mirrors, input layer is added in base class?
-void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
-    const data_layout data_dist,
-    const int layer_dim,
-    const activation_type activation,
-    const weight_initialization init,
-    std::vector<regularizer *> regularizers) {
-
-
-  // get prev neurons
-  //int mid = (int)Layers.size() / 2;
+void lbann::stacked_autoencoder::begin_stack(Layer* new_layer){
   int cur_size = m_layers.size();
-  //int mid = cur_size / 2;
-  //Layer *mid_layer = m_layers[mid];
-  //int mid_num_neurons = mid_layer->get_num_neurons();
-  //int prev_layer_dim = mid_layer->get_num_neurons();
-
+  int mid = cur_size / 2;
   if (cur_size == 1) {
     // create first hidden layer
-    if(layer_name == "FullyConnected") {
-      /*optimizer *new_optimizer = create_optimizer();
-      Layer *new_layer
-        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
-            prev_layer_dim,layer_dim,
-            m_mini_batch_size, activation, init,
-            m_comm,new_optimizer, regularizers);
-            m_layers.push_back(new_layer);
-      // create output/mirror layer
-      optimizer *mirror_optimizer = create_optimizer();
-      Layer *mirror_layer
-        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
-            layer_dim,prev_layer_dim,
-            m_mini_batch_size,activation, init,
-            m_comm,mirror_optimizer,regularizers);
-            m_layers.push_back(mirror_layer);*/
-    }
+    m_layers.push_back(new_layer);
+    //mirror layer
+    optimizer *mirror_optimizer = create_optimizer();
+    reconstruction_layer<data_layout>* mirror_layer = new reconstruction_layer<data_layout>(new_layer->get_data_layout(),
+                                                      cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+    m_layers.push_back(mirror_layer);
   } else {
-    // create hiden layer
-    if(layer_name == "FullyConnected") {
-      /*optimizer *hidden_optimizer = create_optimizer();
-      Layer *hidden_layer
-        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size,
-            prev_layer_dim,layer_dim,
-            m_mini_batch_size, activation, init,
-            m_comm,hidden_optimizer, regularizers);
-            m_layers.insert(m_layers.begin()+ mid + 1,hidden_layer);
-      // create mirror layer
-      optimizer *mirror_hidden_optimizer = create_optimizer();
-      Layer *mirror_hidden_layer
-        = layer_fac->create_layer<fully_connected_layer<data_layout::MODEL_PARALLEL>>("FullyConnected",data_dist,cur_size+1,
-            layer_dim,prev_layer_dim,
-            m_mini_batch_size,activation, init,
-            m_comm,mirror_hidden_optimizer,regularizers);
-            m_layers.insert(m_layers.begin() + mid + 2, mirror_hidden_layer);*/
+    m_layers.insert(m_layers.begin()+ mid + 1,new_layer);
+    optimizer *mirror_optimizer = create_optimizer();
+    reconstruction_layer<data_layout>* mirror_layer = new reconstruction_layer<data_layout>(new_layer->get_data_layout(),
+                                                     cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+    m_layers.insert(m_layers.begin() + mid + 2, mirror_layer);
 
-    }
     // re-number layer index
     for (size_t n = 0; n < m_layers.size(); n++) {
       Layer *layer = m_layers[n];
@@ -129,8 +90,6 @@ void lbann::stacked_autoencoder::begin_stack(const std::string layer_name,
 
   //sanity check
   if(m_comm->am_world_master()) {
-    //cout << "#Layers " << m_layers.size() << endl;
-    //cout << "Layer Index and Layer Dim: " << endl;
     for(auto& layer:m_layers) {
       cout << "[ " << layer->get_index() << "]" << layer->get_num_neurons() << endl;
     }
