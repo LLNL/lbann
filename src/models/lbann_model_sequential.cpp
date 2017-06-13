@@ -325,7 +325,7 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index) {
 
 bool lbann::sequential_model::at_epoch_start() {
   // use mini batch index in data reader to signify start of epoch
-  lbann::io_layer *input = (lbann::io_layer *) m_layers[0];
+  lbann::io_layer<data_layout> *input = (lbann::io_layer<data_layout> *) m_layers[0];
   bool flag = input->at_new_epoch();
   return flag;
 }

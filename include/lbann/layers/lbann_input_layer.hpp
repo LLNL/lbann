@@ -31,11 +31,11 @@
 
 namespace lbann {
 template <class T_layout>
-class input_layer : public io_layer {
+class input_layer : public io_layer<T_layout> {
  public:
   input_layer(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs = {})
-    : io_layer(data_dist, comm, mini_batch_size, data_readers) {
-    m_num_neurons = io_layer::get_linearized_data_size();
+    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers) {
+    this->m_num_neurons = io_layer<T_layout>::get_linearized_data_size();
   }
 
   /**
@@ -56,12 +56,12 @@ class input_layer : public io_layer {
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    m_training_dataset.data_reader->saveToCheckpointShared(p, "data_reader_training");
-    m_validation_dataset.data_reader->saveToCheckpointShared(p, "data_reader_validation");
-    m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
+    this->m_training_dataset.data_reader->saveToCheckpointShared(p, "data_reader_training");
+    this->m_validation_dataset.data_reader->saveToCheckpointShared(p, "data_reader_validation");
+    this->m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
 
     // save our own state
-    io_layer::saveToCheckpointShared(p);
+    io_layer<T_layout>::saveToCheckpointShared(p);
 
     return true;
   }
@@ -69,12 +69,12 @@ class input_layer : public io_layer {
   // reload state of IO from a checkpoint
   bool loadFromCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    m_training_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_training");
-    m_validation_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_validation");
-    m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
+    this->m_training_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_training");
+    this->m_validation_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_validation");
+    this->m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
 
     // save our own state
-    io_layer::loadFromCheckpointShared(p);
+    io_layer<T_layout>::loadFromCheckpointShared(p);
 
     return true;
   }

@@ -38,32 +38,32 @@
 
 namespace lbann {
 template <class T_layout>
-class target_layer : public io_layer {
+class target_layer : public io_layer<T_layout> {
  protected:
   bool m_shared_data_reader;
 
  public:
   target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression) {
-    if (is_for_regression()) {
-      m_num_neurons = io_layer::get_linearized_response_size();
+    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression) {
+    if (this->is_for_regression()) {
+      this->m_num_neurons = io_layer<T_layout>::get_linearized_response_size();
     } else {
-      m_num_neurons = io_layer::get_linearized_label_size();
+      this->m_num_neurons = io_layer<T_layout>::get_linearized_label_size();
     }
     m_shared_data_reader = shared_data_reader;
   }
 
   void setup(int num_prev_neurons) {
-    if(m_neural_network_model->m_obj_fn == NULL) {
+    if(this->m_neural_network_model->m_obj_fn == NULL) {
       throw lbann_exception("target layer has invalid objective function pointer");
     }
-    m_neural_network_model->m_obj_fn->setup(m_num_neurons, m_mini_batch_size);
-    for (auto&& m : m_neural_network_model->m_metrics) {
-      m->setup(m_num_neurons, m_mini_batch_size);
-      m->m_neural_network_model = m_neural_network_model;
+    this->m_neural_network_model->m_obj_fn->setup(this->m_num_neurons, this->m_mini_batch_size);
+    for (auto&& m : this->m_neural_network_model->m_metrics) {
+      m->setup(this->m_num_neurons, this->m_mini_batch_size);
+      m->m_neural_network_model = this->m_neural_network_model;
     }
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
   }
 
   /**
@@ -75,19 +75,19 @@ class target_layer : public io_layer {
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
     m_shared_data_reader = shared_data_reader;
-    return io_layer::set_training_data_reader(data_reader);
+    return io_layer<T_layout>::set_training_data_reader(data_reader);
   }
 
   lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
     m_shared_data_reader = shared_data_reader;
-    return io_layer::set_testing_data_reader(data_reader);
+    return io_layer<T_layout>::set_testing_data_reader(data_reader);
   }
 
   void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
-    m_neural_network_model->m_obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
-    for (auto&& m : m_neural_network_model->m_metrics) {
+    this->m_neural_network_model->m_obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
+    for (auto&& m : this->m_neural_network_model->m_metrics) {
       m->fp_set_std_matrix_view(cur_mini_batch_size);
     }
   }
@@ -99,22 +99,22 @@ class target_layer : public io_layer {
 
   void summarize(lbann_summary& summarizer, int64_t step) {
     Layer::summarize(summarizer, step);
-    std::string tag = "layer" + std::to_string(static_cast<long long>(m_index))
+    std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/CrossEntropyCost";
-    summarizer.reduce_scalar(tag, m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
+    summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
   }
 
   void epoch_print() const {
-    double obj_cost = m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
-    if (m_comm->am_world_master()) {
-      std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
-      m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
+    double obj_cost = this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
+    if (this->m_comm->am_world_master()) {
+      std::vector<double> avg_obj_fn_costs(this->m_comm->get_num_models());
+      this->m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
       for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
-        std::cout << "Model " << i << " average " << _to_string(m_neural_network_model->m_obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
+        std::cout << "Model " << i << " average " << _to_string(this->m_neural_network_model->m_obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
           std::endl;
       }
     } else {
-      m_comm->intermodel_gather(obj_cost, m_comm->get_world_master());
+      this->m_comm->intermodel_gather(obj_cost, this->m_comm->get_world_master());
     }
   }
 
@@ -124,7 +124,7 @@ class target_layer : public io_layer {
   }
 
   void resetCost() {
-    m_neural_network_model->m_obj_fn->reset_obj_fn();
+    this->m_neural_network_model->m_obj_fn->reset_obj_fn();
   }
 
   bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {

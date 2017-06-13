@@ -33,10 +33,11 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
 
-/// Pooling layer
+/// Local Response Normalization layer
 class local_response_normalization_layer : public Layer {
 
  public:

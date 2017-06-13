@@ -54,13 +54,13 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
   void setup(int num_prev_neurons) {
     target_layer<T_layout>::setup(num_prev_neurons);
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(io_layer::m_data_sets_span_models) {
-        io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
-                                                  Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
-        io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+      if(io_layer<T_layout>::m_data_sets_span_models) {
+        io_layer<T_layout>::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
+                                                            Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
+        io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
       } else {
-        io_layer::setup_data_readers_for_training(0, this->m_mini_batch_size);
-        io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+        io_layer<T_layout>::setup_data_readers_for_training(0, this->m_mini_batch_size);
+        io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
       }
     }
 
