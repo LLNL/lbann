@@ -93,7 +93,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer<T_lay
     m_num_data_per_epoch = 0;
   }
 
-  void fp_linearity(void) {
+  void fp_compute(void) {
     int num_samples_in_batch = fetch_to_local_matrix(this->m_activations->Matrix());
 
     target_layer<T_layout>::update_num_samples_processed(num_samples_in_batch);
@@ -113,7 +113,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer<T_lay
   }
 
 
-  void bp_linearity(void) {
+  void bp_compute(void) {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type,
@@ -125,7 +125,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer<T_lay
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update(void) {
+  bool update_compute(void) {
     return is_data_set_processed();
   }
 

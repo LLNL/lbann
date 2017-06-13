@@ -44,7 +44,7 @@ class target_layer : public io_layer<T_layout> {
 
  public:
   target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, std::vector<lbann::regularizer*>(), true, for_regression) {
+    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
       this->m_num_neurons = io_layer<T_layout>::get_linearized_response_size();
     } else {
@@ -91,11 +91,6 @@ class target_layer : public io_layer<T_layout> {
       m->fp_set_std_matrix_view(cur_mini_batch_size);
     }
   }
-
-  /** No non-linearity */
-  void fp_nonlinearity(void) {}
-  /** No non-linearity */
-  void bp_nonlinearity(void) {}
 
   void summarize(lbann_summary& summarizer, int64_t step) {
     Layer::summarize(summarizer, step);

@@ -75,7 +75,7 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
 
   }
 
-  void fp_linearity() {
+  void fp_compute() {
     generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
 
     if (this->m_comm->get_rank_in_model() == m_root) {
@@ -105,7 +105,7 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
     return;
   }
 
-  void bp_linearity() {
+  void bp_compute() {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type,
@@ -118,7 +118,7 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update_compute() {
     generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
     if(this->m_shared_data_reader) { /// If the data reader is shared with an input layer, don't update the reader
       return true;

@@ -96,7 +96,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
     m_num_data_per_epoch = 0;
   }
 
-  void fp_linearity() {
+  void fp_compute() {
     int num_samples_in_batch = fetch_to_local_matrix(Y_local);
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -124,7 +124,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
   }
 
 
-  void bp_linearity() {
+  void bp_compute() {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type,
@@ -137,7 +137,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update_compute() {
     return is_data_set_processed();
   }
 
