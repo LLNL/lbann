@@ -30,7 +30,7 @@
 #define LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/lbann_layer_activations.hpp"
+#include "lbann/layers/activations/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>

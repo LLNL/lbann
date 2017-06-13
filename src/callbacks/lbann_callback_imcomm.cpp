@@ -29,7 +29,7 @@
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/utils/lbann_exception.hpp"
-#include "lbann/layers/lbann_layer_convolutional.hpp"
+#include "lbann/layers/learning/lbann_layer_convolutional.hpp"
 
 namespace lbann {
 

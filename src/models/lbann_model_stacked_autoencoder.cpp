@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_stacked_autoencoder.hpp"
-#include "lbann/layers/lbann_layer_reconstruction.hpp"
+#include "lbann/layers/io/target/lbann_layer_reconstruction.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"

@@ -30,7 +30,7 @@
 
 #include "lbann/models/lbann_model_sequential.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/lbann_layer_reconstruction.hpp"
+#include "lbann/layers/io/target/lbann_layer_reconstruction.hpp"
 //#include "lbann/lbann.hpp"
 #include <vector>
 #include <string>
