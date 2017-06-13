@@ -296,11 +296,6 @@ class fully_connected_layer : public learning<T_layout> {
     return avg_error;
   }
 
-  DataType WBL2norm(void) {
-    DataType nrm2 = Nrm2(*this->m_weights);
-    return nrm2 * nrm2;
-  }
-
   inline DataType _sq(DataType x) {
     return (x * x);
   }
