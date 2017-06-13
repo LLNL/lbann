@@ -48,7 +48,6 @@
 namespace lbann {
 
 // Forward-declare this.
-class regularizer;
 class model;
 
 // @todo: check list of layer types
@@ -126,8 +125,7 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 class Layer {
  public:
   Layer(data_layout data_dist, const uint index, lbann_comm *comm, optimizer *opt,
-        uint mbsize, activation_type activation=activation_type::ID,
-        std::vector<regularizer *> regs= {});
+        uint mbsize);
 
   virtual ~Layer(void);
 
@@ -195,10 +193,6 @@ class Layer {
   /** Return (a view of) the weights/biases gradient matrix for this layer. */
   virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
-  }
-  /** Return (a view of) the activations matrix for this layer. */
-  virtual ElMat& get_activations(void) {
-    return *m_activations;
   }
   /** Return the layer's optimizer. */
   virtual optimizer *get_optimizer(void) const {
@@ -284,7 +278,6 @@ class Layer {
   Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
 
   execution_mode  m_execution_mode;
-  activation_type m_activation_type;
 
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
@@ -322,14 +315,12 @@ class Layer {
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view(void);
 #endif
-  /** Apply the layer's linear update in forward propagation. */
-  virtual void fp_linearity(void) {}
-  /** Handle the layer's linearity in backward propagation. */
-  virtual void bp_linearity(void) {}
-  /** Apply the layer's nonlinearity in forward propagation. */
-  virtual void fp_nonlinearity(void);
-  /** Handle the layer's nonlinearity in backward propagation. */
-  virtual void bp_nonlinearity(void);
+  /** Perform the layers work / main function for forward propagation */
+  virtual void fp_compute() {}
+  /** Perform the layers work / main function for backward propagation */
+  virtual void bp_compute() {}
+  /** Perform the layers work / main function for the update step */
+  virtual void update_compute() {}
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;
@@ -363,10 +354,6 @@ class Layer {
 
 #endif
 
-  /** Activation function */
-  activation<data_layout> *m_activation_fn;
-  /** Regularizers being applied to the layer. */
-  std::vector<regularizer *> regularizers;
   /** Size of the local mini-batch. */
   uint m_mini_batch_size;
   /** "Effective" mini-batch size for backward propagation, etc.. */
@@ -374,16 +361,12 @@ class Layer {
 
   /** Time spent in forward propagation. */
   double fp_time;
-  /** Time spent in the forward propagation linearity. */
-  double fp_linearity_time;
-  /** Time spent in the forward propagation nonlinearity. */
-  double fp_nonlinearity_time;
+  /** Time spent in the forward propagation computation. */
+  double fp_compute_time;
   /** Time spent in backward propagation. */
   double bp_time;
-  /** Time spent in the backward propagation linearity. */
+  /** Time spent in the backward propagation computation. */
   double bp_linearity_time;
-  /** Time spent in the backward propagation linearity. */
-  double bp_nonlinearity_time;
   /** Time spent in updates. */
   double update_time;
 };

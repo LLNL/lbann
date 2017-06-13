@@ -28,7 +28,6 @@
 
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/layers/activations/create_activation.hpp"
-#include "lbann/regularization/lbann_regularizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/io/lbann_file_io.hpp"
@@ -43,13 +42,12 @@ using namespace El;
 
 lbann::Layer::Layer(data_layout data_dist, const uint index,
                     lbann_comm *comm, optimizer *opt,
-                    uint mbsize, activation_type activation,
-                    std::vector<regularizer *> regs)
+                    uint mbsize)
   : m_data_layout(data_dist), m_index(index),
     m_comm(comm), m_optimizer(opt),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
-    m_execution_mode(execution_mode::training), m_activation_type(activation),
-    m_cudnn(nullptr), regularizers(regs),
+    m_execution_mode(execution_mode::training),
+    m_cudnn(nullptr),
     m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize)
 {
@@ -170,30 +168,10 @@ void lbann::Layer::forwardProp() {
   }
 #endif
 
-  // Apply connection regularization. (e.g. DropConnect).
-  for(size_t i=0; i<regularizers.size(); ++i) {
-    regularizers[i]->fp_connections();
-  }
-
-  // Layer layer's linearity.
-  double fp_lin_start = get_time();
-  fp_linearity();
-  fp_linearity_time += get_time() - fp_lin_start;
-
-  // Apply weight regularization (e.g. L2 normalization).
-  for(size_t i=0; i<regularizers.size(); ++i) {
-    regularizers[i]->fp_weights();
-  }
-
-  // Apply activation function/nonlinearity.
-  double fp_nonlin_start = get_time();
-  fp_nonlinearity();
-  fp_nonlinearity_time += get_time() - fp_nonlin_start;
-
-  // Apply activation regularization (e.g. Dropout).
-  for(size_t i=0; i<regularizers.size(); ++i) {
-    regularizers[i]->fp_activations();
-  }
+  // Apply layer's compute function
+  double fp_compute_start = get_time();
+  fp_compute();
+  fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
@@ -244,30 +222,10 @@ void lbann::Layer::backProp() {
   }
 #endif
 
-  // Backprop activation regularization.
-  for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->bp_activations();
-  }
-
-  // Backprop the activation function/nonlinearity.
-  double bp_nonlin_start = get_time();
-  bp_nonlinearity();
-  bp_nonlinearity_time += get_time() - bp_nonlin_start;
-
-  // Backprop weight regularization.
-  for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->bp_weights();
-  }
-
-  // Backprop the layer's linearity.
-  double bp_lin_start = get_time();
-  bp_linearity();
-  bp_linearity_time += get_time() - bp_lin_start;
-
-  // Backprop connection regularization.
-  for(Int i=regularizers.size()-1; i>=0; --i) {
-    regularizers[i]->bp_connections();
-  }
+  // Backprop the compute function.
+  double bp_compute_start = get_time();
+  bp_compute();
+  bp_compute_time += get_time() - bp_compute_start;
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU
@@ -284,10 +242,10 @@ void lbann::Layer::backProp() {
 
 bool lbann::Layer::update() {
   if (m_execution_mode == execution_mode::training) {
-    for(size_t i=0; i<regularizers.size(); ++i) {
-      regularizers[i]->update_gradients();
-      regularizers[i]->update();
-    }
+    // Apply any updates.
+    double update_compute_start = get_time();
+    update_compute();
+    update_time += get_time() - update_compute_start;
   }
   return false;
 }
@@ -325,9 +283,6 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
-  for (regularizer *reg : regularizers) {
-    reg->setup(this);
-  }
 }
 
 void lbann::Layer::check_setup() {
