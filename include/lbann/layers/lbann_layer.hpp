@@ -31,7 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/layers/activations/lbann_layer_activations.hpp"
+#include "lbann/layers/activations/activations.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
@@ -364,7 +364,7 @@ class Layer {
 #endif
 
   /** Activation function */
-  Activation<data_layout> *m_activation_fn;
+  activation<data_layout> *m_activation_fn;
   /** Regularizers being applied to the layer. */
   std::vector<regularizer *> regularizers;
   /** Size of the local mini-batch. */

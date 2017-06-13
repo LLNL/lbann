@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/activations/create_activation.hpp"
 #include "lbann/regularization/lbann_regularizer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/models/lbann_model.hpp"

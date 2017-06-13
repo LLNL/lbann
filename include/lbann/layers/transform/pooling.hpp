@@ -56,6 +56,7 @@ cudnnPoolingMode_t get_cudnn_pool_mode(const pool_mode mode) {
 
 /// Pooling layer
 template <class T_layout>
+//class pooling_layer : public transform<T_layout> {
 class pooling_layer : public transform<T_layout> {
  private:
 

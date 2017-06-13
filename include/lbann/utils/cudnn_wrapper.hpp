@@ -33,7 +33,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
-#include "lbann/layers/activations/lbann_layer_activations.hpp"
+#include "lbann/layers/activations/activations.hpp"
 
 #ifdef __LIB_CUDNN
 #include <cuda.h>
