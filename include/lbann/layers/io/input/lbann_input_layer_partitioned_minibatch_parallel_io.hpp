@@ -42,8 +42,8 @@ template <class T_layout>
 class input_layer_partitioned_minibatch_parallel_io : public input_layer<T_layout>, public partitioned_minibatch_parallel_io {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs= {})
-    : input_layer<T_layout>(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers, regs),
+  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer<T_layout>(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     this->m_type = layer_type::input_partitioned_minibatch_parallel_io;
   }
@@ -80,7 +80,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer<T_layou
     m_num_data_per_epoch = 0;
   }
 
-  void fp_linearity(void) {
+  void fp_compute(void) {
     //  generic_data_reader *data_reader = input_layer::select_data_reader();
     //int num_parallel_readers = get_num_parallel_readers();
 
@@ -97,7 +97,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer<T_layou
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update(void) {
+  bool update_compute(void) {
     return is_data_set_processed();
   }
 

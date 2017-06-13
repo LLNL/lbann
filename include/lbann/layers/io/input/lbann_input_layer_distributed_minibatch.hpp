@@ -44,8 +44,8 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
   long m_num_data_per_epoch;
 
  public:
-  input_layer_distributed_minibatch(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs = {})
-    : input_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, regs), Xs(this->m_comm->get_model_grid()) {
+  input_layer_distributed_minibatch(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
 
     this->m_type = layer_type::input_distributed_minibatch;
 
@@ -71,7 +71,7 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
 
  protected:
   /** Handle forward propagation (arguments are unused.) */
-  void fp_linearity() {
+  void fp_compute() {
     generic_data_reader *data_reader = input_layer<T_layout>::select_data_reader();
     int num_samples_in_batch = 0;
 
@@ -103,7 +103,7 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update_compute() {
     generic_data_reader *data_reader = input_layer<T_layout>::select_data_reader();
     return !data_reader->update();
   }

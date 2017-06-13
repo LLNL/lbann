@@ -45,8 +45,8 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer<T_layou
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs = {})
-    : input_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, regs),
+  input_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
 
@@ -84,7 +84,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer<T_layou
 
  protected:
   /** Handle forward propagation (arguments are unused). */
-  void fp_linearity(void) {
+  void fp_compute(void) {
     generic_data_reader *data_reader = input_layer<T_layout>::select_data_reader();
     int num_parallel_readers = get_num_parallel_readers();
 
@@ -107,7 +107,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer<T_layou
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update() {
+  bool update_compute() {
     return is_data_set_processed();
   }
 

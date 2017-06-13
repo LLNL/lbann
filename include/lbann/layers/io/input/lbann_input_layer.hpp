@@ -33,7 +33,7 @@ namespace lbann {
 template <class T_layout>
 class input_layer : public io_layer<T_layout> {
  public:
-  input_layer(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, std::vector<regularizer *> regs = {})
+  input_layer(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers) {
     this->m_num_neurons = io_layer<T_layout>::get_linearized_data_size();
   }
@@ -47,11 +47,6 @@ class input_layer : public io_layer<T_layout> {
 
   /** No setting the standard view of the matrix -- it defines the standard view */
   void fp_set_std_matrix_view(void) {}
-
-  /** No non-linearity */
-  void fp_nonlinearity(void) {}
-  /** No non-linearity */
-  void bp_nonlinearity(void) {}
 
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {
