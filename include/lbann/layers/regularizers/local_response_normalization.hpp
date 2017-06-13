@@ -31,7 +31,7 @@
 
 #include <vector>
 #include "lbann/lbann_base.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
@@ -39,7 +39,7 @@ namespace lbann {
 
 /// Local Response Normalization layer
 template <class T_layout>
-class local_response_normalization_layer : public Layer {
+class local_response_normalization_layer : public regularizer_layer<T_layout> {
  private:
 
   /// Number of data dimensions
@@ -78,18 +78,18 @@ class local_response_normalization_layer : public Layer {
    uint mini_batch_size,
    lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
-    : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
+    : regularizer_layer<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
-    m_type = layer_type::local_response_normalization;
+    this->m_type = layer_type::local_response_normalization;
 
     // Initialize data dimensions
     m_dims.resize(num_dims);
-    m_num_neurons = num_channels;
+    this->m_num_neurons = num_channels;
     for(int i=0; i<num_dims; ++i) {
       m_dims[i] = dims[i];
-      m_num_neurons *= dims[i];
+      this->m_num_neurons *= dims[i];
     }
 
   #ifdef __LIB_CUDNN
@@ -107,7 +107,7 @@ class local_response_normalization_layer : public Layer {
       const int num_gpus = m_cudnn->get_num_gpus();
 
       // Get number of columns per GPU
-      const int num_processes = m_comm->get_procs_per_model();
+      const int num_processes = this->m_comm->get_procs_per_model();
       const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
       m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
@@ -118,7 +118,7 @@ class local_response_normalization_layer : public Layer {
 
   ~local_response_normalization_layer() {
   #ifdef __LIB_CUDNN
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
 
       // Destroy cuDNN objects
       if(m_tensor_desc) {
@@ -148,7 +148,7 @@ class local_response_normalization_layer : public Layer {
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       setup_gpu();
     }
   #endif // __LIB_CUDNN
@@ -165,11 +165,11 @@ class local_response_normalization_layer : public Layer {
   #endif
 
     // Initialize matrices
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
 
   }
 
@@ -211,22 +211,22 @@ class local_response_normalization_layer : public Layer {
 
     // Allocate GPU memory
     m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                              m_num_neurons,
+                              this->m_num_neurons,
                               m_mini_batch_size_per_gpu);
     m_cudnn->allocate_on_gpus(m_activations_d,
-                              m_num_neurons,
+                              this->m_num_neurons,
                               m_mini_batch_size_per_gpu);
     m_cudnn->allocate_on_gpus(m_error_signal_d,
-                              m_num_prev_neurons,
+                              this->m_num_prev_neurons,
                               m_mini_batch_size_per_gpu);
     if(!m_prev_layer_using_gpus) {
       m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                                m_num_prev_neurons,
+                                this->m_num_prev_neurons,
                                 m_mini_batch_size_per_gpu);
     }
     if(!m_next_layer_using_gpus) {
       m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                                m_num_neurons,
+                                this->m_num_neurons,
                                 m_mini_batch_size_per_gpu);
     }
 
@@ -235,7 +235,7 @@ class local_response_normalization_layer : public Layer {
 
  protected:
   void fp_linearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       fp_linearity_gpu();
     } else {
       fp_linearity_cpu();
@@ -243,7 +243,7 @@ class local_response_normalization_layer : public Layer {
   }
 
   void bp_linearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       bp_linearity_gpu();
     } else {
       bp_linearity_cpu();
@@ -291,12 +291,12 @@ class local_response_normalization_layer : public Layer {
   void fp_linearity_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-    Mat& activations_local = m_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Input and output entries are divided amongst channels
-    const Int num_per_channel = m_num_neurons / m_num_channels;
+    const Int num_per_channel = this->m_num_neurons / m_num_channels;
 
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
@@ -398,16 +398,16 @@ class local_response_normalization_layer : public Layer {
   void bp_linearity_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& activations_local = m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = m_error_signal_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& activations_local = this->m_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Initialize error signal to zero
     Zero(error_signal_local);
 
     // Input and output entries are divided amongst channels
-    const Int num_per_channel = m_num_neurons / m_num_channels;
+    const Int num_per_channel = this->m_num_neurons / m_num_channels;
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)
@@ -489,7 +489,7 @@ class local_response_normalization_layer : public Layer {
   bool update() {
     double start = get_time();
     Layer::update();
-    update_time += get_time() - start;
+    this->update_time += get_time() - start;
     return true;
   }
 };
