@@ -26,11 +26,6 @@
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/callbacks/lbann_callback_save_images.hpp"
 
-#include "lbann/regularization/lbann_regularizer.hpp"
-#include "lbann/regularization/lbann_batch_normalization.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
-#include "lbann/regularization/lbann_l2_regularization.hpp"
-
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
