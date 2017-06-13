@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 
-#include "lbann/layers/lbann_target_layer.hpp"
+#include "lbann/layers/io/target/lbann_target_layer.hpp"
 #include "lbann/io/lbann_partitioned_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_Elemental_extensions.h"

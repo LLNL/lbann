@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_sequential.hpp"
-#include "lbann/layers/lbann_io_layer.hpp"
+#include "lbann/layers/io/lbann_io_layer.hpp"
 #include "lbann/layers/lbann_layer_convolutional.hpp"
 #include "lbann/layers/lbann_layer_pooling.hpp"
 #include "lbann/layers/lbann_layer_fully_connected.hpp"

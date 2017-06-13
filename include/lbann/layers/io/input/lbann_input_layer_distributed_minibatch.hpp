@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
-#include "lbann/layers/lbann_input_layer.hpp"
+#include "lbann/layers/io/input/lbann_input_layer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>

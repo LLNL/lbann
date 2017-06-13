@@ -47,12 +47,12 @@
 #include "lbann/layers/lbann_layer_local_response_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/lbann_input_layer_distributed_minibatch.hpp"
-#include "lbann/layers/lbann_target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
 //#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers

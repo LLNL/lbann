@@ -33,7 +33,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/layers/lbann_target_layer.hpp" // temporary
+#include "lbann/layers/io/target/lbann_target_layer.hpp" // temporary
 
 #include <string>
 #include <chrono>
