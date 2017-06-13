@@ -383,8 +383,8 @@ int main(int argc, char *argv[]) {
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer *layer
-        = new local_response_normalization_layer(2, numDims, channels, dims,
+      local_response_normalization_layer<data_layout> *layer
+        = new local_response_normalization_layer<data_layout>(2, numDims, channels, dims,
             windowWidth, alpha, beta, k,
             trainParams.MBSize, comm, cudnn);
       dnn->add(layer);
@@ -440,8 +440,8 @@ int main(int argc, char *argv[]) {
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer *layer
-        = new local_response_normalization_layer(5, numDims, channels, dims,
+      local_response_normalization_layer<data_layout> *layer
+        = new local_response_normalization_layer<data_layout>(5, numDims, channels, dims,
             windowWidth, alpha, beta, k,
             trainParams.MBSize, comm, cudnn);
       dnn->add(layer);
