@@ -78,15 +78,11 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
                           "Invalid data layout selected");
   }
 
-  // Initialize activation function
-  m_activation_fn = new_activation(activation);
-
   reset_counters();
 
 }
 
 lbann::Layer::~Layer() {
-  delete m_activation_fn;
   delete m_weights;
   delete m_weights_gradient;
   delete m_weighted_sum;
@@ -273,11 +269,7 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_stdev(prefix + "stdev", acts, step);
   prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
-  summarizer.reduce_scalar(prefix + "fp_linearity_time", fp_linearity_time, step);
-  summarizer.reduce_scalar(prefix + "fp_nonlinearity_time", fp_nonlinearity_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
-  summarizer.reduce_scalar(prefix + "bp_linearity_time", bp_linearity_time, step);
-  summarizer.reduce_scalar(prefix + "bp_nonlinearity_time", bp_nonlinearity_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
 }

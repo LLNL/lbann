@@ -201,11 +201,7 @@ class Layer {
   /** Reset layer stat counters. */
   virtual void reset_counters(void) {
     fp_time = 0.0;
-    fp_linearity_time = 0.0;
-    fp_nonlinearity_time = 0.0;
     bp_time = 0.0;
-    bp_linearity_time = 0.0;
-    bp_nonlinearity_time = 0.0;
     update_time = 0.0;
   }
 
@@ -320,7 +316,7 @@ class Layer {
   /** Perform the layers work / main function for backward propagation */
   virtual void bp_compute() {}
   /** Perform the layers work / main function for the update step */
-  virtual void update_compute() {}
+  virtual bool update_compute() {}
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;
