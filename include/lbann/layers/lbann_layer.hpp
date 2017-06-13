@@ -316,7 +316,7 @@ class Layer {
   /** Perform the layers work / main function for backward propagation */
   virtual void bp_compute() {}
   /** Perform the layers work / main function for the update step */
-  virtual bool update_compute() {}
+  virtual bool update_compute() { return true; }
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;
@@ -362,7 +362,7 @@ class Layer {
   /** Time spent in backward propagation. */
   double bp_time;
   /** Time spent in the backward propagation computation. */
-  double bp_linearity_time;
+  double bp_compute_time;
   /** Time spent in updates. */
   double update_time;
 };

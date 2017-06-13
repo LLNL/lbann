@@ -51,7 +51,7 @@ class dropout : public regularizer_layer<T_layout> {
   dropout(data_layout data_dist, const uint index, lbann_comm *comm,
           uint mini_batch_size, float keep_prob=0.5f) :
     regularizer_layer(data_dist, index, comm, NULL, mini_batch_size),
-    m_keep_prop(keep_prob) {
+    m_keep_prob(keep_prob) {
 
   }
   ~dropout() {
@@ -74,7 +74,7 @@ class dropout : public regularizer_layer<T_layout> {
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() {
-    if (this->get_execution_mode() != execution_mode::training() ||
+    if (this->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       return;
     }

@@ -30,6 +30,7 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/utils/lbann_statistics.hpp"
 
 namespace lbann {
 
@@ -76,24 +77,24 @@ class batch_normalization : public regularizer_layer<T_layout> {
   }
 
   void initialize_model_parallel_distribution() {
-    m_gamma = new RowSumMat(m_comm->get_model_grid());
-    m_beta = new RowSumMat(m_comm->get_model_grid());
-    m_dgamma = new RowSumMat(m_comm->get_model_grid());
-    m_dbeta = new RowSumMat(m_comm->get_model_grid());
-    m_mean = new RowSumMat(m_comm->get_model_grid());
-    m_stdev = new RowSumMat(m_comm->get_model_grid());
-    m_running_mean = new RowSumMat(m_comm->get_model_grid());
-    m_running_stdev = new RowSumMat(m_comm->get_model_grid());
+    m_gamma = new RowSumMat(this->m_comm->get_model_grid());
+    m_beta = new RowSumMat(this->m_comm->get_model_grid());
+    m_dgamma = new RowSumMat(this->m_comm->get_model_grid());
+    m_dbeta = new RowSumMat(this->m_comm->get_model_grid());
+    m_mean = new RowSumMat(this->m_comm->get_model_grid());
+    m_stdev = new RowSumMat(this->m_comm->get_model_grid());
+    m_running_mean = new RowSumMat(this->m_comm->get_model_grid());
+    m_running_stdev = new RowSumMat(this->m_comm->get_model_grid());
   }
   void initialize_data_parallel_distribution() {
-    m_gamma = new StarMat(m_comm->get_model_grid());
-    m_beta = new StarMat(m_comm->get_model_grid());
-    m_dgamma = new StarMat(m_comm->get_model_grid());
-    m_dbeta = new StarMat(m_comm->get_model_grid());
-    m_mean = new StarMat(m_comm->get_model_grid());
-    m_stdev = new StarMat(m_comm->get_model_grid());
-    m_running_mean = new StarMat(m_comm->get_model_grid());
-    m_running_stdev = new StarMat(m_comm->get_model_grid());
+    m_gamma = new StarMat(this->m_comm->get_model_grid());
+    m_beta = new StarMat(this->m_comm->get_model_grid());
+    m_dgamma = new StarMat(this->m_comm->get_model_grid());
+    m_dbeta = new StarMat(this->m_comm->get_model_grid());
+    m_mean = new StarMat(this->m_comm->get_model_grid());
+    m_stdev = new StarMat(this->m_comm->get_model_grid());
+    m_running_mean = new StarMat(this->m_comm->get_model_grid());
+    m_running_stdev = new StarMat(this->m_comm->get_model_grid());
   }
   /** Initializes matrices. */
   void setup(int num_prev_neurons) {
@@ -170,7 +171,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
     ElMat *input_bpsignal = this->m_prev_error_signal;
     const ElMat *acts = this->m_prev_activations;
     const El::Int mbsize = acts->Width();
-    Mat& input_bp_local = bpsignal->Matrix();
+    Mat& input_bp_local = input_bpsignal->Matrix();
     Mat& bp_local = this->m_error_signal->Matrix();
     const Mat& acts_local = acts->LockedMatrix();
     const El::Int local_height = input_bp_local.Height();
@@ -218,6 +219,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
       m_gamma_optimizer->update(m_dgamma);
       m_beta_optimizer->update(m_dbeta);
     }
+    return true;
   }
 
  protected:
