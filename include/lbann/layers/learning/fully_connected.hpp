@@ -29,7 +29,7 @@
 #ifndef LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
 #define LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/activations/lbann_layer_activations.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
@@ -39,9 +39,8 @@
 #include <unistd.h>
 
 namespace lbann {
-// fully_connected_layer : dense layer class
 template <class T_layout>
-class fully_connected_layer : public Layer {
+class fully_connected_layer : public learning<T_layout> {
  private:
 
   const weight_initialization m_weight_initialization;
@@ -85,20 +84,22 @@ class fully_connected_layer : public Layer {
                       const uint index,
                       const int numPrevNeurons,
                       const uint numNeurons,
-                      const uint minim_batch_size,
+                      const uint mini_batch_size,
                       const activation_type activationType,
                       const weight_initialization init,
                       lbann_comm *comm,
                       optimizer *opt,
                       std::vector<regularizer *> regs = {})
-    : Layer(data_dist,
-            index, comm, opt, minim_batch_size, activationType, regs),
+    : learning<T_layout>(data_dist,
+                         index, numPrevNeurons, 
+                         numNeurons, mini_batch_size, 
+                         comm, opt, activationType, regs),
     m_weight_initialization(init) {
 
-    m_type = layer_type::fully_connected;
+    this->m_type = layer_type::fully_connected;
 
-    m_index = index;
-    m_num_neurons = numNeurons;
+    this->m_index = index;
+    this->m_num_neurons = numNeurons;
     WBL2NormSum = 0.0;
     m_bias_term = 1.0;
 
@@ -129,28 +130,28 @@ class fully_connected_layer : public Layer {
 
   /// Matrices should be in MC,MR distributions
   void initialize_model_parallel_distribution(void) {
-    m_bias_bp_t                      = new DistMat(m_comm->get_model_grid());
-    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(m_comm->get_model_grid());
+    m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
+    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new DistMat(m_comm->get_model_grid());
-    m_bias_weights_v                 = new DistMat(m_comm->get_model_grid());
-    m_activation_weights_gradient_v  = new DistMat(m_comm->get_model_grid());
-    m_bias_weights_gradient_v        = new DistMat(m_comm->get_model_grid());
-    m_bias_bp_t_v                    = new DistMat(m_comm->get_model_grid());
+    m_activation_weights_v           = new DistMat(this->m_comm->get_model_grid());
+    m_bias_weights_v                 = new DistMat(this->m_comm->get_model_grid());
+    m_activation_weights_gradient_v  = new DistMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new DistMat(this->m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new DistMat(this->m_comm->get_model_grid());
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
   void initialize_data_parallel_distribution(void) {
-    m_bias_bp_t                      = new StarVCMat(m_comm->get_model_grid());
-    m_bias_weights_repl              = new StarMat(m_comm->get_model_grid());
+    m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
+    m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
 
     /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new StarMat(m_comm->get_model_grid());
-    m_bias_weights_v                 = new StarMat(m_comm->get_model_grid());
-    m_activation_weights_gradient_v  = new StarMat(m_comm->get_model_grid());
-    m_bias_weights_gradient_v        = new StarMat(m_comm->get_model_grid());
-    m_bias_bp_t_v                    = new StarVCMat(m_comm->get_model_grid());
+    m_activation_weights_v           = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_v                 = new StarMat(this->m_comm->get_model_grid());
+    m_activation_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new StarVCMat(this->m_comm->get_model_grid());
   }
 
   void setup(int numPrevNeurons) {
@@ -158,37 +159,37 @@ class fully_connected_layer : public Layer {
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
-    Zeros(*m_weights, m_num_neurons, numPrevNeurons+1);
-    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons + 1);
-    Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons+1);
+    Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons + 1);
+    Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
+    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations and bias terms
-    View(*m_activation_weights_v, *m_weights, ALL, IR(0, numPrevNeurons));
-    View(*m_bias_weights_v, *m_weights, ALL, IR(numPrevNeurons));
+    View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_v, *this->m_weights, ALL, IR(numPrevNeurons));
 
     /// Setup independent views of the weights gradient matrix for the activations and bias terms
-    View(*m_activation_weights_gradient_v, *m_weights_gradient, ALL, IR(0, numPrevNeurons));
-    View(*m_bias_weights_gradient_v, *m_weights_gradient, ALL, IR(numPrevNeurons));
+    View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, numPrevNeurons));
+    View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(numPrevNeurons));
 
     /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_activation_weights_v, m_weight_initialization, numPrevNeurons, m_num_neurons);
+    initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, numPrevNeurons, this->m_num_neurons);
 
     /// Create a "transposed" vector of the bias term for use in backprop
-    Ones(*m_bias_bp_t, 1, m_mini_batch_size);
+    Ones(*m_bias_bp_t, 1, this->m_mini_batch_size);
 
     // Initialize optimizer
-    if(m_optimizer != NULL) {
-      m_optimizer->setup(m_weights);
+    if(this->m_optimizer != NULL) {
+      this->m_optimizer->setup(this->m_weights);
     }
 
   }
 
   void fp_set_std_matrix_view(void) {
-    int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
     Layer::fp_set_std_matrix_view();
 
@@ -203,54 +204,54 @@ class fully_connected_layer : public Layer {
     // Apply bias
     Copy(*m_bias_weights_v, *m_bias_weights_repl);
     const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
-    IndexDependentFill(m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
+    IndexDependentFill(this->m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
                        ([&local_bias_weights](El::Int r, El::Int c)->DataType {
                          return local_bias_weights.Get(r);
                        }));
-    Scale(m_bias_term, *m_weighted_sum_v);
+    Scale(m_bias_term, *this->m_weighted_sum_v);
 
     // Apply weight matrix
-    switch(m_data_layout) {
+    switch(this->m_data_layout) {
     case data_layout::MODEL_PARALLEL:
       Gemm(NORMAL, NORMAL, DataType(1),
-           *m_activation_weights_v,
-           *m_prev_activations_v,
+           *this->m_activation_weights_v,
+           *this->m_prev_activations_v,
            DataType(1),
-           *m_weighted_sum_v);
+           *this->m_weighted_sum_v);
       break;
     case data_layout::DATA_PARALLEL:
       Gemm(NORMAL, NORMAL, DataType(1),
-           m_activation_weights_v->LockedMatrix(),
-           m_prev_activations_v->LockedMatrix(),
+           this->m_activation_weights_v->LockedMatrix(),
+           this->m_prev_activations_v->LockedMatrix(),
            DataType(1),
-           m_weighted_sum_v->Matrix());
+           this->m_weighted_sum_v->Matrix());
       break;
     }
 
     // Copy result to output matrix
-    Copy(*m_weighted_sum_v, *m_activations_v);
+    Copy(*this->m_weighted_sum_v, *this->m_activations_v);
 
   }
 
   void bp_linearity(void) {
 
-    switch(m_data_layout) {
+    switch(this->m_data_layout) {
     case data_layout::MODEL_PARALLEL:
       // Compute the partial delta update for the next lower layer
       Gemm(TRANSPOSE, NORMAL, DataType(1),
-           *m_activation_weights_v,
-           *m_prev_error_signal_v,
+           *this->m_activation_weights_v,
+           *this->m_prev_error_signal_v,
            DataType(0),
-           *m_error_signal_v);
+           *this->m_error_signal_v);
       // Compute update for activation weights
-      Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
-           *m_prev_error_signal_v,
-           *m_prev_activations_v,
+      Gemm(NORMAL, TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+           *this->m_prev_error_signal_v,
+           *this->m_prev_activations_v,
            DataType(0),
-           *m_activation_weights_gradient_v);
+           *this->m_activation_weights_gradient_v);
       // Compute update for bias terms
-      Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
-           *m_prev_error_signal_v,
+      Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
+           *this->m_prev_error_signal_v,
            *m_bias_bp_t_v,
            DataType(0),
            *m_bias_weights_gradient_v);
@@ -258,25 +259,25 @@ class fully_connected_layer : public Layer {
     case data_layout::DATA_PARALLEL:
       // Compute the partial delta update for the next lower layer
       Gemm(TRANSPOSE, NORMAL, DataType(1),
-           m_activation_weights_v->LockedMatrix(),
-           m_prev_error_signal_v->LockedMatrix(),
+           this->m_activation_weights_v->LockedMatrix(),
+           this->m_prev_error_signal_v->LockedMatrix(),
            DataType(0),
-           m_error_signal_v->Matrix());
+           this->m_error_signal_v->Matrix());
       // Compute update for activation weights
-      Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
-           m_prev_error_signal_v->LockedMatrix(),
-           m_prev_activations_v->LockedMatrix(),
+      Gemm(NORMAL, TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+           this->m_prev_error_signal_v->LockedMatrix(),
+           this->m_prev_activations_v->LockedMatrix(),
            DataType(0),
-           m_activation_weights_gradient_v->Matrix());
+           this->m_activation_weights_gradient_v->Matrix());
       // Compute update for bias terms
-      Gemv(NORMAL, DataType(1)/get_effective_minibatch_size(),
-           m_prev_error_signal_v->LockedMatrix(),
+      Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
+           this->m_prev_error_signal_v->LockedMatrix(),
            m_bias_bp_t_v->LockedMatrix(),
            DataType(0),
            m_bias_weights_gradient_v->Matrix());
       // Add gradients from all processes
-      AllReduce(*m_weights_gradient,
-                m_weights_gradient->RedundantComm());
+      AllReduce(*this->m_weights_gradient,
+                this->m_weights_gradient->RedundantComm());
       break;
     }
 
@@ -298,7 +299,7 @@ class fully_connected_layer : public Layer {
   }
 
   DataType WBL2norm(void) {
-    DataType nrm2 = Nrm2(*m_weights);
+    DataType nrm2 = Nrm2(*this->m_weights);
     return nrm2 * nrm2;
   }
 
@@ -312,32 +313,32 @@ class fully_connected_layer : public Layer {
   bool update(void) {
     double start = get_time();
     Layer::update();
-    if(m_execution_mode == execution_mode::training) {
-      m_optimizer->update(m_weights_gradient);
+    if(this->m_execution_mode == execution_mode::training) {
+      this->m_optimizer->update(this->m_weights_gradient);
     }
-    update_time += get_time() - start;
+    this->update_time += get_time() - start;
     return true;
   }
 
   DataType checkGradient(Layer& PrevLayer, const DataType Epsilon) {
-    DistMat WB_E1(m_weights->Grid());
-    DistMat WB_E2(m_weights->Grid());
-    DistMat Zs_E1(m_weighted_sum->Grid());
-    DistMat Zs_E2(m_weighted_sum->Grid());
-    DistMat Acts_E1(m_activations->Grid());
-    DistMat Acts_E2(m_activations->Grid());
+    DistMat WB_E1(this->m_weights->Grid());
+    DistMat WB_E2(this->m_weights->Grid());
+    DistMat Zs_E1(this->m_weighted_sum->Grid());
+    DistMat Zs_E2(this->m_weighted_sum->Grid());
+    DistMat Acts_E1(this->m_activations->Grid());
+    DistMat Acts_E2(this->m_activations->Grid());
     DataType grad_diff = 0;
     DataType grad_sum = 0;
 
-    Zeros(WB_E1, m_weights->Height(), m_weights->Width());
-    Zeros(WB_E2, m_weights->Height(), m_weights->Width());
-    Zeros(Zs_E1, m_weighted_sum->Height(), m_weighted_sum->Width());
-    Zeros(Zs_E2, m_weighted_sum->Height(), m_weighted_sum->Width());
-    Zeros(Acts_E1, m_activations->Height(), m_activations->Width());
-    Zeros(Acts_E2, m_activations->Height(), m_activations->Width());
+    Zeros(WB_E1, this->m_weights->Height(), this->m_weights->Width());
+    Zeros(WB_E2, this->m_weights->Height(), this->m_weights->Width());
+    Zeros(Zs_E1, this->m_weighted_sum->Height(), this->m_weighted_sum->Width());
+    Zeros(Zs_E2, this->m_weighted_sum->Height(), this->m_weighted_sum->Width());
+    Zeros(Acts_E1, this->m_activations->Height(), this->m_activations->Width());
+    Zeros(Acts_E2, this->m_activations->Height(), this->m_activations->Width());
 
-    Copy(*m_weights, WB_E1);
-    Copy(*m_weights, WB_E2);
+    Copy(*this->m_weights, WB_E1);
+    Copy(*this->m_weights, WB_E2);
 
     //DataType sum_error = 0;
     Int prow = 0;
@@ -353,8 +354,8 @@ class fully_connected_layer : public Layer {
       Int _pcol = WB_E2.LocalCol(pcol);
       WB_E2.SetLocal(_prow, _pcol, WB_E2.GetLocal(_prow, _pcol) - Epsilon);
     }
-    for (Int row = 0; row < m_weights->Height(); row++) {
-      for (Int col = 0; col < m_weights->Width(); col++) {
+    for (Int row = 0; row < this->m_weights->Height(); row++) {
+      for (Int col = 0; col < this->m_weights->Width(); col++) {
         //          printf("Updating %d: %d x %d\n", m_index, row, col);
         if(WB_E1.IsLocal(prow, pcol)) {
           Int _prow = WB_E1.LocalRow(prow);
@@ -392,12 +393,12 @@ class fully_connected_layer : public Layer {
         //            this->getCost();
 
         // gradApprox(i) = J(thetaPlus(i)) - J(thetaMinus(i)) / (2*Epsilon)
-        Axpy(-1.0, *m_activations, Acts_E1);
-        Axpy(-1.0, *m_activations, Acts_E2);
+        Axpy(-1.0, *this->m_activations, Acts_E1);
+        Axpy(-1.0, *this->m_activations, Acts_E2);
 
         bool bad_E1 = false, bad_E2 = false;
-        for(Int r = 0; r < m_activations->Height(); r++) {
-          for(Int c = 0; c < m_activations->Width(); c++) {
+        for(Int r = 0; r < this->m_activations->Height(); r++) {
+          for(Int c = 0; c < this->m_activations->Width(); c++) {
             if(Acts_E1.IsLocal(r,c)) {
               Int _r = Acts_E1.LocalRow(r);
               Int _c = Acts_E1.LocalCol(c);
@@ -426,7 +427,7 @@ class fully_connected_layer : public Layer {
           if(Acts_E1.Grid().Rank() == 0) {
             printf("Acts\n");
           }
-          Print(*m_activations);
+          Print(*this->m_activations);
         }
         if(bad_E2) {
           if(Acts_E2.Grid().Rank() == 0) {
