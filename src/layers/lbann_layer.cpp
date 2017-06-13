@@ -241,13 +241,14 @@ void lbann::Layer::backProp() {
 }
 
 bool lbann::Layer::update() {
+  bool layer_done = false;
   if (m_execution_mode == execution_mode::training) {
     // Apply any updates.
     double update_compute_start = get_time();
-    update_compute();
+    layer_done = update_compute();
     update_time += get_time() - update_compute_start;
   }
-  return false;
+  return layer_done;
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
@@ -470,16 +471,6 @@ void lbann::Layer::bp_set_std_matrix_view() {
   }
 }
 #endif
-void lbann::Layer::fp_nonlinearity() {
-  // Forward propagation
-  m_activation_fn->forwardProp(*m_activations_v);
-}
-
-void lbann::Layer::bp_nonlinearity() {
-  // Backward propagation
-  m_activation_fn->backwardPropError(*m_weighted_sum_v, *m_prev_error_signal_v);
-}
-
 
 //enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
 
