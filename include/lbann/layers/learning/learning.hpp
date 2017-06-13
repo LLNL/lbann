@@ -57,10 +57,9 @@ class learning : public Layer {
            const int numPrevNeurons,
            const uint numNeurons,
            const uint mini_batch_size,
-           lbann_comm *comm, optimizer *opt,
-           activation_type activation=activation_type::ID,
-           std::vector<regularizer *> regs= {})
-    : Layer(data_dist, index, comm, opt, mini_batch_size, activation, regs) {
+           lbann_comm *comm, optimizer *opt
+           )
+    : Layer(data_dist, index, comm, opt, mini_batch_size) {
 
 #if 0
   // Setup the data distribution
