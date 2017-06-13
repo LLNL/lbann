@@ -44,9 +44,8 @@ class transform : public Layer {
             //           const uint numNeurons,
            lbann_comm *comm, optimizer *opt,
            const uint mini_batch_size,
-           activation_type activation=activation_type::ID,
-           std::vector<regularizer *> regs= {})
-    : Layer(data_dist, index, comm, opt, mini_batch_size, activation, regs) {
+           activation_type activation=activation_type::ID)
+    : Layer(data_dist, index, comm, opt, mini_batch_size, activation) {
 
   }
 
