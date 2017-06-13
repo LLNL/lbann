@@ -61,7 +61,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
   batch_normalization(data_layout data_dist, const uint index, lbann_comm *comm,
                       uint mini_batch_size,
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
-    : regularizer_layer(data_dist, index, comm, NULL, mini_batch_size),
+    : regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
 
   }
