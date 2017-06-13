@@ -31,7 +31,7 @@
 
 #include <vector>
 #include "lbann/lbann_base.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_im2col.hpp"
@@ -56,7 +56,7 @@ cudnnPoolingMode_t get_cudnn_pool_mode(const pool_mode mode) {
 
 /// Pooling layer
 template <class T_layout>
-class pooling_layer : public Layer {
+class pooling_layer : public transform<T_layout> {
  private:
 
   /// Pooling mode
@@ -110,10 +110,10 @@ class pooling_layer : public Layer {
                 uint mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : Layer(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
+    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
-    m_type = layer_type::pooling;
+    this->m_type = layer_type::pooling;
 
     // Initialize input dimensions and pooling parameters
     m_input_dims.resize(num_dims);
@@ -131,11 +131,11 @@ class pooling_layer : public Layer {
 
     // Calculate output dimensions
     m_output_dims.resize(num_dims);
-    m_num_neurons = num_channels;
+    this->m_num_neurons = num_channels;
     for(int i=0; i<num_dims; ++i) {
       m_output_dims[i] = input_dims[i]+2*pool_pads[i]-pool_dims[i]+1;
       m_output_dims[i] = (m_output_dims[i]+pool_strides[i]-1)/pool_strides[i];
-      m_num_neurons *= m_output_dims[i];
+      this->m_num_neurons *= m_output_dims[i];
     }
 
   #ifdef __LIB_CUDNN
@@ -159,7 +159,7 @@ class pooling_layer : public Layer {
       const int num_gpus = m_cudnn->get_num_gpus();
 
       // Get number of columns per GPU
-      const int num_processes = m_comm->get_procs_per_model();
+      const int num_processes = this->m_comm->get_procs_per_model();
       const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
       m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
@@ -225,11 +225,11 @@ class pooling_layer : public Layer {
     }
 
     // Initialize matrices
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
 
   }
 
@@ -462,7 +462,7 @@ class pooling_layer : public Layer {
 
  protected:
   void fp_linearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       fp_linearity_gpu();
     } else {
       fp_linearity_cpu();
@@ -470,7 +470,7 @@ class pooling_layer : public Layer {
   }
 
   void bp_linearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       bp_linearity_gpu();
     } else {
       bp_linearity_cpu();
@@ -523,12 +523,12 @@ class pooling_layer : public Layer {
     }
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-    Mat& activations_local = m_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Output entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
 
     // Initialize im2col matrix
     Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
@@ -629,12 +629,12 @@ class pooling_layer : public Layer {
     }
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = m_error_signal_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Output entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
 
     // Initialize im2col matrix
     Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
@@ -707,7 +707,7 @@ class pooling_layer : public Layer {
   bool update() {
     double start = get_time();
     Layer::update();
-    update_time += get_time() - start;
+    this->update_time += get_time() - start;
     return true;
   }
 };
