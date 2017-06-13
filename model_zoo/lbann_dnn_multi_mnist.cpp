@@ -201,12 +201,12 @@ int main(int argc, char *argv[]) {
        prev_num_neurons,
        1024,
        trainParams.MBSize,
-       trainParams.ActivationType,
        weight_initialization::glorot_uniform,
        comm,
-       dnn.create_optimizer(),
-       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+       dnn.create_optimizer());
     dnn.add(new_layer);
+    // trainParams.ActivationType,
+    // {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)}
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
     uint fcidx2 = layer_id;
@@ -216,12 +216,12 @@ int main(int argc, char *argv[]) {
        prev_num_neurons,
        1024,
        trainParams.MBSize,
-       trainParams.ActivationType,
        weight_initialization::glorot_uniform,
        comm,
-       dnn.create_optimizer(),
-       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+       dnn.create_optimizer());
     dnn.add(new_layer_2);
+    // trainParams.ActivationType,
+    // {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)}
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
     uint fcidx3 = layer_id;
@@ -231,12 +231,12 @@ int main(int argc, char *argv[]) {
        prev_num_neurons,
        1024,
        trainParams.MBSize,
-       trainParams.ActivationType,
        weight_initialization::glorot_uniform,
        comm,
-       dnn.create_optimizer(),
-       {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)});
+       dnn.create_optimizer());
     dnn.add(new_layer_3);
+    // trainParams.ActivationType,
+    // {new dropout(DATA_LAYOUT, comm, trainParams.DropOut)}
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
     uint smidx = layer_id;
