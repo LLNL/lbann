@@ -31,6 +31,7 @@
 #define LBANN_LAYER_CONVOLUTIONAL_HPP_INCLUDED
 
 #include <vector>
+#include "lbann/layers/learning/learning.hpp"
 #include "lbann/lbann_base.hpp"
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
@@ -63,7 +64,7 @@ class lbann_callback_imcomm;
 
 /// Convolutional layer
 template <class T_layout>
-class convolutional_layer : public Layer {
+class convolutional_layer : public learning<T_layout> {
  private:
 
   friend class lbann_callback_imcomm;
@@ -148,12 +149,12 @@ public:
       optimizer *opt,
       std::vector<regularizer *> regs = {},
       cudnn::cudnn_manager *cudnn = NULL)
-    : Layer(data_layout::DATA_PARALLEL, index, comm, opt, mini_batch_size, activation, regs),
+    : learning<T_layout>(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt, activation, regs),
       m_weight_initialization(init),
       m_num_dims(num_dims),
       m_num_input_channels(num_input_channels),
       m_num_output_channels(num_output_channels) {
-    m_type = layer_type::convolution;
+    this->m_type = layer_type::convolution;
 
     // Initialize input dimensions and convolution parameters
     m_input_dims.resize(m_num_dims);
@@ -171,15 +172,15 @@ public:
 
     // Calculate output dimensions
     m_output_dims.resize(num_dims);
-    m_num_neurons = num_output_channels;
+    this->m_num_neurons = num_output_channels;
     for(Int i=0; i<num_dims; ++i) {
       m_output_dims[i] = input_dims[i]+2*conv_pads[i]-filter_dims[i]+1;
       m_output_dims[i] = (m_output_dims[i]+conv_strides[i]-1)/conv_strides[i];
-      m_num_neurons *= m_output_dims[i];
+      this->m_num_neurons *= m_output_dims[i];
     }
 
   #ifdef __LIB_CUDNN
-    m_weights_gradient_per_gpu = StarMat(m_comm->get_model_grid());
+    m_weights_gradient_per_gpu = StarMat(this->m_comm->get_model_grid());
   #endif // #ifdef __LIB_CUDNN
 
   #ifdef __LIB_CUDNN
@@ -202,12 +203,12 @@ public:
 
     // Set parameters for GPU implementation
     if(cudnn) {
-      m_using_gpus = true;
+      this->m_using_gpus = true;
       m_cudnn = cudnn;
       const Int num_gpus = m_cudnn->get_num_gpus();
-      const Int num_processes = m_comm->get_procs_per_model();
+      const Int num_processes = this->m_comm->get_procs_per_model();
       const Int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
-      m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+      this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
       // Default behavior set to pin memory blocks used by cuDNN
       pin_mem();
@@ -219,7 +220,7 @@ public:
 
   ~convolutional_layer() {
   #ifdef __LIB_CUDNN
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
 
       // Destroy cuDNN objects
       if(m_input_desc) {
@@ -246,15 +247,15 @@ public:
 
       // Deallocate GPU memory
       m_cudnn->deallocate_on_gpus(m_weights_d);
-      m_cudnn->deallocate_on_gpus(m_weighted_sum_d);
-      m_cudnn->deallocate_on_gpus(m_activations_d);
+      m_cudnn->deallocate_on_gpus(this->m_weighted_sum_d);
+      m_cudnn->deallocate_on_gpus(this->m_activations_d);
       m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-      m_cudnn->deallocate_on_gpus(m_error_signal_d);
+      m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
       if(!m_prev_layer_using_gpus) {
-        m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+        m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
       }
       if(!m_next_layer_using_gpus) {
-        m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+        m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
       }
 
     }
@@ -266,7 +267,7 @@ public:
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       setup_gpu();
     }
   #endif // #ifdef __LIB_CUDNN
@@ -277,37 +278,37 @@ public:
     for(Int i=0; i<m_num_dims; ++i) {
       num_inputs *= m_input_dims[i];
     }
-    if(num_inputs != m_num_prev_neurons) {
+    if(num_inputs != this->m_num_prev_neurons) {
       throw lbann_exception("lbann_layer_convolutional: unexpected number of input neurons");
     }
   #endif // #ifdef LBANN_DEBUG
 
     // Initialize matrices
-    Zeros(*m_weights, m_filter_size+m_num_output_channels, 1);
-    Zeros(*m_weights_gradient, m_filter_size+m_num_output_channels, 1);
+    Zeros(*(this->m_weights), m_filter_size+m_num_output_channels, 1);
+    Zeros(*(this->m_weights_gradient), m_filter_size+m_num_output_channels, 1);
   #ifdef __LIB_CUDNN
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       Zeros(m_weights_gradient_per_gpu,
             m_filter_size+m_num_output_channels,
             m_cudnn->get_num_gpus());
     }
   #endif // #ifdef __LIB_CUDNN
-    Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
-    Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
-    Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
+    Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_prev_error_signal), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_weighted_sum), this->m_num_neurons, this->m_mini_batch_size);
 
     // Initialize filters
     StarMat filter;
-    View(filter, *m_weights, IR(0,m_filter_size), ALL);
+    View(filter, *(this->m_weights), IR(0,m_filter_size), ALL);
     const Int fan_in = m_filter_size / m_num_output_channels;
     const Int fan_out = m_filter_size / m_num_input_channels;
-    initialize_matrix(filter, m_weight_initialization, fan_in, fan_out);
+    initialize_matrix(filter, this->m_weight_initialization, fan_in, fan_out);
 
     // Initialize optimizer
-    if(m_optimizer != NULL) {
-      m_optimizer->setup(m_weights);
+    if(this->m_optimizer != NULL) {
+      this->m_optimizer->setup(this->m_weights);
     }
 
   }
@@ -332,7 +333,7 @@ public:
 
     // Set input tensor descriptor
     std::vector<int> input_dims(m_num_dims+2);
-    input_dims[0] = m_mini_batch_size_per_gpu;
+    input_dims[0] = this->m_mini_batch_size_per_gpu;
     input_dims[1] = m_num_input_channels;
     for(Int i=0; i<m_num_dims; ++i) {
       input_dims[i+2] = m_input_dims[i];
@@ -388,7 +389,7 @@ public:
                m_filter_desc,
                m_num_dims+2,
                output_dims.data()));
-    if(output_dims[0] != m_mini_batch_size_per_gpu) {
+    if(output_dims[0] != this->m_mini_batch_size_per_gpu) {
       throw lbann_exception("lbann_layer_convolutional: invalid output dimensions");
     }
     if(output_dims[1] != m_num_output_channels) {
@@ -400,7 +401,7 @@ public:
       }
     }
   #else
-    output_dims[0] = m_mini_batch_size_per_gpu;
+    output_dims[0] = this->m_mini_batch_size_per_gpu;
     output_dims[1] = m_num_output_channels;
     for(Int i=0; i<m_num_dims; ++i) {
       output_dims[i+2] = m_output_dims[i];
@@ -488,7 +489,7 @@ public:
     }
 
     // Set activation descriptor
-    if(m_activation_type != activation_type::ID) {
+    if(this->m_activation_type != activation_type::ID) {
       checkCUDNN(cudnnSetActivationDescriptor(m_activation_desc,
                                               get_cudnn_activation_mode(m_activation_type),
                                               CUDNN_PROPAGATE_NAN,
@@ -502,24 +503,24 @@ public:
     m_cudnn->allocate_on_gpus(m_weights_gradient_d,
                               m_filter_size+m_num_output_channels,
                               1);
-    m_cudnn->allocate_on_gpus(m_weighted_sum_d,
-                              m_num_neurons,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->allocate_on_gpus(m_activations_d,
-                              m_num_neurons,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->allocate_on_gpus(m_error_signal_d,
-                              m_num_prev_neurons,
-                              m_mini_batch_size_per_gpu);
+    m_cudnn->allocate_on_gpus(this->m_weighted_sum_d,
+                              this->m_num_neurons,
+                              this->m_mini_batch_size_per_gpu);
+    m_cudnn->allocate_on_gpus(this->m_activations_d,
+                              this->m_num_neurons,
+                              this->m_mini_batch_size_per_gpu);
+    m_cudnn->allocate_on_gpus(this->m_error_signal_d,
+                              this->m_num_prev_neurons,
+                              this->m_mini_batch_size_per_gpu);
     if(!m_prev_layer_using_gpus) {
-      m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                                m_num_prev_neurons,
-                                m_mini_batch_size_per_gpu);
+      m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
+                                this->m_num_prev_neurons,
+                                this->m_mini_batch_size_per_gpu);
     }
     if(!m_next_layer_using_gpus) {
-      m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                                m_num_neurons,
-                                m_mini_batch_size_per_gpu);
+      m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
+                                this->m_num_neurons,
+                                this->m_mini_batch_size_per_gpu);
     }
 
   #endif // #ifdef __LIB_CUDNN
@@ -554,16 +555,13 @@ public:
   void pin_memory_blocks_fwd(void) {
   #ifdef __LIB_CUDNN
     size_t total_size = 0u;
-    total_size += m_cudnn->pin_memory_block(m_weights);
+    total_size += m_cudnn->pin_memory_block(this->m_weights);
     if(!m_prev_layer_using_gpus) {
-      total_size += m_cudnn->pin_memory_block(m_prev_activations);
+      total_size += m_cudnn->pin_memory_block(this->m_prev_activations);
     }
     if(!m_next_layer_using_gpus) {
-      total_size += m_cudnn->pin_memory_block(m_activations);
+      total_size += m_cudnn->pin_memory_block(this->m_activations);
     }
-    //std::cout << total_size << " bytes pinned by convolutional layer "
-    //          << get_index() << " forward " << std::endl;
-
     is_pinned_fwd = true;
   #endif // #ifdef __LIB_CUDNN
   }
@@ -574,14 +572,11 @@ public:
     size_t total_size = 0u;
     total_size += m_cudnn->pin_memory_block(&m_weights_gradient_per_gpu);
     if(!m_next_layer_using_gpus) {
-      total_size += m_cudnn->pin_memory_block(m_prev_error_signal);
+      total_size += m_cudnn->pin_memory_block(this->m_prev_error_signal);
     }
     if(!m_prev_layer_using_gpus) {
-      total_size += m_cudnn->pin_memory_block(m_error_signal);
+      total_size += m_cudnn->pin_memory_block(this->m_error_signal);
     }
-    //std::cout << total_size << " bytes pinned by convolutional layer "
-    //          << get_index() << " backward " << std::endl;
-
     is_pinned_bwd = true;
   #endif // #ifdef __LIB_CUDNN
   }
@@ -589,12 +584,12 @@ public:
   ///< unpin the memory used by cudnn forward path
   void unpin_memory_blocks_fwd(void) {
   #ifdef __LIB_CUDNN
-    m_cudnn->unpin_memory_block(m_weights);
+    m_cudnn->unpin_memory_block(this->m_weights);
     if(!m_prev_layer_using_gpus) {
-      m_cudnn->unpin_memory_block(m_prev_activations);
+      m_cudnn->unpin_memory_block(this->m_prev_activations);
     }
     if(!m_next_layer_using_gpus) {
-      m_cudnn->unpin_memory_block(m_activations);
+      m_cudnn->unpin_memory_block(this->m_activations);
     }
 
     is_pinned_fwd = false;
@@ -606,10 +601,10 @@ public:
   #ifdef __LIB_CUDNN
     m_cudnn->unpin_memory_block(&m_weights_gradient_per_gpu);
     if(!m_next_layer_using_gpus) {
-      m_cudnn->unpin_memory_block(m_prev_error_signal);
+      m_cudnn->unpin_memory_block(this->m_prev_error_signal);
     }
     if(!m_prev_layer_using_gpus) {
-      m_cudnn->unpin_memory_block(m_error_signal);
+      m_cudnn->unpin_memory_block(this->m_error_signal);
     }
 
     is_pinned_bwd = false;
@@ -647,7 +642,7 @@ public:
  protected:
   /// @todo CPU implementations for 1d and 3d
   void fp_linearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       fp_linearity_gpu();
     } else {
       fp_linearity_cpu_gemm();
@@ -657,7 +652,7 @@ public:
   /// @todo CPU implementations for 1d and 3d
   void bp_linearity() {
 
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       bp_linearity_gpu();
     } else {
       bp_linearity_cpu_gemm();
@@ -666,7 +661,7 @@ public:
   }
 
   void fp_nonlinearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       fp_nonlinearity_gpu();
     } else {
       Layer::fp_nonlinearity();
@@ -674,7 +669,7 @@ public:
   }
 
   void bp_nonlinearity() {
-    if(m_using_gpus) {
+    if(this->m_using_gpus) {
       bp_nonlinearity_gpu();
     } else {
       Layer::bp_nonlinearity();
@@ -703,7 +698,7 @@ public:
       checkCUDNN(cudnnConvolutionForward(m_cudnn->get_handle(i),
                                          &one,
                                          m_input_desc,
-                                         m_prev_activations_d[i],
+                                         this->m_prev_activations_d[i],
                                          m_filter_desc,
                                          m_weights_d[i],
                                          m_convolution_desc,
@@ -712,21 +707,21 @@ public:
                                          m_cudnn->get_work_space_size(i),
                                          &zero,
                                          m_output_desc,
-                                         m_weighted_sum_d[i]));
+                                         this->m_weighted_sum_d[i]));
       checkCUDNN(cudnnAddTensor(m_cudnn->get_handle(i),
                                 &one,
                                 m_bias_desc,
                                 m_weights_d[i] + m_filter_size,
                                 &one,
                                 m_output_desc,
-                                m_weighted_sum_d[i]));
+                                this->m_weighted_sum_d[i]));
     }
 
     // Copy result to output matrix
-    m_cudnn->copy_on_gpus(m_activations_d,
-                          m_weighted_sum_d,
-                          m_num_neurons,
-                          m_mini_batch_size_per_gpu);
+    m_cudnn->copy_on_gpus(this->m_activations_d,
+                          this->m_weighted_sum_d,
+                          this->m_num_neurons,
+                          this->m_mini_batch_size_per_gpu);
 
   #endif // #ifndef __LIB_CUDNN
   }
@@ -751,10 +746,10 @@ public:
                                           m_activation_desc,
                                           &one,
                                           m_output_desc,
-                                          m_activations_d[i],
+                                          this->m_activations_d[i],
                                           &zero,
                                           m_output_desc,
-                                          m_activations_d[i]));
+                                          this->m_activations_d[i]));
       }
     }
 
@@ -765,18 +760,18 @@ public:
   void fp_linearity_cpu_direct() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-    Mat& activations_local = m_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get filter and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -888,18 +883,18 @@ public:
   void fp_linearity_cpu_direct_2d() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-    Mat& activations_local = m_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get filter and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -1001,18 +996,18 @@ public:
   void fp_linearity_cpu_gemm() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    Mat& weighted_sum_local = m_weighted_sum_v->Matrix();
-    Mat& activations_local = m_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get filters and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -1066,10 +1061,10 @@ public:
     const DataType zero = 0;
 
     // Clear unused columns
-    m_cudnn->clear_unused_columns_on_gpus(m_prev_error_signal_d,
-                                          m_num_neurons,
-                                          m_prev_error_signal_v->LocalWidth(),
-                                          m_mini_batch_size_per_gpu);
+    m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_d,
+                                          this->m_num_neurons,
+                                          this->m_prev_error_signal_v->LocalWidth(),
+                                          this->m_mini_batch_size_per_gpu);
 
     // Perform back propagation on each GPU
     const Int num_gpus = m_cudnn->get_num_gpus();
@@ -1080,16 +1075,16 @@ public:
       checkCUDNN(cudnnConvolutionBackwardBias(m_cudnn->get_handle(i),
                                               &one,
                                               m_output_desc,
-                                              m_prev_error_signal_d[i],
+                                              this->m_prev_error_signal_d[i],
                                               &zero,
                                               m_bias_desc,
                                               m_weights_gradient_d[i] + m_filter_size));
       checkCUDNN(cudnnConvolutionBackwardFilter(m_cudnn->get_handle(i),
                  &one,
                  m_input_desc,
-                 m_prev_activations_d[i],
+                 this->m_prev_activations_d[i],
                  m_output_desc,
-                 m_prev_error_signal_d[i],
+                 this->m_prev_error_signal_d[i],
                  m_convolution_desc,
                  m_backward_filter_algo,
                  m_cudnn->get_work_space(i),
@@ -1102,14 +1097,14 @@ public:
                                               m_filter_desc,
                                               m_weights_d[i],
                                               m_output_desc,
-                                              m_prev_error_signal_d[i],
+                                              this->m_prev_error_signal_d[i],
                                               m_convolution_desc,
                                               m_backward_data_algo,
                                               m_cudnn->get_work_space(i),
                                               m_cudnn->get_work_space_size(i),
                                               &zero,
                                               m_input_desc,
-                                              m_error_signal_d[i]));
+                                              this->m_error_signal_d[i]));
 
     }
 
@@ -1143,14 +1138,14 @@ public:
                                            m_activation_desc,
                                            &one,
                                            m_output_desc,
-                                           m_weighted_sum_d[i],
+                                           this->m_weighted_sum_d[i],
                                            m_output_desc,
-                                           m_prev_error_signal_d[i],
+                                           this->m_prev_error_signal_d[i],
                                            m_output_desc,
-                                           m_activations_d[i],
+                                           this->m_activations_d[i],
                                            &zero,
                                            m_output_desc,
-                                           m_prev_error_signal_d[i]));
+                                           this->m_prev_error_signal_d[i]));
 
       }
     }
@@ -1162,12 +1157,12 @@ public:
   void bp_linearity_cpu_direct() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
-    const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-    Mat& weights_gradient_local = m_weights_gradient->Matrix();
-    Mat& error_signal_local = m_error_signal_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    const Mat& weighted_sum_local = this->m_weighted_sum_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    Mat& weights_gradient_local = this->m_weights_gradient->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get filters and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
@@ -1179,8 +1174,8 @@ public:
     Zero(error_signal_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -1299,8 +1294,8 @@ public:
     }
 
     // Scale and accumulate gradients
-    *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
-    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+    *(this->m_weights_gradient) *= DataType(1) / this->get_effective_minibatch_size();
+    AllReduce(*(this->m_weights_gradient), this->m_weights_gradient->RedundantComm());
 
   }
 
@@ -1308,12 +1303,12 @@ public:
   void bp_linearity_cpu_direct_2d() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
-    const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-    Mat& weights_gradient_local = m_weights_gradient->Matrix();
-    Mat& error_signal_local = m_error_signal_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    const Mat& weighted_sum_local = this->m_weighted_sum_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    Mat& weights_gradient_local = this->m_weights_gradient->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get filters and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
@@ -1325,8 +1320,8 @@ public:
     Zero(error_signal_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -1432,8 +1427,8 @@ public:
     }
 
     // Scale and accumulate gradients
-    *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
-    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+    *(this->m_weights_gradient) *= DataType(1) / this->get_effective_minibatch_size();
+    AllReduce(*(this->m_weights_gradient), this->m_weights_gradient->RedundantComm());
 
   }
 
@@ -1441,12 +1436,12 @@ public:
   void bp_linearity_cpu_gemm() {
 
     // Get local matrices
-    const Mat& prev_activations_local = m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = m_weights->LockedMatrix();
-    const Mat& weighted_sum_local = m_weighted_sum_v->LockedMatrix();
-    const Mat& prev_error_signal_local = m_prev_error_signal_v->LockedMatrix();
-    Mat& weights_gradient_local = m_weights_gradient->Matrix();
-    Mat& error_signal_local = m_error_signal_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& weights_local = this->m_weights->LockedMatrix();
+    const Mat& weighted_sum_local = this->m_weighted_sum_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    Mat& weights_gradient_local = this->m_weights_gradient->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get filters and bias
     const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
@@ -1457,8 +1452,8 @@ public:
     Zero(weights_gradient_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = m_num_prev_neurons / m_num_input_channels;
+    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
     const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
@@ -1519,8 +1514,8 @@ public:
     }
 
     // Scale and accumulate gradients
-    *m_weights_gradient *= DataType(1) / get_effective_minibatch_size();
-    AllReduce(*m_weights_gradient, m_weights_gradient->RedundantComm());
+    *(this->m_weights_gradient) *= DataType(1) / this->get_effective_minibatch_size();
+    AllReduce(*(this->m_weights_gradient), this->m_weights_gradient->RedundantComm());
 
   }
 
@@ -1531,12 +1526,12 @@ public:
     // Regularize gradients and update regularizers
     Layer::update();
 
-    if(m_execution_mode == execution_mode::training) {
+    if(this->m_execution_mode == execution_mode::training) {
       // Apply optimizer
-      m_optimizer->update(m_weights_gradient);
+      this->m_optimizer->update(this->m_weights_gradient);
     }
 
-    update_time += get_time() - start;
+    this->update_time += get_time() - start;
     return true;
   }
 };
