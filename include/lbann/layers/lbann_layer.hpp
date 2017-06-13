@@ -194,6 +194,10 @@ class Layer {
   virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
   }
+  /** Return (a view of) the activations matrix for this layer. */
+  virtual ElMat& get_activations(void) {
+    return *m_activations;
+  }
   /** Return the layer's optimizer. */
   virtual optimizer *get_optimizer(void) const {
     return m_optimizer;
