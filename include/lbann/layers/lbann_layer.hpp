@@ -364,7 +364,7 @@ class Layer {
 #endif
 
   /** Activation function */
-  Activation *m_activation_fn;
+  Activation<data_layout> *m_activation_fn;
   /** Regularizers being applied to the layer. */
   std::vector<regularizer *> regularizers;
   /** Size of the local mini-batch. */

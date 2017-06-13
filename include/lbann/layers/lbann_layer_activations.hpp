@@ -47,19 +47,88 @@ enum class activation_type {
 };
 
 /** Base activation function class. */
+template <class T_layout>
 class Activation {
  public:
-  virtual ~Activation(void) {}
+  Activation() {}
+  virtual ~Activation() {}
+
   /** Apply the activation function elementwise to m. */
-  virtual void forwardProp(ElMat& m);
+  virtual void forwardProp(ElMat& m) {
+    EntrywiseMap(m, std::function<DataType(const DataType&)>(
+    [this] (const DataType& z) {
+      return act(z);
+    }));
+  }
+
   /** Apply the activation derivative function elementwise to m. */
-  virtual void backwardProp(ElMat& m);
+  virtual void backwardProp(ElMat& m) {
+    EntrywiseMap(m, std::function<DataType(const DataType&)>(
+    [this] (const DataType& z) {
+      return act_prime(z);
+    }));
+  }
+
   /**
    * Apply the activation derivative function and then multiply by the error
    * signal in one step, storing into prev_error_signal.
    */
-  virtual void backwardPropError(const ElMat& m, ElMat& prev_error_signal);
-  static const std::string activation_name(activation_type id);
+  virtual void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {
+    const Int height = m.LocalHeight();
+    const Int width = m.LocalWidth();
+    const Int m_LDim = m.LDim();
+    const DataType *m_buf = m.LockedBuffer();
+    const Int p_LDim = prev_error_signal.LDim();
+    DataType *p_buf = prev_error_signal.Buffer();
+
+    if (height == m_LDim && height == p_LDim) {
+      // Contiguous memory.
+      #pragma omp parallel for
+      for (Int i = 0; i < height * width; ++i) {
+        p_buf[i] = act_prime(m_buf[i]) * p_buf[i];
+      }
+    } else {
+      // Non-contiguous.
+      #pragma omp parallel for collapse(2)
+      for (Int j = 0; j < width; ++j) {
+        for (Int i = 0; i < height; ++i) {
+          p_buf[i+j*p_LDim] = act_prime(m_buf[i+j*m_LDim]) * p_buf[i+j*p_LDim];
+        }
+      }
+    }
+  }
+
+  static const std::string activation_name(activation_type id) {
+    switch(id) {
+    case activation_type::SIGMOID:
+      return "sigmoid";
+      break;
+    case activation_type::TANH:
+      return "tanh";
+      break;
+    case activation_type::RELU:
+      return "relu";
+      break;
+    case activation_type::ID:
+      return "id";
+      break;
+    case activation_type::LEAKY_RELU:
+      return "leaky_relu";
+      break;
+    case activation_type::SOFTPLUS:
+      return "softplus";
+      break;
+    case activation_type::SMOOTH_RELU:
+      return "smooth_relu";
+      break;
+    case activation_type::ELU:
+      return "elu";
+      break;
+    default:
+      throw lbann_exception("unknown activation_type");
+    }
+  }
+
  protected:
   /** The activation function. */
   virtual DataType act(const DataType& z) = 0;
@@ -71,7 +140,8 @@ class Activation {
  * Sigmoid activation function.
  * See: https://en.wikipedia.org/wiki/Sigmoid_function
  */
-class sigmoid_layer : public Activation {
+template <class T_layout>
+class sigmoid_layer : public Activation<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
@@ -83,7 +153,8 @@ class sigmoid_layer : public Activation {
 };
 
 /** Hyperbolic tangent activation function. */
-class tanh_layer : public Activation {
+template <class T_layout>
+class tanh_layer : public Activation<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return std::tanh(z);
@@ -98,7 +169,8 @@ class tanh_layer : public Activation {
  * Rectified linear unit activation function.
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-class reLU_layer : public Activation {
+template <class T_layout>
+class reLU_layer : public Activation<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return std::max(DataType(0), z);
@@ -109,7 +181,8 @@ class reLU_layer : public Activation {
 };
 
 /** Identity activation function -- does nothing. */
-class id_layer : public Activation {
+template <class T_layout>
+class id_layer : public Activation<T_layout> {
   void forwardProp(ElMat& m) {}
   void backwardProp(ElMat& m) {}
   void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {}
@@ -129,7 +202,8 @@ class id_layer : public Activation {
  * Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier nonlinearities
  * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
  */
-class leaky_reLU_layer : public Activation {
+template <class T_layout>
+class leaky_reLU_layer : public Activation<T_layout> {
  public:
   /** Leak is the amount of signal to permit for negative values. */
   leaky_reLU_layer(DataType leak = 0.01f) : m_leak(leak) {}
@@ -149,7 +223,8 @@ class leaky_reLU_layer : public Activation {
  * This is a smooth approximation of the ReLU.
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-class softplus_layer : public Activation {
+template <class T_layout>
+class softplus_layer : public Activation<T_layout> {
  protected:
   DataType act(const DataType& z) {
     // Warning: Not numerically stable.
@@ -166,7 +241,8 @@ class softplus_layer : public Activation {
  * Smooth Rectified linear unit activation function.
  * This is an approximation to the softplus.
  */
-class smooth_reLU_layer : public Activation {
+template <class T_layout>
+class smooth_reLU_layer : public Activation<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return z / (DataType(1) + std::exp(-z));
@@ -187,7 +263,8 @@ class smooth_reLU_layer : public Activation {
  * "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)"
  * ICLR 2016.
  */
-class ELU_layer : public Activation {
+template <class T_layout>
+class ELU_layer : public Activation<T_layout> {
  public:
   /**
    * alpha controls the value to which the ELU saturates for negative inputs.
@@ -209,24 +286,24 @@ class ELU_layer : public Activation {
 
 /** Return a new Activation class of type act_fn. */
 template<typename... Args>
-Activation *new_activation(activation_type act_fn, Args... params) {
+Activation<data_layout> *new_activation(activation_type act_fn, Args... params) {
   switch (act_fn) {
   case activation_type::SIGMOID:
-    return new sigmoid_layer();
+    return new sigmoid_layer<data_layout>();
   case activation_type::TANH:
-    return new tanh_layer();
+    return new tanh_layer<data_layout>();
   case activation_type::RELU:
-    return new reLU_layer();
+    return new reLU_layer<data_layout>();
   case activation_type::ID:
-    return new id_layer();
+    return new id_layer<data_layout>();
   case activation_type::LEAKY_RELU:
-    return new leaky_reLU_layer(params...);
+    return new leaky_reLU_layer<data_layout>(params...);
   case activation_type::SOFTPLUS:
-    return new softplus_layer();
+    return new softplus_layer<data_layout>();
   case activation_type::SMOOTH_RELU:
-    return new smooth_reLU_layer();
+    return new smooth_reLU_layer<data_layout>();
   case activation_type::ELU:
-    return new ELU_layer(params...);
+    return new ELU_layer<data_layout>(params...);
   default:
     throw lbann_exception("Unsupported activation type.");
   }
