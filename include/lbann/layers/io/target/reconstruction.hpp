@@ -61,7 +61,6 @@ class reconstruction_layer : public target_layer<T_layout> {
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
     // Initialize activation function
-    this->m_activation_fn = new_activation(activation);
     // Done in base layer constructor
     /*switch(data_dist) {
       case data_layout::MODEL_PARALLEL:
@@ -107,9 +106,8 @@ class reconstruction_layer : public target_layer<T_layout> {
 
     this->fp_set_std_matrix_view();
 
-    DistMat original_layer_act_v;
     //view of original layer
-    View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,curr_mini_batch_size));
+    View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));
   }
 
 
