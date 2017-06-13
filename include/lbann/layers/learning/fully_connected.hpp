@@ -87,7 +87,7 @@ class fully_connected_layer : public learning<T_layout> {
                       const uint mini_batch_size,
                       const weight_initialization init,
                       lbann_comm *comm,
-                      optimizer *opt,
+                        optimizer *opt)
     : learning<T_layout>(data_dist,
                          index, numPrevNeurons, 
                          numNeurons, mini_batch_size, 
