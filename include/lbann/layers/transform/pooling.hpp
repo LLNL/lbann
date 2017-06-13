@@ -461,28 +461,30 @@ class pooling_layer : public transform<T_layout> {
 
   }
 
- protected:
-  void fp_linearity() {
+  protected:
+
+  void fp_compute() {
     if(this->m_using_gpus) {
-      fp_linearity_gpu();
+      fp_compute_cudnn();
     } else {
-      fp_linearity_cpu();
+      fp_compute_im2col();
     }
   }
 
-  void bp_linearity() {
+  void bp_compute() {
     if(this->m_using_gpus) {
-      bp_linearity_gpu();
+      bp_compute_cudnn();
     } else {
-      bp_linearity_cpu();
+      bp_compute_im2col();
     }
   }
 
  private:
-  /// GPU implementation of forward propagation linearity
-  void fp_linearity_gpu() {
+
+  /// Pooling forward propagation with cuDNN
+  void fp_compute_cudnn() {
   #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
+    throw lbann_exception("pooling_layer: cuDNN not detected");
   #else
 
     // Useful constants
@@ -502,93 +504,16 @@ class pooling_layer : public transform<T_layout> {
                                      m_prev_activations_d[i],
                                      &zero,
                                      m_output_desc,
-                                     m_weighted_sum_d[i]));
+                                     m_activations_d[i]));
     }
-
-    // Copy result to output matrix
-    m_cudnn->copy_on_gpus(m_activations_d,
-                          m_weighted_sum_d,
-                          m_num_neurons,
-                          m_mini_batch_size_per_gpu);
 
   #endif // #ifndef __LIB_CUDNN
   }
 
-  /// CPU implementation of forward propagation linearity
-  void fp_linearity_cpu() {
-
-    // Throw exception if pooling mode is not max or average pooling
-    if(m_pool_mode != pool_mode::max
-        && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max and average pooling");
-    }
-
-    // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& weighted_sum_local = this->m_weighted_sum_v->Matrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
-
-    // Output entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
-
-    // Initialize im2col matrix
-    Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
-
-    // Iterate through data samples
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-
-      // Construct im2col matrix from input
-      const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
-      im2col(input_mat, im2col_mat,
-             m_input_dims, m_pool_pads, m_num_channels,
-             m_pool_dims, m_pool_strides);
-
-      // Apply max pooling
-      if(m_pool_mode == pool_mode::max) {
-        DataType *output_buffer = weighted_sum_local.Buffer(0, sample);
-        #pragma omp parallel for collapse(2)
-        for(Int c = 0; c < m_num_channels; ++c) {
-          for(Int j = 0; j < num_per_output_channel; ++j) {
-            DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
-            DataType output_entry = -INFINITY;
-            for(Int i = 0; i < m_pool_size; ++i) {
-              output_entry = Max(output_entry, im2col_buffer[i]);
-            }
-            const Int output_index = j + c * num_per_output_channel;
-            output_buffer[output_index] = output_entry;
-          }
-        }
-      }
-
-      // Apply average pooling
-      if(m_pool_mode == pool_mode::average) {
-        DataType *output_buffer = weighted_sum_local.Buffer(0, sample);
-        #pragma omp parallel for collapse(2)
-        for(Int c = 0; c < m_num_channels; ++c) {
-          for(Int j = 0; j < num_per_output_channel; ++j) {
-            DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
-            DataType output_entry = 0;
-            for(Int i = 0; i < m_pool_size; ++i) {
-              output_entry += im2col_buffer[i];
-            }
-            output_entry /= m_pool_size;
-            const Int output_index = j + c * num_per_output_channel;
-            output_buffer[output_index] = output_entry;
-          }
-        }
-      }
-
-    }
-
-    // weighted_sum and output are identical after fp linearity step
-    Copy(weighted_sum_local, activations_local);
-
-  }
-
-  /// GPU implementation of backward propagation linearity
-  void bp_linearity_gpu() {
+  /// Pooling backward propagation with cuDNN
+  void bp_compute_cudnn() {
   #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
+    throw lbann_exception("pooling_layer: cuDNN not detected");
   #else
 
     // Useful constants
@@ -620,13 +545,80 @@ class pooling_layer : public transform<T_layout> {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  /// CPU implementation of backward propagation linearity
-  void bp_linearity_cpu() {
+  /// Pooling forward propagation with im2col
+  void fp_compute_im2col() {
 
     // Throw exception if pooling mode is not max or average pooling
     if(m_pool_mode != pool_mode::max
         && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("lbann_layer_pooling: CPU pooling layer only implements max and average pooling");
+      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
+    }
+
+    // Get local matrices
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
+
+    // Output entries are divided amongst channels
+    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
+
+    // Initialize im2col matrix
+    Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
+
+    // Iterate through data samples
+    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+
+      // Construct im2col matrix from input
+      const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+      im2col(input_mat, im2col_mat,
+             m_input_dims, m_pool_pads, m_num_channels,
+             m_pool_dims, m_pool_strides);
+
+      // Apply max pooling
+      if(m_pool_mode == pool_mode::max) {
+        DataType *output_buffer = activations_local.Buffer(0, sample);
+        #pragma omp parallel for collapse(2)
+        for(Int c = 0; c < m_num_channels; ++c) {
+          for(Int j = 0; j < num_per_output_channel; ++j) {
+            DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+            DataType output_entry = -INFINITY;
+            for(Int i = 0; i < m_pool_size; ++i) {
+              output_entry = Max(output_entry, im2col_buffer[i]);
+            }
+            const Int output_index = j + c * num_per_output_channel;
+            output_buffer[output_index] = output_entry;
+          }
+        }
+      }
+
+      // Apply average pooling
+      if(m_pool_mode == pool_mode::average) {
+        DataType *output_buffer = activations_local.Buffer(0, sample);
+        #pragma omp parallel for collapse(2)
+        for(Int c = 0; c < m_num_channels; ++c) {
+          for(Int j = 0; j < num_per_output_channel; ++j) {
+            DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
+            DataType output_entry = 0;
+            for(Int i = 0; i < m_pool_size; ++i) {
+              output_entry += im2col_buffer[i];
+            }
+            output_entry /= m_pool_size;
+            const Int output_index = j + c * num_per_output_channel;
+            output_buffer[output_index] = output_entry;
+          }
+        }
+      }
+
+    }
+
+  }
+
+  /// Pooling forward propagation with im2col
+  void bp_compute_im2col() {
+
+    // Throw exception if pooling mode is not max or average pooling
+    if(m_pool_mode != pool_mode::max
+        && m_pool_mode != pool_mode::average) {
+      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
     }
 
     // Get local matrices
@@ -705,12 +697,6 @@ class pooling_layer : public transform<T_layout> {
 
   }
 
-  bool update() {
-    double start = get_time();
-    Layer::update();
-    this->update_time += get_time() - start;
-    return true;
-  }
 };
 }
 

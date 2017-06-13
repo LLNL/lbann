@@ -316,7 +316,7 @@ class Layer {
   /** Perform the layers work / main function for backward propagation */
   virtual void bp_compute() {}
   /** Perform the layers work / main function for the update step */
-  virtual bool update_compute() { return false; }
+  virtual bool update_compute() { return true; }
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;

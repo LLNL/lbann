@@ -78,7 +78,7 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
    uint mini_batch_size,
    lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
-    : regularizer_layer<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID, {}),
+    : regularizer_layer<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size),
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
@@ -234,25 +234,25 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
   }
 
  protected:
-  void fp_linearity() {
+  void fp_compute() {
     if(this->m_using_gpus) {
-      fp_linearity_gpu();
+      fp_compute_gpu();
     } else {
-      fp_linearity_cpu();
+      fp_compute_cpu();
     }
   }
 
-  void bp_linearity() {
+  void bp_compute() {
     if(this->m_using_gpus) {
-      bp_linearity_gpu();
+      bp_compute_gpu();
     } else {
-      bp_linearity_cpu();
+      bp_compute_cpu();
     }
   }
 
  private:
-  /// GPU implementation of forward propagation linearity
-  void fp_linearity_gpu() {
+  /// GPU implementation of forward propagation
+  void fp_compute_gpu() {
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
@@ -287,8 +287,8 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  /// CPU implementation of forward propagation linearity
-  void fp_linearity_cpu() {
+  /// CPU implementation of forward propagation
+  void fp_compute_cpu() {
 
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
@@ -358,8 +358,8 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
 
   }
 
-  /// GPU implementation of backward propagation linearity
-  void bp_linearity_gpu() {
+  /// GPU implementation of backward propagation
+  void bp_compute_gpu() {
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
@@ -394,8 +394,8 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  /// CPU implementation of backward propagation linearity
-  void bp_linearity_cpu() {
+  /// CPU implementation of backward propagation
+  void bp_compute_cpu() {
 
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
@@ -486,10 +486,8 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
 
   }
 
-  bool update() {
-    double start = get_time();
+  bool update_compute() {
     Layer::update();
-    this->update_time += get_time() - start;
     return true;
   }
 };

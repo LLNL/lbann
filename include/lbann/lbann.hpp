@@ -53,9 +53,13 @@
 /// Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/learning/convolutional.hpp"
+#include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/transform/pooling.hpp"
+
+/// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch.hpp"
@@ -100,9 +104,6 @@
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
 #include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
-
-/// Regularizers
-#include "lbann/regularization/lbann_dropout.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"

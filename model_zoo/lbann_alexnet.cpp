@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, -1);
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
 #endif
     dnn->add(input_layer);
 
-    // Layer 1 (convolutional)
+    // Layer 1 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       Int numDims = 2;
@@ -361,16 +361,16 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {11, 11};
       Int convPads[] = {0, 0};
       Int convStrides[] = {4, 4};
-      convolutional_layer<data_layout> *layer
-        = new convolutional_layer<data_layout>(1, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(1, numDims, inputChannels, inputDims,
+                                             outputChannels, filterDims,
+                                             convPads, convStrides,
+                                             trainParams.MBSize,
+                                             activation_type::RELU,
+                                             weight_initialization::he_normal,
+                                             comm, convolution_layer_optimizer,
+                                             {new l2_regularization(0.0005)},
+                                             cudnn);
       dnn->add(layer);
     }
 
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
       dnn->add(layer);
     }
 
-    // Layer 4 (convolutional)
+    // Layer 4 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       Int numDims = 2;
@@ -418,8 +418,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {5, 5};
       Int convPads[] = {2, 2};
       Int convStrides[] = {1, 1};
-      convolutional_layer<data_layout> *layer
-        = new convolutional_layer<data_layout>(4, numDims, inputChannels, inputDims,
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(4, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
       dnn->add(layer);
     }
 
-    // Layer 7 (convolutional)
+    // Layer 7 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       Int numDims = 2;
@@ -475,8 +475,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer<data_layout> *layer
-        = new convolutional_layer<data_layout>(7, numDims, inputChannels, inputDims,
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(7, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
       dnn->add(layer);
     }
 
-    // Layer 8 (convolutional)
+    // Layer 8 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       Int numDims = 2;
@@ -498,8 +498,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer<data_layout> *layer
-        = new convolutional_layer<data_layout>(8, numDims, inputChannels, inputDims,
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(8, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
@@ -511,7 +511,7 @@ int main(int argc, char *argv[]) {
       dnn->add(layer);
     }
 
-    // Layer 9 (convolutional)
+    // Layer 9 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       Int numDims = 2;
@@ -521,8 +521,8 @@ int main(int argc, char *argv[]) {
       Int filterDims[] = {3, 3};
       Int convPads[] = {1, 1};
       Int convStrides[] = {1, 1};
-      convolutional_layer<data_layout> *layer
-        = new convolutional_layer<data_layout>(9, numDims, inputChannels, inputDims,
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(9, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
