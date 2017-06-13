@@ -31,7 +31,6 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/layers/activations/activations.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
@@ -131,8 +130,8 @@ class Layer {
 
   static std::string weight_initialization_name(weight_initialization id);
 
-  void initialize_model_parallel_distribution(void);
-  void initialize_data_parallel_distribution(void);
+  virtual void initialize_model_parallel_distribution();
+  virtual void initialize_data_parallel_distribution();
 
   virtual void forwardProp(void);
   virtual void backProp(void);
