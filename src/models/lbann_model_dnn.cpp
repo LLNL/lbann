@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_dnn.hpp"
-#include "lbann/layers/learning/lbann_layer_fully_connected.hpp"
-#include "lbann/layers/activations/lbann_layer_softmax.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"

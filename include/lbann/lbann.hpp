@@ -40,11 +40,11 @@
 
 /// Layers
 #include "lbann/layers/activations/lbann_layer_activations.hpp"
-#include "lbann/layers/learning/lbann_layer_fully_connected.hpp"
-#include "lbann/layers/activations/lbann_layer_softmax.hpp"
-#include "lbann/layers/learning/lbann_layer_convolutional.hpp"
-#include "lbann/layers/transform/lbann_layer_pooling.hpp"
-#include "lbann/layers/regularizers/lbann_layer_local_response_normalization.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/learning/convolutional.hpp"
+#include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/regularizers/local_response_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch.hpp"

@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
-#include "lbann/layers/io/target/lbann_layer_reconstruction.hpp"
+#include "lbann/layers/io/target/reconstruction.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
 using namespace std;
