@@ -84,7 +84,7 @@ void lbann_callback_imcomm::setup(model *m) {
     }
     if (params.ct != NONE) {
       if (layer_cat != layer_category::learning) {
-        throw lbann_exception("imcomm: trying to do inter-model gradient"
+        throw lbann_exception("imcomm: trying to do inter-model gradient "
                               "communication on layer " + std::to_string(layer)
                               + " without gradients");
       }

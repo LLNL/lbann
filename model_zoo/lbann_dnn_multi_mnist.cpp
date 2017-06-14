@@ -177,12 +177,13 @@ int main(int argc, char *argv[]) {
 
     //layer_factory *lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
-    metrics::categorical_accuracy acc(data_layout::DATA_PARALLEL, comm);
+    metrics::categorical_accuracy acc(DATA_LAYOUT, comm);
     dnn.add_metric(&acc);
-    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
-                                                           std::make_pair(execution_mode::validation, &mnist_validation_set),
-                                                           std::make_pair(execution_mode::testing, &mnist_testset)
-                                                          };
+    std::map<execution_mode, generic_data_reader *> data_readers = {
+      std::make_pair(execution_mode::training,&mnist_trainset),
+      std::make_pair(execution_mode::validation, &mnist_validation_set),
+      std::make_pair(execution_mode::testing, &mnist_testset)
+    };
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
     Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
@@ -193,9 +194,9 @@ int main(int argc, char *argv[]) {
 
     int prev_num_neurons;
     int layer_id;
-    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx1 = layer_id;
-    Layer *new_layer = new fully_connected_layer<data_layout>(
+    Layer *fc1 = new fully_connected_layer<data_layout>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -204,15 +205,30 @@ int main(int argc, char *argv[]) {
        weight_initialization::glorot_uniform,
        comm,
        dnn.create_optimizer());
-    dnn.add(new_layer);
-    // trainParams.ActivationType,
+    dnn.add(fc1);
+
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, layer_id, prev_num_neurons, comm, trainParams.MBSize, trainParams.DropOut);
+    Layer *relu1 = new relu_layer<data_layout>(
+      DATA_LAYOUT,
+      layer_id,
+      comm,
+      trainParams.MBSize,
+      prev_num_neurons);
+    dnn.add(relu1);
+
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
+    Layer *dropout1 = new dropout<data_layout>(
+      DATA_LAYOUT,
+      layer_id,
+      prev_num_neurons,
+      comm,
+      trainParams.MBSize,
+      trainParams.DropOut);
     dnn.add(dropout1);
 
-    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx2 = layer_id;
-    Layer *new_layer_2 = new fully_connected_layer<data_layout>(
+    Layer *fc2 = new fully_connected_layer<data_layout>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -221,15 +237,30 @@ int main(int argc, char *argv[]) {
        weight_initialization::glorot_uniform,
        comm,
        dnn.create_optimizer());
-    dnn.add(new_layer_2);
-    // trainParams.ActivationType,
+    dnn.add(fc2);
+
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, prev_num_neurons, layer_id, comm, trainParams.MBSize, trainParams.DropOut);
+    Layer *relu2 = new relu_layer<data_layout>(
+      DATA_LAYOUT,
+      layer_id,
+      comm,
+      trainParams.MBSize,
+      prev_num_neurons);
+    dnn.add(relu2);
+
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
+    Layer *dropout2 = new dropout<data_layout>(
+      DATA_LAYOUT,
+      layer_id,
+      prev_num_neurons,
+      comm,
+      trainParams.MBSize,
+      trainParams.DropOut);
     dnn.add(dropout2);
 
-    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx3 = layer_id;
-    Layer *new_layer_3 = new fully_connected_layer<data_layout>(
+    Layer *fc3 = new fully_connected_layer<data_layout>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -238,20 +269,42 @@ int main(int argc, char *argv[]) {
        weight_initialization::glorot_uniform,
        comm,
        dnn.create_optimizer());
-    dnn.add(new_layer_3);
-    // trainParams.ActivationType,
+    dnn.add(fc3);
+
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
+    Layer *relu3 = new relu_layer<data_layout>(
+      DATA_LAYOUT,
+      layer_id,
+      comm,
+      trainParams.MBSize,
+      prev_num_neurons);
+    dnn.add(relu3);
+
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *dropout3 = new dropout<data_layout>(
-      data_layout::MODEL_PARALLEL, 
-      prev_num_neurons, 
-      layer_id, comm,
-      trainParams.MBSize, 
-      trainParams.DropOut
-    );
+      DATA_LAYOUT,
+      layer_id,
+      prev_num_neurons,
+      comm,
+      trainParams.MBSize,
+      trainParams.DropOut);
     dnn.add(dropout3);
 
-    get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
-    uint smidx = layer_id;
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
+    uint fcidx4 = layer_id;
+    Layer *fc4 = new fully_connected_layer<data_layout>(
+       DATA_LAYOUT, 
+       layer_id,
+       prev_num_neurons,
+       10,
+       trainParams.MBSize,
+       weight_initialization::glorot_uniform,
+       comm,
+       dnn.create_optimizer(),
+       false);
+    dnn.add(fc4);
+
+    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *softmax = new softmax_layer<data_layout>(
        DATA_LAYOUT,
        layer_id,
@@ -260,10 +313,9 @@ int main(int argc, char *argv[]) {
        trainParams.MBSize,
        weight_initialization::glorot_uniform,
        comm,
-       dnn.create_optimizer() 
-      );
+       dnn.create_optimizer());
     dnn.add(softmax);
-    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers, true);
+
 #ifdef PARTITIONED
     Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<data_layout>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #else
@@ -285,7 +337,7 @@ int main(int argc, char *argv[]) {
     lbann_callback_imcomm imcomm_cb(
       static_cast<lbann_callback_imcomm::comm_type>(
         trainParams.IntermodelCommMethod),
-    {fcidx1, fcidx2, fcidx3, smidx}, &summarizer);
+      {fcidx1, fcidx2, fcidx3, fcidx4}, &summarizer);
     dnn.add_callback(&imcomm_cb);
     lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);
