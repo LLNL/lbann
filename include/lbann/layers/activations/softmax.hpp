@@ -40,8 +40,6 @@
 namespace lbann {
 template <class T_layout>
 class softmax_layer: public Layer {
- protected:
-  DataType   WBL2NormSum;
 
  private:
   weight_initialization m_weight_initialization;
@@ -62,7 +60,6 @@ class softmax_layer: public Layer {
     m_type = layer_type::softmax;
     m_index = index;
     m_num_neurons = numNeurons;
-    WBL2NormSum = 0.0;
 
     // Setup the data distribution
     switch(data_dist) {
