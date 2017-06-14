@@ -249,11 +249,11 @@ class pooling_layer : public transform<T_layout> {
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
-      cudnn_pool_mode = CUDNN_POOLING_MAX;
+      cudnn_pool_mode = CUDNN_POOLING_MAX; break;
     case pool_mode::average:
-      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:
-      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING; break;
     default:
       throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
     }

@@ -94,8 +94,8 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
 
  protected:
   
-  virtual DataType activation_function(DataType x);
-  virtual DataType activation_function_gradient(DataType x);
+  virtual DataType activation_function(DataType x) = 0;
+  virtual DataType activation_function_gradient(DataType x) = 0;
 
   void fp_compute() {
     if(this->m_using_gpus) {
