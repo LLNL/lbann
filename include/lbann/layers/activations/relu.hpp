@@ -103,7 +103,7 @@ class relu_layer : public activation_layer<T_layout> {
   }
 
   void setup(int num_prev_neurons) {
-    entrywise_activation_layer::setup(num_prev_neurons);
+    entrywise_activation_layer<T_layout>::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects

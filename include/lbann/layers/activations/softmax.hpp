@@ -29,8 +29,6 @@
 #ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/io/lbann_file_io.hpp"
@@ -234,7 +232,5 @@ class softmax_layer: public activation_layer<T_layout> {
   }
 };
 }
-
-#endif
 
 #endif // LBANN_LAYER_SOFTMAX_HPP_INCLUDED
