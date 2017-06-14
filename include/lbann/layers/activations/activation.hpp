@@ -125,7 +125,7 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
     
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    Mat& activations_local = this->m_prev_activations->Matrix();
+    Mat& activations_local = this->m_activations->Matrix();
 
     // Local matrix parameters
     const int local_height = prev_activations_local.Height();

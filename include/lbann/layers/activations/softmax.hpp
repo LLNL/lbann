@@ -204,10 +204,6 @@ class softmax_layer: public activation_layer<T_layout> {
   }
 
   bool update_compute(void) {
-    if(this->m_execution_mode == execution_mode::training) {
-      double start = get_time();
-      this->update_time += get_time() - start;
-    }
     return true;
   }
 
