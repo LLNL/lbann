@@ -1,12 +1,14 @@
-#if 0
 syntax = "proto3";
 
 package lbann_data;
 
 message LbannPB {
-  DataReader data_reader = 1; 
-  Model model = 2; 
+  string junk = 1;
+  //DataReader data_reader = 1; 
+  //Model model = 2; 
 }
+
+#if 0
 
 //========================================================================
 // start of DataReaders
