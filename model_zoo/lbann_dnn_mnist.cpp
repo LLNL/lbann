@@ -212,11 +212,18 @@ int main(int argc, char *argv[]) {
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);
+
+    Layer *fc3 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 5,
+                                                        30, 10, trainParams.MBSize,
+                                                        weight_initialization::glorot_uniform,
+                                                        comm, optimizer_fac->create_optimizer(),
+                                                        false);
+    dnn.add(fc3);
     
     //fourth layer
     Layer *sl = new softmax_layer<data_layout>(
       data_layout::MODEL_PARALLEL, 
-      5, 30, 10,
+      6, 10, 10,
       trainParams.MBSize, 
       weight_initialization::glorot_uniform, 
       comm, optimizer_fac->create_optimizer()

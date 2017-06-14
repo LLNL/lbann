@@ -231,12 +231,10 @@ void lbann::Layer::backProp() {
 
 bool lbann::Layer::update() {
   bool layer_done = false;
-  if (m_execution_mode == execution_mode::training) {
-    // Apply any updates.
-    double update_compute_start = get_time();
-    layer_done = update_compute();
-    update_time += get_time() - update_compute_start;
-  }
+  // Apply any updates.
+  double update_compute_start = get_time();
+  layer_done = update_compute();
+  update_time += get_time() - update_compute_start;
   return layer_done;
 }
 
