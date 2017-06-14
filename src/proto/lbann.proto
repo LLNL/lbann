@@ -1,3 +1,4 @@
+#if 0
 syntax = "proto3";
 
 package lbann_data;
@@ -205,7 +206,7 @@ message Layer {
 // Activation Layers //
 ///////////////////////
 message ELU {
-  double alpha = 1.0; //default: 1.0; must be >= 0
+  double alpha = 1; //default: 1.0; must be >= 0
 }
 
 message ID {
@@ -259,15 +260,15 @@ message Dropout {
 //////////////////
 // Input Layers //
 //////////////////
-message InputDistributed input_distributed {
+message InputDistributed{
   string data_layout = 1;
 }
 
-message InputDistributedParallel input_distributed_parallel {
+message InputDistributedParallel {
   string data_layout = 1;
 }
 
-message InputPartitionedParallel input_partitioned_parallel {
+message InputPartitionedParallel {
   int64 num_parallel_readers = 2;
 }
 
@@ -335,3 +336,4 @@ message TargetDistributedMinibatchParallelIO {
 //========================================================================
 // end of Layer types
 //========================================================================
+#endif
