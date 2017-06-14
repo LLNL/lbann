@@ -79,6 +79,19 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
 
   virtual ~entrywise_activation_layer() {}
 
+  virtual void setup(int num_prev_neurons) {
+    Layer::setup(num_prev_neurons);
+
+    this->m_num_neurons = num_prev_neurons;
+
+    // Initialize matrices
+    Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_prev_error_signal), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
+
+  }
+
  protected:
   
   virtual DataType activation_function(DataType x);

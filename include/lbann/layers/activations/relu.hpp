@@ -103,7 +103,7 @@ class relu_layer : public activation_layer<T_layout> {
   }
 
   void setup(int num_prev_neurons) {
-    Layer::setup(num_prev_neurons);
+    entrywise_activation_layer::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -111,12 +111,6 @@ class relu_layer : public activation_layer<T_layout> {
       setup_gpu();
     }
   #endif // #ifdef __LIB_CUDNN
-
-    // Initialize matrices
-    Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_prev_error_signal), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
 
   }
 
