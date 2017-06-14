@@ -143,6 +143,7 @@ class dropout : public regularizer_layer<T_layout> {
     if (m_keep_prob < 0.0f) {
       // Copy error signal through.
       El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal));
+      return;
     }
 
 #ifdef LBANN_PROCDET_DROPOUT
