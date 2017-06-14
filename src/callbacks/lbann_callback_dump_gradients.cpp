@@ -41,10 +41,14 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m, Layer *l) {
   if (idx == 0 || idx == m->get_layers().size() - 1) {
     return;
   }
-  El::Write(l->get_weights_biases_gradient(),
-            prefix + std::to_string(idx) +
-            "-Gradients",
-            El::ASCII);
+  // Skip non-learning layers.
+  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  if(learning_layer != NULL) {
+    El::Write(learning_layer->get_weights_biases_gradient(),
+              prefix + std::to_string(idx) +
+              "-Gradients",
+              El::ASCII);
+  }
 }
 
 }  // namespace lbann

@@ -50,9 +50,14 @@ void lbann_callback_check_init::on_train_begin(model *m) {
     if (comm->am_world_master()) {
       std::cout << "Checking layer " << l << std::endl;
     }
+    // Skip non-learning layers.
+    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layers[l]);
+    if(learning_layer == NULL) {
+      continue;
+    }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const ElMat& weights = layers[l]->get_weights_biases();
+    const ElMat& weights = learning_layer->get_weights_biases();
     const Mat& local_weights = weights.LockedMatrix();
     for (int model = 1; model < comm->get_num_models(); ++model) {
       comm->global_barrier();
