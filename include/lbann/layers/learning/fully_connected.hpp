@@ -243,7 +243,7 @@ class fully_connected_layer : public learning<T_layout> {
       Gemm(NORMAL, NORMAL, DataType(1),
            *this->m_activation_weights_v,
            *this->m_prev_activations_v,
-           DataType(1),
+           m_has_bias ? DataType(1) : DataType(0),
            *this->m_weighted_sum_v);
       break;
     case data_layout::DATA_PARALLEL:
