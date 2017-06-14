@@ -166,17 +166,17 @@ void setup_gpu() {
     // Apply application on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
-      checkCUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      checkCUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                this->m_cudnn->get_stream(i)));
-      checkCUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
-                                        m_activation_desc,
-                                        &one,
-                                        m_tensor_desc,
-                                        this->m_activations_d[i],
-                                        &zero,
-                                        m_tensor_desc,
-                                        this->m_activations_d[i]));
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                 this->m_cudnn->get_stream(i)));
+      CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
+                                         m_activation_desc,
+                                         &one,
+                                         m_tensor_desc,
+                                         this->m_activations_d[i],
+                                         &zero,
+                                         m_tensor_desc,
+                                         this->m_activations_d[i]));
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -194,21 +194,21 @@ void setup_gpu() {
     // Apply application on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
-      checkCUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      checkCUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                this->m_cudnn->get_stream(i)));
-      checkCUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
-                                         m_activation_desc,
-                                         &one,
-                                         m_tensor_desc,
-                                         this->m_prev_activations_d[i],
-                                         m_tensor_desc,
-                                         this->m_prev_error_signal_d[i],
-                                         m_tensor_desc, 
-                                         this->m_activations_d[i],
-                                         &zero,
-                                         m_tensor_desc,
-                                         this->m_error_signal_d[i]));
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                 this->m_cudnn->get_stream(i)));
+      CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
+                                          m_activation_desc,
+                                          &one,
+                                          m_tensor_desc,
+                                          this->m_prev_activations_d[i],
+                                          m_tensor_desc,
+                                          this->m_prev_error_signal_d[i],
+                                          m_tensor_desc, 
+                                          this->m_activations_d[i],
+                                          &zero,
+                                          m_tensor_desc,
+                                          this->m_error_signal_d[i]));
     }
 
   #endif // #ifndef __LIB_CUDNN
