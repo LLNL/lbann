@@ -50,7 +50,7 @@ class dropout : public regularizer_layer<T_layout> {
   /** Keep units with probabiliy keep_prob. */
   dropout(data_layout data_dist, const uint index, lbann_comm *comm,
           uint mini_batch_size, float keep_prob=0.5f) :
-    regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
+    regularizer_layer<T_layout>(data_dist, index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
 
     // Setup the data distribution

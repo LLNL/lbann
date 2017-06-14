@@ -41,10 +41,15 @@ void lbann_callback_learning_rate::setup(model *m) {
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
+    // Skip non-learning layers.
+    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layer);
+    if(learning_layer == NULL) {
+      continue;
+    }
     if (m_layer_indices.size() == 0 ||
         m_layer_indices.find(idx) != m_layer_indices.end()) {
-      if (layer->get_optimizer() != NULL) {
-        m_old_lrs[idx] = layer->get_optimizer()->get_learning_rate();
+      if (learning_layer->get_optimizer() != NULL) {
+        m_old_lrs[idx] = learning_layer->get_optimizer()->get_learning_rate();
         m_last_idx = idx;
       }
     }
@@ -56,11 +61,16 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
+    // Skip non-learning layers.
+    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layer);
+    if(learning_layer == NULL) {
+      continue;
+    }
     if (m_old_lrs.find(idx) != m_old_lrs.end()) {
       float new_lr = schedule(m, layer);
       if (new_lr != m_old_lrs[idx]) {
         m_old_lrs[idx] = new_lr;
-        layer->get_optimizer()->set_learning_rate(new_lr);
+        learning_layer->get_optimizer()->set_learning_rate(new_lr);
         lbann_comm *comm = m->get_comm();
         if (comm->am_model_master()) {
           std::cout << "Model " << comm->get_model_rank() <<
@@ -81,7 +91,12 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
   lbann_callback_learning_rate(layers), m_step(step), m_amt(amt) {}
 
 float lbann_callback_step_learning_rate::schedule(model *m, Layer *l) {
-  float cur_lr = l->get_optimizer()->get_learning_rate();
+  // Skip non-learning layers.
+  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  if(learning_layer == NULL) {
+    return 0;
+  }
+  float cur_lr = learning_layer->get_optimizer()->get_learning_rate();
   if (m->get_cur_epoch() % m_step == 0) {
     return cur_lr * m_amt;
   } else {
@@ -101,7 +116,12 @@ lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 float lbann_callback_adaptive_learning_rate::schedule(model *m, Layer *l) {
-  float cur_lr = l->get_optimizer()->get_learning_rate();
+  // Skip non-learning layers.
+  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  if(learning_layer == NULL) {
+    return 0;
+  }
+  float cur_lr = learning_layer->get_optimizer()->get_learning_rate();
   double score = m->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::validation);
   if (score < m_last_score) {
     m_last_score = score;

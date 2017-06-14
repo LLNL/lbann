@@ -39,9 +39,9 @@ template <class T_layout>
 class regularizer_layer : public Layer {
  public:
   regularizer_layer(data_layout data_dist, const uint index, 
-                    lbann_comm *comm, optimizer *opt,
+                    lbann_comm *comm,
                     const uint mini_batch_size) :
-    Layer(data_dist, index, comm, opt, mini_batch_size) {
+    Layer(data_dist, index, comm, mini_batch_size) {
     
   }
   virtual ~regularizer_layer() {}

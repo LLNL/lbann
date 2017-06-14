@@ -41,10 +41,10 @@ using namespace std;
 using namespace El;
 
 lbann::Layer::Layer(data_layout data_dist, const uint index,
-                    lbann_comm *comm, optimizer *opt,
+                    lbann_comm *comm,
                     uint mbsize)
   : m_data_layout(data_dist), m_index(index),
-    m_comm(comm), m_optimizer(opt),
+    m_comm(comm),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
     m_execution_mode(execution_mode::training),
     m_cudnn(nullptr),

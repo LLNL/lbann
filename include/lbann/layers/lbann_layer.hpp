@@ -123,8 +123,7 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 
 class Layer {
  public:
-  Layer(data_layout data_dist, const uint index, lbann_comm *comm, optimizer *opt,
-        uint mbsize);
+  Layer(data_layout data_dist, const uint index, lbann_comm *comm, uint mbsize);
 
   virtual ~Layer(void);
 
@@ -186,10 +185,6 @@ class Layer {
   /** Return (a view of) the activations matrix for this layer. */
   virtual ElMat& get_activations(void) {
     return *m_activations;
-  }
-  /** Return the layer's optimizer. */
-  virtual optimizer *get_optimizer(void) const {
-    return m_optimizer;
   }
   /** Reset layer stat counters. */
   virtual void reset_counters(void) {
@@ -257,7 +252,6 @@ class Layer {
   uint m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;
-  optimizer  *m_optimizer;
 
   layer_type m_type;            ///< Type of this layer
   layer_type m_prev_layer_type; ///< Type of previous layer

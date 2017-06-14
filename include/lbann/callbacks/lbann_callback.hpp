@@ -33,7 +33,7 @@
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/io/lbann_io_layer.hpp"
 #include "lbann/layers/io/input/lbann_input_layer.hpp"
 #include "lbann/layers/io/target/lbann_target_layer.hpp"
