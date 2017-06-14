@@ -73,37 +73,37 @@ void lbann_callback_imcomm::setup(model *m) {
   m_layer_params.resize(layers.size());
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     imcomm_params& params = m_layer_params[layer];
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layers[layer]);
+    layer_category layer_cat = _layer_type_to_category(layers[layer]->get_type());
     if (m_param_choices.find(layer) != m_param_choices.end()) {
       params = m_param_choices[layer];
-    } else if (learning_layer != NULL && layer != 0 && layer != layers.size() - 1) {
-      // Don't do communication for input/output layers unless explicitly told.
-      // Also don't do communication for layers with no gradients.
-      if (learning_layer->get_weights_biases_gradient().Height() == 0) {
-        params.ct = NONE;
-      } else {
-        params.ct = m_default_ct;
-      }
+    } else if (layer_cat == layer_category::learning) {
+      // Only do communication for learning layers unless explicitly told.
+      params.ct = m_default_ct;
+    } else {
+      params.ct = NONE;
     }
     if (params.ct != NONE) {
+      if (layer_cat != layer_category::learning) {
+        throw lbann_exception("imcomm: trying to do inter-model gradient"
+                              "communication on layer " + std::to_string(layer)
+                              + " without gradients");
+      }
       // Update the effective mini-batch size so averaging is done properly.
       layers[layer]->set_effective_minibatch_size(
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
-      // Check if reshaping is needed.
-      // Currently only automatically reshapes conv layers. (But ignores bias.)
-      if (layers[layer]->get_type() == layer_type::convolution) {
-        convolution_layer<data_layout> *conv_layer = (convolution_layer<data_layout> *) layers[layer];
-        params.reshape_height = conv_layer->m_num_input_channels *
-                                std::accumulate(conv_layer->m_filter_dims.begin(),
-                                                conv_layer->m_filter_dims.end(),
-                                                Int(1), std::multiplies<Int>());
-        params.reshape_width = conv_layer->m_num_output_channels;
-      }
+      // TODO: Support reshaping. (Old implementation was broken.)
       if (ct_does_quantization(params.ct)) {
-        if (params.reshape_height) {
-          Zeros(params.error, params.reshape_height, params.reshape_width);
-        } else {
-          const ElMat& gradients = layers[layer]->get_weights_biases_gradient();
+        data_layout layout = layers[layer]->get_data_layout();
+        // TODO: Update this when we have better templates.
+        if (layout == data_layout::MODEL_PARALLEL) {
+          learning<data_layout> *learning_layer =
+            dynamic_cast<learning<data_layout>*>(layers[layer]);
+          const ElMat& gradients = learning_layer->get_weights_gradient();
+          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
+        } else if (layout == data_layout::DATA_PARALLEL) {
+          learning<data_layout> *learning_layer =
+            dynamic_cast<learning<data_layout>*>(layers[layer]);
+          const ElMat& gradients = learning_layer->get_weights_biases_gradient();
           Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
         }
       }
@@ -122,15 +122,20 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     imcomm_params& params = m_layer_params[layer];
     if (ct_does_quantization(params.ct)) {
       comm->intermodel_sum_matrix(params.error);
-      Mat& local_gradients = layers[layer]->get_weights_biases_gradient().Matrix();
-      if (params.reshape_height > 0) {
-        Mat reshaped;
-        reshape_mat(local_gradients, reshaped, params.reshape_height,
-                    params.reshape_width);
-        reshaped = params.error;
-      } else {
-        local_gradients = params.error;
+      Mat* local_gradients = nullptr;
+      data_layout layout = layers[layer]->get_data_layout();
+      // TODO: Update this when we have better templates.
+      if (layout == data_layout::MODEL_PARALLEL) {
+        learning<data_layout> *learning_layer =
+          dynamic_cast<learning<data_layout>*>(layers[layer]);
+        local_gradients = &(learning_layer->get_weights_gradient().Matrix());
+      } else if (layout == data_layout::DATA_PARALLEL) {
+        learning<data_layout> *learning_layer =
+          dynamic_cast<learning<data_layout>*>(layers[layer]);
+        local_gradients = &(learning_layer->get_weights_gradient().Matrix());
       }
+      // TODO: Handle reshaping.
+      *local_gradients = params.error;
       // Apply optimizer update with accumulated gradient error.
       layers[layer]->update();
       Zero(params.error);
@@ -151,36 +156,34 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     if (params.ct == NONE) {
       continue;
     }
-    Mat& local_gradients =
-      layers[layer]->get_weights_biases_gradient().Matrix();
-    Mat *reshaped = &local_gradients;
-    if (params.reshape_height > 0 && ct_does_quantization(params.ct)) {
-      if (layers[layer]->get_type() == layer_type::convolution) {
-        convolution_layer<data_layout> *conv_layer = (convolution_layer<data_layout> *) layers[layer];
-        // Currently ignores the bias.
-        Mat grad_view = local_gradients(IR(0, conv_layer->m_filter_size), ALL);
-        reshape_mat(grad_view, *reshaped, params.reshape_height,
-                    params.reshape_width);
-      } else {
-        reshape_mat(local_gradients, *reshaped, params.reshape_height,
-                    params.reshape_width);
-      }
+    // TODO: Handle reshaping.
+    Mat* local_gradients = nullptr;
+    data_layout layout = layers[layer]->get_data_layout();
+    // TODO: Update this when we have better templates.
+    if (layout == data_layout::MODEL_PARALLEL) {
+      learning<data_layout> *learning_layer =
+        dynamic_cast<learning<data_layout>*>(layers[layer]);
+      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
+    } else if (layout == data_layout::DATA_PARALLEL) {
+      learning<data_layout> *learning_layer =
+        dynamic_cast<learning<data_layout>*>(layers[layer]);
+      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
     }
     switch (params.ct) {
     case NORMAL:
-      comm->intermodel_sum_matrix(*reshaped);
+      comm->intermodel_sum_matrix(*local_gradients);
       break;
     case ONEBIT_QUANTIZATION:
       m_quantizer.intermodel_sum_onebit_quantized(
-        comm, *reshaped, params.error);
+        comm, *local_gradients, params.error);
       break;
     case THRESH_QUANTIZATION:
       m_quantizer.intermodel_sum_threshold_quantized(
-        comm, *reshaped, params.error, params.pos_thresh, params.neg_thresh);
+        comm, *local_gradients, params.error, params.pos_thresh, params.neg_thresh);
       break;
     case ADAPTIVE_QUANTIZATION:
       m_quantizer.intermodel_sum_adaptive_quantized(
-        comm, *reshaped, params.error, params.proportion);
+        comm, *local_gradients, params.error, params.proportion);
       break;
     default:
       throw lbann_exception("imcomm: unknown comm type");
@@ -208,12 +211,12 @@ void lbann_callback_imcomm::do_summary(model *m, Layer *layer,
     bytes_received = comm->get_ar_bytes_received();
   } else {
     // Use the same approximation the comm layer does.
-    const Mat& local_gradients =
+    /*const Mat& local_gradients =
       layer->get_weights_biases_gradient().LockedMatrix();
     bytes_sent =
       sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
     bytes_received =
-      sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
+    sizeof(DataType) * local_gradients.Height() * local_gradients.Width();*/
   }
   m_summarizer->reduce_scalar(prefix + "bytes_sent",
                               bytes_sent, m->get_cur_step());

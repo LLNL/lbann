@@ -73,6 +73,11 @@ class learning : public Layer {
     delete m_weights_gradient;
   }
 
+  /** Return the weights associated with this layer. */
+  virtual ElMat& get_weights() const { return *m_weights; }
+  /** Return the gradients associated with this layer. */
+  virtual ElMat& get_weights_gradient() const { return *m_weights_gradient; }
+
   /// Matrices should be in MC,MR distributions
   virtual void initialize_model_parallel_distribution() {
     m_weights             = new DistMat(m_comm->get_model_grid());
