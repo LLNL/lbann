@@ -118,10 +118,9 @@ class learning : public Layer {
     }
   }
 
-#if 0
-  void setup(int numPrevNeurons) {
+  virtual void setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);
-
+#if 0
     // Zero the weight-bias matrix
     Zeros(*m_weights, m_num_neurons, numPrevNeurons);
 
@@ -130,8 +129,8 @@ class learning : public Layer {
 
     // Initialize other matrices
     Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons);
-  }
 #endif
+  }
 
   virtual void summarize(lbann_summary& summarizer, int64_t step) {
     std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
