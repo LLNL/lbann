@@ -1,3 +1,4 @@
+
 #if 0
 #include "lbann/proto/lbann_proto_common.hpp"
 
@@ -746,3 +747,4 @@ bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb) {
   return true;
 }
 #endif
+
