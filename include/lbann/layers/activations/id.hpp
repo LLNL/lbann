@@ -27,6 +27,8 @@
 #ifndef ID_HPP_INCLUDED
 #define ID_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -47,5 +49,7 @@ class id_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // ID_HPP_INCLUDED

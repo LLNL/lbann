@@ -42,24 +42,6 @@
 
 namespace lbann {
 
-
-#ifdef __LIB_CUDNN
-/// Get cuDNN activation mode
-inline
-cudnnActivationMode_t get_cudnn_activation_mode(activation_type type) {
-  switch(type) {
-  case activation_type::SIGMOID:
-    return CUDNN_ACTIVATION_SIGMOID;
-  case activation_type::RELU:
-    return CUDNN_ACTIVATION_RELU;
-  case activation_type::TANH:
-    return CUDNN_ACTIVATION_TANH;
-  default:
-    throw lbann_exception("convolution_layer: invalid activation type for cuDNN");
-  }
-}
-#endif // #ifdef __LIB_CUDNN
-
 // Forward declaration.
 class lbann_callback_imcomm;
 
@@ -104,8 +86,6 @@ class convolution_layer : public learning<T_layout> {
   cudnnFilterDescriptor_t m_filter_desc;
   /// Convolution descriptor
   cudnnConvolutionDescriptor_t m_convolution_desc;
-  /// Activation descriptor
-  cudnnActivationDescriptor_t m_activation_desc;
 
   /// Forward pass algorithm
   cudnnConvolutionFwdAlgo_t m_forward_algo;
@@ -196,7 +176,6 @@ class convolution_layer : public learning<T_layout> {
     m_bias_desc = NULL;
     m_filter_desc = NULL;
     m_convolution_desc = NULL;
-    m_activation_desc = NULL;
     m_forward_algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
     m_backward_filter_algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
     m_backward_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
@@ -237,9 +216,6 @@ class convolution_layer : public learning<T_layout> {
       }
       if(m_convolution_desc) {
         CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
-      }
-      if(m_activation_desc) {
-        CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
       }
 
       // Unpin pinned memory blocks
@@ -327,7 +303,6 @@ class convolution_layer : public learning<T_layout> {
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_desc));
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_filter_desc));
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_desc));
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
 
     // Set input tensor descriptor
     std::vector<int> input_dims(m_num_dims+2);
@@ -484,14 +459,6 @@ class convolution_layer : public learning<T_layout> {
       if(max_work_space > this->m_cudnn->get_work_space_size(i)) {
         this->m_cudnn->set_work_space_size(i, max_work_space);
       }
-    }
-
-    // Set activation descriptor
-    if(this->m_activation_type != activation_type::ID) {
-      CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,
-                                               get_cudnn_activation_mode(this->m_activation_type),
-                                               CUDNN_PROPAGATE_NAN,
-                                               0.0));
     }
 
     // Allocate GPU memory

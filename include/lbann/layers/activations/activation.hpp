@@ -43,7 +43,7 @@ namespace lbann {
       LEAKY_RELU,
       SOFTPLUS,
       SMOOTH_RELU,
-  ELU
+      ELU
       };
 
 
@@ -52,37 +52,156 @@ class activation_layer : public Layer {
 
  public:
   activation_layer(data_layout data_dist,
-                   const uint index,
+                   uint index,
                    lbann_comm *comm,
                    optimizer *opt,
-                   const uint mini_batch_size) :
+                   uint mini_batch_size) :
     Layer(data_dist, index, comm, opt, mini_batch_size) {
   }
 
   virtual ~activation_layer() {}
 
-  virtual void initialize_model_parallel_distribution() {}
+  // virtual void initialize_model_parallel_distribution() {}
   
-  virtual void initialize_data_parallel_distribution() {}
+  // virtual void initialize_data_parallel_distribution() {}
 
 };
 
-#if 0
 template <class T_layout>
-class entrywise_activation_layer : public activation {
+class entrywise_activation_layer : public activation_layer<T_layout> {
 
  public:
   entrywise_activation_layer(data_layout data_dist,
-                             const uint index,
+                             uint index,
                              lbann_comm *comm,
-                             const uint mini_batch_size) :
-    activation_layer(data_dist, index, comm, opt, mini_batch_size) {
+                             uint mini_batch_size) :
+    activation_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size) {
   }
 
-  virtual ~activation_layer() {}
+  virtual ~entrywise_activation_layer() {}
+
+ protected:
+  
+  virtual DataType activation_function(DataType x);
+  virtual DataType activation_function_gradient(DataType x);
+
+  void fp_compute() {
+    if(this->m_using_gpus) {
+      fp_compute_gpu();
+    } else {
+      fp_compute_cpu();
+    }
+  }
+
+  void bp_compute() {
+    if(this->m_using_gpus) {
+      bp_compute_gpu();
+    } else {
+      bp_compute_cpu();
+    }
+  }
+
+  virtual void fp_compute_gpu() {
+    throw lbann_exception("entrywise_activation_layer: no forward propagation GPU implementation");
+  }
+
+  virtual void bp_compute_gpu() {
+    throw lbann_exception("entrywise_activation_layer: no backward propagation GPU implementation");
+  }
+
+  void fp_compute_cpu() {
+    
+    // Get local matrices
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    Mat& activations_local = this->m_prev_activations->Matrix();
+
+    // Local matrix parameters
+    const int local_height = prev_activations_local.Height();
+    const int local_width = prev_activations_local.Width();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    const int activations_ldim = activations_local.LDim();
+    const DataType* __restrict__ prev_activations_buffer 
+      = prev_activations_local.LockedBuffer();
+    DataType* __restrict__ activations_buffer = activations_local.Buffer();
+    
+    // Apply activation function
+    if(prev_activations_ldim == local_height
+       && activations_ldim == local_height) {
+      // Contiguous data
+      #pragma omp parallel for
+      for(int i = 0; i < local_height * local_width; ++i) {
+        const DataType prev_activations_entry = prev_activations_buffer[i];
+        DataType& activations_entry = activations_buffer[i];
+        activations_entry = activation_function(prev_activations_entry);
+      }
+    } else {
+      // Non-contiguous data
+      #pragma omp parallel for collapse(2)
+      for(int col = 0; col < local_width; ++col) {
+        for(int row = 0; row < local_height; ++row) {
+          const DataType prev_activations_entry
+            = prev_activations_buffer[row + col * prev_activations_ldim];
+          DataType& activations_entry
+            = activations_buffer[row + col * activations_ldim];
+          activations_entry = activation_function(prev_activations_entry);
+        }
+      }
+    }
+
+  }
+
+  void bp_compute_cpu() {
+    
+    // Get local matrices
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    Mat& error_signal_local = this->m_error_signal->Matrix();
+
+    // Local matrix parameters
+    const int local_height = prev_activations_local.Height();
+    const int local_width = prev_activations_local.Width();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    const int prev_error_signal_ldim = prev_error_signal_local.LDim();
+    const int error_signal_ldim = error_signal_local.LDim();
+    const DataType* __restrict__ prev_activations_buffer 
+      = prev_activations_local.LockedBuffer();
+    const DataType* __restrict__ prev_error_signal_buffer 
+      = prev_error_signal_local.LockedBuffer();
+    DataType* __restrict__ error_signal_buffer = error_signal_local.Buffer();
+    
+    // Apply activation function back propagation
+    if(prev_activations_ldim == local_height
+       && prev_error_signal_ldim == local_height
+       && error_signal_ldim == local_height) {
+      // Contiguous data
+      #pragma omp parallel for
+      for(int i = 0; i < local_height * local_width; ++i) {
+        const DataType prev_activations_entry = prev_activations_buffer[i];
+        const DataType prev_error_signal_entry = prev_error_signal_buffer[i];
+        DataType& error_signal_entry = error_signal_buffer[i];
+        error_signal_entry
+          = activation_function_gradient(prev_activations_entry) * prev_error_signal_entry;
+      }
+    } else {
+      // Non-contiguous data
+      #pragma omp parallel for collapse(2)
+      for(int col = 0; col < local_width; ++col) {
+        for(int row = 0; row < local_height; ++row) {
+          const DataType prev_activations_entry
+            = prev_activations_buffer[row + col * prev_activations_ldim];
+          const DataType prev_error_signal_entry
+            = prev_error_signal_buffer[row + col * prev_error_signal_ldim];
+          DataType& error_signal_entry
+            = error_signal_buffer[row + col * error_signal_ldim];
+          error_signal_entry
+            = activation_function_gradient(prev_activations_entry) * prev_error_signal_entry;
+        }
+      }
+    }
+
+  }
 
 };
-#endif
 
 }  // namespace lbann
 

@@ -27,6 +27,8 @@
 #ifndef TANH_HPP_INCLUDED
 #define TANH_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -45,5 +47,7 @@ class tanh_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // TANH_HPP_INCLUDED

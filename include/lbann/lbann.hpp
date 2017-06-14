@@ -40,7 +40,6 @@
 
 /// Activation Layers
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/layers/activations/create_activation.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/id.hpp"

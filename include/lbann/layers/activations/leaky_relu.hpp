@@ -27,6 +27,8 @@
 #ifndef LEAKY_RELU_HPP_INCLUDED
 #define LEAKY_RELU_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -55,5 +57,7 @@ class leaky_relu_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // LEAKY_RELU_HPP_INCLUDED

@@ -27,6 +27,8 @@
 #ifndef SOFTPLUS_HPP_INCLUDED
 #define SOFTPLUS_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -51,5 +53,7 @@ class softplus_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // SOFTPLUS_HPP_INCLUDED

@@ -27,6 +27,8 @@
 #ifndef SMOOTH_RELU_HPP_INCLUDED
 #define SMOOTH_RELU_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -48,5 +50,7 @@ class smooth_relu_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED

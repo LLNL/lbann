@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/activations/create_activation.hpp"
 #include "lbann/layers/io/target/lbann_target_layer.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/models/lbann_model.hpp"

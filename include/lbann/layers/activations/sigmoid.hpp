@@ -27,6 +27,8 @@
 #ifndef SIGMOID_HPP_INCLUDED
 #define SIGMOID_HPP_INCLUDED
 
+#if 0
+
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -50,5 +52,7 @@ class sigmoid_layer : public activation_layer<T_layout> {
 
 
 }  // namespace lbann
+
+#endif
 
 #endif  // SIGMOID_HPP_INCLUDED
