@@ -113,32 +113,39 @@ class softmax_layer: public activation_layer<T_layout> {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
+    Mat& prev_activations_local = this->m_prev_activations_v->Matrix();
     Mat& activations_local = this->m_activations_v->Matrix();
     const Int local_height = activations_local.Height();
     const Int local_width = activations_local.Width();
 
     // Find maximum entry in each column
-#pragma omp parallel for
+    #pragma omp parallel for
     for(Int c=0; c<local_width; ++c) {
-    DataType max_entry = -INFINITY;
-    for(Int r=0; r<local_height; ++r) {
-    max_entry = Max(max_entry, activations_local.Get(r,c));
-  }
-    workspace_local.Set(Int(0), c, max_entry);
-  }
+      DataType max_entry = -INFINITY;
+      for(Int r=0; r<local_height; ++r) {
+        max_entry = Max(max_entry, prev_activations_local.Get(r,c));
+      }
+      workspace_local.Set(Int(0), c, max_entry);
+    }
     AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::MAX);
 
     // Subtract column max and exponentiate activations
     // Note: Subtracting the column max prevents activations from blowing
     //   up. Large negative values underflow to 0.
-    IndexDependentMap(activations_local,
-      (std::function<DataType(Int,Int,const DataType&)>)
-      ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
-    return Exp(z - workspace_local.Get(Int(0), c));
-  }));
+    for (El::Int col = 0; col < local_width; ++col) {
+      for (El::Int row = 0; row < local_height; ++row) {
+        activations_local(row, col) =
+          El::Exp(prev_activations_local(row, col) - workspace_local(0, col));
+      }
+    }
+    /*IndexDependentMap(activations_local,
+                      (std::function<DataType(Int,Int,const DataType&)>)
+                      ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
+                        return Exp(z - workspace_local.Get(Int(0), c));
+                        }));*/
 
     // Compute column sums
-#pragma omp parallel for
+    #pragma omp parallel for
     for(Int c=0; c<local_width; ++c) {
       DataType sum = 0;
       for(Int r=0; r<local_height; ++r) {
@@ -158,7 +165,6 @@ class softmax_layer: public activation_layer<T_layout> {
                         const DataType v = z / workspace_local.Get(Int(0), c);
                         return Abs(v) < 1e-8 ? DataType(1e-8) : v;
                       }));
-
   }
 
   void bp_compute(void) {
@@ -171,6 +177,7 @@ class softmax_layer: public activation_layer<T_layout> {
            || this->m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
            // || m_next_layer_type == layer_type::target_unsupervised
            )) {
+      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal));
       return;
     }
 
@@ -178,6 +185,7 @@ class softmax_layer: public activation_layer<T_layout> {
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
     Mat& workspace_local = m_workspace_v->Matrix();
     Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
     //const Int local_height = activations_local.Height();
     const Int local_width = activations_local.Width();
 
@@ -191,8 +199,8 @@ class softmax_layer: public activation_layer<T_layout> {
     AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::SUM);
 
     // Update error signal
-    // Note: prev_error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-    IndexDependentMap(prev_error_signal_local,
+    // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
+    IndexDependentMap(error_signal_local,
                       (std::function<DataType(Int,Int,const DataType&)>)
                       ([this,&activations_local,&workspace_local]
                        (Int r, Int c, const DataType& z)->DataType {
