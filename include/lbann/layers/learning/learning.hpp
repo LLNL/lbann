@@ -39,6 +39,7 @@ template <class T_layout>
 class learning : public Layer {
  protected:
   //  data_layout m_data_layout;
+  optimizer  *m_optimizer;
 
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
@@ -50,7 +51,7 @@ class learning : public Layer {
            const uint mini_batch_size,
            lbann_comm *comm, optimizer *opt
            )
-    : Layer(data_dist, index, comm, opt, mini_batch_size) {
+    : Layer(data_dist, index, comm, mini_batch_size), m_optimizer(opt) {
 
   // Setup the data distribution
   switch(data_dist) {
@@ -172,6 +173,10 @@ class learning : public Layer {
   /** Return (a view of) the weights/biases gradient matrix for this layer. */
   virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
+  }
+  /** Return the layer's optimizer. */
+  virtual optimizer *get_optimizer(void) const {
+    return m_optimizer;
   }
 
   bool saveToFile(int fd, const char *dirname) {

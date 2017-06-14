@@ -54,9 +54,8 @@ class activation_layer : public Layer {
   activation_layer(data_layout data_dist,
                    const uint index,
                    lbann_comm *comm,
-                   optimizer *opt,
                    const uint mini_batch_size) :
-    Layer(data_dist, index, comm, opt, mini_batch_size) {
+    Layer(data_dist, index, comm, mini_batch_size) {
   }
 
   virtual ~activation_layer() {}
