@@ -58,12 +58,12 @@ class batch_normalization : public regularizer_layer<T_layout> {
    * @param beta The initial value for beta. This should almost always
    * stay at zero.
    */
-  batch_normalization(data_layout data_dist, const uint index, lbann_comm *comm,
-                      uint mini_batch_size,
+  batch_normalization(data_layout data_dist, const uint index, const uint num_neurons,
+                      lbann_comm *comm, uint mini_batch_size,
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
     : regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
-
+    this->m_num_neurons = num_neurons;
     // Setup the data distribution
     switch(data_dist) {
     case data_layout::MODEL_PARALLEL:
@@ -113,6 +113,9 @@ class batch_normalization : public regularizer_layer<T_layout> {
   /** Initializes matrices. */
   void setup(int num_prev_neurons) {
     regularizer_layer<T_layout>::setup(num_prev_neurons);
+    this->m_num_neurons = num_prev_neurons;
+    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
     Ones(*m_gamma, this->get_num_neurons(), 1);
     Scale(m_gamma_init, *m_gamma);
     Ones(*m_beta, this->get_num_neurons(), 1);
