@@ -27,7 +27,7 @@
 #ifndef SMOOTH_RELU_HPP_INCLUDED
 #define SMOOTH_RELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
@@ -36,7 +36,7 @@ namespace lbann {
  * This is an approximation to the softplus.
  */
 template <class T_layout>
-class smooth_relu_layer : public activation<T_layout> {
+class smooth_relu_layer : public activation_layer<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return z / (DataType(1) + std::exp(-z));

@@ -27,7 +27,7 @@
 #ifndef RELU_HPP_INCLUDED
 #define RELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
@@ -36,7 +36,7 @@ namespace lbann {
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <class T_layout>
-class relu_layer : public activation<T_layout> {
+class relu_layer : public activation_layer<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return std::max(DataType(0), z);
