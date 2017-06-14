@@ -27,13 +27,13 @@
 #ifndef ID_HPP_INCLUDED
 #define ID_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
 /** Identity activation function -- does nothing. */
 template <class T_layout>
-class id_layer : public activation<T_layout> {
+class id_layer : public activation_layer<T_layout> {
   void forwardProp(ElMat& m) {}
   void backwardProp(ElMat& m) {}
   void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {}

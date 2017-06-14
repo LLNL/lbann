@@ -42,7 +42,7 @@ namespace lbann {
 
 /** Return a new Activation class of type act_fn. */
 template<typename... Args>
-activation<data_layout> *new_activation(activation_type act_fn, Args... params) {
+activation_layer<data_layout> *new_activation(activation_type act_fn, Args... params) {
   switch (act_fn) {
   case activation_type::SIGMOID:
     return new sigmoid_layer<data_layout>();
