@@ -207,8 +207,7 @@ int main(int argc, char *argv[]) {
     dnn.add(new_layer);
     // trainParams.ActivationType,
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, layer_id, comm,
-                                               trainParams.MBSize, trainParams.DropOut);
+    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, layer_id, prev_num_neurons, comm, trainParams.MBSize, trainParams.DropOut);
     dnn.add(dropout1);
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
@@ -225,8 +224,7 @@ int main(int argc, char *argv[]) {
     dnn.add(new_layer_2);
     // trainParams.ActivationType,
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, layer_id, comm,
-                                               trainParams.MBSize, trainParams.DropOut);
+    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, prev_num_neurons, layer_id, comm, trainParams.MBSize, trainParams.DropOut);
     dnn.add(dropout2);
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
@@ -243,8 +241,13 @@ int main(int argc, char *argv[]) {
     dnn.add(new_layer_3);
     // trainParams.ActivationType,
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout3 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, layer_id, comm,
-                                               trainParams.MBSize, trainParams.DropOut);
+    Layer *dropout3 = new dropout<data_layout>(
+      data_layout::MODEL_PARALLEL, 
+      prev_num_neurons, 
+      layer_id, comm,
+      trainParams.MBSize, 
+      trainParams.DropOut
+    );
     dnn.add(dropout3);
 
     get_prev_neurons_and_index( &dnn, prev_num_neurons, layer_id); 
