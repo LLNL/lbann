@@ -57,10 +57,10 @@ class elu_layer : public entrywise_activation_layer<T_layout> {
                                          mini_batch_size, num_neurons),
     m_alpha(alpha) {}
  protected:
-  DataType activation_function(const DataType& z) {
+  DataType activation_function(DataType z) {
     return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));
   }
-  DataType activation_function_gradient(const DataType& z) {
+  DataType activation_function_gradient(DataType z) {
     return (z > DataType(0)) ? DataType(1) : (m_alpha*std::expm1(z) + m_alpha);
   }
  private:

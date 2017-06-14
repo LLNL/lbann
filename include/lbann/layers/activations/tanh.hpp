@@ -40,10 +40,10 @@ class tanh_layer : public activation_layer<T_layout> {
     entrywise_activation_layer<T_layout>(data_dist, index, comm,
                                          mini_batch_size, num_neurons) {}
  protected:
-  DataType activation_function(const DataType& z) {
+  DataType activation_function(DataType z) {
     return std::tanh(z);
   }
-  DataType activation_function_gradient(const DataType& z) {
+  DataType activation_function_gradient(DataType z) {
     const DataType e = std::exp(DataType(2)*z);
     return (e - DataType(1)) / (e + DataType(1));
   }

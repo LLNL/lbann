@@ -43,10 +43,10 @@ class smooth_relu_layer : public entrywise_activation_layer<T_layout> {
     entrywise_activation_layer<T_layout>(data_dist, index, comm,
                                          mini_batch_size, num_neurons) {}
  protected:
-  DataType activation_function(const DataType& z) {
+  DataType activation_function(DataType z) {
     return z / (DataType(1) + std::exp(-z));
   }
-  DataType activation_function_gradient(const DataType& z) {
+  DataType activation_function_gradient(DataType z) {
     const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
     return sigz + z*sigz - z*sigz*sigz;
   }

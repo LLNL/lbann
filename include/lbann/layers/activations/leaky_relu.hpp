@@ -49,10 +49,10 @@ class leaky_relu_layer : public entrywise_activation_layer<T_layout> {
                                          mini_batch_size, num_neurons),
     m_leak(leak) {}
  protected:
-  DataType activation_function(const DataType& z) {
+  DataType activation_function(DataType z) {
     return std::max(m_leak * z, z);
   }
-  DataType activation_function_gradient(const DataType& z) {
+  DataType activation_function_gradient(DataType z) {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
  private:

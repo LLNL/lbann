@@ -27,8 +27,6 @@
 #ifndef SOFTPLUS_HPP_INCLUDED
 #define SOFTPLUS_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -39,21 +37,23 @@ namespace lbann {
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <class T_layout>
-class softplus_layer : public activation_layer<T_layout> {
+class softplus_layer : public entrywise_activation_layer<T_layout> {
+  softplus_layer(data_layout data_dist, uint index, lbann_comm *comm,
+                 const uint mini_batch_size, uint num_neurons) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(DataType z) {
     // Warning: Not numerically stable.
     // Better approach is to determine a threshold so that for large z,
     // softplus(z) ~= z and for small z, softplus(z) ~= exp(z).
     return std::log1p(std::exp(z));
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(DataType z) {
     return DataType(1.0) / (DataType(1.0) + std::exp(-z));
   }
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // SOFTPLUS_HPP_INCLUDED
