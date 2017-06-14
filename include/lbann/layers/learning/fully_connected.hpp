@@ -30,7 +30,7 @@
 #define LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
@@ -153,7 +153,7 @@ class fully_connected_layer : public learning<T_layout> {
   }
 
   void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
+    learning<T_layout>::setup(numPrevNeurons);
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
@@ -189,7 +189,7 @@ class fully_connected_layer : public learning<T_layout> {
   void fp_set_std_matrix_view(void) {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    Layer::fp_set_std_matrix_view();
+    learning<T_layout>::fp_set_std_matrix_view();
 
     /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
     /// limit the height, not the width
@@ -294,11 +294,6 @@ class fully_connected_layer : public learning<T_layout> {
     mpi::AllReduce(total_error, norms.DistComm());
     avg_error = total_error / norms.Height();
     return avg_error;
-  }
-
-  DataType WBL2norm(void) {
-    DataType nrm2 = Nrm2(*this->m_weights);
-    return nrm2 * nrm2;
   }
 
   inline DataType _sq(DataType x) {

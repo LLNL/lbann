@@ -27,7 +27,9 @@
 #ifndef SIGMOID_HPP_INCLUDED
 #define SIGMOID_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#if 0
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
@@ -37,7 +39,7 @@ namespace lbann {
  * See: https://en.wikipedia.org/wiki/Sigmoid_function
  */
 template <class T_layout>
-class sigmoid_layer : public activation<T_layout> {
+class sigmoid_layer : public activation_layer<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
@@ -50,5 +52,7 @@ class sigmoid_layer : public activation<T_layout> {
 
 
 }  // namespace lbann
+
+#endif
 
 #endif  // SIGMOID_HPP_INCLUDED

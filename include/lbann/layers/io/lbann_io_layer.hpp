@@ -54,7 +54,7 @@ class io_layer : public Layer {
 
  public:
   io_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool data_sets_span_models = true, bool for_regression = false)
-    : Layer(data_dist, 0, comm, NULL, mini_batch_size),
+    : Layer(data_dist, 0, comm, mini_batch_size),
       m_training_dataset(data_readers[execution_mode::training]),
       m_testing_dataset(data_readers[execution_mode::testing]),
       m_validation_dataset(data_readers[execution_mode::validation]),
@@ -72,6 +72,10 @@ class io_layer : public Layer {
       m_testing_dataset.total_samples = m_testing_dataset.data_reader->getNumData();
     }
   }
+
+
+  virtual void initialize_model_parallel_distribution() {}
+  virtual void initialize_data_parallel_distribution() {}
 
   // io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader *training_data_reader)
   //   : io_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}

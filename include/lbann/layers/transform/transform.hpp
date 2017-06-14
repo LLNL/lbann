@@ -42,10 +42,9 @@ class transform : public Layer {
   transform(data_layout data_dist, const uint index, 
             //           const int numPrevNeurons,
             //           const uint numNeurons,
-           lbann_comm *comm, optimizer *opt,
-           const uint mini_batch_size,
-           activation_type activation=activation_type::ID)
-    : Layer(data_dist, index, comm, opt, mini_batch_size, activation) {
+           lbann_comm *comm,
+           const uint mini_batch_size)
+    : Layer(data_dist, index, comm, mini_batch_size) {
 
   }
 

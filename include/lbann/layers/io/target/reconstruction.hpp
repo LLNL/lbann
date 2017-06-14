@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/activations/create_activation.hpp"
 #include "lbann/layers/io/target/lbann_target_layer.hpp"
 #include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/models/lbann_model.hpp"
@@ -42,69 +41,40 @@ class reconstruction_layer : public target_layer<T_layout> {
   Layer *m_original_layer;
   DataType aggregate_cost;
   long num_forwardprop_steps;
-  weight_initialization m_weight_initialization;
+  //  weight_initialization m_weight_initialization;
   DistMat original_layer_act_v;
 
  public:
+  /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
   reconstruction_layer(T_layout data_dist, size_t index,lbann_comm *comm,
                        optimizer *opt,/*needed?*/
                        const uint minim_batch_size,
-                       Layer *original_layer,
-                       const weight_initialization init=weight_initialization::glorot_uniform)
-    :  target_layer<T_layout>(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer),
-       m_weight_initialization(init) {
+                       Layer *original_layer)
+    :  target_layer<T_layout>(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
 
     this->m_type = layer_type::reconstruction;
     this->m_index = index;
     this->m_num_neurons = original_layer->get_num_neurons();
-    this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
-    // Initialize activation function
-    // Done in base layer constructor
-    /*switch(data_dist) {
-      case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();  base layer
-      break;
-      case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-      default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-      std::to_string(__LINE__) +
-      "Invalid data layout selected");
-      }*/
   }
 
   void setup(int num_prev_neurons) {
     target_layer<T_layout>::setup(num_prev_neurons);
     Layer::setup(num_prev_neurons);
 
-    // Initialize weight-bias matrix
-    Zeros(*this->m_weights, this->m_num_neurons, num_prev_neurons);
-
-    // Initialize weights
-    initialize_matrix(*this->m_weights, m_weight_initialization, num_prev_neurons, this->m_num_neurons);
-
     // Initialize other matrices
     Zeros(*this->m_error_signal, num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
-    Zeros(*this->m_weights_gradient, this->m_num_neurons,num_prev_neurons); //clear up before filling with new results
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
     Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
-
-    // Initialize optimizer
-    if(this->m_optimizer != NULL) {
-      this->m_optimizer->setup(this->m_weights);
-    }
-
   }
 
  protected:
   void fp_set_std_matrix_view() {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    this->fp_set_std_matrix_view();
+    target_layer<T_layout>::fp_set_std_matrix_view();
 
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));
@@ -134,12 +104,10 @@ class reconstruction_layer : public target_layer<T_layout> {
   }
 
   bool update_compute() {
-    double start = get_time();
-    Layer::update();
     if(this->m_execution_mode == execution_mode::training) {
-      this->m_optimizer->update(this->m_weights_gradient);
+      double start = get_time();
+      this->update_time += get_time() - start;
     }
-    this->update_time += get_time() - start;
     return true;
   }
 

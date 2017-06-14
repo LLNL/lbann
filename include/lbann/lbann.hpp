@@ -39,8 +39,7 @@
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/activations.hpp"
-#include "lbann/layers/activations/create_activation.hpp"
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/id.hpp"

@@ -27,13 +27,15 @@
 #ifndef TANH_HPP_INCLUDED
 #define TANH_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#if 0
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
 /** Hyperbolic tangent activation function. */
 template <class T_layout>
-class tanh_layer : public activation<T_layout> {
+class tanh_layer : public activation_layer<T_layout> {
  protected:
   DataType act(const DataType& z) {
     return std::tanh(z);
@@ -45,5 +47,7 @@ class tanh_layer : public activation<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // TANH_HPP_INCLUDED

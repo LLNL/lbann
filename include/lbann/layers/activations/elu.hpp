@@ -27,7 +27,9 @@
 #ifndef ELU_HPP_INCLUDED
 #define ELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#if 0
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
@@ -43,7 +45,7 @@ namespace lbann {
  * ICLR 2016.
  */
 template <class T_layout>
-class elu_layer : public activation<T_layout> {
+class elu_layer : public activation_layer<T_layout> {
  public:
   /**
    * alpha controls the value to which the ELU saturates for negative inputs.
@@ -64,5 +66,7 @@ class elu_layer : public activation<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // ELU_HPP_INCLUDED

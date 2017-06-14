@@ -27,7 +27,9 @@
 #ifndef SOFTPLUS_HPP_INCLUDED
 #define SOFTPLUS_HPP_INCLUDED
 
-#include "lbann/layers/activations/activations.hpp"
+#if 0
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
@@ -37,7 +39,7 @@ namespace lbann {
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <class T_layout>
-class softplus_layer : public activation<T_layout> {
+class softplus_layer : public activation_layer<T_layout> {
  protected:
   DataType act(const DataType& z) {
     // Warning: Not numerically stable.
@@ -51,5 +53,7 @@ class softplus_layer : public activation<T_layout> {
 };
 
 }  // namespace lbann
+
+#endif
 
 #endif  // SOFTPLUS_HPP_INCLUDED

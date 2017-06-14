@@ -68,9 +68,12 @@ void lbann_callback_summary::on_epoch_end(model *m) {
     m_summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
   }
   for (const auto& layer : m->get_layers()) {
-    std::string prefix = "layer" + std::to_string(layer->get_index()) + "/";
-    m_summarizer->reduce_histogram(prefix + "WB", layer->get_weights_biases(),
-                                   m->get_cur_step());
+    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layer);
+    if(learning_layer != NULL) {
+      std::string prefix = "layer" + std::to_string(learning_layer->get_index()) + "/";
+      m_summarizer->reduce_histogram(prefix + "WB", learning_layer->get_weights_biases(),
+                                     m->get_cur_step());
+    }
   }
   m_summarizer->flush();
 }

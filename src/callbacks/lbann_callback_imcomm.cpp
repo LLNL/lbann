@@ -73,12 +73,13 @@ void lbann_callback_imcomm::setup(model *m) {
   m_layer_params.resize(layers.size());
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     imcomm_params& params = m_layer_params[layer];
+    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layers[layer]);
     if (m_param_choices.find(layer) != m_param_choices.end()) {
       params = m_param_choices[layer];
-    } else if (layer != 0 && layer != layers.size() - 1) {
+    } else if (learning_layer != NULL && layer != 0 && layer != layers.size() - 1) {
       // Don't do communication for input/output layers unless explicitly told.
       // Also don't do communication for layers with no gradients.
-      if (layers[layer]->get_weights_biases_gradient().Height() == 0) {
+      if (learning_layer->get_weights_biases_gradient().Height() == 0) {
         params.ct = NONE;
       } else {
         params.ct = m_default_ct;

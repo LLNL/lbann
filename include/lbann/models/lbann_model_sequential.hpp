@@ -31,7 +31,7 @@
 
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/io/lbann_persist.hpp"
 #include <vector>
@@ -74,6 +74,15 @@ class sequential_model : public model {
   /// Get list of layers
   virtual std::vector<Layer *>& get_layers() {
     return m_layers;
+  }
+  virtual std::vector<Layer*> get_layers(layer_category cat) {
+    std::vector<Layer*> layers;
+    for (auto&& layer : m_layers) {
+      if (_layer_type_to_category(layer->get_type()) == cat) {
+        layers.push_back(layer);
+      }
+    }
+    return layers;
   }
 
   /// Set layers

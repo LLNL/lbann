@@ -197,20 +197,26 @@ int main(int argc, char *argv[]) {
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc1);
     // trainParams.ActivationType,
-    // {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)}
+    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 2, 100,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
+    dnn.add(dropout1);
 
     //third layer 
-    Layer *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 2, 
+    Layer *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 3, 
                                                                    100, 30,trainParams.MBSize,
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc2);
     // trainParams.ActivationType,
-    // {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)}
+    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 4, 30,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
+    dnn.add(dropout2);
     
     //fourth layer
     Layer *sl = new softmax_layer<data_layout>(
       data_layout::MODEL_PARALLEL, 
-      3, 30, 10,
+      5, 30, 10,
       trainParams.MBSize, 
       weight_initialization::glorot_uniform, 
       comm, optimizer_fac->create_optimizer()

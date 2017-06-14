@@ -38,22 +38,6 @@
 
 namespace lbann {
 
-#ifdef __LIB_CUDNN
-/// Get cuDNN pooling mode
-cudnnPoolingMode_t get_cudnn_pool_mode(const pool_mode mode) {
-  switch(mode) {
-  case pool_mode::max:
-    return CUDNN_POOLING_MAX;
-  case pool_mode::average:
-    return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-  case pool_mode::average_no_pad:
-    return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-  default:
-    throw lbann::lbann_exception("cudnn_wrapper: invalid pooling mode");
-  }
-}
-#endif // #ifdef __LIB_CUDNN
-
 /// Pooling layer
 template <class T_layout>
 //class pooling_layer : public transform<T_layout> {
@@ -111,7 +95,7 @@ class pooling_layer : public transform<T_layout> {
                 uint mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID),
+    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
     this->m_type = layer_type::pooling;
@@ -262,6 +246,17 @@ class pooling_layer : public transform<T_layout> {
                                            input_strides.data()));
 
     // Set pooling descriptor
+    cudnnPoolingMode_t cudnn_pool_mode;
+    switch(m_pool_mode) {
+    case pool_mode::max:
+      cudnn_pool_mode = CUDNN_POOLING_MAX;
+    case pool_mode::average:
+      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+    case pool_mode::average_no_pad:
+      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+    default:
+      throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
+    }
     std::vector<int> pool_dims(m_num_dims);
     std::vector<int> pool_pads(m_num_dims);
     std::vector<int> pool_strides(m_num_dims);
@@ -271,7 +266,7 @@ class pooling_layer : public transform<T_layout> {
       pool_strides[i] = m_pool_strides[i];
     }
     CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_desc,
-                                            get_cudnn_pool_mode(m_pool_mode),
+                                            cudnn_pool_mode,
                                             CUDNN_PROPAGATE_NAN,
                                             m_num_dims,
                                             pool_dims.data(),
