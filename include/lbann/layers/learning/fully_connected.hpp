@@ -305,7 +305,6 @@ class fully_connected_layer : public learning<T_layout> {
 
   bool update_compute(void) {
     double start = get_time();
-    Layer::update();
     if(this->m_execution_mode == execution_mode::training) {
       this->m_optimizer->update(this->m_weights_gradient);
     }
