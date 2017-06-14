@@ -27,29 +27,28 @@
 #ifndef ID_HPP_INCLUDED
 #define ID_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
 /** Identity activation function -- does nothing. */
 template <class T_layout>
-class id_layer : public activation_layer<T_layout> {
-  void forwardProp(ElMat& m) {}
-  void backwardProp(ElMat& m) {}
-  void backwardPropError(const ElMat& m, ElMat& prev_error_signal) {}
+class id_layer : public entrywise_activation_layer<T_layout> {
+ public:
+  // TODO: Optimize this to copy instead of applying elementwise.
+  id_layer(data_layout data_dist, uint index, lbann_comm *comm,
+           const uint mini_batch_size, uint num_neurons) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return z;
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(const DataType& z) {
     return z;
   }
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // ID_HPP_INCLUDED

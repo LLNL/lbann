@@ -27,8 +27,6 @@
 #ifndef SMOOTH_RELU_HPP_INCLUDED
 #define SMOOTH_RELU_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -38,19 +36,22 @@ namespace lbann {
  * This is an approximation to the softplus.
  */
 template <class T_layout>
-class smooth_relu_layer : public activation_layer<T_layout> {
+class smooth_relu_layer : public entrywise_activation_layer<T_layout> {
+ public:
+  smooth_relu_layer(data_layout data_dist, uint index, lbann_comm *comm,
+                    const uint mini_batch_size, uint num_neurons) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return z / (DataType(1) + std::exp(-z));
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(const DataType& z) {
     const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
     return sigz + z*sigz - z*sigz*sigz;
   }
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED

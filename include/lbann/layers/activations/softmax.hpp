@@ -50,14 +50,14 @@ class softmax_layer: public activation_layer<T_layout> {
                const uint index,
                const int numPrevNeurons,
                const uint numNeurons,
-               const uint minim_batch_size,
+               const uint mini_batch_size,
                const weight_initialization init,
                lbann_comm *comm,
                optimizer *opt)
-    :  activation_layer<T_layout>(data_dist, index, comm, minim_batch_size) {
+    :  activation_layer<T_layout>(data_dist, index, comm, mini_batch_size,
+                                  numNeurons) {
     this->m_type = layer_type::softmax;
     this->m_index = index;
-    this->m_num_neurons = numNeurons;
 
     // Setup the data distribution
     switch(data_dist) {
@@ -209,10 +209,6 @@ class softmax_layer: public activation_layer<T_layout> {
       this->update_time += get_time() - start;
     }
     return true;
-  }
-
-  DataType checkGradient(Layer& PrevLayer, const DataType Epsilon) {
-    return 0.0;
   }
 
   bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {

@@ -37,7 +37,7 @@ namespace lbann {
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <class T_layout>
-class relu_layer : public activation_layer<T_layout> {
+class relu_layer : public entrywise_activation_layer<T_layout> {
 
  private:
 
@@ -53,8 +53,10 @@ class relu_layer : public activation_layer<T_layout> {
              uint index,
              lbann_comm *comm,
              uint mini_batch_size,
+             uint num_neurons,
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer<T_layout>(data_dist, index, comm, mini_batch_size) {
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {
 
   #ifdef __LIB_CUDNN
 

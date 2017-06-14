@@ -27,8 +27,6 @@
 #ifndef TANH_HPP_INCLUDED
 #define TANH_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -36,18 +34,21 @@ namespace lbann {
 /** Hyperbolic tangent activation function. */
 template <class T_layout>
 class tanh_layer : public activation_layer<T_layout> {
+ public:
+  tanh_layer(data_layout data_dist, uint index, lbann_comm *comm,
+             const uint mini_batch_size, uint num_neurons) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return std::tanh(z);
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(const DataType& z) {
     const DataType e = std::exp(DataType(2)*z);
     return (e - DataType(1)) / (e + DataType(1));
   }
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // TANH_HPP_INCLUDED

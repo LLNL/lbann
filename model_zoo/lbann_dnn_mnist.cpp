@@ -193,27 +193,36 @@ int main(int argc, char *argv[]) {
 
     //second layer
     Layer *fc1 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 1,
-                                                                    mnist_trainset.get_linearized_data_size(), 100,trainParams.MBSize,
-                                                                    weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+                                                        mnist_trainset.get_linearized_data_size(), 100,trainParams.MBSize,
+                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc1);
-    // trainParams.ActivationType,
-    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 2, 100,
+
+    Layer *relu1 = new relu_layer<data_layout>(data_layout::MODEL_PARALLEL, 2, comm,
+                                               trainParams.MBSize, 100);
+    dnn.add(relu1);
+
+    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 3, 100,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
     //third layer 
-    Layer *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 3, 
-                                                                   100, 30,trainParams.MBSize,
-                                                                    weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    Layer *fc2 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 4,
+                                                        100, 30, trainParams.MBSize,
+                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc2);
+
+    Layer *relu2 = new relu_layer<data_layout>(data_layout::MODEL_PARALLEL, 5, comm,
+                                               trainParams.MBSize, 30);
+    dnn.add(relu2);
+
     // trainParams.ActivationType,
-    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 4, 30,
+    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 6, 30,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);
 
-    Layer *fc3 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 5,
+    Layer *fc3 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 7,
                                                         30, 10, trainParams.MBSize,
                                                         weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer(),
@@ -223,7 +232,7 @@ int main(int argc, char *argv[]) {
     //fourth layer
     Layer *sl = new softmax_layer<data_layout>(
       data_layout::MODEL_PARALLEL, 
-      6, 10, 10,
+      8, 10, 10,
       trainParams.MBSize, 
       weight_initialization::glorot_uniform, 
       comm, optimizer_fac->create_optimizer()

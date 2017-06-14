@@ -34,17 +34,15 @@ namespace lbann {
 
   /** Represent the type of activation function. */
   enum class activation_type {
-    //if you add or change the following enums, please also edit the
-    //activation_name() method in the activation class
     SIGMOID = 1,
-      TANH,
-      RELU,
-      ID,
-      LEAKY_RELU,
-      SOFTPLUS,
-      SMOOTH_RELU,
-      ELU
-      };
+    TANH,
+    RELU,
+    ID,
+    LEAKY_RELU,
+    SOFTPLUS,
+    SMOOTH_RELU,
+    ELU
+  };
 
 
 template <class T_layout>
@@ -54,8 +52,10 @@ class activation_layer : public Layer {
   activation_layer(data_layout data_dist,
                    uint index,
                    lbann_comm *comm,
-                   const uint mini_batch_size) :
+                   const uint mini_batch_size,
+                   uint num_neurons) :
     Layer(data_dist, index, comm, mini_batch_size) {
+    this->m_num_neurons = num_neurons;
   }
 
   virtual ~activation_layer() {}
@@ -73,16 +73,15 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
   entrywise_activation_layer(data_layout data_dist,
                              uint index,
                              lbann_comm *comm,
-                             uint mini_batch_size) :
-    activation_layer<T_layout>(data_dist, index, comm, mini_batch_size) {
+                             uint mini_batch_size,
+                             uint num_neurons) :
+    activation_layer<T_layout>(data_dist, index, comm, mini_batch_size, num_neurons) {
   }
 
   virtual ~entrywise_activation_layer() {}
 
   virtual void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
-
-    this->m_num_neurons = num_prev_neurons;
 
     // Initialize matrices
     Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);

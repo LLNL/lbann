@@ -27,8 +27,6 @@
 #ifndef LEAKY_RELU_HPP_INCLUDED
 #define LEAKY_RELU_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
@@ -41,15 +39,20 @@ namespace lbann {
  * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
  */
 template <class T_layout>
-class leaky_relu_layer : public activation_layer<T_layout> {
+class leaky_relu_layer : public entrywise_activation_layer<T_layout> {
  public:
   /** Leak is the amount of signal to permit for negative values. */
-  leaky_relu_layer(DataType leak = 0.01f) : m_leak(leak) {}
+  leaky_relu_layer(data_layout data_dist, uint index, lbann_comm *comm,
+                   const uint mini_batch_size, uint num_neurons,
+                   DataType leak = DataType(0.01)) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons),
+    m_leak(leak) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return std::max(m_leak * z, z);
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(const DataType& z) {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
  private:
@@ -57,7 +60,5 @@ class leaky_relu_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // LEAKY_RELU_HPP_INCLUDED

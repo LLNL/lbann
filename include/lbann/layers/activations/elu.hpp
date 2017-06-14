@@ -27,12 +27,9 @@
 #ifndef ELU_HPP_INCLUDED
 #define ELU_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
-
 
 /**
  * Exponential linear unit.
@@ -45,7 +42,7 @@ namespace lbann {
  * ICLR 2016.
  */
 template <class T_layout>
-class elu_layer : public activation_layer<T_layout> {
+class elu_layer : public entrywise_activation_layer<T_layout> {
  public:
   /**
    * alpha controls the value to which the ELU saturates for negative inputs.
@@ -53,12 +50,17 @@ class elu_layer : public activation_layer<T_layout> {
    * If alpha = 0, this turns into a ReLU.
    * Paper uses alpha = 1.0 as a good starting point.
    */
-  elu_layer(DataType alpha = 1.0f) : m_alpha(alpha) {}
+  elu_layer(data_layout data_dist, uint index, lbann_comm *comm,
+            const uint mini_batch_size, uint num_neurons,
+            DataType alpha = DataType(1.0)) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons),
+    m_alpha(alpha) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));
   }
-  DataType act_prime(const DataType& z) {
+  DataType activation_function_gradient(const DataType& z) {
     return (z > DataType(0)) ? DataType(1) : (m_alpha*std::expm1(z) + m_alpha);
   }
  private:
@@ -66,7 +68,5 @@ class elu_layer : public activation_layer<T_layout> {
 };
 
 }  // namespace lbann
-
-#endif
 
 #endif  // ELU_HPP_INCLUDED

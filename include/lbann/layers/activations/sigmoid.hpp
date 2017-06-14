@@ -27,32 +27,31 @@
 #ifndef SIGMOID_HPP_INCLUDED
 #define SIGMOID_HPP_INCLUDED
 
-#if 0
-
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
-
 
 /**
  * Sigmoid activation function.
  * See: https://en.wikipedia.org/wiki/Sigmoid_function
  */
 template <class T_layout>
-class sigmoid_layer : public activation_layer<T_layout> {
+class sigmoid_layer : public entrywise_activation_layer<T_layout> {
+ public:
+  sigmoid_layer(data_layout data_dist, uint index, lbann_comm *comm,
+                const uint mini_batch_size, uint num_neurons) :
+    entrywise_activation_layer<T_layout>(data_dist, index, comm,
+                                         mini_batch_size, num_neurons) {}
  protected:
-  DataType act(const DataType& z) {
+  DataType activation_function(const DataType& z) {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
   }
-  DataType act_prime(const DataType& z) {
-    const DataType sigz = act(z);
+  DataType activation_function_gradient(const DataType& z) {
+    const DataType sigz = activation_function(z);
     return sigz * (DataType(1) - sigz);
   }
 };
 
-
 }  // namespace lbann
-
-#endif
 
 #endif  // SIGMOID_HPP_INCLUDED
