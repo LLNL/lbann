@@ -50,29 +50,59 @@ namespace lbann {
 class model;
 
 // @todo: check list of layer types
-enum class layer_type {fully_connected, softmax, convolution, pooling,
-                       local_response_normalization,
-                       input_distributed_minibatch, input_distributed_minibatch_parallel_io,
-                       input_partitioned_minibatch_parallel_io,
-                       target_distributed_minibatch, target_distributed_minibatch_parallel_io,
-                       target_partitioned_minibatch_parallel_io,
-                       reconstruction,
-                       INVALID
-                      };
-enum class layer_category {compute, io, SPECIAL, INVALID};
+/**
+ * Different layer types.
+ */
+enum class layer_type {
+  fully_connected,
+  convolution,
+  softmax,
+  activation,
+  pooling,
+  local_response_normalization,
+  dropout,
+  batch_normalization,
+  input_distributed_minibatch,
+  input_distributed_minibatch_parallel_io,
+  input_partitioned_minibatch_parallel_io,
+  target_distributed_minibatch,
+  target_distributed_minibatch_parallel_io,
+  target_partitioned_minibatch_parallel_io,
+  reconstruction,
+  INVALID
+};
+
+/**
+ * Broad categories into which layers are divided.
+ */
+enum class layer_category {
+  io,
+  learning,
+  activation,
+  regularizer,
+  transform,
+  special,
+  invalid
+};
 
 static const char *__attribute__((used)) _layer_type_to_string(layer_type l) {
   switch(l) {
   case layer_type::fully_connected:
     return "fully_connected";
-  case layer_type::softmax:
-    return "softmax";
   case layer_type::convolution:
     return "convolution";
+  case layer_type::softmax:
+    return "softmax";
+  case layer_type::activation:
+    return "activation";
   case layer_type::pooling:
     return "pooling";
   case layer_type::local_response_normalization:
     return "local_response_normalization";
+  case layer_type::dropout:
+    return "dropout";
+  case layer_type::batch_normalization:
+    return "batch_normalization";
   case layer_type::input_distributed_minibatch:
     return "input_distributed_minibatch";
   case layer_type::input_distributed_minibatch_parallel_io:
@@ -98,11 +128,17 @@ static const char *__attribute__((used)) _layer_type_to_string(layer_type l) {
 static layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
   switch(l) {
   case layer_type::fully_connected:
-  case layer_type::softmax:
   case layer_type::convolution:
+    return layer_category::learning;
+  case layer_type::softmax:
+  case layer_type::activation:
+    return layer_category::activation;
   case layer_type::pooling:
+    return layer_category::transform;
   case layer_type::local_response_normalization:
-    return layer_category::compute;
+  case layer_type::dropout:
+  case layer_type::batch_normalization:
+    return layer_category::regularizer;
   case layer_type::input_distributed_minibatch:
   case layer_type::input_distributed_minibatch_parallel_io:
   case layer_type::input_partitioned_minibatch_parallel_io:
@@ -111,13 +147,13 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
   case layer_type::target_partitioned_minibatch_parallel_io:
     return layer_category::io;
   case layer_type::reconstruction:
-    return layer_category::SPECIAL;
+    return layer_category::special;
   case layer_type::INVALID:
-    return layer_category::INVALID;
+    return layer_category::invalid;
   default:
     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
   }
-  return layer_category::INVALID;
+  return layer_category::invalid;
 }
 
 

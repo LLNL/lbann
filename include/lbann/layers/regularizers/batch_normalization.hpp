@@ -63,6 +63,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
     : regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
+    this->m_type = layer_type::batch_normalization;
     this->m_num_neurons = num_neurons;
     // Setup the data distribution
     switch(data_dist) {

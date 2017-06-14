@@ -56,6 +56,7 @@ class activation_layer : public Layer {
                    uint num_neurons) :
     Layer(data_dist, index, comm, mini_batch_size) {
     this->m_num_neurons = num_neurons;
+    this->m_type = layer_type::activation;
   }
 
   virtual ~activation_layer() {}

@@ -52,7 +52,7 @@ class dropout : public regularizer_layer<T_layout> {
           uint mini_batch_size, float keep_prob=0.5f) :
     regularizer_layer<T_layout>(data_dist, index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
-
+    this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
     // Setup the data distribution
     switch(data_dist) {
