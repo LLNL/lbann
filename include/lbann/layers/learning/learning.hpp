@@ -37,20 +37,12 @@ namespace lbann {
 
 template <class T_layout>
 class learning : public Layer {
-#if 0
  protected:
-  data_layout m_data_layout;
+  //  data_layout m_data_layout;
+  optimizer  *m_optimizer;
 
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
-  ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
-
- public:
-  /// Create a view of each matrix so that it can accomodate partial mini-batches
-  ElMat *m_weighted_sum_v;
-  ElMat *m_prev_error_signal_v;
-  ElMat *m_activations_v;
-#endif
 
  public:
   learning(data_layout data_dist, const uint index, 
@@ -59,9 +51,8 @@ class learning : public Layer {
            const uint mini_batch_size,
            lbann_comm *comm, optimizer *opt
            )
-    : Layer(data_dist, index, comm, opt, mini_batch_size) {
+    : Layer(data_dist, index, comm, mini_batch_size), m_optimizer(opt) {
 
-#if 0
   // Setup the data distribution
   switch(data_dist) {
   case data_layout::MODEL_PARALLEL:
@@ -75,29 +66,105 @@ class learning : public Layer {
                           std::to_string(__LINE__) +
                           "Invalid data layout selected");
   }
-#endif
   }
 
-#if 0
-  virtual ~learning(void);
+  virtual ~learning(void) {
+    delete m_weights;
+    delete m_weights_gradient;
+  }
 
-  static std::string weight_initialization_name(weight_initialization id);
-#endif
-
+  /// Matrices should be in MC,MR distributions
   virtual void initialize_model_parallel_distribution() {
+    m_weights             = new DistMat(m_comm->get_model_grid());
+    m_weights_gradient    = new DistMat(m_comm->get_model_grid());
   }
+
+  /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
   virtual void initialize_data_parallel_distribution() {
+    m_weights             = new StarMat(m_comm->get_model_grid());
+    m_weights_gradient    = new StarMat(m_comm->get_model_grid());
+  }
+
+  /// @todo BVE should the learning layer be able to initialize the
+  /// matrix, or is that purely a function of the children classes
+  //enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
+  static std::string weight_initialization_name(weight_initialization id) {
+    switch(id) {
+    case weight_initialization::zero :
+      return "zero";
+      break;
+    case weight_initialization::uniform :
+      return "uniform";
+      break;
+    case weight_initialization::normal :
+      return "normal";
+      break;
+    case weight_initialization::glorot_normal :
+      return "glorot_normal";
+      break;
+    case weight_initialization::glorot_uniform :
+      return "glorot_uniform";
+      break;
+    case weight_initialization::he_normal :
+      return "he_normal";
+      break;
+    case weight_initialization::he_uniform :
+      return "he_uniform";
+      break;
+    default:
+      char b[1024];
+      sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
+      throw lbann_exception(b);
+    }
   }
 
 #if 0
-  virtual void forwardProp(void);
-  virtual void backProp(void);
-  virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
+  void setup(int numPrevNeurons) {
+    Layer::setup(numPrevNeurons);
 
-  virtual void setup(int);
+    // Zero the weight-bias matrix
+    Zeros(*m_weights, m_num_neurons, numPrevNeurons);
+
+    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
+    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, m_num_neurons);
+
+    // Initialize other matrices
+    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons);
+  }
+#endif
+
+  virtual void summarize(lbann_summary& summarizer, int64_t step) {
+    std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
+    // TODO: implement summarizer functions for other matrix distributions
+    const ElMat& wb = get_weights_biases();
+    summarizer.reduce_mean(prefix + "mean", wb, step);
+    summarizer.reduce_min(prefix + "min", wb, step);
+    summarizer.reduce_max(prefix + "max", wb, step);
+    summarizer.reduce_stdev(prefix + "stdev", wb, step);
+    prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights_gradient/";
+    const ElMat& wb_d = get_weights_biases_gradient();
+    summarizer.reduce_mean(prefix + "mean", wb_d, step);
+    summarizer.reduce_min(prefix + "min", wb_d, step);
+    summarizer.reduce_max(prefix + "max", wb_d, step);
+    summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
+
+    // Call parent summarizer after local results are summarized
+    Layer::summarize(summarizer, step);
+  }
+
+  //  virtual void setup(int);
+
   /** Validate that the setup is reasonable. */
-  virtual void check_setup(void);
+  virtual void check_setup() {
+    Layer::check_setup();
+    // If these two are sendable, the other matrices should be fine.
+    if (!lbann::lbann_comm::is_sendable(*m_weights)) {
+      throw lbann::lbann_exception("Weights too large to send");
+    }
+    if (!lbann::lbann_comm::is_sendable(*m_activations)) {
+      throw lbann::lbann_exception("Activations too large to send");
+    }
+  }
 
   /** Return (a view of) the weights/biases matrix for this layer. */
   virtual ElMat& get_weights_biases(void) {
@@ -107,43 +174,73 @@ class learning : public Layer {
   virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
   }
+  /** Return the layer's optimizer. */
+  virtual optimizer *get_optimizer(void) const {
+    return m_optimizer;
+  }
 
-  ElMat *fp_output(void);
-  ElMat *bp_output(void);
-  void setup_fp_input(ElMat *fp_input);
-  void setup_bp_input(ElMat *bp_input);
+  bool saveToFile(int fd, const char *dirname) {
+    Layer::loadFromFile(fd, dirname);
+    char filepath[512];
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
+    
+    uint64_t bytes;
+    return lbann::write_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
+  }
+  
+  bool loadFromFile(int fd, const char *dirname) {
+    Layer::loadFromFile(fd, dirname);
+    char filepath[512];
+    sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
+    
+    uint64_t bytes;
+    return lbann::read_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
+  }
 
-  void set_prev_layer_type(layer_type type);
-  void set_next_layer_type(layer_type type);
-  bool using_gpus(void) const;
-  void set_prev_layer_using_gpus(bool using_gpus);
-  void set_next_layer_using_gpus(bool using_gpus);
-#ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d(void);
-  std::vector<DataType *> *bp_output_d(void);
-  void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
-  void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
-#endif
+  virtual bool saveToCheckpointShared(lbann::persist& p) {
+    Layer::saveToCheckpointShared(p);
+    // define name to store our parameters
+    char name[512];
+    sprintf(name, "weights_L%d_%lldx%lld", m_index, m_weights->Height(), m_weights->Width());
 
-#endif
-#if 0
+    // write out our weights to the model file
+    p.write_distmat(persist_type::model, name, (DistMat *)m_weights);
+
+    // if saving training state, also write out state of optimizer
+    // m_optimizer->saveToCheckpointShared(p, m_index);
+
+    return true;
+  }
+
+  virtual bool loadFromCheckpointShared(lbann::persist& p) {
+    Layer::loadFromCheckpointShared(p);
+    // define name to store our parameters
+    char name[512];
+    sprintf(name, "weights_L%d_%lldx%lld.bin", m_index, m_weights->Height(), m_weights->Width());
+
+    // read our weights from model file
+    p.read_distmat(persist_type::model, name, (DistMat *)m_weights);
+
+    // if loading training state, read in state of optimizer
+    // m_optimizer->loadFromCheckpointShared(p, m_index);
+
+    return true;
+  }
+
+
  protected:
 
   /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view(void);
+  virtual void fp_set_std_matrix_view(void) {
+    //int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    Layer::fp_set_std_matrix_view();
+  }
+
 #if 0
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view(void);
 #endif
-  /** Apply the layer's linear update in forward propagation. */
-  virtual void fp_linearity(void) {}
-  /** Handle the layer's linearity in backward propagation. */
-  virtual void bp_linearity(void) {}
-  /** Apply the layer's nonlinearity in forward propagation. */
-  virtual void fp_nonlinearity(void);
-  /** Handle the layer's nonlinearity in backward propagation. */
-  virtual void bp_nonlinearity(void);
-#endif
+
 };
 }
 

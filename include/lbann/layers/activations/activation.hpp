@@ -54,9 +54,8 @@ class activation_layer : public Layer {
   activation_layer(data_layout data_dist,
                    uint index,
                    lbann_comm *comm,
-                   optimizer *opt,
-                   uint mini_batch_size) :
-    Layer(data_dist, index, comm, opt, mini_batch_size) {
+                   const uint mini_batch_size) :
+    Layer(data_dist, index, comm, mini_batch_size) {
   }
 
   virtual ~activation_layer() {}
@@ -75,7 +74,7 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
                              uint index,
                              lbann_comm *comm,
                              uint mini_batch_size) :
-    activation_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size) {
+    activation_layer<T_layout>(data_dist, index, comm, mini_batch_size) {
   }
 
   virtual ~entrywise_activation_layer() {}

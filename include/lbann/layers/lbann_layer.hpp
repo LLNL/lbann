@@ -123,12 +123,9 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 
 class Layer {
  public:
-  Layer(data_layout data_dist, const uint index, lbann_comm *comm, optimizer *opt,
-        uint mbsize);
+  Layer(data_layout data_dist, const uint index, lbann_comm *comm, uint mbsize);
 
   virtual ~Layer(void);
-
-  static std::string weight_initialization_name(weight_initialization id);
 
   virtual void initialize_model_parallel_distribution();
   virtual void initialize_data_parallel_distribution();
@@ -185,21 +182,9 @@ class Layer {
   inline data_layout get_data_layout(void) const {
     return m_data_layout;
   }
-  /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases(void) {
-    return *m_weights;
-  }
-  /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient(void) {
-    return *m_weights_gradient;
-  }
   /** Return (a view of) the activations matrix for this layer. */
   virtual ElMat& get_activations(void) {
     return *m_activations;
-  }
-  /** Return the layer's optimizer. */
-  virtual optimizer *get_optimizer(void) const {
-    return m_optimizer;
   }
   /** Reset layer stat counters. */
   virtual void reset_counters(void) {
@@ -253,8 +238,8 @@ class Layer {
   }
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb(void) { return nullptr; };
 
-  bool saveToFile(int fd, const char *filename);
-  bool loadFromFile(int fd, const char *filename);
+  virtual bool saveToFile(int fd, const char *filename) { return true; };
+  virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
   virtual bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes);
   virtual bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes);
@@ -267,7 +252,6 @@ class Layer {
   uint m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;
-  optimizer  *m_optimizer;
 
   layer_type m_type;            ///< Type of this layer
   layer_type m_prev_layer_type; ///< Type of previous layer
@@ -278,8 +262,6 @@ class Layer {
 
   execution_mode  m_execution_mode;
 
-  ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
-  ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
   ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
 
  public:

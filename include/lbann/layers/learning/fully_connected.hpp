@@ -189,7 +189,7 @@ class fully_connected_layer : public learning<T_layout> {
   void fp_set_std_matrix_view(void) {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    Layer::fp_set_std_matrix_view();
+    learning<T_layout>::fp_set_std_matrix_view();
 
     /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
     /// limit the height, not the width

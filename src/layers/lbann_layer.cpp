@@ -40,10 +40,10 @@ using namespace std;
 using namespace El;
 
 lbann::Layer::Layer(data_layout data_dist, const uint index,
-                    lbann_comm *comm, optimizer *opt,
+                    lbann_comm *comm,
                     uint mbsize)
   : m_data_layout(data_dist), m_index(index),
-    m_comm(comm), m_optimizer(opt),
+    m_comm(comm),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
     m_execution_mode(execution_mode::training),
     m_cudnn(nullptr),
@@ -82,8 +82,6 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
 }
 
 lbann::Layer::~Layer() {
-  delete m_weights;
-  delete m_weights_gradient;
   delete m_weighted_sum;
   delete m_prev_error_signal;
   delete m_error_signal;
@@ -98,8 +96,6 @@ lbann::Layer::~Layer() {
 
 /// Matrices should be in MC,MR distributions
 void lbann::Layer::initialize_model_parallel_distribution() {
-  m_weights             = new DistMat(m_comm->get_model_grid());
-  m_weights_gradient    = new DistMat(m_comm->get_model_grid());
   m_weighted_sum        = new DistMat(m_comm->get_model_grid());
   m_prev_activations    = new DistMat(m_comm->get_model_grid());
   m_activations         = new DistMat(m_comm->get_model_grid());
@@ -116,8 +112,6 @@ void lbann::Layer::initialize_model_parallel_distribution() {
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::Layer::initialize_data_parallel_distribution() {
-  m_weights             = new StarMat(m_comm->get_model_grid());
-  m_weights_gradient    = new StarMat(m_comm->get_model_grid());
   m_weighted_sum        = new StarVCMat(m_comm->get_model_grid());
   m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
   m_activations         = new StarVCMat(m_comm->get_model_grid());
@@ -247,20 +241,8 @@ bool lbann::Layer::update() {
 }
 
 void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
   // TODO: implement summarizer functions for other matrix distributions
-  const ElMat& wb = get_weights_biases();
-  summarizer.reduce_mean(prefix + "mean", wb, step);
-  summarizer.reduce_min(prefix + "min", wb, step);
-  summarizer.reduce_max(prefix + "max", wb, step);
-  summarizer.reduce_stdev(prefix + "stdev", wb, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights_gradient/";
-  const ElMat& wb_d = get_weights_biases_gradient();
-  summarizer.reduce_mean(prefix + "mean", wb_d, step);
-  summarizer.reduce_min(prefix + "min", wb_d, step);
-  summarizer.reduce_max(prefix + "max", wb_d, step);
-  summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
@@ -271,15 +253,7 @@ void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
 }
 
-void lbann::Layer::check_setup() {
-  // If these two are sendable, the other matrices should be fine.
-  if (!lbann::lbann_comm::is_sendable(*m_weights)) {
-    throw lbann::lbann_exception("Weights too large to send");
-  }
-  if (!lbann::lbann_comm::is_sendable(*m_activations)) {
-    throw lbann::lbann_exception("Activations too large to send");
-  }
-}
+void lbann::Layer::check_setup() {}
 
 ElMat *lbann::Layer::fp_output() {
   return m_activations;
@@ -343,22 +317,6 @@ void lbann::Layer::set_next_layer_using_gpus(bool using_gpus) {
   m_next_layer_using_gpus = using_gpus;
 }
 
-bool lbann::Layer::saveToFile(int fd, const char *dirname) {
-  char filepath[512];
-  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
-
-  uint64_t bytes;
-  return lbann::write_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
-}
-
-bool lbann::Layer::loadFromFile(int fd, const char *dirname) {
-  char filepath[512];
-  sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
-
-  uint64_t bytes;
-  return lbann::read_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
-}
-
 bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   //writeDist(fd, filename, *m_weights, bytes);
 
@@ -377,30 +335,10 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *by
 }
 
 bool lbann::Layer::saveToCheckpointShared(lbann::persist& p) {
-  // define name to store our parameters
-  char name[512];
-  sprintf(name, "weights_L%d_%lldx%lld", m_index, m_weights->Height(), m_weights->Width());
-
-  // write out our weights to the model file
-  p.write_distmat(persist_type::model, name, (DistMat *)m_weights);
-
-  // if saving training state, also write out state of optimizer
-  // m_optimizer->saveToCheckpointShared(p, m_index);
-
   return true;
 }
 
 bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
-  // define name to store our parameters
-  char name[512];
-  sprintf(name, "weights_L%d_%lldx%lld.bin", m_index, m_weights->Height(), m_weights->Width());
-
-  // read our weights from model file
-  p.read_distmat(persist_type::model, name, (DistMat *)m_weights);
-
-  // if loading training state, read in state of optimizer
-  // m_optimizer->loadFromCheckpointShared(p, m_index);
-
   return true;
 }
 
@@ -456,35 +394,3 @@ void lbann::Layer::bp_set_std_matrix_view() {
   }
 }
 #endif
-
-//enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-
-std::string lbann::Layer::weight_initialization_name(weight_initialization id) {
-  switch(id) {
-  case weight_initialization::zero :
-    return "zero";
-    break;
-  case weight_initialization::uniform :
-    return "uniform";
-    break;
-  case weight_initialization::normal :
-    return "normal";
-    break;
-  case weight_initialization::glorot_normal :
-    return "glorot_normal";
-    break;
-  case weight_initialization::glorot_uniform :
-    return "glorot_uniform";
-    break;
-  case weight_initialization::he_normal :
-    return "he_normal";
-    break;
-  case weight_initialization::he_uniform :
-    return "he_uniform";
-    break;
-  default:
-    char b[1024];
-    sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
-    throw lbann_exception(b);
-  }
-}

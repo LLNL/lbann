@@ -48,11 +48,12 @@ template <class T_layout>
 class dropout : public regularizer_layer<T_layout> {
  public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(data_layout data_dist, const uint index, lbann_comm *comm,
+  dropout(data_layout data_dist, const uint index, const uint num_neurons, lbann_comm *comm,
           uint mini_batch_size, float keep_prob=0.5f) :
-    regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
+    regularizer_layer<T_layout>(data_dist, index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
 
+    this->m_num_neurons = num_neurons;
     // Setup the data distribution
     switch(data_dist) {
     case data_layout::MODEL_PARALLEL:
@@ -84,11 +85,19 @@ class dropout : public regularizer_layer<T_layout> {
     m_cur_mask = new Mat;
 #endif
   }
+  void setup(int num_prev_neurons) {
+    regularizer_layer<T_layout>::setup(num_prev_neurons);
+    this->m_num_neurons = num_prev_neurons;
+    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
+  }
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() {
     if (this->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
+      // Copy previous activations over.
+      El::Copy(*(this->m_prev_activations), *(this->m_activations));
       return;
     }
     ElMat *input_acts = this->m_prev_activations;
@@ -127,9 +136,13 @@ class dropout : public regularizer_layer<T_layout> {
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute() {
-    // Terminate early if dropout is disabled
-    if (this->get_execution_mode() != execution_mode::training
-        || m_keep_prob < 0.0f) {
+    // Terminate early when not training.
+    if (this->get_execution_mode() != execution_mode::training) {
+      return;
+    }
+    if (m_keep_prob < 0.0f) {
+      // Copy error signal through.
+      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal));
       return;
     }
 
