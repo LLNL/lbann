@@ -1367,7 +1367,9 @@ class convolution_layer : public learning<T_layout> {
 
   /// Update convolution filters and biases
   bool update_compute() {
-    this->m_optimizer->update(this->m_weights_gradient);
+    if(this->m_execution_mode == execution_mode::training) {
+      this->m_optimizer->update(this->m_weights_gradient);
+    }
     return true;
   }
 
