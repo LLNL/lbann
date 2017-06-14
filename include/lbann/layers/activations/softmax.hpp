@@ -96,26 +96,13 @@ class softmax_layer: public Layer {
   void setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);
 
-    // Zero the weight-bias matrix
-    Zeros(*m_weights, m_num_neurons, numPrevNeurons);
-
-    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, m_num_neurons);
-
     // Initialize other matrices
-    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons);
     Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
     Zeros(*m_error_signal, numPrevNeurons, m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*m_weighted_sum, m_num_neurons, m_mini_batch_size);
     Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
     Zeros(*m_prev_activations, numPrevNeurons, m_mini_batch_size);
     Zeros(*m_workspace, 1, m_mini_batch_size);
-
-    // Initialize optimizer
-    if(m_optimizer != NULL) {
-      m_optimizer->setup(m_weights);
-    }
-
   }
 
   void fp_set_std_matrix_view(void) {
@@ -124,32 +111,7 @@ class softmax_layer: public Layer {
     View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
   }
 
-  void fp_linearity(void) {
-
-    // Apply weight matrix
-    switch(m_data_layout) {
-    case data_layout::MODEL_PARALLEL:
-      Gemm(NORMAL, NORMAL, DataType(1),
-           *m_weights,
-           *m_prev_activations_v,
-           DataType(0),
-           *m_weighted_sum_v);
-      break;
-    case data_layout::DATA_PARALLEL:
-      Gemm(NORMAL, NORMAL, DataType(1),
-           m_weights->LockedMatrix(),
-           m_prev_activations_v->LockedMatrix(),
-           DataType(0),
-           m_weighted_sum_v->Matrix());
-      break;
-    }
-
-    // Copy result to output matrix
-    Copy(*m_weighted_sum_v, *m_activations_v);
-
-  }
-
-  void fp_nonlinearity(void) {
+  void fp_compute() {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
@@ -201,45 +163,7 @@ class softmax_layer: public Layer {
 
   }
 
-  void bp_linearity(void) {
-
-    switch(m_data_layout) {
-    case data_layout::MODEL_PARALLEL:
-      // Compute the partial delta update for the next lower layer
-      Gemm(TRANSPOSE, NORMAL, DataType(1),
-           *m_weights,
-           *m_prev_error_signal_v,
-           DataType(0),
-           *m_error_signal_v);
-      // Compute update for activation weights
-      Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
-           *m_prev_error_signal_v,
-           *m_prev_activations_v,
-           DataType(0),
-           *m_weights_gradient);
-      break;
-    case data_layout::DATA_PARALLEL:
-      // Compute the partial delta update for the next lower layer
-      Gemm(TRANSPOSE, NORMAL, DataType(1),
-           m_weights->LockedMatrix(),
-           m_prev_error_signal_v->LockedMatrix(),
-           DataType(0),
-           m_error_signal_v->Matrix());
-      // Compute update for activation weights
-      Gemm(NORMAL, TRANSPOSE, DataType(1)/get_effective_minibatch_size(),
-           m_prev_error_signal_v->LockedMatrix(),
-           m_prev_activations_v->LockedMatrix(),
-           DataType(0),
-           m_weights_gradient->Matrix());
-      // Add gradients from all processes
-      AllReduce(*m_weights_gradient,
-                m_weights_gradient->RedundantComm());
-      break;
-    }
-
-  }
-
-  void bp_nonlinearity(void) {
+  void bp_compute(void) {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
@@ -281,25 +205,11 @@ class softmax_layer: public Layer {
 
   }
 
-  DataType WBL2norm(void) {
-    DataType nrm2 = Nrm2(*m_weights);
-    return nrm2 * nrm2;
-  }
-
-  inline DataType _sq(DataType x) {
-    return (x * x);
-  }
-  inline DataType _sqrt(DataType x) {
-    return (1 / sqrt(x + 1e-8));
-  }
-
-  bool update(void) {
-    double start = get_time();
-    Layer::update();
+  bool update_compute(void) {
     if(m_execution_mode == execution_mode::training) {
-      m_optimizer->update(m_weights_gradient);
+      double start = get_time();
+      update_time += get_time() - start;
     }
-    update_time += get_time() - start;
     return true;
   }
 

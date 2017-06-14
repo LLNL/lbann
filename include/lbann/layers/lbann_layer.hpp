@@ -128,8 +128,6 @@ class Layer {
 
   virtual ~Layer(void);
 
-  static std::string weight_initialization_name(weight_initialization id);
-
   virtual void initialize_model_parallel_distribution();
   virtual void initialize_data_parallel_distribution();
 
@@ -184,14 +182,6 @@ class Layer {
   /** Return the data layout of this layer */
   inline data_layout get_data_layout(void) const {
     return m_data_layout;
-  }
-  /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases(void) {
-    return *m_weights;
-  }
-  /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient(void) {
-    return *m_weights_gradient;
   }
   /** Return (a view of) the activations matrix for this layer. */
   virtual ElMat& get_activations(void) {
@@ -253,8 +243,8 @@ class Layer {
   }
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb(void) { return nullptr; };
 
-  bool saveToFile(int fd, const char *filename);
-  bool loadFromFile(int fd, const char *filename);
+  virtual bool saveToFile(int fd, const char *filename) { return true; };
+  virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
   virtual bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes);
   virtual bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes);
@@ -278,8 +268,6 @@ class Layer {
 
   execution_mode  m_execution_mode;
 
-  ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
-  ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
   ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
 
  public:
