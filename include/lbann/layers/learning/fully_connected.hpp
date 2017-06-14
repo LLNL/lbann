@@ -56,6 +56,7 @@ class fully_connected_layer : public learning<T_layout> {
   ElMat *m_bias_bp_t_v;
   ElMat *m_bias_weights_repl;
   DataType m_bias_term;
+  bool m_has_bias;
 
  protected:
   //Probability of dropping neuron/input used in dropout_layer
@@ -87,11 +88,11 @@ class fully_connected_layer : public learning<T_layout> {
                       const uint mini_batch_size,
                       const weight_initialization init,
                       lbann_comm *comm,
-                        optimizer *opt)
+                        optimizer *opt, bool has_bias = true)
     : learning<T_layout>(data_dist,
                          index, numPrevNeurons, 
                          numNeurons, mini_batch_size, 
-                         comm, opt),
+                         comm, opt), m_has_bias(has_bias),
     m_weight_initialization(init) {
 
     this->m_type = layer_type::fully_connected;
@@ -117,39 +118,52 @@ class fully_connected_layer : public learning<T_layout> {
   }
 
   ~fully_connected_layer(void) {
-    delete m_bias_bp_t;
-    delete m_bias_weights_repl;
+    if(m_has_bias) {
+      delete m_bias_bp_t;
+      delete m_bias_weights_repl;
+    }
+
     delete m_activation_weights_v;
-    delete m_bias_weights_v;
     delete m_activation_weights_gradient_v;
-    delete m_bias_weights_gradient_v;
-    delete m_bias_bp_t_v;
+    if(m_has_bias) {
+      delete m_bias_weights_v;
+      delete m_bias_weights_gradient_v;
+      delete m_bias_bp_t_v;
+    }
   }
 
   /// Matrices should be in MC,MR distributions
   void initialize_model_parallel_distribution(void) {
-    m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
-    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+    if(m_has_bias) {
+      m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
+      m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+    }
 
     /// Instantiate these view objects but do not allocate data for them
     m_activation_weights_v           = new DistMat(this->m_comm->get_model_grid());
-    m_bias_weights_v                 = new DistMat(this->m_comm->get_model_grid());
     m_activation_weights_gradient_v  = new DistMat(this->m_comm->get_model_grid());
-    m_bias_weights_gradient_v        = new DistMat(this->m_comm->get_model_grid());
-    m_bias_bp_t_v                    = new DistMat(this->m_comm->get_model_grid());
+    if(m_has_bias) {
+      m_bias_weights_v                 = new DistMat(this->m_comm->get_model_grid());
+      m_bias_weights_gradient_v        = new DistMat(this->m_comm->get_model_grid());
+      m_bias_bp_t_v                    = new DistMat(this->m_comm->get_model_grid());
+    }
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
   void initialize_data_parallel_distribution(void) {
-    m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
-    m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
+    if(m_has_bias) {
+      m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
+      m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
+    }
 
     /// Instantiate these view objects but do not allocate data for them
     m_activation_weights_v           = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_v                 = new StarMat(this->m_comm->get_model_grid());
     m_activation_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
-    m_bias_bp_t_v                    = new StarVCMat(this->m_comm->get_model_grid());
+    if(m_has_bias) {
+      m_bias_weights_v                 = new StarMat(this->m_comm->get_model_grid());
+      m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
+      m_bias_bp_t_v                    = new StarVCMat(this->m_comm->get_model_grid());
+    }
   }
 
   void setup(int numPrevNeurons) {
@@ -157,27 +171,38 @@ class fully_connected_layer : public learning<T_layout> {
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
-    Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons+1);
-    Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons + 1);
+    if(m_has_bias) {
+      Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons+1);
+      Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons + 1);
+    }else {
+      Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons);
+      Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons);
+    }
     Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
     Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
-    /// Setup independent views of the weight matrix for the activations and bias terms
+    /// Setup independent views of the weight matrix for the activations
     View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, numPrevNeurons));
-    View(*m_bias_weights_v, *this->m_weights, ALL, IR(numPrevNeurons));
 
-    /// Setup independent views of the weights gradient matrix for the activations and bias terms
+    /// Setup independent views of the weights gradient matrix for the activations
     View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, numPrevNeurons));
-    View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(numPrevNeurons));
+
+    /// Setup independent views of the weights and gradient matrix for the bias terms
+    if(m_has_bias) {
+      View(*m_bias_weights_v, *this->m_weights, ALL, IR(numPrevNeurons));
+      View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(numPrevNeurons));
+    }
 
     /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
     initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, numPrevNeurons, this->m_num_neurons);
 
-    /// Create a "transposed" vector of the bias term for use in backprop
-    Ones(*m_bias_bp_t, 1, this->m_mini_batch_size);
+    if(m_has_bias) {
+      /// Create a "transposed" vector of the bias term for use in backprop
+      Ones(*m_bias_bp_t, 1, this->m_mini_batch_size);
+    }
 
     // Initialize optimizer
     if(this->m_optimizer != NULL) {
@@ -191,22 +216,26 @@ class fully_connected_layer : public learning<T_layout> {
 
     learning<T_layout>::fp_set_std_matrix_view();
 
-    /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
-    /// limit the height, not the width
-    View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
+    if(m_has_bias) {
+      /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
+      /// limit the height, not the width
+      View(*m_bias_bp_t_v, *m_bias_bp_t, ALL, IR(0, cur_mini_batch_size));
+    }
   }
 
   void fp_compute(void) {
     // Apply forward prop linearity
 
-    // Apply bias
-    Copy(*m_bias_weights_v, *m_bias_weights_repl);
-    const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
-    IndexDependentFill(this->m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
-                       ([&local_bias_weights](El::Int r, El::Int c)->DataType {
-                         return local_bias_weights.Get(r);
-                       }));
-    Scale(m_bias_term, *this->m_weighted_sum_v);
+    if(m_has_bias) {
+      // Apply bias
+      Copy(*m_bias_weights_v, *m_bias_weights_repl);
+      const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
+      IndexDependentFill(this->m_weighted_sum_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
+                         ([&local_bias_weights](El::Int r, El::Int c)->DataType {
+                           return local_bias_weights.Get(r);
+                         }));
+      Scale(m_bias_term, *this->m_weighted_sum_v);
+    }
 
     // Apply weight matrix
     switch(this->m_data_layout) {
@@ -247,12 +276,14 @@ class fully_connected_layer : public learning<T_layout> {
            *this->m_prev_activations_v,
            DataType(0),
            *this->m_activation_weights_gradient_v);
-      // Compute update for bias terms
-      Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
-           *this->m_prev_error_signal_v,
-           *m_bias_bp_t_v,
-           DataType(0),
-           *m_bias_weights_gradient_v);
+      if(m_has_bias) {
+        // Compute update for bias terms
+        Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
+             *this->m_prev_error_signal_v,
+             *m_bias_bp_t_v,
+             DataType(0),
+             *m_bias_weights_gradient_v);
+      }
       break;
     case data_layout::DATA_PARALLEL:
       // Compute the partial delta update for the next lower layer
@@ -267,12 +298,14 @@ class fully_connected_layer : public learning<T_layout> {
            this->m_prev_activations_v->LockedMatrix(),
            DataType(0),
            this->m_activation_weights_gradient_v->Matrix());
-      // Compute update for bias terms
-      Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
-           this->m_prev_error_signal_v->LockedMatrix(),
-           m_bias_bp_t_v->LockedMatrix(),
-           DataType(0),
-           m_bias_weights_gradient_v->Matrix());
+      if(m_has_bias) {
+        // Compute update for bias terms
+        Gemv(NORMAL, DataType(1)/this->get_effective_minibatch_size(),
+             this->m_prev_error_signal_v->LockedMatrix(),
+             m_bias_bp_t_v->LockedMatrix(),
+             DataType(0),
+             m_bias_weights_gradient_v->Matrix());
+      }
       // Add gradients from all processes
       AllReduce(*this->m_weights_gradient,
                 this->m_weights_gradient->RedundantComm());
