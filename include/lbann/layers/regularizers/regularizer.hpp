@@ -45,6 +45,14 @@ class regularizer_layer : public Layer {
     
   }
   virtual ~regularizer_layer() {}
+
+  virtual void initialize_model_parallel_distribution() {
+    Layer::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    Layer::initialize_data_parallel_distribution();
+  }
+
 };
 
 }  // namespace lbann

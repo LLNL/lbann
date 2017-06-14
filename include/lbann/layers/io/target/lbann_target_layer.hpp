@@ -53,6 +53,13 @@ class target_layer : public io_layer<T_layout> {
     m_shared_data_reader = shared_data_reader;
   }
 
+  virtual void initialize_model_parallel_distribution() {
+    target_layer<T_layout>::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    target_layer<T_layout>::initialize_data_parallel_distribution();
+  }
+
   void setup(int num_prev_neurons) {
     if(this->m_neural_network_model->m_obj_fn == NULL) {
       throw lbann_exception("target layer has invalid objective function pointer");

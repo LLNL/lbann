@@ -128,6 +128,7 @@ class fully_connected_layer : public learning<T_layout> {
 
   /// Matrices should be in MC,MR distributions
   void initialize_model_parallel_distribution(void) {
+    learning<T_layout>::initialize_model_parallel_distribution();
     m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
     m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
 
@@ -141,6 +142,7 @@ class fully_connected_layer : public learning<T_layout> {
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
   void initialize_data_parallel_distribution(void) {
+    learning<T_layout>::initialize_data_parallel_distribution();
     m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
     m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
 

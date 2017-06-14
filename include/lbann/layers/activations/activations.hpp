@@ -132,6 +132,14 @@ class activation {
     }
   }
 
+  virtual void initialize_model_parallel_distribution() {
+    //Layer::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    //Layer::initialize_data_parallel_distribution();
+  }
+
+
  protected:
   /** The activation function. */
   virtual DataType act(const DataType& z) = 0;

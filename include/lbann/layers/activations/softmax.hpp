@@ -82,13 +82,15 @@ class softmax_layer: public Layer {
   }
 
   /// Matrices should be in MC,MR distributions
-  void initialize_model_parallel_distribution(void) {
+  virtual void initialize_model_parallel_distribution() {
+    activation<T_layout>::initialize_model_parallel_distribution();
     m_workspace = new StarMRMat(m_comm->get_model_grid());
     m_workspace_v = new StarMRMat(m_comm->get_model_grid());
   }
 
   /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  void initialize_data_parallel_distribution(void) {
+  virtual void initialize_data_parallel_distribution(void) {
+    activation<T_layout>::initialize_data_parallel_distribution();
     m_workspace = new StarVCMat(m_comm->get_model_grid());
     m_workspace_v = new StarVCMat(m_comm->get_model_grid());
   }

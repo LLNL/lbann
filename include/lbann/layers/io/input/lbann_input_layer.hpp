@@ -38,6 +38,14 @@ class input_layer : public io_layer<T_layout> {
     this->m_num_neurons = io_layer<T_layout>::get_linearized_data_size();
   }
 
+  virtual void initialize_model_parallel_distribution() {
+    input_layer<T_layout>::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    input_layer<T_layout>::initialize_data_parallel_distribution();
+  }
+
+
   /**
    * Input layers are not able to return output matrices for backward propagation
    */

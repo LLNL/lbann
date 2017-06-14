@@ -60,20 +60,6 @@ class reconstruction_layer : public target_layer<T_layout> {
     this->m_optimizer = opt; // Manually assign the optimizer since target layers normally set this to NULL
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
-    // Initialize activation function
-    // Done in base layer constructor
-    /*switch(data_dist) {
-      case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();  base layer
-      break;
-      case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-      default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-      std::to_string(__LINE__) +
-      "Invalid data layout selected");
-      }*/
   }
 
   void setup(int num_prev_neurons) {
@@ -104,7 +90,7 @@ class reconstruction_layer : public target_layer<T_layout> {
   void fp_set_std_matrix_view() {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    this->fp_set_std_matrix_view();
+    target_layer<T_layout>::fp_set_std_matrix_view();
 
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));

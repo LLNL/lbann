@@ -77,6 +77,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
   }
 
   void initialize_model_parallel_distribution() {
+    regularizer_layer<T_layout>::initialize_model_parallel_distribution();
     m_gamma = new RowSumMat(this->m_comm->get_model_grid());
     m_beta = new RowSumMat(this->m_comm->get_model_grid());
     m_dgamma = new RowSumMat(this->m_comm->get_model_grid());
@@ -87,6 +88,7 @@ class batch_normalization : public regularizer_layer<T_layout> {
     m_running_stdev = new RowSumMat(this->m_comm->get_model_grid());
   }
   void initialize_data_parallel_distribution() {
+    regularizer_layer<T_layout>::initialize_data_parallel_distribution();
     m_gamma = new StarMat(this->m_comm->get_model_grid());
     m_beta = new StarMat(this->m_comm->get_model_grid());
     m_dgamma = new StarMat(this->m_comm->get_model_grid());

@@ -58,6 +58,7 @@ class dropout : public regularizer_layer<T_layout> {
     delete m_cur_mask;
   }
   void initialize_model_parallel_distribution() {
+    regularizer_layer<T_layout>::initialize_model_parallel_distribution();    
 #ifdef LBANN_PROCDET_DROPOUT
     m_cur_mask = new DistMat(m_comm->get_model_grid());
 #else
@@ -65,6 +66,7 @@ class dropout : public regularizer_layer<T_layout> {
 #endif
   }
   void initialize_data_parallel_distribution() {
+    regularizer_layer<T_layout>::initialize_data_parallel_distribution();
 #ifdef LBANN_PROCDET_DROPOUT
     m_cur_mask = new StarMat(m_comm->get_model_grid());
 #else

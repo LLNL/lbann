@@ -73,6 +73,14 @@ class io_layer : public Layer {
     }
   }
 
+
+  virtual void initialize_model_parallel_distribution() {
+    Layer::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    Layer::initialize_data_parallel_distribution();
+  }
+
   // io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader *training_data_reader)
   //   : io_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}
 
