@@ -28,7 +28,7 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/regularization/lbann_l2_regularization.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
 #include <time.h>
@@ -366,12 +366,12 @@ int main(int argc, char *argv[]) {
                                              outputChannels, filterDims,
                                              convPads, convStrides,
                                              trainParams.MBSize,
-                                             activation_type::RELU,
                                              weight_initialization::he_normal,
                                              comm, convolution_layer_optimizer,
-                                             {new l2_regularization(0.0005)},
                                              cudnn);
       dnn->add(layer);
+      //                                             activation_type::RELU,
+                                             // {new l2_regularization(0.0005)},
     }
 
     // Layer 2 (LRN)
@@ -423,12 +423,12 @@ int main(int argc, char *argv[]) {
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
-                                  activation_type::RELU,
                                   weight_initialization::he_normal,
                                   comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
       cudnn);
       dnn->add(layer);
+      //                                  activation_type::RELU,
+//       {new l2_regularization(0.0005)},
     }
 
     // Layer 5 (LRN)
@@ -480,12 +480,12 @@ int main(int argc, char *argv[]) {
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
-                                  activation_type::RELU,
                                   weight_initialization::he_normal,
                                   comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
       cudnn);
       dnn->add(layer);
+      //                                  activation_type::RELU,
+//       {new l2_regularization(0.0005)},
     }
 
     // Layer 8 (convolution)
@@ -503,12 +503,12 @@ int main(int argc, char *argv[]) {
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
-                                  activation_type::RELU,
                                   weight_initialization::he_normal,
                                   comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
       cudnn);
       dnn->add(layer);
+//                                   activation_type::RELU,
+//       {new l2_regularization(0.0005)},
     }
 
     // Layer 9 (convolution)
@@ -526,12 +526,12 @@ int main(int argc, char *argv[]) {
                                   outputChannels, filterDims,
                                   convPads, convStrides,
                                   trainParams.MBSize,
-                                  activation_type::RELU,
                                   weight_initialization::he_normal,
                                   comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
       cudnn);
       dnn->add(layer);
+      //                                  activation_type::RELU,
+//       {new l2_regularization(0.0005)},
     }
 
     // Layer 10 (pooling)
@@ -562,15 +562,15 @@ int main(int argc, char *argv[]) {
        prev_num_neurons,
        4096,
        trainParams.MBSize,
-       activation_type::RELU,
        weight_initialization::he_normal,
        comm,
-       dnn->create_optimizer(),
-       {
-         new dropout(DATA_LAYOUT, comm, trainParams.DropOut),
-         new l2_regularization(0.0005)
-        });
+       dnn->create_optimizer());
     dnn->add(new_layer);
+    // activation_type::RELU,
+       // {
+       //   new dropout(DATA_LAYOUT, comm, trainParams.DropOut),
+       //   new l2_regularization(0.0005)
+        // }
 
     // Layer 12 (fully-connected)
     get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
@@ -580,15 +580,15 @@ int main(int argc, char *argv[]) {
        prev_num_neurons,
        4096,
        trainParams.MBSize,
-       activation_type::RELU,
        weight_initialization::he_normal,
        comm,
-       dnn->create_optimizer(),
-       {
-         new dropout(DATA_LAYOUT, comm, 0.5),
-         new l2_regularization(0.0005)
-        });
+       dnn->create_optimizer());
     dnn->add(new_layer_2);
+       // activation_type::RELU,
+       // {
+       //   new dropout(DATA_LAYOUT, comm, 0.5),
+       //   new l2_regularization(0.0005)
+       //  });
 
     // Layer 13 (softmax)
     get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
