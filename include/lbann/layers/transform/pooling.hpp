@@ -111,7 +111,7 @@ class pooling_layer : public transform<T_layout> {
                 uint mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size, activation_type::ID),
+    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, NULL, mini_batch_size),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
     this->m_type = layer_type::pooling;

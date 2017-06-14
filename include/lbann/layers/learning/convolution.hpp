@@ -145,12 +145,11 @@ class convolution_layer : public learning<T_layout> {
       const Int *conv_pads,
       const Int *conv_strides,
       const Int mini_batch_size,
-      const activation_type activation,
       const weight_initialization init,
       lbann_comm *comm,
       optimizer *opt,
       cudnn::cudnn_manager *cudnn = NULL)
-    : learning<T_layout>(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt, activation),
+    : learning<T_layout>(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt),
       m_weight_initialization(init),
       m_num_dims(num_dims),
       m_num_input_channels(num_input_channels),

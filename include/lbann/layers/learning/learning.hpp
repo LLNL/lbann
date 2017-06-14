@@ -82,10 +82,16 @@ class learning : public Layer {
   virtual ~learning(void);
 
   static std::string weight_initialization_name(weight_initialization id);
+#endif
 
-  virtual void initialize_model_parallel_distribution(void);
-  virtual void initialize_data_parallel_distribution(void);
+  virtual void initialize_model_parallel_distribution() {
+    Layer::initialize_model_parallel_distribution();
+  }
+  virtual void initialize_data_parallel_distribution() {
+    Layer::initialize_data_parallel_distribution();
+  }
 
+#if 0
   virtual void forwardProp(void);
   virtual void backProp(void);
   virtual bool update(void);
