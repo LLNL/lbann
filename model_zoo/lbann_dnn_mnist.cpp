@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc1);
     // trainParams.ActivationType,
-    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 2,
+    Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 2, 100,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout1);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
                                                                     weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     dnn.add(fc2);
     // trainParams.ActivationType,
-    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 4,
+    Layer *dropout2 = new dropout<data_layout>(data_layout::MODEL_PARALLEL, 4, 30,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);
