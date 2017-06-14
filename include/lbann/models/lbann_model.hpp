@@ -69,6 +69,8 @@ class model {
 
   /** Return the model's layers. */
   virtual std::vector<Layer *>& get_layers() = 0;
+  /** Return the models layers of a given category. */
+  virtual std::vector<Layer*> get_layers(layer_category cat) = 0;
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {

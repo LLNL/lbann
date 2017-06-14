@@ -75,6 +75,15 @@ class sequential_model : public model {
   virtual std::vector<Layer *>& get_layers() {
     return m_layers;
   }
+  virtual std::vector<Layer*> get_layers(layer_category cat) {
+    std::vector<Layer*> layers;
+    for (auto&& layer : m_layers) {
+      if (_layer_type_to_category(layer->get_type()) == cat) {
+        layers.push_back(layer);
+      }
+    }
+    return layers;
+  }
 
   /// Set layers
   virtual void set_layers(vector<Layer *>& layers) {
