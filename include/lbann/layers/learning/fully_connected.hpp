@@ -153,7 +153,7 @@ class fully_connected_layer : public learning<T_layout> {
   }
 
   void setup(int numPrevNeurons) {
-    learner<T_layout>::setup(numPrevNeurons);
+    learning<T_layout>::setup(numPrevNeurons);
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
