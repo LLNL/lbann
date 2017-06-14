@@ -85,10 +85,8 @@ class learning : public Layer {
 #endif
 
   virtual void initialize_model_parallel_distribution() {
-    Layer::initialize_model_parallel_distribution();
   }
   virtual void initialize_data_parallel_distribution() {
-    Layer::initialize_data_parallel_distribution();
   }
 
 #if 0
