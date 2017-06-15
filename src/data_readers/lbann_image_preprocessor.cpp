@@ -163,7 +163,7 @@ void lbann_image_preprocessor::mean_subtraction(Mat& pixels,
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     for (unsigned i = 0; i < height_per_channel; ++i) {
       DataType& pixels_entry = pixels_channel(i, 0);
       pixels_entry -= mean;
@@ -184,7 +184,7 @@ void lbann_image_preprocessor::unit_variance(
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     if(stdev > DataType(1e-7)*Abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {
@@ -216,7 +216,7 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     if(stdev > DataType(1e-7)*Abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {

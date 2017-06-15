@@ -36,7 +36,7 @@ namespace lbann {
  *  @param means   Mean value.
  *  @param stdevs  Standard deviation.
  */
-void mean_and_stdev(const Mat& data, DataType& mean, DataType& stdev);
+void entrywise_mean_and_stdev(const Mat& data, DataType& mean, DataType& stdev);
 
 /// Compute column-wise means and standard deviations
 /** @param data    Input matrix.

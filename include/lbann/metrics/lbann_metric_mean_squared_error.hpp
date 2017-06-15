@@ -29,7 +29,6 @@
 
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 
 namespace lbann {
 namespace metrics {

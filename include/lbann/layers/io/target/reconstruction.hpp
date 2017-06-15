@@ -29,7 +29,6 @@
 
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/layers/io/target/lbann_target_layer.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include "lbann/utils/lbann_random.hpp"

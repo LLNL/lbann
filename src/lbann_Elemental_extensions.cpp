@@ -28,7 +28,7 @@
 
 #include "El.hpp"
 
-#include "lbann/lbann_Elemental_extensions.h"
+#include "lbann/lbann_Elemental_extensions.hpp"
 
 namespace El {
 
@@ -36,61 +36,99 @@ template<typename F>
 void ColumnSum( const Matrix<F>& X, Matrix<F>& sums ) {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
 
-  // Input matrix parameters
-  const Int m = X.Height();
-  const Int n = X.Width();
-  const F *XBuf = X.LockedBuffer();
-  const Int XLDim = X.LDim();
+    // Input matrix parameters
+    const Int m = X.Height();
+    const Int n = X.Width();
+    const F *XBuf = X.LockedBuffer();
+    const Int XLDim = X.LDim();
 
-  // Initialize output
-  Zeros( sums, n, 1 );
-  F *sumsBuf = sums.Buffer();
+    // Initialize output
+    Zeros( sums, 1, n );
+    F *sumsBuf = sums.Buffer();
+    const Int sumsLDim = sums.LDim();
 
-  // Compute sum over each column
-  EL_PARALLEL_FOR
-  for( Int j=0; j<n; ++j ) {
-    for( Int i=0; i<m; ++i ) {
-      sumsBuf[j] += XBuf[i+j*XLDim];
+    // Compute sum over each column
+    EL_PARALLEL_FOR
+    for( Int j=0; j<n; ++j )
+    {
+        for( Int i=0; i<m; ++i )
+        {
+            sumsBuf[j*sumsLDim] += XBuf[i+j*XLDim];
+        }
     }
-  }
 
 }
 
-template<typename F,Dist U,Dist V,DistWrap W>
+template<typename F>
 void ColumnSum
-( const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums ) {
+( const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums ) {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
-  const Int n = A.Width();
-  sums.AlignWith( A );
-  sums.Resize( n, 1 );
-  ColumnSum( A.LockedMatrix(), sums.Matrix() );
-  AllReduce( sums.Matrix(), A.ColComm(), mpi::SUM );
+
+    // Check that distributed matrix formats are valid
+    if( A.DistData().rowDist != sums.DistData().rowDist
+        || sums.DistData().colDist != STAR 
+        || A.DistData().blockHeight != sums.DistData().blockHeight
+        || A.DistData().blockWidth != sums.DistData().blockWidth)
+    {
+        LogicError("Matrices do not have compatible data distributions");
+    }
+
+    // Compute column-wise sums
+    sums.AlignWith( A );
+    sums.Resize( 1, A.Width() );
+    ColumnSum( A.LockedMatrix(), sums.Matrix() );
+    AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
+
 }
 
 template<typename F>
 void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
-  const Int m = X.Height();
-  const Int n = X.Width();
-  const F *XBuf = X.LockedBuffer();
-  const Int XLDim = X.LDim();
-  Zeros(sums, m, 1);
-  F *sumsBuf = sums.Buffer();
-  // Note: Iterating over columns helps cache locality for X but means we can't
-  // naively parallelize the outer loop (race conditions).
-  // Could probably do a local accumulation to avoid this.
-  for (Int j = 0; j < n; ++j) {
-    for (Int i = 0; i < m; ++i) {
-      sumsBuf[i] += XBuf[i+j*XLDim];
+
+    // Input matrix parameters
+    const Int m = X.Height();
+    const Int n = X.Width();
+    const F *XBuf = X.LockedBuffer();
+    const Int XLDim = X.LDim();
+
+    // Initialize output
+    Zeros( sums, m, 1 );
+    F *sumsBuf = sums.Buffer();
+
+    // Iterate through row blocks
+    const Int bsize = Max( 64 / sizeof(F), 1 );
+    EL_PARALLEL_FOR
+    for( Int i=0; i<m; i+=bsize )
+    {
+        const Int mb = Min( bsize, m - i );
+        for( Int j=0; j<n; ++j )
+        {
+            for( Int ib=0; ib<mb; ++ib )
+            {
+                sumsBuf[i+ib] += XBuf[(i+ib)+j*XLDim];
+            }
+        }
     }
-  }
+
 }
 
-template <typename F,Dist U,Dist V,DistWrap W>
-void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums) {
-  sums.AlignWith(A);
-  sums.Resize(A.Height(), 1);
-  RowSum(A.LockedMatrix(), sums.Matrix());
-  AllReduce(sums, A.RowComm(), mpi::SUM);
+template <typename F>
+void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
+  
+  // Check that distributed matrix formats are valid
+  if( A.DistData().colDist != sums.DistData().colDist
+      || sums.DistData().rowDist != STAR 
+      || A.DistData().blockHeight != sums.DistData().blockHeight
+      || A.DistData().blockWidth != sums.DistData().blockWidth)
+  {
+      LogicError("Matrices do not have compatible data distributions");
+  }
+
+  // Compute row-wise sums
+  sums.AlignWith( A );
+  sums.Resize( A.Height(), 1 );
+  RowSum( A.LockedMatrix(), sums.Matrix() );
+  AllReduce( sums, sums.RedundantComm(), mpi::SUM );
+
 }
 
 LBANN_PROTO_FLOAT
