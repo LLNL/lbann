@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
     trainParams.LearnRate = 1e-2;
     trainParams.DropOut = 0.5;
-    trainParams.ProcsPerModel = 1;
+    trainParams.ProcsPerModel = 4;
     trainParams.IntermodelCommMethod
       = static_cast<int>(lbann_callback_imcomm::NORMAL);
     trainParams.parse_params();
