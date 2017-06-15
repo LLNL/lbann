@@ -333,6 +333,7 @@ class fully_connected_layer : public learning<T_layout> {
 
   bool update_compute(void) {
     if(this->m_execution_mode == execution_mode::training) {
+      this->l2_regularize();
       this->m_optimizer->update(this->m_weights_gradient);
     }
     return true;

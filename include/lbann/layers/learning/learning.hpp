@@ -44,6 +44,16 @@ class learning : public Layer {
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
 
+  /** Factor for L2 regularization; 0 to disable. */
+  DataType m_l2_regularization_factor = DataType(0);
+
+  /** Apply L2 regularization to the current gradient. */
+  virtual void l2_regularize() {
+    if (m_l2_regularization_factor > DataType(0)) {
+      El::Axpy(m_l2_regularization_factor, *m_weights, *m_weights_gradient);
+    }
+  }
+
  public:
   learning(data_layout data_dist, const uint index, 
            const int numPrevNeurons,
@@ -181,6 +191,11 @@ class learning : public Layer {
   /** Return the layer's optimizer. */
   virtual optimizer *get_optimizer(void) const {
     return m_optimizer;
+  }
+
+  /** Set the layer's L2 regularization factor (0 to disable). */
+  void set_l2_regularization_factor(DataType f) {
+    m_l2_regularization_factor = f;
   }
 
   bool saveToFile(int fd, const char *dirname) {
