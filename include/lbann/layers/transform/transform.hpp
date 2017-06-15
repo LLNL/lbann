@@ -39,12 +39,12 @@ namespace lbann {
 class transform : public Layer {
 
  public:
-  transform(data_layout data_dist, const uint index, 
+  transform(const uint index, 
             //           const int numPrevNeurons,
             //           const uint numNeurons,
            lbann_comm *comm,
            const uint mini_batch_size)
-    : Layer(data_dist, index, comm, mini_batch_size) {
+    : Layer(index, comm, mini_batch_size) {
 
   }
 

@@ -129,7 +129,7 @@ class convolution_layer : public learning {
       lbann_comm *comm,
       optimizer *opt,
       cudnn::cudnn_manager *cudnn = NULL)
-    : learning(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt),
+    : learning(index, 0, 0, mini_batch_size, comm, opt),
       m_weight_initialization(init),
       m_num_dims(num_dims),
       m_num_input_channels(num_input_channels),
@@ -244,6 +244,7 @@ class convolution_layer : public learning {
   void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(const int num_prev_neurons) {
     Layer::setup(num_prev_neurons);

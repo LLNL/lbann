@@ -116,10 +116,10 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   Layer *mirror_layer = NULL;
   switch(original_layer->get_data_layout()){
   case data_layout::MODEL_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(original_layer->get_data_layout(), mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
     break;
   case data_layout::DATA_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(original_layer->get_data_layout(), mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
     break;
   default:
     break;
@@ -170,10 +170,10 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
     Layer *mirror_layer;
     switch(original_layer->get_data_layout()){
     case data_layout::MODEL_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
+      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
       break;
     case data_layout::DATA_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(original_layer->get_data_layout(), m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
+      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(m_phase_end, m_comm, opt, m_mini_batch_size,original_layer);
       break;
     default:
       break;

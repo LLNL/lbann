@@ -46,11 +46,11 @@ class reconstruction_layer : public target_layer {
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(data_layout data_dist, size_t index,lbann_comm *comm,
+  reconstruction_layer(size_t index,lbann_comm *comm,
                        optimizer *opt,/*needed?*/
                        const uint minim_batch_size,
                        Layer *original_layer)
-    :  target_layer(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
+    :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::reconstruction;
@@ -63,6 +63,7 @@ class reconstruction_layer : public target_layer {
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int num_prev_neurons) {
     target_layer::setup(num_prev_neurons);

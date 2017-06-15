@@ -71,10 +71,10 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
 }
 }
 
-lbann::Layer::Layer(data_layout data_dist, const uint index,
+lbann::Layer::Layer(const uint index,
                     lbann_comm *comm,
                     uint mbsize)
-  : m_data_layout(data_dist), m_index(index),
+  : m_index(index),
     m_comm(comm),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
     m_execution_mode(execution_mode::training),

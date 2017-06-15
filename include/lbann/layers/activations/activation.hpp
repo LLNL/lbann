@@ -48,12 +48,11 @@ namespace lbann {
 class activation_layer : public Layer {
 
  public:
-  activation_layer(data_layout data_dist,
-                   uint index,
+  activation_layer(uint index,
                    lbann_comm *comm,
                    const uint mini_batch_size,
                    uint num_neurons) :
-    Layer(data_dist, index, comm, mini_batch_size) {
+    Layer(index, comm, mini_batch_size) {
     this->m_num_neurons = num_neurons;
     this->m_type = layer_type::activation;
   }
@@ -69,12 +68,11 @@ class activation_layer : public Layer {
 class entrywise_activation_layer : public activation_layer {
 
  public:
-  entrywise_activation_layer(data_layout data_dist,
-                             uint index,
+  entrywise_activation_layer(uint index,
                              lbann_comm *comm,
                              uint mini_batch_size,
                              uint num_neurons) :
-    activation_layer(data_dist, index, comm, mini_batch_size, num_neurons) {
+    activation_layer(index, comm, mini_batch_size, num_neurons) {
   }
 
   virtual ~entrywise_activation_layer() {}

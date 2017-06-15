@@ -45,8 +45,8 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
+  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
     // Setup the data distribution
@@ -58,6 +58,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int num_prev_neurons) {
     target_layer::setup(num_prev_neurons);

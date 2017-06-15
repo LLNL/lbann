@@ -50,16 +50,17 @@ class elu_layer : public entrywise_activation_layer {
    * If alpha = 0, this turns into a ReLU.
    * Paper uses alpha = 1.0 as a good starting point.
    */
-  elu_layer(data_layout data_dist, uint index, lbann_comm *comm,
+  elu_layer(uint index, lbann_comm *comm,
             const uint mini_batch_size, uint num_neurons,
             DataType alpha = DataType(1.0)) :
-    entrywise_activation_layer(data_dist, index, comm,
+    entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),
     m_alpha(alpha) { initialize_distributed_matrices(); }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
  protected:
   DataType activation_function(DataType z) {

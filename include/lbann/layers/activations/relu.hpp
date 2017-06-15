@@ -49,13 +49,12 @@ class relu_layer : public entrywise_activation_layer {
 #endif
 
  public:
-  relu_layer(data_layout data_dist,
-             uint index,
+  relu_layer(uint index,
              lbann_comm *comm,
              uint mini_batch_size,
              uint num_neurons,
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer(data_dist, index, comm,
+    entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons) {
 
     initialize_distributed_matrices();
@@ -109,6 +108,7 @@ class relu_layer : public entrywise_activation_layer {
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int num_prev_neurons) {
     entrywise_activation_layer::setup(num_prev_neurons);

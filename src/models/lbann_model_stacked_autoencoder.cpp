@@ -73,12 +73,10 @@ void lbann::stacked_autoencoder::begin_stack(Layer* new_layer){
     Layer *mirror_layer = NULL;
     switch(new_layer->get_data_layout()){
     case data_layout::MODEL_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(new_layer->get_data_layout(),
-                                                                           cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
       break;
     case data_layout::DATA_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(new_layer->get_data_layout(),
-                                                                          cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
       break;
     default:
       break;
@@ -90,12 +88,10 @@ void lbann::stacked_autoencoder::begin_stack(Layer* new_layer){
     Layer *mirror_layer = NULL;
     switch(new_layer->get_data_layout()){
     case data_layout::MODEL_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(new_layer->get_data_layout(),
-                                                                           cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
       break;
     case data_layout::DATA_PARALLEL:
-      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(new_layer->get_data_layout(),
-                                                                          cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
       break;
     default:
       break;

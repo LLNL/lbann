@@ -42,8 +42,8 @@ class target_layer : public io_layer {
   bool m_shared_data_reader;
 
  public:
-  target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(data_dist, comm, mini_batch_size, data_readers, true, for_regression) {
+  target_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
       this->m_num_neurons = io_layer::get_linearized_response_size();
     } else {

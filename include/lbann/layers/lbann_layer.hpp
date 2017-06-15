@@ -159,7 +159,7 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 
 class Layer {
  public:
-  Layer(data_layout data_dist, const uint index, lbann_comm *comm, uint mbsize);
+  Layer(const uint index, lbann_comm *comm, uint mbsize);
 
   virtual ~Layer(void);
 
@@ -214,10 +214,9 @@ class Layer {
   inline void set_execution_mode(const execution_mode mode) {
     m_execution_mode = mode;
   }
-  /** Return the data layout of this layer */
-  inline data_layout get_data_layout(void) const {
-    return m_data_layout;
-  }
+  /** Return the data layout of the given layer -- Every concrete
+      layer has to overrride this with its T_layout template parameter */
+  virtual inline data_layout get_data_layout() { return data_layout::MODEL_PARALLEL; };
   /** Return (a view of) the activations matrix for this layer. */
   virtual ElMat& get_activations(void) {
     return *m_activations;
@@ -284,7 +283,6 @@ class Layer {
   virtual bool loadFromCheckpointShared(persist& p);
 
  protected:
-  data_layout m_data_layout;
   uint m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;

@@ -48,9 +48,9 @@ template <data_layout T_layout>
 class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(data_layout data_dist, const uint index, const uint num_neurons, lbann_comm *comm,
+  dropout(const uint index, const uint num_neurons, lbann_comm *comm,
           uint mini_batch_size, float keep_prob=0.5f) :
-    regularizer_layer(data_dist, index, comm, mini_batch_size),
+    regularizer_layer(index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -62,6 +62,7 @@ class dropout : public regularizer_layer {
   }
 
   virtual inline void initialize_distributed_matrices();
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int num_prev_neurons) {
     regularizer_layer::setup(num_prev_neurons);

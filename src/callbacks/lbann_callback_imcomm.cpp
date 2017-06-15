@@ -93,19 +93,10 @@ void lbann_callback_imcomm::setup(model *m) {
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
       // TODO: Support reshaping. (Old implementation was broken.)
       if (ct_does_quantization(params.ct)) {
-        data_layout layout = layers[layer]->get_data_layout();
-        // TODO: Update this when we have better templates.
-        if (layout == data_layout::MODEL_PARALLEL) {
-          learning *learning_layer =
-            dynamic_cast<learning*>(layers[layer]);
-          const ElMat& gradients = learning_layer->get_weights_gradient();
-          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
-        } else if (layout == data_layout::DATA_PARALLEL) {
-          learning *learning_layer =
-            dynamic_cast<learning*>(layers[layer]);
-          const ElMat& gradients = learning_layer->get_weights_biases_gradient();
-          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
-        }
+        learning *learning_layer =
+          dynamic_cast<learning*>(layers[layer]);
+        const ElMat& gradients = learning_layer->get_weights_gradient();
+        Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
       }
     }
   }
@@ -123,17 +114,9 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     if (ct_does_quantization(params.ct)) {
       comm->intermodel_sum_matrix(params.error);
       Mat* local_gradients = nullptr;
-      data_layout layout = layers[layer]->get_data_layout();
-      // TODO: Update this when we have better templates.
-      if (layout == data_layout::MODEL_PARALLEL) {
-        learning *learning_layer =
-          dynamic_cast<learning*>(layers[layer]);
-        local_gradients = &(learning_layer->get_weights_gradient().Matrix());
-      } else if (layout == data_layout::DATA_PARALLEL) {
-        learning *learning_layer =
-          dynamic_cast<learning*>(layers[layer]);
-        local_gradients = &(learning_layer->get_weights_gradient().Matrix());
-      }
+      learning *learning_layer =
+        dynamic_cast<learning*>(layers[layer]);
+      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
       // TODO: Handle reshaping.
       *local_gradients = params.error;
       // Apply optimizer update with accumulated gradient error.
@@ -158,17 +141,9 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     }
     // TODO: Handle reshaping.
     Mat* local_gradients = nullptr;
-    data_layout layout = layers[layer]->get_data_layout();
-    // TODO: Update this when we have better templates.
-    if (layout == data_layout::MODEL_PARALLEL) {
-      learning *learning_layer =
-        dynamic_cast<learning*>(layers[layer]);
-      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
-    } else if (layout == data_layout::DATA_PARALLEL) {
-      learning *learning_layer =
-        dynamic_cast<learning*>(layers[layer]);
-      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
-    }
+    learning *learning_layer =
+      dynamic_cast<learning*>(layers[layer]);
+    local_gradients = &(learning_layer->get_weights_gradient().Matrix());
     switch (params.ct) {
     case NORMAL:
       comm->intermodel_sum_matrix(*local_gradients);

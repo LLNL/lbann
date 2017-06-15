@@ -46,15 +46,14 @@ class softmax_layer: public activation_layer {
   AbsDistMat *m_workspace_v;
 
  public:
-  softmax_layer(data_layout data_dist,
-               const uint index,
-               const int numPrevNeurons,
-               const uint numNeurons,
-               const uint mini_batch_size,
-               const weight_initialization init,
-               lbann_comm *comm,
-               optimizer *opt)
-    :  activation_layer(data_dist, index, comm, mini_batch_size,
+  softmax_layer(const uint index,
+                const int numPrevNeurons,
+                const uint numNeurons,
+                const uint mini_batch_size,
+                const weight_initialization init,
+                lbann_comm *comm,
+                optimizer *opt)
+     :  activation_layer(index, comm, mini_batch_size,
                                   numNeurons) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -68,6 +67,7 @@ class softmax_layer: public activation_layer {
   }
 
   virtual inline void initialize_distributed_matrices();
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);

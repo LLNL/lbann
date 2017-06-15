@@ -42,7 +42,6 @@ namespace lbann {
 template <data_layout T_layout>
 class fully_connected_layer : public learning {
  private:
-
   const weight_initialization m_weight_initialization;
 
   /// Views of the weight matrix that allow you to separate activation weights from bias weights
@@ -81,16 +80,14 @@ class fully_connected_layer : public learning {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  fully_connected_layer(data_layout data_dist,
-                      const uint index,
-                      const int numPrevNeurons,
-                      const uint numNeurons,
-                      const uint mini_batch_size,
-                      const weight_initialization init,
-                      lbann_comm *comm,
+  fully_connected_layer(const uint index,
+                        const int numPrevNeurons,
+                        const uint numNeurons,
+                        const uint mini_batch_size,
+                        const weight_initialization init,
+                        lbann_comm *comm,
                         optimizer *opt, bool has_bias = true)
-    : learning(data_dist,
-               index, numPrevNeurons, 
+    : learning(index, numPrevNeurons, 
                numNeurons, mini_batch_size, 
                comm, opt), m_has_bias(has_bias),
     m_weight_initialization(init) {
@@ -122,6 +119,7 @@ class fully_connected_layer : public learning {
   }
 
   virtual inline void initialize_distributed_matrices(void);
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int numPrevNeurons) {
     learning::setup(numPrevNeurons);
@@ -182,7 +180,7 @@ class fully_connected_layer : public learning {
   void fp_compute(void) {
 
     // Apply weight matrix
-    switch(this->m_data_layout) {
+    switch(T_layout) {
     case data_layout::MODEL_PARALLEL:
       Gemm(NORMAL, NORMAL, DataType(1),
            *this->m_activation_weights_v,
@@ -214,7 +212,7 @@ class fully_connected_layer : public learning {
 
   void bp_compute(void) {
 
-    switch(this->m_data_layout) {
+    switch(T_layout) {
     case data_layout::MODEL_PARALLEL:
       // Compute the partial delta update for the next lower layer
       Gemm(TRANSPOSE, NORMAL, DataType(1),

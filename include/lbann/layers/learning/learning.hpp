@@ -44,13 +44,13 @@ class learning : public Layer {
   ElMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
 
  public:
-  learning(data_layout data_dist, const uint index, 
+  learning(const uint index, 
            const int numPrevNeurons,
            const uint numNeurons,
            const uint mini_batch_size,
            lbann_comm *comm, optimizer *opt
            )
-    : Layer(data_dist, index, comm, mini_batch_size), m_optimizer(opt) { }
+    : Layer(index, comm, mini_batch_size), m_optimizer(opt) { }
 
   virtual ~learning(void) {
     delete m_weights;

@@ -38,12 +38,12 @@
 
 namespace lbann {
   //template <data_layout DATA_DIST>
-template <data_layout T_layout>
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch_parallel_io {
  public:
   /// @todo make the map and vector references
   input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(data_layout::DATA_PARALLEL, comm, mini_batch_size, data_readers),
+    : input_layer(comm, mini_batch_size, data_readers),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -53,6 +53,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(int num_prev_neurons) {
     input_layer::setup(num_prev_neurons);

@@ -78,7 +78,7 @@ class local_response_normalization_layer : public regularizer_layer {
    uint mini_batch_size,
    lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
-    : regularizer_layer(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
+    : regularizer_layer(index, comm, mini_batch_size),
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
@@ -148,6 +148,7 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(const int num_prev_neurons) {
     Layer::setup(num_prev_neurons);

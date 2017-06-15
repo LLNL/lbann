@@ -95,7 +95,7 @@ class pooling_layer : public transform {
                 uint mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : transform(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
+    : transform(index, comm, mini_batch_size),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
     // Setup the data distribution
@@ -194,6 +194,7 @@ class pooling_layer : public transform {
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
+  virtual inline data_layout get_data_layout() { return T_layout; }
 
   void setup(const int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
