@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     };
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     Layer *input_layer =
-      new input_layer_partitioned_minibatch_parallel_io<data_layout>(
+      new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
         comm,
         parallel_io,
         (int) trainParams.MBSize,
@@ -238,8 +238,8 @@ int main(int argc, char *argv[]) {
       El::Int filterDims[] = {11, 11};
       El::Int convPads[] = {0, 0};
       El::Int convStrides[] = {4, 4};
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(
+      convolution_layer<> *layer
+        = new convolution_layer<>(
           1,
           numDims,
           inputChannels,
@@ -256,8 +256,7 @@ int main(int argc, char *argv[]) {
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::DATA_PARALLEL,
+        = new relu_layer<data_layout::DATA_PARALLEL>(
           2,
           comm,
           trainParams.MBSize,
@@ -275,8 +274,8 @@ int main(int argc, char *argv[]) {
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer<data_layout> *layer
-        = new local_response_normalization_layer<data_layout>(
+      local_response_normalization_layer<> *layer
+        = new local_response_normalization_layer<>(
           3,
           numDims,
           channels,
@@ -300,8 +299,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer<data_layout> *layer
-        = new pooling_layer<data_layout>(
+      pooling_layer<> *layer
+        = new pooling_layer<>(
           4,
           numDims,
           channels,
@@ -326,8 +325,8 @@ int main(int argc, char *argv[]) {
       El::Int filterDims[] = {5, 5};
       El::Int convPads[] = {2, 2};
       El::Int convStrides[] = {1, 1};
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(
+      convolution_layer<> *layer
+        = new convolution_layer<>(
           5,
           numDims,
           inputChannels,
@@ -344,8 +343,7 @@ int main(int argc, char *argv[]) {
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::DATA_PARALLEL,
+        = new relu_layer<data_layout::DATA_PARALLEL>(
           6,
           comm,
           trainParams.MBSize,
@@ -363,8 +361,8 @@ int main(int argc, char *argv[]) {
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer<data_layout> *layer
-        = new local_response_normalization_layer<data_layout>(
+      local_response_normalization_layer<> *layer
+        = new local_response_normalization_layer<>(
           7,
           numDims,
           channels,
@@ -388,8 +386,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer<data_layout> *layer
-        = new pooling_layer<data_layout>(
+      pooling_layer<> *layer
+        = new pooling_layer<>(
           8,
           numDims,
           channels,
@@ -414,8 +412,8 @@ int main(int argc, char *argv[]) {
       El::Int filterDims[] = {3, 3};
       El::Int convPads[] = {1, 1};
       El::Int convStrides[] = {1, 1};
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(
+      convolution_layer<> *layer
+        = new convolution_layer<>(
           9,
           numDims,
           inputChannels,
@@ -432,8 +430,7 @@ int main(int argc, char *argv[]) {
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::DATA_PARALLEL,
+        = new relu_layer<data_layout::DATA_PARALLEL>(
           10,
           comm,
           trainParams.MBSize,
@@ -452,8 +449,8 @@ int main(int argc, char *argv[]) {
       El::Int filterDims[] = {3, 3};
       El::Int convPads[] = {1, 1};
       El::Int convStrides[] = {1, 1};
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(
+      convolution_layer<> *layer
+        = new convolution_layer<>(
           11,
           numDims,
           inputChannels,
@@ -470,8 +467,7 @@ int main(int argc, char *argv[]) {
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::DATA_PARALLEL,
+        = new relu_layer<data_layout::DATA_PARALLEL>(
           12,
           comm,
           trainParams.MBSize,
@@ -490,8 +486,8 @@ int main(int argc, char *argv[]) {
       El::Int filterDims[] = {3, 3};
       El::Int convPads[] = {1, 1};
       El::Int convStrides[] = {1, 1};
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(
+      convolution_layer<> *layer
+        = new convolution_layer<>(
           13,
           numDims,
           inputChannels,
@@ -508,8 +504,7 @@ int main(int argc, char *argv[]) {
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::DATA_PARALLEL,
+        = new relu_layer<data_layout::DATA_PARALLEL>(
           14,
           comm,
           trainParams.MBSize,
@@ -527,8 +522,8 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer<data_layout> *layer
-        = new pooling_layer<data_layout>(
+      pooling_layer<> *layer
+        = new pooling_layer<>(
           15, numDims, channels, inputDim,
           poolWindowDims,
           poolPads,
@@ -542,9 +537,8 @@ int main(int argc, char *argv[]) {
 
     // Layer 11 (fully-connected)
     {
-      fully_connected_layer<data_layout> *fc =
-        new fully_connected_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+      fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
+        new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           16,
           dnn->get_layers().back()->get_num_neurons(),
           4096,
@@ -555,16 +549,14 @@ int main(int argc, char *argv[]) {
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+        = new relu_layer<data_layout::MODEL_PARALLEL>(
           17,
           comm,
           trainParams.MBSize,
           fc->get_num_neurons());
       dnn->add(relu);
       Layer *dropout_layer
-        = new dropout<data_layout>(
-          data_layout::MODEL_PARALLEL,
+        = new dropout<data_layout::MODEL_PARALLEL>(
           18,
           fc->get_num_neurons(),
           comm,
@@ -575,9 +567,8 @@ int main(int argc, char *argv[]) {
 
     // Layer 12 (fully-connected)
     {
-      fully_connected_layer<data_layout> *fc =
-        new fully_connected_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+      fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
+        new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           19,
           dnn->get_layers().back()->get_num_neurons(),
           4096,
@@ -588,16 +579,14 @@ int main(int argc, char *argv[]) {
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
       Layer *relu
-        = new relu_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+        = new relu_layer<data_layout::MODEL_PARALLEL>(
           20,
           comm,
           trainParams.MBSize,
           fc->get_num_neurons());
       dnn->add(relu);
       Layer *dropout_layer
-        = new dropout<data_layout>(
-          data_layout::MODEL_PARALLEL,
+        = new dropout<data_layout::MODEL_PARALLEL>(
           21,
           fc->get_num_neurons(),
           comm,
@@ -609,9 +598,8 @@ int main(int argc, char *argv[]) {
     // Layer 13 (softmax)
     {
       // Fully-connected without bias before softmax.
-      fully_connected_layer<data_layout> *fc =
-        new fully_connected_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+      fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
+        new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           22,
           dnn->get_layers().back()->get_num_neurons(),
           1000,
@@ -623,8 +611,7 @@ int main(int argc, char *argv[]) {
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
       Layer *softmax =
-        new softmax_layer<data_layout>(
-          data_layout::MODEL_PARALLEL,
+        new softmax_layer<data_layout::MODEL_PARALLEL>(
           23,
           1000,
           1000,
@@ -636,7 +623,7 @@ int main(int argc, char *argv[]) {
     }
 
     Layer *target_layer =
-      new target_layer_partitioned_minibatch_parallel_io<data_layout>(
+      new target_layer_partitioned_minibatch_parallel_io<>(
         comm,
         parallel_io,
         (int) trainParams.MBSize,
