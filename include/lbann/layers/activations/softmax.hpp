@@ -38,15 +38,15 @@
 #include <string>
 
 namespace lbann {
-template <class T_layout>
-class softmax_layer: public activation_layer<T_layout> {
+template <data_layout T_layout>
+class softmax_layer: public activation_layer {
 
  private:
   AbsDistMat *m_workspace;
   AbsDistMat *m_workspace_v;
 
  public:
-  softmax_layer(T_layout data_dist,
+  softmax_layer(data_layout data_dist,
                const uint index,
                const int numPrevNeurons,
                const uint numNeurons,
@@ -54,24 +54,12 @@ class softmax_layer: public activation_layer<T_layout> {
                const weight_initialization init,
                lbann_comm *comm,
                optimizer *opt)
-    :  activation_layer<T_layout>(data_dist, index, comm, mini_batch_size,
+    :  activation_layer(data_dist, index, comm, mini_batch_size,
                                   numNeurons) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::softmax;
     this->m_index = index;
-
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
   }
 
   ~softmax_layer(void) {
@@ -79,17 +67,7 @@ class softmax_layer: public activation_layer<T_layout> {
     delete m_workspace_v;
   }
 
-  /// Matrices should be in MC,MR distributions
-  virtual void initialize_model_parallel_distribution() {
-    m_workspace = new StarMRMat(this->m_comm->get_model_grid());
-    m_workspace_v = new StarMRMat(this->m_comm->get_model_grid());
-  }
-
-  /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  virtual void initialize_data_parallel_distribution(void) {
-    m_workspace = new StarVCMat(this->m_comm->get_model_grid());
-    m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
-  }
+  virtual inline void initialize_distributed_matrices();
 
   void setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);
@@ -231,6 +209,21 @@ class softmax_layer: public activation_layer<T_layout> {
     return Layer::loadFromCheckpointShared(p);
   }
 };
+
+/// Matrices should be in MC,MR distributions
+template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
+  activation_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  m_workspace = new StarMRMat(this->m_comm->get_model_grid());
+  m_workspace_v = new StarMRMat(this->m_comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
+  activation_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  m_workspace = new StarVCMat(this->m_comm->get_model_grid());
+  m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
+}
+
 }
 
 #endif // LBANN_LAYER_SOFTMAX_HPP_INCLUDED

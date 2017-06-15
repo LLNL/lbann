@@ -52,7 +52,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
     return;
   }
   // Skip non-learning layers.
-  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
   if(learning_layer == NULL) {
     return;
   }
@@ -74,7 +74,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
   for (size_t i = 1; i < layers.size() - 1; ++i) {
     Layer *l = layers[i];
     // Skip non-learning layers.
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
     if(learning_layer == NULL) {
       continue;
     }

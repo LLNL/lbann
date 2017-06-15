@@ -39,6 +39,42 @@
 using namespace std;
 using namespace El;
 
+namespace lbann {
+/// Matrices should be in MC,MR distributions
+template <>
+void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
+  m_weighted_sum        = new DistMat(m_comm->get_model_grid());
+  m_prev_activations    = new DistMat(m_comm->get_model_grid());
+  m_activations         = new DistMat(m_comm->get_model_grid());
+  m_prev_error_signal   = new DistMat(m_comm->get_model_grid());
+  m_error_signal        = new DistMat(m_comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new DistMat(m_comm->get_model_grid());
+  m_prev_activations_v  = new DistMat(m_comm->get_model_grid());
+  m_activations_v       = new DistMat(m_comm->get_model_grid());
+  m_prev_error_signal_v = new DistMat(m_comm->get_model_grid());
+  m_error_signal_v      = new DistMat(m_comm->get_model_grid());
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+template<>
+void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
+  m_weighted_sum        = new StarVCMat(m_comm->get_model_grid());
+  m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
+  m_activations         = new StarVCMat(m_comm->get_model_grid());
+  m_prev_error_signal   = new StarVCMat(m_comm->get_model_grid());
+  m_error_signal        = new StarVCMat(m_comm->get_model_grid());
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_weighted_sum_v      = new StarVCMat(m_comm->get_model_grid());
+  m_prev_activations_v  = new StarVCMat(m_comm->get_model_grid());
+  m_activations_v       = new StarVCMat(m_comm->get_model_grid());
+  m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
+  m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
+}
+}
+
 lbann::Layer::Layer(data_layout data_dist, const uint index,
                     lbann_comm *comm,
                     uint mbsize)
@@ -63,20 +99,6 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
   bp_input_d = NULL;
 #endif
 
-  // Setup the data distribution
-  switch(data_dist) {
-  case data_layout::MODEL_PARALLEL:
-    initialize_model_parallel_distribution();
-    break;
-  case data_layout::DATA_PARALLEL:
-    initialize_data_parallel_distribution();
-    break;
-  default:
-    throw lbann_exception(std::string{} + __FILE__ + " " +
-                          std::to_string(__LINE__) +
-                          "Invalid data layout selected");
-  }
-
   reset_counters();
 
 }
@@ -92,38 +114,6 @@ lbann::Layer::~Layer() {
   delete m_error_signal_v;
   delete m_activations_v;
   delete m_prev_activations_v;
-}
-
-/// Matrices should be in MC,MR distributions
-void lbann::Layer::initialize_model_parallel_distribution() {
-  m_weighted_sum        = new DistMat(m_comm->get_model_grid());
-  m_prev_activations    = new DistMat(m_comm->get_model_grid());
-  m_activations         = new DistMat(m_comm->get_model_grid());
-  m_prev_error_signal   = new DistMat(m_comm->get_model_grid());
-  m_error_signal        = new DistMat(m_comm->get_model_grid());
-
-  /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new DistMat(m_comm->get_model_grid());
-  m_prev_activations_v  = new DistMat(m_comm->get_model_grid());
-  m_activations_v       = new DistMat(m_comm->get_model_grid());
-  m_prev_error_signal_v = new DistMat(m_comm->get_model_grid());
-  m_error_signal_v      = new DistMat(m_comm->get_model_grid());
-}
-
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-void lbann::Layer::initialize_data_parallel_distribution() {
-  m_weighted_sum        = new StarVCMat(m_comm->get_model_grid());
-  m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
-  m_activations         = new StarVCMat(m_comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(m_comm->get_model_grid());
-  m_error_signal        = new StarVCMat(m_comm->get_model_grid());
-
-  /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new StarVCMat(m_comm->get_model_grid());
-  m_prev_activations_v  = new StarVCMat(m_comm->get_model_grid());
-  m_activations_v       = new StarVCMat(m_comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
 
 void lbann::Layer::forwardProp() {

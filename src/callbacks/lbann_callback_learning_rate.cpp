@@ -42,7 +42,7 @@ void lbann_callback_learning_rate::setup(model *m) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
     // Skip non-learning layers.
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layer);
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
     if(learning_layer == NULL) {
       continue;
     }
@@ -62,7 +62,7 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
     // Skip non-learning layers.
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layer);
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
     if(learning_layer == NULL) {
       continue;
     }
@@ -92,7 +92,7 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
 
 float lbann_callback_step_learning_rate::schedule(model *m, Layer *l) {
   // Skip non-learning layers.
-  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
   if(learning_layer == NULL) {
     return 0;
   }
@@ -117,7 +117,7 @@ lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
 /// continues to improve
 float lbann_callback_adaptive_learning_rate::schedule(model *m, Layer *l) {
   // Skip non-learning layers.
-  learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (l);
+  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
   if(learning_layer == NULL) {
     return 0;
   }

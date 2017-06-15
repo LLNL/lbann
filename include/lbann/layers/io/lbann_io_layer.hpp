@@ -41,7 +41,6 @@
 #include <stdio.h>
 
 namespace lbann {
-template <class T_layout>
 class io_layer : public Layer {
  protected:
   dataset m_training_dataset;
@@ -73,9 +72,9 @@ class io_layer : public Layer {
     }
   }
 
-
-  virtual void initialize_model_parallel_distribution() {}
-  virtual void initialize_data_parallel_distribution() {}
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    Layer::initialize_distributed_matrices<T_layout>();
+  }
 
   // io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader *training_data_reader)
   //   : io_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}

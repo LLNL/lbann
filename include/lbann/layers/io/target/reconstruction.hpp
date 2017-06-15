@@ -35,8 +35,8 @@
 #include "lbann/utils/lbann_random.hpp"
 
 namespace lbann {
-template <class T_layout>
-class reconstruction_layer : public target_layer<T_layout> {
+template <data_layout T_layout>
+class reconstruction_layer : public target_layer {
  private:
   Layer *m_original_layer;
   DataType aggregate_cost;
@@ -46,12 +46,13 @@ class reconstruction_layer : public target_layer<T_layout> {
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(T_layout data_dist, size_t index,lbann_comm *comm,
+  reconstruction_layer(data_layout data_dist, size_t index,lbann_comm *comm,
                        optimizer *opt,/*needed?*/
                        const uint minim_batch_size,
                        Layer *original_layer)
-    :  target_layer<T_layout>(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
-
+    :  target_layer(data_dist, comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::reconstruction;
     this->m_index = index;
     this->m_num_neurons = original_layer->get_num_neurons();
@@ -59,8 +60,12 @@ class reconstruction_layer : public target_layer<T_layout> {
     num_forwardprop_steps = 0;
   }
 
+  virtual inline void initialize_distributed_matrices() {
+    target_layer::initialize_distributed_matrices<T_layout>();
+  }
+
   void setup(int num_prev_neurons) {
-    target_layer<T_layout>::setup(num_prev_neurons);
+    target_layer::setup(num_prev_neurons);
     Layer::setup(num_prev_neurons);
 
     // Initialize other matrices
@@ -74,7 +79,7 @@ class reconstruction_layer : public target_layer<T_layout> {
   void fp_set_std_matrix_view() {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    target_layer<T_layout>::fp_set_std_matrix_view();
+    target_layer::fp_set_std_matrix_view();
 
     //view of original layer
     View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));

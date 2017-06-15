@@ -30,17 +30,16 @@
 #include "lbann/layers/io/lbann_io_layer.hpp"
 
 namespace lbann {
-template <class T_layout>
-class input_layer : public io_layer<T_layout> {
+class input_layer : public io_layer {
  public:
-  input_layer(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers) {
-    this->m_num_neurons = io_layer<T_layout>::get_linearized_data_size();
+  input_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+    : io_layer(data_dist, comm, mini_batch_size, data_readers) {
+    this->m_num_neurons = io_layer::get_linearized_data_size();
   }
 
-  virtual void initialize_model_parallel_distribution() {}
-  virtual void initialize_data_parallel_distribution() {}
-
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    io_layer::initialize_distributed_matrices<T_layout>();
+  }
 
   /**
    * Input layers are not able to return output matrices for backward propagation
@@ -60,7 +59,7 @@ class input_layer : public io_layer<T_layout> {
     this->m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
 
     // save our own state
-    io_layer<T_layout>::saveToCheckpointShared(p);
+    io_layer::saveToCheckpointShared(p);
 
     return true;
   }
@@ -73,7 +72,7 @@ class input_layer : public io_layer<T_layout> {
     this->m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
 
     // save our own state
-    io_layer<T_layout>::loadFromCheckpointShared(p);
+    io_layer::loadFromCheckpointShared(p);
 
     return true;
   }

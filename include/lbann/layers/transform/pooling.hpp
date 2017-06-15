@@ -39,9 +39,9 @@
 namespace lbann {
 
 /// Pooling layer
-template <class T_layout>
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
 //class pooling_layer : public transform<T_layout> {
-class pooling_layer : public transform<T_layout> {
+class pooling_layer : public transform {
  private:
 
   /// Pooling mode
@@ -95,9 +95,11 @@ class pooling_layer : public transform<T_layout> {
                 uint mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : transform<T_layout>(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
+    : transform(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::pooling;
 
     // Initialize input dimensions and pooling parameters
@@ -187,6 +189,10 @@ class pooling_layer : public transform<T_layout> {
 
     }
   #endif // __LIB_CUDNN
+  }
+
+  virtual inline void initialize_distributed_matrices() {
+    transform::initialize_distributed_matrices<T_layout>();
   }
 
   void setup(const int num_prev_neurons) {

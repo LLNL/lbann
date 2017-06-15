@@ -51,7 +51,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
       std::cout << "Checking layer " << l << std::endl;
     }
     // Skip non-learning layers.
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layers[l]);
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (layers[l]);
     if(learning_layer == NULL) {
       continue;
     }

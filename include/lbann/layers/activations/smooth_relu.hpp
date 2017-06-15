@@ -35,13 +35,18 @@ namespace lbann {
  * Smooth Rectified linear unit activation function.
  * This is an approximation to the softplus.
  */
-template <class T_layout>
-class smooth_relu_layer : public entrywise_activation_layer<T_layout> {
+template <data_layout T_layout>
+class smooth_relu_layer : public entrywise_activation_layer {
  public:
   smooth_relu_layer(data_layout data_dist, uint index, lbann_comm *comm,
                     const uint mini_batch_size, uint num_neurons) :
-    entrywise_activation_layer<T_layout>(data_dist, index, comm,
-                                         mini_batch_size, num_neurons) {}
+    entrywise_activation_layer(data_dist, index, comm,
+                               mini_batch_size, num_neurons) { initialize_distributed_matrices(); }
+
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+
  protected:
   DataType activation_function(DataType z) {
     return z / (DataType(1) + std::exp(-z));

@@ -38,40 +38,46 @@
 #include <unistd.h>
 
 namespace lbann {
-template <class T_layout>
-class target_layer_distributed_minibatch_parallel_io : public target_layer<T_layout>, public distributed_minibatch_parallel_io {
+template <data_layout T_layout>
+class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
  protected:
   Mat Y_local;
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch_parallel_io(T_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : target_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
+  target_layer_distributed_minibatch_parallel_io(data_layout data_dist, lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::target_distributed_minibatch_parallel_io;
     //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
+  virtual inline void initialize_distributed_matrices() {
+    target_layer::initialize_distributed_matrices<T_layout>();
+  }
+
   void setup(int num_prev_neurons) {
-    target_layer<T_layout>::setup(num_prev_neurons);
+    target_layer::setup(num_prev_neurons);
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(io_layer<T_layout>::m_data_sets_span_models) {
+      if(io_layer::m_data_sets_span_models) {
         int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
         int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
         int model_offset = Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size;
         //cout << "Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
-        io_layer<T_layout>::setup_data_readers_for_training(base_offset,
+        io_layer::setup_data_readers_for_training(base_offset,
                                                             stride,
                                                             model_offset);
         distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
         /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-        io_layer<T_layout>::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
+        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                               m_num_parallel_readers_training * Layer::m_mini_batch_size);
       } else {
-        io_layer<T_layout>::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
+        io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                             m_num_parallel_readers_training * Layer::m_mini_batch_size);
-        io_layer<T_layout>::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
+        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                               m_num_parallel_readers_training * Layer::m_mini_batch_size);
       }
     }
@@ -100,7 +106,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
     int num_samples_in_batch = fetch_to_local_matrix(Y_local);
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
-      target_layer<T_layout>::update_num_samples_processed(num_samples_in_batch);
+      target_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
     int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
@@ -142,8 +148,8 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
   }
 
   int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
-    if (target_layer<T_layout>::is_for_regression()) {
+    generic_data_reader *data_reader = target_layer::select_data_reader();
+    if (target_layer::is_for_regression()) {
       return data_reader->fetch_response(M_local);
     } else {
       return data_reader->fetch_label(M_local);
@@ -155,7 +161,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer<T_lay
   }
 
   bool update_data_reader() {
-    generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
+    generic_data_reader *data_reader = target_layer::select_data_reader();
     if(this->m_shared_data_reader) {
       /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
       /// or will be done on the next update of the input layer (which includes adding the stride).

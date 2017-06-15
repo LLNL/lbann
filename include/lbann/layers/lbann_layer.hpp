@@ -163,8 +163,8 @@ class Layer {
 
   virtual ~Layer(void);
 
-  virtual void initialize_model_parallel_distribution();
-  virtual void initialize_data_parallel_distribution();
+  template <data_layout T_layout>
+  void initialize_distributed_matrices();
 
   virtual void forwardProp(void);
   virtual void backProp(void);
@@ -388,6 +388,5 @@ class Layer {
   double update_time;
 };
 }
-
 
 #endif // LBANN_LAYER_HPP_INCLUDED

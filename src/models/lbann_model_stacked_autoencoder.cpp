@@ -70,14 +70,36 @@ void lbann::stacked_autoencoder::begin_stack(Layer* new_layer){
     m_layers.push_back(new_layer);
     //mirror layer
     optimizer *mirror_optimizer = create_optimizer();
-    reconstruction_layer<data_layout>* mirror_layer = new reconstruction_layer<data_layout>(new_layer->get_data_layout(),
-                                                      cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+    Layer *mirror_layer = NULL;
+    switch(new_layer->get_data_layout()){
+    case data_layout::MODEL_PARALLEL:
+      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(new_layer->get_data_layout(),
+                                                                           cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      break;
+    case data_layout::DATA_PARALLEL:
+      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(new_layer->get_data_layout(),
+                                                                          cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      break;
+    default:
+      break;
+    }
     m_layers.push_back(mirror_layer);
   } else {
     m_layers.insert(m_layers.begin()+ mid + 1,new_layer);
     optimizer *mirror_optimizer = create_optimizer();
-    reconstruction_layer<data_layout>* mirror_layer = new reconstruction_layer<data_layout>(new_layer->get_data_layout(),
-                                                     cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+    Layer *mirror_layer = NULL;
+    switch(new_layer->get_data_layout()){
+    case data_layout::MODEL_PARALLEL:
+      mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(new_layer->get_data_layout(),
+                                                                           cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      break;
+    case data_layout::DATA_PARALLEL:
+      mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(new_layer->get_data_layout(),
+                                                                          cur_size+1, m_comm, mirror_optimizer, m_mini_batch_size, new_layer);
+      break;
+    default:
+      break;
+    }
     m_layers.insert(m_layers.begin() + mid + 2, mirror_layer);
 
     // re-number layer index

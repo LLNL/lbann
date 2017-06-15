@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 #ifdef PARTITIONED
     Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #else
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
 #endif
     dnn.add(input_layer);
 
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
     int layer_id;
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx1 = layer_id;
-    Layer *fc1 = new fully_connected_layer<data_layout>(
+    Layer *fc1 = new fully_connected_layer<DATA_LAYOUT>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     dnn.add(fc1);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu1 = new relu_layer<data_layout>(
+    Layer *relu1 = new relu_layer<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       comm,
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
     dnn.add(relu1);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout1 = new dropout<data_layout>(
+    Layer *dropout1 = new dropout<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       prev_num_neurons,
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx2 = layer_id;
-    Layer *fc2 = new fully_connected_layer<data_layout>(
+    Layer *fc2 = new fully_connected_layer<DATA_LAYOUT>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
     dnn.add(fc2);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu2 = new relu_layer<data_layout>(
+    Layer *relu2 = new relu_layer<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       comm,
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
     dnn.add(relu2);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout2 = new dropout<data_layout>(
+    Layer *dropout2 = new dropout<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       prev_num_neurons,
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx3 = layer_id;
-    Layer *fc3 = new fully_connected_layer<data_layout>(
+    Layer *fc3 = new fully_connected_layer<DATA_LAYOUT>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
     dnn.add(fc3);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu3 = new relu_layer<data_layout>(
+    Layer *relu3 = new relu_layer<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       comm,
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
     dnn.add(relu3);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout3 = new dropout<data_layout>(
+    Layer *dropout3 = new dropout<DATA_LAYOUT>(
       DATA_LAYOUT,
       layer_id,
       prev_num_neurons,
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
     uint fcidx4 = layer_id;
-    Layer *fc4 = new fully_connected_layer<data_layout>(
+    Layer *fc4 = new fully_connected_layer<DATA_LAYOUT>(
        DATA_LAYOUT, 
        layer_id,
        prev_num_neurons,
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
     dnn.add(fc4);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *softmax = new softmax_layer<data_layout>(
+    Layer *softmax = new softmax_layer<DATA_LAYOUT>(
        DATA_LAYOUT,
        layer_id,
        prev_num_neurons,
@@ -317,9 +317,9 @@ int main(int argc, char *argv[]) {
     dnn.add(softmax);
 
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<data_layout>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
 #endif
     dnn.add(target_layer);
 

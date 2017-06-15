@@ -44,49 +44,27 @@ namespace lbann {
  * The implementation recommends a keep probability of 0.5 for fully-connected
  * layers and 0.8 for input layers as good starting points.
  */
-template <class T_layout>
-class dropout : public regularizer_layer<T_layout> {
+template <data_layout T_layout>
+class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
   dropout(data_layout data_dist, const uint index, const uint num_neurons, lbann_comm *comm,
           uint mini_batch_size, float keep_prob=0.5f) :
-    regularizer_layer<T_layout>(data_dist, index, comm, mini_batch_size),
+    regularizer_layer(data_dist, index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
   }
   ~dropout() {
     delete m_cur_mask;
   }
-  void initialize_model_parallel_distribution() {
-#ifdef LBANN_PROCDET_DROPOUT
-    m_cur_mask = new DistMat(m_comm->get_model_grid());
-#else
-    m_cur_mask = new Mat;
-#endif
-  }
-  void initialize_data_parallel_distribution() {
-#ifdef LBANN_PROCDET_DROPOUT
-    m_cur_mask = new StarMat(m_comm->get_model_grid());
-#else
-    m_cur_mask = new Mat;
-#endif
-  }
+
+  virtual inline void initialize_distributed_matrices();
+
   void setup(int num_prev_neurons) {
-    regularizer_layer<T_layout>::setup(num_prev_neurons);
+    regularizer_layer::setup(num_prev_neurons);
     this->m_num_neurons = num_prev_neurons;
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
@@ -166,6 +144,24 @@ class dropout : public regularizer_layer<T_layout> {
   Mat *m_cur_mask;
 #endif
 };
+
+template<> inline void dropout<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
+  regularizer_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+#ifdef LBANN_PROCDET_DROPOUT
+  m_cur_mask = new DistMat(m_comm->get_model_grid());
+#else
+  m_cur_mask = new Mat;
+#endif
+}
+
+template<> inline void dropout<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
+  regularizer_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+#ifdef LBANN_PROCDET_DROPOUT
+  m_cur_mask = new StarMat(m_comm->get_model_grid());
+#else
+  m_cur_mask = new Mat;
+#endif
+}
 
 }  // namespace lbann
 

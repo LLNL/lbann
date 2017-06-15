@@ -35,7 +35,6 @@
 
 namespace lbann {
 
-template <class T_layout>
 class regularizer_layer : public Layer {
  public:
   regularizer_layer(data_layout data_dist, const uint index, 
@@ -46,13 +45,9 @@ class regularizer_layer : public Layer {
   }
   virtual ~regularizer_layer() {}
 
-  virtual void initialize_model_parallel_distribution() {
-    Layer::initialize_model_parallel_distribution();
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    Layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual void initialize_data_parallel_distribution() {
-    Layer::initialize_data_parallel_distribution();
-  }
-
 };
 
 }  // namespace lbann

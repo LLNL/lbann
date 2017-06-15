@@ -39,8 +39,8 @@
 #include <unistd.h>
 
 namespace lbann {
-template <class T_layout>
-class fully_connected_layer : public learning<T_layout> {
+template <data_layout T_layout>
+class fully_connected_layer : public learning {
  private:
 
   const weight_initialization m_weight_initialization;
@@ -81,7 +81,7 @@ class fully_connected_layer : public learning<T_layout> {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  fully_connected_layer(T_layout data_dist,
+  fully_connected_layer(data_layout data_dist,
                       const uint index,
                       const int numPrevNeurons,
                       const uint numNeurons,
@@ -89,11 +89,14 @@ class fully_connected_layer : public learning<T_layout> {
                       const weight_initialization init,
                       lbann_comm *comm,
                         optimizer *opt, bool has_bias = true)
-    : learning<T_layout>(data_dist,
-                         index, numPrevNeurons, 
-                         numNeurons, mini_batch_size, 
-                         comm, opt), m_has_bias(has_bias),
+    : learning(data_dist,
+               index, numPrevNeurons, 
+               numNeurons, mini_batch_size, 
+               comm, opt), m_has_bias(has_bias),
     m_weight_initialization(init) {
+
+    // Setup the data distribution
+    initialize_distributed_matrices();
 
     this->m_type = layer_type::fully_connected;
 
@@ -101,20 +104,6 @@ class fully_connected_layer : public learning<T_layout> {
     this->m_num_neurons = numNeurons;
     WBL2NormSum = 0.0;
     m_bias_term = 1.0;
-
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
   }
 
   ~fully_connected_layer(void) {
@@ -132,42 +121,10 @@ class fully_connected_layer : public learning<T_layout> {
     }
   }
 
-  /// Matrices should be in MC,MR distributions
-  void initialize_model_parallel_distribution(void) {
-    if(m_has_bias) {
-      m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
-      m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
-    }
-
-    /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new DistMat(this->m_comm->get_model_grid());
-    m_activation_weights_gradient_v  = new DistMat(this->m_comm->get_model_grid());
-    if(m_has_bias) {
-      m_bias_weights_v                 = new DistMat(this->m_comm->get_model_grid());
-      m_bias_weights_gradient_v        = new DistMat(this->m_comm->get_model_grid());
-      m_bias_bp_t_v                    = new DistMat(this->m_comm->get_model_grid());
-    }
-  }
-
-  /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  void initialize_data_parallel_distribution(void) {
-    if(m_has_bias) {
-      m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
-      m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
-    }
-
-    /// Instantiate these view objects but do not allocate data for them
-    m_activation_weights_v           = new StarMat(this->m_comm->get_model_grid());
-    m_activation_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
-    if(m_has_bias) {
-      m_bias_weights_v                 = new StarMat(this->m_comm->get_model_grid());
-      m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
-      m_bias_bp_t_v                    = new StarVCMat(this->m_comm->get_model_grid());
-    }
-  }
+  virtual inline void initialize_distributed_matrices(void);
 
   void setup(int numPrevNeurons) {
-    learning<T_layout>::setup(numPrevNeurons);
+    learning::setup(numPrevNeurons);
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
@@ -214,7 +171,7 @@ class fully_connected_layer : public learning<T_layout> {
   void fp_set_std_matrix_view(void) {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    learning<T_layout>::fp_set_std_matrix_view();
+    learning::fp_set_std_matrix_view();
 
     if(m_has_bias) {
       /// Note that the view of the bias backprop term is transposed, so the current mini-batch size is used to
@@ -344,6 +301,42 @@ class fully_connected_layer : public learning<T_layout> {
   }
 
 };
+
+/// Matrices should be in MC,MR distributions
+template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices(void) {
+  learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  if(m_has_bias) {
+    m_bias_bp_t                      = new DistMat(this->m_comm->get_model_grid());
+    m_bias_weights_repl              = new DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  }
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new DistMat(this->m_comm->get_model_grid());
+  m_activation_weights_gradient_v  = new DistMat(this->m_comm->get_model_grid());
+  if(m_has_bias) {
+    m_bias_weights_v                 = new DistMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new DistMat(this->m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new DistMat(this->m_comm->get_model_grid());
+  }
+}
+
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices(void) {
+  learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  if(m_has_bias) {
+    m_bias_bp_t                      = new StarVCMat(this->m_comm->get_model_grid());
+    m_bias_weights_repl              = new StarMat(this->m_comm->get_model_grid());
+  }
+
+  /// Instantiate these view objects but do not allocate data for them
+  m_activation_weights_v           = new StarMat(this->m_comm->get_model_grid());
+  m_activation_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
+  if(m_has_bias) {
+    m_bias_weights_v                 = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
+    m_bias_bp_t_v                    = new StarVCMat(this->m_comm->get_model_grid());
+  }
+}
 
 }
 

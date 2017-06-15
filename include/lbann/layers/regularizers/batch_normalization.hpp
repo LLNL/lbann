@@ -45,8 +45,8 @@ namespace lbann {
  * See also:
  * https://cthorey.github.io/backpropagation/
  */
-template <class T_layout>
-class batch_normalization : public regularizer_layer<T_layout> {
+template <data_layout T_layout>
+class batch_normalization : public regularizer_layer {
  public:
   /**
    * Set up batch normalization.
@@ -61,23 +61,12 @@ class batch_normalization : public regularizer_layer<T_layout> {
   batch_normalization(data_layout data_dist, const uint index, const uint num_neurons,
                       lbann_comm *comm, uint mini_batch_size,
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
-    : regularizer_layer<T_layout>(data_dist, index, comm, NULL, mini_batch_size),
+    : regularizer_layer(data_dist, index, comm, NULL, mini_batch_size),
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::batch_normalization;
     this->m_num_neurons = num_neurons;
-    // Setup the data distribution
-    switch(data_dist) {
-    case data_layout::MODEL_PARALLEL:
-      initialize_model_parallel_distribution();
-      break;
-    case data_layout::DATA_PARALLEL:
-      initialize_data_parallel_distribution();
-      break;
-    default:
-      throw lbann_exception(std::string{} + __FILE__ + " " +
-                            std::to_string(__LINE__) +
-                            "Invalid data layout selected");
-    }
   }
 
   ~batch_normalization() {
@@ -91,29 +80,11 @@ class batch_normalization : public regularizer_layer<T_layout> {
     delete m_running_stdev;
   }
 
-  void initialize_model_parallel_distribution() {
-    m_gamma = new RowSumMat(this->m_comm->get_model_grid());
-    m_beta = new RowSumMat(this->m_comm->get_model_grid());
-    m_dgamma = new RowSumMat(this->m_comm->get_model_grid());
-    m_dbeta = new RowSumMat(this->m_comm->get_model_grid());
-    m_mean = new RowSumMat(this->m_comm->get_model_grid());
-    m_stdev = new RowSumMat(this->m_comm->get_model_grid());
-    m_running_mean = new RowSumMat(this->m_comm->get_model_grid());
-    m_running_stdev = new RowSumMat(this->m_comm->get_model_grid());
-  }
-  void initialize_data_parallel_distribution() {
-    m_gamma = new StarMat(this->m_comm->get_model_grid());
-    m_beta = new StarMat(this->m_comm->get_model_grid());
-    m_dgamma = new StarMat(this->m_comm->get_model_grid());
-    m_dbeta = new StarMat(this->m_comm->get_model_grid());
-    m_mean = new StarMat(this->m_comm->get_model_grid());
-    m_stdev = new StarMat(this->m_comm->get_model_grid());
-    m_running_mean = new StarMat(this->m_comm->get_model_grid());
-    m_running_stdev = new StarMat(this->m_comm->get_model_grid());
-  }
+  virtual inline void initialize_distributed_matrices();
+
   /** Initializes matrices. */
   void setup(int num_prev_neurons) {
-    regularizer_layer<T_layout>::setup(num_prev_neurons);
+    regularizer_layer::setup(num_prev_neurons);
     this->m_num_neurons = num_prev_neurons;
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
@@ -268,6 +239,29 @@ class batch_normalization : public regularizer_layer<T_layout> {
   /** Running standard deviation of activations (for inference). */
   ElMat *m_running_stdev;
 };
+
+template<> inline void batch_normalization<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
+  regularizer_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  m_gamma = new RowSumMat(this->m_comm->get_model_grid());
+  m_beta = new RowSumMat(this->m_comm->get_model_grid());
+  m_dgamma = new RowSumMat(this->m_comm->get_model_grid());
+  m_dbeta = new RowSumMat(this->m_comm->get_model_grid());
+  m_mean = new RowSumMat(this->m_comm->get_model_grid());
+  m_stdev = new RowSumMat(this->m_comm->get_model_grid());
+  m_running_mean = new RowSumMat(this->m_comm->get_model_grid());
+  m_running_stdev = new RowSumMat(this->m_comm->get_model_grid());
+}
+template<> inline void batch_normalization<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
+  regularizer_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  m_gamma = new StarMat(this->m_comm->get_model_grid());
+  m_beta = new StarMat(this->m_comm->get_model_grid());
+  m_dgamma = new StarMat(this->m_comm->get_model_grid());
+  m_dbeta = new StarMat(this->m_comm->get_model_grid());
+  m_mean = new StarMat(this->m_comm->get_model_grid());
+  m_stdev = new StarMat(this->m_comm->get_model_grid());
+  m_running_mean = new StarMat(this->m_comm->get_model_grid());
+  m_running_stdev = new StarMat(this->m_comm->get_model_grid());
+}
 
 }  // namespace lbann
 

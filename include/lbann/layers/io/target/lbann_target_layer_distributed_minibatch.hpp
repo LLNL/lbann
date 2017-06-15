@@ -35,32 +35,38 @@
 #include <unistd.h>
 
 namespace lbann {
-template <class T_layout>
-class target_layer_distributed_minibatch : public target_layer<T_layout> {
+template <data_layout T_layout>
+class target_layer_distributed_minibatch : public target_layer {
  protected:
   int m_root; /* Which rank is the root of the CircMat */
   Mat Y_local;
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : target_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(this->m_comm->get_model_grid()) {
+  target_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : target_layer(data_dist, comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(this->m_comm->get_model_grid()) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::target_distributed_minibatch;
     //  m_index = index;
     m_root = 0;
     //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
+  virtual inline void initialize_distributed_matrices() {
+    target_layer::initialize_distributed_matrices<T_layout>();
+  }
+
   void setup(int num_prev_neurons) {
-    target_layer<T_layout>::setup(num_prev_neurons);
+    target_layer::setup(num_prev_neurons);
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(io_layer<T_layout>::m_data_sets_span_models) {
-        io_layer<T_layout>::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
+      if(io_layer::m_data_sets_span_models) {
+        io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
                                                             Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
-        io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+        io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
       } else {
-        io_layer<T_layout>::setup_data_readers_for_training(0, this->m_mini_batch_size);
-        io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+        io_layer::setup_data_readers_for_training(0, this->m_mini_batch_size);
+        io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
       }
     }
 
@@ -76,7 +82,7 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
   }
 
   void fp_compute() {
-    generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
+    generic_data_reader *data_reader = target_layer::select_data_reader();
 
     if (this->m_comm->get_rank_in_model() == m_root) {
       Zero(Y_local);
@@ -119,7 +125,7 @@ class target_layer_distributed_minibatch : public target_layer<T_layout> {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    generic_data_reader *data_reader = target_layer<T_layout>::select_data_reader();
+    generic_data_reader *data_reader = target_layer::select_data_reader();
     if(this->m_shared_data_reader) { /// If the data reader is shared with an input layer, don't update the reader
       return true;
     } else {

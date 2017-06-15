@@ -96,13 +96,13 @@ void lbann_callback_imcomm::setup(model *m) {
         data_layout layout = layers[layer]->get_data_layout();
         // TODO: Update this when we have better templates.
         if (layout == data_layout::MODEL_PARALLEL) {
-          learning<data_layout> *learning_layer =
-            dynamic_cast<learning<data_layout>*>(layers[layer]);
+          learning *learning_layer =
+            dynamic_cast<learning*>(layers[layer]);
           const ElMat& gradients = learning_layer->get_weights_gradient();
           Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
         } else if (layout == data_layout::DATA_PARALLEL) {
-          learning<data_layout> *learning_layer =
-            dynamic_cast<learning<data_layout>*>(layers[layer]);
+          learning *learning_layer =
+            dynamic_cast<learning*>(layers[layer]);
           const ElMat& gradients = learning_layer->get_weights_biases_gradient();
           Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
         }
@@ -126,12 +126,12 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
       data_layout layout = layers[layer]->get_data_layout();
       // TODO: Update this when we have better templates.
       if (layout == data_layout::MODEL_PARALLEL) {
-        learning<data_layout> *learning_layer =
-          dynamic_cast<learning<data_layout>*>(layers[layer]);
+        learning *learning_layer =
+          dynamic_cast<learning*>(layers[layer]);
         local_gradients = &(learning_layer->get_weights_gradient().Matrix());
       } else if (layout == data_layout::DATA_PARALLEL) {
-        learning<data_layout> *learning_layer =
-          dynamic_cast<learning<data_layout>*>(layers[layer]);
+        learning *learning_layer =
+          dynamic_cast<learning*>(layers[layer]);
         local_gradients = &(learning_layer->get_weights_gradient().Matrix());
       }
       // TODO: Handle reshaping.
@@ -161,12 +161,12 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     data_layout layout = layers[layer]->get_data_layout();
     // TODO: Update this when we have better templates.
     if (layout == data_layout::MODEL_PARALLEL) {
-      learning<data_layout> *learning_layer =
-        dynamic_cast<learning<data_layout>*>(layers[layer]);
+      learning *learning_layer =
+        dynamic_cast<learning*>(layers[layer]);
       local_gradients = &(learning_layer->get_weights_gradient().Matrix());
     } else if (layout == data_layout::DATA_PARALLEL) {
-      learning<data_layout> *learning_layer =
-        dynamic_cast<learning<data_layout>*>(layers[layer]);
+      learning *learning_layer =
+        dynamic_cast<learning*>(layers[layer]);
       local_gradients = &(learning_layer->get_weights_gradient().Matrix());
     }
     switch (params.ct) {

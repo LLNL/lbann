@@ -38,7 +38,7 @@ void lbann_callback_dump_weights::on_epoch_end(model *m) {
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-layer";
   // Skip the input/output layers.
   for (unsigned i = 1; i < layers.size() - 1; ++i) {
-    learning<data_layout> *learning_layer = (learning<data_layout> *) dynamic_cast<learning<data_layout> *> (layers[i]);
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (layers[i]);
     if(learning_layer != NULL) {
       El::Write(learning_layer->get_weights_biases(),
                 prefix + std::to_string(i) + "-WeightsBiases",

@@ -35,8 +35,8 @@
 #include <unistd.h>
 
 namespace lbann {
-template <class T_layout>
-class input_layer_distributed_minibatch : public input_layer<T_layout> {
+template <data_layout T_layout>
+class input_layer_distributed_minibatch : public input_layer {
  public:
   int m_root; /* Which rank is the root of the CircMat */
   Mat X_local;
@@ -44,9 +44,10 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
   long m_num_data_per_epoch;
 
  public:
-  input_layer_distributed_minibatch(T_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
-
+  input_layer_distributed_minibatch(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer(data_dist, comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::input_distributed_minibatch;
 
     //  m_index = index;
@@ -55,14 +56,18 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
 
   }
 
+  virtual inline void initialize_distributed_matrices() {
+    input_layer::initialize_distributed_matrices<T_layout>();
+  }
+
   void setup(int num_prev_neurons) {
-    if(io_layer<T_layout>::m_data_sets_span_models) {
-      io_layer<T_layout>::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
+    if(io_layer::m_data_sets_span_models) {
+      io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
                                                           Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
-      io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+      io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
     } else {
-      io_layer<T_layout>::setup_data_readers_for_training(0, this->m_mini_batch_size);
-      io_layer<T_layout>::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
+      io_layer::setup_data_readers_for_training(0, this->m_mini_batch_size);
+      io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
     }
 
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
@@ -72,7 +77,7 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
  protected:
   /** Handle forward propagation (arguments are unused.) */
   void fp_compute() {
-    generic_data_reader *data_reader = input_layer<T_layout>::select_data_reader();
+    generic_data_reader *data_reader = input_layer::select_data_reader();
     int num_samples_in_batch = 0;
 
     if (this->m_comm->get_rank_in_model() == m_root) {
@@ -104,7 +109,7 @@ class input_layer_distributed_minibatch : public input_layer<T_layout> {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    generic_data_reader *data_reader = input_layer<T_layout>::select_data_reader();
+    generic_data_reader *data_reader = input_layer::select_data_reader();
     return !data_reader->update();
   }
 

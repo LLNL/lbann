@@ -46,8 +46,8 @@ namespace lbann {
 class lbann_callback_imcomm;
 
 /// Convolution layer
-template <class T_layout>
-class convolution_layer : public learning<T_layout> {
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
+class convolution_layer : public learning {
  private:
 
   friend class lbann_callback_imcomm;
@@ -129,11 +129,15 @@ class convolution_layer : public learning<T_layout> {
       lbann_comm *comm,
       optimizer *opt,
       cudnn::cudnn_manager *cudnn = NULL)
-    : learning<T_layout>(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt),
+    : learning(data_layout::DATA_PARALLEL, index, 0, 0, mini_batch_size, comm, opt),
       m_weight_initialization(init),
       m_num_dims(num_dims),
       m_num_input_channels(num_input_channels),
       m_num_output_channels(num_output_channels) {
+
+    // Setup the data distribution
+    initialize_distributed_matrices();
+
     this->m_type = layer_type::convolution;
 
     // Initialize input dimensions and convolution parameters
@@ -235,6 +239,10 @@ class convolution_layer : public learning<T_layout> {
 
     }
   #endif // #ifdef __LIB_CUDNN
+  }
+
+  void initialize_distributed_matrices() {
+    learning::initialize_distributed_matrices<T_layout>();
   }
 
   void setup(const int num_prev_neurons) {

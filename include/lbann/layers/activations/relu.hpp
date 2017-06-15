@@ -36,8 +36,8 @@ namespace lbann {
  * Rectified linear unit activation function.
  * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-template <class T_layout>
-class relu_layer : public entrywise_activation_layer<T_layout> {
+template <data_layout T_layout>
+class relu_layer : public entrywise_activation_layer {
 
  private:
 
@@ -55,8 +55,10 @@ class relu_layer : public entrywise_activation_layer<T_layout> {
              uint mini_batch_size,
              uint num_neurons,
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer<T_layout>(data_dist, index, comm,
-                                         mini_batch_size, num_neurons) {
+    entrywise_activation_layer(data_dist, index, comm,
+                               mini_batch_size, num_neurons) {
+
+    initialize_distributed_matrices();
 
   #ifdef __LIB_CUDNN
 
@@ -104,8 +106,12 @@ class relu_layer : public entrywise_activation_layer<T_layout> {
 
   }
 
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+
   void setup(int num_prev_neurons) {
-    entrywise_activation_layer<T_layout>::setup(num_prev_neurons);
+    entrywise_activation_layer::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects

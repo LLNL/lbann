@@ -45,7 +45,6 @@ namespace lbann {
   };
 
 
-template <class T_layout>
 class activation_layer : public Layer {
 
  public:
@@ -61,14 +60,13 @@ class activation_layer : public Layer {
 
   virtual ~activation_layer() {}
 
-  // virtual void initialize_model_parallel_distribution() {}
-  
-  // virtual void initialize_data_parallel_distribution() {}
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    Layer::initialize_distributed_matrices<T_layout>();
+  }
 
 };
 
-template <class T_layout>
-class entrywise_activation_layer : public activation_layer<T_layout> {
+class entrywise_activation_layer : public activation_layer {
 
  public:
   entrywise_activation_layer(data_layout data_dist,
@@ -76,10 +74,14 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
                              lbann_comm *comm,
                              uint mini_batch_size,
                              uint num_neurons) :
-    activation_layer<T_layout>(data_dist, index, comm, mini_batch_size, num_neurons) {
+    activation_layer(data_dist, index, comm, mini_batch_size, num_neurons) {
   }
 
   virtual ~entrywise_activation_layer() {}
+
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    activation_layer::initialize_distributed_matrices<T_layout>();
+  }
 
   virtual void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);

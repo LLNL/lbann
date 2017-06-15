@@ -38,8 +38,8 @@
 namespace lbann {
 
 /// Local Response Normalization layer
-template <class T_layout>
-class local_response_normalization_layer : public regularizer_layer<T_layout> {
+template <data_layout T_layout>
+class local_response_normalization_layer : public regularizer_layer {
  private:
 
   /// Number of data dimensions
@@ -78,10 +78,13 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
    uint mini_batch_size,
    lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
-    : regularizer_layer<T_layout>(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
+    : regularizer_layer(data_layout::DATA_PARALLEL, index, comm, mini_batch_size),
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
+
+    // Setup the data distribution
+    initialize_distributed_matrices();
     this->m_type = layer_type::local_response_normalization;
 
     // Initialize data dimensions
@@ -140,6 +143,10 @@ class local_response_normalization_layer : public regularizer_layer<T_layout> {
 
     }
   #endif // __LIB_CUDNN
+  }
+
+  virtual inline void initialize_distributed_matrices() {
+    regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
 
   void setup(const int num_prev_neurons) {

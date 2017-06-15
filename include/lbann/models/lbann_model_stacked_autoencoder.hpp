@@ -82,7 +82,7 @@ class stacked_autoencoder : public sequential_model {
 
  protected:
   size_t m_num_layers;
-  reconstruction_layer<data_layout> *m_target_layer;
+  Layer *m_target_layer;
   /// the Model's name
   std::string m_name;
 };

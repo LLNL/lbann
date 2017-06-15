@@ -41,8 +41,8 @@ namespace lbann {
  * "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)"
  * ICLR 2016.
  */
-template <class T_layout>
-class elu_layer : public entrywise_activation_layer<T_layout> {
+template <data_layout T_layout>
+class elu_layer : public entrywise_activation_layer {
  public:
   /**
    * alpha controls the value to which the ELU saturates for negative inputs.
@@ -53,9 +53,14 @@ class elu_layer : public entrywise_activation_layer<T_layout> {
   elu_layer(data_layout data_dist, uint index, lbann_comm *comm,
             const uint mini_batch_size, uint num_neurons,
             DataType alpha = DataType(1.0)) :
-    entrywise_activation_layer<T_layout>(data_dist, index, comm,
-                                         mini_batch_size, num_neurons),
-    m_alpha(alpha) {}
+    entrywise_activation_layer(data_dist, index, comm,
+                               mini_batch_size, num_neurons),
+    m_alpha(alpha) { initialize_distributed_matrices(); }
+
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+
  protected:
   DataType activation_function(DataType z) {
     return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));

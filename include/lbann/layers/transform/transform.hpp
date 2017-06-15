@@ -35,7 +35,7 @@
 
 namespace lbann {
 
-template <class T_layout>
+  //template <data_layout T_layout>
 class transform : public Layer {
 
  public:
@@ -48,13 +48,14 @@ class transform : public Layer {
 
   }
 
+  virtual ~transform() {}
+
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    Layer::initialize_distributed_matrices<T_layout>();
+  }
+
 #if 0
-  virtual ~transform(void);
-
   static std::string weight_initialization_name(weight_initialization id);
-
-  virtual void initialize_model_parallel_distribution(void);
-  virtual void initialize_data_parallel_distribution(void);
 
   virtual void forwardProp(void);
   virtual void backProp(void);

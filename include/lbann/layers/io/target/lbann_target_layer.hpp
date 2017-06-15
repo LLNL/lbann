@@ -37,24 +37,24 @@
 #include <unistd.h>
 
 namespace lbann {
-template <class T_layout>
-class target_layer : public io_layer<T_layout> {
+class target_layer : public io_layer {
  protected:
   bool m_shared_data_reader;
 
  public:
   target_layer(data_layout data_dist, lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer<T_layout>(data_dist, comm, mini_batch_size, data_readers, true, for_regression) {
+    : io_layer(data_dist, comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
-      this->m_num_neurons = io_layer<T_layout>::get_linearized_response_size();
+      this->m_num_neurons = io_layer::get_linearized_response_size();
     } else {
-      this->m_num_neurons = io_layer<T_layout>::get_linearized_label_size();
+      this->m_num_neurons = io_layer::get_linearized_label_size();
     }
     m_shared_data_reader = shared_data_reader;
   }
 
-  virtual void initialize_model_parallel_distribution() {}
-  virtual void initialize_data_parallel_distribution() {}
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    io_layer::initialize_distributed_matrices<T_layout>();
+  }
 
   void setup(int num_prev_neurons) {
     if(this->m_neural_network_model->m_obj_fn == NULL) {
@@ -78,12 +78,12 @@ class target_layer : public io_layer<T_layout> {
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
     m_shared_data_reader = shared_data_reader;
-    return io_layer<T_layout>::set_training_data_reader(data_reader);
+    return io_layer::set_training_data_reader(data_reader);
   }
 
   lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
     m_shared_data_reader = shared_data_reader;
-    return io_layer<T_layout>::set_testing_data_reader(data_reader);
+    return io_layer::set_testing_data_reader(data_reader);
   }
 
   void fp_set_std_matrix_view() {

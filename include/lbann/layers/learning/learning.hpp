@@ -35,7 +35,6 @@
 
 namespace lbann {
 
-template <class T_layout>
 class learning : public Layer {
  protected:
   //  data_layout m_data_layout;
@@ -51,22 +50,7 @@ class learning : public Layer {
            const uint mini_batch_size,
            lbann_comm *comm, optimizer *opt
            )
-    : Layer(data_dist, index, comm, mini_batch_size), m_optimizer(opt) {
-
-  // Setup the data distribution
-  switch(data_dist) {
-  case data_layout::MODEL_PARALLEL:
-    initialize_model_parallel_distribution();
-    break;
-  case data_layout::DATA_PARALLEL:
-    initialize_data_parallel_distribution();
-    break;
-  default:
-    throw lbann_exception(std::string{} + __FILE__ + " " +
-                          std::to_string(__LINE__) +
-                          "Invalid data layout selected");
-  }
-  }
+    : Layer(data_dist, index, comm, mini_batch_size), m_optimizer(opt) { }
 
   virtual ~learning(void) {
     delete m_weights;
@@ -78,17 +62,8 @@ class learning : public Layer {
   /** Return the gradients associated with this layer. */
   virtual ElMat& get_weights_gradient() const { return *m_weights_gradient; }
 
-  /// Matrices should be in MC,MR distributions
-  virtual void initialize_model_parallel_distribution() {
-    m_weights             = new DistMat(m_comm->get_model_grid());
-    m_weights_gradient    = new DistMat(m_comm->get_model_grid());
-  }
-
-  /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-  virtual void initialize_data_parallel_distribution() {
-    m_weights             = new StarMat(m_comm->get_model_grid());
-    m_weights_gradient    = new StarMat(m_comm->get_model_grid());
-  }
+  template <data_layout T_layout>
+  inline void initialize_distributed_matrices();
 
   /// @todo BVE should the learning layer be able to initialize the
   /// matrix, or is that purely a function of the children classes
@@ -246,7 +221,21 @@ class learning : public Layer {
 #endif
 
 };
+
+/// Matrices should be in MC,MR distributions
+template<> inline void learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
+  Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  m_weights             = new DistMat(m_comm->get_model_grid());
+  m_weights_gradient    = new DistMat(m_comm->get_model_grid());
 }
 
+/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
+template<> inline void learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
+  Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  m_weights             = new StarMat(m_comm->get_model_grid());
+  m_weights_gradient    = new StarMat(m_comm->get_model_grid());
+}
+
+}
 
 #endif // LBANN_LAYER_LEARNING_HPP_INCLUDED
