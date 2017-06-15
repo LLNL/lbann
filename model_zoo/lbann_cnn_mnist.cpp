@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     // First convolution layer
@@ -211,28 +211,27 @@ int main(int argc, char *argv[]) {
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
 
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(1,
-                                             numDims,
-                                             inputChannels,
-                                             inputDims,
-                                             outputChannels,
-                                             filterDims,
-                                             convPads,
-                                             convStrides,
-                                             trainParams.MBSize,
-                                             weight_initialization::glorot_uniform,
-                                             comm,
-                                             convolution_layer_optimizer,
-                                             cudnn);
+      convolution_layer<> *layer
+        = new convolution_layer<>(1,
+                                  numDims,
+                                  inputChannels,
+                                  inputDims,
+                                  outputChannels,
+                                  filterDims,
+                                  convPads,
+                                  convStrides,
+                                  trainParams.MBSize,
+                                  weight_initialization::glorot_uniform,
+                                  comm,
+                                  convolution_layer_optimizer,
+                                  cudnn);
       dnn.add(layer);
 
-      Layer *relu = new relu_layer<data_layout>(data_layout::DATA_PARALLEL,
-                                                2,
-                                                comm,
-                                                trainParams.MBSize,
-                                                21632,
-                                                cudnn);
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
+                                                               comm,
+                                                               trainParams.MBSize,
+                                                               21632,
+                                                               cudnn);
       dnn.add(relu);
     }
 
@@ -247,28 +246,27 @@ int main(int argc, char *argv[]) {
       Int convPads[] = {0, 0};
       Int convStrides[] = {1, 1};
 
-      convolution_layer<data_layout> *layer
-        = new convolution_layer<data_layout>(3,
-                                             numDims,
-                                             inputChannels,
-                                             inputDims,
-                                             outputChannels,
-                                             filterDims,
-                                             convPads,
-                                             convStrides,
-                                             trainParams.MBSize,
-                                             weight_initialization::glorot_uniform,
-                                             comm,
-                                             convolution_layer_optimizer,
-                                             cudnn);
+      convolution_layer<> *layer
+        = new convolution_layer<>(3,
+                                  numDims,
+                                  inputChannels,
+                                  inputDims,
+                                  outputChannels,
+                                  filterDims,
+                                  convPads,
+                                  convStrides,
+                                  trainParams.MBSize,
+                                  weight_initialization::glorot_uniform,
+                                  comm,
+                                  convolution_layer_optimizer,
+                                  cudnn);
       dnn.add(layer);
 
-      Layer *relu = new relu_layer<data_layout>(data_layout::DATA_PARALLEL,
-                                                2,
-                                                comm,
-                                                trainParams.MBSize,
-                                                18432,
-                                                cudnn);
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
+                                                               comm,
+                                                               trainParams.MBSize,
+                                                               18432,
+                                                               cudnn);
       dnn.add(relu);
     }
 
@@ -281,65 +279,60 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer<data_layout> *layer
-        = new pooling_layer<data_layout>(4,
-                                         numDims,
-                                         channels,
-                                         inputDim,
-                                         poolWindowDims,
-                                         poolPads,
-                                         poolStrides,
-                                         poolMode,
-                                         trainParams.MBSize,
-                                         comm,
-                                         cudnn);
+      pooling_layer<> *layer
+        = new pooling_layer<>(4,
+                              numDims,
+                              channels,
+                              inputDim,
+                              poolWindowDims,
+                              poolPads,
+                              poolStrides,
+                              poolMode,
+                              trainParams.MBSize,
+                              comm,
+                              cudnn);
       dnn.add(layer);
     }
 
     // First fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL,
-                                                          5,
-                                                          4608,
-                                                          128,
-                                                          trainParams.MBSize,
-                                                          weight_initialization::glorot_uniform,
-                                                          comm,
-                                                          optimizer_fac->create_optimizer());
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
+                                                                         4608,
+                                                                         128,
+                                                                         trainParams.MBSize,
+                                                                         weight_initialization::glorot_uniform,
+                                                                         comm,
+                                                                         optimizer_fac->create_optimizer());
       dnn.add(fc);
-      Layer *relu = new relu_layer<data_layout>(data_layout::MODEL_PARALLEL,
-                                                6,
-                                                comm,
-                                                trainParams.MBSize,
-                                                128,
-                                                NULL);
+      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(6,
+                                                                comm,
+                                                                trainParams.MBSize,
+                                                                128,
+                                                                NULL);
       dnn.add(relu);
-      Layer *dropout1 = new dropout<data_layout>(data_layout::MODEL_PARALLEL,
-                                           7,
-                                           100,
-                                           comm,
-                                           trainParams.MBSize,
-                                           0.5);
+      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(7,
+                                                                 100,
+                                                                 comm,
+                                                                 trainParams.MBSize,
+                                                                 0.5);
       dnn.add(dropout1);
     }
 
     // Second fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL,
-                                                         8,
-                                                         128,
-                                                         10,
-                                                         trainParams.MBSize,
-                                                         weight_initialization::glorot_uniform,
-                                                         comm,
-                                                         optimizer_fac->create_optimizer(),
-                                                         false);
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
+                                                                         128,
+                                                                         10,
+                                                                         trainParams.MBSize,
+                                                                         weight_initialization::glorot_uniform,
+                                                                         comm,
+                                                                         optimizer_fac->create_optimizer(),
+                                                                         false);
       dnn.add(fc);
     }
 
     // Softmax layer
-    Layer *sl = new softmax_layer<data_layout>(
-      data_layout::MODEL_PARALLEL, 
+    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
       9, 10, 10,
       trainParams.MBSize, 
       weight_initialization::glorot_uniform, 
@@ -348,7 +341,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;
