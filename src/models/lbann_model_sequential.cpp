@@ -252,7 +252,6 @@ uint lbann::sequential_model::add(Layer *new_layer) {
   const uint layer_index = m_layers.size();
   new_layer->set_index(layer_index);
   m_layers.push_back(new_layer);
-  new_layer->set_index(layer_index);
   return layer_index;
 }
 

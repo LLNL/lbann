@@ -66,7 +66,6 @@ class target_layer : public io_layer {
       m->m_neural_network_model = this->m_neural_network_model;
     }
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
   }
 
   /**

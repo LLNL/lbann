@@ -286,7 +286,7 @@ class pooling_layer : public transform {
                                                   m_input_desc,
                                                   m_num_dims+2,
                                                   output_dims.data()));
-    if(output_dims[0] != m_mini_batch_size_per_gpu) {
+    if(output_dims[0] != this->m_mini_batch_size_per_gpu) {
       throw lbann_exception("lbann_layer_pooling: invalid output dimensions");
     }
     if(output_dims[1] != m_num_channels) {

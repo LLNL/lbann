@@ -94,7 +94,6 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     Zeros(Y_local, this->m_num_neurons, Layer::m_mini_batch_size);
     Zeros(Ys, this->m_num_neurons, Layer::m_mini_batch_size);
     Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
 
     m_local_data_valid = false;

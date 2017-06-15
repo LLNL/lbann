@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/proto/lbann_proto_common.hpp"
+//#include "lbann/proto/lbann_proto_common.hpp"
 
 using namespace lbann;
 

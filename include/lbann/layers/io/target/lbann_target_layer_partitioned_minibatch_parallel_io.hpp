@@ -91,7 +91,6 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     // Zeros(Y_local, m_num_neurons, Layer::m_mini_batch_size);
     // Zeros(Ys, m_num_neurons, Layer::m_mini_batch_size);
     Zeros(*this->m_prev_activations, num_prev_neurons, Layer::m_mini_batch_size); // I am not sure that this is good
-    Zeros(*this->m_weighted_sum, this->m_num_neurons, Layer::m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;

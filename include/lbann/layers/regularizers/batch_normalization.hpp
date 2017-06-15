@@ -61,7 +61,7 @@ class batch_normalization : public regularizer_layer {
   batch_normalization(data_layout data_dist, const uint index, const uint num_neurons,
                       lbann_comm *comm, uint mini_batch_size,
                       DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
-    : regularizer_layer(data_dist, index, comm, NULL, mini_batch_size),
+    : regularizer_layer(data_dist, index, comm, mini_batch_size),
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -158,10 +158,10 @@ class batch_normalization : public regularizer_layer {
     if (this->get_execution_mode() != execution_mode::training) {
       return;
     }
-    ElMat *input_bpsignal = this->m_prev_error_signal;
+    const ElMat *input_bpsignal = this->m_prev_error_signal;
     const ElMat *acts = this->m_prev_activations;
     const El::Int mbsize = acts->Width();
-    Mat& input_bp_local = input_bpsignal->Matrix();
+    const Mat& input_bp_local = input_bpsignal->LockedMatrix();
     Mat& bp_local = this->m_error_signal->Matrix();
     const Mat& acts_local = acts->LockedMatrix();
     const El::Int local_height = input_bp_local.Height();

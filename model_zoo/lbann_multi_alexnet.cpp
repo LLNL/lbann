@@ -28,28 +28,11 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/regularization/lbann_l2_regularization.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 
-#include <time.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-#include <iomanip>
-#include <string>
-
-using namespace std;
 using namespace lbann;
-using namespace El;
-
-
 
 // train/test data info
-const int g_SaveImageIndex[1] = {0}; // for auto encoder
-//const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
-//const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
@@ -58,11 +41,7 @@ const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
 int main(int argc, char *argv[]) {
-  // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  init_random(42);
-  init_data_seq_random(42);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
     ///////////////////////////////////////////////////////////////////
@@ -74,7 +53,7 @@ int main(int argc, char *argv[]) {
     trainParams.DropOut = 0.5;
     trainParams.ProcsPerModel = 4;
     trainParams.IntermodelCommMethod
-      = static_cast<int>(lbann_callback_imcomm::NORMAL/*ADAPTIVE_THRESH_QUANTIZATION*/);
+      = static_cast<int>(lbann_callback_imcomm::NORMAL);
     trainParams.parse_params();
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.2;
@@ -88,8 +67,6 @@ int main(int argc, char *argv[]) {
     sysParams.parse_params();
 
     // training settings
-    int decayIterations = 1;
-
     bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
     bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
     bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
@@ -98,10 +75,12 @@ int main(int argc, char *argv[]) {
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
     // Number of GPUs
-    Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+#if __LIB_CUDNN
+    El::Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+#endif
 
     // Number of class labels
-    Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
+    El::Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
 
     ProcessInput();
     PrintInputReport();
@@ -133,38 +112,25 @@ int main(int argc, char *argv[]) {
       g_ImageNet_ValLabelFile   = "val.txt";
       g_ImageNet_TestLabelFile  = "val.txt";
     }
-    if (comm->am_world_master()) {
-      cout << "Train set label file: " << g_ImageNet_TrainLabelFile << "\n"
-           << "Validation set label file: " << g_ImageNet_ValLabelFile << "\n"
-           << "Test set label file: " << g_ImageNet_TestLabelFile << "\n";
-    }
-
-    // create timer for performance measurement
-    Timer timer_io;
-    Timer timer_lbann;
-    Timer timer_val;
-    double sec_all_io = 0;
-    double sec_all_lbann = 0;
-    double sec_all_val = 0;
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      cout << "Number of models: " << comm->get_num_models() << endl;
-      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
+      std::cout << "Number of models: " << comm->get_num_models() << std::endl;
+      std::cout << "Grid is " << grid.Height() << " x " << grid.Width() << std::endl;
+      std::cout << std::endl;
     }
 
     int parallel_io = perfParams.MaxParIOSize;
     if(parallel_io == 0) {
       if(comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() << " (Limited to # Processes)" << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() << " (Limited to # Processes)" << std::endl;
       }
       parallel_io = comm->get_procs_per_model();
     } else {
       if(comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
       }
     }
 
@@ -193,8 +159,8 @@ int main(int argc, char *argv[]) {
       size_t num_validate = imagenet_validation_set.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+      std::cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << std::endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << std::endl;
     }
 
     imagenet_validation_set.scale(scale);
@@ -212,7 +178,7 @@ int main(int argc, char *argv[]) {
     imagenet_testset.load();
 
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << endl;
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << std::endl;
     }
     imagenet_testset.scale(scale);
     imagenet_testset.subtract_mean(subtract_mean);
@@ -243,37 +209,61 @@ int main(int argc, char *argv[]) {
 #endif // __LIB_CUDNN
 
     deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
-    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&imagenet_trainset),
-                                                           std::make_pair(execution_mode::validation, &imagenet_validation_set),
-                                                           std::make_pair(execution_mode::testing, &imagenet_testset)
-                                                          };
+    dnn = new deep_neural_network(
+      trainParams.MBSize,
+      comm,
+      new objective_functions::categorical_cross_entropy(comm),
+      optimizer_fac);
+    std::map<execution_mode, generic_data_reader *> data_readers = {
+      std::make_pair(execution_mode::training,&imagenet_trainset),
+      std::make_pair(execution_mode::validation, &imagenet_validation_set),
+      std::make_pair(execution_mode::testing, &imagenet_testset)
+    };
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
-    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer =
+      new input_layer_partitioned_minibatch_parallel_io<data_layout>(
+        comm,
+        parallel_io,
+        (int) trainParams.MBSize,
+        data_readers);
     dnn->add(input_layer);
 
     // Layer 1 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 3;
-      Int inputDims[] = {256, 256};
-      Int outputChannels = 96;
-      Int filterDims[] = {11, 11};
-      Int convPads[] = {0, 0};
-      Int convStrides[] = {4, 4};
-      convolutional_layer *layer
-        = new convolutional_layer(1, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      El::Int numDims = 2;
+      El::Int inputChannels = 3;
+      El::Int inputDims[] = {256, 256};
+      El::Int outputChannels = 96;
+      El::Int filterDims[] = {11, 11};
+      El::Int convPads[] = {0, 0};
+      El::Int convStrides[] = {4, 4};
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(
+          1,
+          numDims,
+          inputChannels,
+          inputDims,
+          outputChannels,
+          filterDims,
+          convPads,
+          convStrides,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          convolution_layer_optimizer,
+          cudnn);
       dnn->add(layer);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::DATA_PARALLEL,
+          2,
+          comm,
+          trainParams.MBSize,
+          layer->get_num_neurons(),
+          cudnn);
+      dnn->add(relu);
+      // l2(0.0005)
     }
 
     // Layer 2 (LRN)
@@ -281,14 +271,23 @@ int main(int argc, char *argv[]) {
       int numDims = 2;
       int channels = 96;
       int dims[] = {62, 62};
-      Int windowWidth = 5;
+      El::Int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer *layer
-        = new local_response_normalization_layer(2, numDims, channels, dims,
-            windowWidth, alpha, beta, k,
-            trainParams.MBSize, comm, cudnn);
+      local_response_normalization_layer<data_layout> *layer
+        = new local_response_normalization_layer<data_layout>(
+          3,
+          numDims,
+          channels,
+          dims,
+          windowWidth,
+          alpha,
+          beta,
+          k,
+          trainParams.MBSize,
+          comm,
+          cudnn);
       dnn->add(layer);
     }
 
@@ -301,36 +300,58 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(3, numDims, channels, inputDim,
-                            poolWindowDims, poolPads, poolStrides, poolMode,
-                            trainParams.MBSize,
-                            comm,
-                            cudnn);
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(
+          4,
+          numDims,
+          channels,
+          inputDim,
+          poolWindowDims,
+          poolPads,
+          poolStrides,
+          poolMode,
+          trainParams.MBSize,
+          comm,
+          cudnn);
       dnn->add(layer);
     }
 
     // Layer 4 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 96;
-      Int inputDims[] = {30, 30};
-      Int outputChannels = 256;
-      Int filterDims[] = {5, 5};
-      Int convPads[] = {2, 2};
-      Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(4, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      El::Int numDims = 2;
+      El::Int inputChannels = 96;
+      El::Int inputDims[] = {30, 30};
+      El::Int outputChannels = 256;
+      El::Int filterDims[] = {5, 5};
+      El::Int convPads[] = {2, 2};
+      El::Int convStrides[] = {1, 1};
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(
+          5,
+          numDims,
+          inputChannels,
+          inputDims,
+          outputChannels,
+          filterDims,
+          convPads,
+          convStrides,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          convolution_layer_optimizer,
+          cudnn);
       dnn->add(layer);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::DATA_PARALLEL,
+          6,
+          comm,
+          trainParams.MBSize,
+          layer->get_num_neurons(),
+          cudnn);
+      dnn->add(relu);
+      // l2(0.0005)
     }
 
     // Layer 5 (LRN)
@@ -338,14 +359,23 @@ int main(int argc, char *argv[]) {
       int numDims = 2;
       int channels = 256;
       int dims[] = {30, 30};
-      Int windowWidth = 5;
+      El::Int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
-      local_response_normalization_layer *layer
-        = new local_response_normalization_layer(5, numDims, channels, dims,
-            windowWidth, alpha, beta, k,
-            trainParams.MBSize, comm, cudnn);
+      local_response_normalization_layer<data_layout> *layer
+        = new local_response_normalization_layer<data_layout>(
+          7,
+          numDims,
+          channels,
+          dims,
+          windowWidth,
+          alpha,
+          beta,
+          k,
+          trainParams.MBSize,
+          comm,
+          cudnn);
       dnn->add(layer);
     }
 
@@ -358,82 +388,134 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(6, numDims, channels, inputDim,
-                            poolWindowDims, poolPads, poolStrides, poolMode,
-                            trainParams.MBSize,
-                            comm,
-                            cudnn);
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(
+          8,
+          numDims,
+          channels,
+          inputDim,
+          poolWindowDims,
+          poolPads,
+          poolStrides,
+          poolMode,
+          trainParams.MBSize,
+          comm,
+          cudnn);
       dnn->add(layer);
     }
 
     // Layer 7 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 256;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 384;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(7, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      El::Int numDims = 2;
+      El::Int inputChannels = 256;
+      El::Int inputDims[] = {14, 14};
+      El::Int outputChannels = 384;
+      El::Int filterDims[] = {3, 3};
+      El::Int convPads[] = {1, 1};
+      El::Int convStrides[] = {1, 1};
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(
+          9,
+          numDims,
+          inputChannels,
+          inputDims,
+          outputChannels,
+          filterDims,
+          convPads,
+          convStrides,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          convolution_layer_optimizer,
+          cudnn);
       dnn->add(layer);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::DATA_PARALLEL,
+          10,
+          comm,
+          trainParams.MBSize,
+          layer->get_num_neurons(),
+          cudnn);
+      dnn->add(relu);
+      // l2(0.0005)
     }
 
     // Layer 8 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 384;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 384;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(8, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      El::Int numDims = 2;
+      El::Int inputChannels = 384;
+      El::Int inputDims[] = {14, 14};
+      El::Int outputChannels = 384;
+      El::Int filterDims[] = {3, 3};
+      El::Int convPads[] = {1, 1};
+      El::Int convStrides[] = {1, 1};
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(
+          11,
+          numDims,
+          inputChannels,
+          inputDims,
+          outputChannels,
+          filterDims,
+          convPads,
+          convStrides,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          convolution_layer_optimizer,
+          cudnn);
       dnn->add(layer);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::DATA_PARALLEL,
+          12,
+          comm,
+          trainParams.MBSize,
+          layer->get_num_neurons(),
+          cudnn);
+      dnn->add(relu);
+      // l2(0.0005)
     }
 
     // Layer 9 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 384;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 256;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
-      convolutional_layer *layer
-        = new convolutional_layer(9, numDims, inputChannels, inputDims,
-                                  outputChannels, filterDims,
-                                  convPads, convStrides,
-                                  trainParams.MBSize,
-                                  activation_type::RELU,
-                                  weight_initialization::he_normal,
-                                  comm, convolution_layer_optimizer,
-      {new l2_regularization(0.0005)},
-      cudnn);
+      El::Int numDims = 2;
+      El::Int inputChannels = 384;
+      El::Int inputDims[] = {14, 14};
+      El::Int outputChannels = 256;
+      El::Int filterDims[] = {3, 3};
+      El::Int convPads[] = {1, 1};
+      El::Int convStrides[] = {1, 1};
+      convolution_layer<data_layout> *layer
+        = new convolution_layer<data_layout>(
+          13,
+          numDims,
+          inputChannels,
+          inputDims,
+          outputChannels,
+          filterDims,
+          convPads,
+          convStrides,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          convolution_layer_optimizer,
+          cudnn);
       dnn->add(layer);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::DATA_PARALLEL,
+          14,
+          comm,
+          trainParams.MBSize,
+          layer->get_num_neurons(),
+          cudnn);
+      dnn->add(relu);
+      // l2(0.0005)
     }
 
     // Layer 10 (pooling)
@@ -445,45 +527,121 @@ int main(int argc, char *argv[]) {
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
-      pooling_layer *layer
-        = new pooling_layer(10, numDims, channels, inputDim,
-                            poolWindowDims, poolPads, poolStrides, poolMode,
-                            trainParams.MBSize,
-                            comm,
-                            cudnn);
+      pooling_layer<data_layout> *layer
+        = new pooling_layer<data_layout>(
+          15, numDims, channels, inputDim,
+          poolWindowDims,
+          poolPads,
+          poolStrides,
+          poolMode,
+          trainParams.MBSize,
+          comm,
+          cudnn);
       dnn->add(layer);
     }
 
     // Layer 11 (fully-connected)
-    dnn->add("FullyConnected",
-             data_layout::MODEL_PARALLEL,
-             4096,
-             activation_type::RELU,
-    weight_initialization::he_normal, {
-      new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
-      new l2_regularization(0.0005)
-    });
+    {
+      Layer *fc =
+        new fully_connected_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          16,
+          dnn->get_layers().back()->get_num_neurons(),
+          4096,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          dnn->create_optimizer());
+      dnn->add(fc);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          17,
+          comm,
+          trainParams.MBSize,
+          fc->get_num_neurons());
+      dnn->add(relu);
+      Layer *dropout_layer
+        = new dropout<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          18,
+          fc->get_num_neurons(),
+          comm,
+          trainParams.MBSize,
+          0.5);
+      dnn->add(dropout_layer);
+      // l2(0.0005)
+    }
 
     // Layer 12 (fully-connected)
-    dnn->add("FullyConnected",
-             data_layout::MODEL_PARALLEL,
-             4096,
-             activation_type::RELU,
-    weight_initialization::he_normal, {
-      new dropout(data_layout::MODEL_PARALLEL, comm, 0.5),
-      new l2_regularization(0.0005)
-    });
+    {
+      Layer *fc =
+        new fully_connected_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          19,
+          dnn->get_layers().back()->get_num_neurons(),
+          4096,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          dnn->create_optimizer());
+      dnn->add(fc);
+      Layer *relu
+        = new relu_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          20,
+          comm,
+          trainParams.MBSize,
+          fc->get_num_neurons());
+      dnn->add(relu);
+      Layer *dropout_layer
+        = new dropout<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          21,
+          fc->get_num_neurons(),
+          comm,
+          trainParams.MBSize,
+          0.5);
+      dnn->add(dropout_layer);
+      // l2(0.0005)
+    }
 
     // Layer 13 (softmax)
-    dnn->add("softmax",
-             data_layout::MODEL_PARALLEL,
-             1000,
-             activation_type::ID,
-             weight_initialization::he_normal,
-    {new l2_regularization(0.0005)});
+    {
+      // Fully-connected without bias before softmax.
+      Layer *fc =
+        new fully_connected_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          22,
+          dnn->get_layers().back()->get_num_neurons(),
+          1000,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          dnn->create_optimizer(),
+          false);
+      dnn->add(fc);
+      // l2(0.0005)
+      Layer *softmax =
+        new softmax_layer<data_layout>(
+          data_layout::MODEL_PARALLEL,
+          23,
+          1000,
+          1000,
+          trainParams.MBSize,
+          weight_initialization::he_normal,
+          comm,
+          dnn->create_optimizer());
+      dnn->add(softmax);
+    }
 
-    // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer =
+      new target_layer_partitioned_minibatch_parallel_io<data_layout>(
+        comm,
+        parallel_io,
+        (int) trainParams.MBSize,
+        data_readers,
+        true);
     dnn->add(target_layer);
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -502,37 +660,32 @@ int main(int argc, char *argv[]) {
     lbann_callback_imcomm imcomm_cb
       = lbann_callback_imcomm(static_cast<lbann_callback_imcomm::comm_type>
                               (trainParams.IntermodelCommMethod),
-    {1, 4, 7, 8, 9, 11, 12, 13}, &summarizer);
+                              {1, 5, 9, 11, 13, 16, 19, 22}, &summarizer);
     dnn->add_callback(&imcomm_cb);
 
     dnn->setup();
 
     if (comm->am_world_master()) {
-      cout << "Layer initialized:" << endl;
+      std::cout << "Layer initialized:" << std::endl;
       for (uint n = 0; n < dnn->get_layers().size(); n++) {
-        cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->NumNeurons << endl;
+        std::cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->get_num_neurons() << std::endl;
       }
-      cout << endl;
+      std::cout << std::endl;
     }
 
     if (comm->am_world_master()) {
-      cout << "Parameter settings:" << endl;
-      cout << "\tBlock size: " << perfParams.BlockSize << endl;
-      cout << "\tEpochs: " << trainParams.EpochCount << endl;
-      cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-      // if(trainParams.MaxMBCount == 0) {
-      //   cout << "\tMini-batch count (max): " << "unlimited" << endl;
-      // }else {
-      //   cout << "\tMini-batch count (max): " << trainParams.MaxMBCount << endl;
-      // }
-      cout << "\tLearning rate: " << trainParams.LearnRate << endl;
-      cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
+      std::cout << "Parameter settings:" << std::endl;
+      std::cout << "\tBlock size: " << perfParams.BlockSize << std::endl;
+      std::cout << "\tEpochs: " << trainParams.EpochCount << std::endl;
+      std::cout << "\tMini-batch size: " << trainParams.MBSize << std::endl;
+      std::cout << "\tLearning rate: " << trainParams.LearnRate << std::endl;
+      std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl << std::endl;
       if(perfParams.MaxParIOSize == 0) {
-        cout << "\tMax Parallel I/O Fetch: " << grid.Size() << " (Limited to # Processes)" << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << grid.Size() << " (Limited to # Processes)" << std::endl;
       } else {
-        cout << "\tMax Parallel I/O Fetch: " << perfParams.MaxParIOSize << endl;
+        std::cout << "\tMax Parallel I/O Fetch: " << perfParams.MaxParIOSize << std::endl;
       }
-      cout << "\tDataset: " << trainParams.DatasetRootDir << endl;
+      std::cout << "\tDataset: " << trainParams.DatasetRootDir << std::endl;
     }
 
     // load parameters from file if available
@@ -542,33 +695,11 @@ int main(int argc, char *argv[]) {
 
     comm->global_barrier();
 
-    ///////////////////////////////////////////////////////////////////
-    // main loop for training/testing
-    ///////////////////////////////////////////////////////////////////
-
-    int last_layer_size;
-    last_layer_size = netParams.Network[netParams.Network.size()-1];
-
-    //************************************************************************
-    // read training state from checkpoint file if we have one
-    //************************************************************************
-    int epochStart = 0; // epoch number we should start at
-    int trainStart; // index into indices we should start at
-
     //************************************************************************
     // mainloop for train/validate
     //************************************************************************
-    for (int epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
-
-      // TODO: need to save this in checkpoint?
-      decayIterations = 1;
-
-      //************************************************************************
-      // training epoch loop
-      //************************************************************************
-
+    for (int epoch = 0; epoch < trainParams.EpochCount; epoch++) {
       dnn->train(1, true);
-
       dnn->evaluate(execution_mode::testing);
     }
 
@@ -579,8 +710,7 @@ int main(int argc, char *argv[]) {
     ReportException(e);  /// Elemental exceptions
   }
 
-  // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
   return 0;
 }
