@@ -126,13 +126,13 @@ void setup_gpu() {
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
 
     // Set tensor descriptor
-    int tensor_dims = this->m_num_neurons * this->m_mini_batch_size_per_gpu;
-    int one = 1;
+    int tensor_dims[] = {1,1,(int)this->m_mini_batch_size_per_gpu, (int)this->m_num_neurons};
+    int tensor_strides[] = {(int)this->m_num_neurons, (int)this->m_num_neurons, (int)this->m_num_neurons, 1};
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
                                            this->m_cudnn->get_cudnn_data_type(),
-                                           1,
-                                           &tensor_dims,
-                                           &one));
+                                           4,
+                                           tensor_dims,
+                                           tensor_strides));
     
     // Set activation descriptor
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,
@@ -140,6 +140,23 @@ void setup_gpu() {
                                              CUDNN_PROPAGATE_NAN,
                                              0.0));
 
+    // Allocate GPU memory
+    this->m_cudnn->allocate_on_gpus(this->m_activations_d,
+                                    this->m_num_neurons,
+                                    this->m_mini_batch_size_per_gpu);
+    this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
+                                    this->m_num_prev_neurons,
+                                    this->m_mini_batch_size_per_gpu);
+    if(!this->m_prev_layer_using_gpus) {
+      this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
+                                      this->m_num_prev_neurons,
+                                      this->m_mini_batch_size_per_gpu);
+    }
+    if(!this->m_next_layer_using_gpus) {
+      this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
+                                      this->m_num_neurons,
+                                      this->m_mini_batch_size_per_gpu);
+    }
 
   #endif
 }
@@ -173,7 +190,7 @@ void setup_gpu() {
                                          m_activation_desc,
                                          &one,
                                          m_tensor_desc,
-                                         this->m_activations_d[i],
+                                         this->m_prev_activations_d[i],
                                          &zero,
                                          m_tensor_desc,
                                          this->m_activations_d[i]));

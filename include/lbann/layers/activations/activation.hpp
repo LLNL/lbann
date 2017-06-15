@@ -121,7 +121,7 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
     throw lbann_exception("entrywise_activation_layer: no backward propagation GPU implementation");
   }
 
-  void fp_compute_cpu() {
+  virtual void fp_compute_cpu() {
     
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
@@ -162,7 +162,7 @@ class entrywise_activation_layer : public activation_layer<T_layout> {
 
   }
 
-  void bp_compute_cpu() {
+  virtual void bp_compute_cpu() {
     
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
