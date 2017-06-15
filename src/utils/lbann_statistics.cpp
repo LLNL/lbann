@@ -56,7 +56,8 @@ void mean_and_stdev(const Mat& data,
   const DataType shifted_mean = shifted_sum / size;
   const DataType shifted_sqmean = shifted_sqsum / size;
   mean = shifted_mean + shift;
-  const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+  const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                           DataType(0));
   stdev = Sqrt(var);
 
 }
@@ -87,7 +88,8 @@ void columnwise_mean_and_stdev(const Mat& data,
     const DataType shifted_mean = shifted_sum / height;
     const DataType shifted_sqmean = shifted_sqsum / height;
     const DataType mean = shifted_mean + shift;
-    const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+    const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                             DataType(0));
     const DataType stdev = Sqrt(var);
     means(0, col) = mean;
     stdevs(0, col) = stdev;
@@ -148,7 +150,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   for(Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
-    const DataType var = Max(sqmean - mean * mean, 0);
+    const DataType var = Max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(0, col) = mean;
     local_stdevs(0, col) = stdev;
@@ -203,7 +205,8 @@ void rowwise_mean_and_stdev(const Mat& data,
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];
-      const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+      const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                               DataType(0));
       const DataType stdev = Sqrt(var);
       means(row, 0) = mean;
       stdevs(row, 0) = stdev;
@@ -233,6 +236,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
   // Matrix dimensions
   const Int height = data.Height();
+  const Int width = data.Width();
   const Int local_height = data.LocalHeight();
   const Int local_width = data.LocalWidth();
 
@@ -275,9 +279,9 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   // Compute mean and standard deviation of each matrix row
   #pragma omp parallel for
   for(Int row = 0; row < local_height; ++row) {
-    const DataType mean = local_means(row, 0) / height;
-    const DataType sqmean = local_stdevs(row, 0) / height;
-    const DataType var = Max(sqmean - mean * mean, 0);
+    const DataType mean = local_means(row, 0) / width;
+    const DataType sqmean = local_stdevs(row, 0) / width;
+    const DataType var = Max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(row, 0) = mean;
     local_stdevs(row, 0) = stdev;
