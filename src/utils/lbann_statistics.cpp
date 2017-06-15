@@ -31,9 +31,13 @@ using namespace El;
 
 namespace lbann {
 
-void mean_and_stdev(const Mat& data,
-                    DataType& mean,
-                    DataType& stdev) {
+void entrywise_mean_and_stdev(const Mat& data,
+                              DataType& mean,
+                              DataType& stdev) {
+  // Note: This routine is primarily called in an OpenMP-parallelized
+  // loop in data_readers/lbann_image_preprocessor.hpp. If a more
+  // significant use-case is found, it may be worthwhile parallelizing
+  // the loop.
 
   // Matrix dimensions
   const Int height = data.Height();

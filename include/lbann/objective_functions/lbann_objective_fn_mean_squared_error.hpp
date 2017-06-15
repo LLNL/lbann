@@ -28,7 +28,6 @@
 #define LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 
 namespace lbann {
 namespace objective_functions {

@@ -30,7 +30,6 @@
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/lbann_layer.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"

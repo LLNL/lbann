@@ -31,6 +31,7 @@
 
 #include "datatype.hpp"
 #include "El.hpp"
+#include "lbann/lbann_Elemental_extensions.hpp"
 
 //typedef double DataType;
 typedef float DataType;

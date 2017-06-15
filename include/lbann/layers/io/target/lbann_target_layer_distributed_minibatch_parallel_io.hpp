@@ -30,7 +30,6 @@
 #include "lbann/layers/io/target/lbann_target_layer.hpp"
 #include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>

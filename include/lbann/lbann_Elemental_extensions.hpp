@@ -31,43 +31,24 @@ namespace El {
 template<typename F>
 void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
 
-template<typename F,Dist U,Dist V,DistWrap W>
-void ColumnSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,V,STAR,W>& sums);
+template<typename F>
+void ColumnSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
 template<typename F>
 void RowSum(const Matrix<F>& X, Matrix<F>& sums);
 
-template <typename F,Dist U,Dist V,DistWrap W>
-void RowSum(const DistMatrix<F,U,V,W>& A, DistMatrix<F,U,STAR,W>& sums);
+template <typename F>
+void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
-#define LBANN_PROTO_DIST(F,U,V) \
-  template void ColumnSum \
-  (const DistMatrix<F,U,V,ELEMENT>& X, DistMatrix<F,V,STAR,ELEMENT>& norms); \
-  template void ColumnSum \
-  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,V,STAR,BLOCK>& norms); \
-  template void RowSum                                               \
-  (const DistMatrix<F,U,V,ELEMENT>& X, DistMatrix<F,U,STAR,ELEMENT>& norms); \
-  template void RowSum \
-  (const DistMatrix<F,U,V,BLOCK>& X, DistMatrix<F,U,STAR,BLOCK>& norms);
-
-#define LBANN_PROTO(F) \
-  template void ColumnSum \
-  ( const Matrix<F>& X, Matrix<F>& norms ); \
-  template void RowSum \
-  ( const Matrix<F>& X, Matrix<F>& norms ); \
-  LBANN_PROTO_DIST(F,MC,  MR  ) \
-  LBANN_PROTO_DIST(F,MC,  STAR) \
-  LBANN_PROTO_DIST(F,MD,  STAR) \
-  LBANN_PROTO_DIST(F,MR,  MC  ) \
-  LBANN_PROTO_DIST(F,MR,  STAR) \
-  LBANN_PROTO_DIST(F,STAR,MC  ) \
-  LBANN_PROTO_DIST(F,STAR,MD  ) \
-  LBANN_PROTO_DIST(F,STAR,MR  ) \
-  LBANN_PROTO_DIST(F,STAR,STAR) \
-  LBANN_PROTO_DIST(F,STAR,VC  ) \
-  LBANN_PROTO_DIST(F,STAR,VR  ) \
-  LBANN_PROTO_DIST(F,VC,  STAR) \
-  LBANN_PROTO_DIST(F,VR,  STAR)
+#define LBANN_PROTO(F)                                           \
+  template void ColumnSum                                        \
+  ( const Matrix<F>& X, Matrix<F>& norms );                      \
+  template void RowSum                                           \
+  ( const Matrix<F>& X, Matrix<F>& norms );                      \
+  template void ColumnSum                                        \
+  (const AbstractDistMatrix<F>& X, AbstractDistMatrix<F>& sums); \
+  template void RowSum                                           \
+  (const AbstractDistMatrix<F>& X, AbstractDistMatrix<F>& sums); \
 
 /* #define EL_NO_INT_PROTO */
 /* #define EL_ENABLE_QUAD */
