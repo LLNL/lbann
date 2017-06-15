@@ -38,7 +38,7 @@
 namespace lbann {
 
 /// Local Response Normalization layer
-template <data_layout T_layout>
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class local_response_normalization_layer : public regularizer_layer {
  private:
 
