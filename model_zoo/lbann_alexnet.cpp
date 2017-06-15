@@ -40,7 +40,7 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-#define PARTITIONED
+//#define PARTITIONED
 #if defined(PARTITIONED)
 #define DATA_LAYOUT data_layout::DATA_PARALLEL
 #else
@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
     trainParams.DropOut = 0.5;
     trainParams.ProcsPerModel = 0;
     trainParams.parse_params();
-    trainParams.PercentageTrainingSamples = 0.01; //1.0;
-    trainParams.PercentageValidationSamples = 0.4; //0.2;
+    trainParams.PercentageTrainingSamples = 1.0;
+    trainParams.PercentageValidationSamples = 0.2;
     PerformanceParams perfParams;
     perfParams.parse_params();
     // Read in the user specified network topology
