@@ -223,18 +223,6 @@ class fully_connected_layer : public learning<T_layout> {
   }
 
   void fp_compute(void) {
-    // Apply forward prop linearity
-
-    if(m_has_bias) {
-      // Apply bias
-      Copy(*m_bias_weights_v, *m_bias_weights_repl);
-      const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
-      IndexDependentFill(this->m_activations_v->Matrix(), (std::function<DataType(El::Int,El::Int)>)
-                         ([&local_bias_weights](El::Int r, El::Int c)->DataType {
-                           return local_bias_weights.Get(r);
-                         }));
-      Scale(m_bias_term, *this->m_activations_v);
-    }
 
     // Apply weight matrix
     switch(this->m_data_layout) {
@@ -242,17 +230,29 @@ class fully_connected_layer : public learning<T_layout> {
       Gemm(NORMAL, NORMAL, DataType(1),
            *this->m_activation_weights_v,
            *this->m_prev_activations_v,
-           m_has_bias ? DataType(1) : DataType(0),
+           DataType(0),
            *this->m_activations_v);
       break;
     case data_layout::DATA_PARALLEL:
       Gemm(NORMAL, NORMAL, DataType(1),
            this->m_activation_weights_v->LockedMatrix(),
            this->m_prev_activations_v->LockedMatrix(),
-           DataType(1),
+           DataType(0),
            this->m_activations_v->Matrix());
       break;
     }
+
+    // Apply bias if needed
+    if(m_has_bias) {
+      Copy(*m_bias_weights_v, *m_bias_weights_repl);
+      const Mat& local_bias_weights = m_bias_weights_repl->Matrix();
+      El::IndexDependentMap(this->m_activations_v->Matrix(),
+                            (std::function<DataType(El::Int,El::Int,const DataType&)>)
+                            ([this,&local_bias_weights](El::Int r, El::Int c,const DataType& z)->DataType {
+                              return z + m_bias_term * local_bias_weights.Get(r);
+                            }));
+    }
+
   }
 
   void bp_compute(void) {
