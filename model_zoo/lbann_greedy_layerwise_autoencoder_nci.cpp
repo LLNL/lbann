@@ -42,10 +42,9 @@ using namespace El;
 
 int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  init_random(42);
-  init_data_seq_random(42);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
+
+  El::GemmUseGPU(32,32,32);
 
   try {
 
@@ -83,7 +82,7 @@ int main(int argc, char *argv[]) {
     const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
 
     // Set up the communicator and get the grid.
-    lbann_comm *comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -151,23 +150,25 @@ int main(int argc, char *argv[]) {
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
-    layer_factory *lfac = new layer_factory();
-    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
+    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), optimizer_fac);
 
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                            std::make_pair(execution_mode::validation, &nci_validation_set),
                                                            std::make_pair(execution_mode::testing, &nci_testset)
                                                           };
 
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io,
-        (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout>(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
     gla.add(input_layer);
+    Layer *fc1 = new fully_connected_layer<data_layout>(data_layout::MODEL_PARALLEL, 1,
+                                                        nci_trainset.get_linearized_data_size(), 500,trainParams.MBSize,
+                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    gla.add(fc1);
 
-    gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    /*gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
     gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
     gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
+*/
 
     //Dump Weight-Bias matrices to files in DumpDir
     lbann_callback_dump_weights *dump_weights_cb;
