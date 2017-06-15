@@ -87,7 +87,7 @@ class fully_connected_layer : public learning {
                         optimizer *opt, bool has_bias = true)
     : learning(index, numPrevNeurons, 
                numNeurons, mini_batch_size, 
-               comm, opt)
+               comm, opt),
     m_weight_initialization(init) {
 
     // Setup the data distribution
