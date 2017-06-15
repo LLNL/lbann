@@ -253,6 +253,7 @@ int main(int argc, char *argv[]) {
           comm,
           convolution_layer_optimizer,
           cudnn);
+      layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -263,7 +264,6 @@ int main(int argc, char *argv[]) {
           layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
-      // l2(0.0005)
     }
 
     // Layer 2 (LRN)
@@ -341,6 +341,7 @@ int main(int argc, char *argv[]) {
           comm,
           convolution_layer_optimizer,
           cudnn);
+      layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -351,7 +352,6 @@ int main(int argc, char *argv[]) {
           layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
-      // l2(0.0005)
     }
 
     // Layer 5 (LRN)
@@ -429,6 +429,7 @@ int main(int argc, char *argv[]) {
           comm,
           convolution_layer_optimizer,
           cudnn);
+      layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -439,7 +440,6 @@ int main(int argc, char *argv[]) {
           layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
-      // l2(0.0005)
     }
 
     // Layer 8 (convolutional)
@@ -467,6 +467,7 @@ int main(int argc, char *argv[]) {
           comm,
           convolution_layer_optimizer,
           cudnn);
+      layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -477,7 +478,6 @@ int main(int argc, char *argv[]) {
           layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
-      // l2(0.0005)
     }
 
     // Layer 9 (convolutional)
@@ -505,6 +505,7 @@ int main(int argc, char *argv[]) {
           comm,
           convolution_layer_optimizer,
           cudnn);
+      layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -515,7 +516,6 @@ int main(int argc, char *argv[]) {
           layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
-      // l2(0.0005)
     }
 
     // Layer 10 (pooling)
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
 
     // Layer 11 (fully-connected)
     {
-      Layer *fc =
+      fully_connected_layer<data_layout> *fc =
         new fully_connected_layer<data_layout>(
           data_layout::MODEL_PARALLEL,
           16,
@@ -552,6 +552,7 @@ int main(int argc, char *argv[]) {
           weight_initialization::he_normal,
           comm,
           dnn->create_optimizer());
+      fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -570,12 +571,11 @@ int main(int argc, char *argv[]) {
           trainParams.MBSize,
           0.5);
       dnn->add(dropout_layer);
-      // l2(0.0005)
     }
 
     // Layer 12 (fully-connected)
     {
-      Layer *fc =
+      fully_connected_layer<data_layout> *fc =
         new fully_connected_layer<data_layout>(
           data_layout::MODEL_PARALLEL,
           19,
@@ -585,6 +585,7 @@ int main(int argc, char *argv[]) {
           weight_initialization::he_normal,
           comm,
           dnn->create_optimizer());
+      fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
       Layer *relu
         = new relu_layer<data_layout>(
@@ -603,13 +604,12 @@ int main(int argc, char *argv[]) {
           trainParams.MBSize,
           0.5);
       dnn->add(dropout_layer);
-      // l2(0.0005)
     }
 
     // Layer 13 (softmax)
     {
       // Fully-connected without bias before softmax.
-      Layer *fc =
+      fully_connected_layer<data_layout> *fc =
         new fully_connected_layer<data_layout>(
           data_layout::MODEL_PARALLEL,
           22,
@@ -620,8 +620,8 @@ int main(int argc, char *argv[]) {
           comm,
           dnn->create_optimizer(),
           false);
+      fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
-      // l2(0.0005)
       Layer *softmax =
         new softmax_layer<data_layout>(
           data_layout::MODEL_PARALLEL,
