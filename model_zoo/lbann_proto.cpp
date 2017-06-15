@@ -35,6 +35,7 @@ using namespace El;
 
 int main(int argc, char* argv[])
 {
+#if 0
   Initialize(argc, argv);
   lbann_comm* comm = NULL;
 
@@ -186,6 +187,6 @@ int main(int argc, char* argv[])
 
   // free all resources by El and MPI
   Finalize();
-
+#endif
   return 0;
 }
