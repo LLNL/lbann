@@ -82,12 +82,10 @@ lbann::Layer::Layer(data_layout data_dist, const uint index,
 }
 
 lbann::Layer::~Layer() {
-  delete m_weighted_sum;
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
   delete m_prev_activations;
-  delete m_weighted_sum_v;
   delete m_prev_error_signal_v;
   delete m_error_signal_v;
   delete m_activations_v;
@@ -96,14 +94,12 @@ lbann::Layer::~Layer() {
 
 /// Matrices should be in MC,MR distributions
 void lbann::Layer::initialize_model_parallel_distribution() {
-  m_weighted_sum        = new DistMat(m_comm->get_model_grid());
   m_prev_activations    = new DistMat(m_comm->get_model_grid());
   m_activations         = new DistMat(m_comm->get_model_grid());
   m_prev_error_signal   = new DistMat(m_comm->get_model_grid());
   m_error_signal        = new DistMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new DistMat(m_comm->get_model_grid());
   m_prev_activations_v  = new DistMat(m_comm->get_model_grid());
   m_activations_v       = new DistMat(m_comm->get_model_grid());
   m_prev_error_signal_v = new DistMat(m_comm->get_model_grid());
@@ -112,14 +108,12 @@ void lbann::Layer::initialize_model_parallel_distribution() {
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 void lbann::Layer::initialize_data_parallel_distribution() {
-  m_weighted_sum        = new StarVCMat(m_comm->get_model_grid());
   m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
   m_activations         = new StarVCMat(m_comm->get_model_grid());
   m_prev_error_signal   = new StarVCMat(m_comm->get_model_grid());
   m_error_signal        = new StarVCMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_weighted_sum_v      = new StarVCMat(m_comm->get_model_grid());
   m_prev_activations_v  = new StarVCMat(m_comm->get_model_grid());
   m_activations_v       = new StarVCMat(m_comm->get_model_grid());
   m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
@@ -349,7 +343,6 @@ void lbann::Layer::fp_set_std_matrix_view() {
     View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
          IR(0, cur_mini_batch_size));
   }
-  View(*m_weighted_sum_v, *m_weighted_sum, ALL, IR(0, cur_mini_batch_size));
   View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
@@ -375,7 +368,6 @@ void lbann::Layer::bp_set_std_matrix_view() {
   if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
     View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
   }
-  View(*m_weighted_sum_v, *m_weighted_sum, IR(0, m_weighted_sum->Height()), IR(0, cur_mini_batch_size));
   if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
     View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
   }

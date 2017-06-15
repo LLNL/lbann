@@ -97,7 +97,6 @@ class softmax_layer: public activation_layer<T_layout> {
     // Initialize other matrices
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*this->m_weighted_sum, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
     Zeros(*this->m_workspace, 1, this->m_mini_batch_size);

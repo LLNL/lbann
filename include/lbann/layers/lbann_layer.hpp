@@ -298,15 +298,12 @@ class Layer {
 
   execution_mode  m_execution_mode;
 
-  ElMat *m_weighted_sum;        ///< Weighted sum - Output of forward pass linear transformation ((# neurons) x mini-batch size)
-
  public:
   ElMat *m_prev_error_signal;   ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
 
   ElMat *m_activations;         ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
 
   /// Create a view of each matrix so that it can accomodate partial mini-batches
-  ElMat *m_weighted_sum_v;
   ElMat *m_prev_error_signal_v;
   ElMat *m_activations_v;
 
@@ -358,8 +355,6 @@ class Layer {
   std::vector<DataType *> m_prev_activations_d;
   /** GPU memory for activations. */
   std::vector<DataType *> m_activations_d;
-  /** GPU memory for output of forward pass linear transformation. */
-  std::vector<DataType *> m_weighted_sum_d;
   /** GPU memory for error signal from "next" layer. */
   std::vector<DataType *> m_prev_error_signal_d;
   /** GPU memory for error signal. */
