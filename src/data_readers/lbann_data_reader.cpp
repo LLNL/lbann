@@ -60,8 +60,6 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
                  get_data_seq_generator());
   }
 
-  //  m_num_iterations_per_epoch = m_num_mini_batches_per_reader; //ceil((float) this->getNumData() / (float) m_batch_size);
-  std::cout << "I have just finished setup and the number of samples is " << this->getNumData() << " which will require " << m_num_iterations_per_epoch << " iterations " <<  std::endl;
 }
 
 void generic_data_reader::setup(void) {
