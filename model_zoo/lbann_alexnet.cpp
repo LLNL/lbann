@@ -84,8 +84,6 @@ int main(int argc, char *argv[]) {
     trainParams.parse_params();
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.2;
-    trainParams.PercentageTrainingSamples = 0.01; //1.0;
-    trainParams.PercentageValidationSamples = 0.4; //0.2;
     PerformanceParams perfParams;
     perfParams.parse_params();
     // Read in the user specified network topology
