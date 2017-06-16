@@ -127,7 +127,7 @@ void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
   sums.AlignWith( A );
   sums.Resize( A.Height(), 1 );
   RowSum( A.LockedMatrix(), sums.Matrix() );
-  AllReduce( sums, sums.RedundantComm(), mpi::SUM );
+  AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
 
 }
 

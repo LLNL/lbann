@@ -145,6 +145,8 @@ class softmax_layer: public activation_layer {
            // || m_next_layer_type == layer_type::target_unsupervised
            )) {
       View(*this->m_error_signal, *this->m_prev_error_signal);
+      View(*this->m_error_signal_v, *this->m_error_signal,
+           ALL, IR(0,this->m_error_signal->Width()));
       return;
     }
 
