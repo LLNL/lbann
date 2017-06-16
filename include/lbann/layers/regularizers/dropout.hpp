@@ -158,7 +158,7 @@ template<> inline void dropout<data_layout::MODEL_PARALLEL>::initialize_distribu
 template<> inline void dropout<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   regularizer_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
 #ifdef LBANN_PROCDET_DROPOUT
-  m_cur_mask = new StarMat(m_comm->get_model_grid());
+  m_cur_mask = new StarVCMat(m_comm->get_model_grid());
 #else
   m_cur_mask = new Mat;
 #endif

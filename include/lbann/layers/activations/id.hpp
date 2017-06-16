@@ -33,7 +33,7 @@ namespace lbann {
 
 /** Identity activation function -- does nothing. */
 template <data_layout T_layout>
-class id_layer : public entrywise_activation_layer {
+class id_layer : public activation_layer {
  public:
   // TODO: Optimize this to copy instead of applying elementwise.
   id_layer(uint index, lbann_comm *comm,
@@ -42,17 +42,18 @@ class id_layer : public entrywise_activation_layer {
                                mini_batch_size, num_neurons) { initialize_distributed_matrices(); }
 
   virtual inline void initialize_distributed_matrices() {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+    activation_layer::initialize_distributed_matrices<T_layout>();
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
- protected:
-  DataType activation_function(DataType z) {
-    return z;
+  void fp_compute() {
+    El::View(*this->m_activations, *this->m_prev_activations);
   }
-  DataType activation_function_gradient(DataType z) {
-    return z;
+
+  void bp_compute() {
+    El::View(*this->m_error_signal, *this->m_prev_error_signal);
   }
+
 };
 
 }  // namespace lbann

@@ -162,10 +162,6 @@ void lbann::Layer::forwardProp() {
 void lbann::Layer::backProp() {
   double bp_start = get_time();
 
-  // Set the view for all of the standard matrices based on the
-  // current mini-batch size
-  //  bp_set_std_matrix_view();
-
   // Get incoming loss and convert matrix distribution if necessary
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
     DistData curr_dist = m_prev_error_signal->DistData();
@@ -173,14 +169,14 @@ void lbann::Layer::backProp() {
     if(curr_dist.colDist == next_dist.colDist
         && curr_dist.rowDist == next_dist.rowDist) {
       View(*m_prev_error_signal, *bp_input);
-      View(*m_prev_error_signal_v,
-           *m_prev_error_signal,
-           ALL,
-           IR(0, m_prev_error_signal_v->Width()));
     } else {
       *m_prev_error_signal = *bp_input;
     }
   }
+
+  // Set the view for all of the standard matrices based on the
+  // current mini-batch size
+  bp_set_std_matrix_view();
 
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs
@@ -326,14 +322,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
 
 void lbann::Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  if (m_prev_error_signal->Height() > 0) {
-    // No previous error signal for the final layer.
-    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
-         IR(0, cur_mini_batch_size));
-  }
-  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
@@ -351,26 +340,26 @@ void lbann::Layer::fp_set_std_matrix_view() {
   }
 }
 
-#if 0
 void lbann::Layer::bp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-
-  if(m_prev_activations != NULL) { // Input layers will not have a valid fp_input
-    View(*m_prev_activations_v, *m_prev_activations, IR(0, m_prev_activations->Height()), IR(0, cur_mini_batch_size));
+  if(m_prev_error_signal->Height() > 0) {
+    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
+         IR(0, cur_mini_batch_size));
   }
-  if(m_prev_error_signal != NULL) { // Target layers will not have a valid bp_input
-    View(*m_prev_error_signal_v, *m_prev_error_signal, IR(0, m_prev_error_signal->Height()), IR(0, cur_mini_batch_size));
-  }
-  View(*m_error_signal_v, *m_error_signal, IR(0, m_error_signal->Height()), IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, IR(0, m_activations->Height()), IR(0, cur_mini_batch_size));
+  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
-  if(cur_mini_batch_size != m_mini_batch_size) { /// When the current mini-batch is partial, check with the other models to figure out the entire size of the complete mini-batch
-    int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
-    //    cout << "[" << m_comm->get_rank_in_world() << "] total_mini_batch_size " << total_mini_batch_size << " and cur mini batch size " << cur_mini_batch_size << endl;
+  /// @todo BVE FIXME This will cause a bug when you are on the last
+  /// iteration and the size of the current mini-batch equals the normal
+  /// mini-batch size.  In this case one of the ranks gets out of sync
+  /// To fix this, we need a flag for when we are on the last mini-batch
+  if(cur_mini_batch_size != m_mini_batch_size || 1) {
+    // When the current mini-batch is partial, check with the other
+    // models to figure out the entire size of the complete mini-batch
+    Int total_mini_batch_size = m_comm->intermodel_allreduce((Int) cur_mini_batch_size);
     set_effective_minibatch_size(total_mini_batch_size);
   } else {
     set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
   }
+
 }
-#endif

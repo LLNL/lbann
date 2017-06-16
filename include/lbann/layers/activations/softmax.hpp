@@ -73,7 +73,7 @@ class softmax_layer: public activation_layer {
 
     // Initialize other matrices
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
     Zeros(*this->m_workspace, 1, this->m_mini_batch_size);
@@ -96,38 +96,29 @@ class softmax_layer: public activation_layer {
 
     // Find maximum entry in each column
     #pragma omp parallel for
-    for(Int c=0; c<local_width; ++c) {
-      DataType max_entry = -INFINITY;
-      for(Int r=0; r<local_height; ++r) {
-        max_entry = Max(max_entry, prev_activations_local.Get(r,c));
+    for(El::Int col = 0; col < local_width; ++col) {
+      DataType max_entry = prev_activations_local(0, col);
+      for(El::Int row = 1; row < local_height; ++row) {
+        max_entry = Max(max_entry, prev_activations_local(row,col));
       }
-      workspace_local.Set(Int(0), c, max_entry);
+      workspace_local(0, col) = max_entry;
     }
     AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::MAX);
 
-    // Subtract column max and exponentiate activations
-    // Note: Subtracting the column max prevents activations from blowing
-    //   up. Large negative values underflow to 0.
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        activations_local(row, col) =
-          El::Exp(prev_activations_local(row, col) - workspace_local(0, col));
-      }
-    }
-    /*IndexDependentMap(activations_local,
-                      (std::function<DataType(Int,Int,const DataType&)>)
-                      ([this,&workspace_local](Int r, Int c, const DataType& z)->DataType {
-                        return Exp(z - workspace_local.Get(Int(0), c));
-                        }));*/
-
-    // Compute column sums
+    // Exponentiate activations and compute column sums
+    // Note: Subtracting by the column max prevents activations from
+    //   blowing up. Large negative values underflow to 0.
     #pragma omp parallel for
-    for(Int c=0; c<local_width; ++c) {
+    for (El::Int col = 0; col < local_width; ++col) {
+      const DataType shift = workspace_local(0, col);
       DataType sum = 0;
-      for(Int r=0; r<local_height; ++r) {
-        sum += activations_local.Get(r,c);
+      for (El::Int row = 0; row < local_height; ++row) {
+        const DataType prev_activations_entry = prev_activations_local(row, col);
+        const DataType activations_entry = El::Exp(prev_activations_entry - shift);
+        activations_local(row, col) = activations_entry;
+        sum += activations_entry;
       }
-      workspace_local.Set(Int(0), c, sum);
+      workspace_local(0, col) = sum;
     }
     AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), mpi::SUM);
 
@@ -153,7 +144,7 @@ class softmax_layer: public activation_layer {
            || this->m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
            // || m_next_layer_type == layer_type::target_unsupervised
            )) {
-      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal));
+      View(*this->m_error_signal, *this->m_prev_error_signal);
       return;
     }
 

@@ -323,10 +323,8 @@ class Layer {
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view(void);
-#if 0
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view(void);
-#endif
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */
