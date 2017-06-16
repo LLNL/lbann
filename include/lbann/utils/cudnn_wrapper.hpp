@@ -37,7 +37,6 @@
 #ifdef __LIB_CUDNN
 #include <cuda.h>
 #include <cudnn.h>
-#include <cub/util_allocator.cuh>
 #endif // #ifdef __LIB_CUDNN
 
 // Error utility macros
@@ -99,10 +98,6 @@ class cudnn_manager {
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
   int get_gpu(Int i=0) const;
-  /** Get GPU memory allocator. */
-  cub::CachingDeviceAllocator& get_gpu_memory();
-  /** Get GPU memory allocator (const). */
-  const cub::CachingDeviceAllocator& get_gpu_memory() const;
   /** Get CUDA streams. */
   std::vector<cudaStream_t>& get_streams();
   /** Get CUDA streams (const). */
@@ -179,18 +174,18 @@ class cudnn_manager {
   /** Synchronize GPUs. */
   void synchronize();
 
-  /// Register a block of memory to pin
-  void pin_ptr(void *ptr, size_t sz);
-  /// Pin the memory block of a matrix and return the block size
-  size_t pin_memory_block(ElMat *mat);
-  /// Unpin the memory block of a matrix
-  void unpin_memory_block(ElMat *mat);
-  /// Unregister a block of pinnedmemory
-  void unpin_ptr(void *ptr);
-  /// Unregister all the memories registered to pin
-  void unpin_ptrs(void);
-  /// report the total size of memory blocks pinned
-  size_t get_total_size_of_pinned_blocks(void) const;
+  /** Pin matrix memory.
+   *  Pinned memory accelerates memory transfers with GPU, but may
+   *  degrade system performance. This function assumes that the
+   *  matrix memory was previously allocated within Elemental.
+   */
+  void pin_matrix(ElMat& mat);
+
+  /** Unpin matrix memory.
+   *  Pinned memory accelerates memory transfers with GPU, but may
+   *  degrade system performance.
+   */
+  void unpin_matrix(ElMat& mat);
 
  private:
 
@@ -201,10 +196,6 @@ class cudnn_manager {
   Int m_num_gpus;
   /** Number of available GPUs. */
   Int m_num_total_gpus;
-
-  /** GPU memory allocator.
-   *  Faster than cudaMalloc/cudaFree since it uses a memory pool. */
-  cub::CachingDeviceAllocator *m_gpu_memory;
 
   /** List of GPUs. */
   std::vector<int> m_gpus;

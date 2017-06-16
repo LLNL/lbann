@@ -74,14 +74,6 @@ class pooling_layer : public transform {
   cudnnPoolingDescriptor_t m_pooling_desc;
 #endif // __LIB_CUDNN
 
-  bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
-  bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path
-  bool is_pinned_fwd; ///< indicate if the memory blocks for cudnn forward path are pinned
-  bool is_pinned_bwd; ///< indicate if the memory blocks for cudnn backward path are pinned
-#if 0
-  void *get_cudnn_manager(void); ///< returns the pointer to cudnn_manager if available, otherwise NULL
-#endif
-
  public:
   /// Constructor
   pooling_layer(uint index,
@@ -132,11 +124,6 @@ class pooling_layer : public transform {
     m_output_desc = NULL;
     m_pooling_desc = NULL;
 
-    to_pin_fwd = false;
-    to_pin_bwd = false;
-    is_pinned_fwd = false;
-    is_pinned_bwd = false;
-
     // Initialize GPU memory if using GPU
     if(cudnn) {
       this->m_using_gpus = true;
@@ -149,10 +136,6 @@ class pooling_layer : public transform {
       const int num_processes = this->m_comm->get_procs_per_model();
       const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
       this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-      // Default behavior set to pin memory blocks used by cuDNN
-      pin_mem();
-
     }
   #endif // __LIB_CUDNN
 
@@ -173,9 +156,6 @@ class pooling_layer : public transform {
       if(m_pooling_desc) {
         CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
       }
-
-      // Unpin pinned memory
-      unpin_mem();
 
       // Deallocate GPU memory
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
@@ -335,127 +315,6 @@ class pooling_layer : public transform {
     }
 
   #endif // #ifndef __LIB_CUDNN
-  }
-
-  /**
-   * \brief Set to pin the memory blocks used by cudnn.
-   * \details The actual pinning occurs at the beginning of next fp_linearity() call.
-   *          No effect when cudnn is not employed.
-   */
-  // TODO: JY - Eventually, this needs to move up to the parent class
-  // in case that there are more gpu wrapper classes coming to existences
-  void pin_mem(void) {
-  #ifdef __LIB_CUDNN
-    to_pin_fwd = true;
-    to_pin_bwd = true;
-  #endif
-  }
-
-  /**
-   * \brief unpin the memory blocks pinned for cudnn
-   * \details The effect is immediate.
-   */
-  // TODO: JY - Eventually, this needs to move up to the parent class
-  void unpin_mem(void) {
-  #ifdef __LIB_CUDNN
-    to_pin_fwd = false;
-    to_pin_bwd = false;
-    unpin_memory_blocks_fwd();
-    unpin_memory_blocks_bwd();
-  #endif
-  }
-
-  // TODO: JY - Eventually, this needs to a virtual member function of the parent class
-  ///< pin the memory used by cudnn forward path
-  void pin_memory_blocks_fwd(void) {
-  #ifdef __LIB_CUDNN
-    size_t total_size = 0u;
-    if(!this->m_prev_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_prev_activations);
-    }
-    if(!this->m_next_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_activations);
-    }
-    //std::cout << total_size << " bytes pinned by pooling layer "
-    //          << get_index() << " forward " << std::endl;
-
-    is_pinned_fwd = true;
-  #endif
-  }
-
-  ///< pin the memory used by cudnn backward path
-  void pin_memory_blocks_bwd(void) {
-  #ifdef __LIB_CUDNN
-    size_t total_size = 0u;
-    if(!this->m_next_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_prev_error_signal);
-    }
-    if(!this->m_prev_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_error_signal);
-    }
-
-    //this->m_cudnn->pin_memory_block(m_error_signal);
-    //std::cout << total_size << " bytes pinned by pooling layer "
-    //          << get_index() << " backward " << std::endl;
-
-    is_pinned_bwd = true;
-  #endif
-  }
-
-  ///< unpin the memory used by cudnn forward path
-  void unpin_memory_blocks_fwd(void) {
-  #ifdef __LIB_CUDNN
-    if(!this->m_prev_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_prev_activations);
-    }
-    if(!this->m_next_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_activations);
-    }
-
-    is_pinned_fwd = false;
-  #endif
-  }
-
-  ///< unpin the memory used by cudnn backward path
-  void unpin_memory_blocks_bwd(void) {
-  #ifdef __LIB_CUDNN
-    if(!this->m_next_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_prev_error_signal);
-    }
-    if(!this->m_prev_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_error_signal);
-    }
-
-    is_pinned_bwd = false;
-  #endif
-  }
-
-  void forwardProp() {
-
-    // Perform forward propagation
-    Layer::forwardProp();
-
-  #ifdef __LIB_CUDNN
-    // Pin memory blocks at the first step
-    if(to_pin_fwd && !is_pinned_fwd) {
-      pin_memory_blocks_fwd();
-    }
-  #endif // #ifdef __LIB_CUDNN
-
-  }
-
-  void backProp() {
-
-    // Perform backward propagation
-    Layer::backProp();
-
-  #ifdef __LIB_CUDNN
-    // Pin memory blocks at the first step
-    if(to_pin_bwd && !is_pinned_bwd) {
-      pin_memory_blocks_bwd();
-    }
-  #endif // #ifdef __LIB_CUDNN
-
   }
 
   protected:
