@@ -347,19 +347,4 @@ void lbann::Layer::bp_set_std_matrix_view() {
          IR(0, cur_mini_batch_size));
   }
   View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
-
-  // Update the layer's effective mini-batch size so it averages properly.
-  /// @todo BVE FIXME This will cause a bug when you are on the last
-  /// iteration and the size of the current mini-batch equals the normal
-  /// mini-batch size.  In this case one of the ranks gets out of sync
-  /// To fix this, we need a flag for when we are on the last mini-batch
-  if(cur_mini_batch_size != m_mini_batch_size || 1) {
-    // When the current mini-batch is partial, check with the other
-    // models to figure out the entire size of the complete mini-batch
-    Int total_mini_batch_size = m_comm->intermodel_allreduce((Int) cur_mini_batch_size);
-    set_effective_minibatch_size(total_mini_batch_size);
-  } else {
-    set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
-  }
-
 }
