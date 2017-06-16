@@ -576,7 +576,7 @@ int main(int argc, char *argv[]) {
     Layer *new_layer_2 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        prev_num_neurons,
-       4096,
+       1000,
        trainParams.MBSize,
        weight_initialization::he_normal,
        comm,
