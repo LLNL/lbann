@@ -84,6 +84,8 @@ int main(int argc, char *argv[]) {
     trainParams.parse_params();
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.2;
+    trainParams.PercentageTrainingSamples = 0.01; //1.0;
+    trainParams.PercentageValidationSamples = 0.4; //0.2;
     PerformanceParams perfParams;
     perfParams.parse_params();
     // Read in the user specified network topology
@@ -580,7 +582,8 @@ int main(int argc, char *argv[]) {
        trainParams.MBSize,
        weight_initialization::he_normal,
        comm,
-       dnn->create_optimizer());
+       dnn->create_optimizer(), 
+       false);
     dnn->add(new_layer_2);
        // activation_type::RELU,
        // {
