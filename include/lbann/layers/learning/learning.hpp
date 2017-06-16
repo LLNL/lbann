@@ -102,9 +102,9 @@ class learning : public Layer {
       return "he_uniform";
       break;
     default:
-      char b[1024];
-      sprintf(b, "%s %d :: unknown weight_initialization: %d", __FILE__, __LINE__, id);
-      throw lbann_exception(b);
+      throw lbann_exception(
+        std::string(__FILE__) + " " + std::to_string(__LINE__) + " :: "
+        "unknown weight_initialization: " + std::to_string((int) id));
     }
   }
 

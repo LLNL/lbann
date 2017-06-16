@@ -728,9 +728,7 @@ class convolution_layer : public learning {
 
     // Input, output, and filter entries are divided amongst channels
     const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Apply bias
     for(Int i=0; i<m_num_output_channels; ++i) {
@@ -788,9 +786,7 @@ class convolution_layer : public learning {
 
     // Input, output, and filter entries are divided amongst channels
     const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Compute bias gradient
     #pragma omp parallel for
