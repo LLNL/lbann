@@ -162,7 +162,8 @@ int main(int argc, char *argv[]) {
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
-      model->train(1, pb_model->evaluation_frequency());
+      model->train(1, true);
+      model->evaluate(execution_mode::testing);
     }
 
     // @todo: figure out and implement coherent strategy

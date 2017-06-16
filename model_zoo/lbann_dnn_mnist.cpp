@@ -170,12 +170,16 @@ int main(int argc, char *argv[]) {
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+      cout << "XX adagrad\n";
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+      cout << "XX rmsprop\n";
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+      cout << "XX adam\n";
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+      cout << "XX sgd\n";
     }
 
     // Initialize network

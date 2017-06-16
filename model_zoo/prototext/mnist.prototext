@@ -9,6 +9,20 @@ model {
   use_cudnn: false
   num_gpus: -1
 
+  ###################################################
+  # Optimzer
+  ###################################################
+  optimizer {
+    name: "adagrad"
+    learn_rate: 0.01
+    momentum: 0.9
+    decay: 0.5
+    nesterov: true
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
   callback {
     print {
       interval: 1
@@ -26,6 +40,13 @@ model {
     }
   }
 
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
   layer {
     index: 1
     parent: 1
@@ -34,6 +55,9 @@ model {
     }
   }
 
+  #################
+  # FULLY_CONNECTED
+  #################
   layer {
     index: 2
     parent: 1
@@ -45,6 +69,9 @@ model {
     }
   }
 
+  ######
+  # RELU
+  ######
   layer {
     index: 3
     parent: 2
@@ -54,6 +81,9 @@ model {
     }
   }
 
+  #########
+  # DROPOUT
+  #########
   layer {
     index: 4
     parent: 3
@@ -64,6 +94,9 @@ model {
     }
   }
 
+  #################
+  # FULLY_CONNECTED
+  #################
   layer {
     index: 5
     parent: 4
@@ -75,6 +108,9 @@ model {
     }
   }
 
+  ######
+  # RELU
+  ######
   layer {
     index: 6
     parent: 5
@@ -94,6 +130,9 @@ model {
     }
   }
 
+  #################
+  # FULLY_CONNECTED
+  #################
   layer {
     index: 8
     parent: 7
@@ -105,6 +144,9 @@ model {
     }
   }
 
+  #########
+  # SOFTMAX
+  #########
   layer {
     index: 9
     parent: 8
@@ -115,6 +157,9 @@ model {
     }
   }
 
+  #########
+  # TARGET
+  #########
   layer {
     index: 10
     parent: 9
@@ -123,11 +168,8 @@ model {
       shared_data_reader: true
     }
   }
-  optimizer {
-    name: "adagrad"
-    learn_rate: 0.01
-    momentum: 0.9
-    decay: 0.5
-    nesterov: true
-  }
+
+  ###################################################
+  # end of layers
+  ###################################################
 }
