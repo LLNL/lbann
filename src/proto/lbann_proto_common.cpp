@@ -1,5 +1,4 @@
 
-#if 0
 #include "lbann/proto/lbann_proto_common.hpp"
 
 #include "lbann/lbann_base.hpp"
@@ -33,7 +32,8 @@
 
 using namespace lbann;
 
-pool_mode get_pool_mode(const string& s) {
+pool_mode get_pool_mode(const string& s)
+{
   if (s == "max") {
     return pool_mode::max;
   } else if (s == "average") {
@@ -50,7 +50,8 @@ pool_mode get_pool_mode(const string& s) {
 
 }
 
-void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index) {
+void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index)
+{
   std::vector<Layer *>& layers = model->get_layers();
   prev_num_neurons = -1;
   if(layers.size() != 0) {
@@ -60,7 +61,8 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
   cur_index = layers.size();
 }
 
-activation_type get_activation_type(const string& s) {
+activation_type get_activation_type(const string& s)
+{
   if (s == "sigmoid") {
     return activation_type::SIGMOID;
   } else if (s == "tanh") {
@@ -86,7 +88,8 @@ activation_type get_activation_type(const string& s) {
   }
 }
 
-weight_initialization get_weight_initialization(const string& s) {
+weight_initialization get_weight_initialization(const string& s)
+{
   if (s == "zero") {
     return weight_initialization::zero;
   } else if (s == "uniform") {
@@ -110,7 +113,8 @@ weight_initialization get_weight_initialization(const string& s) {
   }
 }
 
-data_layout get_data_layout(const string& s, const char *file, int line) {
+const data_layout get_data_layout(const string& s, const char *file, int line)
+{
   if (s == "model_parallel") {
     return data_layout::MODEL_PARALLEL;
   } else if (s == "data_parallel") {
@@ -124,43 +128,12 @@ data_layout get_data_layout(const string& s, const char *file, int line) {
   }
 }
 
-void init_regularizers(
-  vector<regularizer *>& regs,
-  lbann_comm *comm,
-  const ::google::protobuf::RepeatedPtrField< ::lbann_data::Regularizer >& r) {
-  for (int i=0; i<r.size(); i++) {
-    const lbann_data::Regularizer r2 = r[i];
-    if (r[i].has_batch_normalization()) {
-      const lbann_data::BatchNormalization& b = r[i].batch_normalization();
-      batch_normalization *b2 = new batch_normalization(
-        get_data_layout(b.data_layout(), __FILE__, __LINE__),
-        comm,
-        b.decay(),
-        b.gamma(),
-        b.beta());
-      regs.push_back(b2);
-    }
-    if (r[i].has_dropout()) {
-      const lbann_data::Dropout& b = r[i].dropout();
-      dropout *b2 = new dropout(
-        get_data_layout(b.data_layout(), __FILE__, __LINE__),
-        comm,
-        b.keep_prob());
-      regs.push_back(b2);
-    }
-    if (r[i].has_l2_regularization()) {
-      const lbann_data::L2Regularization& b = r[i].l2_regularization();
-      l2_regularization *b2 = new l2_regularization(b.lambda());
-      regs.push_back(b2);
-    }
-  }
-}
-
 void add_layers(
   lbann::sequential_model *model,
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p) {
+  const lbann_data::LbannPB& p)
+{
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
 
@@ -170,7 +143,6 @@ void add_layers(
 
   for (int j=0; j<size; j++) {
     const lbann_data::Layer& layer = m.layer(j);
-
     int layer_id;
     int prev_num_neurons;
     get_prev_neurons_and_index(model, prev_num_neurons, layer_id);
@@ -180,15 +152,21 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
-      vector<regularizer *> regs;
-      init_regularizers(regs, comm, ell.regularizer());
-      input_layer<data_layout> *d = new input_layer_distributed_minibatch_parallel_io<data_layout>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           mb_size,
-          data_readers,
-          regs);
+          data_readers);
+      } else {
+        d = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers);
+      }
       model->add(d);
     }
 
@@ -197,20 +175,30 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected& ell = layer.fully_connected();
-      vector<regularizer *> regs;
-      init_regularizers(regs, comm, ell.regularizer());
-      Layer *new_layer = new fully_connected_layer<data_layout>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           prev_num_neurons,
           ell.num_neurons(),
           mb_size,
-          get_activation_type(ell.activation_type()),
           get_weight_initialization(ell.weight_initialization()),
           comm,
           model->create_optimizer(),
-          regs);
-      model->add(new_layer);
+          ell.has_bias());
+      } else {
+        d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          prev_num_neurons,
+          ell.num_neurons(),
+          mb_size,
+          get_weight_initialization(ell.weight_initialization()),
+          comm,
+          model->create_optimizer(),
+          ell.has_bias());
+      }
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -246,22 +234,39 @@ void add_layers(
       while (ss >> i) {
         pool_strides.push_back(i);
       }
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new pooling_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          ell.num_dims(),
+          ell.num_channels(),
+          &input_dims[0],
+          &pool_dims[0],
+          &pool_pads[0],
+          &pool_strides[0],
+          get_pool_mode(ell.pool_mode()),
+          mb_size,
+          comm,
+          cudnn
+        );
+      } else {
+        d = new pooling_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          ell.num_dims(),
+          ell.num_channels(),
+          &input_dims[0],
+          &pool_dims[0],
+          &pool_pads[0],
+          &pool_strides[0],
+          get_pool_mode(ell.pool_mode()),
+          mb_size,
+          comm,
+          cudnn
+        );
+      }
 
-      pooling_layer<data_layout> *new_layer = new pooling_layer<data_layout>(
-        layer_id,
-        ell.num_dims(),
-        ell.num_channels(),
-        &input_dims[0],
-        &pool_dims[0],
-        &pool_pads[0],
-        &pool_strides[0],
-        get_pool_mode(ell.pool_mode()),
-        mb_size,
-        comm,
-        cudnn
-      );
-
-      model->add(new_layer);
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -301,29 +306,43 @@ void add_layers(
       Int num_dims = ell.num_dims();
       Int num_input_channels = ell.num_input_channels();
       Int num_output_channels = ell.num_output_channels();
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new convolution_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          num_dims,
+          num_input_channels,
+          &input_dims[0],
+          num_output_channels,
+          &filter_dims[0],
+          &conv_pads[0],
+          &conv_strides[0],
+          mb_size,
+          get_weight_initialization(ell.weight_initialization()),
+          comm,
+          model->create_optimizer(),
+          cudnn
+        );
+      } else {
+        d = new convolution_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          num_dims,
+          num_input_channels,
+          &input_dims[0],
+          num_output_channels,
+          &filter_dims[0],
+          &conv_pads[0],
+          &conv_strides[0],
+          mb_size,
+          get_weight_initialization(ell.weight_initialization()),
+          comm,
+          model->create_optimizer(),
+          cudnn
+        );
+      }
 
-      vector<regularizer *> regs;
-      init_regularizers(regs, comm, ell.regularizer());
-
-      convolutional_layer<data_layout> *new_layer = new convolutional_layer<data_layout>(
-        layer_id,
-        num_dims,
-        num_input_channels,
-        &input_dims[0],
-        num_output_channels,
-        &filter_dims[0],
-        &conv_pads[0],
-        &conv_strides[0],
-        mb_size,
-        get_activation_type(ell.activation_type()),
-        get_weight_initialization(ell.weight_initialization()),
-        comm,
-        model->create_optimizer(),
-        regs,
-        cudnn
-      );
-
-      model->add(new_layer);
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -331,8 +350,10 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      Layer *new_layer = new softmax_layer<data_layout>(
-          get_data_layout(ell.data_layout(), __FILE__, __LINE__),
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           prev_num_neurons,
           ell.num_neurons(),
@@ -341,7 +362,18 @@ void add_layers(
           comm,
           model->create_optimizer()
         );
-      model->add(new_layer);
+      } else {
+        d = new softmax_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          prev_num_neurons,
+          ell.num_neurons(),
+          mb_size,
+          get_weight_initialization(ell.weight_initialization()),
+          comm,
+          model->create_optimizer()
+        );
+      }
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -349,15 +381,26 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO& ell = layer.target_distributed_minibatch_parallel_io();
-      Layer *t = new  target_layer_distributed_minibatch_parallel_io<data_layout>(
-        get_data_layout(ell.data_layout(), __FILE__, __LINE__),
-        comm,
-        m.num_parallel_readers(),
-        mb_size,
-        data_readers,
-        ell.shared_data_reader(),
-        ell.for_regression());
-      model->add(t);
+      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          ell.shared_data_reader(),
+          ell.for_regression());
+      } else {
+        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          ell.shared_data_reader(),
+          ell.for_regression());
+      }
+      model->add(d);
     }
   }
 }
@@ -366,7 +409,8 @@ void init_callbacks(
   lbann_comm *comm,
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p) {
+  const lbann_data::LbannPB& p)
+{
   std::stringstream err;
   bool master = comm->am_world_master();
 
@@ -463,7 +507,8 @@ void init_callbacks(
 }
 
 
-sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p) {
+sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p)
+{
   std::stringstream err;
 
   sequential_model *model;
@@ -525,7 +570,8 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   return model;
 }
 
-optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p) {
+optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p)
+{
   const lbann_data::Model& model = p.model();
   const lbann_data::Optimizer& optimizer = model.optimizer();
 
@@ -559,7 +605,8 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   return factory;
 }
 
-void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, int mini_batch_size) {
+void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, int mini_batch_size)
+{
   std::stringstream err;
 
   const lbann_data::DataReader & d_reader = p.data_reader();
@@ -716,7 +763,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
   }
 }
 
-void readPrototextFile(string fn, lbann_data::LbannPB& pb) {
+void readPrototextFile(string fn, lbann_data::LbannPB& pb)
+{
   std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
@@ -731,7 +779,8 @@ void readPrototextFile(string fn, lbann_data::LbannPB& pb) {
   }
 }
 
-bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb) {
+bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb)
+{
   int fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC, 0644);
   if (fd == -1) {
     return false;
@@ -746,5 +795,3 @@ bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb) {
   close(fd);
   return true;
 }
-#endif
-
