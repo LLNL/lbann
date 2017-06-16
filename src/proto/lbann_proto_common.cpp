@@ -168,6 +168,7 @@ void add_layers(
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
       Layer *d;
+      cout << "XX numreaders: " << m.num_parallel_readers() << endl;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
@@ -401,7 +402,7 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
-        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           mb_size,
@@ -558,10 +559,19 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   int size = m.metric_size();
   for (int j=0; j<size; j++) {
     string metric = m.metric(j);
+    data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__);
     if (metric == "categorical_accuracy") {
+      if (dl == data_layout::MODEL_PARALLEL) {
+      model->add_metric(new metrics::categorical_accuracy(data_layout::MODEL_PARALLEL, comm));
+      } else {
       model->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
+      }
     } else if (metric == "mean_squared_error") {
+      if (dl == data_layout::MODEL_PARALLEL) {
+      model->add_metric(new metrics::mean_squared_error(data_layout::MODEL_PARALLEL, comm));
+      } else {
       model->add_metric(new metrics::mean_squared_error(data_layout::DATA_PARALLEL, comm));
+      }
     } else {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown metric name: " << metric << endl
