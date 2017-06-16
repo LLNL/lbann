@@ -2,9 +2,10 @@ model {
   name: "dnn"
   objective_function: "categorical_cross_entropy"
   metric: "categorical_accuracy"
+  data_layout: "data_parallel"
   mini_batch_size: 192
   num_epochs: 10
-  num_parallel_readers: 0
+  num_parallel_readers: 12
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
