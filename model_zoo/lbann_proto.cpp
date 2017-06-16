@@ -27,12 +27,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-//#include "lbann/proto/lbann_proto_common.hpp"
+#include "lbann/proto/lbann_proto_common.hpp"
 
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-#if 0
   lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
@@ -177,6 +176,5 @@ int main(int argc, char *argv[]) {
   // free all resources by El and MPI
   finalize(comm);
 
-#endif
   return 0;
 }

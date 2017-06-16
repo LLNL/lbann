@@ -162,6 +162,7 @@ message CallbackImComm {
 message Layer {
    int64 index = 50; 
    int64 parent = 51;
+   string data_layout = 52;
 
    // a Layer should contain exactly one of the following;
    // this may or may not be properly checked for in lbann_proto_common.cpp
@@ -179,7 +180,6 @@ message Layer {
    FullyConnected fully_connected = 11;
    Pooling pooling = 12;
    Convolution convolution = 13;
-   Softmax softmax = 14;
    Target target = 15;
    TargetParallel target_parallel = 16;
    TargetDistributedMinibatch target_distributed_minibatch = 17;
@@ -191,6 +191,7 @@ message Layer {
    Dropout dropout = 21;
 
    // activation Layers
+   Softmax softmax = 200;
    ELU elu = 30;
    ID id = 31;
    LeakyRelu leaky_relu = 32;
@@ -215,6 +216,7 @@ message LeakyRelu {
 }
 
 message Relu {
+  int64 num_neurons = 2;
 }
 
 message Sigmoid {
@@ -249,6 +251,7 @@ message LocalResponseNormalization {
 }
 
 message Dropout {
+  int64 num_neurons = 1;
   double keep_prob = 2;  //default: 0.5
 }
 
@@ -258,17 +261,14 @@ message Dropout {
 //////////////////
 
 message InputDistributedMiniBatchParallelIO {
-  string data_layout = 1;
 }
 
 message InputPartitionedParallel {
-  string data_layout = 1;
   int64 num_parallel_readers = 2;
 }
 
 
 message FullyConnected {
-  string data_layout = 1;
   int64 num_neurons = 2;
   string weight_initialization = 5;
   bool has_bias = 6;
@@ -276,7 +276,6 @@ message FullyConnected {
 
 
 message Pooling {
-  string data_layout = 100;
   int64 num_dims = 1;
   int64 num_channels = 2;
   string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
@@ -290,7 +289,6 @@ message Pooling {
 }
 
 message Convolution {
-  string data_layout = 100;
   int64 num_dims = 1;
   int64 num_input_channels = 2;
   string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
@@ -304,7 +302,6 @@ message Convolution {
 }
 
 message Softmax {
-  string data_layout = 100;
   int64 num_neurons = 2;
   string weight_initialization = 3;
 }
@@ -322,7 +319,6 @@ message TargetDistributedMinibatch {
 }
 
 message TargetDistributedMinibatchParallelIO {
-  string data_layout = 1;
   bool shared_data_reader = 3;
   bool for_regression = 4;
 }

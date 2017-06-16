@@ -25,6 +25,7 @@
 #include "lbann/callbacks/lbann_callback_dump_activations.hpp"
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/callbacks/lbann_callback_save_images.hpp"
+#include "lbann/layers/activations/relu.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -146,13 +147,26 @@ void add_layers(
     int layer_id;
     int prev_num_neurons;
     get_prev_neurons_and_index(model, prev_num_neurons, layer_id);
+    data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__);
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: Relu
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_relu()) {
+      const lbann_data::Relu &ell = layer.relu();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
+      } else {
+        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
+      }
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: input_distributed_minibatch_parallel_io
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
@@ -175,7 +189,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected& ell = layer.fully_connected();
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
@@ -234,7 +247,6 @@ void add_layers(
       while (ss >> i) {
         pool_strides.push_back(i);
       }
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new pooling_layer<data_layout::MODEL_PARALLEL>(
@@ -306,7 +318,6 @@ void add_layers(
       Int num_dims = ell.num_dims();
       Int num_input_channels = ell.num_input_channels();
       Int num_output_channels = ell.num_output_channels();
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
@@ -350,7 +361,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
@@ -381,7 +391,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO& ell = layer.target_distributed_minibatch_parallel_io();
-      data_layout dl = get_data_layout(ell.data_layout(), __FILE__, __LINE__);
       Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(

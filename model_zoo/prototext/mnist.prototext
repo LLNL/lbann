@@ -27,36 +27,99 @@ model {
   }
 
   layer {
+    index: 1
+    parent: 1
+    data_layout: "data_parallel"
     input_distributed_minibatch_parallel_io {
-      data_layout: "data_parallel"
     }
   }
+
   layer {
+    index: 2
+    parent: 1
+    data_layout: "data_parallel"
     fully_connected {
-      data_layout: "data_parallel"
       num_neurons: 100
-      activation_type: "sigmoid"
       weight_initialization: "glorot_uniform"
+      has_bias: true
     }
   }
+
   layer {
+    index: 3
+    parent: 2
+    data_layout: "data_parallel"
+    relu {
+      num_neurons: 100
+    }
+  }
+
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "data_parallel"
+    dropout {
+      num_neurons: 100
+      keep_prob: -1.0
+    }
+  }
+
+  layer {
+    index: 5
+    parent: 4
+    data_layout: "data_parallel"
     fully_connected {
-      data_layout: "data_parallel"
       num_neurons: 30
-      activation_type: "sigmoid"
       weight_initialization: "glorot_uniform"
+      has_bias: true
     }
   }
+
   layer {
+    index: 6
+    parent: 5
+    data_layout: "data_parallel"
+    relu {
+      num_neurons: 30
+    }
+  }
+
+  layer {
+    index: 7
+    parent: 6
+    data_layout: "data_parallel"
+    dropout {
+      num_neurons: 30
+      keep_prob: -1.0
+    }
+  }
+
+  layer {
+    index: 8
+    parent: 7
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+      has_bias: false
+    }
+  }
+
+  layer {
+    index: 9
+    parent: 8
+    data_layout: "data_parallel"
     softmax {
-      data_layout: "data_parallel"
       num_neurons: 10
       weight_initialization: "glorot_uniform"
     }
   }
+
   layer {
+    index: 10
+    parent: 9
+    data_layout: "data_parallel"
     target_distributed_minibatch_parallel_io {
-      data_layout: "data_parallel"
       shared_data_reader: true
     }
   }
