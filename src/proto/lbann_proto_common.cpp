@@ -18,6 +18,7 @@
 
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 
@@ -163,11 +164,39 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: Relu
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_sigmoid()) {
+      const lbann_data::Sigmoid &ell = layer.sigmoid();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
+      } else {
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: reconstruction
+    //////////////////////////////////////////////////////////////////
+    /*
+    if (layer.has_target_reconstruction()) {
+      const lbann_data::TargetReconstruction & ell = layer.target_reconstruction();
+      Layer *d;
+      //please do not delete this! it's here to remind me that something needs
+      //fixing. Thanks, Dave H.
+      cout << "XX numreaders: " << m.num_parallel_readers() << endl;
+      if (dl == data_layout::MODEL_PARALLEL) {
+      */
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: input_distributed_minibatch_parallel_io
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
       Layer *d;
+      //please do not delete this! it's here to remind me that something needs
+      //fixing. Thanks, Dave H.
       cout << "XX numreaders: " << m.num_parallel_readers() << endl;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
@@ -598,6 +627,9 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   double learn_rate = optimizer.learn_rate();
   double momentum = optimizer.momentum();
   double decay_rate = optimizer.decay();
+  double beta1 = optimizer.beta1();
+  double beta2 = optimizer.beta2();
+  double eps = optimizer.eps();
   bool nesterov = optimizer.nesterov();
 
   //note: learn_rate, momentum, decay are DataType in LBANN, which is
@@ -606,11 +638,13 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   optimizer_factory *factory;
 
   if (name == "adagrad") {
-    factory = new adagrad_factory(comm, learn_rate);
+    factory = new adagrad_factory(comm, learn_rate, eps);
   } else if (name == "rmsprop") {
-    factory = new rmsprop_factory(comm, learn_rate);
+    factory = new rmsprop_factory(comm, learn_rate, decay_rate, eps);
   } else if (name == "adam") {
-    factory = new adam_factory(comm, learn_rate);
+    factory = new adam_factory(comm, learn_rate, beta1, beta2, eps);
+  } else if (name == "hypergradient_adam") {
+    factory = new hypergradient_adam_factory(comm, learn_rate, beta1, beta2, eps);
   } else if (name == "sgd") {
     factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
   } else {

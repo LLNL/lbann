@@ -84,12 +84,15 @@ message Model {
 }
 
 message Optimizer {
-  //adagrad, rmsprop, adam, sgd
+  //adagrad, rmsprop, adam, hypergradient_adam, sgd
   string name = 1;
   double learn_rate = 2;
-  double momentum = 3;
-  double decay = 4;
-  bool nesterov = 5;
+  double momentum = 3; //sgd
+  double decay = 4;    //rmsprop, sgd
+  bool nesterov = 5;   //sgd
+  double beta1 = 6;    //adam, hypergradient_adam
+  double beta2 = 7;    //adam, hypergradient_adam
+  double eps = 8;      //adagrad, adam, hypergradient_adam
 }
 
 message Callback {
@@ -172,12 +175,6 @@ message Layer {
    InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 2;
    InputPartitionedParallel input_partitioned_parallel = 3;
 
-   // target Layers
-   //TargetDistributed target_distributed = 100;
-   //TargetDistributedParallel target_distributed_parallel = 101;
-   //TargetParititionedParellel target_partitioned_parallel = 101;
-
-
    FullyConnected fully_connected = 11;
    Pooling pooling = 12;
    Convolution convolution = 13;
@@ -185,6 +182,7 @@ message Layer {
    TargetParallel target_parallel = 16;
    TargetDistributedMinibatch target_distributed_minibatch = 17;
    TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
+   TargetReconstruction target_reconstruction = 22;
 
    // regularization Layers
    BatchNormalization batch_normalization = 19;
@@ -221,6 +219,7 @@ message Relu {
 }
 
 message Sigmoid {
+  int64 num_neurons = 2;
 }
 
 message SmoothRelu {
@@ -322,6 +321,9 @@ message TargetDistributedMinibatch {
 message TargetDistributedMinibatchParallelIO {
   bool shared_data_reader = 3;
   bool for_regression = 4;
+}
+
+message TargetReconstruction {
 }
 
 //========================================================================
