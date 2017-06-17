@@ -106,14 +106,6 @@ class convolution_layer : public learning {
 
 #endif // __LIB_CUDNN
 
-  bool to_pin_fwd; ///< request to pin the memory used by cudnn forward path
-  bool to_pin_bwd; ///< request to pin the memory used by cudnn backward path
-  bool is_pinned_fwd; ///< indicate if the memory blocks for cudnn forward path are pinned
-  bool is_pinned_bwd; ///< indicate if the memory blocks for cudnn backward path are pinned
-#if 0
-  void *get_cudnn_manager(void); ///< returns the pointer to cudnn_manager if available, otherwise NULL
-#endif
-
   public:
 
   convolution_layer(const uint index,
@@ -169,11 +161,6 @@ class convolution_layer : public learning {
 
   #ifdef __LIB_CUDNN
 
-    to_pin_fwd = false;
-    to_pin_bwd = false;
-    is_pinned_fwd = false;
-    is_pinned_bwd = false;
-
     // Initialize cuDNN objects
     m_input_desc = NULL;
     m_output_desc = NULL;
@@ -192,9 +179,6 @@ class convolution_layer : public learning {
       const Int num_processes = this->m_comm->get_procs_per_model();
       const Int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
       this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-      // Default behavior set to pin memory blocks used by cuDNN
-      pin_mem();
     }
 
   #endif // #ifdef __LIB_CUDNN
@@ -222,9 +206,6 @@ class convolution_layer : public learning {
         CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
       }
 
-      // Unpin pinned memory blocks
-      unpin_mem();
-
       // Deallocate GPU memory
       this->m_cudnn->deallocate_on_gpus(m_weights_d);
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
@@ -235,6 +216,12 @@ class convolution_layer : public learning {
       }
       if(!this->m_next_layer_using_gpus) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
+      }
+
+      // Unpin host memory
+      if(this->m_using_gpus) {
+        this->m_cudnn->unpin_matrix(*(this->m_weights));
+        this->m_cudnn->unpin_matrix(m_weights_gradient_per_gpu);
       }
 
     }
@@ -281,6 +268,14 @@ class convolution_layer : public learning {
     Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_prev_error_signal), this->m_num_neurons, this->m_mini_batch_size);
+
+  #ifdef __LIB_CUDNN
+    // Pin host memory
+    if(this->m_using_gpus) {
+      this->m_cudnn->pin_matrix(*(this->m_weights));
+      this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
+    }
+  #endif // #ifdef __LIB_CUDNN
 
     // Initialize filters
     StarMat filter;
@@ -497,91 +492,6 @@ class convolution_layer : public learning {
   #endif // #ifdef __LIB_CUDNN
   }
 
-  /**
-   * \brief Set to pin the memory blocks used by cudnn.
-   * \details The actual pinning occurs at the beginning of next fp_linearity() call.
-   *          No effect when cudnn is not employed.
-   */
-  void pin_mem(void) {
-  #ifdef __LIB_CUDNN
-    to_pin_fwd = true;
-    to_pin_bwd = true;
-  #endif
-  }
-
-  /**
-   * \brief unpin the memory blocks pinned for cudnn
-   * \details The effect is immediate.
-   */
-  void unpin_mem(void) {
-  #ifdef __LIB_CUDNN
-    to_pin_fwd = false;
-    to_pin_bwd = false;
-    unpin_memory_blocks_fwd();
-    unpin_memory_blocks_bwd();
-  #endif
-  }
-
-  ///< pin the memory used by cudnn forward path
-  void pin_memory_blocks_fwd(void) {
-  #ifdef __LIB_CUDNN
-    size_t total_size = 0u;
-    total_size += this->m_cudnn->pin_memory_block(this->m_weights);
-    if(!this->m_prev_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_prev_activations);
-    }
-    if(!this->m_next_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_activations);
-    }
-    is_pinned_fwd = true;
-  #endif // #ifdef __LIB_CUDNN
-  }
-
-  ///< pin the memory used by cudnn backward path
-  void pin_memory_blocks_bwd(void) {
-  #ifdef __LIB_CUDNN
-    size_t total_size = 0u;
-    total_size += this->m_cudnn->pin_memory_block(&m_weights_gradient_per_gpu);
-    if(!this->m_next_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_prev_error_signal);
-    }
-    if(!this->m_prev_layer_using_gpus) {
-      total_size += this->m_cudnn->pin_memory_block(this->m_error_signal);
-    }
-    is_pinned_bwd = true;
-  #endif // #ifdef __LIB_CUDNN
-  }
-
-  ///< unpin the memory used by cudnn forward path
-  void unpin_memory_blocks_fwd(void) {
-  #ifdef __LIB_CUDNN
-    this->m_cudnn->unpin_memory_block(this->m_weights);
-    if(!this->m_prev_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_prev_activations);
-    }
-    if(!this->m_next_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_activations);
-    }
-
-    is_pinned_fwd = false;
-  #endif
-  }
-
-  ///< unpin the memory used by cudnn backward path
-  void unpin_memory_blocks_bwd(void) {
-  #ifdef __LIB_CUDNN
-    this->m_cudnn->unpin_memory_block(&m_weights_gradient_per_gpu);
-    if(!this->m_next_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_prev_error_signal);
-    }
-    if(!this->m_prev_layer_using_gpus) {
-      this->m_cudnn->unpin_memory_block(this->m_error_signal);
-    }
-
-    is_pinned_bwd = false;
-  #endif
-  }
-
  protected:
 
   void fp_compute() {
@@ -728,9 +638,7 @@ class convolution_layer : public learning {
 
     // Input, output, and filter entries are divided amongst channels
     const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Apply bias
     for(Int i=0; i<m_num_output_channels; ++i) {
@@ -788,9 +696,7 @@ class convolution_layer : public learning {
 
     // Input, output, and filter entries are divided amongst channels
     const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
     const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Compute bias gradient
     #pragma omp parallel for

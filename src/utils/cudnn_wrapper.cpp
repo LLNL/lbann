@@ -43,9 +43,6 @@ using namespace lbann;
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
   : comm(_comm) {
 
-  // Initialize memory pool
-  m_gpu_memory = new cub::CachingDeviceAllocator(2u);
-
   // Determine number of available GPUs
   int num_total_gpus;
   CHECK_CUDA(cudaGetDeviceCount(&num_total_gpus));
@@ -104,15 +101,11 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus)
 cudnn_manager::~cudnn_manager() {
   // Free work spaces
   for(size_t i=0u; i<m_gpus.size(); ++i) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     if(m_work_space_sizes[i]) {
-      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      CHECK_CUDA(cudaFree(m_work_spaces[i]));
     }
   }
-
-  // Destroy GPU memory pool
-  m_gpu_memory->FreeAllCached();
-  delete m_gpu_memory;
 
   // Destroy cuDNN handles
   for(size_t i=0u; i<m_gpus.size(); ++i) {
@@ -124,12 +117,11 @@ cudnn_manager::~cudnn_manager() {
       CHECK_CUDNN(cudnnDestroy(m_handles[i]));
     }
   }
-  unpin_ptrs();
 }
 
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
-    Int height,
-    Int width_per_gpu) {
+                                                    Int height,
+                                                    Int width_per_gpu) {
 
 #ifdef LBANN_DEBUG
   if(gpu_data.size() != 0) {
@@ -150,10 +142,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   gpu_data.resize(m_num_gpus, NULL);
   for(Int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
-      CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                              (void **) &gpu_data[i],
-                                              height*width_per_gpu*sizeof(DataType),
-                                              m_streams[i]));
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      CHECK_CUDA(cudaMalloc((void **) &gpu_data[i],
+                            height*width_per_gpu*sizeof(DataType)));
     }
 
   }
@@ -177,7 +168,8 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
   // Deallocate GPU memory
   for(Int i=0; i<m_num_gpus; ++i) {
     if(gpu_data[i] != NULL) {
-      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], gpu_data[i]));
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      CHECK_CUDA(cudaFree(gpu_data[i]));
     }
   }
 
@@ -187,8 +179,8 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
 }
 
 void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType *>& gpu_data,
-    Int height,
-    Int width_per_gpu) {
+                                                 Int height,
+                                                 Int width_per_gpu) {
 
   // Clear memory on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
@@ -202,9 +194,9 @@ void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType *>& gpu_da
 }
 
 void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<DataType *>& gpu_data,
-    Int height,
-    Int width,
-    Int width_per_gpu) {
+                                                                Int height,
+                                                                Int width,
+                                                                Int width_per_gpu) {
 
   // Iterate through GPUs
   for(Int i=0; i<m_num_gpus; ++i) {
@@ -228,9 +220,9 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
 }
 
 void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
-    const std::vector<DataType *>& gpu_src_data,
-    Int height,
-    Int width_per_gpu) {
+                                                const std::vector<DataType *>& gpu_src_data,
+                                                Int height,
+                                                Int width_per_gpu) {
 
   // Perform memory transfer on each GPU
   for(Int i=0; i<m_num_gpus; ++i) {
@@ -245,8 +237,8 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst
 }
 
 void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_data,
-    const Mat& cpu_data,
-    Int width_per_gpu) {
+                                                   const Mat& cpu_data,
+                                                   Int width_per_gpu) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -295,8 +287,8 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
 }
 
 void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
-    const std::vector<DataType *>& gpu_data,
-    Int width_per_gpu) {
+                                                    const std::vector<DataType *>& gpu_data,
+                                                    Int width_per_gpu) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -337,7 +329,7 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
 }
 
 void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gpu_data,
-    const Mat& cpu_data) {
+                                                     const Mat& cpu_data) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -371,7 +363,7 @@ void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gp
 }
 
 void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
-    const std::vector<DataType *>& gpu_data) {
+                                                    const std::vector<DataType *>& gpu_data) {
 
   // Get matrix properties
   const Int height = cpu_data.Height();
@@ -396,68 +388,6 @@ void cudnn_manager::cudnn_manager::synchronize() {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     CHECK_CUDA(cudaStreamSynchronize(m_streams[i]));
   }
-}
-
-void cudnn_manager::pin_ptr(void *ptr, size_t sz) {
-  if (!ptr) {
-    return;
-  }
-  std::map<void *, size_t>::iterator it = pinned_ptr.find(ptr);
-  if (it == pinned_ptr.end()) {
-    //std::cout << "adding a new ptr " << reinterpret_cast<unsigned long long>(ptr) << std::endl;
-    pinned_ptr[ptr] = sz;
-    CHECK_CUDA(cudaHostRegister(ptr, sz, cudaHostRegisterPortable));
-  } else {
-    // TODO: We can check here if the block defined by (ptr,sz) overlaps with an existing one.
-  }
-}
-
-size_t cudnn_manager::pin_memory_block(ElMat *mat) {
-  if (!mat) {
-    return static_cast<size_t>(0u);
-  }
-  const int w = (mat->Matrix()).Width();
-  const int h = (mat->Matrix()).Height();
-  const int sz = w*h*sizeof(DataType);
-  void *ptr = (void *) (mat->Matrix()).Buffer();
-  pin_ptr(ptr, sz);
-  return static_cast<size_t>(sz);
-}
-
-void cudnn_manager::unpin_memory_block(ElMat *mat) {
-  if (!mat) {
-    return;
-  }
-  unpin_ptr(reinterpret_cast<void *>((mat->Matrix()).Buffer()));
-}
-
-void cudnn_manager::unpin_ptr(void *const ptr) {
-  std::map<void *, size_t>::iterator it = pinned_ptr.find(ptr);
-  if (it != pinned_ptr.end()) {
-    CHECK_CUDA(cudaHostUnregister(it->first));
-    pinned_ptr.erase(it);
-  }
-}
-
-void cudnn_manager::unpin_ptrs(void) {
-  std::map<void *, size_t>::iterator it = pinned_ptr.begin();
-  std::map<void *, size_t>::iterator itend = pinned_ptr.end();
-
-  for(; it != itend; ++it) {
-    CHECK_CUDA(cudaHostUnregister(it->first));
-  }
-  pinned_ptr.clear();
-}
-
-size_t cudnn_manager::get_total_size_of_pinned_blocks(void) const {
-  std::map<void *, size_t>::const_iterator it = pinned_ptr.begin();
-  std::map<void *, size_t>::const_iterator itend = pinned_ptr.end();
-
-  size_t total = 0u;
-  for(; it != itend; ++it) {
-    total += it->second;
-  }
-  return total;
 }
 
 void cudnn_manager::print_version() const {
@@ -499,14 +429,6 @@ int cudnn_manager::get_gpu(Int i) const {
   return m_gpus[i];
 }
 
-cub::CachingDeviceAllocator& cudnn_manager::get_gpu_memory() {
-  return *m_gpu_memory;
-}
-
-const cub::CachingDeviceAllocator& cudnn_manager::get_gpu_memory() const {
-  return *m_gpu_memory;
-}
-
 std::vector<cudaStream_t>& cudnn_manager::get_streams() {
   return m_streams;
 }
@@ -542,10 +464,9 @@ const cudnnHandle_t& cudnn_manager::get_handle(Int i) const {
 std::vector<void *> cudnn_manager::get_work_spaces() {
   for(Int i=0; i<m_num_gpus; ++i) {
     if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
-      CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                              &m_work_spaces[i],
-                                              m_work_space_sizes[i],
-                                              m_streams[i]));
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
+                            m_work_space_sizes[i]));
     }
   }
   return m_work_spaces;
@@ -553,10 +474,9 @@ std::vector<void *> cudnn_manager::get_work_spaces() {
 
 void *cudnn_manager::get_work_space(Int i) {
   if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
-    CHECK_CUDA(m_gpu_memory->DeviceAllocate(m_gpus[i],
-                                            &m_work_spaces[i],
-                                            m_work_space_sizes[i],
-                                            m_streams[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
+                          m_work_space_sizes[i]));
   }
   return m_work_spaces[i];
 }
@@ -573,10 +493,56 @@ void cudnn_manager::set_work_space_size(Int i, size_t size) {
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != NULL) {
-      CHECK_CUDA(m_gpu_memory->DeviceFree(m_gpus[i], m_work_spaces[i]));
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      CHECK_CUDA(cudaFree(m_work_spaces[i]));
       m_work_spaces[i] = NULL;
     }
   }
+}
+
+void cudnn_manager::pin_matrix(ElMat& mat) {
+  
+  // Get local matrix
+  const Mat& mat_local = mat.LockedMatrix();
+  
+  // Allocate pinned memory on host
+  DataType* pinned_buffer;
+  CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
+                            mat_local.Height()*mat_local.Width()*sizeof(DataType)));
+
+  // Reconfigure matrix around pinned memory
+  mat.Attach(mat.Height(),
+             mat.Width(),
+             mat.Grid(),
+             mat.ColAlign(),
+             mat.RowAlign(),
+             pinned_buffer,
+             mat_local.Height(),
+             mat.Root());
+
+  // Copy data
+  Copy(mat_local, mat.Matrix());
+
+}
+
+void cudnn_manager::unpin_matrix(ElMat& mat) {
+  
+  // Get local matrix
+  Mat& mat_local = mat.Matrix();
+  Mat new_mat_local(mat_local);
+  
+  // Reconfigure matrix around unpinned memory
+  mat.Attach(mat.Height(),
+             mat.Width(),
+             mat.Grid(),
+             mat.ColAlign(),
+             mat.RowAlign(),
+             new_mat_local,
+             mat.Root());
+
+  // Deallocate pinned memory
+  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
+
 }
 
 #endif // #ifdef __LIB_CUDNN

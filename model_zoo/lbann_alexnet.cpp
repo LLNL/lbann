@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/regularization/lbann_l2_regularization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/data_readers/lbann_image_utils.hpp"
 

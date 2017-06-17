@@ -93,6 +93,10 @@ lbann::Layer::Layer(const uint index,
 #ifdef __LIB_CUDNN
   fp_input_d = NULL;
   bp_input_d = NULL;
+  m_fp_input_pinned = false;
+  m_fp_output_pinned = false;
+  m_bp_input_pinned = false;
+  m_bp_output_pinned = false;
 #endif
 
   reset_counters();
@@ -100,6 +104,20 @@ lbann::Layer::Layer(const uint index,
 }
 
 lbann::Layer::~Layer() {
+#ifdef __LIB_CUDNN
+  if(m_fp_input_pinned) {
+    m_cudnn->unpin_matrix(*m_prev_activations);
+  }
+  if(m_fp_output_pinned) {
+    m_cudnn->unpin_matrix(*m_activations);
+  }
+  if(m_bp_input_pinned) {
+    m_cudnn->unpin_matrix(*m_prev_error_signal);
+  }
+  if(m_bp_output_pinned) {
+    m_cudnn->unpin_matrix(*m_error_signal);
+  }
+#endif
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
@@ -113,15 +131,32 @@ lbann::Layer::~Layer() {
 void lbann::Layer::forwardProp() {
   double fp_start = get_time();
 
+#ifdef __LIB_CUDNN
+  // Pin host memory if needed for GPU memory transfers
+  if(m_using_gpus && !m_prev_layer_using_gpus && !m_fp_input_pinned) {
+    if(fp_input != NULL
+       && m_prev_activations->DistData().colDist == fp_input->DistData().colDist
+       && m_prev_activations->DistData().rowDist == fp_input->DistData().rowDist) {
+      m_cudnn->pin_matrix(*fp_input);
+    }
+    else {
+      m_cudnn->pin_matrix(*m_prev_activations);
+    }
+    m_fp_input_pinned = true;
+  }
+  if(m_using_gpus && !m_next_layer_using_gpus && !m_fp_output_pinned) {
+    m_cudnn->pin_matrix(*m_activations);
+    m_fp_output_pinned = true;
+  }
+#endif
+
   // Get incoming activations and convert matrix distribution if necessary
   if(fp_input != NULL) { // Input layers will not have a valid fp_input
-    DistData curr_dist = m_prev_activations->DistData();
-    DistData prev_dist = fp_input->DistData();
-    if(curr_dist.colDist == prev_dist.colDist
-        && curr_dist.rowDist == prev_dist.rowDist) {
+    if(m_prev_activations->DistData().colDist == fp_input->DistData().colDist
+       && m_prev_activations->DistData().rowDist == fp_input->DistData().rowDist) {
       View(*m_prev_activations, *fp_input);
     } else {
-      *m_prev_activations = *fp_input;
+      Copy(*fp_input, *m_prev_activations);
     }
   }
 
@@ -149,6 +184,9 @@ void lbann::Layer::forwardProp() {
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
   if(m_using_gpus && !m_next_layer_using_gpus) {
+    if(!m_fp_output_pinned) {
+      m_cudnn->pin_matrix(*m_activations);
+    }
     m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
                               m_activations_d,
                               m_mini_batch_size_per_gpu);
@@ -162,15 +200,32 @@ void lbann::Layer::forwardProp() {
 void lbann::Layer::backProp() {
   double bp_start = get_time();
 
+#ifdef __LIB_CUDNN
+  // Pin host memory if needed for GPU memory transfers
+  if(m_using_gpus && !m_next_layer_using_gpus && !m_bp_input_pinned) {
+    if(bp_input != NULL
+       && m_prev_error_signal->DistData().colDist == bp_input->DistData().colDist
+       && m_prev_error_signal->DistData().rowDist == bp_input->DistData().rowDist) {
+      m_cudnn->pin_matrix(*bp_input);
+    }
+    else {
+      m_cudnn->pin_matrix(*m_prev_error_signal);
+    }
+    m_bp_input_pinned = true;
+  }
+  if(m_using_gpus && !m_prev_layer_using_gpus && !m_bp_output_pinned) {
+    m_cudnn->pin_matrix(*m_error_signal);
+    m_bp_output_pinned = true;
+  }
+#endif
+
   // Get incoming loss and convert matrix distribution if necessary
   if(bp_input != NULL) { // Target layers will not have a valid bp_input
-    DistData curr_dist = m_prev_error_signal->DistData();
-    DistData next_dist = bp_input->DistData();
-    if(curr_dist.colDist == next_dist.colDist
-        && curr_dist.rowDist == next_dist.rowDist) {
+    if(m_prev_error_signal->DistData().colDist == bp_input->DistData().colDist
+       && m_prev_error_signal->DistData().rowDist == bp_input->DistData().rowDist) {
       View(*m_prev_error_signal, *bp_input);
     } else {
-      *m_prev_error_signal = *bp_input;
+      Copy(*bp_input, *m_prev_error_signal);
     }
   }
 
@@ -342,6 +397,8 @@ void lbann::Layer::fp_set_std_matrix_view() {
 
 void lbann::Layer::bp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
+  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
   if(m_prev_error_signal->Height() > 0) {
     View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
          IR(0, cur_mini_batch_size));

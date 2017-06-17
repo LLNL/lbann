@@ -172,7 +172,7 @@ class fully_connected_layer : public learning {
       El::IndexDependentMap(this->m_activations_v->Matrix(),
                             (std::function<DataType(El::Int,El::Int,const DataType&)>)
                             ([this,&local_bias_weights](El::Int r, El::Int c,const DataType& z)->DataType {
-                              return z + m_bias_scaling_factor * local_bias_weights.Get(r);
+                              return z + m_bias_scaling_factor * local_bias_weights.Get(r, 0);
                             }));
     }
 
@@ -196,15 +196,6 @@ class fully_connected_layer : public learning {
                *this->m_prev_activations_v,
                DataType(0),
                *this->m_activation_weights_gradient_v);
-
-      if(m_bias_scaling_factor != DataType(0)) {
-        // Compute update for bias terms
-        El::RowSum(*this->m_prev_error_signal_v,
-                   *m_bias_weights_gradient_repl);
-        El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
-                  *m_bias_weights_gradient_v);
-        El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
-      }
       break;
 
     case data_layout::DATA_PARALLEL:
@@ -224,16 +215,16 @@ class fully_connected_layer : public learning {
                this->m_activation_weights_gradient_v->Matrix());
       El::AllReduce(*this->m_activation_weights_gradient_v,
                     this->m_activation_weights_gradient_v->RedundantComm());
-
-      if(m_bias_scaling_factor != DataType(0)) {
-        // Compute update for bias terms
-        El::RowSum(*this->m_prev_error_signal_v,
-                   *m_bias_weights_gradient_repl);
-        El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
-                  *m_bias_weights_gradient_v);
-        El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
-      }
       break;
+    }
+
+    // Compute bias update if needed
+    if(m_bias_scaling_factor != DataType(0)) {
+      El::RowSum(*this->m_prev_error_signal_v,
+                 *m_bias_weights_gradient_repl);
+      El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
+                *m_bias_weights_gradient_v);
+      El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
 
   }
