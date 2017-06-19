@@ -60,7 +60,9 @@ class learning : public Layer {
            const uint mini_batch_size,
            lbann_comm *comm, optimizer *opt
            )
-    : Layer(index, comm, mini_batch_size), m_optimizer(opt) { }
+    : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
+      set_name("learning");
+    }
 
   virtual ~learning(void) {
     delete m_weights;

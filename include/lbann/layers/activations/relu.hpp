@@ -56,6 +56,7 @@ class relu_layer : public entrywise_activation_layer {
              cudnn::cudnn_manager *cudnn = NULL) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons) {
+    set_name("relu_layer");
 
     initialize_distributed_matrices();
 

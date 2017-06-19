@@ -90,6 +90,8 @@ class fully_connected_layer : public learning {
                comm, opt),
     m_weight_initialization(init) {
 
+    set_name("fully_connected");
+
     // Setup the data distribution
     initialize_distributed_matrices();
 
