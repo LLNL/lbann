@@ -20,13 +20,14 @@ message Reader {
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filename = 6;
-  string label_filename = 7;
-  double train_or_test_percent = 8;
-  double validation_percent = 9;
-  bool firstN = 10;
-  int64 max_sample_count = 11;
-  double percent_of_data_to_use = 12;
-  ImagePreprocessor image_preprocessor = 13;
+  string data_filedir = 7;
+  string label_filename = 8;
+  double train_or_test_percent = 9;
+  double validation_percent = 10;
+  bool firstN = 11;
+  int64 max_sample_count = 12;
+  double percent_of_data_to_use = 13;
+  ImagePreprocessor image_preprocessor = 14;
 }
 
 message ImagePreprocessor {

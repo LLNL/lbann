@@ -679,6 +679,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (readme.label_filename() != "") {
       reader->set_label_filename( readme.label_filename() );
     }
+    if (readme.data_filedir() != "") {
+      reader->set_file_dir( readme.data_filedir() );
+    }
     reader->set_use_percent( readme.train_or_test_percent() );
     reader->set_firstN( readme.firstn() );
     if (readme.max_sample_count()) {
@@ -709,7 +712,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else {
       reader->set_role("error");
     }
-
     if (readme.role() == "train") {
       reader->set_validation_percent( readme.validation_percent() );
       if (master) {
@@ -734,7 +736,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new mnist_reader(mini_batch_size, shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new mnist_reader(mini_batch_size, shuffle);
+        reader_validation = new imagenet_reader(mini_batch_size, shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
