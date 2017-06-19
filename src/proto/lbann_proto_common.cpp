@@ -160,6 +160,7 @@ void add_layers(
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
       }
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
