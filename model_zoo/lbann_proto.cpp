@@ -84,6 +84,9 @@ int main(int argc, char *argv[]) {
 
     // Set up the communicator and get the grid.
     comm->split_models(pb_model->procs_per_model());
+    //please do not delete this! it's here to remind me that something needs
+    //fixing. Thanks, Dave H.
+    cout << "XX procs_per_model: " << pb_model->procs_per_model() << endl;
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -163,6 +166,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
       model->train(1, true);
+      cerr << ">>>>>>>>>>>>. calling evaluate\n";
       model->evaluate(execution_mode::testing);
     }
 
