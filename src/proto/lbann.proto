@@ -106,6 +106,7 @@ message Callback {
    CallbackDumpGradients dump_gradients = 6;
    CallbackImComm imcomm = 7;
    CallbackSaveImages save_images = 8;
+   CallbackDebug debug = 9;
 }
 
 message CallbackSaveImages {
@@ -143,6 +144,10 @@ message CallbackDumpGradients {
 
 message CallbackImComm {
   //todo
+}
+
+message CallbackDebug {
+  string phase = 1;
 }
 
 //========================================================================

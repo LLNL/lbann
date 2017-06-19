@@ -165,7 +165,7 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: Relu
+    // LAYER: sigmoid
     //////////////////////////////////////////////////////////////////
     if (layer.has_sigmoid()) {
       const lbann_data::Sigmoid &ell = layer.sigmoid();
@@ -175,6 +175,7 @@ void add_layers(
       } else {
         d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
       }
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -541,6 +542,24 @@ void init_callbacks(
 
     if (callback.has_imcomm()) {
       //TODO todo
+    }
+
+    if (callback.has_debug()) {
+      const lbann_data::CallbackDebug& c = callback.debug();
+      if (master) {
+        cout << "adding debugging callback for phase: " << c.phase() << endl;
+      }
+      lbann_callback_debug *debug_cb = nullptr;
+      if(c.phase() == "train") {
+        debug_cb = new lbann_callback_debug(execution_mode::training);
+      }else if (c.phase() == "validation") {
+        debug_cb = new lbann_callback_debug(execution_mode::validation);
+      }else if (c.phase() == "test") {
+        debug_cb = new lbann_callback_debug(execution_mode::testing);
+      }else {
+        debug_cb = new lbann_callback_debug();
+      }
+      model->add_callback(debug_cb);
     }
   }
 

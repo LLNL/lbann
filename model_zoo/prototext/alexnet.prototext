@@ -43,8 +43,7 @@ model {
   }
   callback {
     debug {
-      dir: "none"
-      interval: 1
+      phase: "train"
     }
   }
 
