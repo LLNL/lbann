@@ -85,45 +85,6 @@ enum class layer_category {
   invalid
 };
 
-static const char *__attribute__((used)) _layer_type_to_string(layer_type l) {
-  switch(l) {
-  case layer_type::fully_connected:
-    return "fully_connected";
-  case layer_type::convolution:
-    return "convolution";
-  case layer_type::softmax:
-    return "softmax";
-  case layer_type::activation:
-    return "activation";
-  case layer_type::pooling:
-    return "pooling";
-  case layer_type::local_response_normalization:
-    return "local_response_normalization";
-  case layer_type::dropout:
-    return "dropout";
-  case layer_type::batch_normalization:
-    return "batch_normalization";
-  case layer_type::input_distributed_minibatch:
-    return "input_distributed_minibatch";
-  case layer_type::input_distributed_minibatch_parallel_io:
-    return "input_distributed_minibatch_parallel_io";
-  case layer_type::input_partitioned_minibatch_parallel_io:
-    return "input_partitioned_minibatch_parallel_io";
-  case layer_type::target_distributed_minibatch:
-    return "target_distributed_minibatch";
-  case layer_type::target_distributed_minibatch_parallel_io:
-    return "target_distributed_minibatch_parallel_io";
-  case layer_type::target_partitioned_minibatch_parallel_io:
-    return "target_partitioned_minibatch_parallel_io";
-  case layer_type::reconstruction:
-    return "reconstruction";
-  case layer_type::INVALID:
-    return "INVALID";
-  default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
-  }
-  return NULL;
-}
 
 static layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
   switch(l) {
@@ -195,7 +156,7 @@ class Layer {
   }
 
   /** Return this layer's name */
-  inline std::string get_name() { 
+  inline std::string get_name() const { 
     return m_name;
   }
 
