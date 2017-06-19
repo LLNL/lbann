@@ -47,7 +47,10 @@ class leaky_relu_layer : public entrywise_activation_layer {
                    DataType leak = DataType(0.01)) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),
-    m_leak(leak) { initialize_distributed_matrices(); }
+    m_leak(leak) { 
+    set_name("leaky_relu_layer");
+    initialize_distributed_matrices(); 
+    }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

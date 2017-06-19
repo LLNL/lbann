@@ -38,7 +38,10 @@ class tanh_layer : public entrywise_activation_layer {
   tanh_layer(data_layout data_dist, uint index, lbann_comm *comm,
              const uint mini_batch_size, uint num_neurons) :
     entrywise_activation_layer(data_dist, index, comm,
-                               mini_batch_size, num_neurons) { initialize_distributed_matrices(); }
+                               mini_batch_size, num_neurons) { 
+    set_name("tanh_layer");
+    initialize_distributed_matrices(); 
+    }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

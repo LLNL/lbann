@@ -61,7 +61,6 @@ class learning : public Layer {
            lbann_comm *comm, optimizer *opt
            )
     : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
-      set_name("learning");
     }
 
   virtual ~learning(void) {

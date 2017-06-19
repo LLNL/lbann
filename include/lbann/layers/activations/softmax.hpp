@@ -54,6 +54,7 @@ class softmax_layer: public activation_layer {
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size,
                                   numNeurons) {
+    set_name("softmax_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::softmax;

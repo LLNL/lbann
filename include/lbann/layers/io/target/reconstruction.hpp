@@ -50,6 +50,7 @@ class reconstruction_layer : public target_layer {
                        const uint minim_batch_size,
                        Layer *original_layer)
     :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
+    set_name("reconstruction_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::reconstruction;

@@ -90,6 +90,7 @@ class pooling_layer : public transform {
     : transform(index, comm, mini_batch_size),
   m_pool_mode(_pool_mode),
   m_num_dims(num_dims), m_num_channels(num_channels) {
+    set_name("pooling_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::pooling;

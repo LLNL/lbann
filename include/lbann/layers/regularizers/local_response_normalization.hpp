@@ -82,6 +82,7 @@ class local_response_normalization_layer : public regularizer_layer {
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
+  set_name("local_response_normalization_layer");
 
     // Setup the data distribution
     initialize_distributed_matrices();

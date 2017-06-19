@@ -39,7 +39,10 @@ class id_layer : public activation_layer {
   id_layer(uint index, lbann_comm *comm,
            const uint mini_batch_size, uint num_neurons) :
     entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) { initialize_distributed_matrices(); }
+                               mini_batch_size, num_neurons) { 
+     set_name("id_layer");
+     initialize_distributed_matrices(); 
+  }
 
   virtual inline void initialize_distributed_matrices() {
     activation_layer::initialize_distributed_matrices<T_layout>();

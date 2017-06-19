@@ -82,6 +82,7 @@ lbann::Layer::Layer(const uint index,
     m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize)
 {
+  set_name("the name has not been set for this layer");
 
   fp_input = NULL;
   bp_input = NULL;
@@ -178,7 +179,9 @@ void lbann::Layer::forwardProp() {
 
   // Apply layer's compute function
   double fp_compute_start = get_time();
+  //cerr << "CALLING fp_compute()\n";
   fp_compute();
+  //cerr << "DONE CALLING fp_compute()\n";
   fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef __LIB_CUDNN

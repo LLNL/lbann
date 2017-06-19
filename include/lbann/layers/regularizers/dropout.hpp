@@ -52,6 +52,7 @@ class dropout : public regularizer_layer {
           uint mini_batch_size, float keep_prob=0.5f) :
     regularizer_layer(index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
+    set_name("dropout");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::dropout;
