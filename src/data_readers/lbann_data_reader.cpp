@@ -62,11 +62,11 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
 }
 
-void generic_data_reader::setup(void) {
+void generic_data_reader::setup() {
   generic_data_reader::setup(0, m_batch_size);
 }
 
-bool generic_data_reader::update(void) {
+bool generic_data_reader::update() {
   /// Is the mini-batch that is about to finish equal to the second to last mini-batch
   if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
     //    std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
@@ -93,7 +93,7 @@ bool generic_data_reader::update(void) {
   }
 }
 
-int generic_data_reader::getm_batch_size(void) const {
+int generic_data_reader::getm_batch_size() const {
   if (m_use_alt_last_mini_batch_size &&
       m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
     return m_last_mini_batch_size;
@@ -102,7 +102,7 @@ int generic_data_reader::getm_batch_size(void) const {
   }
 }
 
-int generic_data_reader::get_next_position(void) const {
+int generic_data_reader::get_next_position() const {
   /// Is the mini-batch that is about to finish equal to the second to last mini-batch
   if (m_use_alt_last_mini_batch_size &&
       ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
@@ -112,7 +112,7 @@ int generic_data_reader::get_next_position(void) const {
   }
 }
 
-void generic_data_reader::select_subset_of_data(void) {
+void generic_data_reader::select_subset_of_data() {
   if(!get_firstN()) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), get_data_seq_generator());
   }
@@ -150,7 +150,7 @@ void generic_data_reader::select_subset_of_data(void) {
   }
 }
 
-void generic_data_reader::use_unused_index_set(void) {
+void generic_data_reader::use_unused_index_set() {
   m_shuffled_indices.swap(m_unused_indices);
   m_unused_indices.clear();
   std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
@@ -261,7 +261,7 @@ void generic_data_reader::set_file_dir(std::string s) {
   m_file_dir = s;
 }
 
-std::string generic_data_reader::get_file_dir(void) const {
+std::string generic_data_reader::get_file_dir() const {
   return m_file_dir;
 }
 
@@ -269,7 +269,7 @@ void generic_data_reader::set_data_filename(std::string s) {
   m_data_fn = s;
 }
 
-std::string generic_data_reader::get_data_filename(void) const {
+std::string generic_data_reader::get_data_filename() const {
   if (m_data_fn == "") {
     std::stringstream s;
     s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
@@ -283,7 +283,7 @@ void generic_data_reader::set_label_filename(std::string s) {
   m_label_fn = s;
 }
 
-string generic_data_reader::get_label_filename(void) const {
+string generic_data_reader::get_label_filename() const {
   if (m_label_fn == "") {
     std::stringstream s;
     s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
@@ -298,11 +298,11 @@ void generic_data_reader::set_max_sample_count(size_t s) {
   m_max_sample_count_was_set = true;
 }
 
-size_t generic_data_reader::get_max_sample_count(void) const {
+size_t generic_data_reader::get_max_sample_count() const {
   return m_max_sample_count;
 }
 
-bool generic_data_reader::has_max_sample_count(void) const {
+bool generic_data_reader::has_max_sample_count() const {
   return m_max_sample_count_was_set;
 }
 
@@ -310,7 +310,7 @@ void generic_data_reader::set_firstN(bool b) {
   m_first_n = b;
 }
 
-bool generic_data_reader::get_firstN(void) const {
+bool generic_data_reader::get_firstN() const {
   return m_first_n;
 }
 
@@ -323,14 +323,14 @@ void generic_data_reader::set_validation_percent(double s) {
   m_validation_percent = s;
 }
 
-bool generic_data_reader::has_validation_percent(void) const {
+bool generic_data_reader::has_validation_percent() const {
   if (m_validation_percent == -1) {
     return false;
   }
   return true;
 }
 
-double generic_data_reader::get_validation_percent(void) const {
+double generic_data_reader::get_validation_percent() const {
   return m_validation_percent;
 }
 
@@ -343,14 +343,14 @@ void generic_data_reader::set_use_percent(double s) {
   m_use_percent = s;
 }
 
-bool generic_data_reader::has_use_percent(void) const {
+bool generic_data_reader::has_use_percent() const {
   if (m_use_percent == -1) {
     return false;
   }
   return true;
 }
 
-double generic_data_reader::get_use_percent(void) const {
+double generic_data_reader::get_use_percent() const {
   stringstream err;
   if (not has_use_percent()) {
     err << __FILE__ << " " << __LINE__ << " :: you must call set_use_percent()"
