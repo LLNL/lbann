@@ -249,7 +249,7 @@ message LocalResponseNormalization {
   int64 num_channels = 2;
   string dims = 3;  //e.g, "2 2 2"
   int64 window_width = 4;
-  double lrn_alphs = 5;
+  double lrn_alpha = 5;
   double lrn_beta = 6;
   double lrn_k = 7;
 }

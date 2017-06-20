@@ -70,7 +70,7 @@ class local_response_normalization_layer : public regularizer_layer {
   (uint index,
    int num_dims,
    int num_channels,
-   const int *dims,
+   const Int *dims,
    Int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,

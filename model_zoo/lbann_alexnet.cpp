@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
     {
       int numDims = 2;
       int channels = 96;
-      int dims[] = {62, 62};
+      Int dims[] = {62, 62};
       Int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
     {
       int numDims = 2;
       int channels = 256;
-      int dims[] = {30, 30};
+      Int dims[] = {30, 30};
       Int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;

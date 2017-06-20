@@ -389,6 +389,56 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: local_response_normalization
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_local_response_normalization()) {
+      const lbann_data::LocalResponseNormalization& ell = layer.local_response_normalization();
+
+      vector<El::Int> dims;
+      std::stringstream ss(ell.dims());
+      int i;
+      while (ss >> i) {
+        dims.push_back(i);
+      }
+
+      Int num_dims = ell.num_dims();
+      Int num_channels = ell.num_channels();
+      DataType lrn_alpha = ell.lrn_alpha();
+      DataType lrn_beta = ell.lrn_beta();
+      DataType lrn_k = ell.lrn_k();
+      Int window_width = ell.window_width();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          num_dims,
+          num_channels,
+          &dims[0],
+          window_width,
+          lrn_alpha,
+          lrn_beta,
+          lrn_k,
+          mb_size,
+          comm,
+          cudnn);
+      } else {
+        d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          num_dims,
+          num_channels,
+          &dims[0],
+          window_width,
+          lrn_alpha,
+          lrn_beta,
+          lrn_k,
+          mb_size,
+          comm,
+          cudnn);
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: softmax
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
