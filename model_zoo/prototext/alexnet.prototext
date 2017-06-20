@@ -41,11 +41,11 @@ model {
       interval: 1
     }
   }
-  callback {
-    debug {
-      phase: "train"
-    }
-  }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
 
   ###################################################
   # start of layers

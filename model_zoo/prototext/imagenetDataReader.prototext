@@ -1,0 +1,52 @@
+data_reader {
+  reader {
+    name: "imagenet"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
+    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train.txt"
+    label_filename: ""
+    train_or_test_percent: 1.0
+    validation_percent: 0.1
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: true
+      z_score: false
+      horizontal_flip: false
+      vertical_flip: false
+      rotation: 0
+      horizontal_shift: 0
+      vertical_shift: 0
+      shear_range: 0
+    }
+  }
+  reader {
+    name: "imagenet"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
+    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val.txt"
+    label_filename: ""
+    train_or_test_percent: 1.0
+    validation_percent: 1.0
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: true
+      z_score: false
+      horizontal_flip: false
+      vertical_flip: false
+      rotation: 0
+      horizontal_shift: 0
+      vertical_shift: 0
+      shear_range: 0
+    }
+  }
+}
