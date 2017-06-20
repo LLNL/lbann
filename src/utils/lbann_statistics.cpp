@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,9 +31,13 @@ using namespace El;
 
 namespace lbann {
 
-void mean_and_stdev(const Mat& data,
-                    DataType& mean,
-                    DataType& stdev) {
+void entrywise_mean_and_stdev(const Mat& data,
+                              DataType& mean,
+                              DataType& stdev) {
+  // Note: This routine is primarily called in an OpenMP-parallelized
+  // loop in data_readers/lbann_image_preprocessor.hpp. If a more
+  // significant use-case is found, it may be worthwhile parallelizing
+  // the loop.
 
   // Matrix dimensions
   const Int height = data.Height();
@@ -56,7 +60,8 @@ void mean_and_stdev(const Mat& data,
   const DataType shifted_mean = shifted_sum / size;
   const DataType shifted_sqmean = shifted_sqsum / size;
   mean = shifted_mean + shift;
-  const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+  const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                           DataType(0));
   stdev = Sqrt(var);
 
 }
@@ -74,7 +79,7 @@ void columnwise_mean_and_stdev(const Mat& data,
   stdevs.Resize(1, width);
 
   // Compute mean and standard deviation of each matrix column
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int col = 0; col < width; ++col) {
     const DataType shift = data(0, col);
     DataType shifted_sum = 0;
@@ -87,7 +92,8 @@ void columnwise_mean_and_stdev(const Mat& data,
     const DataType shifted_mean = shifted_sum / height;
     const DataType shifted_sqmean = shifted_sqsum / height;
     const DataType mean = shifted_mean + shift;
-    const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+    const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                             DataType(0));
     const DataType stdev = Sqrt(var);
     means(0, col) = mean;
     stdevs(0, col) = stdev;
@@ -103,9 +109,9 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 #ifdef LBANN_DEBUG
   DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
   if(means_dist.colDist != STAR
-     || means_dist.rowDist != data_dist.rowDist
-     || stdevs_dist.colDist != STAR
-     || stdevs_dist.rowDist != data_dist.rowDist) {
+      || means_dist.rowDist != data_dist.rowDist
+      || stdevs_dist.colDist != STAR
+      || stdevs_dist.rowDist != data_dist.rowDist) {
     throw lbann_exception("columnwise_mean_and_stdev: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -126,7 +132,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   Mat& local_stdevs = stdevs.Matrix();
 
   // Compute sum and sum of squares of each matrix column
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     DataType sqsum = 0;
@@ -144,15 +150,15 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   AllReduce(stdevs, stdevs.RedundantComm(), mpi::SUM);
 
   // Compute mean and standard deviation of each matrix column
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
-    const DataType var = Max(sqmean - mean * mean, 0);
+    const DataType var = Max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(0, col) = mean;
     local_stdevs(0, col) = stdev;
-  }  
+  }
 
 }
 
@@ -170,12 +176,12 @@ void rowwise_mean_and_stdev(const Mat& data,
 
   // Iterate through row blocks
   const Int block_size = 16;
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int row_start = 0; row_start < height; row_start += block_size) {
     const Int row_end = Min(row_start + block_size, height);
-    
+
     // Initialize shift and sums for each row
-    DataType* shifts = new DataType[block_size];
+    DataType *shifts = new DataType[block_size];
     for(Int row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;
@@ -203,12 +209,13 @@ void rowwise_mean_and_stdev(const Mat& data,
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];
-      const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean, 0);
+      const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
+                               DataType(0));
       const DataType stdev = Sqrt(var);
       means(row, 0) = mean;
       stdevs(row, 0) = stdev;
     }
-    
+
     // Deallocate shifts
     delete[] shifts;
 
@@ -224,9 +231,9 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 #ifdef LBANN_DEBUG
   DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
   if(means_dist.colDist != data_dist.colDist
-     || means_dist.rowDist != STAR
-     || stdevs_dist.colDist != data_dist.colDist
-     || stdevs_dist.rowDist != STAR) {
+      || means_dist.rowDist != STAR
+      || stdevs_dist.colDist != data_dist.colDist
+      || stdevs_dist.rowDist != STAR) {
     throw lbann_exception("rowwise_mean_and_stdev: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -248,10 +255,10 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
   // Iterate through row blocks
   const Int block_size = 16;
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int row_start = 0; row_start < local_height; row_start += block_size) {
     const Int row_end = Min(row_start + block_size, local_height);
-    
+
     // Iterate through blocks in row block
     for(Int col_start = 0; col_start < local_width; col_start += block_size) {
       const Int col_end = Min(col_start + block_size, local_width);
@@ -274,15 +281,15 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   AllReduce(stdevs, stdevs.RedundantComm(), mpi::SUM);
 
   // Compute mean and standard deviation of each matrix row
-#pragma omp parallel for
+  #pragma omp parallel for
   for(Int row = 0; row < local_height; ++row) {
-    const DataType mean = local_means(row, 0) / height;
-    const DataType sqmean = local_stdevs(row, 0) / height;
-    const DataType var = Max(sqmean - mean * mean, 0);
+    const DataType mean = local_means(row, 0) / width;
+    const DataType sqmean = local_stdevs(row, 0) / width;
+    const DataType var = Max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(row, 0) = mean;
     local_stdevs(row, 0) = stdev;
-  }  
+  }
 
 }
 

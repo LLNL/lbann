@@ -64,8 +64,7 @@ const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
   init_random(42);  // Deterministic initialization across every model.
@@ -150,12 +149,14 @@ int main(int argc, char* argv[])
 
     parallel_io = 1;
 
-    std::map<execution_mode, generic_data_reader*> data_readers;
+    std::map<execution_mode, generic_data_reader *> data_readers;
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     if (not use_new_reader) {
-      if (comm->am_world_master()) cout << endl << "USING imagenet_reader\n\n";
+      if (comm->am_world_master()) {
+        cout << endl << "USING imagenet_reader\n\n";
+      }
       imagenet_reader *imagenet_trainset = new imagenet_reader(trainParams.MBSize, true);
       imagenet_trainset->set_firstN(false);
       imagenet_trainset->set_role("train");
@@ -216,7 +217,9 @@ int main(int argc, char* argv[])
       //===============================================================
       // imagenet_readerSingle
       //===============================================================
-      if (comm->am_world_master()) cout << endl << "USING imagenet_readerSingle\n\n";
+      if (comm->am_world_master()) {
+        cout << endl << "USING imagenet_readerSingle\n\n";
+      }
       imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(trainParams.MBSize, true);
       imagenet_trainset->set_firstN(false);
       imagenet_trainset->set_role("train");
@@ -296,7 +299,7 @@ int main(int argc, char* argv[])
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    layer_factory* lfac = new layer_factory();
+    layer_factory *lfac = new layer_factory();
     deep_neural_network *dnn = NULL;
     dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
     metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
@@ -315,7 +318,7 @@ int main(int argc, char* argv[])
         {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
       } else {
         // Add a softmax layer to the end
-        dnn->add("Softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
+        dnn->add("softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
                  activation_type::ID,
                  weight_initialization::glorot_uniform,
                  {});
@@ -344,8 +347,9 @@ int main(int argc, char* argv[])
 
     if (grid.Rank() == 0) {
       cout << "Layer initialized:" << endl;
-      for (uint n = 0; n < dnn->get_layers().size(); n++)
+      for (uint n = 0; n < dnn->get_layers().size(); n++) {
         cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->NumNeurons << endl;
+      }
       cout << endl;
     }
 
@@ -434,8 +438,7 @@ int main(int argc, char* argv[])
 
 
 #if 0
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
 
@@ -529,7 +532,7 @@ int main(int argc, char* argv[])
       // autoencoder.add("FullyConnected", 784, g_ActivationType, g_DropOut, trainParams.Lambda);
       // autoencoder.add("FullyConnected", 100, g_ActivationType, g_DropOut, trainParams.Lambda);
       // autoencoder.add("FullyConnected", 30, g_ActivationType, g_DropOut, trainParams.Lambda);
-      // autoencoder.add("Softmax", 10);
+      // autoencoder.add("softmax", 10);
     } else {
       dnn = new deep_neural_network(optimizer_fac, trainParams.MBSize, grid);
       int NumLayers = netParams.Network.size();
@@ -540,7 +543,7 @@ int main(int argc, char* argv[])
           networkType = "FullyConnected";
         } else {
           // Add a softmax layer to the end
-          networkType = "Softmax";
+          networkType = "softmax";
         }
         dnn->add(networkType, netParams.Network[l], trainParams.ActivationType, {new dropout(trainParams.DropOut)});
       }
@@ -549,11 +552,13 @@ int main(int argc, char* argv[])
     if (grid.Rank() == 0) {
       cout << "Layer initialized:" << endl;
       if (g_AutoEncoder) {
-        for (size_t n = 0; n < autoencoder->get_layers().size(); n++)
+        for (size_t n = 0; n < autoencoder->get_layers().size(); n++) {
           cout << "\tLayer[" << n << "]: " << autoencoder->get_layers()[n]->NumNeurons << endl;
+        }
       } else {
-        for (uint n = 0; n < dnn->get_layers().size(); n++)
+        for (uint n = 0; n < dnn->get_layers().size(); n++) {
           cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->NumNeurons << endl;
+        }
       }
       cout << endl;
     }
@@ -580,10 +585,11 @@ int main(int argc, char* argv[])
 
     // load parameters from file if available
     if (trainParams.LoadModel && trainParams.ParameterDir.length() > 0) {
-      if (g_AutoEncoder)
+      if (g_AutoEncoder) {
         autoencoder->load_from_file(trainParams.ParameterDir);
-      else
+      } else {
         dnn->load_from_file(trainParams.ParameterDir);
+      }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -661,7 +667,7 @@ int main(int argc, char* argv[])
     vector<int> indices(numTrainData);
 
     // create a buffer for image data
-    unsigned char* imagedata = new unsigned char[g_ImageNet_Width * g_ImageNet_Height * 3];
+    unsigned char *imagedata = new unsigned char[g_ImageNet_Width * g_ImageNet_Height * 3];
 
     //************************************************************************
     // read training state from checkpoint file if we have one
@@ -706,8 +712,8 @@ int main(int argc, char* argv[])
       }
 
       if (!restarted && !g_AutoEncoder) {
-        ((SoftmaxLayer*)dnn->get_layers()[dnn->get_layers().size()-1])->resetCost();
-        //              dnn->Softmax->resetCost();
+        ((softmax_layer *)dnn->get_layers()[dnn->get_layers().size()-1])->resetCost();
+        //              dnn->softmax->resetCost();
       }
 
       // TODO: need to save this in checkpoint?
@@ -780,9 +786,13 @@ int main(int argc, char* argv[])
               std::cout << "[";
               int pos = barWidth * progress;
               for (int i = 0; i < barWidth; ++i) {
-                if (i < pos) std::cout << "=";
-                else if (i == pos) std::cout << ">";
-                else std::cout << " ";
+                if (i < pos) {
+                  std::cout << "=";
+                } else if (i == pos) {
+                  std::cout << ">";
+                } else {
+                  std::cout << " ";
+                }
               }
               std::cout << "] " << int(progress * 100.0) << " %\r";
               std::cout.flush();
@@ -817,10 +827,11 @@ int main(int argc, char* argv[])
           }
 
 
-          if (g_AutoEncoder)
+          if (g_AutoEncoder) {
             autoencoder->train(Xs, trainParams.LearnRate);
-          else
+          } else {
             dnn->train(Xs, Ys, trainParams.LearnRate, trainParams.LearnRateMethod);
+          }
 
 #if 0
           if(/*n*/trainOffset + r * trainParams.MBSize > decayIterations * trainParams.LrDecayCycles) {
@@ -871,9 +882,9 @@ int main(int argc, char* argv[])
           double sec_each_total = (sec_mbatch_io + sec_mbatch_lbann) / trainParams.MBSize;
 
           if(!g_AutoEncoder) {
-            double avg_cost = ((SoftmaxLayer*)dnn->get_layers()[dnn->get_layers().size()-1])->avgCost();
-            //                    double avg_cost = dnn->Softmax->avgCost();
-            cout << "Average Softmax Cost: " << avg_cost << endl;
+            double avg_cost = ((softmax_layer *)dnn->get_layers()[dnn->get_layers().size()-1])->avgCost();
+            //                    double avg_cost = dnn->softmax->avgCost();
+            cout << "Average softmax Cost: " << avg_cost << endl;
           }
           cout << "#, Host, Nodes, Processes, Cores, TasksPerNode, Epoch, Training Samples, Mini-Batch Size, Mini-Batch Count, Total Time, Total I/O, Total lbann, MB Time, MB I/O, MB lbann, Sample Time, Sample I/O, Sample lbann" << endl;
           cout << "# [RESULT], " << sysParams.HostName << ", " << sysParams.NumNodes << ", " << grid.Size() << ", " << sysParams.NumCores << ", " << sysParams.TasksPerNode << ", " << epoch << ", ";
@@ -930,8 +941,9 @@ int main(int argc, char* argv[])
 
           // validate
           if (grid.Rank() == 0) {
-            for (uint m = 0; m < netParams.Network[0]; m++)
+            for (uint m = 0; m < netParams.Network[0]; m++) {
               sumerrors += ((X.GetLocal(m, 0) - XP.GetLocal(m, 0)) * (X.GetLocal(m, 0) - XP.GetLocal(m, 0)));
+            }
 
             cout << "\rTesting: " << n;
           }
@@ -1012,38 +1024,43 @@ int main(int argc, char* argv[])
       }
 
       if (g_AutoEncoder) {
-        if (grid.Rank() == 0)
+        if (grid.Rank() == 0) {
           cout << "Sum. square errors: " << sumerrors << endl;
+        }
 
         // save a couple of reconstructed outputs as image files
         int imagecount = sizeof(g_SaveImageIndex) / sizeof(int);
-        uchar* pixels_gt = new uchar[netParams.Network[0] * imagecount];
-        uchar* pixels_rc = new uchar[netParams.Network[0] * imagecount];
+        uchar *pixels_gt = new uchar[netParams.Network[0] * imagecount];
+        uchar *pixels_rc = new uchar[netParams.Network[0] * imagecount];
 
         for (int n = 0; n < imagecount; n++) {
           int imagelabel;
           if (grid.Rank() == 0) {
-            if (1 || numValData <= 0)
+            if (1 || numValData <= 0) {
               getTrainData(imagenet, g_SaveImageIndex[n], imagedata, X, Y, netParams.Network[0]);
-            else
+            } else {
               getValData(imagenet, g_SaveImageIndex[n], imagedata, X, imagelabel, netParams.Network[0]);
+            }
 
             for (int y = 0; y < g_ImageNet_Height; y++)
               for (int x = 0; x < g_ImageNet_Width; x++)
-                for (int ch = 0; ch < 3; ch++)
+                for (int ch = 0; ch < 3; ch++) {
                   pixels_gt[(y * g_ImageNet_Width * imagecount + x + g_ImageNet_Width * n) * 3 + ch] = imagedata[(y * g_ImageNet_Width + x) * 3 + ch];
+                }
           }
           mpi::Barrier(grid.Comm());
           autoencoder->test(X, XP);
 
           if (grid.Rank() == 0) {
-            for (uint m = 0; m < netParams.Network[0]; m++)
+            for (uint m = 0; m < netParams.Network[0]; m++) {
               imagedata[m] = XP.GetLocal(m, 0) * 255;
+            }
 
             for (int y = 0; y < g_ImageNet_Height; y++)
               for (int x = 0; x < g_ImageNet_Width; x++)
-                for (int ch = 0; ch < 3; ch++)
+                for (int ch = 0; ch < 3; ch++) {
                   pixels_rc[(y * g_ImageNet_Width * imagecount + x + g_ImageNet_Width * n) * 3 + ch] = imagedata[(y * g_ImageNet_Width + x) * 3 + ch];
+                }
           }
         }
 
@@ -1082,16 +1099,18 @@ int main(int argc, char* argv[])
 
     // save final model parameters
     if (trainParams.SaveModel && trainParams.ParameterDir.length() > 0) {
-      if (g_AutoEncoder)
+      if (g_AutoEncoder) {
         autoencoder->save_to_file(trainParams.ParameterDir);
-      else
+      } else {
         dnn->save_to_file(trainParams.ParameterDir);
+      }
     }
 
-    if (g_AutoEncoder)
+    if (g_AutoEncoder) {
       delete autoencoder;
-    else
+    } else {
       delete dnn;
+    }
   } catch (exception& e) {
     ReportException(e);
   }

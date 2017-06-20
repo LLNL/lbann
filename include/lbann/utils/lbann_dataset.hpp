@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,18 +29,17 @@
 
 #include "lbann/data_readers/lbann_data_reader.hpp"
 
-namespace lbann
-{
-  class dataset {
-  public:
-    dataset(generic_data_reader *data_reader) : data_reader(data_reader), num_samples_processed(0), total_samples(0) {};
+namespace lbann {
+class dataset {
+ public:
+  dataset(generic_data_reader *d_reader) : data_reader(d_reader), num_samples_processed(0), total_samples(0) {};
 
-  public:
-    generic_data_reader *data_reader;
-    long num_samples_processed;
-    long total_samples;
-    long num_iterations_per_epoch;
-  };
+ public:
+  generic_data_reader *data_reader;
+  long num_samples_processed;
+  long total_samples;
+  long num_iterations_per_epoch;
+};
 }
 
 #endif  // LBANN_DATASET_HPP_INCLUDED

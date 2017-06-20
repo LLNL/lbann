@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,22 +33,20 @@ using namespace El;
 using namespace lbann;
 
 
-cifar10_reader::cifar10_reader(int batchSize, bool shuffle) 
-	: m_image_width(32), m_image_height(32), m_image_num_channels(3),
-    generic_data_reader(batchSize, shuffle)
-{
+cifar10_reader::cifar10_reader(int batchSize, bool shuffle)
+  : generic_data_reader(batchSize, shuffle),
+    m_image_width(32), m_image_height(32), m_image_num_channels(3) {
 }
 
-cifar10_reader::cifar10_reader(const cifar10_reader &source) 
+cifar10_reader::cifar10_reader(const cifar10_reader& source)
   : generic_data_reader((const generic_data_reader&) source),
+    m_data(source.m_data),
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
-    m_image_num_channels(source.m_image_num_channels),
-    m_data(source.m_data)
-{
+    m_image_num_channels(source.m_image_num_channels) {
 }
 
-cifar10_reader & cifar10_reader::operator=(const cifar10_reader &source) {
+cifar10_reader& cifar10_reader::operator=(const cifar10_reader& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
@@ -63,10 +61,9 @@ cifar10_reader & cifar10_reader::operator=(const cifar10_reader &source) {
   return (*this);
 }
 
-cifar10_reader::~cifar10_reader() { }
+cifar10_reader::~cifar10_reader(void) { }
 
-void cifar10_reader::load()
-{
+void cifar10_reader::load(void) {
   stringstream err;
 
   //open data file
@@ -74,7 +71,9 @@ void cifar10_reader::load()
   string filename = get_data_filename();
   stringstream b;
   b << image_dir << "/" << filename;
-  if (is_master()) cout << "opening: " << b.str() << endl;
+  if (is_master()) {
+    cout << "opening: " << b.str() << endl;
+  }
   ifstream in(b.str().c_str(), ios::binary);
   if (not in.good()) {
     err << __FILE__ << " " << __LINE__
@@ -83,27 +82,27 @@ void cifar10_reader::load()
   }
 
   //get number of images, with error checking
-  int n = get_linearized_data_size() + 1;  //should be 3073
+  int len = get_linearized_data_size() + 1;  //should be 3073
   in.seekg(0, in.end);
   streampos fs = in.tellg();
   in.seekg(0, in.beg);
-  if (fs % n != 0) {
+  if (fs % len != 0) {
     err << __FILE__ << " " << __LINE__
-        << " ::  fs % n != 0; fs: " << fs << " n: " << n;
+        << " ::  fs % len != 0; fs: " << fs << " len: " << len;
     throw lbann_exception(err.str());
   }
 
   //reserve space for string images
-  int num_images = fs / n;
+  int num_images = fs / len;
   m_data.resize(num_images);
   for (size_t h=0; h<m_data.size(); h++) {
-    m_data[h].resize(n);
+    m_data[h].resize(len);
   }
 
   //read in the images; each image is 1 byte, which is the
   //label (0-9), and 2072 pixels
   for (size_t h=0; h<m_data.size(); h++) {
-    in.read((char*)&(m_data[h][0]), n);
+    in.read((char *)&(m_data[h][0]), len);
   }
   in.close();
 
@@ -116,8 +115,7 @@ void cifar10_reader::load()
 }
 
 
-int lbann::cifar10_reader::fetch_data(Mat &X)
-{
+int lbann::cifar10_reader::fetch_data(Mat& X) {
   stringstream err;
 
   if(!generic_data_reader::position_valid()) {

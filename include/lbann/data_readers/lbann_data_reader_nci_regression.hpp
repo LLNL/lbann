@@ -33,38 +33,46 @@
 
 
 
-namespace lbann
-{
-  //@todo rewrite data_reader class to follow coding convention
-  class data_reader_nci_regression : public generic_data_reader
-  {
-    private:
-      //@todo add response mode {binary,ternary, continuous}
-      int m_num_responses;
-      size_t m_num_samples; //rows
-      size_t m_num_features; //cols
-      std::vector<DataType> m_responses;
-      std::vector<std::streampos> m_index_map; // byte offset of each line in the input file
-      std::string m_infile; //input file name
+namespace lbann {
+//@todo rewrite data_reader class to follow coding convention
+class data_reader_nci_regression : public generic_data_reader {
+ private:
+  //@todo add response mode {binary,ternary, continuous}
+  int m_num_responses;
+  size_t m_num_samples; //rows
+  size_t m_num_features; //cols
+  std::vector<DataType> m_responses;
+  std::vector<std::streampos> m_index_map; // byte offset of each line in the input file
+  std::string m_infile; //input file name
 
-    public:
-      data_reader_nci_regression(int batchSize, bool shuffle=true);
-      //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
-      //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
-      ~data_reader_nci_regression();
+ public:
+  data_reader_nci_regression(int batchSize, bool shuffle=true);
+  //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
+  //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
+  ~data_reader_nci_regression(void);
 
-      int fetch_data(Mat& X);
-      int fetch_response(Mat& Y);
-      int get_num_labels() { return m_num_responses; } //@todo; check if used
+  int fetch_data(Mat& X);
+  int fetch_response(Mat& Y);
+  int get_num_labels(void) const {
+    return m_num_responses;  //@todo; check if used
+  }
 
-      void load();
+  void load(void);
 
-      size_t get_num_samples() {return m_num_samples;}
-      size_t get_num_features() {return m_num_features;}
+  size_t get_num_samples(void) const {
+    return m_num_samples;
+  }
+  size_t get_num_features(void) const {
+    return m_num_features;
+  }
 
-      int get_linearized_data_size() { return m_num_features; }
-      int get_linearized_response_size(void) const { return m_num_responses; }
-  };
+  int get_linearized_data_size(void) const {
+    return m_num_features;
+  }
+  int get_linearized_response_size(void) const {
+    return m_num_responses;
+  }
+};
 
 }
 

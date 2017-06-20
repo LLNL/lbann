@@ -39,184 +39,188 @@ using namespace El;
 const uint g_NumLayers = g_LayerDim.size(); // # layers*/
 
 /// Main function
-int main(int argc, char* argv[])
-{
-    // El initialization (similar to MPI_Init)
-    Initialize(argc, argv);
-    init_random(42);
-    init_data_seq_random(42);
-    lbann_comm* comm = NULL;
+int main(int argc, char *argv[]) {
+  lbann_comm *comm = initialize(argc, argv, 42);
 
-    try {
+  El::GemmUseGPU(32,32,32);
 
-        // Get data files
-        const string g_MNIST_TrainLabelFile = Input("--train-label-file",
-                                                    "MNIST training set label file",
-                                                    std::string("train-labels-idx1-ubyte"));
-        const string g_MNIST_TrainImageFile = Input("--train-image-file",
-                                                    "MNIST training set image file",
-                                                    std::string("train-images-idx3-ubyte"));
-        const string g_MNIST_TestLabelFile = Input("--test-label-file",
-                                                   "MNIST test set label file",
-                                                   std::string("t10k-labels-idx1-ubyte"));
-        const string g_MNIST_TestImageFile = Input("--test-image-file",
-                                                   "MNIST test set image file",
-                                                   std::string("t10k-images-idx3-ubyte"));
+  try {
 
-        ///////////////////////////////////////////////////////////////////
-        // initalize grid, block
-        ///////////////////////////////////////////////////////////////////
+    // Get data files
+    const string g_MNIST_TrainLabelFile = Input("--train-label-file",
+                                          "MNIST training set label file",
+                                          std::string("train-labels-idx1-ubyte"));
+    const string g_MNIST_TrainImageFile = Input("--train-image-file",
+                                          "MNIST training set image file",
+                                          std::string("train-images-idx3-ubyte"));
+    const string g_MNIST_TestLabelFile = Input("--test-label-file",
+                                         "MNIST test set label file",
+                                         std::string("t10k-labels-idx1-ubyte"));
+    const string g_MNIST_TestImageFile = Input("--test-image-file",
+                                         "MNIST test set image file",
+                                         std::string("t10k-images-idx3-ubyte"));
 
-        // Initialize parameter defaults
-        TrainingParams trainParams;
-        trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
-        trainParams.EpochCount = 50;
-        trainParams.MBSize = 192;
-        trainParams.LearnRate = 0.01;
-        trainParams.DropOut = -1.0f;
-        trainParams.ProcsPerModel = 0;
-        trainParams.PercentageTrainingSamples = 1.0;
-        trainParams.PercentageValidationSamples = 0.1;
-        PerformanceParams perfParams;
-        perfParams.BlockSize = 256;
+    ///////////////////////////////////////////////////////////////////
+    // initalize grid, block
+    ///////////////////////////////////////////////////////////////////
 
-        // Parse command-line inputs
-        trainParams.parse_params();
-        perfParams.parse_params();
-        ProcessInput();
-        PrintInputReport();
+    // Initialize parameter defaults
+    TrainingParams trainParams;
+    trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
+    trainParams.EpochCount = 50;
+    trainParams.MBSize = 192;
+    trainParams.LearnRate = 0.01;
+    trainParams.DropOut = -1.0f;
+    trainParams.ProcsPerModel = 0;
+    trainParams.PercentageTrainingSamples = 1.0;
+    trainParams.PercentageValidationSamples = 0.1;
+    PerformanceParams perfParams;
+    perfParams.BlockSize = 256;
 
-        // Set algorithmic blocksize
-        SetBlocksize(perfParams.BlockSize);
+    // Parse command-line inputs
+    trainParams.parse_params();
+    perfParams.parse_params();
+    ProcessInput();
+    PrintInputReport();
 
-        // Set up the communicator and get the grid.
-        comm = new lbann_comm(trainParams.ProcsPerModel);
-        Grid& grid = comm->get_model_grid();
-        if (comm->am_world_master()) {
-          cout << "Number of models: " << comm->get_num_models() << endl;
-          cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
-          cout << endl;
-        }
+    // Set algorithmic blocksize
+    SetBlocksize(perfParams.BlockSize);
 
-        int parallel_io = perfParams.MaxParIOSize;
-        if (parallel_io == 0) {
-          if (comm->am_world_master()) {
-            cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-              " (Limited to # Processes)" << endl;
-          }
-          parallel_io = comm->get_procs_per_model();
-        } else {
-          if (comm->am_world_master()) {
-            cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
-          }
-        }
-
-        ///////////////////////////////////////////////////////////////////
-        // load training data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        mnist_reader mnist_trainset(trainParams.MBSize, true);
-        mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
-        mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
-        mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-        mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
-        mnist_trainset.load();
-
-        ///////////////////////////////////////////////////////////////////
-        // create a validation set from the unused training data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
-        mnist_validation_set.use_unused_index_set();
-        if (comm->am_world_master()) {
-          size_t num_train = mnist_trainset.getNumData();
-          size_t num_validate = mnist_trainset.getNumData();
-          double validate_percent = num_validate / (num_train+num_validate)*100.0;
-          double train_percent = num_train / (num_train+num_validate)*100.0;
-          cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
-               << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
-        }
-
-
-        ///////////////////////////////////////////////////////////////////
-        // load testing data (MNIST)
-        ///////////////////////////////////////////////////////////////////
-        mnist_reader mnist_testset(trainParams.MBSize, true);
-        mnist_testset.set_file_dir(trainParams.DatasetRootDir);
-        mnist_testset.set_data_filename(g_MNIST_TestImageFile);
-        mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
-        mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
-        mnist_testset.load();
-        if (comm->am_world_master()) {
-          cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
-        }
-
-        ///////////////////////////////////////////////////////////////////
-        // initalize neural network (layers)
-        ///////////////////////////////////////////////////////////////////
-
-        // Initialize optimizer
-        optimizer_factory *optimizer_fac;
-        if (trainParams.LearnRateMethod == 1) { // Adagrad
-          optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-        }else if (trainParams.LearnRateMethod == 2) { // RMSprop
-          optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-        } else if (trainParams.LearnRateMethod == 3) { // Adam
-          optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
-        } else {
-          optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
-        }
-
-        // Initialize network
-        layer_factory* lfac = new layer_factory();
-        greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), lfac, optimizer_fac);
-        std::map<execution_mode, generic_data_reader*> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
-                                                               std::make_pair(execution_mode::validation, &mnist_validation_set),
-                                                               std::make_pair(execution_mode::testing, &mnist_testset)};
-
-        input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
-        gla.add(input_layer);
-        gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 32, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-
-        if (comm->am_world_master()) {
-          cout << "Parameter settings:" << endl;
-          cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-          cout << "\tLearning rate: " << trainParams.LearnRate << endl;
-          cout << "\tEpoch count: " << trainParams.EpochCount << endl;
-        }
-
-        ///////////////////////////////////////////////////////////////////
-        // main loop for training/testing
-        ///////////////////////////////////////////////////////////////////
-
-        // Initialize the model's data structures
-        gla.setup();
-
-        // set checkpoint directory and checkpoint interval
-        // @TODO: add to lbann_proto
-        gla.set_checkpoint_dir(trainParams.ParameterDir);
-        gla.set_checkpoint_epochs(trainParams.CkptEpochs);
-        gla.set_checkpoint_steps(trainParams.CkptSteps);
-        gla.set_checkpoint_secs(trainParams.CkptSecs);
-
-        // restart model from checkpoint if we have one
-        gla.restartShared();
-
-        if (comm->am_world_master()) cout << "(Pre) train autoencoder - unsupersived training" << endl;
-        gla.train(trainParams.EpochCount);
-
-
-        // Free dynamically allocated memory
-        // delete target_layer;  // Causes segfault
-        // delete input_layer;  // Causes segfault
-        // delete lfac;  // Causes segfault
-        delete optimizer_fac;
-        delete comm;
-
+    // Set up the communicator and get the grid.
+    comm->split_models(trainParams.ProcsPerModel);
+    Grid& grid = comm->get_model_grid();
+    if (comm->am_world_master()) {
+      cout << "Number of models: " << comm->get_num_models() << endl;
+      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
+      cout << endl;
     }
-    catch (lbann_exception& e) { lbann_report_exception(e, comm); }
-    catch (exception& e) { ReportException(e); } /// Elemental exceptions
 
-    // free all resources by El and MPI
-    Finalize();
+    int parallel_io = perfParams.MaxParIOSize;
+    if (parallel_io == 0) {
+      if (comm->am_world_master()) {
+        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+             " (Limited to # Processes)" << endl;
+      }
+      parallel_io = comm->get_procs_per_model();
+    } else {
+      if (comm->am_world_master()) {
+        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+      }
+    }
 
-    return 0;
+    ///////////////////////////////////////////////////////////////////
+    // load training data (MNIST)
+    ///////////////////////////////////////////////////////////////////
+    mnist_reader mnist_trainset(trainParams.MBSize, true);
+    mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
+    mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
+    mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
+    mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
+    mnist_trainset.load();
+
+    ///////////////////////////////////////////////////////////////////
+    // create a validation set from the unused training data (MNIST)
+    ///////////////////////////////////////////////////////////////////
+    mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
+    mnist_validation_set.use_unused_index_set();
+    if (comm->am_world_master()) {
+      size_t num_train = mnist_trainset.getNumData();
+      size_t num_validate = mnist_trainset.getNumData();
+      double validate_percent = num_validate / (num_train+num_validate)*100.0;
+      double train_percent = num_train / (num_train+num_validate)*100.0;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    // load testing data (MNIST)
+    ///////////////////////////////////////////////////////////////////
+    mnist_reader mnist_testset(trainParams.MBSize, true);
+    mnist_testset.set_file_dir(trainParams.DatasetRootDir);
+    mnist_testset.set_data_filename(g_MNIST_TestImageFile);
+    mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
+    mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
+    mnist_testset.load();
+    if (comm->am_world_master()) {
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // initalize neural network (layers)
+    ///////////////////////////////////////////////////////////////////
+
+    // Initialize optimizer
+    optimizer_factory *optimizer_fac;
+    if (trainParams.LearnRateMethod == 1) { // Adagrad
+      optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+    } else if (trainParams.LearnRateMethod == 2) { // RMSprop
+      optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+    } else if (trainParams.LearnRateMethod == 3) { // Adam
+      optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+    } else {
+      optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+    }
+
+    // Initialize network
+    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), optimizer_fac);
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
+                                                           std::make_pair(execution_mode::validation, &mnist_validation_set),
+                                                           std::make_pair(execution_mode::testing, &mnist_testset)
+                                                          };
+
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    gla.add(input_layer);
+    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
+                                                        mnist_trainset.get_linearized_data_size(), 32,trainParams.MBSize,
+                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    gla.add(fc1);
+
+    if (comm->am_world_master()) {
+      cout << "Parameter settings:" << endl;
+      cout << "\tMini-batch size: " << trainParams.MBSize << endl;
+      cout << "\tLearning rate: " << trainParams.LearnRate << endl;
+      cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // main loop for training/testing
+    ///////////////////////////////////////////////////////////////////
+
+    // Initialize the model's data structures
+    gla.setup();
+
+    // set checkpoint directory and checkpoint interval
+    // @TODO: add to lbann_proto
+    gla.set_checkpoint_dir(trainParams.ParameterDir);
+    gla.set_checkpoint_epochs(trainParams.CkptEpochs);
+    gla.set_checkpoint_steps(trainParams.CkptSteps);
+    gla.set_checkpoint_secs(trainParams.CkptSecs);
+
+    // restart model from checkpoint if we have one
+    gla.restartShared();
+
+    if (comm->am_world_master()) {
+      cout << "(Pre) train autoencoder - unsupersived training" << endl;
+    }
+    gla.train(trainParams.EpochCount);
+
+
+    // Free dynamically allocated memory
+    // delete target_layer;  // Causes segfault
+    // delete input_layer;  // Causes segfault
+    // delete lfac;  // Causes segfault
+    delete optimizer_fac;
+    delete comm;
+
+  } catch (lbann_exception& e) {
+    lbann_report_exception(e, comm);
+  } catch (exception& e) {
+    ReportException(e);  /// Elemental exceptions
+  }
+
+  // free all resources by El and MPI
+  Finalize();
+
+  return 0;
 }

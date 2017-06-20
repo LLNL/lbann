@@ -38,21 +38,35 @@
 #include "lbann/models/lbann_model_stacked_autoencoder.hpp"
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
+/// Activation Layers
+#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/activations/elu.hpp"
+#include "lbann/layers/activations/softplus.hpp"
+#include "lbann/layers/activations/id.hpp"
+#include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/relu.hpp"
+#include "lbann/layers/activations/sigmoid.hpp"
+#include "lbann/layers/activations/smooth_relu.hpp"
+#include "lbann/layers/activations/tanh.hpp"
+
 /// Layers
-#include "lbann/layers/lbann_layer_activations.hpp"
-#include "lbann/layers/lbann_layer_fully_connected.hpp"
-#include "lbann/layers/lbann_layer_softmax.hpp"
-#include "lbann/layers/lbann_layer_convolutional.hpp"
-#include "lbann/layers/lbann_layer_pooling.hpp"
-#include "lbann/layers/lbann_layer_local_response_normalization.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/transform/pooling.hpp"
+
+/// Regularization layers.
+#include "lbann/layers/regularizers/local_response_normalization.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/lbann_input_layer_distributed_minibatch.hpp"
-#include "lbann/layers/lbann_target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
-#include "lbann/layers/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
 //#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers
@@ -89,9 +103,6 @@
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
 #include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
-
-/// Regularizers
-#include "lbann/regularization/lbann_dropout.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"

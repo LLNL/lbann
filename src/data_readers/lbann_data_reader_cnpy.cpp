@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cnpy_reader .hpp .cpp 
+// lbann_cnpy_reader .hpp .cpp
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
@@ -36,18 +36,15 @@ using namespace std;
 using namespace El;
 
 lbann::cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0)
-{
+  : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0) {
 }
 
-lbann::cnpy_reader::~cnpy_reader()
-{
+lbann::cnpy_reader::~cnpy_reader(void) {
   m_data.destruct();
 }
 
 
-int lbann::cnpy_reader::fetch_data(Mat& X)
-{
+int lbann::cnpy_reader::fetch_data(Mat& X) {
   if(!generic_data_reader::position_valid()) {
     return 0;
   }
@@ -55,20 +52,21 @@ int lbann::cnpy_reader::fetch_data(Mat& X)
 
   int n = 0;
   for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
-    if (n >= (int)m_shuffled_indices.size())
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
     int k = n - m_current_pos;
     int index = m_shuffled_indices[n];
 
     if (m_data.word_size == 4) {
-      float *tmp = (float*)m_data.data;
+      float *tmp = (float *)m_data.data;
       float *data = tmp + index;
       for (int j=0; j<m_num_features; j++) {
         X.Set(j, k, data[j]);
       }
     } else if (m_data.word_size == 8) {
-      double *tmp = (double*)m_data.data;
+      double *tmp = (double *)m_data.data;
       double *data = tmp + index;
       for (int j=0; j<m_num_features; j++) {
         X.Set(j, k, data[j]);
@@ -84,14 +82,13 @@ int lbann::cnpy_reader::fetch_data(Mat& X)
   return (n - m_current_pos);
 }
 
-void lbann::cnpy_reader::load()
-{
+void lbann::cnpy_reader::load(void) {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
-  if (!ifs) { 
+  if (!ifs) {
     stringstream err;
-    err << endl << __FILE__ << " " << __LINE__ 
-         << "  cnpy_reader::load() - can't open file : " << infile;  
+    err << endl << __FILE__ << " " << __LINE__
+        << "  cnpy_reader::load() - can't open file : " << infile;
     throw lbann_exception(err.str());
   }
   ifs.close();
@@ -120,12 +117,12 @@ lbann::cnpy_reader::cnpy_reader(const cnpy_reader& source) :
 
 
 
-lbann::cnpy_reader& lbann::cnpy_reader::operator=(const cnpy_reader& source)
-{
+lbann::cnpy_reader& lbann::cnpy_reader::operator=(const cnpy_reader& source) {
 
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   generic_data_reader::operator=(source);

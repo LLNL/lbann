@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,15 +30,21 @@
 #include <omp.h>
 #include <hwloc.h>
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
-  #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
+#include "lbann/utils/lbann_random.hpp"
 
 namespace lbann {
 
-void initialize(lbann_comm* comm) {
+lbann_comm* initialize(int& argc, char**& argv, int seed) {
+  // Initialize Elemental.
+  El::Initialize(argc, argv);
+  // Create a new comm object.
+  // Initial creation with every process in one model.
+  lbann_comm* comm = new lbann_comm(0);
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
   hwloc_topology_init(&topo);
@@ -46,7 +52,7 @@ void initialize(lbann_comm* comm) {
   int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
   if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
     std::cout << comm->get_rank_in_world() <<
-      ": cannot determine hwloc NUMA-node depth" << std::endl;
+              ": cannot determine hwloc NUMA-node depth" << std::endl;
   }
   int num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
   // Warn if there are more NUMA nodes than processes per node.
@@ -56,9 +62,9 @@ void initialize(lbann_comm* comm) {
   if (num_numa_nodes > ppn) {
     if (comm->get_rank_in_node() == 0) {
       std::cout << comm->get_rank_in_world() <<
-        ": WARNING: node has " << num_numa_nodes <<
-        " NUMA nodes but you have " << ppn << " processes per node" <<
-        std::endl;
+                ": WARNING: node has " << num_numa_nodes <<
+                " NUMA nodes but you have " << ppn << " processes per node" <<
+                std::endl;
     }
   }
 #ifdef _OPENMP
@@ -71,10 +77,17 @@ void initialize(lbann_comm* comm) {
     omp_set_num_threads(threads_per_rank);
   }
 #endif  // _OPENMP
+  // Initialize local random number generators.
+  init_random(seed);
+  init_data_seq_random(seed);
+  return comm;
 }
 
-void finalize() {
-
+void finalize(lbann_comm* comm) {
+  if (comm != nullptr) {
+    delete comm;
+  }
+  El::Finalize();
 }
 
 }  // namespace lbann

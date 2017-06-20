@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -54,19 +54,19 @@ namespace lbann {
  * Distributed matrices should be distributed by model.
  * This class automatically prepends "modelN/" to each tag. The tag is only
  * relevant at the world master process.
- * 
+ *
  * @note WHEN YOU UPDATE THE PUBLIC API HERE, REMEMBER TO UPDATE THE KLUDGE FOR
  * NON-TENSORBOARD BUILDS BELOW!
  */
 class lbann_summary {
-public:
+ public:
 
   /**
    * Create a new summary manager.
    * @param logdir The directory to output events to.
    * @param comm Communicator to use.
    */
-  lbann_summary(std::string logdir, lbann_comm* comm);
+  lbann_summary(std::string logdir, lbann_comm *comm);
   ~lbann_summary();
 
   /** Report the mean of mat. */
@@ -91,15 +91,15 @@ public:
    */
   void flush();
 
-private:
-  lbann_comm* comm;
-  TBinf::SummaryWriter* sw;
+ private:
+  lbann_comm *m_comm;
+  TBinf::SummaryWriter *m_sw;
 
   /** Represent a pending summary operation. */
   struct pending_op {
-    pending_op(const std::string tag, int64_t step, DataType local,
-               DataType local2 = 0.0f, int num = 0) :
-      tag(tag), step(step), local(local), local2(local2), num(num) {}
+    pending_op(const std::string tag_, int64_t step_, DataType local_,
+               DataType local2_ = 0.0f, int num_ = 0) :
+      tag(tag_), step(step_), local(local_), local2(local2_), num(num_) {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -113,12 +113,12 @@ private:
   };
   /** Represent a pending histogram operation. */
   struct pending_histogram {
-    pending_histogram(const std::string tag, int64_t step,
-                      std::vector<float> buckets,
-                      DataType min, DataType max, DataType num,
-                      DataType sum, DataType sqsum) :
-      tag(tag), step(step), buckets(buckets), min(min), max(max), num(num),
-      sum(sum), sqsum(sqsum) {}
+    pending_histogram(const std::string tag_, int64_t step_,
+                      std::vector<float> buckets_,
+                      DataType min_, DataType max_, DataType num_,
+                      DataType sum_, DataType sqsum_) :
+      tag(tag_), step(step_), buckets(buckets_), min(min_), max(max_),
+      num(num_), sum(sum_), sqsum(sqsum_) {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -138,21 +138,21 @@ private:
   };
 
   /** Currently-pending reduce_means. */
-  std::vector<pending_op> pending_means;
+  std::vector<pending_op> m_pending_means;
   /** Currently-pending reduce_mins. */
-  std::vector<pending_op> pending_mins;
+  std::vector<pending_op> m_pending_mins;
   /** Currently-pending reduce_maxes. */
-  std::vector<pending_op> pending_maxes;
+  std::vector<pending_op> m_pending_maxes;
   /** Currently-pending reduce_stdevs. */
-  std::vector<pending_op> pending_stdevs;
+  std::vector<pending_op> m_pending_stdevs;
   /** Currently-pending reduce_scalars. */
-  std::vector<pending_op> pending_scalars;
+  std::vector<pending_op> m_pending_scalars;
   /** Currently-pending sum_reduce_scalars. */
-  std::vector<pending_op> pending_sum_scalars;
+  std::vector<pending_op> m_pending_sum_scalars;
   /** Buckets for histograms. */
-  std::vector<double> histogram_buckets;
+  std::vector<double> m_histogram_buckets;
   /** Currently-pending reduce_histograms. */
-  std::vector<pending_histogram> pending_histograms;
+  std::vector<pending_histogram> m_pending_histograms;
 
   /** Execute all pending mean operations. */
   void flush_means();
@@ -186,8 +186,8 @@ private:
 
 /** Dummy class when TBinf is not present. */
 class lbann_summary {
-public:
-  lbann_summary(std::string logdir, lbann_comm* comm) {}
+ public:
+  lbann_summary(std::string logdir, lbann_comm *comm) {}
 
   void reduce_mean(const std::string tag, const ElMat& mat, int64_t step) {}
   void reduce_min(const std::string tag, const ElMat& mat, int64_t step) {}

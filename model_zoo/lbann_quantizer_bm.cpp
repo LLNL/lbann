@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -39,12 +39,12 @@ const int num_trials = 20;
 using namespace lbann;
 
 // Summarizers for different approaches.
-lbann_summary* normal_summarizer;
-lbann_summary* onebit_summarizer;
-lbann_summary* thresh_summarizer;
-lbann_summary* adaptive_summarizer;
+lbann_summary *normal_summarizer;
+lbann_summary *onebit_summarizer;
+lbann_summary *thresh_summarizer;
+lbann_summary *adaptive_summarizer;
 
-std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
+std::vector<double> test_normal(lbann_comm *comm, DistMat& mat) {
   std::vector<double> times;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
@@ -57,8 +57,8 @@ std::vector<double> test_normal(lbann_comm* comm, DistMat& mat) {
   return times;
 }
 
-void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
-                      lbann_comm* comm, int trial) {
+void quantize_summary(lbann_summary *summarizer, lbann_quantizer& quantizer,
+                      lbann_comm *comm, int trial) {
   summarizer->reduce_scalar("bytes_sent",
                             comm->get_ar_bytes_sent(),
                             trial);
@@ -117,7 +117,7 @@ void quantize_summary(lbann_summary* summarizer, lbann_quantizer& quantizer,
   comm->reset_stats_counters();
 }
 
-std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
+std::vector<double> test_onebit(lbann_comm *comm, DistMat& mat) {
   std::vector<double> times;
   lbann_quantizer quantizer;
   Mat qerror;
@@ -135,7 +135,7 @@ std::vector<double> test_onebit(lbann_comm* comm, DistMat& mat) {
   return times;
 }
 
-std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
+std::vector<double> test_thresh(lbann_comm *comm, DistMat& mat,
                                 float thresh) {
   std::vector<double> times;
   lbann_quantizer quantizer;
@@ -156,7 +156,7 @@ std::vector<double> test_thresh(lbann_comm* comm, DistMat& mat,
   return times;
 }
 
-std::vector<double> test_adaptive(lbann_comm* comm, DistMat& mat,
+std::vector<double> test_adaptive(lbann_comm *comm, DistMat& mat,
                                   int proportion) {
   std::vector<double> times;
   lbann_quantizer quantizer;
@@ -196,12 +196,12 @@ void print_stats(const std::vector<double>& times) {
   std::cout << std::endl;
 }
 
-void test_mat(lbann_comm* comm, DistMat& mat) {
+void test_mat(lbann_comm *comm, DistMat& mat) {
   DistMat normal_copy(mat);
   auto normal_times = test_normal(comm, normal_copy);
   if (comm->am_world_master()) {
     std::cout << "Normal (" << mat.Height() << "x" << mat.Width() << "):" <<
-      std::endl;
+              std::endl;
     print_stats(normal_times);
   }
   normal_copy.Empty();
@@ -209,7 +209,7 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
   auto onebit_times = test_onebit(comm, onebit_copy);
   if (comm->am_world_master()) {
     std::cout << "Onebit (" << mat.Height() << "x" << mat.Width() << "):" <<
-      std::endl;
+              std::endl;
     print_stats(onebit_times);
   }
   onebit_copy.Empty();
@@ -225,15 +225,15 @@ void test_mat(lbann_comm* comm, DistMat& mat) {
   auto adaptive_times = test_adaptive(comm, adaptive_copy, 32);
   if (comm->am_world_master()) {
     std::cout << "Adaptive 32 " << "(" << mat.Height() << "x" <<
-      mat.Width() << "):" << std::endl;
+              mat.Width() << "):" << std::endl;
     print_stats(adaptive_times);
   }
   adaptive_copy.Empty();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   El::Initialize(argc, argv);
-  lbann_comm* comm = new lbann_comm(1);
+  lbann_comm *comm = new lbann_comm(1);
   normal_summarizer = new lbann_summary("qbm/normal", comm);
   onebit_summarizer = new lbann_summary("qbm/onebit", comm);
   //thresh_summarizer = new lbann_summary("qbm/thresh", comm);

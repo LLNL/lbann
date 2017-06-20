@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -35,26 +35,26 @@ using namespace lbann;
 
 const int num_trials = 20;
 
-void add_buffer_into_mat(const uint8_t* buf_, Mat& accum) {
+void add_buffer_into_mat(const uint8_t *buf_, Mat& accum) {
   const Int height = accum.Height();
   const Int width = accum.Width();
-  const DataType* buf = (const DataType*) buf_;
-  DataType* accum_buf = accum.Buffer();
+  const DataType *buf = (const DataType *) buf_;
+  DataType *accum_buf = accum.Buffer();
   for (Int i = 0; i < height*width; ++i) {
     accum_buf[i] += buf[i];
   }
 }
 
-void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
+void test_rd_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
-        int call_idx) {
+  int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
-    return (uint8_t*) to_send.Buffer();
+    return (uint8_t *) to_send.Buffer();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
+  [] (uint8_t *recv_buf, Mat& accum, bool is_local) {
     add_buffer_into_mat(recv_buf, accum);
     return sizeof(DataType) * accum.Height() * accum.Width();
   };
@@ -62,28 +62,28 @@ void test_rd_allreduce(lbann_comm* comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), {});
+    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), {});
 }
 
-void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
+void test_pe_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
-        int call_idx) {
+  int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
-    return (uint8_t*) to_send.Buffer();
+    return (uint8_t *) to_send.Buffer();
   };
   auto recv_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+  [] (uint8_t *recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType *) recv_buf,
                           accum.LDim());
     accum = recv_mat;
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
+  [] (uint8_t *recv_buf, Mat& accum, bool is_local) {
     add_buffer_into_mat(recv_buf, accum);
     return sizeof(DataType) * accum.Height() * accum.Width();
   };
@@ -93,29 +93,29 @@ void test_pe_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->pe_ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
+    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<int(uint8_t *, Mat&)>(recv_transform),
+    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
 
-void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
+void test_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
-        int call_idx) {
+  int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
-    return (uint8_t*) to_send.Buffer();
+    return (uint8_t *) to_send.Buffer();
   };
   auto recv_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+  [] (uint8_t *recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType *) recv_buf,
                           accum.LDim());
     accum = recv_mat;
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum, bool) {
+  [] (uint8_t *recv_buf, Mat& accum, bool) {
     add_buffer_into_mat(recv_buf, accum);
     return sizeof(DataType) * accum.Height() * accum.Width();
   };
@@ -125,29 +125,29 @@ void test_ring_allreduce(lbann_comm* comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
+    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<int(uint8_t *, Mat&)>(recv_transform),
+    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
 
-void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
+void test_rabenseifner_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
     [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
-        int call_idx) {
+  int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
-    return (uint8_t*) to_send.Buffer();
+    return (uint8_t *) to_send.Buffer();
   };
   auto recv_transform =
-    [] (uint8_t* recv_buf, Mat& accum) {
+  [] (uint8_t *recv_buf, Mat& accum) {
     Mat recv_mat;
-    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType*) recv_buf,
+    recv_mat.LockedAttach(accum.Height(), accum.Width(), (DataType *) recv_buf,
                           accum.LDim());
     accum = recv_mat;
     return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [] (uint8_t* recv_buf, Mat& accum, bool is_local) {
+  [] (uint8_t *recv_buf, Mat& accum, bool is_local) {
     add_buffer_into_mat(recv_buf, accum);
     return sizeof(DataType) * accum.Height() * accum.Width();
   };
@@ -157,9 +157,9 @@ void test_rabenseifner_allreduce(lbann_comm* comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->rabenseifner_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform), opts);
+    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<int(uint8_t *, Mat&)>(recv_transform),
+    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void print_stats(const std::vector<double>& times) {
@@ -182,12 +182,12 @@ void print_stats(const std::vector<double>& times) {
   std::cout << std::endl;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   El::Initialize(argc, argv);
-  lbann_comm* comm = new lbann_comm(1);
+  lbann_comm *comm = new lbann_comm(1);
   for (Int mat_size = 1; mat_size <= 16384; mat_size *= 2) {
     std::vector<double> mpi_times, rd_times, pe_ring_times, ring_times,
-      rab_times;
+        rab_times;
     // First trial is a warmup.
     for (int trial = 0; trial < num_trials + 1; ++trial) {
       DistMat rd_mat(comm->get_model_grid());
@@ -230,14 +230,14 @@ int main(int argc, char** argv) {
       std::cout << "RD (" << mat_size << "x" << mat_size << "):" << std::endl;
       print_stats(rd_times);
       std::cout << "PE/ring (" << mat_size << "x" << mat_size << "):" <<
-        std::endl;
+                std::endl;
       print_stats(pe_ring_times);
       std::cout << "Ring (" << mat_size << "x" << mat_size << "):" << std::endl;
       print_stats(ring_times);
       std::cout << "Rabenseifner (" << mat_size << "x" << mat_size << "):" <<
-        std::endl;
+                std::endl;
       print_stats(rab_times);
-    }    
+    }
   }
   delete comm;
   El::Finalize();

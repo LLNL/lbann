@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,16 +30,13 @@
 using namespace std;
 using namespace El;
 
-lbann::metrics::mean_squared_error::mean_squared_error(data_layout data_dist, lbann_comm* comm)
+lbann::metrics::mean_squared_error::mean_squared_error(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
-    internal_obj_fn(comm)
-{
+    internal_obj_fn(comm) {
   this->type = metric_type::mean_squared_error;
 }
 
-lbann::metrics::mean_squared_error::~mean_squared_error() {
-  //internal_obj_fn.~mean_squared_error();
-}
+lbann::metrics::mean_squared_error::~mean_squared_error() {}
 
 void lbann::metrics::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
@@ -65,7 +62,6 @@ double lbann::metrics::mean_squared_error::report_metric(execution_mode mode) {
   double mse = error_per_epoch / samples_per_epoch;
   string score = std::to_string(mse);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << error_per_epoch << " errors and " << samples_per_epoch << " samples, a mse of " << mse << " and a score of " << score << endl;
   return mse;
 }
 
@@ -77,6 +73,5 @@ double lbann::metrics::mean_squared_error::report_lifetime_metric(execution_mode
   double mse = total_error / total_num_samples;
   string score = std::to_string(mse);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << total_error << " errors and " << total_num_samples << " samples, a mse of " << mse << " and a score of " << score << endl;
   return mse;
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -30,11 +30,10 @@
 using namespace std;
 using namespace El;
 
-lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm* comm)
+lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
     YsColMaxStar(comm->get_model_grid()),
-    YsColMaxStar_v(comm->get_model_grid())
-{
+    YsColMaxStar_v(comm->get_model_grid()) {
   this->type = metric_type::categorical_accuracy;
 
   // Setup the data distribution
@@ -59,14 +58,14 @@ lbann::metrics::categorical_accuracy::~categorical_accuracy() {
 
 /// Workspace matrices should be in MR,Star distributions
 void lbann::metrics::categorical_accuracy::initialize_model_parallel_distribution() {
-  YsColMax = new ColSumMat(comm->get_model_grid());
-  YsColMax_v = new ColSumMat(comm->get_model_grid());
+  YsColMax = new ColSumMat(m_comm->get_model_grid());
+  YsColMax_v = new ColSumMat(m_comm->get_model_grid());
 }
 
 /// Workspace matrices should be in VC,Star distributions
 void lbann::metrics::categorical_accuracy::initialize_data_parallel_distribution() {
-  YsColMax = new ColSumStarVCMat(comm->get_model_grid());
-  YsColMax_v = new ColSumStarVCMat(comm->get_model_grid());
+  YsColMax = new ColSumStarVCMat(m_comm->get_model_grid());
+  YsColMax_v = new ColSumStarVCMat(m_comm->get_model_grid());
 }
 
 void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
@@ -101,7 +100,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
     ColumnMaxNorms((DistMat) predictions_v, *((ColSumMat *) YsColMax_v));
     break;
   case data_layout::DATA_PARALLEL:
-    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v)); 
+    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v));
     break;
   default:
     throw lbann_exception(std::string{} + __FILE__ + " " +
@@ -126,7 +125,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
   /// Note that this has to operate on the raw buffer, not the view
-  comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
+  m_comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
 
   /// Check to see if the predicted results match the target results
   int num_errors = 0;
@@ -153,8 +152,8 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
       }
     }
   }
-  
-  num_errors = comm->model_allreduce(num_errors);
+
+  num_errors = m_comm->model_allreduce(num_errors);
   return num_errors;
 }
 
@@ -166,7 +165,6 @@ double lbann::metrics::categorical_accuracy::report_metric(execution_mode mode) 
   double accuracy = (double)(samples_per_epoch - errors_per_epoch) / samples_per_epoch * 100;
   string score = std::to_string(accuracy);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << errors_per_epoch << " errors and " << samples_per_epoch << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
   return accuracy;
 }
 
@@ -178,6 +176,5 @@ double lbann::metrics::categorical_accuracy::report_lifetime_metric(execution_mo
   double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
   string score = std::to_string(accuracy);
 
-  // std::cout << _to_string(type) << " reporting a metric with " << total_error << " errors and " << total_num_samples << " samples, a accuracty of " << accuracy << " and a score of " << score << endl;
   return accuracy;
 }

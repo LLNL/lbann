@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -43,8 +43,8 @@ void im2col(const Mat& im,
   const int num_dims = im_dims.size();
   const int output_height = col.Height();
   const int output_width = col.Width();
-  const DataType* __restrict__ input_buffer = im.LockedBuffer();
-  DataType* __restrict__ output_buffer = col.Buffer();
+  const DataType *__restrict__ input_buffer = im.LockedBuffer();
+  DataType *__restrict__ output_buffer = col.Buffer();
 
   // Call optimized routine if data is 2D
   if(num_dims == 2) {
@@ -72,7 +72,7 @@ void im2col(const Mat& im,
   }
 
   // Iterate through output matrix columns
-#pragma omp parallel for
+  #pragma omp parallel for
   for(int output_col = 0; output_col < output_width; ++output_col) {
 
     // Initialize arrays
@@ -129,10 +129,9 @@ void col2im(const Mat& col,
   const int num_channels = num_im_channels;
   const int num_dims = im_dims.size();
   const int input_height = col.Height();
-  const int input_width = col.Width();
   const int output_size = im.Height() * im.Width();
-  const DataType* __restrict__ input_buffer = col.LockedBuffer();
-  DataType* __restrict__ output_buffer = im.Buffer();
+  const DataType *__restrict__ input_buffer = col.LockedBuffer();
+  DataType *__restrict__ output_buffer = im.Buffer();
 
   // Call optimized routine if data is 2D
   if(num_dims == 2) {
@@ -160,9 +159,9 @@ void col2im(const Mat& col,
   }
 
   // Iterate through output entries
-#pragma omp parallel for
+  #pragma omp parallel for
   for(int output_index = 0; output_index < output_size; ++output_index) {
-    
+
     // Initialize arrays
     std::vector<int> output_pos(num_dims);
     std::vector<int> first_offset(num_dims);
@@ -191,7 +190,7 @@ void col2im(const Mat& col,
 
     // Iterate through window offsets containing output entry
     while(offset[0] <= last_offset[0]) {
-      
+
       // Get input entry corresponding to input entry
       int input_col = 0;
       int input_row = channel;
@@ -223,8 +222,8 @@ void col2im(const Mat& col,
 
 }
 
-void im2col_2d(const DataType* __restrict__ input_buffer,
-               DataType* __restrict__ output_buffer,
+void im2col_2d(const DataType *__restrict__ input_buffer,
+               DataType *__restrict__ output_buffer,
                int input_dim_x,
                int input_dim_y,
                int input_pad_x,
@@ -243,10 +242,9 @@ void im2col_2d(const DataType* __restrict__ input_buffer,
   const int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
   const int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
   const int output_height = num_channels * window_dim_x * window_dim_y;
-  const int output_width = offset_num_x * offset_num_y;
 
   // Iterate through output matrix entries
-#pragma omp parallel for collapse(5)
+  #pragma omp parallel for collapse(5)
   for(int offset_y = 0; offset_y < offset_num_y; ++offset_y) {
     for(int offset_x = 0; offset_x < offset_num_x; ++offset_x) {
       for(int channel = 0; channel < num_channels; ++channel) {
@@ -280,7 +278,7 @@ void im2col_2d(const DataType* __restrict__ input_buffer,
             // Copy input entry to output entry if valid
             output_buffer[output_index]
               = input_pos_valid ? input_buffer[input_index] : DataType(0);
-            
+
           }
         }
       }
@@ -289,8 +287,8 @@ void im2col_2d(const DataType* __restrict__ input_buffer,
 
 }
 
-void col2im_2d(const DataType* __restrict__ input_buffer,
-               DataType* __restrict__ output_buffer,
+void col2im_2d(const DataType *__restrict__ input_buffer,
+               DataType *__restrict__ output_buffer,
                int output_dim_x,
                int output_dim_y,
                int output_pad_x,
@@ -309,11 +307,9 @@ void col2im_2d(const DataType* __restrict__ input_buffer,
   const int offset_num_x = (offset_end_x - offset_start_x + offset_stride_x - 1) / offset_stride_x;
   const int offset_num_y = (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
   const int input_height = num_channels * window_dim_x * window_dim_y;
-  const int input_width = offset_num_x * offset_num_y;
-  const int output_size = num_channels * output_dim_x * output_dim_y;
 
   // Iterate through output entries
-#pragma omp parallel for collapse(3)
+  #pragma omp parallel for collapse(3)
   for(int channel = 0; channel < num_channels; ++channel) {
     for(int output_pos_y = 0;
         output_pos_y < output_dim_y;

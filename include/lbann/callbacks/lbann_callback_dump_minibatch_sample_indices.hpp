@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -42,22 +42,22 @@ namespace lbann {
  * produce a lot of output.
  */
 class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
-public:
+ public:
   /**
    * @param basename The basename for writing files.
    */
-  lbann_callback_dump_minibatch_sample_indices(std::string basename, int _batch_interval = 1) :
-    lbann_callback(_batch_interval), basename(basename) {
-      set_name("dump_minibatch_sample_indices");
-    }
-  void on_forward_prop_end(model* m, Layer* l);
-  void on_evaluate_forward_prop_end(model* m, Layer* l);
+  lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
+    lbann_callback(batch_interval), m_basename(basename) {
+    set_name("dump_minibatch_sample_indices");
+  }
+  void on_forward_prop_end(model *m, Layer *l);
+  void on_evaluate_forward_prop_end(model *m, Layer *l);
 
-  void dump_to_file(model* m, Layer* l, int64_t step);
+  void dump_to_file(model *m, Layer *l, int64_t step);
 
-private:
+ private:
   /** Basename for writing files. */
-  std::string basename;
+  std::string m_basename;
 };
 
 }  // namespace lbann

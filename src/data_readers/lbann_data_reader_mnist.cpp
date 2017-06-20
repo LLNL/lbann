@@ -32,8 +32,7 @@
 using namespace std;
 using namespace El;
 
-inline void __swapEndianInt(unsigned int& ui)
-{
+inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
 }
 
@@ -41,7 +40,7 @@ inline void __swapEndianInt(unsigned int& ui)
 
 lbann::mnist_reader::mnist_reader(int batchSize, bool shuffle)
   : generic_data_reader(batchSize, shuffle)
-  //, lbann_image_preprocessor()
+    //, lbann_image_preprocessor()
 {
   m_image_width = 28;
   m_image_height = 28;
@@ -64,13 +63,11 @@ lbann::mnist_reader::mnist_reader(const mnist_reader& source)
 }
 */
 
-lbann::mnist_reader::~mnist_reader()
-{
+lbann::mnist_reader::~mnist_reader(void) {
   //this->free();
 }
 
-int lbann::mnist_reader::fetch_data(Mat& X)
-{
+int lbann::mnist_reader::fetch_data(Mat& X) {
   if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
@@ -86,16 +83,17 @@ int lbann::mnist_reader::fetch_data(Mat& X)
   for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < X.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
     //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << m_current_pos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) <<  " and there are only samples = " << getNumData() << std::endl;
 
-     // if(n >= m_current_pos + current_batch_size) {
-     //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) << " and the limit is " << (m_current_pos + current_batch_size) << std::endl;
+    // if(n >= m_current_pos + current_batch_size) {
+    //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) << " and the limit is " << (m_current_pos + current_batch_size) << std::endl;
 
-     // }
+    // }
 
-    if (n >= (int)m_shuffled_indices.size())
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
     int index = m_shuffled_indices[n];
-    vector<unsigned char> &tmp = m_image_data[index];
+    vector<unsigned char>& tmp = m_image_data[index];
 
     m_indices_fetched_per_mb.Set(s, 0, index);
 
@@ -111,8 +109,7 @@ int lbann::mnist_reader::fetch_data(Mat& X)
   return s;
 }
 
-int lbann::mnist_reader::fetch_label(Mat& Y)
-{
+int lbann::mnist_reader::fetch_label(Mat& Y) {
   if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader load error: !position_valid";
@@ -122,8 +119,9 @@ int lbann::mnist_reader::fetch_label(Mat& Y)
   int current_batch_size = getm_batch_size();
   int n = 0, s = 0;
   for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < Y.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
-    if (n >= (int)m_shuffled_indices.size())
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
     //std::cout << " Target Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << std::endl;
 
@@ -140,9 +138,10 @@ int lbann::mnist_reader::fetch_label(Mat& Y)
 
 //===================================================
 
-void lbann::mnist_reader::load()
-{
-  if (is_master()) cerr << "starting lbann::mnist_reader::load\n";
+void lbann::mnist_reader::load(void) {
+  if (is_master()) {
+    cerr << "starting lbann::mnist_reader::load\n";
+  }
   m_image_data.clear();
 
   string FileDir = get_file_dir();
@@ -154,7 +153,7 @@ void lbann::mnist_reader::load()
   string labelpath = FileDir + __DIR_DELIMITER + LabelFile;
 
   // read labels
-  FILE* fplbl = fopen(labelpath.c_str(), "rb");
+  FILE *fplbl = fopen(labelpath.c_str(), "rb");
   if (!fplbl) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: failed to open file: " << labelpath;
@@ -168,7 +167,7 @@ void lbann::mnist_reader::load()
   __swapEndianInt((unsigned int&)numitems1);
 
   // read images
-  FILE* fpimg = fopen(imagepath.c_str(), "rb");
+  FILE *fpimg = fopen(imagepath.c_str(), "rb");
   if (!fpimg) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: MNIST data reader: failed to open file: " << imagepath;
@@ -209,7 +208,9 @@ void lbann::mnist_reader::load()
   for (size_t n = 0; n < m_shuffled_indices.size(); n++) {
     m_shuffled_indices[n] = n;
   }
-  if (is_master()) cerr << "calling select_subset_of_data; m_shuffled_indices.size: " << m_shuffled_indices.size() << endl;
+  if (is_master()) {
+    cerr << "calling select_subset_of_data; m_shuffled_indices.size: " << m_shuffled_indices.size() << endl;
+  }
   select_subset_of_data();
 }
 

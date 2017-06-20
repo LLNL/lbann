@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,47 +31,57 @@
 
 namespace lbann {
 
-void lbann_callback_checknan::on_forward_prop_end(model* m, Layer* l) {
+void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
   // Skip output layer.
   if (l->get_index() == m->get_layers().size() - 1) {
     return;
   }
   DistMat& acts = (DistMat&) l->get_activations();
   if (!is_good(acts)) {
-    lbann_comm* comm = m->get_comm();
+    lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-      l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
-      std::endl;
+              l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
+              std::endl;
     throw lbann_exception("checknan: error in activations");
   }
 }
 
-void lbann_callback_checknan::on_backward_prop_end(model* m, Layer* l) {
+void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
+  // Skip non-learning layers.
+  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
+  if(learning_layer == NULL) {
+    return;
+  }
   // Skip input/output layers.
   if (l->get_index() == 0 || l->get_index() == m->get_layers().size() - 1) {
     return;
   }
-  DistMat& grad = (DistMat&) l->get_weights_biases_gradient();
+  DistMat& grad = (DistMat&) learning_layer->get_weights_biases_gradient();
   if (!is_good(grad)) {
-    lbann_comm* comm = m->get_comm();
+    lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-      l->get_index() << " gradients (step=" << m->get_cur_step() << ")" <<
-      std::endl;
+              l->get_index() << " gradients (step=" << m->get_cur_step() << ")" <<
+              std::endl;
     throw lbann_exception("checknan: error in gradients");
   }
 }
 
-void lbann_callback_checknan::on_batch_end(model* m) {
-  std::vector<Layer*>& layers = m->get_layers();
+void lbann_callback_checknan::on_batch_end(model *m) {
+  std::vector<Layer *>& layers = m->get_layers();
   // Skip input/output layers-- they don't have weights.
   for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer* l = layers[i];
-    DistMat& weights = (DistMat&) l->get_weights_biases();
+    Layer *l = layers[i];
+    // Skip non-learning layers.
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
+    if(learning_layer == NULL) {
+      continue;
+    }
+    DistMat& weights = (DistMat&) learning_layer->get_weights_biases();
     if (!is_good(weights)) {
-      lbann_comm* comm = m->get_comm();
+      lbann_comm *comm = m->get_comm();
       std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-        l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
-        std::endl;
+                l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
+                std::endl;
       throw lbann_exception("checknan: error in weights");
     }
   }

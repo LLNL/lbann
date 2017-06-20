@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,12 +40,12 @@ using namespace lbann;
 #define LBANN_COMM_TEST_NCOLS (2*LBANN_COMM_TEST_PPM)
 
 /** Initialize a new communicator. */
-lbann_comm* init_comm() {
+lbann_comm *init_comm() {
   return new lbann_comm(LBANN_COMM_TEST_PPM);
 }
 
 /** Destroy a communicator. */
-void fini_comm(lbann_comm* comm) {
+void fini_comm(lbann_comm *comm) {
   delete comm;
 }
 
@@ -66,14 +66,14 @@ void validate_mat(DistMat& mat, DataType expected) {
 
 /** Verify we can successfully create/destroy a lbann_comm. */
 void test_creation() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   ASSERT_TRUE(comm);
   fini_comm(comm);
 }
 
 /** Verify ranks are all reasonable. */
 void test_ranks() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   int model_rank = comm->get_model_rank();
   ASSERT_TRUE(model_rank >= 0);
   ASSERT_TRUE(model_rank < LBANN_COMM_TEST_PROCS);
@@ -86,7 +86,7 @@ void test_ranks() {
 
 /** Verify the grid is valid. */
 void test_grid() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   Grid& grid = comm->get_model_grid();
   ASSERT_TRUE(grid.Size() == LBANN_COMM_TEST_PPM);
   fini_comm(comm);
@@ -94,7 +94,7 @@ void test_grid() {
 
 /** Verify matrices work properly. */
 void test_mat() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   DistMat mat(comm->get_model_grid());
   create_mat(mat, 42.0);
   ASSERT_EQ(mat.DistRank(), comm->get_rank_in_model());
@@ -105,7 +105,7 @@ void test_mat() {
 
 /** Verify inter-model matrix summation works. */
 void test_intermodel_sum_matrix() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   DistMat mat(comm->get_model_grid());
   create_mat(mat);
   comm->intermodel_barrier();
@@ -116,7 +116,7 @@ void test_intermodel_sum_matrix() {
 
 /** Verify inter-model matrix broadcast works. */
 void test_intermodel_broadcast_matrix() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   DistMat mat(comm->get_model_grid());
   create_mat(mat, (float) comm->get_model_rank());
   comm->intermodel_barrier();
@@ -127,10 +127,10 @@ void test_intermodel_broadcast_matrix() {
 
 /** Verify sends/receives of blob data work. */
 void test_send_recv_blob() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   int send_model = (comm->get_model_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
   int recv_model = (comm->get_model_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
-    LBANN_COMM_TEST_NUM_MODELS;
+                   LBANN_COMM_TEST_NUM_MODELS;
   int send_data = 42;
   int recv_data = 0;
   // Test sends/recvs with full model/rank spec.
@@ -152,10 +152,10 @@ void test_send_recv_blob() {
 
 /** Verify sends/receives of matrices work. */
 void test_send_recv_mat() {
-  lbann_comm* comm = init_comm();
+  lbann_comm *comm = init_comm();
   int send_model = (comm->get_model_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
   int recv_model = (comm->get_model_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
-    LBANN_COMM_TEST_NUM_MODELS;
+                   LBANN_COMM_TEST_NUM_MODELS;
   DistMat send_mat(comm->get_model_grid());
   DistMat recv_mat(comm->get_model_grid());
   create_mat(send_mat, (float) comm->get_model_rank());
@@ -174,44 +174,8 @@ void test_send_recv_mat() {
   fini_comm(comm);
 }
 
-/** Verify broadcasting blob data works. */
-void test_broadcast_blob() {
-  lbann_comm* comm = init_comm();
-  int send_data = 0;
-  if (comm->get_model_rank() == 0) {
-    send_data = 42;
-  }
-  std::vector<int> dests(3);
-  dests[0] = comm->get_world_rank(1, comm->get_rank_in_model());
-  dests[1] = comm->get_world_rank(2, comm->get_rank_in_model());
-  dests[2] = comm->get_world_rank(3, comm->get_rank_in_model());
-  comm->broadcast(&send_data, 1, dests,
-                  comm->get_world_rank(0, comm->get_rank_in_model()));
-  ASSERT_EQ(send_data, 42);
-  fini_comm(comm);
-}
-
-/** Verify broadcasting matrices works. */
-void test_broadcast_mat() {
-  lbann_comm* comm = init_comm();
-  DistMat mat(comm->get_model_grid());
-  if (comm->get_model_rank() == 0) {
-    create_mat(mat, (DataType) 42.0);
-  } else {
-    create_mat(mat, (float) 0.0);
-  }
-  std::vector<int> dests(3);
-  dests[0] = comm->get_world_rank(1, comm->get_rank_in_model());
-  dests[1] = comm->get_world_rank(2, comm->get_rank_in_model());
-  dests[2] = comm->get_world_rank(3, comm->get_rank_in_model());
-  comm->broadcast(mat, dests,
-                  comm->get_world_rank(0, comm->get_rank_in_model()));
-  validate_mat(mat, (DataType) 42.0);
-  fini_comm(comm);
-}
-
-// Run with srun -n8 --tasks-per-node=12 
-int main(int argc, char** argv) {
+// Run with srun -n8 --tasks-per-node=12
+int main(int argc, char **argv) {
   El::Initialize(argc, argv);
   ASSERT_EQ(El::mpi::Size(El::mpi::COMM_WORLD), LBANN_COMM_TEST_PROCS);
   try {
@@ -223,8 +187,6 @@ int main(int argc, char** argv) {
     test_intermodel_broadcast_matrix();
     test_send_recv_blob();
     test_send_recv_mat();
-    test_broadcast_blob();
-    test_broadcast_mat();
     El::mpi::Barrier(El::mpi::COMM_WORLD);
     if (El::mpi::Rank(El::mpi::COMM_WORLD) == 0) {
       std::cout << "All tests passed" << std::endl;

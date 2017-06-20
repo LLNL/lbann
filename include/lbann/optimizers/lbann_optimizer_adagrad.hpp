@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,50 +31,47 @@
 
 #include "lbann/optimizers/lbann_optimizer.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
-  /// AdaGrad optimizer
-  class adagrad : public optimizer
-  {
-  public:
-    /// Constructor
-    adagrad
-    (lbann_comm* comm,
-     DataType learning_rate,
-     DataType m_eps = DataType(1e-8));
-    /// Destructor
-    ~adagrad();
-    /// Set parameters to optimize and initialize optimizer
-    void setup(AbsDistMat* parameters);
-    /// Update parameters using objective function gradient
-    void update(const AbsDistMat* gradient);
-  private:
-    /// Small factor to avoid division by zero
-    DataType m_eps;
-    /// AdaGrad cache
-    AbsDistMat* m_cache;
-  };
+/// AdaGrad optimizer
+class adagrad : public optimizer {
+ public:
+  /// Constructor
+  adagrad
+  (lbann_comm *comm,
+   DataType learning_rate,
+   DataType eps = DataType(1e-8));
+  /// Destructor
+  ~adagrad();
+  /// Set parameters to optimize and initialize optimizer
+  void setup(AbsDistMat *parameters);
+  /// Update parameters using objective function gradient
+  void update(const AbsDistMat *gradient);
+ private:
+  /// Small factor to avoid division by zero
+  DataType m_eps;
+  /// AdaGrad cache
+  AbsDistMat *m_cache;
+};
 
-  /// Factory for AdaGrad optimizer
-  class adagrad_factory : public optimizer_factory
-  {
-  public:
-    /// Constructor
-    adagrad_factory
-    (lbann_comm* comm,
-     DataType learning_rate,
-     DataType eps = DataType(1e-8));
-    /// Destructor
-    virtual ~adagrad_factory();
-    /// Create AdaGrad optimizer
-    optimizer* create_optimizer();
-  private:
-    /// Small factor to avoid division by zero
-    DataType m_eps;
-    /// Learning rate
-    DataType m_learning_rate;
-  };
+/// Factory for AdaGrad optimizer
+class adagrad_factory : public optimizer_factory {
+ public:
+  /// Constructor
+  adagrad_factory
+  (lbann_comm *comm,
+   DataType learning_rate,
+   DataType eps = DataType(1e-8));
+  /// Destructor
+  virtual ~adagrad_factory();
+  /// Create AdaGrad optimizer
+  optimizer *create_optimizer();
+ private:
+  /// Small factor to avoid division by zero
+  DataType m_eps;
+  /// Learning rate
+  DataType m_learning_rate;
+};
 
 } // namespace lbann
 

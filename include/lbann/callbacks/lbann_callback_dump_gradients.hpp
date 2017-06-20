@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -43,18 +43,18 @@ namespace lbann {
  * produce a lot of output.
  */
 class lbann_callback_dump_gradients : public lbann_callback {
-public:
+ public:
   /**
    * @param basename The basename for writing files.
    */
-  lbann_callback_dump_gradients(std::string basename, int _batch_interval = 1) :
-    lbann_callback(_batch_interval), basename(basename) {
-      set_name("dump_gradients");
-    }
-  void on_backward_prop_end(model* m, Layer* l);
-private:
+  lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
+    lbann_callback(batch_interval), m_basename(basename) {
+    set_name("dump_gradients");
+  }
+  void on_backward_prop_end(model *m, Layer *l);
+ private:
   /** Basename for writing files. */
-  std::string basename;
+  std::string m_basename;
 };
 
 }  // namespace lbann

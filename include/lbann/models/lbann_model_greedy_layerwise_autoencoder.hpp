@@ -34,73 +34,69 @@
 #include <vector>
 #include <string>
 
-namespace lbann
-{
-  class greedy_layerwise_autoencoder : public sequential_model
-  {
-  public:
-    /// Constructor
-    greedy_layerwise_autoencoder(uint mini_batch_size,
-                        lbann_comm* comm,
-                        objective_functions::objective_fn* obj_fn,
-                        layer_factory* _layer_fac,
-                        optimizer_factory* _optimizer_fac);
+namespace lbann {
+class greedy_layerwise_autoencoder : public sequential_model {
+ public:
+  /// Constructor
+  greedy_layerwise_autoencoder(uint mini_batch_size,
+                               lbann_comm *comm,
+                               objective_functions::objective_fn *obj_fn,
+                               optimizer_factory *_optimizer_fac);
 
-    /// Destructor
-    ~greedy_layerwise_autoencoder();
+  /// Destructor
+  ~greedy_layerwise_autoencoder();
 
-    /// Save model to shared checkpoint
-    bool save_to_checkpoint_shared(persist& p);
+  /// Save model to shared checkpoint
+  bool save_to_checkpoint_shared(persist& p);
 
-    /// Restore model from shared checkpoint
-    bool load_from_checkpoint_shared(persist& p);
+  /// Restore model from shared checkpoint
+  bool load_from_checkpoint_shared(persist& p);
 
-    /// Compute layer summaries
-    void summarize(lbann_summary& summarizer);
+  /// Compute layer summaries
+  void summarize(lbann_summary& summarizer);
 
-    /// Train neural network
-    /** @param num_epochs Number of epochs to train at each phase
-     *  @param evaluation_frequency How often to evaluate model on
-     *  validation set. A value less than 1 will disable evaluation.
-     */
-    void train(int num_epochs, int evaluation_frequency=0);
+  /// Train neural network
+  /** @param num_epochs Number of epochs to train at each phase
+   *  @param evaluation_frequency How often to evaluate model on
+   *  validation set. A value less than 1 will disable evaluation.
+   */
+  void train(int num_epochs, int evaluation_frequency=0);
 
-    // Train each phase ( a set of (original) input, hidden and mirror layers (output))
-    void train_phase(int num_epochs, int evaluation_frequency);
+  // Train each phase ( a set of (original) input, hidden and mirror layers (output))
+  void train_phase(int num_epochs, int evaluation_frequency);
 
-    /// Training step on one mini-batch
-    bool train_mini_batch();
+  /// Training step on one mini-batch
+  bool train_mini_batch();
 
-    /// Training step on one mini-batch
-    //bool train_mini_batch() {return false;}
+  ///Global evaluation (testing), provide overall cost relative to original input
+  void evaluate(execution_mode mode=execution_mode::testing);
+  /// Evaluate (validation) per phase
+  void evaluate_phase(execution_mode mode=execution_mode::validation);
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch();
 
-    ///Global evaluation (testing), provide overall cost relative to original input
-    void evaluate(execution_mode mode=execution_mode::testing);
-    /// Evaluate (validation) per phase
-    void evaluate_phase(execution_mode mode=execution_mode::validation);
-    /// Evaluation step on one mini-batch
-    bool evaluate_mini_batch();
+  const std::string& name() {
+    return m_name;
+  }
+  void reset_phase();
 
-    const std::string & name() { return m_name; }
-    void reset_phase();
+ protected:
+  /// Model's name
+  std::string m_name;
+  /// index of last layer in a phase
+  size_t m_phase_end;
+  /// containers for  mirror layers
+  std::vector<Layer *> m_reconstruction_layers;
 
-  protected:
-    /// Model's name
-    std::string m_name;
-    /// index of last layer in a phase
-    size_t m_phase_end;
-    /// containers for  mirror layers
-    std::vector<Layer*> m_reconstruction_layers;
+  /// Flag recording whether we have a mirror layer inserted in model for training
+  uint32_t m_have_mirror;
 
-    /// Flag recording whether we have a mirror layer inserted in model for training
-    uint32_t m_have_mirror;
+  /// Inserts a mirror layer for specified layer index
+  void insert_mirror(uint32_t layer_index);
 
-    /// Inserts a mirror layer for specified layer index
-    void insert_mirror(uint32_t layer_index);
-
-    /// Removes mirror for specified layer index
-    void remove_mirror(uint32_t layer_index);
-  };
+  /// Removes mirror for specified layer index
+  void remove_mirror(uint32_t layer_index);
+};
 }
 
 

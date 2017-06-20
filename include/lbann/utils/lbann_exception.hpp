@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,31 +36,30 @@
 
 using namespace El;
 
-namespace lbann
-{
-  class lbann_exception : public std::exception
-  {
-  public:
-    lbann_exception(const std::string m="my custom exception"):msg(m){}
-    ~lbann_exception(void) {}
-    const char* what(){return msg.c_str();}
-
-  private:
-    std::string msg;
-  };
-
-  inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=NULL, std::ostream& os=std::cerr)
-  {
-    if( std::string(e.what()) != "" ) {
-      if(comm != NULL) {
-        os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
-      }else {
-        os << "LBANN: caught error message:";
-      }
-      os << "\t" << e.what() << std::endl;
-    }
-    El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
+namespace lbann {
+class lbann_exception : public std::exception {
+ public:
+  lbann_exception(const std::string m="my custom exception"):msg(m) {}
+  ~lbann_exception(void) {}
+  const char *what() {
+    return msg.c_str();
   }
+
+ private:
+  std::string msg;
+};
+
+inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=NULL, std::ostream& os=std::cerr) {
+  if( std::string(e.what()) != "" ) {
+    if(comm != NULL) {
+      os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
+    } else {
+      os << "LBANN: caught error message:";
+    }
+    os << "\t" << e.what() << std::endl;
+  }
+  El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
+}
 }
 
 #endif // LBANN_EXCEPTION_HPP_INCLUDED

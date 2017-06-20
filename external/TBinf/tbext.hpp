@@ -21,24 +21,24 @@ limitations under the License.
 namespace TBinf {
 
 // Write a 32-bit value to a buffer. Assume little-endian.
-inline void put32(char* buf, uint32_t val) {
+inline void put32(char *buf, uint32_t val) {
   memcpy(buf, &val, sizeof(uint32_t));
 }
 
 // Write a 64-bit value to a buffer. Assume little-endian.
-inline void put64(char* buf, uint64_t val) {
+inline void put64(char *buf, uint64_t val) {
   memcpy(buf, &val, sizeof(uint64_t));
 }
 
 // Get a 32-bit value from a buffer. Assume little-endian.
-inline uint32_t get32(const char* buf) {
+inline uint32_t get32(const char *buf) {
   uint32_t r;
   memcpy(&r, buf, sizeof(uint32_t));
   return r;
 }
 
 // Get a 64-bit value from a buffer. Assume little-endian.
-inline uint64_t get64(const char* buf) {
+inline uint64_t get64(const char *buf) {
   uint64_t r;
   memcpy(&r, buf, sizeof(uint64_t));
   return r;
@@ -88,7 +88,8 @@ static const uint32_t table0_[256] = {
   0x88d28022, 0x7ab90321, 0xae7367ca, 0x5c18e4c9, 0x4f48173d, 0xbd23943e,
   0xf36e6f75, 0x0105ec76, 0x12551f82, 0xe03e9c81, 0x34f4f86a, 0xc69f7b69,
   0xd5cf889d, 0x27a40b9e, 0x79b737ba, 0x8bdcb4b9, 0x988c474d, 0x6ae7c44e,
-  0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351};
+  0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351
+};
 static const uint32_t table1_[256] = {
   0x00000000, 0x13a29877, 0x274530ee, 0x34e7a899, 0x4e8a61dc, 0x5d28f9ab,
   0x69cf5132, 0x7a6dc945, 0x9d14c3b8, 0x8eb65bcf, 0xba51f356, 0xa9f36b21,
@@ -132,7 +133,8 @@ static const uint32_t table1_[256] = {
   0xc10e2ca9, 0xd2acb4de, 0xa8c17d9b, 0xbb63e5ec, 0x8f844d75, 0x9c26d502,
   0x449a2e7e, 0x5738b609, 0x63df1e90, 0x707d86e7, 0x0a104fa2, 0x19b2d7d5,
   0x2d557f4c, 0x3ef7e73b, 0xd98eedc6, 0xca2c75b1, 0xfecbdd28, 0xed69455f,
-  0x97048c1a, 0x84a6146d, 0xb041bcf4, 0xa3e32483};
+  0x97048c1a, 0x84a6146d, 0xb041bcf4, 0xa3e32483
+};
 static const uint32_t table2_[256] = {
   0x00000000, 0xa541927e, 0x4f6f520d, 0xea2ec073, 0x9edea41a, 0x3b9f3664,
   0xd1b1f617, 0x74f06469, 0x38513ec5, 0x9d10acbb, 0x773e6cc8, 0xd27ffeb6,
@@ -176,7 +178,8 @@ static const uint32_t table2_[256] = {
   0xda386046, 0x7f79f238, 0x0b899651, 0xaec8042f, 0x44e6c45c, 0xe1a75622,
   0xdda47104, 0x78e5e37a, 0x92cb2309, 0x378ab177, 0x437ad51e, 0xe63b4760,
   0x0c158713, 0xa954156d, 0xe5f54fc1, 0x40b4ddbf, 0xaa9a1dcc, 0x0fdb8fb2,
-  0x7b2bebdb, 0xde6a79a5, 0x3444b9d6, 0x91052ba8};
+  0x7b2bebdb, 0xde6a79a5, 0x3444b9d6, 0x91052ba8
+};
 static const uint32_t table3_[256] = {
   0x00000000, 0xdd45aab8, 0xbf672381, 0x62228939, 0x7b2231f3, 0xa6679b4b,
   0xc4451272, 0x1900b8ca, 0xf64463e6, 0x2b01c95e, 0x49234067, 0x9466eadf,
@@ -220,16 +223,17 @@ static const uint32_t table3_[256] = {
   0x6700c234, 0xba45688c, 0xa345d046, 0x7e007afe, 0x1c22f3c7, 0xc167597f,
   0xc747336e, 0x1a0299d6, 0x782010ef, 0xa565ba57, 0xbc65029d, 0x6120a825,
   0x0302211c, 0xde478ba4, 0x31035088, 0xec46fa30, 0x8e647309, 0x5321d9b1,
-  0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842};
+  0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
+};
 
 // Helper for crc32.
-static inline uint32_t LE_LOAD32(const uint8_t* p) {
-  return get32(reinterpret_cast<const char*>(p));
+static inline uint32_t LE_LOAD32(const uint8_t *p) {
+  return get32(reinterpret_cast<const char *>(p));
 }
 
 // Compute the crc32 of buf with length n with prior crc32 crc.
-inline uint32_t crc32(uint32_t crc, const char* buf, size_t n) {
-  const uint8_t *p = reinterpret_cast<const uint8_t*>(buf);
+inline uint32_t crc32(uint32_t crc, const char *buf, size_t n) {
+  const uint8_t *p = reinterpret_cast<const uint8_t *>(buf);
   const uint8_t *e = p + n;
   uint32_t l = crc ^ 0xffffffffu;
 
@@ -250,7 +254,7 @@ inline uint32_t crc32(uint32_t crc, const char* buf, size_t n) {
   // Point x at first 4-byte aligned byte in string.  This might be
   // just past the end of the string.
   const uintptr_t pval = reinterpret_cast<uintptr_t>(p);
-  const uint8_t* x = reinterpret_cast<const uint8_t*>(((pval + 3) >> 2) << 2);
+  const uint8_t *x = reinterpret_cast<const uint8_t *>(((pval + 3) >> 2) << 2);
   if (x <= e) {
     // Process bytes until finished or p is 4-byte aligned
     while (p != x) {
@@ -278,7 +282,7 @@ inline uint32_t crc32(uint32_t crc, const char* buf, size_t n) {
 }
 
 // Compute the masked crc32 of buf with length n.
-inline uint32_t masked_crc32(const char* buf, size_t n) {
+inline uint32_t masked_crc32(const char *buf, size_t n) {
   const uint32_t MASK_DELTA = 0xa282ead8ul;
   uint32_t crc = crc32(0, buf, n);
   return ((crc >> 15) | (crc << 17)) + MASK_DELTA;

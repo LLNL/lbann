@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -33,11 +33,9 @@
 #include "lbann_cv_transform.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
-class cv_colorizer : public cv_transform
-{
+class cv_colorizer : public cv_transform {
  protected:
   bool m_gray;
 
@@ -45,7 +43,7 @@ class cv_colorizer : public cv_transform
   cv_colorizer(void) : cv_transform(), m_gray(false) {}
   cv_colorizer(const cv_colorizer& rhs);
   cv_colorizer& operator=(const cv_colorizer& rhs);
-  virtual cv_colorizer* clone(void) const;
+  virtual cv_colorizer *clone(void) const;
 
   virtual ~cv_colorizer(void) {}
 
@@ -65,12 +63,23 @@ class cv_colorizer : public cv_transform
    */
   virtual bool apply(cv::Mat& image);
 
-  virtual void enable(void) { m_enabled = true; }
-  virtual void disable(void) { m_enabled = false; }
-  virtual void reset(void) { m_enabled = false; m_gray = false; }
-  virtual bool is_enabled(void) const { return m_enabled; }
+  virtual void enable(void) {
+    m_enabled = true;
+  }
+  virtual void disable(void) {
+    m_enabled = false;
+  }
+  virtual void reset(void) {
+    m_enabled = false;
+    m_gray = false;
+  }
+  virtual bool is_enabled(void) const {
+    return m_enabled;
+  }
 
-  virtual std::ostream& print(std::ostream& os) const { return os; }
+  virtual std::ostream& print(std::ostream& os) const {
+    return os;
+  }
 };
 
 } // end of namespace lbann

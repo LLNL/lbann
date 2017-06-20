@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -43,7 +43,7 @@ namespace TBinf {
  * This writes data in the same format as Tensorflow does.
  */
 class SummaryWriter {
-public:
+ public:
   /**
    * Create a new event file in logdir to write to.
    * @param logdir The directory where the event file will be written.
@@ -65,7 +65,7 @@ public:
    * @param last Iterator past the last value to add.
    * @param step Optional global step.
    */
-  void add_histogram(const std::string tag, 
+  void add_histogram(const std::string tag,
                      std::vector<float>::const_iterator first,
                      std::vector<float>::const_iterator last,
                      int64_t step = -1);
@@ -93,13 +93,13 @@ public:
   /** Ensure all events are written out. */
   void flush();
 
-private:
+ private:
   /**
    * Write a summary to the event file.
    * @param s The summary to write.
    * @param step Optional global step for the event.
    */
-  void write_summary_event(tensorflow::Summary* s, int64_t step = -1);
+  void write_summary_event(tensorflow::Summary *s, int64_t step = -1);
 
   /**
    * Write an event to the event file.
@@ -114,7 +114,7 @@ private:
   void init_histogram_buckets();
 
   /** Current event version. */
-  static constexpr const char* EVENT_VERSION = "brain.Event:2";
+  static constexpr const char *EVENT_VERSION = "brain.Event:2";
 
   /** Filename to write to. */
   std::string filename;

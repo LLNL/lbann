@@ -34,8 +34,7 @@ using namespace std;
 using namespace El;
 
 lbann::imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle)
-{
+  : generic_data_reader(batchSize, shuffle) {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -51,19 +50,16 @@ lbann::imagenet_reader::imagenet_reader(const imagenet_reader& source)
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
-    m_num_labels(source.m_num_labels)
-{
+    m_num_labels(source.m_num_labels) {
   m_pixels = new unsigned char[m_image_width * m_image_height * m_image_num_channels];
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 }
 
-lbann::imagenet_reader::~imagenet_reader()
-{
+lbann::imagenet_reader::~imagenet_reader(void) {
   delete [] m_pixels;
 }
 
-int lbann::imagenet_reader::fetch_data(Mat& X)
-{
+int lbann::imagenet_reader::fetch_data(Mat& X) {
   if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
@@ -77,14 +73,14 @@ int lbann::imagenet_reader::fetch_data(Mat& X)
 
   Zeros(X, X.Height(), X.Width());
   Zeros(m_indices_fetched_per_mb, mb_size, 1);
-#pragma omp parallel for
+  #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     string imagepath = m_image_dir + image_list[index].first;
 
     int width, height;
-    unsigned char* pixels = (unsigned char*) std::malloc(num_channel_values*sizeof(unsigned char));
+    unsigned char *pixels = (unsigned char *) std::malloc(num_channel_values*sizeof(unsigned char));
     bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
@@ -108,8 +104,7 @@ int lbann::imagenet_reader::fetch_data(Mat& X)
   return mb_size;
 }
 
-int lbann::imagenet_reader::fetch_label(Mat& Y)
-{
+int lbann::imagenet_reader::fetch_label(Mat& Y) {
   if(!position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
@@ -131,8 +126,7 @@ int lbann::imagenet_reader::fetch_label(Mat& Y)
   return mb_size;
 }
 
-void lbann::imagenet_reader::load()
-{
+void lbann::imagenet_reader::load(void) {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
@@ -140,7 +134,7 @@ void lbann::imagenet_reader::load()
   image_list.clear();
 
   // load image list
-  FILE* fplist = fopen(imageListFile.c_str(), "rt");
+  FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
     stringstream err;
     err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
@@ -150,8 +144,9 @@ void lbann::imagenet_reader::load()
   while (!feof(fplist)) {
     char imagepath[512];
     int imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
+    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
+    }
     image_list.push_back(make_pair(imagepath, imagelabel));
   }
   fclose(fplist);
@@ -166,17 +161,16 @@ void lbann::imagenet_reader::load()
   select_subset_of_data();
 }
 
-void lbann::imagenet_reader::free()
-{
+void lbann::imagenet_reader::free(void) {
   delete [] m_pixels;
 }
 
 // Assignment operator
-lbann::imagenet_reader& lbann::imagenet_reader::operator=(const imagenet_reader& source)
-{
+lbann::imagenet_reader& lbann::imagenet_reader::operator=(const imagenet_reader& source) {
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
   generic_data_reader::operator=(source);

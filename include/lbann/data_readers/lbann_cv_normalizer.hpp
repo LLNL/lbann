@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -36,8 +36,7 @@
 #include "lbann/utils/lbann_mild_exception.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 /**
  *  Modifies the channel values of each pixel according to the chosen normalization
  *  strategies:
@@ -52,11 +51,10 @@ namespace lbann
  *  than creating a new copy of data, especially, if the channel data type of
  *  source image is the same as that of the resultant image.
  */
-class cv_normalizer : public cv_transform
-{
+class cv_normalizer : public cv_transform {
  public:
   /**
-   * Define the type of normalization methods available. 
+   * Define the type of normalization methods available.
    * z-score method is essentially the combination of mean subtraction and unit variance
    */
   enum normalization_type {_none=0, _u_scale=1, _mean_sub=2, _unit_var=4, _z_score=6};
@@ -83,12 +81,14 @@ class cv_normalizer : public cv_transform
 
 
   /// Set a normalization bit flag
-  virtual normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const
-  { return static_cast<normalization_type>(static_cast<uint32_t>(ntype) | static_cast<uint32_t>(flag)); }
+  virtual normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+    return static_cast<normalization_type>(static_cast<uint32_t>(ntype) | static_cast<uint32_t>(flag));
+  }
 
   /// Mask normalization bits
-  virtual normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const
-  { return static_cast<normalization_type>(static_cast<uint32_t>(ntype) & static_cast<uint32_t>(flag)); }
+  virtual normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+    return static_cast<normalization_type>(static_cast<uint32_t>(ntype) & static_cast<uint32_t>(flag));
+  }
 
   /// Enable a particular normalization method
   virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
@@ -101,19 +101,27 @@ class cv_normalizer : public cv_transform
   cv_normalizer(void);
   cv_normalizer(const cv_normalizer& rhs);
   cv_normalizer& operator=(const cv_normalizer& rhs);
-  virtual cv_normalizer* clone(void) const;
+  virtual cv_normalizer *clone(void) const;
 
   /// Set the parameters all at once
   virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
 
   /// Whether to subtract the per-channel and per-sample mean.
-  void subtract_mean(bool b) { m_mean_subtraction = b; }
+  void subtract_mean(bool b) {
+    m_mean_subtraction = b;
+  }
   /// Whether to normalize to unit variance, per-channel and per-sample.
-  void unit_variance(bool b) { m_unit_variance = b; }
+  void unit_variance(bool b) {
+    m_unit_variance = b;
+  }
   /// Whether to scale to [0, 1]
-  void unit_scale(bool b) { m_unit_scale = b; }
+  void unit_scale(bool b) {
+    m_unit_scale = b;
+  }
   /// Whether to normalize by z-scores, per-channel and per-sample.
-  void z_score(bool b) { m_z_score = b; }
+  void z_score(bool b) {
+    m_z_score = b;
+  }
 
   /// Reset all the paramters to the default values
   virtual void reset(void);
@@ -124,7 +132,7 @@ class cv_normalizer : public cv_transform
   }
 
   /**
-   * Combine the normalizations enabled and define a linear transform 
+   * Combine the normalizations enabled and define a linear transform
    * per pixel to address them all. If successful, the tranform is enabled.
    * If not, it is disabled.
    * @return false if not enabled or unsuccessful.
@@ -151,7 +159,7 @@ class cv_normalizer : public cv_transform
   // utilities
   template<class InputIterator, class OutputIterator>
   static OutputIterator scale(InputIterator first, InputIterator last, OutputIterator result,
-                        const std::vector<channel_trans_t> trans);
+                              const std::vector<channel_trans_t> trans);
 
   template<typename Tsrc, typename Tdst>
   static bool scale_with_known_type(cv::Mat& image, const std::vector<channel_trans_t>& trans);
@@ -166,11 +174,11 @@ class cv_normalizer : public cv_transform
 
   template<typename T>
   static bool compute_mean_stddev_with_known_type(const cv::Mat& image,
-       std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask);
+      std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask);
 
   /// Compute the per-channel and per-sample mean and standard deviation
   static bool compute_mean_stddev(const cv::Mat& image,
-       std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask=cv::Mat());
+                                  std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask=cv::Mat());
 
   virtual std::ostream& print(std::ostream& os) const;
 };
@@ -190,8 +198,7 @@ class cv_normalizer : public cv_transform
 template<class InputIterator, class OutputIterator>
 inline OutputIterator cv_normalizer::scale(
   InputIterator first, InputIterator last, OutputIterator result,
-  const std::vector<channel_trans_t> trans)
-{
+  const std::vector<channel_trans_t> trans) {
   const size_t NCh = trans.size();
   bool trivial_alpha = true;
   bool trivial_beta = true;
@@ -203,9 +210,9 @@ inline OutputIterator cv_normalizer::scale(
 
   if (trivial_alpha && trivial_beta) {
     if ((typeid(*first) == typeid(*result)) &&
-        (reinterpret_cast<const void*>(&(*first)) ==
-         reinterpret_cast<const void*>(&(*result))))
-        // This way, it works both for iterator and for pointer
+        (reinterpret_cast<const void *>(&(*first)) ==
+         reinterpret_cast<const void *>(&(*result))))
+      // This way, it works both for iterator and for pointer
     {
       std::advance(result, std::distance(first,last));
       return result;
@@ -223,14 +230,17 @@ inline OutputIterator cv_normalizer::scale(
 
     while (first != last) {
       *result = cv::saturate_cast<T>(a * (*first) + b);
-      ++result; ++first;
+      ++result;
+      ++first;
     }
   } else {
     size_t ch = 0u;
 
     while (first != last) {
       *result = cv::saturate_cast<T>(trans[ch].first * (*first) + trans[ch].second);
-      ++result; ++first; ++ch;
+      ++result;
+      ++first;
+      ++ch;
       ch = (ch % NCh);
     }
   }
@@ -250,27 +260,28 @@ inline OutputIterator cv_normalizer::scale(
  */
 template<typename Tsrc, typename Tdst>
 inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
-  const std::vector<channel_trans_t>& trans)
-{
+    const std::vector<channel_trans_t>& trans) {
   const unsigned int Width  = static_cast<unsigned int>(image.cols);
   const unsigned int Height = static_cast<unsigned int>(image.rows);
   const unsigned int NCh    = static_cast<unsigned int>(image.channels());
-  if ((trans.size() > 0u) && (trans.size() != NCh)) return false;
+  if ((trans.size() > 0u) && (trans.size() != NCh)) {
+    return false;
+  }
 
-  
+
   // overwrite the storage of the source image if the source and the result have
   // the same data type. Otherwise, create a new image for the result and replace
   // the input with the input at the end.
   if (std::is_same<Tsrc, Tdst>::value) {
     if (image.isContinuous()) {
-      scale(reinterpret_cast<const Tsrc*>(image.datastart),
-            reinterpret_cast<const Tsrc*>(image.dataend),
-            reinterpret_cast<Tsrc*>(image.data), trans);
+      scale(reinterpret_cast<const Tsrc *>(image.datastart),
+            reinterpret_cast<const Tsrc *>(image.dataend),
+            reinterpret_cast<Tsrc *>(image.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
       for (unsigned int i = 0u; i < Height; ++i) {
-        Tsrc* optr = reinterpret_cast<Tsrc*>(image.ptr<Tsrc>(i));
-        const Tsrc* iptr = optr;
+        Tsrc *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
+        const Tsrc *iptr = optr;
         scale(iptr, iptr+stride, optr, trans);
       }
     }
@@ -278,14 +289,14 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
     cv::Mat image_out = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<Tdst>::depth, NCh));
 
     if (image.isContinuous()) {
-      scale(reinterpret_cast<const Tsrc*>(image.datastart),
-            reinterpret_cast<const Tsrc*>(image.dataend),
-            reinterpret_cast<Tdst*>(image_out.data), trans);
+      scale(reinterpret_cast<const Tsrc *>(image.datastart),
+            reinterpret_cast<const Tsrc *>(image.dataend),
+            reinterpret_cast<Tdst *>(image_out.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
-      Tdst* ptr_out = reinterpret_cast<Tdst*>(image_out.data);
+      Tdst *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
       for (unsigned int i = 0u; i < Height; ++i, ptr_out += stride) {
-        const Tsrc* ptr = reinterpret_cast<Tsrc*>(image.ptr<Tsrc>(i));
+        const Tsrc *ptr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         scale(ptr, ptr+stride, ptr_out, trans);
       }
     }
@@ -301,11 +312,12 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
  */
 template<typename T>
 inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& image,
-  std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask)
-{
+    std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask) {
   mean.clear();
   stddev.clear();
-  if (image.empty()) return false;
+  if (image.empty()) {
+    return false;
+  }
 
   const int NCh = image.channels();
   const int num_pixels = image.rows * image.cols;
@@ -316,7 +328,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;
     sqsum[ch] = 0.0;
-    const T* ptr = reinterpret_cast<const T*>(image.datastart);
+    const T *ptr = reinterpret_cast<const T *>(image.datastart);
     shift[ch] = static_cast<double>(*(ptr+ch));
   }
 
@@ -324,8 +336,8 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   stddev.resize(NCh);
 
   if (image.isContinuous()) {
-    const T* ptr = reinterpret_cast<const T*>(image.datastart);
-    const T* const ptrend = reinterpret_cast<const T* const>(image.dataend);
+    const T *ptr = reinterpret_cast<const T *>(image.datastart);
+    const T *const ptrend = reinterpret_cast<const T *const>(image.dataend);
 
     int ch = 0;
     do {
@@ -336,18 +348,18 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
       ch = ch % NCh;
     } while ((++ptr) != ptrend);
 
-    for (int ch = 0; ch < NCh; ++ch) {
-      const double shifted_mean = sum[ch] / num_pixels;
-      mean[ch] = shifted_mean + shift[ch];
-      stddev[ch] = sqrt(sqsum[ch]/num_pixels - shifted_mean * shifted_mean);
+    for (int c = 0; c < NCh; ++c) {
+      const double shifted_mean = sum[c] / num_pixels;
+      mean[c] = shifted_mean + shift[c];
+      stddev[c] = sqrt(sqsum[c]/num_pixels - shifted_mean * shifted_mean);
     }
   } else {
     const int stride = image.cols*NCh;
     const int Height = image.rows;
 
     for (int i = 0; i < Height; ++i) {
-      const T* ptr = reinterpret_cast<const T*>(image.ptr<const T>(i));
-      const T* const ptrend = ptr + stride;
+      const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+      const T *const ptrend = ptr + stride;
 
       int ch = 0;
       do {
@@ -358,17 +370,18 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
         ch = ch % NCh;
       } while ((++ptr) != ptrend);
     }
-  
+
     for (int ch = 0; ch < NCh; ++ch) {
       const double shifted_mean = sum[ch] / num_pixels;
       mean[ch] = shifted_mean + shift[ch];
       stddev[ch] = sqrt(sqsum[ch]/num_pixels - shifted_mean*shifted_mean);
     }
   }
- #if 0
-  for (size_t ch = 0u; ch < NCh; ++ch)
+#if 0
+  for (size_t ch = 0u; ch < NCh; ++ch) {
     std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
- #endif
+  }
+#endif
   return true;
 }
 
