@@ -243,6 +243,10 @@ void add_layers(
           model->create_optimizer(),
           ell.has_bias());
       }
+      double l2_regularization_factor = ell.l2_regularization_factor();
+      if(l2_regularization_factor != double(0.0)) {
+        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
+      }
       model->add(d);
     }
 
@@ -385,6 +389,10 @@ void add_layers(
         );
       }
 
+      double l2_regularization_factor = ell.l2_regularization_factor();
+      if(l2_regularization_factor != double(0.0)) {
+        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
+      }
       model->add(d);
     }
 

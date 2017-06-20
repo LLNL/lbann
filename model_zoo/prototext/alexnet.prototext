@@ -78,6 +78,7 @@ model {
       conv_pads: "0 0"
       conv_strides: "4 4"
       weight_initialization: "he_normal"
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -145,6 +146,7 @@ model {
       conv_pads: "2 2"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -213,6 +215,7 @@ model {
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -244,6 +247,7 @@ model {
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -275,6 +279,7 @@ model {
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -320,6 +325,7 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -359,6 +365,7 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
+      l2_regularization_factor: 0.0005
     }
   }
 
@@ -398,6 +405,7 @@ model {
       num_neurons: 1000
       weight_initialization: "he_normal"
       has_bias: false
+      l2_regularization_factor: 0.0005
     }
   }
 
