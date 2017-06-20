@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
     ProcessInput();
     PrintInputReport();
 
+    std::cout << "Finished with the inut report" << std::endl;
     //error check the command line
     if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
       if (comm->am_world_master()) {
@@ -64,8 +65,10 @@ int main(int argc, char *argv[]) {
     lbann_data::LbannPB pb;
     lbann_data::LbannPB pb_reader;
     readPrototextFile(prototext_model_fn.c_str(), pb);
+    std::cout << "Finished with the model file" << std::endl;
     readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
     lbann_data::Model *pb_model = pb.mutable_model();
+    std::cout << "Finished with the data reader file" << std::endl;
 
     //adjust the prototext with any over-rides
     if (mini_batch_size != 0) {
@@ -108,6 +111,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    std::cout << "Setting up the data readers" << std::endl;
     ///////////////////////////////////////////////////////////////////
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

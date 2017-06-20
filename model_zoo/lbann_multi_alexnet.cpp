@@ -39,6 +39,11 @@ const string g_ImageNet_LabelDir = "labels/";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
+
+
+
+//#define PARTITIONED
+
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
 
@@ -56,6 +61,7 @@ int main(int argc, char *argv[]) {
     trainParams.parse_params();
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.2;
+
     PerformanceParams perfParams;
     perfParams.parse_params();
     // Read in the user specified network topology
@@ -139,6 +145,7 @@ int main(int argc, char *argv[]) {
     imagenet_reader imagenet_trainset(trainParams.MBSize, true);
     imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
     imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
+    imagenet_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
     imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     imagenet_trainset.load();
 
@@ -219,14 +226,23 @@ int main(int argc, char *argv[]) {
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
+#ifdef PARTITIONED
     Layer *input_layer =
-      new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+      new input_layer_partitioned_minibatch_parallel_io<>(
         comm,
         parallel_io,
         (int) trainParams.MBSize,
         data_readers);
     dnn->add(input_layer);
-
+#else
+    Layer *input_layer =
+      new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+        comm,
+        parallel_io,
+        (int) trainParams.MBSize,
+        data_readers);
+    dnn->add(input_layer);
+#endif
     // Layer 1 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
@@ -621,6 +637,7 @@ int main(int argc, char *argv[]) {
       dnn->add(softmax);
     }
 
+#ifdef PARTITIONED
     Layer *target_layer =
       new target_layer_partitioned_minibatch_parallel_io<>(
         comm,
@@ -629,7 +646,16 @@ int main(int argc, char *argv[]) {
         data_readers,
         true);
     dnn->add(target_layer);
-
+#else
+    Layer *target_layer =
+      new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        comm,
+        parallel_io,
+        (int) trainParams.MBSize,
+        data_readers,
+        true);
+    dnn->add(target_layer);
+#endif
     lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
     lbann_callback_print print_cb;
