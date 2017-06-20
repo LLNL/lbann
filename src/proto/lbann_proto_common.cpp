@@ -818,11 +818,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     }
     if (readme.role() == "train") {
       reader->set_validation_percent( readme.validation_percent() );
-      if (master) {
-        cout << "Training using " << (readme.train_or_test_percent()*100)
-             << "% of the training data set, which is " << reader->getNumData()
-             << " samples.\n";
-      }
     }
 
     reader->set_master(master);
@@ -877,8 +872,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       if (master) {
         size_t num_train = reader->getNumData();
         size_t num_validate = reader_validation->getNumData();
-        double validate_percent = num_validate / (num_train+num_validate)*100.0;
-        double train_percent = num_train / (num_train+num_validate)*100.0;
+        double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
+        double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         cout << "Training using " << train_percent << "% of the training data set, which is " << reader->getNumData() << " samples." << endl
              << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->getNumData() << " samples." << endl;
       }
