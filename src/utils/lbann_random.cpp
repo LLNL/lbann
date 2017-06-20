@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -69,7 +69,7 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
-void init_random(int seed, lbann_comm* comm) {
+void init_random(int seed, lbann_comm *comm) {
   if (seed != -1) {
     // Seed every OpenMP thread, if present.
     // Note: Threadprivate OMP variables don't work with dynamic threads.
@@ -120,7 +120,7 @@ void init_data_seq_random(int seed) {
   // Seed every OpenMP thread, if present.
   // Note: Threadprivate OMP variables don't work with dynamic threads.
 #ifdef _OPENMP
-#pragma omp parallel
+  #pragma omp parallel
   {
     get_data_seq_generator().seed(seed);
   }
@@ -147,7 +147,7 @@ void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p) {
 }
 
 void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
-                   DataType radius) {
+                  DataType radius) {
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
   El::Uniform(mat, m, n, center, radius);
 #else
@@ -193,7 +193,7 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
     mat.Reserve(n * m);
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
-                                                  center + radius);
+        center + radius);
     for (El::Int col = 0; col < n; ++col) {
       for (El::Int row = 0; row < m; ++row) {
         mat.QueueUpdate(row, col, dist(gen));

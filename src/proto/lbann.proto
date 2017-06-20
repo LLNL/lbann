@@ -19,6 +19,7 @@ message Reader {
   string name = 1; //mnist, nci, nci_regression, cnpy, imagenet
   string role = 3; //train, test
   bool shuffle = 4;
+  string data_filedir = 5;
   string data_filename = 6;
   string label_filename = 7;
   double train_or_test_percent = 8;
@@ -51,15 +52,15 @@ message Model {
   string name = 1; //dnn, stacked_autoencoder, greedy_layerwise_autoencoder
   string objective_function = 2; //categorical_cross_entropy, mean_squared_error
   repeated string metric = 5; //categorical_accuracy, mean_squared_error
+  string data_layout = 6;
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
   int64 block_size = 50;
   int64 procs_per_model = 51;
-  int64 num_parallel_readers = 52;
   int64 num_gpus = 53;
   int64 evaluation_frequency = 54;
-  repeated Regularizer regularizer = 55;
+  int64 num_parallel_readers = 100;
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
@@ -84,12 +85,15 @@ message Model {
 }
 
 message Optimizer {
-  //adagrad, rmsprop, adam, sgd
+  //adagrad, rmsprop, adam, hypergradient_adam, sgd
   string name = 1;
   double learn_rate = 2;
-  double momentum = 3;
-  double decay = 4;
-  bool nesterov = 5;
+  double momentum = 3; //sgd
+  double decay = 4;    //rmsprop, sgd
+  bool nesterov = 5;   //sgd
+  double beta1 = 6;    //adam, hypergradient_adam
+  double beta2 = 7;    //adam, hypergradient_adam
+  double eps = 8;      //adagrad, adam, hypergradient_adam
 }
 
 message Callback {
@@ -102,6 +106,7 @@ message Callback {
    CallbackDumpGradients dump_gradients = 6;
    CallbackImComm imcomm = 7;
    CallbackSaveImages save_images = 8;
+   CallbackDebug debug = 9;
 }
 
 message CallbackSaveImages {
@@ -141,31 +146,8 @@ message CallbackImComm {
   //todo
 }
 
-//========================================================================
-// Regularizers
-//========================================================================
-
-message Regularizer {
-  //a Regularizer should contain exactly one of the following
-  BatchNormalization batch_normalization = 1;
-  Dropout dropout = 2;
-  L2Regularization l2_regularization = 3; 
-}
-
-message BatchNormalization {
-  string data_layout = 1;
-  double decay = 2;
-  double gamma = 3;
-  double beta = 4;
-}
-
-message Dropout {
-  string data_layout = 1;
-  double keep_prob = 2;
-}
-
-message L2Regularization {
-  double lambda = 3;
+message CallbackDebug {
+  string phase = 1;
 }
 
 //========================================================================
@@ -176,58 +158,121 @@ message L2Regularization {
 //    zero, uniform, normal, glorot_normal, he_normal, he_uniform
 // see: lbann/include/lbann/lbann_base.hpp
 //
-//
-// activation_type should be one of:
-//    sigmoid, tanh, relu, id, leaky_relu, smooth_relu, elu
-// see: lbann/include/lbann/layers/lbann_layer_activations.hpp
-//
-//
-// optimizer should be one of: adagrad, rmsprop, adam, sgd 
-//see: lbann/include/lbann/lbann_base.hpp
-//
-//
 
 message Layer {
-   int64 index = 2; 
-   int64 parent = 3;
-   int64 child = 4;
+   int64 index = 50; 
+   int64 parent = 51;
+   string data_layout = 52;
 
    // a Layer should contain exactly one of the following
-   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 8;
-   InputDistributedMiniBatch input_distributed_minibatch = 9;
-   FullyConnected fully_connected = 11;
+   // (this may or may not be properly checked for in lbann_proto_common.cpp)
+
+   // input Layers
+   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 2;
+   InputPartitionedMiniBatchParallelIO input_partitioned_minibatch_parallel_io = 3;
+
+   // transform Layers
    Pooling pooling = 12;
+
+   // learning Layers
+   FullyConnected fully_connected = 11;
    Convolution convolution = 13;
-   Softmax softmax = 14;
-   Target target = 15;
-   TargetParallel target_parallel = 16;
-   TargetDistributedMinibatch target_distributed_minibatch = 17;
+
+   // target Layers
    TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
+   TargetPartitionedMinibatchParallelIO target_partitioned_minibatch_parallel_io = 180;
+   TargetReconstruction target_reconstruction = 22;
+
+   // regularization Layers
+   BatchNormalization batch_normalization = 19;
+   LocalResponseNormalization local_response_normalization = 20;
+   Dropout dropout = 21;
+
+   // activation Layers
+   Softmax softmax = 200;
+   ELU elu = 30;
+   ID id = 31;
+   LeakyRelu leaky_relu = 32;
+   Relu relu = 33;
+   Sigmoid sigmoid = 34;
+   SmoothRelu smooth_relu = 35;
+   Softplus soft_plus = 36;
 }
 
-
-message InputDistributedMiniBatchParallelIO {
-  string data_layout = 3;
-  repeated Regularizer regularizer = 2;
+///////////////////////
+// Activation Layers //
+///////////////////////
+message ELU {
+  double alpha = 1; //default: 1.0; must be >= 0
 }
 
-
-message InputDistributedMiniBatch {
-  //@TODO
+message ID {
 }
 
+message LeakyRelu {
+  double leak = 1; //default: 0.01
+}
 
-message FullyConnected {
-  string data_layout = 12;
-  //int64 num_prev_neurons = 1;
+message Relu {
   int64 num_neurons = 2;
-  string activation_type = 4;
-  string weight_initialization = 5;
-  //string optimizer = 10; 
-  repeated Regularizer regularizer = 11;
 }
 
+message Sigmoid {
+  int64 num_neurons = 2;
+}
 
+message SmoothRelu {
+}
+
+message Softplus {
+}
+
+message Tanh {
+}
+
+message Softmax {
+  int64 num_neurons = 2;
+  string weight_initialization = 3;
+}
+
+///////////////////////////
+// Regularization Layers //
+///////////////////////////
+message BatchNormalization {
+  double decay = 2; //default: 0.9
+  double gamma = 3; //default: 1.0
+  double beta = 4;  //default: 0.0
+}
+
+message LocalResponseNormalization {
+  int64 num_dims = 1;
+  int64 num_channels = 2;
+  string dims = 3;  //e.g, "2 2 2"
+  int64 window_width = 4;
+  double lrn_alpha = 5;
+  double lrn_beta = 6;
+  double lrn_k = 7;
+}
+
+message Dropout {
+  int64 num_neurons = 1;
+  double keep_prob = 2;  //default: 0.5
+}
+
+//////////////////
+// Input Layers //
+//////////////////
+message InputDistributedMiniBatchParallelIO {
+  int64 num_parallel_readers = 2;
+}
+
+message InputPartitionedMiniBatchParallelIO {
+  int64 num_parallel_readers = 2;
+}
+
+//////////////////////
+// transform Layers //
+//////////////////////
 message Pooling {
   int64 num_dims = 1;
   int64 num_channels = 2;
@@ -241,6 +286,15 @@ message Pooling {
   string pool_mode = 7;
 }
 
+/////////////////////
+// learning Layers //
+/////////////////////
+message FullyConnected {
+  int64 num_neurons = 2;
+  string weight_initialization = 5;
+  bool has_bias = 6;
+  double l2_regularization_factor = 10;
+}
 message Convolution {
   int64 num_dims = 1;
   int64 num_input_channels = 2;
@@ -251,32 +305,26 @@ message Convolution {
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
   int64 mini_batch_size = 8;
   string weight_initialization = 9;
-  string activation_type = 10;
-  repeated Regularizer regularizer = 11;
+  double l2_regularization_factor = 10;
 }
 
-message Softmax {
-  string data_layout = 4;
-  int64 num_neurons = 2;
-  string weight_initialization = 3;
-}
-
-message Target {
-  //TODO
-}
-
-message TargetParallel {
-  //TODO
-}
-
-message TargetDistributedMinibatch {
-  //TODO
-}
-
+///////////////////
+// Target Layers //
+///////////////////
 message TargetDistributedMinibatchParallelIO {
-  string data_layout = 5;
-  bool shared_data_reader = 3;
-  bool for_regression = 4;
+  int64 num_parallel_readers = 1;
+  bool shared_data_reader = 2;
+  bool for_regression = 3;
+}
+
+message TargetPartitionedMinibatchParallelIO {
+  int64 num_parallel_readers = 1;
+  bool shared_data_reader = 2;
+  bool for_regression = 3;
+}
+
+message TargetReconstruction {
+  int64 original_layer = 1;
 }
 
 //========================================================================

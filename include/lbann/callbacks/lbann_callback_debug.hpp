@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_debug .hpp .cpp - Callback hooks to time training
+// lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
@@ -36,36 +36,39 @@
 namespace lbann {
 
 /**
- * Record the time to execute minibatches and epochs and report it at the end of
- * each epoch.
- * Right now this reports times only for the master node of each model.
+ * Print status updates on where training is.
  */
 class lbann_callback_debug : public lbann_callback {
-public:
-  lbann_callback_debug(execution_mode phase = execution_mode::invalid, lbann_summary* _summarizer = nullptr) :
-    lbann_callback(1, _summarizer), m_debug_phase(phase) {
-      set_name("debug");
-    }
-  /** Start recording time for the epoch. */
-  void on_epoch_begin(model* m);
-  /** Report epoch and mean minibatch times. */
-  void on_epoch_end(model* m);
-  /** Start record time for a batch. */
-  void on_batch_begin(model* m);
-  /** Stop and save time for a batch. */
-  void on_batch_end(model* m);
-  void on_forward_prop_begin(model* m, Layer* l);
-  void on_forward_prop_end(model* m, Layer* l);
-  void on_backward_prop_begin(model* m, Layer* l);
-  void on_backward_prop_end(model* m, Layer* l);
+ public:
+  /**
+   * Debug a particular phase; use invalid to debug every phase.
+   */
+  lbann_callback_debug(execution_mode phase = execution_mode::invalid,
+                       lbann_summary *summarizer = nullptr) :
+    lbann_callback(1, summarizer), m_debug_phase(phase) {
+    set_name("debug");
+  }
+  /** Print that a batch is being started. */
+  void on_batch_begin(model *m);
+  /** Print that forward prop for a layer is beginning. */
+  void on_forward_prop_begin(model *m, Layer *l);
+  /** Print that forward prop for a layer has completed. */
+  void on_forward_prop_end(model *m, Layer *l);
+  /** Print that backward prop for a layer is beginning. */
+  void on_backward_prop_begin(model *m, Layer *l);
+  /** Print that backward prop for a layer has completed. */
+  void on_backward_prop_end(model *m, Layer *l);
 
-  /** Start record time for a batch. */
-  void on_batch_evaluate_begin(model* m);
-  /** Stop and save time for a batch. */
-  void on_batch_evaluate_end(model* m);
-  void on_evaluate_forward_prop_begin(model* m, Layer* l);
-  void on_evaluate_forward_prop_end(model* m, Layer* l);
-private:
+  /** Print that an evaluation batch is being started. */
+  void on_batch_evaluate_begin(model *m);
+  /** Print that an evaluation batch has completed. */
+  void on_batch_evaluate_end(model *m);
+  /** Print that an evaluation forward prop is beginning. */
+  void on_evaluate_forward_prop_begin(model *m, Layer *l);
+  /** Print that an evaluation forward prop has completed. */
+  void on_evaluate_forward_prop_end(model *m, Layer *l);
+ private:
+  /** The phase to debug. */
   execution_mode m_debug_phase;
 };
 

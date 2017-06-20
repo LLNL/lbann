@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci_regression .hpp .cpp - DataReader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci_regression .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
@@ -36,8 +36,7 @@ using namespace El;
 
 
 lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize, bool shuffle)
-  : DataReader(batchSize, shuffle)
-{
+  : generic_data_reader(batchSize, shuffle) {
   m_num_samples = 0;
   //m_num_samples = -1;
   m_num_features = 0;
@@ -48,7 +47,7 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(int batchSize, boo
 //copy constructor
 /*
 lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_nci_regression& source)
-  : DataReader((const DataReader&) source),
+  : generic_data_reader((const generic_data_reader&) source),
   m_num_responses(source.m_num_responses), m_num_samples(source.m_num_samples),
   m_num_features(source.m_num_features),m_responses(source.m_responses),
   m_index_map(source.m_index_map),m_infile(source.m_infile)
@@ -56,29 +55,31 @@ lbann::data_reader_nci_regression::data_reader_nci_regression(const data_reader_
 }
 */
 
-lbann::data_reader_nci_regression::~data_reader_nci_regression()
-{
+lbann::data_reader_nci_regression::~data_reader_nci_regression(void) {
 }
 
 
-int lbann::data_reader_nci_regression::fetch_data(Mat& X)
-{
-  if(!DataReader::position_valid()) {
+int lbann::data_reader_nci_regression::fetch_data(Mat& X) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   ifstream ifs(m_infile.c_str());
-  if (!ifs) { std::cout << "\n In load: can't open file : " << m_infile;  exit(1); }
+  if (!ifs) {
+    std::cout << "\n In load: can't open file : " << m_infile;
+    exit(1);
+  }
 
   string line;
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
 
     std::getline(ifs.seekg(m_index_map[index]),line);
     istringstream lstream(line);
@@ -88,41 +89,43 @@ int lbann::data_reader_nci_regression::fetch_data(Mat& X)
     while(getline(lstream, field, ' ')) {
       col++;
       if (col == 3) {
-        if (field.empty())
+        if (field.empty()) {
           break;
-        else
+        } else {
           m_responses[index] = static_cast<DataType>(stof(field));
+        }
       } else if (col > 5) {
-        if(field.empty())
-            X.Set(f, k, static_cast<DataType>(0));
-        else
-            X.Set(f,k,stof(field));
+        if(field.empty()) {
+          X.Set(f, k, static_cast<DataType>(0));
+        } else {
+          X.Set(f,k,stof(field));
+        }
         f++;
       }//end if col > 5
     }// end while loop
   } // end for loop (batch)
   ifs.close();
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
-int lbann::data_reader_nci_regression::fetch_response(Mat& Y)
-{
-  if(!DataReader::position_valid()) {
+int lbann::data_reader_nci_regression::fetch_response(Mat& Y) {
+  if(!generic_data_reader::position_valid()) {
     return 0;
   }
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; ++n) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
     DataType sample_response = m_responses[index];
 
     Y.Set(0, k, sample_response);
   }
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
 /*Space separated columns are as follows (in order):
@@ -133,11 +136,10 @@ int lbann::data_reader_nci_regression::fetch_response(Mat& Y)
 5) ternary response label (derived from column 3 value and recommend we ignore for now)
 6+) features*/
 
-void lbann::data_reader_nci_regression::load()
-{
+void lbann::data_reader_nci_regression::load(void) {
   string infile = get_data_filename();
   ifstream ifs(infile.c_str());
-  if (!ifs) { 
+  if (!ifs) {
     stringstream err;
     err << __FILE__ << " " << __LINE__
         << "\n In load: can't open file : " << infile;
@@ -159,9 +161,9 @@ void lbann::data_reader_nci_regression::load()
     static const std::string whitespaces(" \t\f\v\n\r");
     std::size_t pos = line.find_first_not_of(whitespaces);
     if ((pos == std::string::npos) || (line[pos] == '#')) {
-        m_index_map.pop_back();
-        m_index_map.push_back(ifs.tellg());
-        continue;
+      m_index_map.pop_back();
+      m_index_map.push_back(ifs.tellg());
+      continue;
     }
 #endif
 
@@ -184,25 +186,25 @@ void lbann::data_reader_nci_regression::load()
   m_index_map.shrink_to_fit();
   m_responses.resize(m_num_samples);
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(m_num_samples);
-  for (size_t n = 0; n < ShuffledIndices.size(); ++n) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
+  for (size_t n = 0; n < m_shuffled_indices.size(); ++n) {
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
 }
 
 #if 0
-lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(const data_reader_nci_regression& source)
-{
+lbann::data_reader_nci_regression& lbann::data_reader_nci_regression::operator=(const data_reader_nci_regression& source) {
 
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
 
   this->m_num_responses = source.m_num_responses;

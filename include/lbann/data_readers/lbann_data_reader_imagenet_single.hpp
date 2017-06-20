@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - DataReader class for ImageNetSingle dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
@@ -32,29 +32,27 @@
 #include "lbann_data_reader_imagenet.hpp"
 #include "lbann_image_preprocessor.hpp"
 
-namespace lbann
-{
-class DataReader_ImageNetSingle : public DataReader_ImageNet
-{
-public:
-  DataReader_ImageNetSingle(int batchSize, bool shuffle = true);
-  DataReader_ImageNetSingle(const DataReader_ImageNetSingle& source);
-  ~DataReader_ImageNetSingle();
+namespace lbann {
+class imagenet_readerSingle : public imagenet_reader {
+ public:
+  imagenet_readerSingle(int batchSize, bool shuffle = true);
+  imagenet_readerSingle(const imagenet_readerSingle& source);
+  ~imagenet_readerSingle(void);
 
-  DataReader_ImageNetSingle& operator=(const DataReader_ImageNetSingle& source);
+  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  void load();
+  void load(void);
 
-private:
+ private:
   std::ifstream m_data_filestream;
   size_t m_file_size;
   std::vector<unsigned char> m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
   std::vector<unsigned char> m_pixels;
 
-  void openDataStream();
+  void open_data_stream(void);
 };
 
 }  // namespace lbann

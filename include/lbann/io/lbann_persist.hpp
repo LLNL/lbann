@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -40,77 +40,82 @@ enum class persist_type {
 };
 
 class persist {
-public:
-  // eventually, we'll move most of these to be private,
-  // but we expose them for now while converting old code to new code
+ protected:
   int m_rank;
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
-  char m_checkpoint_dir[1024];
   char m_model_filename[1024];
   char m_train_filename[1024];
 
-public:
+ public:
+  char m_checkpoint_dir[1024];
+
+ public:
   persist();
   ~persist() {};
 
-  void open_checkpoint(const char* dir);
+  int get_rank(void) {
+    return m_rank;
+  }
+  void open_checkpoint(const char *dir);
   void close_checkpoint(void);
 
-  void open_restart(const char* dir);
+  void open_restart(const char *dir);
   void close_restart(void);
 
-  uint64_t get_bytes() { return m_bytes; }
+  uint64_t get_bytes() {
+    return m_bytes;
+  }
 
-  bool write_distmat(persist_type type, const char* name, DistMat* M);
-  bool read_distmat (persist_type type, const char* name, DistMat* M);
-  
-  bool write_bytes(persist_type type, const char* name, void* buf, size_t size);
-  bool read_bytes(persist_type type, const char* name, void* buf, size_t size);
-  
-  bool write_uint32(persist_type type, const char* name, uint32_t  val);
-  bool read_uint32 (persist_type type, const char* name, uint32_t* val);
-  
-  bool write_uint64(persist_type type, const char* name, uint64_t  val);
-  bool read_uint64 (persist_type type, const char* name, uint64_t* val);
-  
-  bool write_int32_contig(persist_type type, const char* name, int32_t* buf, uint64_t count);
-  bool read_int32_contig (persist_type type, const char* name, int32_t* buf, uint64_t count);
-  
-  bool write_float(persist_type type, const char* name, float  val);
-  bool read_float (persist_type type, const char* name, float* val);
-  
-  bool write_double(persist_type type, const char* name, double  val);
-  bool read_double (persist_type type, const char* name, double* val);
+  bool write_distmat(persist_type type, const char *name, DistMat *M);
+  bool read_distmat (persist_type type, const char *name, DistMat *M);
 
-private:
+  bool write_bytes(persist_type type, const char *name, void *buf, size_t size);
+  bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
+
+  bool write_uint32(persist_type type, const char *name, uint32_t  val);
+  bool read_uint32 (persist_type type, const char *name, uint32_t *val);
+
+  bool write_uint64(persist_type type, const char *name, uint64_t  val);
+  bool read_uint64 (persist_type type, const char *name, uint64_t *val);
+
+  bool write_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count);
+  bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
+
+  bool write_float(persist_type type, const char *name, float  val);
+  bool read_float (persist_type type, const char *name, float *val);
+
+  bool write_double(persist_type type, const char *name, double  val);
+  bool read_double (persist_type type, const char *name, double *val);
+
+ private:
   int get_fd(persist_type type);
 };
 
-bool writeDist(int fd, const char* filename, const DistMat& M, uint64_t* bytes);
-bool readDist(int fd, const char* filename, DistMat& M, uint64_t* bytes);
+bool writeDist(int fd, const char *filename, const DistMat& M, uint64_t *bytes);
+bool readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes);
 
-bool write_distmat(int fd, const char* name, DistMat* M, uint64_t* bytes);
-bool read_distmat (int fd, const char* name, DistMat* M, uint64_t* bytes);
+bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
+bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);
 
-bool write_bytes(int fd, const char* name, void* buf, size_t size);
-bool read_bytes(int fd, const char* name, void* buf, size_t size);
+bool write_bytes(int fd, const char *name, void *buf, size_t size);
+bool read_bytes(int fd, const char *name, void *buf, size_t size);
 
-bool write_uint32(int fd, const char* name, uint32_t  val);
-bool read_uint32 (int fd, const char* name, uint32_t* val);
+bool write_uint32(int fd, const char *name, uint32_t  val);
+bool read_uint32 (int fd, const char *name, uint32_t *val);
 
-bool write_uint64(int fd, const char* name, uint64_t  val);
-bool read_uint64 (int fd, const char* name, uint64_t* val);
+bool write_uint64(int fd, const char *name, uint64_t  val);
+bool read_uint64 (int fd, const char *name, uint64_t *val);
 
-bool write_int32_contig(int fd, const char* name, int32_t* buf, uint64_t count);
-bool read_int32_contig (int fd, const char* name, int32_t* buf, uint64_t count);
+bool write_int32_contig(int fd, const char *name, int32_t *buf, uint64_t count);
+bool read_int32_contig (int fd, const char *name, int32_t *buf, uint64_t count);
 
-bool write_float(int fd, const char* name, float  val);
-bool read_float (int fd, const char* name, float* val);
+bool write_float(int fd, const char *name, float  val);
+bool read_float (int fd, const char *name, float *val);
 
-bool write_double(int fd, const char* name, double  val);
-bool read_double (int fd, const char* name, double* val);
+bool write_double(int fd, const char *name, double  val);
+bool read_double (int fd, const char *name, double *val);
 
 } // namespace lbann
 

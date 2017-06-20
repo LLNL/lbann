@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -42,8 +42,7 @@ using namespace El;
 #define LBANN_QUANTIZER_TERNARY 0
 #endif
 
-namespace lbann
-{
+namespace lbann {
 
 /**
  * Support different kinds of quantization.
@@ -55,9 +54,8 @@ namespace lbann
  * "Communication Quantization for Data-parallel Training of Deep Neural
  * Networks" by Nikoli Dryden et al. (LLNL/UIUC)
  */
-class lbann_quantizer
-{
-public:
+class lbann_quantizer {
+ public:
   /** We require that sizeof(DataType) <= sizeof(qtype) == sizeof(uqtype). */
   typedef El::Unsigned uqtype;
   typedef El::Int qtype;
@@ -106,9 +104,9 @@ public:
    * @param sample Whether to use samples to approximate averages.
    */
   void onebit_quantize(const Mat& mat, QuantizedMatrix& qmat, Mat& qerror,
-                bool sample = true);
+                       bool sample = true);
   void onebit_quantize(const DistMat& mat, QuantizedMatrix& qmat, Mat& qerror,
-                bool sample = true);
+                       bool sample = true);
   /**
    * Unquantize a onebit-quantized matrix..
    * @param qmat The matrix to unquantize.
@@ -128,8 +126,8 @@ public:
    * should use SGD as the optimizer for those layers to avoid applying AdaGrad
    * twice.
    */
-  void intermodel_sum_onebit_quantized(lbann_comm* comm, Mat& mat, Mat& qerror);
-  void intermodel_sum_onebit_quantized(lbann_comm* comm, DistMat& mat,
+  void intermodel_sum_onebit_quantized(lbann_comm *comm, Mat& mat, Mat& qerror);
+  void intermodel_sum_onebit_quantized(lbann_comm *comm, DistMat& mat,
                                        Mat& qerror);
 
   /**
@@ -165,10 +163,10 @@ public:
   /**
    * As with intermodel_sum_onebit_quantized, but use threshold quantization.
    */
-  void intermodel_sum_threshold_quantized(lbann_comm* comm, Mat& mat,
+  void intermodel_sum_threshold_quantized(lbann_comm *comm, Mat& mat,
                                           Mat& qerror, DataType pos_thresh,
                                           DataType neg_thresh);
-  void intermodel_sum_threshold_quantized(lbann_comm* comm, DistMat& mat,
+  void intermodel_sum_threshold_quantized(lbann_comm *comm, DistMat& mat,
                                           Mat& qerror, DataType pos_thresh,
                                           DataType neg_thresh);
 
@@ -183,27 +181,27 @@ public:
    */
   template <typename colT, typename rowT>
   void adaptive_quantize(const Mat& mat, std::vector<rowT>& q, Mat& qerror,
-                                   int proportion);
+                         int proportion);
   template <typename colT, typename rowT>
   void adaptive_quantize(const DistMat& mat, std::vector<rowT>& q,
-                                   Mat& qerror, int proportion);
+                         Mat& qerror, int proportion);
   /**
    * Unquantize an adaptively-quantized matrix.
    * @param q The quantizd matrix.
    * @param mat The output unquantized matrix.
    */
   template <typename colT, typename rowT>
-  void adaptive_unquantize(const rowT* q, Mat& mat);
+  void adaptive_unquantize(const rowT *q, Mat& mat);
   template <typename colT, typename rowT>
-  void adaptive_unquantize(const rowT* q, DistMat& mat);
+  void adaptive_unquantize(const rowT *q, DistMat& mat);
 
   /**
    * As with intermodel_sum_onebit_quantized, but use adaptive quantization.
    */
   void intermodel_sum_adaptive_quantized(
-    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
   void intermodel_sum_adaptive_quantized(
-    lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion);
 
   /**
    * Compute positive and negative thresholds such that only one in proportion
@@ -230,16 +228,20 @@ public:
     const Mat& mat, const Mat& qerror, Int col,
     const adaptive_thresholds threshes, bool sample = true);
 
-  double get_proportion_time() const { return proportion_time; }
+  double get_proportion_time() const {
+    return proportion_time;
+  }
   /** Reset recorded counters. */
   void reset_counters() {
     proportion_time = 0.0;
     quantized_count = 0;
   }
   /** Return the most recent number of quantized entries. */
-  size_t get_quantized_count() const { return quantized_count; }
+  size_t get_quantized_count() const {
+    return quantized_count;
+  }
 
-private:
+ private:
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
   /** Number of samples to use in proportion_threshold. */
@@ -292,7 +294,7 @@ private:
    * Variant of adaptive_unquantize that adds its entries.
    */
   template <typename colT, typename rowT>
-  void adaptive_unquantize_add(const rowT* q, Mat& mat);
+  void adaptive_unquantize_add(const rowT *q, Mat& mat);
   /**
    * Variant of adaptive_quantize that also replaces entries in mat
    * with their quantized version. This is equivalent to:
@@ -316,7 +318,7 @@ private:
                                colT end, int proportion);
   template <typename colT, typename rowT>
   void intermodel_sum_adaptive_quantized_impl(
-    lbann_comm* comm, Mat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
 
   /**
    * Return the number of threads adaptive quantization should use for a matrix

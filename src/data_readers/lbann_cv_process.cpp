@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,8 +31,7 @@
 #include "lbann/data_readers/lbann_cv_process.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
 /**
  * Copy constructor.
@@ -42,12 +41,12 @@ namespace lbann
  * objects.
  */
 cv_process::cv_process(const cv_process& rhs)
-: m_flip(rhs.m_flip), m_split(rhs.m_split),
-  m_normalizer((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL),
-  m_augmenter((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL),
-  m_transform1((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL),
-  m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
-  m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
+  : m_flip(rhs.m_flip), m_split(rhs.m_split),
+    m_normalizer((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL),
+    m_augmenter((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL),
+    m_transform1((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL),
+    m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
+    m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
 {}
 
 /**
@@ -57,9 +56,10 @@ cv_process::cv_process(const cv_process& rhs)
  * copy-constructs the objects and owns the pointers to those newly created
  * objects.
  */
-cv_process& cv_process::operator=(const cv_process& rhs)
-{
-  if (this == &rhs) return (*this);
+cv_process& cv_process::operator=(const cv_process& rhs) {
+  if (this == &rhs) {
+    return (*this);
+  }
 
   m_flip = rhs.m_flip;
   m_split = rhs.m_split;
@@ -73,21 +73,29 @@ cv_process& cv_process::operator=(const cv_process& rhs)
 }
 
 
-void cv_process::disable_transforms(void)
-{
-  if (m_normalizer) m_normalizer->disable();
-  if (m_augmenter) m_augmenter->disable();
-  if (m_transform1) m_transform1->disable();
-  if (m_transform2) m_transform2->disable();
-  if (m_transform3) m_transform3->disable();
+void cv_process::disable_transforms(void) {
+  if (m_normalizer) {
+    m_normalizer->disable();
+  }
+  if (m_augmenter) {
+    m_augmenter->disable();
+  }
+  if (m_transform1) {
+    m_transform1->disable();
+  }
+  if (m_transform2) {
+    m_transform2->disable();
+  }
+  if (m_transform3) {
+    m_transform3->disable();
+  }
 }
 
 /**
  * Preprocess an image.
  * @return true if successful
  */
-bool cv_process::preprocess(cv::Mat& image)
-{
+bool cv_process::preprocess(cv::Mat& image) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
   bool ok = true;
@@ -97,8 +105,9 @@ bool cv_process::preprocess(cv::Mat& image)
     _LBANN_MILD_EXCEPTION(!ok, "transform1 has failed!", false);
   }
 
-  if (to_flip())
+  if (to_flip()) {
     cv::flip(image, image, how_to_flip());
+  }
 
   if (m_augmenter && m_augmenter->determine_transform(image)) {
     ok = m_augmenter->apply(image);
@@ -116,15 +125,16 @@ bool cv_process::preprocess(cv::Mat& image)
   // copying. If it is explicilty applied here, the normalizer will automatically be
   // disabled to avoid redundant transform during copying.
 
-  if (m_normalizer)
+  if (m_normalizer) {
     m_normalizer->determine_transform(image);
+  }
 
- #if 0
+#if 0
   const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
   for (size_t i=0u; i < ntrans.size(); ++i) {
     std::cout << "preprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
   }
- #endif
+#endif
 
   if (m_transform3) {
     if (m_normalizer) {
@@ -147,8 +157,7 @@ bool cv_process::preprocess(cv::Mat& image)
  * Postprocess an image.
  * @return true if successful
  */
-bool cv_process::postprocess(cv::Mat& image)
-{
+bool cv_process::postprocess(cv::Mat& image) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
   bool ok = true;
@@ -170,20 +179,21 @@ bool cv_process::postprocess(cv::Mat& image)
     }
   }
 
- #if 0
+#if 0
   const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
   for (size_t i=0u; i < ntrans.size(); ++i) {
     std::cout << "postprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
   }
- #endif
+#endif
 
   if (m_transform2 && m_transform2->is_enabled()) {
     ok = m_transform2->apply(image);
     _LBANN_MILD_EXCEPTION(!ok, "inverse transform2 has failed!", false);
   }
 
-  if (to_flip())
+  if (to_flip()) {
     cv::flip(image, image, how_to_flip());
+  }
 
   if (m_transform1 && m_transform1->is_enabled()) {
     ok = m_transform1->apply(image);

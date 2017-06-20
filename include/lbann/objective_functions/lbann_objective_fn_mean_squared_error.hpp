@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -28,32 +28,29 @@
 #define LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
-#include "lbann/lbann_Elemental_extensions.h"
 
-namespace lbann
-{
-  namespace objective_functions
-  {
-    class mean_squared_error : public objective_fn {
-    public:
-      mean_squared_error(lbann_comm* comm);
-      ~mean_squared_error();
+namespace lbann {
+namespace objective_functions {
+class mean_squared_error : public objective_fn {
+ public:
+  mean_squared_error(lbann_comm *comm);
+  ~mean_squared_error();
 
-      void setup(int num_neurons, int mini_batch_size);
-      void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
-      double compute_mean_squared_error(ElMat &predictions_v, ElMat &groundtruth_v);
-      double compute_obj_fn(ElMat &predictions_v, ElMat &groundtruth_v);
-      void compute_obj_fn_derivative(layer_type prev_layer_type,
-                                     ElMat &predictions_v,
-                                     ElMat &groundtruth_v,
-                                     ElMat &error_signal_v);
+  void setup(int num_neurons, int mini_batch_size);
+  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  double compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v);
+  double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v);
+  void compute_obj_fn_derivative(layer_type prev_layer_type,
+                                 ElMat& predictions_v,
+                                 ElMat& groundtruth_v,
+                                 ElMat& error_signal_v);
 
-    protected:
-      /** Workspace to compute the squared error differences */
-      DistMat m_errors;
-      DistMat m_errors_v;
-    };
-  }
+ protected:
+  /** Workspace to compute the squared error differences */
+  DistMat m_errors;
+  DistMat m_errors_v;
+};
+}
 }
 
 #endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED

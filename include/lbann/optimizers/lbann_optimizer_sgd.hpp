@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,75 +31,72 @@
 
 #include "lbann/optimizers/lbann_optimizer.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
-  /// Stochastic gradient descent optimizer
-  /** Supports momentum, learning rate decay, and Nesterov acceleration.
+/// Stochastic gradient descent optimizer
+/** Supports momentum, learning rate decay, and Nesterov acceleration.
+ */
+class sgd : public optimizer {
+
+ public:
+  /// Constructor
+  sgd
+  (lbann_comm *comm,
+   DataType learning_rate,
+   DataType momentum = DataType(0),
+   DataType decay_rate = DataType(0),
+   bool nesterov = false);
+  /// Destructor
+  ~sgd();
+  /// Set parameters to optimize and initialize optimizer
+  void setup(AbsDistMat *parameters);
+  /// Update parameters using objective function gradient
+  void update(const AbsDistMat *gradient);
+
+ private:
+  /// Number of iterations
+  Int m_iterations;
+  /// Momentum
+  DataType m_momentum;
+  /// Learning rate decay
+  /** Uses Keras' decay rate formula:
+   *  \f[
+   *    {lr}_{n+1} = {lr}_{n} \frac{1}{1 + decay * n}
+   *  \f]
    */
-  class sgd : public optimizer
-  {
+  DataType m_decay;
+  /// Nesterov acceleration
+  bool m_nesterov;
 
-  public:
-    /// Constructor
-    sgd
-    (lbann_comm* comm,
-     DataType learning_rate,
-     DataType momentum = DataType(0),
-     DataType decay_rate = DataType(0),
-     bool nesterov = false);
-    /// Destructor
-    ~sgd();
-    /// Set parameters to optimize and initialize optimizer
-    void setup(AbsDistMat* parameters);
-    /// Update parameters using objective function gradient
-    void update(const AbsDistMat* gradient);
+  /// Velocity term for momentum SGD
+  AbsDistMat *m_velocity;
 
-  private:
-    /// Number of iterations
-    Int m_iterations;
-    /// Momentum
-    DataType m_momentum;
-    /// Learning rate decay
-    /** Uses Keras' decay rate formula:
-     *  \f[
-     *    {lr}_{n+1} = {lr}_{n} \frac{1}{1 + decay * n}
-     *  \f]
-     */
-    DataType m_decay;
-    /// Nesterov acceleration
-    bool m_nesterov;
+};
 
-    /// Velocity term for momentum SGD
-    AbsDistMat* m_velocity;
-
-  };
-
-  /// Factory for stochastic gradient descent optimizer
-  class sgd_factory : public optimizer_factory
-  {
-  public:
-    /// Constructor
-    sgd_factory
-    (lbann_comm* comm,
-     DataType learning_rate,
-     DataType momentum = DataType(0),
-     DataType decay = DataType(0),
-     bool nesterov = false);
-    /// Destructor
-    virtual ~sgd_factory();
-    /// Create SGD optimizer
-    optimizer* create_optimizer();
-  private:
-    /// Learning rate
-    DataType m_learning_rate;
-    /// Momentum
-    DataType m_momentum;
-    /// Learning rate decay
-    DataType m_decay;
-    /// Nesterov acceleration
-    bool m_nesterov;
-  };
+/// Factory for stochastic gradient descent optimizer
+class sgd_factory : public optimizer_factory {
+ public:
+  /// Constructor
+  sgd_factory
+  (lbann_comm *comm,
+   DataType learning_rate,
+   DataType momentum = DataType(0),
+   DataType decay = DataType(0),
+   bool nesterov = false);
+  /// Destructor
+  virtual ~sgd_factory();
+  /// Create SGD optimizer
+  optimizer *create_optimizer();
+ private:
+  /// Learning rate
+  DataType m_learning_rate;
+  /// Momentum
+  DataType m_momentum;
+  /// Learning rate decay
+  DataType m_decay;
+  /// Nesterov acceleration
+  bool m_nesterov;
+};
 
 } // namespace lbann
 

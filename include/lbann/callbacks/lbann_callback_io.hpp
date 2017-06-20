@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_io .hpp .cpp - Callback hooks for learning rate schedules
+// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
@@ -35,27 +35,20 @@
 
 namespace lbann {
 
-// Different schedules should inherit from lbann_callback_io.
-
 /**
- * Base class for learning rate schedules.
- * Child classes should implement the schedule method to make changes.
+ * Print information on the amount of IO that layers do.
  */
 class lbann_callback_io : public lbann_callback {
-public:
+ public:
   lbann_callback_io();
   /** Only apply to specific layers. */
-  lbann_callback_io(std::unordered_set<uint> _layers);
-  // /** Do some initialization. */
-  // void on_train_begin(model* m);
-  // /** Apply the learning rate schedule. */
-  // void on_epoch_begin(model* m);
+  lbann_callback_io(std::unordered_set<uint> layers);
   /** Report how much I/O has occured per data reader */
-  void on_epoch_end(model* m);
-  void on_test_end(model* m);
-private:
+  void on_epoch_end(model *m);
+  void on_test_end(model *m);
+ private:
   /** Indicies of layers to monitor. */
-  std::unordered_set<uint> layer_indices;
+  std::unordered_set<uint> m_layer_indices;
 };
 
 }  // namespace lbann

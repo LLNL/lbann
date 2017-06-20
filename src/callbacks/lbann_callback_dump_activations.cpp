@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,11 +31,11 @@
 
 namespace lbann {
 
-void lbann_callback_dump_activations::on_forward_prop_end(model* m, Layer* l) {
-  const std::string prefix = basename + "model" +
-    std::to_string(m->get_comm()->get_model_rank()) +
-    "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-    std::to_string(m->get_cur_step()) + "-layer";
+void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
+  const std::string prefix = m_basename + "model" +
+                             std::to_string(m->get_comm()->get_model_rank()) +
+                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
+                             std::to_string(m->get_cur_step()) + "-layer";
   // Skip the output layer.
   if (l->get_index() == m->get_layers().size() - 1) {
     return;

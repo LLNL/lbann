@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,17 +31,17 @@
 
 namespace lbann {
 
-void lbann_callback_print::setup(model* m) {
+void lbann_callback_print::setup(model *m) {
 #ifdef LBANN_VERSION
-  lbann_comm* comm = m->get_comm();
+  lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     std::cout << "Training with LLNL LBANN version " << LBANN_VERSION << endl;
   }
 #endif
 }
 
-void lbann_callback_print::on_epoch_begin(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_print::on_epoch_begin(model *m) {
+  lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     std::cout << "-----------------------------------------------------------" << std::endl;
     std::cout << "[" << m->get_cur_epoch() << "] Epoch" << std::endl;
@@ -49,11 +49,11 @@ void lbann_callback_print::on_epoch_begin(model* m) {
   }
 }
 
-void lbann_callback_print::on_epoch_end(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_print::on_epoch_end(model *m) {
+  lbann_comm *comm = m->get_comm();
   if (comm->am_model_master()) {
     /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->metrics) {
+    for (auto&& metric : m->m_metrics) {
       double train_score = metric->report_metric(execution_mode::training);
       double validate_score = metric->report_metric(execution_mode::validation);
       if (comm->am_world_master()) {
@@ -65,8 +65,8 @@ void lbann_callback_print::on_epoch_end(model* m) {
         for (size_t i = 0; i < train_scores.size(); ++i) {
           std::cout << "Model " << i;
           std::cout << " @" << m->get_cur_step() << " steps";
-          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << _disp_unit(metric->type);
-          std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation " << _to_string(metric->type) << ": " << validate_scores[i] << _disp_unit(metric->type);
+          std::cout << " Training " << _to_string(metric->type) << ": " << train_scores[i] << metrics::_disp_unit(metric->type);
+          std::cout << " @" << m->get_cur_validation_step() << " validation steps Validation " << _to_string(metric->type) << ": " << validate_scores[i] << metrics::_disp_unit(metric->type);
           std::cout << std::endl;
         }
       } else {
@@ -74,24 +74,24 @@ void lbann_callback_print::on_epoch_end(model* m) {
         comm->intermodel_gather(validate_score, comm->get_intermodel_master());
       }
     }
-    for (Layer* layer : m->get_layers()) {
+    for (Layer *layer : m->get_layers()) {
       layer->epoch_print();
     }
   }
 }
 
-void lbann_callback_print::on_test_end(model* m) {
-  lbann_comm* comm = m->get_comm();
+void lbann_callback_print::on_test_end(model *m) {
+  lbann_comm *comm = m->get_comm();
   if (comm->am_model_master()) {
     /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->metrics) {
+    for (auto&& metric : m->m_metrics) {
       double test_score = metric->report_metric(execution_mode::testing);
       if (comm->am_world_master()) {
         std::vector<double> test_scores(comm->get_num_models());
         comm->intermodel_gather(test_score, test_scores);
         for (size_t i = 0; i < test_scores.size(); ++i) {
           std::cout << "Model " << i << " @" << m->get_cur_testing_step() << " testing steps external validation " << _to_string(metric->type) << ": ";
-          std::cout << test_scores[i] << _disp_unit(metric->type) << std::endl;
+          std::cout << test_scores[i] << metrics::_disp_unit(metric->type) << std::endl;
         }
       } else {
         comm->intermodel_gather(test_score, comm->get_intermodel_master());

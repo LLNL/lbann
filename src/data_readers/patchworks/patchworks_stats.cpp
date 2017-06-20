@@ -36,10 +36,11 @@
 namespace lbann {
 namespace patchworks {
 
-bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats)
-{
-  if (_img.channels() != 1) return false;
-  
+bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats) {
+  if (_img.channels() != 1) {
+    return false;
+  }
+
   cv::Mat img; // pw_fp_t matrix
   _img.convertTo(img, _PW_CV_FP_);
 
@@ -52,7 +53,9 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats)
 
   std::vector<pw_fp_t> data(itBegin, itEnd);
   stats.cnt = data.size();
-  if (stats.cnt == 0u) return false;
+  if (stats.cnt == 0u) {
+    return false;
+  }
 
   std::sort(data.begin(), data.end());
   if (data[0] < typeZero) {
@@ -81,11 +84,16 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats)
   stats.median   = *itMed;
 
   std::vector<pw_fp_t>::const_iterator it = itbegNZ;
-  for( ; it != itend; ++it) sum += *it;
+  for( ; it != itend; ++it) {
+    sum += *it;
+  }
 
   stats.avg = sum/stats.cnt;
-  if (nnz == 0u) stats.avgNZ = stats.avg;
-  else stats.avgNZ = sum/nnz;
+  if (nnz == 0u) {
+    stats.avgNZ = stats.avg;
+  } else {
+    stats.avgNZ = sum/nnz;
+  }
 
   double var = 0.0;
   double varNZ = 0.0;
@@ -109,8 +117,7 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats)
   return true;
 }
 
-bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats)
-{
+bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats) {
   if (img.data == NULL) {
     std::cout << "get_channel_stats(): img not set" << std::endl;
     return false;
@@ -129,7 +136,9 @@ bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats)
     ok = get_single_channel_stats(imgCh[ch], stats[ch]);
   }
 
-  if (!ok) std::cout << "Failed to get stats" << std::endl;
+  if (!ok) {
+    std::cout << "Failed to get stats" << std::endl;
+  }
   return ok;
 }
 

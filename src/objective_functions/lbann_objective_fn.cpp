@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -29,7 +29,7 @@
 
 using namespace std;
 
-lbann::objective_functions::statistics* lbann::objective_functions::objective_fn::get_statistics(execution_mode mode) {
+lbann::objective_functions::statistics *lbann::objective_functions::objective_fn::get_statistics(execution_mode mode) {
   statistics *stats;
 
   switch(mode) {
@@ -51,28 +51,22 @@ lbann::objective_functions::statistics* lbann::objective_functions::objective_fn
 
 void lbann::objective_functions::objective_fn::record_obj_fn(execution_mode mode, double avg_cost) {
   statistics *stats = get_statistics(mode);
-  //  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
   stats->m_last_mini_batch_avg_cost = avg_cost;
   stats->m_aggregate_avg_cost_per_epoch += avg_cost;
   stats->m_num_mini_batch_per_epoch += 1;
-  //  stats->m_samples_per_epoch += num_samples;
   return;
 }
 
 double lbann::objective_functions::objective_fn::report_obj_fn(execution_mode mode) {
   statistics *stats = get_statistics(mode);
-  //  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
   return stats->m_last_mini_batch_avg_cost;
 }
 
 double lbann::objective_functions::objective_fn::report_aggregate_avg_obj_fn(execution_mode mode) {
   statistics *stats = get_statistics(mode);
-  //  statistics *stats = get_statistics(neural_network_model->get_execution_mode());
-
-  //  std::cout << _to_string(type) << " is reporting aggregate obj fn results for mode " << _to_string(mode) << " with " << stats->m_num_mini_batch_per_epoch << " and cost " << stats->m_aggregate_avg_cost_per_epoch << std::endl;
   if(stats->m_num_mini_batch_per_epoch == 0) {
     return std::numeric_limits<double>::max();
-  }else {
+  } else {
     return (stats->m_aggregate_avg_cost_per_epoch / stats->m_num_mini_batch_per_epoch);
   }
 }

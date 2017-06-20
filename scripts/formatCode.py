@@ -17,7 +17,7 @@ arguments:
                    exec=/usr/gapps/brain/bin/astyle_catalyst
 ''' % argv[0]
 
-opts = ' -s2 --style=google '
+opts = ' -s2 --style=google --add-braces --convert-tabs --align-pointer=name  --align-reference=type'
 
 def error(msg) :
   print usage

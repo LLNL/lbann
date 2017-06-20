@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cnpy .hpp .cpp - DataReader class for numpy dataset
+// lbann_data_reader_cnpy .hpp .cpp - generic_data_reader class for numpy dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_CNPY_HPP
@@ -32,24 +32,24 @@
 #include "lbann_data_reader.hpp"
 #include <cnpy.h>
 
-namespace lbann
-{
-class DataReader_cnpy : public DataReader
-{
-public:
-  DataReader_cnpy(int batchSize, bool shuffle = true);
-  DataReader_cnpy(const DataReader_cnpy& source);
-  ~DataReader_cnpy();
+namespace lbann {
+class cnpy_reader : public generic_data_reader {
+ public:
+  cnpy_reader(int batchSize, bool shuffle = true);
+  cnpy_reader(const cnpy_reader& source);
+  ~cnpy_reader(void);
 
-  DataReader_cnpy& operator=(const DataReader_cnpy& source);
+  cnpy_reader& operator=(const cnpy_reader& source);
 
 
   int fetch_data(Mat& X);
-  void load();
+  void load(void);
 
-  int get_linearized_data_size() { return m_num_features; }
+  int get_linearized_data_size(void) const {
+    return m_num_features;
+  }
 
-private:
+ private:
   int m_num_features;
   int m_num_samples;
   cnpy::NpyArray m_data;

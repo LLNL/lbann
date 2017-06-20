@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -32,25 +32,24 @@
 #include <cmath> //fabs
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
 cv_normalizer::cv_normalizer(void)
-: cv_transform(), m_mean_subtraction(false), m_unit_variance(false),
-  m_unit_scale(true), m_z_score(false)
+  : cv_transform(), m_mean_subtraction(false), m_unit_variance(false),
+    m_unit_scale(true), m_z_score(false)
 {}
 
 
 cv_normalizer::cv_normalizer(const cv_normalizer& rhs)
-: cv_transform(rhs), m_mean_subtraction(rhs.m_mean_subtraction), m_unit_variance(rhs.m_unit_variance),
-  m_unit_scale(rhs.m_unit_scale), m_z_score(rhs.m_z_score), m_trans(rhs.m_trans)
-{
+  : cv_transform(rhs), m_mean_subtraction(rhs.m_mean_subtraction), m_unit_variance(rhs.m_unit_variance),
+    m_unit_scale(rhs.m_unit_scale), m_z_score(rhs.m_z_score), m_trans(rhs.m_trans) {
 }
 
 
-cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs)
-{
-  if (this == &rhs) return (*this);
+cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs) {
+  if (this == &rhs) {
+    return (*this);
+  }
   cv_transform::operator=(rhs);
   m_mean_subtraction = rhs.m_mean_subtraction;
   m_unit_variance = rhs.m_unit_variance;
@@ -62,26 +61,23 @@ cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs)
 }
 
 
-cv_normalizer* cv_normalizer::clone(void) const {
+cv_normalizer *cv_normalizer::clone(void) const {
   return new cv_normalizer(*this);
 }
 
 
 cv_normalizer::normalization_type& cv_normalizer::set_normalization_type(
-  normalization_type& ntype, const normalization_type flag) const
-{
+  normalization_type& ntype, const normalization_type flag) const {
   return (ntype = set_normalization_bits(ntype, flag));
 }
 
 
-bool cv_normalizer::check_to_enable(void) const
-{
+bool cv_normalizer::check_to_enable(void) const {
   return (m_mean_subtraction || m_unit_variance || m_unit_scale || m_z_score);
 }
 
 
-void cv_normalizer::set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore)
-{
+void cv_normalizer::set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore) {
   m_enabled = false; // will turns on when the transform is determined
   m_mean_subtraction = meansub;
   m_unit_variance = unitvar;
@@ -91,8 +87,7 @@ void cv_normalizer::set(const bool meansub, const bool unitvar, const bool units
 }
 
 
-void cv_normalizer::reset(void)
-{
+void cv_normalizer::reset(void) {
   m_enabled = false;
   m_mean_subtraction = false;
   m_unit_variance = false;
@@ -102,20 +97,29 @@ void cv_normalizer::reset(void)
 }
 
 
-bool cv_normalizer::determine_transform(const cv::Mat& image)
-{
+bool cv_normalizer::determine_transform(const cv::Mat& image) {
   m_trans.clear();
   m_enabled = false; // unless this method is successful, stays disabled
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  if (!check_to_enable()) return false;
+  if (!check_to_enable()) {
+    return false;
+  }
 
   normalization_type ntype = _none;
-  if (m_unit_scale)       set_normalization_type(ntype, _u_scale);
-  if (m_mean_subtraction) set_normalization_type(ntype, _mean_sub);
-  if (m_unit_variance)    set_normalization_type(ntype, _unit_var);
-  if (m_z_score)          set_normalization_type(ntype, _z_score);
+  if (m_unit_scale) {
+    set_normalization_type(ntype, _u_scale);
+  }
+  if (m_mean_subtraction) {
+    set_normalization_type(ntype, _mean_sub);
+  }
+  if (m_unit_variance) {
+    set_normalization_type(ntype, _unit_var);
+  }
+  if (m_z_score) {
+    set_normalization_type(ntype, _z_score);
+  }
 
   double unit_scale = 1.0;
   double largest = 1.0;
@@ -123,12 +127,23 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
   //if (!m_z_score && m_unit_scale) {
   if (ntype < _z_score) { // !(m_z_score || (m_mean_subtraction && m_unit_variance))
     switch(image.depth()) {
-      case CV_8U:  largest = std::numeric_limits<uint8_t>::max();  break;
-      case CV_8S:  largest = std::numeric_limits<int8_t>::max();   break;
-      case CV_16U: largest = std::numeric_limits<uint16_t>::max(); break;
-      case CV_16S: largest = std::numeric_limits<int16_t>::max();  break;
-      case CV_32S: largest = std::numeric_limits<int32_t>::max();  break;
-      default: return false;
+    case CV_8U:
+      largest = std::numeric_limits<uint8_t>::max();
+      break;
+    case CV_8S:
+      largest = std::numeric_limits<int8_t>::max();
+      break;
+    case CV_16U:
+      largest = std::numeric_limits<uint16_t>::max();
+      break;
+    case CV_16S:
+      largest = std::numeric_limits<int16_t>::max();
+      break;
+    case CV_32S:
+      largest = std::numeric_limits<int32_t>::max();
+      break;
+    default:
+      return false;
       // Currently, do nothing for non-integral types. However, a set of scaling
       // paramters can be added to the argument list of this function.
     }
@@ -141,46 +156,48 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
   const size_t NCh = static_cast<size_t>(image.channels());
 
   if (code_wo_uscale != _none) {
-    if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size()))
+    if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size())) {
       return false;
+    }
   }
 
   m_trans.resize(NCh);
 
   switch (code_wo_uscale) {
-    case _none: // Note that mean.size() is zero in this case
-        for (size_t ch=0u; ch < NCh; ++ch) {
-          m_trans[ch] = channel_trans_t(unit_scale, 0.0);
-        }
-        break;
-    case _mean_sub:
-        for (size_t ch=0u; ch < NCh; ++ch) {
-          m_trans[ch] = channel_trans_t(unit_scale,
-                                      - unit_scale * mean[ch]);
-        }
-        break;
-    case _unit_var:
-        for (size_t ch=0u; ch < NCh; ++ch) {
-          if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
-            m_trans[ch] = 
-                channel_trans_t(1.0/stddev[ch],
-                                unit_scale * mean[ch] - mean[ch]/stddev[ch]);
-          } else {
-            m_trans[ch] = channel_trans_t(unit_scale, 0.0);
-          }
-        }
-        break;
-    case _z_score:
-        for (size_t ch=0u; ch < NCh; ++ch) {
-          if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
-            m_trans[ch] = channel_trans_t(1.0/stddev[ch],
-                                          - mean[ch]/stddev[ch]);
-          } else {
-            m_trans[ch] = channel_trans_t(0.0, 0.0);
-          }
-        }
-        break;
-    default: return false;
+  case _none: // Note that mean.size() is zero in this case
+    for (size_t ch=0u; ch < NCh; ++ch) {
+      m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+    }
+    break;
+  case _mean_sub:
+    for (size_t ch=0u; ch < NCh; ++ch) {
+      m_trans[ch] = channel_trans_t(unit_scale,
+                                    - unit_scale * mean[ch]);
+    }
+    break;
+  case _unit_var:
+    for (size_t ch=0u; ch < NCh; ++ch) {
+      if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
+        m_trans[ch] =
+          channel_trans_t(1.0/stddev[ch],
+                          unit_scale * mean[ch] - mean[ch]/stddev[ch]);
+      } else {
+        m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+      }
+    }
+    break;
+  case _z_score:
+    for (size_t ch=0u; ch < NCh; ++ch) {
+      if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
+        m_trans[ch] = channel_trans_t(1.0/stddev[ch],
+                                      - mean[ch]/stddev[ch]);
+      } else {
+        m_trans[ch] = channel_trans_t(0.0, 0.0);
+      }
+    }
+    break;
+  default:
+    return false;
   }
 
   m_enabled = true;
@@ -189,7 +206,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
 
 
 /**
- * Manually invoke normalization before copying image from cv::Mat into 
+ * Manually invoke normalization before copying image from cv::Mat into
  * El::Matrix<DataType> format. Then, the transform must be disabled to
  * prevent it from being automatically applied again during copying.
  * After the copying is complete, either of the following two is required
@@ -200,8 +217,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image)
  * On the other hand, resetting the structure is ok if no inverse transform
  * is needed. Alternatively, the inverse transform can be set.
  */
-bool cv_normalizer::apply(cv::Mat& image)
-{
+bool cv_normalizer::apply(cv::Mat& image) {
   m_enabled = false; // turn off as it is applied
   return scale(image, m_trans);
 }
@@ -210,7 +226,7 @@ bool cv_normalizer::apply(cv::Mat& image)
 /**
  * The actual transform can either be manually invoked, or automatically during
  * copying from a cv::Mat image to El::Matrix<DataType> data to avoid reading
- * the image twice. 
+ * the image twice.
  * @param _trans The channel-wise parameters for linear transform
  */
 void cv_normalizer::set_transform(const std::vector<channel_trans_t>& _trans) {
@@ -224,16 +240,19 @@ void cv_normalizer::set_transform(const std::vector<channel_trans_t>& _trans) {
  * during copying from El::Matrix<DataType> data to a cv::Mat image while
  * avoiding reading the image twice.
  */
-bool cv_normalizer::determine_inverse_transform(void)
-{
+bool cv_normalizer::determine_inverse_transform(void) {
   m_enabled = false; // unless this method is successful, stays disabled
   const size_t NCh = m_trans.size();
-  if (NCh == 0u) return false;
+  if (NCh == 0u) {
+    return false;
+  }
 
   std::vector<channel_trans_t> trans_reverse(NCh, channel_trans_t(1.0, 0.0));
 
   for (size_t ch=0u; ch < NCh; ++ch) {
-    if (m_trans[ch].first == 0.0) return false;
+    if (m_trans[ch].first == 0.0) {
+      return false;
+    }
     trans_reverse[ch] =
       channel_trans_t(1.0/m_trans[ch].first,
                       - m_trans[ch].second/m_trans[ch].first);
@@ -246,47 +265,54 @@ bool cv_normalizer::determine_inverse_transform(void)
 
 
 
-bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& trans)
-{
+bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& trans) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
   switch(image.depth()) {
-    case CV_8U:  return scale_with_known_type<_depth_type(CV_8U),  ::DataType>(image, trans);
-    case CV_8S:  return scale_with_known_type<_depth_type(CV_8S),  ::DataType>(image, trans);
-    case CV_16U: return scale_with_known_type<_depth_type(CV_16U), ::DataType>(image, trans);
-    case CV_16S: return scale_with_known_type<_depth_type(CV_16S), ::DataType>(image, trans);
-    case CV_32S: return scale_with_known_type<_depth_type(CV_32S), ::DataType>(image, trans);
-    case CV_32F: return scale_with_known_type<_depth_type(CV_32F), ::DataType>(image, trans);
-    case CV_64F: return scale_with_known_type<_depth_type(CV_64F), ::DataType>(image, trans);
+  case CV_8U:
+    return scale_with_known_type<_depth_type(CV_8U),  ::DataType>(image, trans);
+  case CV_8S:
+    return scale_with_known_type<_depth_type(CV_8S),  ::DataType>(image, trans);
+  case CV_16U:
+    return scale_with_known_type<_depth_type(CV_16U), ::DataType>(image, trans);
+  case CV_16S:
+    return scale_with_known_type<_depth_type(CV_16S), ::DataType>(image, trans);
+  case CV_32S:
+    return scale_with_known_type<_depth_type(CV_32S), ::DataType>(image, trans);
+  case CV_32F:
+    return scale_with_known_type<_depth_type(CV_32F), ::DataType>(image, trans);
+  case CV_64F:
+    return scale_with_known_type<_depth_type(CV_64F), ::DataType>(image, trans);
   }
   return false;
 }
 
 
 bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
-  std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask)
-{
-  if (image.empty()) return false;
- #if 0
+                                        std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask) {
+  if (image.empty()) {
+    return false;
+  }
+#if 0
   cv::meanStdDev(image, mean, stddev, mask);
   mean.resize(image.channels());
   stddev.resize(image.channels());
- #else
+#else
   _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
-      compute_mean_stddev_with_known_type, image, mean, stddev, mask)
- #endif
+                          compute_mean_stddev_with_known_type, image, mean, stddev, mask)
+#endif
   return false;
 }
 
-std::ostream& cv_normalizer::print(std::ostream& os) const
-{
+std::ostream& cv_normalizer::print(std::ostream& os) const {
   os << "m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
      << "m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
      << "m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
      << "m_z_score" << (m_z_score? "true" : "false") << std::endl;
   os << "transform:";
-  for (const channel_trans_t& tr: m_trans)
+  for (const channel_trans_t& tr: m_trans) {
     os << ' ' << tr.first << ' ' << tr.second;
+  }
   os << std::endl;
 
   return os;

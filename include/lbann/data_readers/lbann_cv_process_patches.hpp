@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -34,8 +34,7 @@
 #include "patchworks/patchworks_patch_descriptor.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
 /// Similar to cv_process but works on patches that are extracted from an image
 class cv_process_patches : public cv_process {
@@ -48,11 +47,17 @@ class cv_process_patches : public cv_process {
   cv_process_patches& operator=(const cv_process_patches& rhs);
 
   cv_process_patches(const cv_transform::cv_flipping flip_code, const bool tosplit)
-  : cv_process(flip_code, tosplit) {}
+    : cv_process(flip_code, tosplit) {}
 
-  void set_patch_descriptor(const patchworks::patch_descriptor& pd) { m_pd = pd; }
-  patchworks::patch_descriptor& patch_descriptor(void) { return m_pd; }
-  const patchworks::patch_descriptor& patch_descriptor(void) const { return m_pd; }
+  void set_patch_descriptor(const patchworks::patch_descriptor& pd) {
+    m_pd = pd;
+  }
+  patchworks::patch_descriptor& patch_descriptor(void) {
+    return m_pd;
+  }
+  const patchworks::patch_descriptor& patch_descriptor(void) const {
+    return m_pd;
+  }
 
   bool preprocess(const cv::Mat& image, std::vector<cv::Mat>& patches);
 };

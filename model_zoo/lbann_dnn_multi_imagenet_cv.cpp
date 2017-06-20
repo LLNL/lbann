@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -62,8 +62,7 @@ const string g_ImageNet_TestLabelFile = "val_c0-9.txt"; //"test.txt";
 const uint g_ImageNet_Width = 256;
 const uint g_ImageNet_Height = 256;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
   Initialize(argc, argv);
   init_random(1);  // Deterministic initialization across every model.
@@ -120,7 +119,7 @@ int main(int argc, char* argv[])
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
         cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-          " (Limited to # Processes)" << endl;
+             " (Limited to # Processes)" << endl;
       }
       parallel_io = comm->get_procs_per_model();
     } else {
@@ -129,7 +128,7 @@ int main(int argc, char* argv[])
       }
     }
     parallel_io = 1;
-    
+
     // set up the normalizer
     std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
     normalizer->unit_scale(scale);
@@ -149,7 +148,7 @@ int main(int argc, char* argv[])
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
 
-    DataReader_ImageNet_cv imagenet_trainset(trainParams.MBSize, pp, true);
+    imagenet_reader_cv imagenet_trainset(trainParams.MBSize, pp, true);
     imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
     imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
     imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
@@ -159,23 +158,23 @@ int main(int argc, char* argv[])
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     // Clone the training set object
-    DataReader_ImageNet_cv imagenet_validation_set(imagenet_trainset);
+    imagenet_reader_cv imagenet_validation_set(imagenet_trainset);
     // Swap the used and unused index sets so that it validates on the remaining data
     imagenet_validation_set.use_unused_index_set();
 
-        if (comm->am_world_master()) {
-          size_t num_train = imagenet_trainset.getNumData();
-          size_t num_validate = imagenet_trainset.getNumData();
-          double validate_percent = num_validate / (num_train+num_validate)*100.0;
-          double train_percent = num_train / (num_train+num_validate)*100.0;
-          cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
-               << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
-        }
+    if (comm->am_world_master()) {
+      size_t num_train = imagenet_trainset.getNumData();
+      size_t num_validate = imagenet_trainset.getNumData();
+      double validate_percent = num_validate / (num_train+num_validate)*100.0;
+      double train_percent = num_train / (num_train+num_validate)*100.0;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+    }
 
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    DataReader_ImageNet_cv imagenet_testset(trainParams.MBSize, pp, true);
+    imagenet_reader_cv imagenet_testset(trainParams.MBSize, pp, true);
     imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
     imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
     imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
@@ -183,8 +182,8 @@ int main(int argc, char* argv[])
 
     if (comm->am_world_master()) {
       cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
-        "% of the testing data set, which is " << imagenet_testset.getNumData() <<
-        " samples." << endl;
+           "% of the testing data set, which is " << imagenet_testset.getNumData() <<
+           " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -194,7 +193,7 @@ int main(int argc, char* argv[])
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-    }else if (trainParams.LearnRateMethod == 2) { // RMSprop
+    } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
@@ -202,12 +201,12 @@ int main(int argc, char* argv[])
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    layer_factory* lfac = new layer_factory();
+    layer_factory *lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm,
                             new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    std::map<execution_mode, DataReader*> data_readers = {
-      std::make_pair(execution_mode::training,&imagenet_trainset), 
-      std::make_pair(execution_mode::validation, &imagenet_validation_set), 
+    std::map<execution_mode, generic_data_reader *> data_readers = {
+      std::make_pair(execution_mode::training,&imagenet_trainset),
+      std::make_pair(execution_mode::validation, &imagenet_validation_set),
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, &imagenet_trainset, &imagenet_testset);
@@ -222,10 +221,10 @@ int main(int argc, char* argv[])
         idx = dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       trainParams.ActivationType,
                       weight_initialization::glorot_uniform,
-                      {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+        {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
       } else {
         // Add a softmax layer to the end
-        idx = dnn.add("Softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
+        idx = dnn.add("softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       activation_type::ID,
                       weight_initialization::glorot_uniform,
                       {});
@@ -276,7 +275,7 @@ int main(int argc, char* argv[])
 
     // Initialize model.
     dnn.setup();
-    
+
     comm->global_barrier();
 
     ///////////////////////////////////////////////////////////////////
@@ -286,9 +285,11 @@ int main(int argc, char* argv[])
       dnn.train(1, true);
       dnn.evaluate();
     }
+  } catch (lbann_exception& e) {
+    lbann_report_exception(e, comm);
+  } catch (exception& e) {
+    ReportException(e);  /// Elemental exceptions
   }
-  catch (lbann_exception& e) { lbann_report_exception(e, comm); }
-  catch (exception& e) { ReportException(e); } /// Elemental exceptions
 
   // free all resources by El and MPI
   Finalize();

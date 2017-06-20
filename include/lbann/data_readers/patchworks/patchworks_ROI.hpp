@@ -56,9 +56,9 @@ class ROI {
   int m_right; ///< The right-most pixel position of the region
   int m_bottom; ///< The bottom-most pixel position of the region
 
-  ROI(void) ///< The default constructor 
-  : m_left(undefined_coordinate), m_top(undefined_coordinate), 
-    m_right(undefined_coordinate), m_bottom(undefined_coordinate) {}
+  ROI(void) ///< The default constructor
+    : m_left(undefined_coordinate), m_top(undefined_coordinate),
+      m_right(undefined_coordinate), m_bottom(undefined_coordinate) {}
 
   void init(void); ///< Reset the structure with undefined coordinate values
   bool is_undefined(void) const; ///< Tell if the structure has not been initialized
@@ -71,65 +71,79 @@ class ROI {
   bool set_by_corners(const int p0_x, const int p0_y,
                       const int p1_x, const int p1_y);
   /// Set a region by the center and its size
-  bool set_by_center(const int px, const int py, 
+  bool set_by_center(const int px, const int py,
                      const unsigned int _width, const unsigned int _height);
 
   /// move the region horizontally by dx and vertically by dy
   void move(const std::pair<int, int> displacement);
 
   /// Returns the left position of the region
-  int left(void) const { return m_left; }
+  int left(void) const {
+    return m_left;
+  }
   /// Returns the top poisition of the region
-  int top(void) const { return m_top; }
+  int top(void) const {
+    return m_top;
+  }
   /// Returns the right position of the region
-  int right(void) const { return m_right; }
+  int right(void) const {
+    return m_right;
+  }
   /// Returns the bottom position of the region
-  int bottom(void) const { return m_bottom; }
+  int bottom(void) const {
+    return m_bottom;
+  }
 
   /// Returns a cv::Rect equivalent
-  cv::Rect rect(void) const { return cv::Rect(m_left, m_top, m_right-m_left, m_bottom-m_top); }
+  cv::Rect rect(void) const {
+    return cv::Rect(m_left, m_top, m_right-m_left, m_bottom-m_top);
+  }
   /// Returns the width of the rectangular region
-  int width(void) const { return (m_right - m_left); }
+  int width(void) const {
+    return (m_right - m_left);
+  }
   /// Returns the height of the rectangular region
-  int height(void) const { return (m_bottom - m_top); }
+  int height(void) const {
+    return (m_bottom - m_top);
+  }
   /// Returns the area of the rectangular region
-  int area(void) const { return width()*height(); }
+  int area(void) const {
+    return width()*height();
+  }
   /// Returns the size of the area (width, hegiht)
 
   std::ostream& Print(std::ostream& os) const { ///< Print out the content
-      return os << '(' << m_left << ", " << m_top << ") ("
-                <<  m_right << ", " << m_bottom << ')';
+    return os << '(' << m_left << ", " << m_top << ") ("
+           <<  m_right << ", " << m_bottom << ')';
   }
 
   /// Check if this ROI is exactly the same as the given rectangular area
-  bool operator==(const ROI& area) const;
+  bool operator==(const ROI& rarea) const;
   /// Check if this ROI is not exactly the same as the given rectangular area
-  bool operator!=(const ROI& area) const;
+  bool operator!=(const ROI& rarea) const;
   /// Check if the given rectangular region contains this ROI but is not the same
-  bool operator<(const ROI& area) const;
+  bool operator<(const ROI& rarea) const;
   /// Check if the given rectangular region contains this ROI
-  bool operator<=(const ROI& area) const;
+  bool operator<=(const ROI& rarea) const;
   /// Check if this ROI  contains the given rectangular region but is not the same
-  bool operator>(const ROI& area) const;
+  bool operator>(const ROI& rarea) const;
   /// Check if this ROI  contains the given rectangular region
-  bool operator>=(const ROI& area) const;
+  bool operator>=(const ROI& rarea) const;
 };
 
-inline bool ROI::operator<=(const ROI& area) const
-{
-  return (((area.m_left <= m_left) && (area.m_top <= m_top)) &&
-          ((m_right <= area.m_right) && (m_bottom <= area.m_bottom)) &&
-           is_valid());
+inline bool ROI::operator<=(const ROI& rarea) const {
+  return (((rarea.m_left <= m_left) && (rarea.m_top <= m_top)) &&
+          ((m_right <= rarea.m_right) && (m_bottom <= rarea.m_bottom)) &&
+          is_valid());
 }
 
-inline bool ROI::operator>=(const ROI& area) const
-{
-  return (((m_left <= area.m_left) && (m_top <= area.m_top)) &&
-          ((area.m_right <= m_right) && (area.m_bottom <= m_bottom)) &&
-           area.is_valid());
+inline bool ROI::operator>=(const ROI& rarea) const {
+  return (((m_left <= rarea.m_left) && (m_top <= rarea.m_top)) &&
+          ((rarea.m_right <= m_right) && (rarea.m_bottom <= m_bottom)) &&
+          rarea.is_valid());
 }
 
-std::ostream& operator<<(std::ostream& os, const ROI &roi);
+std::ostream& operator<<(std::ostream& os, const ROI& roi);
 
 } // end of namespace patchworks
 } // end of namespace lbann

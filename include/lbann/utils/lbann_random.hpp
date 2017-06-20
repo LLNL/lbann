@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -82,7 +82,7 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
   typename Generator::result_type x;
   max -= 1;
   const typename Generator::result_type upper = Generator::max() -
-    (Generator::max() & (typename Generator::result_type) max);
+      (Generator::max() & (typename Generator::result_type) max);
   do {
     x = g();
   } while (x >= upper);
@@ -97,7 +97,7 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
  * supported via the >> and << operators on the generator (reading/writing
  * from/to a stream).
  */
-void init_random(int seed = -1, lbann_comm* comm = nullptr);
+void init_random(int seed = -1, lbann_comm *comm = nullptr);
 
 /**
  * Initialize a random number generator (with optional seed) that is
@@ -165,15 +165,17 @@ void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, In
 template<typename DistType,typename DType=DataType>
 class rng {
 
-  private:
-    DistType m_dist; // Distribution type
+ private:
+  DistType m_dist; // Distribution type
 
-  public:
-  typename DistType::result_type gen() { return m_dist(get_generator()); }
-    rng(){ }
-    // bernoulli_distribution with prob p
+ public:
+  typename DistType::result_type gen() {
+    return m_dist(get_generator());
+  }
+  rng() { }
+  // bernoulli_distribution with prob p
   rng(DType p) : m_dist(p) {}
-    // (uniform) real distribution between min/mean and max/stdev
+  // (uniform) real distribution between min/mean and max/stdev
   rng(DType a,DType b) : m_dist(a,b) {}
 };
 
@@ -181,7 +183,7 @@ class rng {
  * a multiplier generated according to bernoulli_distribution
  */
 template <typename DType=DataType>
-void rng_bernoulli(const float p, DistMat* m) {
+void rng_bernoulli(const float p, DistMat *m) {
 
   /// the scale for undropped inputs at training time given as @f$ 1 / (1 - p) @f$
   float scale = 1. / (1. - p);

@@ -40,15 +40,14 @@ namespace lbann {
 namespace patchworks {
 
 #if _PATCHWORKS_STAT_FLOAT_ == 32
-  #define _f f
+#define _f f
 #elif _PATCHWORKS_STAT_FLOAT_ == 64
-  #define _f
+#define _f
 #else
-  #error need to set _PATCHWORKS_STAT_FLOAT_
+#error need to set _PATCHWORKS_STAT_FLOAT_
 #endif
 
-std::pair<double,double> check_min_max(const cv::Mat& _img)
-{
+std::pair<double,double> check_min_max(const cv::Mat& _img) {
   cv::Mat img = _img.clone();
 
   double maxVal = 0.0;
@@ -63,9 +62,10 @@ std::pair<double,double> check_min_max(const cv::Mat& _img)
   return std::make_pair(minVal, maxVal);
 }
 
-cv::Mat correct_chromatic_aberration(const cv::Mat& _img)
-{
-  if (_img.channels() != 3) return _img.clone();
+cv::Mat correct_chromatic_aberration(const cv::Mat& _img) {
+  if (_img.channels() != 3) {
+    return _img.clone();
+  }
 
   const int img_depth = _img.depth();
 
@@ -82,9 +82,10 @@ cv::Mat correct_chromatic_aberration(const cv::Mat& _img)
   //                                {a[1]*a[0]/aa, a[1]*a[1]/aa,  a[1]*a[2]/aa},
   //                                {a[2]*a[0]/aa, a[2]*a[1]/aa,  a[2]*a[2]/aa}};
   // B = (I - A)'
-  static const pw_fp_t B[3][3] = {{1.0 _f-a[0]*a[0]/aa, a[0]*a[1]/aa,  a[0]*a[2]/aa},
-                                  {a[1]*a[0]/aa, 1.0 _f-a[1]*a[1]/aa,  a[1]*a[2]/aa},
-                                  {a[2]*a[0]/aa, a[2]*a[1]/aa,  1.0 _f-a[2]*a[2]/aa}};
+  static const pw_fp_t B[3][3] = {{1.0 _f-a[0] *a[0]/aa, a[0] *a[1]/aa,  a[0] *a[2]/aa},
+    {a[1] *a[0]/aa, 1.0 _f-a[1] *a[1]/aa,  a[1] *a[2]/aa},
+    {a[2] *a[0]/aa, a[2] *a[1]/aa,  1.0 _f-a[2] *a[2]/aa}
+  };
 
   cv::MatIterator_<pw_cv_vec3> it = img.begin<pw_cv_vec3>();
   cv::MatIterator_<pw_cv_vec3> itend = img.end<pw_cv_vec3>();
@@ -114,9 +115,10 @@ cv::Mat correct_chromatic_aberration(const cv::Mat& _img)
   return img_final;
 }
 
-cv::Mat drop_2channels(const cv::Mat& _img)
-{
-  if (_img.channels() != 3) return _img.clone();
+cv::Mat drop_2channels(const cv::Mat& _img) {
+  if (_img.channels() != 3) {
+    return _img.clone();
+  }
 
   const int img_depth = _img.depth();
 
@@ -154,15 +156,15 @@ cv::Mat drop_2channels(const cv::Mat& _img)
     const pw_fp_t g0 = static_cast<pw_fp_t>((*it)[1]);
     const pw_fp_t r0 = static_cast<pw_fp_t>((*it)[2]);
 
-  #if 1
+#if 1
     pw_fp_t b = b0*m[0] + (1.0-m[0])*rg_ch0(gen);
     pw_fp_t g = g0*m[1] + (1.0-m[1])*rg_ch1(gen);
     pw_fp_t r = r0*m[2] + (1.0-m[2])*rg_ch2(gen);
-  #else
+#else
     pw_fp_t b = b0*m[0];
     pw_fp_t g = g0*m[1];
     pw_fp_t r = r0*m[2];
-  #endif
+#endif
 
     //std::cout << r0 << ' ' << g0 << ' ' << b0 << " " << r << ' ' << g << ' ' << b << std::endl;
     (*it) = pw_cv_vec3(b,g,r);

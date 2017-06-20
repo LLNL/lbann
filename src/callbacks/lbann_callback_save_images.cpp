@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-void lbann_callback_save_images::on_phase_end(model* m) {
+void lbann_callback_save_images::on_phase_end(model *m) {
   auto layers = m->get_layers();
   auto phase = m->get_current_phase();
   auto epoch = m->get_cur_epoch();
@@ -40,7 +40,7 @@ void lbann_callback_save_images::on_phase_end(model* m) {
   save_image(m,layers[phase]->m_activations, layers[phase+2]->m_activations,index);
 }
 
-void lbann_callback_save_images::save_image(model* m, ElMat* input, ElMat* output,uint index){
+void lbann_callback_save_images::save_image(model *m, ElMat *input, ElMat *output,uint index) {
   DistMat in_col,out_col;
   View(in_col,*input, ALL, IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
   View(out_col,*output, ALL, IR(0));

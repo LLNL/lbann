@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet_cv .hpp .cpp - DataReader class for ImageNet dataset
+// lbann_data_reader_imagenet_cv .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_imagenet_cv.hpp"
@@ -33,9 +33,8 @@
 using namespace std;
 using namespace El;
 
-lbann::DataReader_ImageNet_cv::DataReader_ImageNet_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
-  : DataReader(batchSize, shuffle), m_pp(pp)
-{
+lbann::imagenet_reader_cv::imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
+  : generic_data_reader(batchSize, shuffle), m_pp(pp) {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -48,40 +47,37 @@ lbann::DataReader_ImageNet_cv::DataReader_ImageNet_cv(int batchSize, std::shared
   }
 }
 
-lbann::DataReader_ImageNet_cv::DataReader_ImageNet_cv(const DataReader_ImageNet_cv& source)
-  : DataReader((const DataReader&) source),
+lbann::imagenet_reader_cv::imagenet_reader_cv(const imagenet_reader_cv& source)
+  : generic_data_reader((const generic_data_reader&) source),
     m_image_dir(source.m_image_dir),
-    ImageList(source.ImageList),
+    image_list(source.image_list),
     m_image_width(source.m_image_width),
     m_image_height(source.m_image_height),
     m_image_num_channels(source.m_image_num_channels),
     m_num_labels(source.m_num_labels),
-    m_pp(source.m_pp)
-{
+    m_pp(source.m_pp) {
 }
 
-lbann::DataReader_ImageNet_cv::~DataReader_ImageNet_cv()
-{
+lbann::imagenet_reader_cv::~imagenet_reader_cv(void) {
 }
 
-int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X)
-{
-  if(!DataReader::position_valid()) {
+int lbann::imagenet_reader_cv::fetch_data(Mat& X) {
+  if(!generic_data_reader::position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
     throw lbann_exception(err.str());
   }
 
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  const int current_batch_size = getBatchSize();
-  const int end_pos = Min(CurrentPos+current_batch_size, ShuffledIndices.size());
+  const int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
 
-#pragma omp parallel for
-  for (int n = CurrentPos; n < end_pos; ++n) {
+  #pragma omp parallel for
+  for (int n = m_current_pos; n < end_pos; ++n) {
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
-    string imagepath = m_image_dir + ImageList[index].first;
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
+    string imagepath = m_image_dir + image_list[index].first;
 
     int width=0, height=0, img_type=0;
     ::Mat X_v;
@@ -96,42 +92,41 @@ int lbann::DataReader_ImageNet_cv::fetch_data(Mat& X)
     }
   }
 
-  return end_pos - CurrentPos;
+  return end_pos - m_current_pos;
 }
 
-int lbann::DataReader_ImageNet_cv::fetch_label(Mat& Y)
-{
+int lbann::imagenet_reader_cv::fetch_label(Mat& Y) {
   if(!position_valid()) {
     stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getBatchSize();
+  int current_batch_size = getm_batch_size();
   int n = 0;
-  for (n = CurrentPos; n < CurrentPos + current_batch_size; n++) {
-    if (n >= (int)ShuffledIndices.size())
+  for (n = m_current_pos; n < m_current_pos + current_batch_size; n++) {
+    if (n >= (int)m_shuffled_indices.size()) {
       break;
+    }
 
-    int k = n - CurrentPos;
-    int index = ShuffledIndices[n];
-    int label = ImageList[index].second;
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
+    int label = image_list[index].second;
 
     Y.Set(label, k, 1);
   }
-  return (n - CurrentPos);
+  return (n - m_current_pos);
 }
 
-void lbann::DataReader_ImageNet_cv::load()
-{
+void lbann::imagenet_reader_cv::load(void) {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
   m_image_dir = imageDir; /// Store the primary path to the images for use on fetch
-  ImageList.clear();
+  image_list.clear();
 
   // load image list
-  FILE* fplist = fopen(imageListFile.c_str(), "rt");
+  FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
     stringstream err;
     err << __FILE__ << " " << __LINE__ << "failed to open: " << imageListFile << endl;
@@ -141,38 +136,38 @@ void lbann::DataReader_ImageNet_cv::load()
   while (!feof(fplist)) {
     char imagepath[512];
     int imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1)
+    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
-    ImageList.push_back(make_pair(imagepath, imagelabel));
+    }
+    image_list.push_back(make_pair(imagepath, imagelabel));
   }
   fclose(fplist);
 
   // reset indices
-  ShuffledIndices.clear();
-  ShuffledIndices.resize(ImageList.size());
-  for (size_t n = 0; n < ImageList.size(); n++) {
-    ShuffledIndices[n] = n;
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(image_list.size());
+  for (size_t n = 0; n < image_list.size(); n++) {
+    m_shuffled_indices[n] = n;
   }
 
   select_subset_of_data();
 }
 
-void lbann::DataReader_ImageNet_cv::free()
-{
+void lbann::imagenet_reader_cv::free(void) {
 }
 
 // Assignment operator
-lbann::DataReader_ImageNet_cv& lbann::DataReader_ImageNet_cv::operator=(const DataReader_ImageNet_cv& source)
-{
+lbann::imagenet_reader_cv& lbann::imagenet_reader_cv::operator=(const imagenet_reader_cv& source) {
   // check for self-assignment
-  if (this == &source)
+  if (this == &source) {
     return *this;
+  }
 
   // Call the parent operator= function
-  DataReader::operator=(source);
+  generic_data_reader::operator=(source);
 
   this->m_image_dir = source.m_image_dir;
-  this->ImageList = source.ImageList;
+  this->image_list = source.image_list;
   this->m_image_width = source.m_image_width;
   this->m_image_height = source.m_image_height;
   this->m_image_num_channels = source.m_image_num_channels;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -64,8 +64,8 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
                                        unsigned imwidth,
                                        unsigned num_channels) {
   bool do_transform = m_horizontal_flip || m_vertical_flip ||
-    m_rotation_range || m_horizontal_shift || m_vertical_shift ||
-    m_shear_range;
+                      m_rotation_range || m_horizontal_shift || m_vertical_shift ||
+                      m_shear_range;
   if (do_transform) {
     cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
     rng_gen& gen = get_generator();
@@ -87,12 +87,12 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     float y_trans = 0.0f;
     if (m_horizontal_shift) {
       std::uniform_real_distribution<float> dist(-m_horizontal_shift,
-                                                 m_horizontal_shift);
+          m_horizontal_shift);
       x_trans = dist(gen) * imwidth;
     }
     if (m_vertical_shift) {
       std::uniform_real_distribution<float> dist(-m_vertical_shift,
-                                                 m_vertical_shift);
+          m_vertical_shift);
       y_trans = dist(gen) * imheight;
     }
     Mat trans_mat;
@@ -103,7 +103,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     float shear = 0.0f;
     if (m_shear_range) {
       std::uniform_real_distribution<float> dist(-m_shear_range,
-                                                 m_shear_range);
+          m_shear_range);
       shear = dist(gen);
     }
     Mat shear_mat;
@@ -116,7 +116,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     float rotate = 0.0f;
     if (m_rotation_range) {
       std::uniform_real_distribution<float> dist(-m_rotation_range,
-                                                 m_rotation_range);
+          m_rotation_range);
       rotate = pi / 180.0f * dist(gen);
     }
     Mat rot_mat;
@@ -155,16 +155,15 @@ void lbann_image_preprocessor::normalize(Mat& pixels, unsigned num_channels) {
 }
 
 void lbann_image_preprocessor::mean_subtraction(Mat& pixels,
-                                                unsigned num_channels) {
+    unsigned num_channels) {
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType* pixels_buffer = pixels.Buffer();
   for (unsigned channel = 0; channel < num_channels; ++channel) {
     const unsigned channel_start = channel*height_per_channel;
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     for (unsigned i = 0; i < height_per_channel; ++i) {
       DataType& pixels_entry = pixels_channel(i, 0);
       pixels_entry -= mean;
@@ -178,7 +177,6 @@ void lbann_image_preprocessor::unit_variance(
   // Get image parameters
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType* pixels_buffer = pixels.Buffer();
 
   // Scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
@@ -186,7 +184,7 @@ void lbann_image_preprocessor::unit_variance(
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     if(stdev > DataType(1e-7)*Abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {
@@ -199,7 +197,7 @@ void lbann_image_preprocessor::unit_variance(
 }
 
 void lbann_image_preprocessor::unit_scale(Mat& pixels,
-                                          unsigned num_channels) {
+    unsigned num_channels) {
   // Pixels are in range [0, 255], normalize using that.
   // Channels are not relevant here.
   pixels *= DataType(1) / 255;
@@ -211,7 +209,6 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
   // Get image parameters
   const unsigned height = pixels.Height();
   const unsigned height_per_channel = height / num_channels;
-  DataType* pixels_buffer = pixels.Buffer();
 
   // Shift and scale each channel separately
   for (unsigned channel = 0; channel < num_channels; ++channel) {
@@ -219,15 +216,14 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
     const unsigned channel_end = (channel+1)*height_per_channel;
     Mat pixels_channel = View(pixels, IR(channel_start, channel_end), ALL);
     DataType mean, stdev;
-    mean_and_stdev(pixels_channel, mean, stdev);
+    entrywise_mean_and_stdev(pixels_channel, mean, stdev);
     if(stdev > DataType(1e-7)*Abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {
         DataType& pixels_entry = pixels_channel(i, 0);
         pixels_entry = (pixels_entry - mean) * inv_stdev;
       }
-    }
-    else {
+    } else {
       Zero(pixels_channel);
     }
   }
@@ -235,9 +231,9 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
 }
 
 cv::Mat lbann_image_preprocessor::cv_pixels(const Mat& pixels,
-                                            unsigned imheight,
-                                            unsigned imwidth,
-                                            unsigned num_channels) {
+    unsigned imheight,
+    unsigned imwidth,
+    unsigned num_channels) {
   if (num_channels == 1) {
     cv::Mat m(imheight, imwidth, CV_32FC1);
     for (unsigned y = 0; y < imheight; ++y) {
@@ -267,7 +263,7 @@ cv::Mat lbann_image_preprocessor::cv_pixels(const Mat& pixels,
 }
 
 void lbann_image_preprocessor::col_pixels(const cv::Mat& sqpixels, Mat& pixels,
-                                          unsigned num_channels) {
+    unsigned num_channels) {
   unsigned imheight = sqpixels.rows;
   unsigned imwidth = sqpixels.cols;
   if (num_channels == 1) {
@@ -300,7 +296,7 @@ void lbann_image_preprocessor::flip(cv::Mat& sqpixels, int flip_flag) {
 }
 
 void lbann_image_preprocessor::affine_trans(cv::Mat& sqpixels,
-                                            const Mat& trans) {
+    const Mat& trans) {
   cv::Mat sqpixels_copy = sqpixels.clone();
   // Construct the OpenCV transformation matrix.
   cv::Mat cv_trans(2, 3, CV_32FC1);
@@ -316,7 +312,7 @@ void lbann_image_preprocessor::affine_trans(cv::Mat& sqpixels,
 
 void lbann_image_preprocessor::internal_save_image(
   Mat& pixels, const std::string filename, unsigned imheight, unsigned imwidth,
-  unsigned num_channels, bool scale) {
+  unsigned num_channels, bool do_scale) {
   cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
   cv::Mat converted_pixels;
   int dst_type = 0;
@@ -325,7 +321,7 @@ void lbann_image_preprocessor::internal_save_image(
   } else if (num_channels == 3) {
     dst_type = CV_8UC3;
   }  // cv_pixels ensures no other case happens.
-  sqpixels.convertTo(converted_pixels, dst_type, scale ? 255.0f : 1.0f);
+  sqpixels.convertTo(converted_pixels, dst_type, do_scale ? 255.0f : 1.0f);
   cv::imwrite(filename, converted_pixels);
 }
 

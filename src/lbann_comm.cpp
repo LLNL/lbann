@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -52,48 +52,18 @@ using namespace El;
 #define checkMPI(status) status
 #endif // #ifdef LBANN_DEBUG
 
-lbann::lbann_comm::lbann_comm(int _procs_per_model) :
-  procs_per_model(_procs_per_model), num_model_barriers(0),
+lbann::lbann_comm::lbann_comm(int ppm) :
+  procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 
-  // Initialize parameters
-  int world_size = mpi::Size(mpi::COMM_WORLD);
-  if (procs_per_model == 0) {
-    procs_per_model = world_size;
-  }
-  num_models = world_size / procs_per_model;
-  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
-
-  // Check if parameters are valid
-  if (procs_per_model > world_size) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: Not enough processes to create one model; procs_per_model: "
-        << procs_per_model << " is larger than world_size: " << world_size;
-    throw lbann_exception(err.str());
-  }
-  if (world_size % procs_per_model != 0) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ 
-        << " :: Procs per model does not divide total number of procs; procs_per_model: " 
-        << procs_per_model << " total number of procs (world size): " << world_size;
-    throw lbann_exception(err.str());
-  }
-
-  // Initialize model and intermodel communicators
-  mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
-  mpi::Split(mpi::COMM_WORLD, rank_in_model, model_rank, intermodel_comm);
-
-  // Initialize Elemental grid
-  grid = new Grid(model_comm);
+  // Set up the initial model split.
+  split_models(procs_per_model);
 
   // Initialize node communicators
   setup_node_comm();
   procs_per_node = mpi::Size(node_comm);
   rank_in_node = mpi::Rank(node_comm);
-  
 }
 
 lbann::lbann_comm::~lbann_comm() {
@@ -108,6 +78,43 @@ lbann::lbann_comm::~lbann_comm() {
   }
 }
 
+void lbann::lbann_comm::split_models(int ppm) {
+  int world_size = mpi::Size(mpi::COMM_WORLD);
+  procs_per_model = ppm;
+  if (ppm == 0) {
+    procs_per_model = world_size;
+  }
+  // Check if parameters are valid
+  if (procs_per_model > world_size) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: Not enough processes to create one model; procs_per_model: "
+        << procs_per_model << " is larger than world_size: " << world_size;
+    throw lbann_exception(err.str());
+  }
+  if (world_size % procs_per_model != 0) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: Procs per model does not divide total number of procs; procs_per_model: "
+        << procs_per_model << " total number of procs (world size): " << world_size;
+    throw lbann_exception(err.str());
+  }
+
+  num_models = world_size / procs_per_model;
+  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
+  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
+
+  // Initialize model and intermodel communicators
+  mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
+  mpi::Split(mpi::COMM_WORLD, rank_in_model, model_rank, intermodel_comm);
+
+  // Initialize Elemental grid
+  if (grid != nullptr) {
+    delete grid;
+  }
+  grid = new Grid(model_comm);
+}
+
 void lbann::lbann_comm::intermodel_sum_matrix(Mat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
   AllReduce(mat, intermodel_comm, mpi::SUM);
@@ -120,22 +127,6 @@ void lbann::lbann_comm::intermodel_sum_matrix(DistMat& mat) {
   bytes_received += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
 }
 
-/*void lbann::lbann_comm::nb_intermodel_sum_matrix(Mat& mat, mpi::Request& req) {
-  MPI_Iallreduce(MPI_IN_PLACE, mat.Buffer(),
-                 mat.Height() * mat.Width(), DataTypeMPI, MPI_SUM,
-                 intermodel_comm.comm, &req);
-}
-
-void lbann::lbann_comm::nb_intermodel_sum_matrix(DistMat& mat,
-                                                 mpi::Request& req) {
-  // Note: This reaches into the Elemental internals where presently
-  // mpi::Request is a typedef of MPI_Request and the MPI communicator
-  // is mpi::Comm::comm.
-  MPI_Iallreduce(MPI_IN_PLACE, mat.Buffer(),
-                 mat.LocalHeight() * mat.LocalWidth(), DataTypeMPI, MPI_SUM,
-                 intermodel_comm.comm, &req);
-                 }*/
-
 void lbann::lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
   Broadcast(mat, intermodel_comm, root);
 }
@@ -143,18 +134,6 @@ void lbann::lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
 void lbann::lbann_comm::intermodel_broadcast_matrix(DistMat& mat, int root) {
   Broadcast(mat, intermodel_comm, root);
 }
-
-/*void lbann::lbann_comm::nb_intermodel_broadcast_matrix(Mat& mat, int root,
-                                                       mpi::Request& req) {
-  MPI_Ibcast(mat.Buffer(), mat.Height() * mat.Width(), DataTypeMPI, root,
-             intermodel_comm.comm, &req);
-}
-
-void lbann::lbann_comm::nb_intermodel_broadcast_matrix(DistMat& mat, int root,
-                                                       mpi::Request& req) {
-  MPI_Ibcast(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), DataTypeMPI,
-             root, intermodel_comm.comm, &req);
-             }*/
 
 void lbann::lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
@@ -224,21 +203,11 @@ void lbann::lbann_comm::nb_recv(DistMat& mat, mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), req);
 }
 
-void lbann::lbann_comm::broadcast(Mat& mat,
-                                  std::vector<int>& dests, int root) {
-  broadcast(mat.Buffer(), mat.Height() * mat.Width(), dests, root);
-}
-
-void lbann::lbann_comm::broadcast(DistMat& mat,
-                                  std::vector<int>& dests, int root) {
-  broadcast(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), dests, root);
-}
-
 void lbann::lbann_comm::intermodel_allreduce(
   Mat& mat, int max_recv_count,
-  std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+  std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, Mat&)> recv_transform,
+  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann::lbann_comm::allreduce_options opts) {
   // Determine which algorithm to actually use.
   lbann::lbann_comm::allreduce_algorithm algo = opts.algo;
@@ -287,32 +256,34 @@ void lbann::lbann_comm::intermodel_allreduce(
 
 void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
   mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+  std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const unsigned int nprocs = mpi::Size(comm);
-  if (nprocs == 1) return;  // Nothing to do.
+  if (nprocs == 1) {
+    return;  // Nothing to do.
+  }
   // This implementation requires a power-of-2 number of processes.
   if (nprocs & (nprocs - 1)) {
     throw lbann_exception("lbann_comm: recursive doubling allreduce requires"
                           " a power-of-2 number of participating processes");
   }
-  uint8_t* max_recv_buf = get_collective_buffer(max_recv_count);
-  uint8_t* recv_buf = max_recv_buf;
+  uint8_t *max_recv_buf = get_collective_buffer(max_recv_count);
+  uint8_t *recv_buf = max_recv_buf;
   unsigned int mask = 1;
   while (mask < nprocs) {
     int partner = rank ^ mask;  // The rank we exchange with this step.
     const bool is_local = opts.no_local_trans &&
-      is_rank_node_local(partner, comm);
+                          is_rank_node_local(partner, comm);
     // Transform the data we want to send.
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
-    uint8_t* send_buf = nullptr;
+    uint8_t *send_buf = nullptr;
     if (is_local) {
-      send_buf = (uint8_t*) mat.Buffer();
+      send_buf = (uint8_t *) mat.Buffer();
       send_size = sizeof(DataType) * mat.Height() * mat.Width();
       recv_size = send_size;
       recv_buf = get_collective_buffer(recv_size);
@@ -342,14 +313,16 @@ void lbann::lbann_comm::recursive_doubling_allreduce_pow2(
 
 void lbann::lbann_comm::pe_ring_allreduce(
   mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+  std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, Mat&)> recv_transform,
+  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
-  if (nprocs == 1) return;  // Nothing to do.
+  if (nprocs == 1) {
+    return;  // Nothing to do.
+  }
   // Compute the number of columns each processor sends.
   // If it doesn't divide evenly, give one extra to the earlier ranks.
   const Int cols_per_proc = mat.Width() / nprocs;
@@ -362,7 +335,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   std::vector<Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
-  std::vector<uint8_t*> max_recv_buffers(opts.max_reduces, nullptr);
+  std::vector<uint8_t *> max_recv_buffers(opts.max_reduces, nullptr);
   for (size_t i = 0; i < max_recv_buffers.size(); ++i) {
     max_recv_buffers[i] = get_collective_buffer(max_recv_count, i);
   }
@@ -378,7 +351,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
                                            nprocs - outer_step);
     std::vector<mpi::Request<uint8_t>> send_reqs(reduces_this_step);
     std::vector<mpi::Request<uint8_t>> recv_reqs(reduces_this_step);
-    std::vector<uint8_t*> recv_buffers(max_recv_buffers);
+    std::vector<uint8_t *> recv_buffers(max_recv_buffers);
     int num_local_recvs = 0;
     std::vector<bool> local_recvs(reduces_this_step, false);
     for (int step = outer_step; step < outer_step + reduces_this_step; ++step) {
@@ -387,16 +360,16 @@ void lbann::lbann_comm::pe_ring_allreduce(
       const int dst = (rank + step) % nprocs;
       const int src = (rank - step + nprocs) % nprocs;
       const bool is_send_local = opts.no_local_trans &&
-        is_rank_node_local(dst, comm);
+                                 is_rank_node_local(dst, comm);
       const bool is_recv_local = opts.no_local_trans &&
-        is_rank_node_local(src, comm);
+                                 is_rank_node_local(src, comm);
       // Post the receive.
       double recv_start = get_time();
       int recv_size = max_recv_count;
       if (is_recv_local) {
         recv_size = sizeof(DataType) * accum_view.Height() * accum_view.Width();
         recv_buffers[reduce_idx] = get_collective_buffer(recv_size,
-                                                         num_local_recvs);
+                                   num_local_recvs);
         ++num_local_recvs;
         local_recvs[reduce_idx] = is_recv_local;
       }
@@ -409,16 +382,16 @@ void lbann::lbann_comm::pe_ring_allreduce(
       // twice.
       double send_trans_start = get_time();
       int send_size;
-      uint8_t* send_buf = nullptr;
+      uint8_t *send_buf = nullptr;
       if (is_send_local) {
         auto send_view = mat(
-          ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
-        send_buf = (uint8_t*) send_view.Buffer();
+                           ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
+        send_buf = (uint8_t *) send_view.Buffer();
         send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       } else {
         send_buf = send_transform(
-          mat, ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]),
-          send_size, true, reduce_idx);
+                     mat, ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]),
+                     send_size, true, reduce_idx);
       }
       ar_send_transform_time += get_time() - send_trans_start;
       bytes_sent += send_size;
@@ -444,9 +417,11 @@ void lbann::lbann_comm::pe_ring_allreduce(
       MPI_Waitany(reduces_this_step, raw_reqs.data(), &completed_idx,
                   MPI_STATUS_IGNORE);
       double recv_tot = get_time() - recv_start;
+      ar_recv_time += recv_tot;
+      ar_rs_recv_time += recv_tot;
       double recv_apply_trans_start = get_time();
       int recv_size = recv_apply_transform(
-        recv_buffers[completed_idx], accum_view, local_recvs[completed_idx]);
+                        recv_buffers[completed_idx], accum_view, local_recvs[completed_idx]);
       ar_recv_apply_transform_time += get_time() - recv_apply_trans_start;
       bytes_received += recv_size;
       ar_bytes_received += recv_size;
@@ -459,7 +434,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
     ar_send_time += send_tot;
     ar_rs_send_time += send_tot;
   }
-  uint8_t* recv_buf = max_recv_buffers[0];  // Get a regular recv buffer.
+  uint8_t *recv_buf = max_recv_buffers[0];  // Get a regular recv buffer.
   ar_rs_time += get_time() - rs_start;
   // Do a ring allgather.
   double ag_start = get_time();
@@ -472,9 +447,9 @@ void lbann::lbann_comm::pe_ring_allreduce(
   // Do the first step where we forward our local data.
   {
     double send_trans_start = get_time();
-    uint8_t* send_buf = send_transform(
-      mat, ALL, IR(slice_ends[rank] - slice_lengths[rank], slice_ends[rank]),
-      send_size, false, 0);
+    uint8_t *send_buf = send_transform(
+                          mat, ALL, IR(slice_ends[rank] - slice_lengths[rank], slice_ends[rank]),
+                          send_size, false, 0);
     ar_send_transform_time += get_time() - send_trans_start;
     const int data_src = (rank - 1 + nprocs) % nprocs;
     bytes_sent += send_size;
@@ -485,7 +460,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
                             slice_ends[data_src]));
     // If we can, receive directly into the destination matrix.
     if (opts.id_recv) {
-      recv_buf = (uint8_t*) recv_view.Buffer();
+      recv_buf = (uint8_t *) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
@@ -512,7 +487,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
   // Now do the remaining nprocs - 2 steps.
   // We always send from recv_buf and receive to recv_buf2, swapping
   // pointers to avoid copying.
-  uint8_t* recv_buf2 = nullptr;
+  uint8_t *recv_buf2 = nullptr;
   if (!opts.id_recv) {
     recv_buf2 = get_collective_buffer(max_recv_count, 1);
   }
@@ -523,7 +498,7 @@ void lbann::lbann_comm::pe_ring_allreduce(
                          IR(slice_ends[data_src] - slice_lengths[data_src],
                             slice_ends[data_src]));
     if (opts.id_recv) {
-      recv_buf2 = (uint8_t*) recv_view.Buffer();
+      recv_buf2 = (uint8_t *) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
@@ -558,14 +533,16 @@ void lbann::lbann_comm::pe_ring_allreduce(
 
 void lbann::lbann_comm::ring_allreduce(
   mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+  std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, Mat&)> recv_transform,
+  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const int nprocs = mpi::Size(comm);
-  if (nprocs == 1) return;  // Nothing to do.
+  if (nprocs == 1) {
+    return;  // Nothing to do.
+  }
   // Compute the number of columns each processor sends.
   const Int cols_per_proc = mat.Width() / nprocs;
   const Int cols_remainder = mat.Width() % nprocs;
@@ -577,15 +554,15 @@ void lbann::lbann_comm::ring_allreduce(
   std::vector<Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
-  uint8_t* max_recv_buf = get_collective_buffer(max_recv_count);
-  uint8_t* recv_buf = max_recv_buf;
+  uint8_t *max_recv_buf = get_collective_buffer(max_recv_count);
+  uint8_t *recv_buf = max_recv_buf;
   // Compute source/destination in the ring.
   const int src = (rank - 1 + nprocs) % nprocs;
   const int dst = (rank + 1) % nprocs;
   const bool is_send_local = opts.no_local_trans &&
-    is_rank_node_local(dst, comm);
+                             is_rank_node_local(dst, comm);
   const bool is_recv_local = opts.no_local_trans &&
-    is_rank_node_local(src, comm);
+                             is_rank_node_local(src, comm);
   // Do a ring-based reduce-scatter.
   // This is like the pairwise-exchange reduce-scatter except instead of
   // rank i accumulating only slice i, the slices are cycled around and
@@ -601,20 +578,20 @@ void lbann::lbann_comm::ring_allreduce(
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
-    uint8_t* send_buf = nullptr;
+    uint8_t *send_buf = nullptr;
     if (is_send_local) {
       auto send_view = mat(
-        ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
-      send_buf = (uint8_t*) send_view.Buffer();
+                         ALL, IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
+      send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
     } else {
       send_buf = send_transform(
-        mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
-                     slice_ends[send_slice]), send_size, false, 0);
+                   mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                                slice_ends[send_slice]), send_size, false, 0);
     }
     auto recv_view = mat(
-      ALL, IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
-              slice_ends[recv_slice]));
+                       ALL, IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
+                               slice_ends[recv_slice]));
     if (is_recv_local) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
       recv_buf = get_collective_buffer(recv_size);
@@ -649,9 +626,9 @@ void lbann::lbann_comm::ring_allreduce(
     const int send_slice = (rank + 1) % nprocs;
     const int recv_slice = rank;
     double send_trans_start = get_time();
-    uint8_t* send_buf = send_transform(
-      mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
-                   slice_ends[send_slice]), send_size, false, 0);
+    uint8_t *send_buf = send_transform(
+                          mat, ALL, IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                                       slice_ends[send_slice]), send_size, false, 0);
     ar_send_transform_time += get_time() - send_trans_start;
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
@@ -661,7 +638,7 @@ void lbann::lbann_comm::ring_allreduce(
                             slice_ends[recv_slice]));
     // If we can, receive directly into the destination matrix.
     if (opts.id_recv) {
-      recv_buf = (uint8_t*) recv_view.Buffer();
+      recv_buf = (uint8_t *) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
@@ -685,7 +662,7 @@ void lbann::lbann_comm::ring_allreduce(
     ar_bytes_received += recv_size;
     ar_ag_bytes_received += recv_size;
   }
-  uint8_t* recv_buf2 = nullptr;
+  uint8_t *recv_buf2 = nullptr;
   if (!opts.id_recv) {
     recv_buf2 = get_collective_buffer(max_recv_count, 1);
   }
@@ -695,7 +672,7 @@ void lbann::lbann_comm::ring_allreduce(
                          IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                             slice_ends[recv_slice]));
     if (opts.id_recv) {
-      recv_buf2 = (uint8_t*) recv_view.Buffer();
+      recv_buf2 = (uint8_t *) recv_view.Buffer();
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
@@ -730,14 +707,16 @@ void lbann::lbann_comm::ring_allreduce(
 
 void lbann::lbann_comm::rabenseifner_allreduce(
   mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t*, Mat&)> recv_transform,
-  std::function<int(uint8_t*, Mat&, bool)> recv_apply_transform,
+  std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, Mat&)> recv_transform,
+  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann::lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = mpi::Rank(comm);
   const unsigned int nprocs = mpi::Size(comm);
-  if (nprocs == 1) return;  // Nothing to do.
+  if (nprocs == 1) {
+    return;  // Nothing to do.
+  }
   // This implementation requires a power-of-2 number of processes.
   if (nprocs & (nprocs - 1)) {
     throw lbann_exception("lbann_comm: Rabenseifner allreduce requires"
@@ -764,11 +743,11 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   unsigned int send_idx = 0;
   unsigned int recv_idx = 0;
   unsigned int last_idx = nprocs;
-  uint8_t* recv_buf = get_collective_buffer(max_recv_count);
+  uint8_t *recv_buf = get_collective_buffer(max_recv_count);
   while (partner_mask > 0) {
     int partner = rank ^ partner_mask;  // The rank we exchange with this step.
     const bool is_local = opts.no_local_trans &&
-      is_rank_node_local(partner, comm);
+                          is_rank_node_local(partner, comm);
     // Determine the range of data to send/recv.
     IR send_range, recv_range;
     if (rank < partner) {
@@ -789,10 +768,10 @@ void lbann::lbann_comm::rabenseifner_allreduce(
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
-    uint8_t* send_buf = nullptr;
+    uint8_t *send_buf = nullptr;
     if (is_local) {
       auto send_view = mat(ALL, send_range);
-      send_buf = (uint8_t*) send_view.Buffer();
+      send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
@@ -835,7 +814,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
   while (partner_mask < nprocs) {
     int partner = rank ^ partner_mask;
     const bool is_local = opts.no_local_trans &&
-      is_rank_node_local(partner, comm);
+                          is_rank_node_local(partner, comm);
     // Determine range to send/recv.
     IR send_range, recv_range;
     if (rank < partner) {
@@ -859,10 +838,10 @@ void lbann::lbann_comm::rabenseifner_allreduce(
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
-    uint8_t* send_buf = nullptr;
+    uint8_t *send_buf = nullptr;
     if (is_local) {
       auto send_view = mat(ALL, send_range);
-      send_buf = (uint8_t*) send_view.Buffer();
+      send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
@@ -870,7 +849,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
     }
     ar_send_transform_time += get_time() - send_trans_start;
     if (opts.id_recv || is_local) {
-      recv_buf = (uint8_t*) recv_view.Buffer();
+      recv_buf = (uint8_t *) recv_view.Buffer();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     bytes_sent += send_size;
@@ -906,7 +885,7 @@ void lbann::lbann_comm::rabenseifner_allreduce(
 }
 
 void lbann::lbann_comm::setup_node_comm() {
- 
+
   // Get string specifying compute node
   char node_name[MPI_MAX_PROCESSOR_NAME];
   int node_name_len;
@@ -921,7 +900,7 @@ void lbann::lbann_comm::setup_node_comm() {
   const int hash_comm_size = mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
-  char* node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
+  char *node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
   checkMPI(MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          node_name_list, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          hash_comm.comm));
@@ -945,13 +924,13 @@ void lbann::lbann_comm::setup_node_comm() {
   }
 }
 
-uint8_t* lbann::lbann_comm::get_collective_buffer(size_t size, size_t idx) {
+uint8_t *lbann::lbann_comm::get_collective_buffer(size_t size, size_t idx) {
   auto buf_iter = collective_bufs.find(size);
   if (buf_iter == collective_bufs.end()) {
     if (idx != 0) {
       throw lbann_exception("get_collective_buffer: non-contiguous index");
     }
-    collective_bufs.emplace(std::make_pair(size, std::vector<uint8_t*>()));
+    collective_bufs.emplace(std::make_pair(size, std::vector<uint8_t *>()));
     collective_bufs[size].push_back(new uint8_t[size]);
     return collective_bufs[size][0];
   } else {

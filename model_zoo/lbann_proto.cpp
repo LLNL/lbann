@@ -29,14 +29,10 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto_common.hpp"
 
-using namespace std;
 using namespace lbann;
-using namespace El;
 
-int main(int argc, char* argv[])
-{
-  Initialize(argc, argv);
-  lbann_comm* comm = NULL;
+int main(int argc, char *argv[]) {
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
 
@@ -53,6 +49,7 @@ int main(int argc, char* argv[])
     ProcessInput();
     PrintInputReport();
 
+    std::cout << "Finished with the inut report" << std::endl;
     //error check the command line
     if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
       if (comm->am_world_master()) {
@@ -68,8 +65,10 @@ int main(int argc, char* argv[])
     lbann_data::LbannPB pb;
     lbann_data::LbannPB pb_reader;
     readPrototextFile(prototext_model_fn.c_str(), pb);
+    std::cout << "Finished with the model file" << std::endl;
     readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
     lbann_data::Model *pb_model = pb.mutable_model();
+    std::cout << "Finished with the data reader file" << std::endl;
 
     //adjust the prototext with any over-rides
     if (mini_batch_size != 0) {
@@ -87,7 +86,10 @@ int main(int argc, char* argv[])
     SetBlocksize(pb_model->block_size());
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(pb_model->procs_per_model());
+    comm->split_models(pb_model->procs_per_model());
+    //please do not delete this! it's here to remind me that something needs
+    //fixing. Thanks, Dave H.
+    cout << "XX procs_per_model: " << pb_model->procs_per_model() << endl;
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -95,12 +97,6 @@ int main(int argc, char* argv[])
       cout << endl;
     }
 
-    // Initialize lbann with the communicator.
-    lbann::initialize(comm);
-    init_random(42);
-    init_data_seq_random(42);
-
-    const lbann_data::DataReader &d_reader = pb.data_reader();
     int parallel_io = pb_model->num_parallel_readers();
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
@@ -115,12 +111,12 @@ int main(int argc, char* argv[])
       }
     }
 
+    std::cout << "Setting up the data readers" << std::endl;
     ///////////////////////////////////////////////////////////////////
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
-    const lbann_data::Model &m2 = pb.model();
-    std::map<execution_mode, DataReader*> data_readers;
+    std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
       for (auto it : data_readers) {
@@ -143,7 +139,7 @@ int main(int argc, char* argv[])
     // @todo: not all callbacks code is in place
     ///////////////////////////////////////////////////////////////////
     optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
-    cudnn::cudnn_manager* cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (comm->am_world_master()) {
@@ -156,11 +152,11 @@ int main(int argc, char* argv[])
       }
     }
 #else
-  if (comm->am_world_master()) {
-    cerr << "code was NOT compiled with __LIB_CUDNN\n";
-  }
+    if (comm->am_world_master()) {
+      cerr << "code was NOT compiled with __LIB_CUDNN\n";
+    }
 #endif
-    sequential_model * model = init_model(comm, optimizer_fac, pb);
+    sequential_model *model = init_model(comm, optimizer_fac, pb);
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
@@ -173,7 +169,9 @@ int main(int argc, char* argv[])
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
-      model->train(1, pb_model->evaluation_frequency());
+      model->train(1, true);
+      cerr << ">>>>>>>>>>>>. calling evaluate\n";
+      model->evaluate(execution_mode::testing);
     }
 
     // @todo: figure out and implement coherent strategy
@@ -185,7 +183,7 @@ int main(int argc, char* argv[])
   }
 
   // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
   return 0;
 }

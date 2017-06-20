@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - DataReader class for CIFAR10 dataset
+// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_CIFAR10_HPP
@@ -33,55 +33,55 @@
 
 
 
-namespace lbann
-{
-class DataReader_CIFAR10 : public DataReader
-{
-public:
+namespace lbann {
+class cifar10_reader : public generic_data_reader {
+ public:
   /// constructor
-  DataReader_CIFAR10(int batchSize, bool shuffle = true);
+  cifar10_reader(int batchSize, bool shuffle = true);
 
   /// copy constructor
-  DataReader_CIFAR10(const DataReader_CIFAR10 &source);
+  cifar10_reader(const cifar10_reader& source);
 
   /// destructor
-  ~DataReader_CIFAR10();
+  ~cifar10_reader(void);
 
   /// assignment operator
-  DataReader_CIFAR10& operator=(const DataReader_CIFAR10 &source);
+  cifar10_reader& operator=(const cifar10_reader& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
   void load();
 
   /// returns image width (which should be 32)
-  int get_image_width() {
+  int get_image_width(void) const {
     return m_image_width;
   }
 
   /// returns image height (which should be 32)
-  int get_image_height() {
+  int get_image_height(void) const {
     return m_image_height;
   }
 
-  int get_num_labels() { return 10; }
+  int get_num_labels(void) const {
+    return 10;
+  }
 
   /// returns image depth (which should be 3)
-  int get_image_num_channels() {
+  int get_image_num_channels(void) const {
     return m_image_num_channels;
   }
 
   /// returns the number of pixels in the image (should be 3072)
-  int get_linearized_data_size() {
+  int get_linearized_data_size(void) const {
     return m_image_width * m_image_height * m_image_num_channels;
   }
 
-  /// returns 
-  int get_linearized_label_size() {
+  /// returns
+  int get_linearized_label_size(void) const {
     return 10;
   }
 
-private:
+ private:
   std::vector<std::vector<unsigned char> > m_data;
   int m_image_width;
   int m_image_height;

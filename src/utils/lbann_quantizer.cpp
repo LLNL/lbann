@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -53,9 +53,9 @@ void lbann_quantizer::onebit_quantize(
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
   const Int qmat_ldim = qmat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
-  qtype* __restrict__ qmat_buf = qmat.Buffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
+  DataType *__restrict__ qerror_buf = qerror.Buffer();
+  qtype *__restrict__ qmat_buf = qmat.Buffer();
   #pragma omp parallel for schedule(static)
   for (Int col = 0; col < width; ++col) {
     // First compute the positive and negative column averages.
@@ -142,8 +142,8 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat) {
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
   const Int qmat_ldim = qmat.LDim();
-  const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
-  DataType* __restrict__ mat_buf = mat.Buffer();
+  const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
+  DataType *__restrict__ mat_buf = mat.Buffer();
   #pragma omp parallel for schedule(static)
   for (Int col = 0; col < width; ++col) {
     Int qrow = 2;
@@ -175,13 +175,13 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat,
 }
 
 void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
-                                            Mat& mat) {
+    Mat& mat) {
   const Int width = mat.Width();
   const Int height = mat.Height();
   const Int ldim = mat.LDim();
   const Int qmat_ldim = qmat.LDim();
-  const qtype* __restrict__ qmat_buf = qmat.LockedBuffer();
-  DataType* __restrict__ mat_buf = mat.Buffer();
+  const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
+  DataType *__restrict__ mat_buf = mat.Buffer();
   #pragma omp parallel for schedule(static)
   for (Int col = 0; col < width; ++col) {
     Int qrow = 2;
@@ -208,7 +208,7 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
-  lbann_comm* comm, Mat& mat, Mat& qerror) {
+  lbann_comm *comm, Mat& mat, Mat& qerror) {
   // Initialize qerror.
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
@@ -216,9 +216,9 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   }
   std::vector<QuantizedMatrix> qmats(4);
   auto send_transform =
-    [&qerror, &qmats, this] (Mat& mat, IR h, IR w, int& count, bool const_data,
-      int call_idx) {
-    auto to_send = mat(h, w);
+    [&qerror, &qmats, this] (Mat& to_trans, IR h, IR w, int& count,
+                             bool const_data, int call_idx) {
+    auto to_send = to_trans(h, w);
     auto to_send_qerr = qerror(h, w);
     QuantizedMatrix& qmat = qmats[call_idx];
     onebit_quantize(to_send, qmat, to_send_qerr);
@@ -227,29 +227,29 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
       // Need to accumulate local errors.
       onebit_unquantize(qmat, to_send);
     }
-    return (uint8_t*) qmat.Buffer();
+    return (uint8_t *) qmat.Buffer();
   };
   auto recv_transform =
-    [this] (uint8_t* recv_buf, Mat& accum) {
+  [this] (uint8_t *recv_buf, Mat& accum) {
     QuantizedMatrix recv_mat;
     recv_mat.LockedAttach(
       get_onebit_quantized_matrix_height(accum), accum.Width(),
-      (qtype*) recv_buf, get_onebit_quantized_matrix_height(accum));
+      (qtype *) recv_buf, get_onebit_quantized_matrix_height(accum));
     onebit_unquantize(recv_mat, accum);
     return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
   };
   auto recv_apply_transform =
-    [this] (uint8_t* recv_buf, Mat& accum, bool is_local) {
+  [this] (uint8_t *recv_buf, Mat& accum, bool is_local) {
     if (is_local) {
       Mat recv_mat;
       recv_mat.LockedAttach(accum.Height(), accum.Width(),
-                            (DataType*) recv_buf, accum.LDim());
+                            (DataType *) recv_buf, accum.LDim());
       accum += recv_mat;
       return sizeof(DataType) * recv_mat.Height() * recv_mat.Width();
     } else {
       QuantizedMatrix recv_mat;
       recv_mat.LockedAttach(get_onebit_quantized_matrix_height(accum),
-                            accum.Width(), (qtype*) recv_buf,
+                            accum.Width(), (qtype *) recv_buf,
                             get_onebit_quantized_matrix_height(accum));
       onebit_unquantize_add(recv_mat, accum);
       return sizeof(qtype) * recv_mat.Height() * recv_mat.Width();
@@ -259,26 +259,28 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   opts.max_reduces = 4;
   comm->intermodel_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
-    std::function<uint8_t*(Mat&, IR, IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t*, Mat&)>(recv_transform),
-    std::function<int(uint8_t*, Mat&, bool)>(recv_apply_transform),
+    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<int(uint8_t *, Mat&)>(recv_transform),
+    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform),
     opts);
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
-  lbann_comm* comm, DistMat& mat, Mat& qerror) {
+  lbann_comm *comm, DistMat& mat, Mat& qerror) {
   intermodel_sum_onebit_quantized(comm, mat.Matrix(), qerror);
 }
 
 void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
-                                         Mat& qerror, DataType pos_thresh,
-                                         DataType neg_thresh, bool delta) {
+    Mat& qerror, DataType pos_thresh,
+    DataType neg_thresh, bool delta) {
   const Int ldim = mat.LDim();
   const Int width = mat.Width();
   const Int height = mat.Height();
-  if (ldim != qerror.LDim()) std::cout << "ldims don't match!" << std::endl;
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
+  if (ldim != qerror.LDim()) {
+    std::cout << "ldims don't match!" << std::endl;
+  }
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
+  DataType *__restrict__ qerror_buf = qerror.Buffer();
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   if (delta) {
     Unsigned prev_pos = 0;
@@ -338,23 +340,29 @@ void lbann_quantizer::threshold_quantize(
 void lbann_quantizer::threshold_unquantize(
   const ThreshQuantized& quant, Mat& mat, DataType pos_thresh,
   DataType neg_thresh, bool delta) {
-  DataType* __restrict__ buf = mat.Buffer();
+  DataType *__restrict__ buf = mat.Buffer();
   if (delta) {
     Unsigned prev_pos = 0;
     for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
       const Unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
-      if (q & 1) buf[pos] = pos_thresh;
-      else buf[pos] = neg_thresh;
+      if (q & 1) {
+        buf[pos] = pos_thresh;
+      } else {
+        buf[pos] = neg_thresh;
+      }
     }
   } else {
     #pragma omp parallel for schedule(static)
     for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
       const Unsigned pos = q >> 1;
-      if (q & 1) buf[pos] = pos_thresh;
-      else buf[pos] = neg_thresh;
+      if (q & 1) {
+        buf[pos] = pos_thresh;
+      } else {
+        buf[pos] = neg_thresh;
+      }
     }
   }
 }
@@ -377,7 +385,7 @@ void lbann_quantizer::threshold_unquantize_apply(
   // the final unquantize is not an _apply, and so will just set that entry to
   // the same value multiple times. We send some extra data, but the overhead
   // is small.
-  DataType* __restrict__ buf = mat.Buffer();
+  DataType *__restrict__ buf = mat.Buffer();
   if (delta) {
     Unsigned prev_pos = 0;
     for (Unsigned i = 0; i < quant.size(); ++i) {
@@ -385,16 +393,22 @@ void lbann_quantizer::threshold_unquantize_apply(
       const Unsigned pos = (q >> 1) + prev_pos;
       prev_pos = pos;
       positions.emplace_back(pos);
-      if (q & 1) buf[pos] += pos_thresh;
-      else buf[pos] += neg_thresh;
+      if (q & 1) {
+        buf[pos] += pos_thresh;
+      } else {
+        buf[pos] += neg_thresh;
+      }
     }
   } else {
     for (Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
       const Unsigned pos = q >> 1;
       positions.emplace_back(pos);
-      if (q & 1) buf[pos] += pos_thresh;
-      else buf[pos] += neg_thresh;
+      if (q & 1) {
+        buf[pos] += pos_thresh;
+      } else {
+        buf[pos] += neg_thresh;
+      }
     }
   }
 }
@@ -402,8 +416,8 @@ void lbann_quantizer::threshold_unquantize_apply(
 void lbann_quantizer::threshold_quantize_apply(
   const Mat& mat, ThreshQuantized& quant, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh, std::vector<Unsigned>& positions, bool delta) {
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  DataType* __restrict__ qerror_buf = qerror.Buffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
+  DataType *__restrict__ qerror_buf = qerror.Buffer();
   if (delta) {
     // Need to sort so positions are in order, otherwise our delta encoding
     // doesn't work. (Could be solved by adding stops, but maybe not worth it.)
@@ -440,7 +454,7 @@ void lbann_quantizer::threshold_quantize_apply(
 }
 
 void lbann_quantizer::intermodel_sum_threshold_quantized(
-  lbann_comm* comm, Mat& mat, Mat& qerror, DataType pos_thresh,
+  lbann_comm *comm, Mat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh) {
   // Temporarily not supported until threshold quantization is updated to
   // have upper bounds on its send size.
@@ -448,14 +462,14 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
 }
 
 void lbann_quantizer::intermodel_sum_threshold_quantized(
-  lbann_comm* comm, DistMat& mat, Mat& qerror, DataType pos_thresh,
+  lbann_comm *comm, DistMat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh) {
   intermodel_sum_threshold_quantized(comm, mat.Matrix(), qerror, pos_thresh,
                                      neg_thresh);
 }
 
 void lbann_quantizer::intermodel_sum_adaptive_quantized(
-  lbann_comm* comm, Mat& mat, Mat& qerror, int proportion) {
+  lbann_comm *comm, Mat& mat, Mat& qerror, int proportion) {
   // Select which algorithm to use based on the size of mat.
   // Multiply at 64 bits to avoid overflows.
   size_t mat_size = ((size_t) mat.Height()) * ((size_t) mat.Width());
@@ -478,7 +492,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized(
 }
 
 void lbann_quantizer::intermodel_sum_adaptive_quantized(
-  lbann_comm* comm, DistMat& mat, Mat& qerror, int proportion) {
+  lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion) {
   intermodel_sum_adaptive_quantized(comm, mat.Matrix(), qerror,
                                     proportion);
 }
@@ -490,8 +504,8 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   const Int height = mat.Height();
   const Int width = mat.Width();
   const Int ldim = mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
+  const DataType *__restrict__ qerror_buf = qerror.LockedBuffer();
   // Bail out if needed.
   if (width == 0) {
     return { 0.0f, 0.0f };
@@ -534,20 +548,24 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   DataType neg_thresh = -std::numeric_limits<DataType>::max();
   auto i = entries.begin() + (entries.size() - num_to_keep);
   std::nth_element(entries.begin(), i, entries.end(),
-                   [] (const DataType a, const DataType b) {
-                     return std::abs(a) < std::abs(b); 
-                   });
+  [] (const DataType a, const DataType b) {
+    return std::abs(a) < std::abs(b);
+  });
   if (*i > 0) {
     pos_thresh = *i;
     for (++i; i < entries.end(); ++i) {
       // Find the largest (closest to 0) negative value.
-      if (*i < 0) neg_thresh = std::max(neg_thresh, *i);
+      if (*i < 0) {
+        neg_thresh = std::max(neg_thresh, *i);
+      }
     }
   } else if (*i < 0) {
     neg_thresh = *i;
     for (++i; i < entries.end(); ++i) {
       // Find the smallest (closest to 0) positive value.
-      if (*i > 0) pos_thresh = std::min(pos_thresh, *i);
+      if (*i > 0) {
+        pos_thresh = std::min(pos_thresh, *i);
+      }
     }
   }
   // If there are no values of a sign, select threshold such that none are sent.
@@ -574,8 +592,8 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
 #endif
   const Int height = mat.Height();
   const Int col_offset = col * mat.LDim();
-  const DataType* __restrict__ mat_buf = mat.LockedBuffer();
-  const DataType* __restrict__ qerror_buf = qerror.LockedBuffer();
+  const DataType *__restrict__ mat_buf = mat.LockedBuffer();
+  const DataType *__restrict__ qerror_buf = qerror.LockedBuffer();
   if (height <= NUM_RECON_SAMPLES || !sample) {
     for (Int row = 0; row < height; ++row) {
       const Unsigned pos = row + col_offset;
@@ -587,7 +605,7 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
         if (val <= threshes.neg_thresh) {
           neg_sum += val;
           ++neg_count;
-        } 
+        }
 #if LBANN_QUANTIZER_TERNARY
         else {
           zero_sum += val;

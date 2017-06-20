@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -31,35 +31,32 @@
 #include "lbann/utils/lbann_mild_exception.hpp"
 
 #ifdef __LIB_OPENCV
-namespace lbann
-{
+namespace lbann {
 
 cv_colorizer::cv_colorizer(const cv_colorizer& rhs)
-: cv_transform(rhs), m_gray(rhs.m_gray) {}
+  : cv_transform(rhs), m_gray(rhs.m_gray) {}
 
-cv_colorizer& cv_colorizer::operator=(const cv_colorizer& rhs)
-{
+cv_colorizer& cv_colorizer::operator=(const cv_colorizer& rhs) {
   cv_transform::operator=(rhs);
   m_gray = rhs.m_gray;
   return *this;
 }
 
-bool cv_colorizer::determine_transform(const cv::Mat& image)
-{ 
+bool cv_colorizer::determine_transform(const cv::Mat& image) {
   m_enabled = m_gray = (!image.empty() && (image.channels() == 1));
   return m_enabled;
 }
 
-bool cv_colorizer::determine_inverse_transform(void)
-{
+bool cv_colorizer::determine_inverse_transform(void) {
   m_enabled = m_gray;
   m_gray = false;
   return true;
 }
 
-bool cv_colorizer::apply(cv::Mat& image)
-{
-  if (!m_enabled) return true;
+bool cv_colorizer::apply(cv::Mat& image) {
+  if (!m_enabled) {
+    return true;
+  }
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false);
 
   if (!m_gray) {
@@ -76,13 +73,11 @@ bool cv_colorizer::apply(cv::Mat& image)
   return true;
 }
 
-cv_colorizer* cv_colorizer::clone(void) const
-{
+cv_colorizer *cv_colorizer::clone(void) const {
   return (new cv_colorizer(*this));
 }
 
-std::ostream& operator<<(std::ostream& os, const cv_colorizer& tr)
-{
+std::ostream& operator<<(std::ostream& os, const cv_colorizer& tr) {
   tr.print(os);
   return os;
 }

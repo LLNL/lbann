@@ -43,19 +43,33 @@ namespace patchworks {
 template<int T> struct cv_depth_type {};
 
 /// Convert CV_8U to uint8_t
-template<> struct cv_depth_type<CV_8U>  { typedef  uint8_t standard_type; };
+template<> struct cv_depth_type<CV_8U>  {
+  typedef  uint8_t standard_type;
+};
 /// Convert CV_8S to int8_t
-template<> struct cv_depth_type<CV_8S>  { typedef   int8_t standard_type; };
+template<> struct cv_depth_type<CV_8S>  {
+  typedef   int8_t standard_type;
+};
 /// Convert CV_16U to uint16_t
-template<> struct cv_depth_type<CV_16U> { typedef uint16_t standard_type; };
+template<> struct cv_depth_type<CV_16U> {
+  typedef uint16_t standard_type;
+};
 /// Convert CV_16S to int16_t
-template<> struct cv_depth_type<CV_16S> { typedef  int16_t standard_type; };
+template<> struct cv_depth_type<CV_16S> {
+  typedef  int16_t standard_type;
+};
 /// Convert CV_32S to int32_t
-template<> struct cv_depth_type<CV_32S> { typedef  int32_t standard_type; };
+template<> struct cv_depth_type<CV_32S> {
+  typedef  int32_t standard_type;
+};
 /// Convert CV_32F to float
-template<> struct cv_depth_type<CV_32F> { typedef    float standard_type; };
+template<> struct cv_depth_type<CV_32F> {
+  typedef    float standard_type;
+};
 /// Convert CV_64F to double
-template<> struct cv_depth_type<CV_64F> { typedef   double standard_type; };
+template<> struct cv_depth_type<CV_64F> {
+  typedef   double standard_type;
+};
 
 /// Convert an OpenCV identifier of image depth to a standard C++ type
 #define _depth_type(_cv_depth_) lbann::patchworks::cv_depth_type<_cv_depth_>::standard_type
