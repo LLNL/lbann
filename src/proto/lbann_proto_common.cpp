@@ -5,32 +5,6 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 
-/*
-#include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
-#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
-#include "lbann/data_readers/lbann_data_reader_nci.hpp"
-#include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
-#include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
-#include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
-#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
-#include "lbann/data_readers/lbann_data_reader_imagenet_cv.hpp"
-#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
-#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
-#include "lbann/data_readers/lbann_opencv.hpp"
-
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/optimizers/lbann_optimizer_adam.hpp"
-#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
-
-#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
-#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
-#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
-#include "lbann/callbacks/lbann_callback_save_images.hpp"
-#include "lbann/layers/activations/relu.hpp"
-*/
-
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -528,6 +502,154 @@ void add_layers(
           mb_size,
           ell.alpha(),
           ell.scale()
+        );
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: tanh
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_tanh()) {
+      const lbann_data::Tanh& ell = layer.tanh();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new tanh_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      } else {
+        d = new tanh_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: softplus
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_softplus()) {
+      const lbann_data::Softplus& ell = layer.softplus();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new softplus_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      } else {
+        d = new softplus_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: smooth_relu
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_smooth_relu()) {
+      const lbann_data::SmoothRelu& ell = layer.smooth_relu();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      } else {
+        d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: leaky_relu
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_leaky_relu()) {
+      const lbann_data::LeakyRelu& ell = layer.leaky_relu();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons(),
+          ell.leak()
+        );
+      } else {
+        d = new leaky_relu_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons(),
+          ell.leak()
+        );
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: id
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_id()) {
+      const lbann_data::ID& ell = layer.id();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new id_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      } else {
+        d = new id_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons()
+        );  
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: elu 
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_elu()) {
+      const lbann_data::ELU& ell = layer.elu();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new elu_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons(),
+          ell.alpha()
+        );
+      } else {
+        d = new elu_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.num_neurons(),
+          ell.alpha()
         );
       }
       model->add(d);

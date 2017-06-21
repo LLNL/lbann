@@ -33,7 +33,7 @@ namespace lbann {
 
 /** Identity activation function -- does nothing. */
 template <data_layout T_layout>
-class id_layer : public activation_layer {
+class id_layer : public entrywise_activation_layer {
  public:
   // TODO: Optimize this to copy instead of applying elementwise.
   id_layer(uint index, lbann_comm *comm,
@@ -42,6 +42,16 @@ class id_layer : public activation_layer {
                                mini_batch_size, num_neurons) { 
      set_name("id_layer");
      initialize_distributed_matrices(); 
+  }
+
+  virtual DataType activation_function(DataType x)  {
+     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
+    return DataType(0);
+  }
+
+  virtual DataType activation_function_gradient(DataType x) {
+     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
+    return DataType(0);
   }
 
   virtual inline void initialize_distributed_matrices() {

@@ -65,7 +65,7 @@ lbann::deep_neural_network::~deep_neural_network() {}
 
 
 void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
-  for (size_t l = 1; l < m_layers.size(); ++l) {
+  for (size_t l = 0; l < m_layers.size(); ++l) {
     m_layers[l]->summarize(summarizer, get_cur_step());
   }
 }
