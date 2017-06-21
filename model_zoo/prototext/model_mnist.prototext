@@ -12,20 +12,6 @@ model {
   num_gpus: -1
 
   ###################################################
-  # Optimzer
-  ###################################################
-  optimizer {
-    name: "adagrad"
-    learn_rate: 0.01
-    eps: 1e-8  #used for adagrad, adam, hypergradient_adam
-    #momentum: 0.9 #used for sgd
-    #decay: 0.5    #used for rmsprop, sgd
-    #nesterov: true #used for sgd
-    #beta1: 0.9 # used for adam, hypergradient_adam
-    #beta2: 0.99 # used for adam, hypergradient_adam
-  }
-
-  ###################################################
   # Callbacks
   ###################################################
   callback {

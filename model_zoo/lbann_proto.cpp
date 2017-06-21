@@ -28,6 +28,7 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/lbann_proto_common.hpp"
+//#include "lbann/callbacks/lbann_callback_ltfb.hpp"
 
 using namespace lbann;
 
@@ -37,10 +38,13 @@ int main(int argc, char *argv[]) {
   El::GemmUseGPU(32,32,32);
 
   try {
+    //run LTFB?
+    bool ltfb = Input("--ltfb", "run ltfb", false);
 
     //get input prototext filenames
     string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
     string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
+    string prototext_opt_fn = Input("--prototext_opt_fn", "prototext optimizer filename", "none");
 
     //Get optional over-rides for various fields in the prototext.
     //If you add anything here, also change the section below:
@@ -53,11 +57,13 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Finished with the inut report" << std::endl;
     //error check the command line
-    if (prototext_dr_fn == "none" or prototext_model_fn == "none") {
+    if (prototext_dr_fn == "none" or prototext_model_fn == "none"
+        or prototext_opt_fn == "none") {
       if (comm->am_world_master()) {
         cerr << endl << __FILE__ << " " << __LINE__
-             << " :: error - you must use  --prototext_fn and "
-             << "--prototext_dr_fn to supply prototext filenames\n\n";
+             << " :: error - you must use  --prototext_fn, "
+             << "--prototext_dr_fn, and prototext_opt_fn \n"
+             << "to supply prototext filenames\n\n";
       }
       Finalize();
       return 9;
@@ -66,11 +72,12 @@ int main(int argc, char *argv[]) {
     // read in the prototext files
     lbann_data::LbannPB pb;
     lbann_data::LbannPB pb_reader;
+    lbann_data::LbannPB pb_optimizer;
     readPrototextFile(prototext_model_fn.c_str(), pb);
-    std::cout << "Finished with the model file" << std::endl;
     readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
+    readPrototextFile(prototext_opt_fn.c_str(), pb_optimizer);
     lbann_data::Model *pb_model = pb.mutable_model();
-    std::cout << "Finished with the data reader file" << std::endl;
+    lbann_data::Model *pb_opt = pb_optimizer.mutable_model();
 
     //adjust the prototext with any over-rides
     if (mini_batch_size != 0) {
@@ -137,7 +144,7 @@ int main(int argc, char *argv[]) {
     if (comm->am_world_master()) {
       cout << "\nParameter settings:" << endl;
       cout << "\tMini-batch size: " << pb_model->mini_batch_size() << endl;
-      const lbann_data::Optimizer optimizer = pb_model->optimizer();
+      const lbann_data::Optimizer optimizer = pb_optimizer.optimizer();
       cout << "\tLearning rate: " <<  optimizer.learn_rate() << endl;
       cout << "\tEpoch count: " << pb_model->num_epochs() << endl << endl;
     }
@@ -146,7 +153,7 @@ int main(int argc, char *argv[]) {
     // initalize model
     // @todo: not all callbacks code is in place
     ///////////////////////////////////////////////////////////////////
-    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb_optimizer);
     cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
@@ -169,6 +176,22 @@ int main(int argc, char *argv[]) {
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
 
+    // Optionally run ltfb
+    sequential_model *model_2;
+    std::map<execution_mode, generic_data_reader *> data_readers_2;
+    if (ltfb) {
+      if (comm->am_world_master()) {
+        cerr << endl << "running ltfb\n\n";
+        throw lbann_exception("ltfb is not ready yet; coming soon!");
+      }
+      init_data_readers(comm->am_world_master(), pb_reader, data_readers_2, pb_model->mini_batch_size());
+      optimizer_factory *optimizer_fac_2 = init_optimizer_factory(comm, pb);
+      model_2 = init_model(comm, optimizer_fac_2, pb);
+      model_2->setup();
+      //lbann_callback_ltfb ltfb(45, model_2);
+      //model->add_callback(&ltfb);
+    }
+
     // restart model from checkpoint if we have one
     //@todo
     //model->restartShared();
@@ -178,7 +201,6 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
       model->train(1, true);
-      cerr << ">>>>>>>>>>>>. calling evaluate\n";
       model->evaluate(execution_mode::testing);
     }
 
