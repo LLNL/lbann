@@ -35,7 +35,6 @@
 
 /// Models
 #include "lbann/models/lbann_model_dnn.hpp"
-#include "lbann/models/lbann_model_stacked_autoencoder.hpp"
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
 /// Activation Layers
@@ -68,6 +67,9 @@
 #include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+
+/// Reconstruction Layer
+#include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"

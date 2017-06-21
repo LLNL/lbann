@@ -157,8 +157,8 @@ bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, u
 
 bool lbann::sequential_model::load_from_checkpoint(int fd, const char *filename, uint64_t *bytes) {
   // read number of layers
-  int file_layers;
-  int read_rc = read(fd, &file_layers, sizeof(int));
+  unsigned int file_layers;
+  int read_rc = read(fd, &file_layers, sizeof(unsigned int));
   if (read_rc != sizeof(int)) {
     fprintf(stderr, "ERROR: Failed to read number of layers from file `%s' (%d: %s) @ %s:%d\n",
             filename, errno, strerror(errno), __FILE__, __LINE__
@@ -274,7 +274,7 @@ lbann::Layer *lbann::sequential_model::swap(int index, Layer *new_layer) {
 void lbann::sequential_model::set_fp_input(size_t start_index, size_t end_index) {
   // Get properties from previous layers
   // Note: the first layer has no previous layer
-  for (Int l=Max(start_index,1); l<end_index; ++l) {
+  for (size_t l = std::max(start_index, (size_t) 1); l < end_index; ++l) {
     m_layers[l]->set_prev_layer_type(m_layers[l-1]->get_type());
     m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
 #ifdef __LIB_CUDNN
@@ -308,7 +308,7 @@ void lbann::sequential_model::setup(size_t start_index,size_t end_index) {
 
   // Setup each layer
   int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->get_num_neurons() : -1;
-  for (Int l=start_index; l<end_index; ++l) {
+  for (size_t l=start_index; l<end_index; ++l) {
     if (m_comm->am_world_master()) {
       cout << std::setw(3) << l << ":[" << std::setw(15) << m_layers[l]->get_name() <<  "] Setting up a layer with input " << std::setw(7) << prev_layer_dim << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
     }

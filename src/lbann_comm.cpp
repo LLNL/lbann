@@ -53,7 +53,7 @@ using namespace El;
 #endif // #ifdef LBANN_DEBUG
 
 lbann::lbann_comm::lbann_comm(int ppm) :
-  procs_per_model(ppm), num_model_barriers(0),
+  grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 

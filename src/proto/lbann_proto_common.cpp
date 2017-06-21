@@ -886,14 +886,12 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   //instantiate the network; layers will be added in a separate function call
   if (name == "dnn") {
     model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
-  } else if (name == "stacked_autoencoder") {
-    model = new stacked_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else {
     err << __FILE__ << " " << __LINE__
         << " :: init_model() - unknown model name: " << name << endl
-        << "; should be one of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder";
+        << "; should be one of: dnn, greedy_layerwise_autoencoder";
     throw lbann_exception(err.str());
   }
 

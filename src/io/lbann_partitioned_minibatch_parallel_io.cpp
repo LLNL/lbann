@@ -39,22 +39,6 @@ lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lban
 
   m_cur_step_in_epoch = 0;
 
-  int training_data_set_size = 0;
-  int validation_data_set_size = 0;
-  int testing_data_set_size = 0;
-
-  if(data_readers[execution_mode::training] != NULL) {
-    training_data_set_size = data_readers[execution_mode::training]->getNumData();
-  }
-
-  if(data_readers[execution_mode::validation] != NULL) {
-    validation_data_set_size = data_readers[execution_mode::validation]->getNumData();
-  }
-
-  if(data_readers[execution_mode::testing] != NULL) {
-    testing_data_set_size = data_readers[execution_mode::testing]->getNumData();
-  }
-
   if(m_comm->get_model_grid().Size() != num_parallel_readers) {
     cout << "Warning the requested number of parallel readers "
          << num_parallel_readers
@@ -87,15 +71,11 @@ int lbann::partitioned_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local.Height() != 0 && M_local.Width() != 0) && !m_local_reader_done) {
-    // std::cout << "[" << m_comm->get_rank_in_model() << "] fetch to local matrix " << M_local.Height() << " x " << M_local.Width() << std::endl;
     Zero(M_local);
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     m_num_samples_in_batch = fetch_from_data_reader(M_local);
-    // if(m_num_samples_in_batch != 150) {
-    //      std::cout << "[" << m_comm->get_rank_in_model() << "] fetch to local matrix " << M_local.Height() << " x " << M_local.Width() << " only got samples = " << m_num_samples_in_batch << std::endl;
-    // }
     bool data_valid = (m_num_samples_in_batch > 0);
     if(data_valid) {
       m_num_data_per_epoch+=m_num_samples_in_batch; /// BVE FIXME need to change how this is shared
@@ -116,10 +96,9 @@ void lbann::partitioned_minibatch_parallel_io::distribute_from_local_matrix(Mat&
 
 bool lbann::partitioned_minibatch_parallel_io::is_data_set_processed() {
   int num_readers_done = 0;
-  int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
+  //int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have partitioned it.
-  int num_parallel_readers = m_num_valid_readers;
 
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
