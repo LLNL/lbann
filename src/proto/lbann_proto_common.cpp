@@ -447,6 +447,32 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: dropout
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_dropout()) {
+      const lbann_data::Dropout& ell = layer.dropout();
+
+      double keep_prob = ell.keep_prob();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new dropout<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          keep_prob);
+      } else {
+        d = new dropout<data_layout::DATA_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          keep_prob);
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: softmax
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
