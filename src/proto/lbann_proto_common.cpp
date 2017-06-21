@@ -1,9 +1,11 @@
 
 #include "lbann/proto/lbann_proto_common.hpp"
 
+#include "lbann/lbann.hpp"
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 
+/*
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 #include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
 #include "lbann/data_readers/lbann_data_reader_nci.hpp"
@@ -27,6 +29,7 @@
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/callbacks/lbann_callback_save_images.hpp"
 #include "lbann/layers/activations/relu.hpp"
+*/
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -442,6 +445,90 @@ void add_layers(
           mb_size,
           comm,
           cudnn);
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: selu_dropout (regularizer)
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_selu_dropout()) {
+      const lbann_data::SeluDropout& ell = layer.selu_dropout();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new selu_dropout<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          ell.keep_prob(),
+          ell.alpha(),
+          ell.scale()
+        );
+      } else {
+        d = new selu_dropout<data_layout::DATA_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          ell.keep_prob(),
+          ell.alpha(),
+          ell.scale()
+        );  
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: batch_normalization
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_batch_normalization()) {
+      const lbann_data::BatchNormalization& ell = layer.batch_normalization();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new batch_normalization<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          ell.decay(),
+          ell.gamma(),
+          ell.beta());
+      } else {
+        d = new batch_normalization<data_layout::DATA_PARALLEL>(
+          layer_id,
+          ell.num_neurons(),
+          comm,
+          mb_size,
+          ell.decay(),
+          ell.gamma(),
+          ell.beta());
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: selu (activation)
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_selu()) {
+      const lbann_data::Selu& ell = layer.selu();
+      Layer *d;
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new selu_layer<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.alpha(),
+          ell.scale()
+        );
+      } else {
+        d = new selu_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          mb_size,
+          ell.alpha(),
+          ell.scale()
+        );
       }
       model->add(d);
     }

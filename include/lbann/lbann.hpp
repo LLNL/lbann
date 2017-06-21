@@ -39,35 +39,35 @@
 #include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/activations/elu.hpp"
-#include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/id.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
+#include "lbann/layers/activations/selu.hpp"
 #include "lbann/layers/activations/sigmoid.hpp"
 #include "lbann/layers/activations/smooth_relu.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 
-/// Layers
+/// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/learning/convolution.hpp"
+
+/// Transform Layers
 #include "lbann/layers/transform/pooling.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
+#include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
-//#include "lbann/layers/lbann_target_layer_unsupervised.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
@@ -81,6 +81,9 @@
 #include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
 
 /// Callbacks
+#include "lbann/callbacks/lbann_callback_check_init.hpp"
+#include "lbann/callbacks/lbann_callback_checknan.hpp"
+#include "lbann/callbacks/lbann_callback_checksmall.hpp"
 #include "lbann/callbacks/lbann_callback_print.hpp"
 #include "lbann/callbacks/lbann_callback_io.hpp"
 #include "lbann/callbacks/lbann_callback_summary.hpp"
@@ -93,14 +96,21 @@
 #include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
 #include "lbann/callbacks/lbann_callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/lbann_callback_early_stopping.hpp"
+#include "lbann/callbacks/lbann_callback_ltfb.hpp"
+#include "lbann/callbacks/lbann_callback_save_images.hpp"
+
+/// Optimizers
+#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
+#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
-#include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 
 /// Metrics
-#include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
 #include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
 

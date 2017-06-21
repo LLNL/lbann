@@ -183,6 +183,7 @@ message Layer {
    BatchNormalization batch_normalization = 19;
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
+   SeluDropout selu_dropout = 229;
 
    // activation Layers
    Softmax softmax = 200;
@@ -193,6 +194,7 @@ message Layer {
    Sigmoid sigmoid = 34;
    SmoothRelu smooth_relu = 35;
    Softplus soft_plus = 36;
+   Selu selu = 37;
 }
 
 ///////////////////////
@@ -231,13 +233,27 @@ message Softmax {
   string weight_initialization = 3;
 }
 
+message Selu {
+  int64 num_neurons = 1;
+  double alpha = 2;
+  double scale = 3;
+}
+
 ///////////////////////////
 // Regularization Layers //
 ///////////////////////////
 message BatchNormalization {
+  int64 num_neurons = 1;
   double decay = 2; //default: 0.9
   double gamma = 3; //default: 1.0
   double beta = 4;  //default: 0.0
+}
+
+message SeluDropout {
+  int64 num_neurons = 1;
+  double keep_prob = 2; //default: 0.95
+  double alpha = 3;     //default: 1.6732632423543772848170429916717
+  double scale = 4;     //default: 1.0507009873554804934193349852946
 }
 
 message LocalResponseNormalization {
