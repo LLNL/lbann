@@ -91,9 +91,11 @@ int main(int argc, char *argv[]) {
 
     // set algorithmic blocksize
     SetBlocksize(perfParams.BlockSize);
-
+    
+#ifdef EL_USE_CUBLAS
     El::GemmUseGPU(512,512,512);
-
+#endif
+    
     // Set up the communicator and get the grid.
     comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
