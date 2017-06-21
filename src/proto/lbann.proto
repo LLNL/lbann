@@ -193,22 +193,26 @@ message Layer {
    Relu relu = 33;
    Sigmoid sigmoid = 34;
    SmoothRelu smooth_relu = 35;
-   Softplus soft_plus = 36;
+   Softplus softplus = 36;
    Selu selu = 37;
+   Tanh tanh = 38;
 }
 
 ///////////////////////
 // Activation Layers //
 ///////////////////////
 message ELU {
-  double alpha = 1; //default: 1.0; must be >= 0
+  int64 num_neurons = 1;
+  double alpha = 2; //default: 1.0; must be >= 0
 }
 
 message ID {
+  int64 num_neurons = 1;
 }
 
 message LeakyRelu {
-  double leak = 1; //default: 0.01
+  int64 num_neurons = 1;
+  double leak = 2; //default: 0.01
 }
 
 message Relu {
@@ -220,12 +224,15 @@ message Sigmoid {
 }
 
 message SmoothRelu {
+  int64 num_neurons = 2;
 }
 
 message Softplus {
+  int64 num_neurons = 2;
 }
 
 message Tanh {
+  int64 num_neurons = 2;
 }
 
 message Softmax {
