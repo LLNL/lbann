@@ -34,6 +34,8 @@ using namespace lbann;
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
 
+  El::GemmUseGPU(32,32,32);
+
   try {
 
     //get input prototext filenames
@@ -82,6 +84,12 @@ int main(int argc, char *argv[]) {
     //      instead, use pb_model->mini_batch_size(), etc.
     //////////////////////////////////////////////////////////////////////
 
+    if (pb_model->block_size() == 0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " 
+          << pb_model->block_size();
+      throw lbann_exception(err.str());
+    }
     // Set algorithmic blocksize
     SetBlocksize(pb_model->block_size());
 
