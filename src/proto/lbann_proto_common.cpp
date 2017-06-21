@@ -724,8 +724,7 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 
 optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p)
 {
-  const lbann_data::Model& model = p.model();
-  const lbann_data::Optimizer& optimizer = model.optimizer();
+  const lbann_data::Optimizer& optimizer = p.optimizer();
 
   const string name = optimizer.name();
   double learn_rate = optimizer.learn_rate();

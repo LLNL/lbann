@@ -5,6 +5,7 @@ package lbann_data;
 message LbannPB {
   DataReader data_reader = 1; 
   Model model = 2; 
+  Optimizer optimizer = 3;
 }
 
 //========================================================================
@@ -65,11 +66,6 @@ message Model {
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
 
-  //see note in Layer section below. This is the global optimzer, that is, as of
-  //this writing, passed to all pertinent layers. However, in theory we could
-  //pass different optimizers to different layers; therefore, each Layer
-  //that takes an optimizer in its ctor also has an optimizer field.
-  Optimizer optimizer = 11;
 
   repeated Layer layer = 10;
 

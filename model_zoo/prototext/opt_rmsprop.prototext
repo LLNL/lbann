@@ -1,0 +1,5 @@
+optimizer {
+  name: "rmsprop"
+  learn_rate: 0.01
+  decay: 0.5
+}
