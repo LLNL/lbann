@@ -177,7 +177,7 @@ message Layer {
    // target Layers
    TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
    TargetPartitionedMinibatchParallelIO target_partitioned_minibatch_parallel_io = 180;
-   TargetReconstruction target_reconstruction = 22;
+   TargetReconstruction reconstruction = 22;
 
    // regularization Layers
    BatchNormalization batch_normalization = 19;
@@ -282,11 +282,9 @@ message Dropout {
 // Input Layers //
 //////////////////
 message InputDistributedMiniBatchParallelIO {
-  int64 num_parallel_readers = 2;
 }
 
 message InputPartitionedMiniBatchParallelIO {
-  int64 num_parallel_readers = 2;
 }
 
 //////////////////////
@@ -331,13 +329,11 @@ message Convolution {
 // Target Layers //
 ///////////////////
 message TargetDistributedMinibatchParallelIO {
-  int64 num_parallel_readers = 1;
   bool shared_data_reader = 2;
   bool for_regression = 3;
 }
 
 message TargetPartitionedMinibatchParallelIO {
-  int64 num_parallel_readers = 1;
   bool shared_data_reader = 2;
   bool for_regression = 3;
 }
