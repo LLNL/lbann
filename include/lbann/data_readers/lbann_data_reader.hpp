@@ -68,11 +68,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_master(false)
   {}
 
-  //developer's note: I eliminated the copy ctor, since the
-  //default does everything we need; eliminating our explicit
-  //code helps minimize sources of error -dHysom
-
-  virtual ~generic_data_reader(void) {}
+  virtual ~generic_data_reader() {}
 
   /** @name Methods related to construction and loading
    *  These methods are used in drivers (front ends) to construct data readers,
@@ -92,7 +88,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Returns the base directory for your data.
    * If set_file_dir was not called, returns the empty string
    */
-  std::string get_file_dir(void) const;
+  std::string get_file_dir() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -106,7 +102,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Returns the complete filepath to you data file.
    * See not for set_file_dir()
    */
-  std::string get_data_filename(void) const;
+  std::string get_data_filename() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -120,7 +116,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * See not for set_file_dir(). Note: some pipelines (autoencoders)
    * will not make use of this method.
    */
-  std::string get_label_filename(void) const;
+  std::string get_label_filename() const;
 
   /**
    * if set to true, indices (data samples) are not shuffled;
@@ -130,7 +126,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /** if 'true' is returned, indices (data samples) are not shuffled
    */
-  bool get_firstN(void) const;
+  bool get_firstN() const;
 
   /** sets the absolute number of data samples that will be used
    *  for training or testing
@@ -140,12 +136,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /** returns 'true' if set_max_sample_count() was called;
    *  primarily for internal use; end users can ignore.
    */
-  bool has_max_sample_count(void) const;
+  bool has_max_sample_count() const;
 
   /** returns the absolute number of data samples that will be used
    *  for training or testing
    */
-  size_t get_max_sample_count(void) const;
+  size_t get_max_sample_count() const;
 
   /** set the percentage of the data set to use for training+validation;
    *  or testing.  Exception is thrown if  1.0 < s < 0
@@ -153,14 +149,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_use_percent(double s);
 
   /** returns true if set_use_percent() was called */
-  bool has_use_percent(void) const;
+  bool has_use_percent() const;
 
   /** returns the percent of the data set that is to be used
    *  for training or testing. If training, this is the total
    *  for training+validation. Throws an exception if
    *  set_use_percent() was not previously called.
    */
-  double get_use_percent(void) const;
+  double get_use_percent() const;
 
   /** sets the proportion of the data set that will be used for
    *  validation;  0.0 <= s <= 1.0, else an exception is thrown
@@ -170,12 +166,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /** returns true if set_validation_percent was called;
    *  this method will likely be deprecated in the future
    */
-  bool has_validation_percent(void) const;
+  bool has_validation_percent() const;
 
   /** returns the percentage of the data set that is to be
    *  used for validation
    */
-  double get_validation_percent(void) const;
+  double get_validation_percent() const;
 
   /** set the identifyer for the data set; should be
    *  "train," "test," or validate. This is primarily for internal use:
@@ -189,7 +185,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    *  This is primarily for internal use:
    *  end users can ignore.
    */
-  std::string get_role(void) const {
+  std::string get_role() const {
     return m_role;
   }
 
@@ -198,12 +194,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void load() = 0;
 
-  ///@}
-
-
-
-
-
   /**
    * Prepare to start processing an epoch of data.
    * If shuffle is true, then shuffle the indices of the data set
@@ -211,7 +201,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the stride is not specified set it to batch size
    */
   void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
-  void setup(void);
+  void setup();
 
   virtual int fetch_data(Mat& X) {
     NOT_IMPLEMENTED("fetch_data");
@@ -237,45 +227,45 @@ class generic_data_reader : public lbann_image_preprocessor {
    * advanced the current position pointer.  If the pointer wraps
    * around, then reshuffle the data indicies.
    */
-  virtual bool update(void);
+  virtual bool update();
 
-  virtual int get_num_labels(void) const {
+  virtual int get_num_labels() const {
     return 0;
   }
-  virtual int getNumResponses(void) const {
+  virtual int getNumResponses() const {
     return 1;
   }
-  virtual int get_linearized_data_size(void) const {
+  virtual int get_linearized_data_size() const {
     return 0;
   }
-  virtual int get_linearized_label_size(void) const {
+  virtual int get_linearized_label_size() const {
     return 0;
   }
-  virtual int get_linearized_response_size(void) const {
+  virtual int get_linearized_response_size() const {
     return 1;
   }
 
-  bool position_valid(void) const {
+  bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }
-  bool at_new_epoch(void) const {
+  bool at_new_epoch() const {
     return (m_current_mini_batch_idx == 0);
   }
-  int getm_batch_size(void) const;
+  int getm_batch_size() const;
   /// Return the full mini_batch_size.
-  int getm_batch_max(void) const {
+  int getm_batch_max() const {
     return m_batch_size;
   }
   /// Return the mini batch stride.
-  int get_batch_stride(void) const {
+  int get_batch_stride() const {
     return m_batch_stride;
   }
   /// Return the base offset.
-  int get_base_offset(void) const {
+  int get_base_offset() const {
     return m_base_offset;
   }
   /// Return the model offset.
-  int get_model_offset(void) const {
+  int get_model_offset() const {
     return m_model_offset;
   }
   /// Set the last mini batch treshold
@@ -283,7 +273,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_last_mini_batch_threshold = t;
   }
   /// Return the last mini batch treshold
-  int get_last_mini_batch_threshold(void) const {
+  int get_last_mini_batch_threshold() const {
     return m_last_mini_batch_threshold;
   }
   /// Set the last mini batch size
@@ -291,7 +281,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
-  int get_last_mini_batch_size(void) const {
+  int get_last_mini_batch_size() const {
     return m_last_mini_batch_size;
   }
   /// Set the last mini batch stride
@@ -299,7 +289,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_last_mini_batch_stride = s;
   }
   /// Return the last mini batch stride
-  int get_last_mini_batch_stride(void) const {
+  int get_last_mini_batch_stride() const {
     return m_last_mini_batch_stride;
   }
   /// Set the number of mini batches per reader
@@ -307,29 +297,29 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_num_mini_batches_per_reader = n;
   }
   /// Return the number of mini batches per reader
-  int get_num_mini_batches_per_reader(void) const {
+  int get_num_mini_batches_per_reader() const {
     return m_num_mini_batches_per_reader;
   }
-  int getPosition(void) const {
+  int getPosition() const {
     return m_current_pos;
   }
-  int get_next_position(void) const;
-  int *getIndices(void) {
+  int get_next_position() const;
+  int *getIndices() {
     return &m_shuffled_indices[0];
   }
-  int getNumData(void) const {
+  int getNumData() const {
     return (int)m_shuffled_indices.size();
   }
-  int get_num_unused_data(void) const {
+  int get_num_unused_data() const {
     return (int)m_unused_indices.size();
   }
-  int *get_unused_data(void) {
+  int *get_unused_data() {
     return &m_unused_indices[0];
   }
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
-  int get_num_iterations_per_epoch(void) const {
+  int get_num_iterations_per_epoch() const {
     return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
 
@@ -339,7 +329,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
-  bool is_master(void) const {
+  bool is_master() const {
     return m_master;
   }
 
@@ -349,16 +339,16 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// for use during development and debugging
-  int get_rank(void) const {
+  int get_rank() const {
     return m_rank;
   }
 
-  void select_subset_of_data(void);
+  void select_subset_of_data();
 
   /** \brief Replace the shuffled index set with the unused index set
    *  The unused index set is emptied.
    */
-  void use_unused_index_set(void);
+  void use_unused_index_set();
 
   generic_data_reader& operator=(const generic_data_reader& source);
 
