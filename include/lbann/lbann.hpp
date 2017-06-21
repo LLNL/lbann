@@ -68,6 +68,9 @@
 #include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
 
+/// Reconstruction Layer
+#include "lbann/layers/io/target/reconstruction.hpp"
+
 /// Data Readers
 #include "lbann/data_readers/lbann_data_reader_imagenet.hpp"
 #include "lbann/data_readers/lbann_data_reader_imagenet_single.hpp"
