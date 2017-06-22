@@ -24,10 +24,6 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
   add_custom_command(
     OUTPUT ${LBANN_PROTO_DIR}/lbann.pb.cc
     COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=${PROJECT_SOURCE_DIR}/src/proto --cpp_out=${LBANN_PROTO_DIR}/ ${PROJECT_SOURCE_DIR}/src/proto/lbann.proto
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/include
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${LBANN_PROTO_DIR}/lbann.pb.h 
-      ${CMAKE_INSTALL_PREFIX}/include
     DEPENDS protobuf_built ${PROJECT_SOURCE_DIR}/src/proto/lbann.proto
     WORKING_DIRECTORY ${LBANN_PROTO_DIR}
   )
@@ -48,3 +44,5 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
 endif()
 
 set(LBANN_HAS_LBANN_PROTO TRUE)
+include_directories(${LBANN_PROTO_DIR})
+
