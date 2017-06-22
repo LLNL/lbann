@@ -282,6 +282,18 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+    "/activations/";
+  summarizer.reduce_mean(prefix + "mean", *m_activations, step);
+  summarizer.reduce_min(prefix + "min", *m_activations, step);
+  summarizer.reduce_max(prefix + "max", *m_activations, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_activations, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+    "/error_signal/";
+  summarizer.reduce_mean(prefix + "mean", *m_error_signal, step);
+  summarizer.reduce_min(prefix + "min", *m_error_signal, step);
+  summarizer.reduce_max(prefix + "max", *m_error_signal, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal, step);
   reset_counters();
 }
 
