@@ -123,6 +123,8 @@ int lbann::data_reader_nci::fetch_data(Mat& X) {
         f++;
       }//end if col > 5
     }// end while loop
+    auto data_col = X(El::ALL, IR(k, k+1));
+    normalize(data_col, 1);
   } // end for loop (batch)
   ifs.close();
   return (n - m_current_pos);
