@@ -41,6 +41,7 @@ lbann::data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   //m_num_samples = -1;
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
+  scale(false);
 }
 
 lbann::data_reader_nci::data_reader_nci(int batchSize)
