@@ -28,7 +28,7 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
     COMMAND ${CMAKE_COMMAND} -E copy
       ${LBANN_PROTO_DIR}/lbann.pb.h 
       ${CMAKE_INSTALL_PREFIX}/include
-    DEPENDS protobuf_built
+    DEPENDS protobuf_built ${PROJECT_SOURCE_DIR}/src/proto/lbann.proto
     WORKING_DIRECTORY ${LBANN_PROTO_DIR}
   )
 
