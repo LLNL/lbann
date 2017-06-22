@@ -9,6 +9,8 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 
+#include <unordered_map>
+
 using namespace lbann;
 
 pool_mode get_pool_mode(const string& s)
@@ -116,6 +118,8 @@ void add_layers(
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
 
+  std::unordered_map<int, Layer*> all_layers;
+
   const lbann_data::Model& m = p.model();
   int mb_size = m.mini_batch_size();
   int size = m.layer_size();
@@ -140,6 +144,7 @@ void add_layers(
         d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -153,21 +158,29 @@ void add_layers(
         d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: reconstruction
     //////////////////////////////////////////////////////////////////
-    /*
     if (layer.has_reconstruction()) {
       const lbann_data::TargetReconstruction & ell = layer.reconstruction();
+      int original_layer = ell.original_layer();
+      if (all_layers.find(original_layer) == all_layers.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: the original_field in the "
+            << " Reconstruction layer has index " << original_layer
+            << " but we don't have a layer with that index. Something may be "
+            << " wrong in your prototext file";
+        throw lbann_exception(err.str());
+      }
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           model->create_optimizer(),
           mb_size,
-          ell.original_layer()
+          all_layers[original_layer]
         );  
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
@@ -175,11 +188,12 @@ void add_layers(
           comm,
           model->create_optimizer(),
           mb_size,
-          ell.original_layer()
+          all_layers[original_layer]
         );  
       }
+      model->add(d);
+      all_layers[layer.index()] = d;
     }
-    */
 
     //////////////////////////////////////////////////////////////////
     // LAYER: input_distributed_minibatch_parallel_io
@@ -203,6 +217,7 @@ void add_layers(
           data_readers);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -224,6 +239,7 @@ void add_layers(
           data_readers);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -257,6 +273,7 @@ void add_layers(
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -323,6 +340,7 @@ void add_layers(
       }
 
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -401,6 +419,7 @@ void add_layers(
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -450,6 +469,7 @@ void add_layers(
           cudnn);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -479,6 +499,7 @@ void add_layers(
         );  
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -506,6 +527,7 @@ void add_layers(
           ell.beta());
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -531,6 +553,7 @@ void add_layers(
         );
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -554,6 +577,7 @@ void add_layers(
         );  
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -577,6 +601,7 @@ void add_layers(
         );  
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -600,6 +625,7 @@ void add_layers(
         );  
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -625,6 +651,7 @@ void add_layers(
         );
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -648,6 +675,7 @@ void add_layers(
         );  
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -673,6 +701,7 @@ void add_layers(
         );
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -698,6 +727,7 @@ void add_layers(
           keep_prob);
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -727,6 +757,7 @@ void add_layers(
         );
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -752,6 +783,7 @@ void add_layers(
           ell.for_regression());
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -777,6 +809,7 @@ void add_layers(
           ell.for_regression());
       }
       model->add(d);
+      all_layers[layer.index()] = d;
     }
   }
 }
