@@ -35,9 +35,9 @@ namespace lbann {
 
 /**
  * Dump activations matrices to files.
- * This will dump each hidden layer's weight/bias matrix after each epoch.
+ * This will dump each hidden layer's activation matrix after each minibatch.
  * The matrices are written to files using Elemental's simple ASCII format. This
- * is not meant for checkpointing, but for exporting weight matrices for
+ * is not meant for checkpointing, but for exporting acitvation matrices for
  * analysis that isn't easily done in LBANN.
  * Note this dumps matrices during each mini-batch. This will be slow and
  * produce a lot of output.

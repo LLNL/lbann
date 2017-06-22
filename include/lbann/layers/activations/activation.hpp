@@ -32,18 +32,19 @@
 
 namespace lbann {
 
-  /** Represent the type of activation function. */
-  enum class activation_type {
-    SIGMOID = 1,
-    TANH,
-    RELU,
-    ID,
-    LEAKY_RELU,
-    SOFTPLUS,
-    SMOOTH_RELU,
-    ELU
-  };
-
+/** Represent the type of activation function. */
+enum class activation_type {
+  SIGMOID = 1,
+  TANH,
+  RELU,
+  ID,
+  LEAKY_RELU,
+  SOFTPLUS,
+  SMOOTH_RELU,
+  ELU,
+  SOFTMAX,
+  SELU  
+};
 
 class activation_layer : public Layer {
 
