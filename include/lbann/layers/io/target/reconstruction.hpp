@@ -97,7 +97,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() {
     // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_prev_activations_v, original_layer_act_v,*this->m_prev_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer
