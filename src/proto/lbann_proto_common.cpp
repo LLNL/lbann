@@ -134,7 +134,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_relu()) {
       const lbann_data::Relu &ell = layer.relu();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
       } else {
@@ -148,7 +147,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_sigmoid()) {
       const lbann_data::Sigmoid &ell = layer.sigmoid();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
       } else {
@@ -163,7 +161,6 @@ void add_layers(
     /*
     if (layer.has_reconstruction()) {
       const lbann_data::TargetReconstruction & ell = layer.reconstruction();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -189,7 +186,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
-      //Layer *d;
       //please do not delete this! it's here to remind me that something needs
       //fixing. Thanks, Dave H.
       cout << "XX numreaders: " << m.num_parallel_readers() << endl;
@@ -210,11 +206,31 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: input_partitioned_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_input_partitioned_minibatch_parallel_io()) {
+      const lbann_data::InputPartitionedMiniBatchParallelIO& ell = layer.input_partitioned_minibatch_parallel_io();
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new input_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers);
+      } else {
+        d = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers);
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: fully_connected
     //////////////////////////////////////////////////////////////////
     if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected& ell = layer.fully_connected();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -276,7 +292,6 @@ void add_layers(
       while (ss >> i) {
         pool_strides.push_back(i);
       }
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new pooling_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -347,7 +362,6 @@ void add_layers(
       Int num_dims = ell.num_dims();
       Int num_input_channels = ell.num_input_channels();
       Int num_output_channels = ell.num_output_channels();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -408,7 +422,6 @@ void add_layers(
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
       Int window_width = ell.window_width();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -444,7 +457,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_selu_dropout()) {
       const lbann_data::SeluDropout& ell = layer.selu_dropout();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -474,7 +486,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_batch_normalization()) {
       const lbann_data::BatchNormalization& ell = layer.batch_normalization();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new batch_normalization<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -502,7 +513,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_selu()) {
       const lbann_data::Selu& ell = layer.selu();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new selu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -528,7 +538,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_tanh()) {
       const lbann_data::Tanh& ell = layer.tanh();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -552,7 +561,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softplus()) {
       const lbann_data::Softplus& ell = layer.softplus();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -576,7 +584,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_smooth_relu()) {
       const lbann_data::SmoothRelu& ell = layer.smooth_relu();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -600,7 +607,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_leaky_relu()) {
       const lbann_data::LeakyRelu& ell = layer.leaky_relu();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -626,7 +632,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_id()) {
       const lbann_data::ID& ell = layer.id();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new id_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -650,7 +655,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_elu()) {
       const lbann_data::ELU& ell = layer.elu();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new elu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -678,7 +682,6 @@ void add_layers(
       const lbann_data::Dropout& ell = layer.dropout();
 
       double keep_prob = ell.keep_prob();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -702,7 +705,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
       const lbann_data::Softmax& ell = layer.softmax();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
@@ -728,11 +730,35 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: target_partitioned_minibatch_parallel_io
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_target_partitioned_minibatch_parallel_io()) {
+      const lbann_data::TargetPartitionedMinibatchParallelIO& ell = layer.target_partitioned_minibatch_parallel_io();
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          ell.shared_data_reader(),
+          ell.for_regression());
+      } else {
+        d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+          comm,
+          m.num_parallel_readers(),
+          mb_size,
+          data_readers,
+          ell.shared_data_reader(),
+          ell.for_regression());
+      }
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: target_distributed_minibatch_parallel_io
     //////////////////////////////////////////////////////////////////
     if (layer.has_target_distributed_minibatch_parallel_io()) {
       const lbann_data::TargetDistributedMinibatchParallelIO& ell = layer.target_distributed_minibatch_parallel_io();
-      //Layer *d;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
