@@ -38,7 +38,7 @@ using namespace lbann;
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
 
-#ifdef EL_USE_GPU
+#ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
 #endif
 
@@ -202,9 +202,9 @@ int main(int argc, char *argv[]) {
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode1);
 
-    Layer *tanh1 = new tanh_layer<data_layout::MODEL_PARALLEL>(2, comm,
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
                                                trainParams.MBSize, 1000);
-    dnn.add(tanh1);
+    dnn.add(relu1);
 
     /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 1000,
                                                comm, trainParams.MBSize,
@@ -218,9 +218,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode2);
 
-    Layer *tanh2 = new tanh_layer<data_layout::MODEL_PARALLEL>(4, comm,
+    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(4, comm,
                                                trainParams.MBSize, 500);
-    dnn.add(tanh2);
+    dnn.add(relu2);
 
     /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6, 500,
                                                comm, trainParams.MBSize,
@@ -233,9 +233,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode3);
     
-    Layer *tanh3 = new tanh_layer<data_layout::MODEL_PARALLEL>(6, comm,
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(6, comm,
                                                trainParams.MBSize, 250);
-    dnn.add(tanh3);
+    dnn.add(relu3);
 
     /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(9, 250,
                                                comm, trainParams.MBSize,
@@ -254,9 +254,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode4);
     
-    Layer *tanh4 = new tanh_layer<data_layout::MODEL_PARALLEL>(9, comm,
+    Layer *relu4 = new relu_layer<data_layout::MODEL_PARALLEL>(9, comm,
                                                trainParams.MBSize, 250);
-    dnn.add(tanh4);
+    dnn.add(relu4);
 
     /*Layer *dropout4 = new dropout<data_layout::MODEL_PARALLEL>(13, 250,
                                                comm, trainParams.MBSize,
@@ -270,9 +270,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode3);
     
-    Layer *tanh5 = new tanh_layer<data_layout::MODEL_PARALLEL>(11, comm,
+    Layer *relu5 = new relu_layer<data_layout::MODEL_PARALLEL>(11, comm,
                                                trainParams.MBSize, 500);
-    dnn.add(tanh5);
+    dnn.add(relu5);
 
     /*Layer *dropout5 = new dropout<data_layout::MODEL_PARALLEL>(16, 500,
                                                comm, trainParams.MBSize,
@@ -285,9 +285,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode2);
     
-    Layer *tanh6 = new tanh_layer<data_layout::MODEL_PARALLEL>(13, comm,
+    Layer *relu6 = new relu_layer<data_layout::MODEL_PARALLEL>(13, comm,
                                                trainParams.MBSize, 1000);
-    dnn.add(tanh6);
+    dnn.add(relu6);
 
     /*Layer *dropout6 = new dropout<data_layout::MODEL_PARALLEL>(14, 1000,
                                                comm, trainParams.MBSize,
@@ -300,9 +300,9 @@ int main(int argc, char *argv[]) {
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *tanh7 = new tanh_layer<data_layout::MODEL_PARALLEL>(15, comm,
+    Layer *relu7 = new relu_layer<data_layout::MODEL_PARALLEL>(15, comm,
                                                trainParams.MBSize, 784);
-    dnn.add(tanh7);
+    dnn.add(relu7);
 
     /*Layer *dropout7 = new dropout<data_layout::MODEL_PARALLEL>(22, 784,
                                                comm, trainParams.MBSize,
@@ -314,6 +314,9 @@ int main(int argc, char *argv[]) {
                                                           trainParams.MBSize, input_layer);
     dnn.add(rcl);
 
+    
+    lbann_callback_print print_cb;
+    dnn.add_callback(&print_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
     lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
