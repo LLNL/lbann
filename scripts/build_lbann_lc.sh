@@ -344,9 +344,9 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
         elif [ "${CLUSTER}" == "quartz" ]; then
-            C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
-            CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
-            Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+            C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
+            CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
