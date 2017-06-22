@@ -91,12 +91,32 @@ void lbann_callback_imcomm::setup(model *m) {
       // Update the effective mini-batch size so averaging is done properly.
       layers[layer]->set_effective_minibatch_size(
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
-      // TODO: Support reshaping. (Old implementation was broken.)
+      // Support reshaping for convolutional layers.
+      if (layers[layer]->get_type() == layer_type::convolution) {
+        El::Int filter_size, num_output_channels;
+        if (layers[layer]->get_data_layout() == data_layout::MODEL_PARALLEL) {
+          convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
+            dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
+          filter_size = conv_layer->m_filter_size;
+          num_output_channels = conv_layer->m_num_output_channels;
+        } else {
+          convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
+            dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
+          filter_size = conv_layer->m_filter_size;
+          num_output_channels = conv_layer->m_num_output_channels;
+        }
+        params.reshape_height = filter_size / num_output_channels;
+        params.reshape_width = num_output_channels;
+      }
       if (ct_does_quantization(params.ct)) {
         learning *learning_layer =
           dynamic_cast<learning*>(layers[layer]);
         const ElMat& gradients = learning_layer->get_weights_gradient();
-        Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
+        if (params.reshape_height > 0) {
+          Zeros(params.error, params.reshape_height, params.reshape_width);
+        } else {
+          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
+        }
       }
     }
   }
@@ -113,11 +133,21 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     imcomm_params& params = m_layer_params[layer];
     if (ct_does_quantization(params.ct)) {
       comm->intermodel_sum_matrix(params.error);
-      Mat* local_gradients = nullptr;
+      Mat *local_gradients = nullptr;
+      Mat reshaped;
       learning *learning_layer =
         dynamic_cast<learning*>(layers[layer]);
-      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
-      // TODO: Handle reshaping.
+      if (params.reshape_height > 0) {
+        if (layers[layer]->get_type() == layer_type::convolution) {
+          reshape_mat(learning_layer->get_weights_gradient().Matrix(),
+                      reshaped, params.reshape_height, params.reshape_width);
+          local_gradients = &reshaped;
+        } else {
+          throw lbann_exception("imcomm: unsupported layer reshaping");
+        }
+      } else {
+        local_gradients = &(learning_layer->get_weights_gradient().Matrix());
+      }
       *local_gradients = params.error;
       // Apply optimizer update with accumulated gradient error.
       layers[layer]->update();
@@ -139,11 +169,21 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     if (params.ct == NONE) {
       continue;
     }
-    // TODO: Handle reshaping.
     Mat* local_gradients = nullptr;
+    Mat reshaped;
     learning *learning_layer =
       dynamic_cast<learning*>(layers[layer]);
-    local_gradients = &(learning_layer->get_weights_gradient().Matrix());
+    if (params.reshape_height > 0) {
+      if (layers[layer]->get_type() == layer_type::convolution) {
+        reshape_mat(learning_layer->get_weights_gradient().Matrix(),
+                    reshaped, params.reshape_height, params.reshape_width);
+        local_gradients = &reshaped;
+      } else {
+        throw lbann_exception("imcomm: unsupported layer reshaping");
+      }
+    } else {
+      local_gradients = &(learning_layer->get_weights_gradient().Matrix());
+    }
     switch (params.ct) {
     case NORMAL:
       comm->intermodel_sum_matrix(*local_gradients);
