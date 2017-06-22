@@ -50,6 +50,7 @@ class lbann_callback_save_images : public lbann_callback {
     m_reader(reader) {
     set_name("save_images");
   }
+  void on_epoch_end(model *m);
   void on_phase_end(model *m);
 
  private:
