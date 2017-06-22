@@ -1,12 +1,8 @@
 #ifndef LBANN_PROTO__INCLUDED
 #define LBANN_PROTO__INCLUDED
 
-#include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/lbann.hpp"
-#include "lbann/models/lbann_model_dnn.hpp"
 #include <lbann.pb.h>
-#include "lbann/models/lbann_model_sequential.hpp"
-#include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
 
