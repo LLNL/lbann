@@ -12,6 +12,7 @@ ARCH=$(uname -m)
 COMPILER=gnu
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
+    MPI_VERSION=2.1
 elif [ "${ARCH}" == "ppc64le" ]; then
     MPI=spectrum
 fi
@@ -143,6 +144,7 @@ while :; do
             # Choose mpi library
             if [ -n "${2}" ]; then
                 MPI=${2}
+                MPI_VERSION=
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -341,6 +343,10 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+        elif [ "${CLUSTER}" == "quartz" ]; then
+            C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
+            CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
         elif [ "${CLUSTER}" == "surface" ]; then
             C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
@@ -387,16 +393,22 @@ if [ ${USE_MODULES} -ne 0 ]; then
     fi
     MPI_DIR=$(module show ${MPI} 2> /dev/stdout | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
 else
-    MPI_VER=${MPI}-${COMPILER}
-    if [ -z "$(use | grep ${MPI_VER})" ]; then
-        use ${MPI}-${COMPILER}
+    MPI_DOTKIT=${MPI}-${COMPILER}
+    if [ "${BUILD_TYPE}" == "Debug" ]; then
+        MPI_DOTKIT=${MPI_DOTKIT}-debug
     fi
-    if [ -z "$(use | grep ${MPI_VER})" ]; then
-        echo "Could not load dotkit (${MPI_VER})"
+    if [ -n "${MPI_VERSION}" ]; then
+        MPI_DOTKIT=${MPI_DOTKIT}-${MPI_VERSION}
+    fi
+    if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+        use ${MPI_DOTKIT}
+    fi
+    if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+        echo "Could not load dotkit (${MPI_DOTKIT})"
         exit 1
     fi
-    MPI_VER="$(use | grep ${MPI_VER})"
-    MPI_DIR=$(use -hv ${MPI_VER} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
+    MPI_DOTKIT="$(use | grep ${MPI_DOTKIT})"
+    MPI_DIR=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
 fi
 
 # Get MPI compilers
