@@ -50,7 +50,7 @@ class leaky_relu_layer : public entrywise_activation_layer {
     m_leak(leak) { 
     set_name("leaky_relu_layer");
     initialize_distributed_matrices(); 
-    }
+  }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
