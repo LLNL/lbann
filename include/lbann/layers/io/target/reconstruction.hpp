@@ -65,17 +65,6 @@ class reconstruction_layer : public target_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    target_layer::setup(num_prev_neurons);
-    Layer::setup(num_prev_neurons);
-
-    // Initialize other matrices
-    Zeros(*this->m_error_signal, num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
-    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
-    Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
-  }
-
  protected:
   void fp_set_std_matrix_view() {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
