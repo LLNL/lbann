@@ -36,6 +36,11 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
   set_name("summary");
 }
 
+void lbann_callback_summary::on_train_begin(model *m) {
+  ElMat& acts = m->get_layers()[1]->get_activations();
+  save_histograms(m);
+}
+
 void lbann_callback_summary::on_batch_end(model *m) {
   m->summarize(*m_summarizer);
   // Note that these comm stats are a running sum, so they count from the last
@@ -67,6 +72,26 @@ void lbann_callback_summary::on_epoch_end(model *m) {
     phase += _to_string(metric->type);
     m_summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
   }
+  save_histograms(m);
+  m_summarizer->flush();
+}
+
+void lbann_callback_summary::on_test_end(model *m) {
+  lbann_comm *comm = m->get_comm();
+  for (auto&& metric : m->m_metrics) {
+    double test_score = metric->report_metric(execution_mode::testing);
+    string phase = "test_";
+    phase += _to_string(metric->type);
+    m_summarizer->reduce_scalar(phase, test_score, m->get_cur_step());
+  }
+  // Reset counters incremented during test phase.
+  comm->reset_stats_counters();
+  for (auto&& layer : m->get_layers()) {
+    layer->reset_counters();
+  }
+}
+
+void lbann_callback_summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     std::string prefix = "layer" + std::to_string(layer->get_index()) +
       "/";
@@ -83,22 +108,6 @@ void lbann_callback_summary::on_epoch_end(model *m) {
         learning_layer->get_weights_biases_gradient(),
         m->get_cur_step());
     }
-  }
-  m_summarizer->flush();
-}
-
-void lbann_callback_summary::on_test_end(model *m) {
-  lbann_comm *comm = m->get_comm();
-  for (auto&& metric : m->m_metrics) {
-    double test_score = metric->report_metric(execution_mode::testing);
-    string phase = "test_";
-    phase += _to_string(metric->type);
-    m_summarizer->reduce_scalar(phase, test_score, m->get_cur_step());
-  }
-  // Reset counters incremented during test phase.
-  comm->reset_stats_counters();
-  for (auto&& layer : m->get_layers()) {
-    layer->reset_counters();
   }
 }
 
