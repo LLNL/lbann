@@ -43,7 +43,7 @@ class target_layer_distributed_minibatch : public target_layer {
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression), Ys(this->m_comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -72,7 +72,7 @@ class target_layer_distributed_minibatch : public target_layer {
     }
 
     /// @todo put in warning about bad target size
-    if(static_cast<uint>(num_prev_neurons) != this->m_num_neurons) {
+    if(num_prev_neurons != this->m_num_neurons) {
       throw -1;
     }
 
@@ -103,9 +103,9 @@ class target_layer_distributed_minibatch : public target_layer {
     DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, *this->m_activations_v);
     this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
 
-    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     for (auto&& m : this->m_neural_network_model->m_metrics) {
-      double cur_num_errors = (int) m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
+      double cur_num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(cur_num_errors, curr_mini_batch_size);
     }
 

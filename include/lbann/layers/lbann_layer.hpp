@@ -120,7 +120,7 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 
 class Layer {
  public:
-  Layer(const uint index, lbann_comm *comm, uint mbsize);
+  Layer(const int index, lbann_comm *comm, int mbsize);
 
   virtual ~Layer(void);
 
@@ -130,7 +130,7 @@ class Layer {
   virtual void forwardProp(void);
   virtual void backProp(void);
   virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
+  virtual void summarize(lbann_summary& summarizer, int step);
   /**
    * Print information at the end of an epoch.
    * This is always called on the model masters and should synchronize
@@ -142,7 +142,7 @@ class Layer {
    * reset/clean up.
    */
   virtual void epoch_reset(void) {}
-  virtual DataType checkGradientMB(Layer& PrevLayer, const DataType Epsilon=1e-4) {
+  virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
     return 0.0;
   };
 
@@ -166,15 +166,15 @@ class Layer {
   }
 
   /** Return the index of this layer. */
-  inline uint get_index(void) const {
+  inline int get_index(void) const {
     return m_index;
   }
   /** Set the index of this layer. */
-  inline void set_index(const uint i) {
+  inline void set_index(int i) {
     m_index = i;
   }
   /** Return the number of neurons of this layer. */
-  inline uint get_num_neurons(void) const {
+  inline int get_num_neurons(void) const {
     return m_num_neurons;
   }
   /** Return the execution mode of this layer */
@@ -182,7 +182,7 @@ class Layer {
     return m_execution_mode;
   }
   /** Set the execution mode of this layer */
-  inline void set_execution_mode(const execution_mode mode) {
+  inline void set_execution_mode(execution_mode mode) {
     m_execution_mode = mode;
   }
   /** Return the data layout of the given layer -- Every concrete
@@ -200,7 +200,7 @@ class Layer {
   }
 
   /** Return the size of mini-batch this layer uses. */
-  virtual uint get_minibatch_size(void) const {
+  virtual int get_minibatch_size(void) const {
     return m_mini_batch_size;
   }
   /**
@@ -209,11 +209,11 @@ class Layer {
    * contributed than the local mini-batch size implies (e.g. when doing
    * inter-model updates).
    */
-  virtual uint get_effective_minibatch_size(void) const {
+  virtual int get_effective_minibatch_size(void) const {
     return m_effective_mbsize;
   }
   /** Set the effective size of a mini-batch to size. */
-  virtual void set_effective_minibatch_size(uint size) {
+  virtual void set_effective_minibatch_size(int size) {
     m_effective_mbsize = size;
   }
 
@@ -247,14 +247,14 @@ class Layer {
   virtual bool saveToFile(int fd, const char *filename) { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
-  virtual bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes);
-  virtual bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes);
+  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes);
+  virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
   virtual bool saveToCheckpointShared(persist& p);
   virtual bool loadFromCheckpointShared(persist& p);
 
  protected:
-  uint m_index;                 ///< Layer index (start with 0)
+  int m_index;                 ///< Layer index (start with 0)
 
   std::string m_name;
 
@@ -264,8 +264,8 @@ class Layer {
   layer_type m_prev_layer_type; ///< Type of previous layer
   layer_type m_next_layer_type; ///< Type of next layer
 
-  uint m_num_neurons;           ///< Number of neurons
-  Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
+  int m_num_neurons;           ///< Number of neurons
+  int m_num_prev_neurons;      ///< Number of neurons in previous layer
 
   execution_mode  m_execution_mode;
 
@@ -327,7 +327,7 @@ class Layer {
   bool m_bp_output_pinned;
 
   /** Number of mini-batch samples per GPU. */
-  Int m_mini_batch_size_per_gpu;
+  int m_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType *> m_prev_activations_d;
@@ -345,9 +345,9 @@ class Layer {
 #endif
 
   /** Size of the local mini-batch. */
-  uint m_mini_batch_size;
+  int m_mini_batch_size;
   /** "Effective" mini-batch size for backward propagation, etc.. */
-  uint m_effective_mbsize;
+  int m_effective_mbsize;
 
   /** Time spent in forward propagation. */
   double fp_time;

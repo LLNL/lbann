@@ -32,7 +32,7 @@
 namespace lbann {
 class input_layer : public io_layer {
  public:
-  input_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : io_layer(comm, mini_batch_size, data_readers) {
     this->m_num_neurons = io_layer::get_linearized_data_size();
   }

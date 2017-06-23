@@ -49,10 +49,10 @@ enum class activation_type {
 class activation_layer : public Layer {
 
  public:
-  activation_layer(uint index,
+  activation_layer(int index,
                    lbann_comm *comm,
-                   const uint mini_batch_size,
-                   uint num_neurons) :
+                   int mini_batch_size,
+                   int num_neurons) :
     Layer(index, comm, mini_batch_size) {
     this->m_num_neurons = num_neurons;
     this->m_type = layer_type::activation;
@@ -69,10 +69,10 @@ class activation_layer : public Layer {
 class entrywise_activation_layer : public activation_layer {
 
  public:
-  entrywise_activation_layer(uint index,
+  entrywise_activation_layer(int index,
                              lbann_comm *comm,
-                             uint mini_batch_size,
-                             uint num_neurons) :
+                             int mini_batch_size,
+                             int num_neurons) :
     activation_layer(index, comm, mini_batch_size, num_neurons) {
   }
 

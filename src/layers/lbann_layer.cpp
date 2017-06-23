@@ -71,9 +71,9 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
 }
 }
 
-lbann::Layer::Layer(const uint index,
+lbann::Layer::Layer(int index,
                     lbann_comm *comm,
-                    uint mbsize)
+                    int mbsize)
   : m_index(index),
     m_comm(comm),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
@@ -276,7 +276,7 @@ bool lbann::Layer::update() {
   return layer_done;
 }
 
-void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
+void lbann::Layer::summarize(lbann_summary& summarizer, int step) {
   // TODO: implement summarizer functions for other matrix distributions
   std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
@@ -365,7 +365,7 @@ void lbann::Layer::set_next_layer_using_gpus(bool using_gpus) {
   m_next_layer_using_gpus = using_gpus;
 }
 
-bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
   //writeDist(fd, filename, *m_weights, bytes);
 
   // Need to catch return value from function
@@ -373,7 +373,7 @@ bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *byte
   return true;
 }
 
-bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
   // TODO: implement reader for other matrix distributions
   //readDist(fd, filename, (DistMat&) *m_weights, bytes);
 
@@ -391,7 +391,7 @@ bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
 }
 
 void lbann::Layer::fp_set_std_matrix_view() {
-  Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
 
@@ -403,7 +403,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
   if(cur_mini_batch_size != m_mini_batch_size || 1) {
     // When the current mini-batch is partial, check with the other
     // models to figure out the entire size of the complete mini-batch
-    Int total_mini_batch_size = m_comm->intermodel_allreduce((Int) cur_mini_batch_size);
+    int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
     set_effective_minibatch_size(total_mini_batch_size);
   } else {
     set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
@@ -411,7 +411,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
 }
 
 void lbann::Layer::bp_set_std_matrix_view() {
-  int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
   if(m_prev_error_signal->Height() > 0) {

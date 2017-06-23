@@ -50,11 +50,11 @@ namespace lbann {
  */
 void im2col(const Mat& im,
             Mat& col,
-            const std::vector<El::Int>& im_dims,
-            const std::vector<El::Int>& im_pads,
-            El::Int num_im_channels,
-            const std::vector<El::Int>& window_dims,
-            const std::vector<El::Int>& window_strides);
+            const std::vector<int>& im_dims,
+            const std::vector<int>& im_pads,
+            int num_im_channels,
+            const std::vector<int>& window_dims,
+            const std::vector<int>& window_strides);
 
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im
@@ -74,11 +74,11 @@ void im2col(const Mat& im,
  */
 void col2im(const Mat& col,
             Mat& im,
-            const std::vector<El::Int>& im_dims,
-            const std::vector<El::Int>& im_pads,
-            El::Int num_im_channels,
-            const std::vector<El::Int>& window_dims,
-            const std::vector<El::Int>& window_strides);
+            const std::vector<int>& im_dims,
+            const std::vector<int>& im_pads,
+            int num_im_channels,
+            const std::vector<int>& window_dims,
+            const std::vector<int>& window_strides);
 
 /// Rearrange 2D image blocks into matrix columns
 /** This is an optimized implementation of im2col for 2D data. im2col

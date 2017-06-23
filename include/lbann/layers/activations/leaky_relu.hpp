@@ -42,11 +42,13 @@ template <data_layout T_layout>
 class leaky_relu_layer : public entrywise_activation_layer {
  public:
   /** Leak is the amount of signal to permit for negative values. */
-  leaky_relu_layer(uint index, lbann_comm *comm,
-                   const uint mini_batch_size, uint num_neurons,
+  leaky_relu_layer(int index, lbann_comm *comm,
+                   int mini_batch_size,
+                   int num_neurons,
                    DataType leak = DataType(0.01)) :
     entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons),
+                               mini_batch_size,
+                               num_neurons),
     m_leak(leak) { 
     set_name("leaky_relu_layer");
     initialize_distributed_matrices(); 

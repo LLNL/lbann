@@ -64,8 +64,8 @@ const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const uint g_ImageNet_Width = 256;
-const uint g_ImageNet_Height = 256;
+const int g_ImageNet_Width = 256;
+const int g_ImageNet_Height = 256;
 
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
@@ -102,10 +102,10 @@ int main(int argc, char *argv[]) {
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
     // Number of GPUs
-    //Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+    int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
     // Number of class labels
-    El::Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
+    int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
 
     bool use_new_reader = Input("--new-reader", "use new data reader", false);
 
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, -1);
+    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
@@ -341,24 +341,24 @@ int main(int argc, char *argv[]) {
     deep_neural_network *dnn = NULL;
    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
    dnn->add_metric(new metrics::categorical_accuracy(DATA_LAYOUT/*::DATA_PARALLEL*/, comm));
-    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
+    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers);
 #endif
     dnn->add(input_layer);
 
     // Layer 1 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      El::Int numDims = 2;
-      El::Int inputChannels = 3;
-      El::Int inputDims[] = {256, 256};
-      El::Int outputChannels = 96;
-      El::Int filterDims[] = {11, 11};
-      El::Int convPads[] = {0, 0};
-      El::Int convStrides[] = {4, 4};
+      int numDims = 2;
+      int inputChannels = 3;
+      int inputDims[] = {256, 256};
+      int outputChannels = 96;
+      int filterDims[] = {11, 11};
+      int convPads[] = {0, 0};
+      int convStrides[] = {4, 4};
       convolution_layer<> *layer
         = new convolution_layer<>(
           1,
@@ -390,8 +390,8 @@ int main(int argc, char *argv[]) {
     {
       int numDims = 2;
       int channels = 96;
-      El::Int dims[] = {62, 62};
-      El::Int windowWidth = 5;
+      int dims[] = {62, 62};
+      int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
@@ -439,13 +439,13 @@ int main(int argc, char *argv[]) {
     // Layer 4 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      El::Int numDims = 2;
-      El::Int inputChannels = 96;
-      El::Int inputDims[] = {30, 30};
-      El::Int outputChannels = 256;
-      El::Int filterDims[] = {5, 5};
-      El::Int convPads[] = {2, 2};
-      El::Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 96;
+      int inputDims[] = {30, 30};
+      int outputChannels = 256;
+      int filterDims[] = {5, 5};
+      int convPads[] = {2, 2};
+      int convStrides[] = {1, 1};
       convolution_layer<> *layer
         = new convolution_layer<>(
           5,
@@ -477,8 +477,8 @@ int main(int argc, char *argv[]) {
     {
       int numDims = 2;
       int channels = 256;
-      El::Int dims[] = {30, 30};
-      El::Int windowWidth = 5;
+      int dims[] = {30, 30};
+      int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
@@ -526,13 +526,13 @@ int main(int argc, char *argv[]) {
     // Layer 7 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      El::Int numDims = 2;
-      El::Int inputChannels = 256;
-      El::Int inputDims[] = {14, 14};
-      El::Int outputChannels = 384;
-      El::Int filterDims[] = {3, 3};
-      El::Int convPads[] = {1, 1};
-      El::Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 256;
+      int inputDims[] = {14, 14};
+      int outputChannels = 384;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolution_layer<> *layer
         = new convolution_layer<>(
           9,
@@ -563,13 +563,13 @@ int main(int argc, char *argv[]) {
     // Layer 8 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      El::Int numDims = 2;
-      El::Int inputChannels = 384;
-      El::Int inputDims[] = {14, 14};
-      El::Int outputChannels = 384;
-      El::Int filterDims[] = {3, 3};
-      El::Int convPads[] = {1, 1};
-      El::Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 384;
+      int inputDims[] = {14, 14};
+      int outputChannels = 384;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolution_layer<> *layer
         = new convolution_layer<>(
           11,
@@ -601,13 +601,13 @@ int main(int argc, char *argv[]) {
     // Layer 9 (convolution)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      El::Int numDims = 2;
-      El::Int inputChannels = 384;
-      El::Int inputDims[] = {14, 14};
-      El::Int outputChannels = 256;
-      El::Int filterDims[] = {3, 3};
-      El::Int convPads[] = {1, 1};
-      El::Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 384;
+      int inputDims[] = {14, 14};
+      int outputChannels = 256;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolution_layer<> *layer
         = new convolution_layer<>(
           13,
@@ -759,11 +759,11 @@ int main(int argc, char *argv[]) {
       dnn->add(softmax);
     }
 
-    // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
+    // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers, true);
 #endif
     dnn->add(target_layer);
 

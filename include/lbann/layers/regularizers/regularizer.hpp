@@ -37,9 +37,9 @@ namespace lbann {
 
 class regularizer_layer : public Layer {
  public:
-  regularizer_layer(const uint index, 
+  regularizer_layer(int index, 
                     lbann_comm *comm,
-                    const uint mini_batch_size) :
+                    int mini_batch_size) :
     Layer(index, comm, mini_batch_size) {
     
   }

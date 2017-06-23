@@ -34,10 +34,10 @@ using namespace El;
 
 
 
-lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(const uint mini_batch_size,
-    lbann_comm *comm,
-    objective_functions::objective_fn *obj_fn,
-    optimizer_factory *_optimizer_fac)
+lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
+                                                                  lbann_comm *comm,
+                                                                  objective_functions::objective_fn *obj_fn,
+                                                                  optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_phase_end(2), m_have_mirror(0) {}
 
@@ -160,7 +160,7 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
 }
 
 void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency) {
-  size_t num_phases = m_layers.size()-1;
+  int num_phases = m_layers.size()-1;
   // get to training, layer by layer
   while(m_current_phase < num_phases) {
     //m_current_phase = phase_index;
@@ -325,7 +325,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch() {
 
   /// Update (active) layers
   ///Freeze inactive layers
-  for (size_t l = m_phase_end; l > m_current_phase; --l) {
+  for (int l = m_phase_end; l > m_current_phase; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
@@ -368,7 +368,7 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch() {
   // Update layers
   // Note: should only affect the input and target
   // @todo: delete after check with input layer
-  for (size_t l = m_phase_end; l > m_current_phase; --l) {
+  for (int l = m_phase_end; l > m_current_phase; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();

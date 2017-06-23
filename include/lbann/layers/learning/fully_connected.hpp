@@ -78,13 +78,14 @@ class fully_connected_layer : public learning {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  fully_connected_layer(const uint index,
-                        const int numPrevNeurons,
-                        const uint numNeurons,
-                        const uint mini_batch_size,
-                        const weight_initialization init,
+  fully_connected_layer(int index,
+                        int numPrevNeurons,
+                        int numNeurons,
+                        int mini_batch_size,
+                        weight_initialization init,
                         lbann_comm *comm,
-                        optimizer *opt, bool has_bias = true)
+                        optimizer *opt,
+                        bool has_bias = true)
     : learning(index, numPrevNeurons, 
                numNeurons, mini_batch_size, 
                comm, opt),

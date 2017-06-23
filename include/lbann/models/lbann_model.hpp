@@ -77,20 +77,20 @@ class model {
     return m_comm;
   }
   /** Get the current epoch for the model. */
-  inline int64_t get_cur_epoch() const {
+  inline int get_cur_epoch() const {
     return m_current_epoch;
   }
   /** Get the current step for the model. */
-  inline int64_t get_cur_step() const {
+  inline int get_cur_step() const {
     return m_current_step;  /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
   }
   
   /** Get the current validation step for the model. */
-  inline int64_t get_cur_validation_step() const {
+  inline int get_cur_validation_step() const {
     return m_current_validation_step;
   }
   /** Get the current testing step for the model. */
-  inline int64_t get_cur_testing_step() const {
+  inline int get_cur_testing_step() const {
     return m_current_testing_step;
   }
   /** Get the model's execution mode. */
@@ -105,15 +105,15 @@ class model {
       l->set_execution_mode(mode);
     }
   }
-  inline int64_t set_current_mini_batch_size(int64_t mini_batch_size) {
+  inline int set_current_mini_batch_size(int mini_batch_size) {
     m_current_mini_batch_size = mini_batch_size;
     return m_current_mini_batch_size;
   }
-  inline int64_t get_current_mini_batch_size() {
+  inline int get_current_mini_batch_size() {
     return m_current_mini_batch_size;
   }
   /** Get the current phase (multiple epochs) in layer-wise model training. */
-  inline size_t get_current_phase() {
+  inline int get_current_phase() {
     return m_current_phase;
   }
 
@@ -154,10 +154,10 @@ class model {
   inline void set_checkpoint_dir(std::string dir)   {
     m_checkpoint_dir    = dir;
   }
-  inline void set_checkpoint_epochs(int64_t epochs) {
+  inline void set_checkpoint_epochs(int epochs) {
     m_checkpoint_epochs = epochs;
   }
-  inline void set_checkpoint_steps(int64_t steps)   {
+  inline void set_checkpoint_steps(int steps)   {
     m_checkpoint_steps  = steps;
   }
   inline void set_checkpoint_secs(double secs)      {
@@ -186,15 +186,15 @@ class model {
   /** Flag telling the model to terminate training. */
   bool m_terminate_training;
   /** Most recent/current epoch for the model. */
-  int64_t m_current_epoch;
+  int m_current_epoch;
   /** Most recent/current training step for the model. */
-  int64_t m_current_step;
-  int64_t m_current_validation_step;
-  int64_t m_current_testing_step;
+  int m_current_step;
+  int m_current_validation_step;
+  int m_current_testing_step;
   /** Size of the current mini-batch */
-  int64_t m_current_mini_batch_size;
+  int m_current_mini_batch_size;
   /** current phase (multiple of epoch counts) in training a model */
-  size_t m_current_phase;
+  int m_current_phase;
   /** Communicator for the model. */
   lbann_comm *m_comm;
   /** Global rank of process in MPI_COMM_WORLD */
@@ -207,9 +207,9 @@ class model {
   /** Directory where we should save checkpoints */
   std::string m_checkpoint_dir;
   /** Number of training steps to elapse between checkpoints */
-  int64_t m_checkpoint_epochs;
+  int m_checkpoint_epochs;
   /** Number of training steps to elapse between checkpoints */
-  int64_t m_checkpoint_steps;
+  int m_checkpoint_steps;
   /** Number of seconds to elapse between checkpoints (checkpoint interval) */
   double m_checkpoint_secs;
   /** Timestamp of last checkpoint */

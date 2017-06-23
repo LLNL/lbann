@@ -39,10 +39,14 @@ namespace lbann {
 template <data_layout T_layout>
 class softplus_layer : public entrywise_activation_layer {
 public :
-  softplus_layer(uint index, lbann_comm *comm,
-                 const uint mini_batch_size, uint num_neurons) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) { 
+  softplus_layer(int index,
+                 lbann_comm *comm,
+                 int mini_batch_size,
+                 int num_neurons) :
+    entrywise_activation_layer(index,
+                               comm,
+                               mini_batch_size,
+                               num_neurons) { 
     set_name("softplus_layer");
     initialize_distributed_matrices(); 
   }

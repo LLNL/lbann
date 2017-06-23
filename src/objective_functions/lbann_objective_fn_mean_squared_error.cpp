@@ -44,7 +44,7 @@ void lbann::objective_functions::mean_squared_error::setup(int num_neurons, int 
   Zeros(m_errors, num_neurons, mini_batch_size);
 }
 
-void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
 }
@@ -53,7 +53,7 @@ void lbann::objective_functions::mean_squared_error::fp_set_std_matrix_view(int6
 /** MSE = (predictions-groundtruth)^T (predictions-groundtruth)
  */
 double lbann::objective_functions::mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v) {
-  const Int num_neurons = predictions_v.Height();
+  const int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
   return Pow(FrobeniusNorm(m_errors_v), 2) / num_neurons;
@@ -61,7 +61,7 @@ double lbann::objective_functions::mean_squared_error::compute_mean_squared_erro
 
 /// Compute the average mean squared error over the mini-batch
 double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
-  Int cur_mini_batch_size = groundtruth_v.Width();
+  int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
 
@@ -72,10 +72,10 @@ double lbann::objective_functions::mean_squared_error::compute_obj_fn(ElMat& pre
 
 /// Compute derivative of mean squared error objective function
 void lbann::objective_functions::mean_squared_error::compute_obj_fn_derivative(layer_type prev_layer_type,
-    ElMat& predictions_v,
-    ElMat& groundtruth_v,
-    ElMat& error_signal_v) {
-  const Int num_neurons = predictions_v.Height();
+                                                                               ElMat& predictions_v,
+                                                                               ElMat& groundtruth_v,
+                                                                               ElMat& error_signal_v) {
+  const int num_neurons = predictions_v.Height();
   Copy(predictions_v, error_signal_v);
   Axpy(DataType(-1), groundtruth_v, error_signal_v);
   Scale(DataType(2)/num_neurons, error_signal_v);

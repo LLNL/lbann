@@ -50,8 +50,10 @@ class elu_layer : public entrywise_activation_layer {
    * If alpha = 0, this turns into a ReLU.
    * Paper uses alpha = 1.0 as a good starting point.
    */
-  elu_layer(uint index, lbann_comm *comm,
-            const uint mini_batch_size, uint num_neurons,
+  elu_layer(int index,
+            lbann_comm *comm,
+            int mini_batch_size,
+            int num_neurons,
             DataType alpha = DataType(1.0)) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),

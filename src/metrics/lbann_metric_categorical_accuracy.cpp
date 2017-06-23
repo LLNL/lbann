@@ -78,7 +78,7 @@ void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch
   m_max_mini_batch_size = mini_batch_size;
 }
 
-void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   // Note that these matrices are transposed (column max matrices) and thus the mini-batch size effects the number of rows, not columns
   View(*YsColMax_v, *YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax->Width()));
@@ -112,10 +112,10 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
-  for(Int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
+  for(int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
     int mb_global_index = predictions_v.GlobalCol(mb_index);
     DataType sample_max = YsColMaxStar_v.GetLocal(mb_global_index, 0);
-    for(Int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
+    for(int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
       if(predictions_v.GetLocal(f_index, mb_index) == sample_max) {
         m_max_index_v.Set(mb_global_index, 0, predictions_v.GlobalRow(f_index));
       }
@@ -138,15 +138,15 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
 
   /// Distributed search over the groundtruth matrix
   /// Each rank will search its local portion of the matrix to find if it has the true category
-  for(Int mb_index= 0; mb_index < groundtruth_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch
-    Int targetidx = -1;
-    for(Int f_index= 0; f_index < groundtruth_v.LocalHeight(); f_index++) {
-      if(groundtruth_v.GetLocal(f_index, mb_index) == (DataType) 1.) {
+  for(int mb_index= 0; mb_index < groundtruth_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch
+    int targetidx = -1;
+    for(int f_index= 0; f_index < groundtruth_v.LocalHeight(); f_index++) {
+      if(groundtruth_v.GetLocal(f_index, mb_index) == DataType(1)) {
         targetidx = groundtruth_v.GlobalRow(f_index); /// If this rank holds the correct category, return the global row index
       }
     }
     if(targetidx != -1) { /// Only check against the prediction if this rank holds the groundtruth value
-      Int global_mb_index = groundtruth_v.GlobalCol(mb_index);
+      int global_mb_index = groundtruth_v.GlobalCol(mb_index);
       if(m_reduced_max_indices_v.Get(global_mb_index, 0) != targetidx) {
         num_errors++;
       }

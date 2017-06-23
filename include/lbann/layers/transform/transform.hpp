@@ -39,11 +39,11 @@ namespace lbann {
 class transform : public Layer {
 
  public:
-  transform(const uint index, 
-            //           const int numPrevNeurons,
-            //           const uint numNeurons,
+  transform(int index, 
+            // int numPrevNeurons,
+            // int numNeurons,
            lbann_comm *comm,
-           const uint mini_batch_size)
+           int mini_batch_size)
     : Layer(index, comm, mini_batch_size) {
 
   }
@@ -60,7 +60,7 @@ class transform : public Layer {
   virtual void forwardProp(void);
   virtual void backProp(void);
   virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
+  virtual void summarize(lbann_summary& summarizer, int step);
 
   virtual void setup(int numPrevNeurons) {
     Layer::setup(numPrevNeurons);

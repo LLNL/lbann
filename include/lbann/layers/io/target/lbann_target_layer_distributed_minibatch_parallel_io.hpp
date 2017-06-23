@@ -44,7 +44,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
@@ -84,7 +84,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     }
 
     /// @todo put in warning about bad target size
-    if(static_cast<uint>(num_prev_neurons) != this->m_num_neurons) {
+    if(num_prev_neurons != this->m_num_neurons) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__
           << " ::  lbann_target_layer_distributed_minibatch_parallel_io: number of neurons in previous layer (" << num_prev_neurons << ") does not match the number of neurons in the target layer (" << this->m_num_neurons <<  ")";
@@ -109,7 +109,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
       target_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
-    int64_t curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
       throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
     }
@@ -122,7 +122,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
 
     for (auto&& m : this->m_neural_network_model->m_metrics) {
-      double num_errors = (int) m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 

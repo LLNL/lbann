@@ -186,18 +186,18 @@ int main(int argc, char *argv[]) {
       std::make_pair(execution_mode::validation, &mnist_validation_set),
       std::make_pair(execution_mode::testing, &mnist_testset)
     };
-    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, (int) trainParams.MBSize, data_readers);
+    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
 #else
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers);
 #endif
     dnn.add(input_layer);
 
     int prev_num_neurons;
     int layer_id;
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    uint fcidx1 = layer_id;
+    int fcidx1 = layer_id;
     Layer *fc1 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        prev_num_neurons,
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     dnn.add(dropout1);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    uint fcidx2 = layer_id;
+    int fcidx2 = layer_id;
     Layer *fc2 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        prev_num_neurons,
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
     dnn.add(dropout2);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    uint fcidx3 = layer_id;
+    int fcidx3 = layer_id;
     Layer *fc3 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        prev_num_neurons,
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
     dnn.add(dropout3);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    uint fcidx4 = layer_id;
+    int fcidx4 = layer_id;
     Layer *fc4 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        prev_num_neurons,
@@ -308,9 +308,9 @@ int main(int argc, char *argv[]) {
     dnn.add(softmax);
 
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers, true);
 #endif
     dnn.add(target_layer);
 

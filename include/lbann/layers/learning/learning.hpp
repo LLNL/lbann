@@ -54,11 +54,12 @@ class learning : public Layer {
   }
 
  public:
-  learning(const uint index, 
-           const int numPrevNeurons,
-           const uint numNeurons,
-           const uint mini_batch_size,
-           lbann_comm *comm, optimizer *opt
+  learning(int index, 
+           int numPrevNeurons,
+           int numNeurons,
+           int mini_batch_size,
+           lbann_comm *comm,
+           optimizer *opt
            )
     : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
     }
@@ -123,7 +124,7 @@ class learning : public Layer {
 #endif
   }
 
-  virtual void summarize(lbann_summary& summarizer, int64_t step) {
+  virtual void summarize(lbann_summary& summarizer, int step) {
     std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
     // TODO: implement summarizer functions for other matrix distributions
     const ElMat& wb = get_weights_biases();
@@ -141,8 +142,6 @@ class learning : public Layer {
     // Call parent summarizer after local results are summarized
     Layer::summarize(summarizer, step);
   }
-
-  //  virtual void setup(int);
 
   /** Validate that the setup is reasonable. */
   virtual void check_setup() {
@@ -227,7 +226,6 @@ class learning : public Layer {
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view(void) {
-    //int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
   }
 

@@ -43,7 +43,7 @@ class categorical_accuracy : public metric {
   void initialize_data_parallel_distribution();
 
   void setup(int num_neurons, int mini_batch_size);
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
   double report_metric(execution_mode mode);
@@ -62,7 +62,7 @@ class categorical_accuracy : public metric {
   Mat m_reduced_max_indices_v;
   //    Mat Y_local_v;
 
-  int64_t m_max_mini_batch_size;
+  int m_max_mini_batch_size;
 };
 }
 }

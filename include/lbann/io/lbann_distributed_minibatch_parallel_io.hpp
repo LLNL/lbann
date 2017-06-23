@@ -36,7 +36,7 @@
 namespace lbann {
 class distributed_minibatch_parallel_io {
  public:
-  distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
   virtual ~distributed_minibatch_parallel_io(void) {}
 
   int fetch_to_local_matrix(Mat& M_local);
@@ -75,13 +75,13 @@ class distributed_minibatch_parallel_io {
   int m_num_parallel_readers_testing; 
   int m_local_reader_done;
   /** Maximum size of the mini-batch */
-  uint m_max_mini_batch_size;
+  int m_max_mini_batch_size;
   /** Number of samples in the current mini-batch */
-  uint m_num_samples_in_batch; 
+  int m_num_samples_in_batch; 
   /** Has the layer copied valid data into the local matrix */
   bool m_local_data_valid; 
 
-  long m_num_data_per_epoch;
+  int m_num_data_per_epoch;
   int m_num_valid_readers;
 };
 }

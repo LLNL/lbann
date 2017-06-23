@@ -44,7 +44,7 @@ class input_layer_distributed_minibatch : public input_layer {
   long m_num_data_per_epoch;
 
  public:
-  input_layer_distributed_minibatch(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();

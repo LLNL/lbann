@@ -55,24 +55,24 @@ class convolution_layer : public learning {
   /// Weight initialization scheme
   const weight_initialization m_weight_initialization;
   /// Number of data dimensions
-  const Int m_num_dims;
+  const int m_num_dims;
   /// Number of input channels
-  const Int m_num_input_channels;
+  const int m_num_input_channels;
   /// Input dimensions
   /** In HW or DHW format */
-  std::vector<Int> m_input_dims;
+  std::vector<int> m_input_dims;
   /// Number of output channels
-  const Int m_num_output_channels;
+  const int m_num_output_channels;
   /// Output dimensions
-  std::vector<Int> m_output_dims;
+  std::vector<int> m_output_dims;
   /// Filter dimensions
-  std::vector<Int> m_filter_dims;
+  std::vector<int> m_filter_dims;
   /// Number of filter weights
-  Int m_filter_size;
+  int m_filter_size;
   /// Convolution padding
-  std::vector<Int> m_conv_pads;
+  std::vector<int> m_conv_pads;
   /// Convolution strides
-  std::vector<Int> m_conv_strides;
+  std::vector<int> m_conv_strides;
 
 #ifdef __LIB_CUDNN
 
@@ -108,19 +108,19 @@ class convolution_layer : public learning {
 
   public:
 
-  convolution_layer(const uint index,
-      const Int num_dims,
-      const Int num_input_channels,
-      const Int *input_dims,
-      const Int num_output_channels,
-      const Int *filter_dims,
-      const Int *conv_pads,
-      const Int *conv_strides,
-      const Int mini_batch_size,
-      const weight_initialization init,
-      lbann_comm *comm,
-      optimizer *opt,
-      cudnn::cudnn_manager *cudnn = NULL)
+  convolution_layer(int index,
+                    int num_dims,
+                    int num_input_channels,
+                    const int *input_dims,
+                    int num_output_channels,
+                    const int *filter_dims,
+                    const int *conv_pads,
+                    const int *conv_strides,
+                    int mini_batch_size,
+                    weight_initialization init,
+                    lbann_comm *comm,
+                    optimizer *opt,
+                    cudnn::cudnn_manager *cudnn = NULL)
     : learning(index, 0, 0, mini_batch_size, comm, opt),
       m_weight_initialization(init),
       m_num_dims(num_dims),
@@ -140,7 +140,7 @@ class convolution_layer : public learning {
     m_filter_size = m_num_input_channels*m_num_output_channels;
     m_conv_pads.resize(num_dims);
     m_conv_strides.resize(num_dims);
-    for(Int i=0; i<num_dims; ++i) {
+    for(int i=0; i<num_dims; ++i) {
       m_input_dims[i] = input_dims[i];
       m_filter_dims[i] = filter_dims[i];
       m_filter_size *= filter_dims[i];
@@ -151,7 +151,7 @@ class convolution_layer : public learning {
     // Calculate output dimensions
     m_output_dims.resize(num_dims);
     this->m_num_neurons = num_output_channels;
-    for(Int i=0; i<num_dims; ++i) {
+    for(int i=0; i<num_dims; ++i) {
       m_output_dims[i] = input_dims[i]+2*conv_pads[i]-filter_dims[i]+1;
       m_output_dims[i] = (m_output_dims[i]+conv_strides[i]-1)/conv_strides[i];
       this->m_num_neurons *= m_output_dims[i];
@@ -177,9 +177,9 @@ class convolution_layer : public learning {
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
-      const Int num_gpus = this->m_cudnn->get_num_gpus();
-      const Int num_processes = this->m_comm->get_procs_per_model();
-      const Int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
+      const int num_gpus = this->m_cudnn->get_num_gpus();
+      const int num_processes = this->m_comm->get_procs_per_model();
+      const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
       this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
     }
 
@@ -235,7 +235,7 @@ class convolution_layer : public learning {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(const int num_prev_neurons) {
+  void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
@@ -247,8 +247,8 @@ class convolution_layer : public learning {
 
   #ifdef LBANN_DEBUG
     // Check if input dimensions are valid
-    Int num_inputs = m_num_input_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    int num_inputs = m_num_input_channels;
+    for(int i=0; i<m_num_dims; ++i) {
       num_inputs *= m_input_dims[i];
     }
     if(num_inputs != this->m_num_prev_neurons) {
@@ -282,8 +282,8 @@ class convolution_layer : public learning {
     // Initialize filters
     StarMat filter;
     View(filter, *(this->m_weights), IR(0,m_filter_size), ALL);
-    const Int fan_in = m_filter_size / m_num_output_channels;
-    const Int fan_out = m_filter_size / m_num_input_channels;
+    const int fan_in = m_filter_size / m_num_output_channels;
+    const int fan_out = m_filter_size / m_num_input_channels;
     initialize_matrix(filter, this->m_weight_initialization, fan_in, fan_out);
 
     // Initialize optimizer
@@ -314,12 +314,12 @@ class convolution_layer : public learning {
     std::vector<int> input_dims(m_num_dims+2);
     input_dims[0] = this->m_mini_batch_size_per_gpu;
     input_dims[1] = m_num_input_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       input_dims[i+2] = m_input_dims[i];
     }
     std::vector<int> input_strides(m_num_dims+2);
     input_strides[m_num_dims + 1]  = 1;
-    for(Int i=m_num_dims; i>=0; --i) {
+    for(int i=m_num_dims; i>=0; --i) {
       input_strides[i] = input_strides[i+1] * input_dims[i+1];
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
@@ -332,7 +332,7 @@ class convolution_layer : public learning {
     std::vector<int> filter_dims(m_num_dims+2);
     filter_dims[0] = m_num_output_channels;
     filter_dims[1] = m_num_input_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       filter_dims[i+2] = m_filter_dims[i];
     }
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_filter_desc,
@@ -345,11 +345,11 @@ class convolution_layer : public learning {
     // Note: upscales are not supported as of cuDNN v5.1
     std::vector<int> conv_upscales(m_num_dims, 1);
     std::vector<int> conv_pads(m_num_dims);
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       conv_pads[i] = m_conv_pads[i];
     }
     std::vector<int> conv_strides(m_num_dims);
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       conv_strides[i] = m_conv_strides[i];
     }
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_desc,
@@ -374,7 +374,7 @@ class convolution_layer : public learning {
     if(output_dims[1] != m_num_output_channels) {
       throw lbann_exception("convolution_layer: invalid output dimensions");
     }
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       if(output_dims[i+2] != m_output_dims[i]) {
         throw lbann_exception("convolution_layer: invalid output dimensions");
       }
@@ -382,13 +382,13 @@ class convolution_layer : public learning {
   #else
     output_dims[0] = this->m_mini_batch_size_per_gpu;
     output_dims[1] = m_num_output_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       output_dims[i+2] = m_output_dims[i];
     }
   #endif // #ifdef LBANN_DEBUG
     std::vector<int> output_strides(m_num_dims+2);
     output_strides[m_num_dims + 1]  = 1;
-    for(Int i=m_num_dims; i>=0; --i) {
+    for(int i=m_num_dims; i>=0; --i) {
       output_strides[i] = output_strides[i+1] * output_dims[i+1];
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
@@ -461,7 +461,7 @@ class convolution_layer : public learning {
                                                              m_backward_data_algo,
                                                              &required_work_space));
     max_work_space = Max(max_work_space, required_work_space);
-    for(Int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
+    for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
       if(max_work_space > this->m_cudnn->get_work_space_size(i)) {
         this->m_cudnn->set_work_space_size(i, max_work_space);
       }
@@ -529,8 +529,8 @@ class convolution_layer : public learning {
                                      this->m_weights->LockedMatrix());
 
     // Perform convolution on each GPU
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
-    for(Int i=0; i<num_gpus; ++i) {
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
@@ -576,7 +576,7 @@ class convolution_layer : public learning {
                                           this->m_mini_batch_size_per_gpu);
 
     // Perform back propagation on each GPU
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
+    const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
@@ -639,11 +639,11 @@ class convolution_layer : public learning {
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
 
     // Apply bias
-    for(Int i=0; i<m_num_output_channels; ++i) {
+    for(int i=0; i<m_num_output_channels; ++i) {
       Mat activations_channel
         = View(activations_local,
                IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
@@ -659,7 +659,7 @@ class convolution_layer : public learning {
     Mat im2col_mat(current_filter_size, num_per_output_channel);
 
     // Iterate through data samples
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Construct im2col matrix from input
       const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
@@ -697,17 +697,17 @@ class convolution_layer : public learning {
     Zero(weights_gradient_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
 
     // Compute bias gradient
     #pragma omp parallel for
-    for(Int output_channel = 0;
+    for(int output_channel = 0;
         output_channel < m_num_output_channels;
         ++output_channel) {
       DataType& bias_gradient_entry = bias_gradient_local(output_channel, 0);
-      for(Int col = 0; col < prev_error_signal_local.Width(); ++col) {
-        for(Int row = output_channel * num_per_output_channel;
+      for(int col = 0; col < prev_error_signal_local.Width(); ++col) {
+        for(int row = output_channel * num_per_output_channel;
             row < (output_channel+1) * num_per_output_channel;
             ++row) {
           bias_gradient_entry += prev_error_signal_local(row, col);
@@ -723,7 +723,7 @@ class convolution_layer : public learning {
     Mat im2col_mat(current_filter_size, num_per_output_channel);
 
     // Iterate through data samples
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Reshape previous error signal into matrix
       const Mat prev_error_signal_mat(num_per_output_channel,
@@ -775,13 +775,13 @@ class convolution_layer : public learning {
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Apply bias
-    for(Int i=0; i<m_num_output_channels; ++i) {
+    for(int i=0; i<m_num_output_channels; ++i) {
       Mat activations_channel
         = View(activations_local,
                IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
@@ -797,46 +797,46 @@ class convolution_layer : public learning {
 
     // Iterate through samples, output channels, and input channels
     #pragma omp parallel for
-    for(Int output_channel = 0;
+    for(int output_channel = 0;
         output_channel < m_num_output_channels;
         ++output_channel) {
-      std::vector<Int> filter_offsets(m_num_dims);
-      std::vector<Int> filter_pos(m_num_dims);
-      for(Int input_channel = 0;
+      std::vector<int> filter_offsets(m_num_dims);
+      std::vector<int> filter_pos(m_num_dims);
+      for(int input_channel = 0;
           input_channel < m_num_input_channels;
           ++input_channel) {
-        for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+        for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
           // Iterate through output entries in current output channel
           // Note: each output entry corresponds to a different offset
           //   of the convolution kernel
-          for(Int d = 0; d < m_num_dims; ++d) {
+          for(int d = 0; d < m_num_dims; ++d) {
             filter_offsets[d] = -m_conv_pads[d];
           }
-          const Int start_output_index = output_channel*num_per_output_channel;
-          const Int end_output_index = (output_channel+1)*num_per_output_channel;
-          for(Int output_index = start_output_index;
+          const int start_output_index = output_channel*num_per_output_channel;
+          const int end_output_index = (output_channel+1)*num_per_output_channel;
+          for(int output_index = start_output_index;
               output_index < end_output_index;
               ++output_index) {
             DataType& output_entry = activations_local(output_index, sample);
 
             // Iterate through filter entries for current input and output channel
-            for(Int d = 0; d < m_num_dims; ++d) {
+            for(int d = 0; d < m_num_dims; ++d) {
               filter_pos[d] = 0;
             }
-            const Int start_filter_index
+            const int start_filter_index
               = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-            const Int end_filter_index
+            const int end_filter_index
               = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
-            for(Int filter_index = start_filter_index;
+            for(int filter_index = start_filter_index;
                 filter_index < end_filter_index;
                 ++filter_index) {
               const DataType filter_entry = filter_local(filter_index,0);
 
               // Get input entry corresponding to filter entry
-              Int input_index = 0;
+              int input_index = 0;
               bool valid_input_entry = true;
-              for(Int d = 0; d < m_num_dims; ++d) {
+              for(int d = 0; d < m_num_dims; ++d) {
                 if(filter_offsets[d] + filter_pos[d] < 0
                     || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
                   valid_input_entry = false;
@@ -855,7 +855,7 @@ class convolution_layer : public learning {
 
               // Move to next filter entry
               ++filter_pos[m_num_dims-1];
-              for(Int d = m_num_dims - 1; d > 0; --d) {
+              for(int d = m_num_dims - 1; d > 0; --d) {
                 if(filter_pos[d] >= m_filter_dims[d]) {
                   filter_pos[d] = 0;
                   ++filter_pos[d-1];
@@ -866,7 +866,7 @@ class convolution_layer : public learning {
 
             // Move to next filter offset and output entry
             filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-            for(Int d = m_num_dims - 1; d > 0; --d) {
+            for(int d = m_num_dims - 1; d > 0; --d) {
               if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
                 filter_offsets[d] = -m_conv_pads[d];
                 filter_offsets[d-1] += m_conv_strides[d-1];
@@ -901,19 +901,19 @@ class convolution_layer : public learning {
     Zero(error_signal_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Compute bias gradient
     #pragma omp parallel for
-    for(Int output_channel = 0;
+    for(int output_channel = 0;
         output_channel < m_num_output_channels;
         ++output_channel) {
       DataType bias_gradient_entry = 0;
-      for(Int col = 0; col < prev_error_signal_local.Width(); ++col) {
-        for(Int row = output_channel * num_per_output_channel;
+      for(int col = 0; col < prev_error_signal_local.Width(); ++col) {
+        for(int row = output_channel * num_per_output_channel;
             row < (output_channel+1) * num_per_output_channel;
             ++row) {
           bias_gradient_entry += prev_error_signal_local(row, col);
@@ -932,45 +932,45 @@ class convolution_layer : public learning {
 
     // Iterate through samples, output channels, and input channels
     #pragma omp parallel for
-    for(Int input_channel = 0;
+    for(int input_channel = 0;
         input_channel < m_num_input_channels;
         ++input_channel) {
-      std::vector<Int> filter_offsets(m_num_dims);
-      std::vector<Int> filter_pos(m_num_dims);
-      for(Int output_channel = 0;
+      std::vector<int> filter_offsets(m_num_dims);
+      std::vector<int> filter_pos(m_num_dims);
+      for(int output_channel = 0;
           output_channel < m_num_output_channels;
           ++output_channel) {
-        for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+        for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
           // Iterate through output entries in current output channel
           // Note: each output entry corresponds to a different offset
           //   of the convolution kernel
-          for(Int d = 0; d < m_num_dims; ++d) {
+          for(int d = 0; d < m_num_dims; ++d) {
             filter_offsets[d] = -m_conv_pads[d];
           }
-          const Int start_output_index = output_channel*num_per_output_channel;
-          const Int end_output_index = (output_channel+1)*num_per_output_channel;
-          for(Int output_index = start_output_index;
+          const int start_output_index = output_channel*num_per_output_channel;
+          const int end_output_index = (output_channel+1)*num_per_output_channel;
+          for(int output_index = start_output_index;
               output_index < end_output_index;
               ++output_index) {
 
             // Iterate through filter entries for current input and output channel
-            for(Int d = 0; d < m_num_dims; ++d) {
+            for(int d = 0; d < m_num_dims; ++d) {
               filter_pos[d] = 0;
             }
-            const Int start_filter_index
+            const int start_filter_index
               = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-            const Int end_filter_index
+            const int end_filter_index
               = output_channel*current_filter_size + (input_channel+1)*current_filter_size_per_input_channel;
-            for(Int filter_index = start_filter_index;
+            for(int filter_index = start_filter_index;
                 filter_index < end_filter_index;
                 ++filter_index) {
               const DataType filter_entry = filter_local.Get(filter_index,0);
 
               // Get input entry corresponding to filter entry
-              Int input_index = 0;
+              int input_index = 0;
               bool valid_input_entry = true;
-              for(Int d = 0; d < m_num_dims; ++d) {
+              for(int d = 0; d < m_num_dims; ++d) {
                 if(filter_offsets[d] + filter_pos[d] < 0
                     || filter_offsets[d] + filter_pos[d] >= m_input_dims[d]) {
                   valid_input_entry = false;
@@ -993,14 +993,14 @@ class convolution_layer : public learning {
                 // Update filter gradient
                 // Note: conv_matrix_gradient = prev_error_signal * prev_activations^T
                 const DataType prev_activations_entry = prev_activations_local(input_index, sample);
-                DataType& filter_gradient_entry = filter_gradient_local(filter_index, Int(0));
+                DataType& filter_gradient_entry = filter_gradient_local(filter_index, 0);
                 filter_gradient_entry += prev_error_signal_entry * prev_activations_entry;
 
               }
 
               // Move to next filter entry
               ++filter_pos[m_num_dims-1];
-              for(Int d = m_num_dims - 1; d > 0; --d) {
+              for(int d = m_num_dims - 1; d > 0; --d) {
                 if(filter_pos[d] >= m_filter_dims[d]) {
                   filter_pos[d] = 0;
                   ++filter_pos[d-1];
@@ -1011,7 +1011,7 @@ class convolution_layer : public learning {
 
             // Move to next filter offset and output entry
             filter_offsets[m_num_dims-1] += m_conv_strides[m_num_dims-1];
-            for(Int d = m_num_dims - 1; d > 0; --d) {
+            for(int d = m_num_dims - 1; d > 0; --d) {
               if(filter_offsets[d] + m_filter_dims[d] > m_input_dims[d] + m_conv_pads[d]) {
                 filter_offsets[d] = -m_conv_pads[d];
                 filter_offsets[d-1] += m_conv_strides[d-1];
@@ -1048,13 +1048,13 @@ class convolution_layer : public learning {
     const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Apply bias
-    for(Int i=0; i<m_num_output_channels; ++i) {
+    for(int i=0; i<m_num_output_channels; ++i) {
       Mat activations_channel
         = View(activations_local,
                IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
@@ -1069,60 +1069,60 @@ class convolution_layer : public learning {
     ////////////////////////////////////////////////////////////////
 
     // Avoid slow memory accesses by creating local variables
-    const Int dim_y = m_input_dims[0];
-    const Int dim_x = m_input_dims[1];
-    const Int filter_dim_y = m_filter_dims[0];
-    const Int filter_dim_x = m_filter_dims[1];
-    const Int filter_offset_y_start = -m_conv_pads[0];
-    const Int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
-    const Int filter_offset_y_stride = m_conv_strides[0];
-    const Int filter_offset_x_start = -m_conv_pads[1];
-    const Int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
-    const Int filter_offset_x_stride = m_conv_strides[1];
+    const int dim_y = m_input_dims[0];
+    const int dim_x = m_input_dims[1];
+    const int filter_dim_y = m_filter_dims[0];
+    const int filter_dim_x = m_filter_dims[1];
+    const int filter_offset_y_start = -m_conv_pads[0];
+    const int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
+    const int filter_offset_y_stride = m_conv_strides[0];
+    const int filter_offset_x_start = -m_conv_pads[1];
+    const int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
+    const int filter_offset_x_stride = m_conv_strides[1];
 
     // Iterate through samples, output channels, and input channels
     #pragma omp parallel for
-    for(Int output_channel = 0;
+    for(int output_channel = 0;
         output_channel < m_num_output_channels;
         ++output_channel) {
-      for(Int input_channel = 0;
+      for(int input_channel = 0;
           input_channel < m_num_input_channels;
           ++input_channel) {
-        for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+        for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
           // Iterate through output entries in current output channel
           // Note: each output entry corresponds to a different offset
           //   of the convolution kernel
-          Int output_index = output_channel*num_per_output_channel;
-          for(Int filter_offset_y = filter_offset_y_start;
+          int output_index = output_channel*num_per_output_channel;
+          for(int filter_offset_y = filter_offset_y_start;
               filter_offset_y <= filter_offset_y_end;
               filter_offset_y += filter_offset_y_stride) {
-            for(Int filter_offset_x = filter_offset_x_start;
+            for(int filter_offset_x = filter_offset_x_start;
                 filter_offset_x <= filter_offset_x_end;
                 filter_offset_x += filter_offset_x_stride) {
               DataType& output_entry = activations_local(output_index, sample);
 
               // Iterate through filter entries for current input and output channel
-              const Int input_index_start = input_channel*num_per_input_channel;
-              const Int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-              for(Int filter_pos_y = 0;
+              const int input_index_start = input_channel*num_per_input_channel;
+              const int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
+              for(int filter_pos_y = 0;
                   filter_pos_y < filter_dim_y;
                   ++filter_pos_y) {
-                const Int pos_y = filter_offset_y + filter_pos_y;
-                if(pos_y < Int(0) || pos_y >= dim_y) {
+                const int pos_y = filter_offset_y + filter_pos_y;
+                if(pos_y < 0 || pos_y >= dim_y) {
                   continue;
                 }
-                for(Int filter_pos_x = 0;
+                for(int filter_pos_x = 0;
                     filter_pos_x < filter_dim_x;
                     ++filter_pos_x) {
-                  const Int pos_x = filter_offset_x + filter_pos_x;
-                  if(pos_x < Int(0) || pos_x >= dim_x) {
+                  const int pos_x = filter_offset_x + filter_pos_x;
+                  if(pos_x < 0 || pos_x >= dim_x) {
                     continue;
                   }
 
                   // Get indices
-                  const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
-                  const Int input_index = input_index_start + pos_y*dim_x + pos_x;
+                  const int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
+                  const int input_index = input_index_start + pos_y*dim_x + pos_x;
 
                   // Update output entry
                   const DataType filter_entry = filter_local(filter_index,0);
@@ -1164,19 +1164,19 @@ class convolution_layer : public learning {
     Zero(error_signal_local);
 
     // Input, output, and filter entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
-    const Int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
-    const Int current_filter_size = m_filter_size / m_num_output_channels;
-    const Int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_output_channels;
+    const int num_per_input_channel = this->m_num_prev_neurons / m_num_input_channels;
+    const int current_filter_size = m_filter_size / m_num_output_channels;
+    const int current_filter_size_per_input_channel = current_filter_size / m_num_input_channels;
 
     // Compute bias gradient
     #pragma omp parallel for
-    for(Int output_channel = 0;
+    for(int output_channel = 0;
         output_channel < m_num_output_channels;
         ++output_channel) {
       DataType bias_gradient_entry = 0;
-      for(Int col = 0; col < prev_error_signal_local.Width(); ++col) {
-        for(Int row = output_channel * num_per_output_channel;
+      for(int col = 0; col < prev_error_signal_local.Width(); ++col) {
+        for(int row = output_channel * num_per_output_channel;
             row < (output_channel+1) * num_per_output_channel;
             ++row) {
           bias_gradient_entry += prev_error_signal_local(row, col);
@@ -1194,63 +1194,63 @@ class convolution_layer : public learning {
     ////////////////////////////////////////////////////////////////
 
     // Avoid slow memory accesses by creating local variables
-    const Int dim_y = m_input_dims[0];
-    const Int dim_x = m_input_dims[1];
-    const Int filter_dim_y = m_filter_dims[0];
-    const Int filter_dim_x = m_filter_dims[1];
-    const Int filter_offset_y_start = -m_conv_pads[0];
-    const Int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
-    const Int filter_offset_y_stride = m_conv_strides[0];
-    const Int filter_offset_x_start = -m_conv_pads[1];
-    const Int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
-    const Int filter_offset_x_stride = m_conv_strides[1];
+    const int dim_y = m_input_dims[0];
+    const int dim_x = m_input_dims[1];
+    const int filter_dim_y = m_filter_dims[0];
+    const int filter_dim_x = m_filter_dims[1];
+    const int filter_offset_y_start = -m_conv_pads[0];
+    const int filter_offset_y_end = m_input_dims[0] + m_conv_pads[0] - m_filter_dims[0];
+    const int filter_offset_y_stride = m_conv_strides[0];
+    const int filter_offset_x_start = -m_conv_pads[1];
+    const int filter_offset_x_end = m_input_dims[1] + m_conv_pads[1] - m_filter_dims[1];
+    const int filter_offset_x_stride = m_conv_strides[1];
 
     // Iterate through samples, output channels, and input channels
     #pragma omp parallel for
-    for(Int input_channel = 0;
+    for(int input_channel = 0;
         input_channel < m_num_input_channels;
         ++input_channel) {
-      for(Int output_channel = 0;
+      for(int output_channel = 0;
           output_channel < m_num_output_channels;
           ++output_channel) {
-        for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+        for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
           // Iterate through output entries in current output channel
           // Note: each output entry corresponds to a different offset
           //   of the convolution kernel
-          Int output_index = output_channel*num_per_output_channel;
-          for(Int filter_offset_y = filter_offset_y_start;
+          int output_index = output_channel*num_per_output_channel;
+          for(int filter_offset_y = filter_offset_y_start;
               filter_offset_y <= filter_offset_y_end;
               filter_offset_y += filter_offset_y_stride) {
-            for(Int filter_offset_x = filter_offset_x_start;
+            for(int filter_offset_x = filter_offset_x_start;
                 filter_offset_x <= filter_offset_x_end;
                 filter_offset_x += filter_offset_x_stride) {
 
               // Iterate through filter entries for current input and output channel
-              const Int input_index_start = input_channel*num_per_input_channel;
-              const Int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
-              for(Int filter_pos_y = 0;
+              const int input_index_start = input_channel*num_per_input_channel;
+              const int filter_index_start = output_channel*current_filter_size + input_channel*current_filter_size_per_input_channel;
+              for(int filter_pos_y = 0;
                   filter_pos_y < filter_dim_y;
                   ++filter_pos_y) {
-                const Int pos_y = filter_offset_y + filter_pos_y;
-                if(pos_y < Int(0) || pos_y >= dim_y) {
+                const int pos_y = filter_offset_y + filter_pos_y;
+                if(pos_y < 0 || pos_y >= dim_y) {
                   continue;
                 }
-                for(Int filter_pos_x = 0;
+                for(int filter_pos_x = 0;
                     filter_pos_x < filter_dim_x;
                     ++filter_pos_x) {
-                  const Int pos_x = filter_offset_x + filter_pos_x;
-                  if(pos_x < Int(0) || pos_x >= dim_x) {
+                  const int pos_x = filter_offset_x + filter_pos_x;
+                  if(pos_x < 0 || pos_x >= dim_x) {
                     continue;
                   }
 
                   // Get indices
-                  const Int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
-                  const Int input_index = input_index_start + pos_y*dim_x + pos_x;
+                  const int filter_index = filter_index_start + filter_pos_y*filter_dim_x + filter_pos_x;
+                  const int input_index = input_index_start + pos_y*dim_x + pos_x;
 
                   // Update error signal
                   // Note: error_signal = conv_matrix^T * prev_error_signal
-                  const DataType& filter_entry = filter_local(filter_index, Int(0));
+                  const DataType& filter_entry = filter_local(filter_index, 0);
                   const DataType prev_error_signal_entry = prev_error_signal_local(output_index, sample);
                   DataType& error_signal_entry = error_signal_local(input_index, sample);
                   error_signal_entry += filter_entry * prev_error_signal_entry;
@@ -1258,7 +1258,7 @@ class convolution_layer : public learning {
                   // Update filter gradient
                   // Note: conv_matrix_gradient = prev_error_signal * prev_activations^T
                   const DataType prev_activations_entry = prev_activations_local(input_index, sample);
-                  DataType& filter_gradient_entry = filter_gradient_local(filter_index, Int(0));
+                  DataType& filter_gradient_entry = filter_gradient_local(filter_index, 0);
                   filter_gradient_entry += prev_error_signal_entry * prev_activations_entry;
 
                 }

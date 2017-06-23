@@ -74,14 +74,14 @@ void lbann::rmsprop::setup(AbsDistMat *parameters) {
 void lbann::rmsprop::update(const AbsDistMat *gradient) {
 
   // Get local matrix data
-  const Int local_height = m_parameters->LocalHeight();
-  const Int local_width = m_parameters->LocalWidth();
+  const int local_height = m_parameters->LocalHeight();
+  const int local_width = m_parameters->LocalWidth();
   DataType *parameters_buffer = m_parameters->Buffer();
-  const Int parameters_ldim = m_parameters->LDim();
+  const int parameters_ldim = m_parameters->LDim();
   const DataType *gradient_buffer = gradient->LockedBuffer();
-  const Int gradient_ldim = gradient->LDim();
+  const int gradient_ldim = gradient->LDim();
   DataType *cache_buffer = m_cache->Buffer();
-  const Int cache_ldim = m_cache->LDim();
+  const int cache_ldim = m_cache->LDim();
 
   // Check if matrix data is contiguous
   if(parameters_ldim != local_height
@@ -89,8 +89,8 @@ void lbann::rmsprop::update(const AbsDistMat *gradient) {
       || cache_ldim != local_height) {
     // Update with non-contiguous data
     #pragma omp parallel for collapse(2)
-    for(Int j=0; j<local_width; ++j) {
-      for(Int i=0; i<local_height; ++i) {
+    for(int j=0; j<local_width; ++j) {
+      for(int i=0; i<local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
         const DataType g = gradient_buffer[i+j*gradient_ldim];
         DataType& c = cache_buffer[i+j*cache_ldim];
@@ -101,7 +101,7 @@ void lbann::rmsprop::update(const AbsDistMat *gradient) {
   } else {
     // Update with contiguous data
     #pragma omp parallel for
-    for(Int i=0; i<local_height*local_width; ++i) {
+    for(int i=0; i<local_height*local_width; ++i) {
       DataType& x = parameters_buffer[i];
       const DataType g = gradient_buffer[i];
       DataType& c = cache_buffer[i];

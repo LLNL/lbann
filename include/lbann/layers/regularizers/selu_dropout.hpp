@@ -43,8 +43,11 @@ template <data_layout T_layout>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  selu_dropout(const uint index, const uint num_neurons, lbann_comm *comm,
-               uint mini_batch_size, float keep_prob=0.95f,
+  selu_dropout(int index,
+               int num_neurons,
+               lbann_comm *comm,
+               int mini_batch_size,
+               float keep_prob=0.95f,
                DataType alpha = DataType(1.6732632423543772848170429916717),
                DataType scale = DataType(1.0507009873554804934193349852946)) :
     regularizer_layer(index, comm, mini_batch_size),

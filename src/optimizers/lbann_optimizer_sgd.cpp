@@ -90,14 +90,14 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
   } else {
 
     // Get local matrix data
-    const Int local_height = m_parameters->LocalHeight();
-    const Int local_width = m_parameters->LocalWidth();
+    const int local_height = m_parameters->LocalHeight();
+    const int local_width = m_parameters->LocalWidth();
     DataType *parameters_buffer = m_parameters->Buffer();
-    const Int parameters_ldim = m_parameters->LDim();
+    const int parameters_ldim = m_parameters->LDim();
     const DataType *gradient_buffer = gradient->LockedBuffer();
-    const Int gradient_ldim = gradient->LDim();
+    const int gradient_ldim = gradient->LDim();
     DataType *velocity_buffer = m_velocity->Buffer();
-    const Int velocity_ldim = m_velocity->LDim();
+    const int velocity_ldim = m_velocity->LDim();
 
     // Check if matrix data is contiguous
     if(parameters_ldim != local_height
@@ -105,8 +105,8 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
         || velocity_ldim != local_height) {
       // (Nesterov) momentum SGD for non-contiguous data
       #pragma omp parallel for collapse(2)
-      for(Int j=0; j<local_width; ++j) {
-        for(Int i=0; i<local_height; ++i) {
+      for(int j=0; j<local_width; ++j) {
+        for(int i=0; i<local_height; ++i) {
           const DataType g = gradient_buffer[i+j*gradient_ldim];
           DataType& v = velocity_buffer[i+j*velocity_ldim];
           DataType& x = parameters_buffer[i+j*parameters_ldim];
@@ -118,7 +118,7 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
       if(m_nesterov) {
         // Nesterov's accelerated gradient descent for contiguous data
         #pragma omp parallel for
-        for(Int i=0; i<local_height*local_width; ++i) {
+        for(int i=0; i<local_height*local_width; ++i) {
           DataType& x = parameters_buffer[i];
           const DataType g = gradient_buffer[i];
           DataType& v = velocity_buffer[i];
@@ -128,7 +128,7 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
       } else {
         // Momentum SGD for contiguous data
         #pragma omp parallel for
-        for(Int i=0; i<local_height*local_width; ++i) {
+        for(int i=0; i<local_height*local_width; ++i) {
           DataType& x = parameters_buffer[i];
           const DataType g = gradient_buffer[i];
           DataType& v = velocity_buffer[i];

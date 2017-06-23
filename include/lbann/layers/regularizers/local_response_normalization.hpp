@@ -43,14 +43,14 @@ class local_response_normalization_layer : public regularizer_layer {
  private:
 
   /// Number of data dimensions
-  const Int m_num_dims;
+  const int m_num_dims;
   /// Number of channels
-  const Int m_num_channels;
+  const int m_num_channels;
   /// Data dimensions
   /** In HW or DHW format */
-  std::vector<Int> m_dims;
+  std::vector<int> m_dims;
   /// Normalization window width
-  Int m_window_width;
+  int m_window_width;
   /// LRN alpha scaling parameter
   DataType m_lrn_alpha;
   /// LRN beta power parameter
@@ -70,8 +70,8 @@ class local_response_normalization_layer : public regularizer_layer {
   (uint index,
    int num_dims,
    int num_channels,
-   const Int *dims,
-   Int window_width,
+   const int *dims,
+   int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
@@ -151,7 +151,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(const int num_prev_neurons) {
+  void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
@@ -195,12 +195,12 @@ class local_response_normalization_layer : public regularizer_layer {
     std::vector<int> dims(m_num_dims+2);
     dims[0] = this->m_mini_batch_size_per_gpu;
     dims[1] = m_num_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       dims[i+2] = m_dims[i];
     }
     std::vector<int> strides(m_num_dims+2);
     strides[m_num_dims + 1] = 1;
-    for(Int i=m_num_dims; i>=0; --i) {
+    for(int i=m_num_dims; i>=0; --i) {
       strides[i] = strides[i+1] * dims[i+1];
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
@@ -266,8 +266,8 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType zero = 0;
 
     // Perform local response normalization with each GPU
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
-    for(Int i=0; i<num_gpus; ++i) {
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
@@ -296,7 +296,7 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType zero = 0;
 
     // Get number of GPUs
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
+    const int num_gpus = this->m_cudnn->get_num_gpus();
 
     // Perform back propagation on each GPU
     for(int i=0; i<num_gpus; ++i) {
@@ -329,7 +329,7 @@ class local_response_normalization_layer : public regularizer_layer {
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Input and output entries are divided amongst channels
-    const Int num_per_channel = this->m_num_neurons / m_num_channels;
+    const int num_per_channel = this->m_num_neurons / m_num_channels;
 
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
@@ -340,43 +340,43 @@ class local_response_normalization_layer : public regularizer_layer {
 
     // Iterate through data samples in mini-batch
     #pragma omp parallel for collapse(2)
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
       // Iterate through positions in sample
-      for(Int pos = 0; pos < num_per_channel; ++pos) {
+      for(int pos = 0; pos < num_per_channel; ++pos) {
 
         // Initialize normalization window
-        Int window_start = - m_window_width / 2;
-        Int window_end = m_window_width / 2;
+        int window_start = - m_window_width / 2;
+        int window_end = m_window_width / 2;
         DataType window_sum = 0;
-        for(Int c = Max(window_start, 0);
+        for(int c = Max(window_start, 0);
             c <= Min(window_end, m_num_channels-1);
             ++c) {
           const DataType x
-            = prev_activations_local.Get(pos + num_per_channel*c, sample);
+            = prev_activations_local(pos + num_per_channel*c, sample);
           window_sum += x * x;
         }
 
         // Iterate through channels at current position
-        for(Int channel = 0; channel < m_num_channels; ++channel) {
-          const Int index = pos + num_per_channel * channel;
+        for(int channel = 0; channel < m_num_channels; ++channel) {
+          const int index = pos + num_per_channel * channel;
 
           // Apply local response normalization to current entry
           const DataType input_entry = prev_activations_local.Get(index, sample);
           const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
           const DataType output_entry = input_entry * Pow(scale_factor, -m_lrn_beta);
-          activations_local.Set(index, sample, output_entry);
+          activations_local(index, sample) = output_entry;
 
           // Shift normalization window by one entry
           if(window_start >= 0) {
-            const Int i = pos + num_per_channel*window_start;
-            const DataType x = prev_activations_local.Get(i, sample);
+            const int i = pos + num_per_channel*window_start;
+            const DataType x = prev_activations_local(i, sample);
             window_sum -= x * x;
           }
           ++window_start;
           ++window_end;
           if(window_end < m_num_channels) {
-            const Int i = pos + num_per_channel*window_end;
-            const DataType x = prev_activations_local.Get(i, sample);
+            const int i = pos + num_per_channel*window_end;
+            const DataType x = prev_activations_local(i, sample);
             window_sum += x * x;
           }
 
@@ -401,7 +401,7 @@ class local_response_normalization_layer : public regularizer_layer {
     Zero(error_signal_local);
 
     // Input and output entries are divided amongst channels
-    const Int num_per_channel = this->m_num_neurons / m_num_channels;
+    const int num_per_channel = this->m_num_neurons / m_num_channels;
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)
@@ -416,15 +416,15 @@ class local_response_normalization_layer : public regularizer_layer {
 
     // Iterate through data samples in mini-batch
     #pragma omp parallel for collapse(2)
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
       // Iterate through positions in sample
-      for(Int pos = 0; pos < num_per_channel; ++pos) {
+      for(int pos = 0; pos < num_per_channel; ++pos) {
 
         // Initialize normalization window
-        Int window_start = - m_window_width / 2;
-        Int window_end = m_window_width / 2;
+        int window_start = - m_window_width / 2;
+        int window_end = m_window_width / 2;
         DataType window_sum = 0;
-        for(Int c = Max(window_start, 0);
+        for(int c = Max(window_start, 0);
             c <= Min(window_end, m_num_channels-1);
             ++c) {
           const DataType x
@@ -434,8 +434,8 @@ class local_response_normalization_layer : public regularizer_layer {
 
         // Iterate through channels at current position
         DataType error_signal_update;
-        for(Int channel = 0; channel < m_num_channels; ++channel) {
-          const Int index = pos + num_per_channel * channel;
+        for(int channel = 0; channel < m_num_channels; ++channel) {
+          const int index = pos + num_per_channel * channel;
 
           // Get data for current entry
           const DataType activations_entry = activations_local.Get(index, sample);
@@ -447,10 +447,10 @@ class local_response_normalization_layer : public regularizer_layer {
           error_signal_local.Update(index, sample, error_signal_update);
 
           // Update error signal entries in normalization window
-          for(Int c = Max(window_start, 0);
+          for(int c = Max(window_start, 0);
               c <= Min(window_end, m_num_channels-1);
               ++c) {
-            const Int i = pos + num_per_channel * c;
+            const int i = pos + num_per_channel * c;
             const DataType prev_activations_entry = prev_activations_local.Get(i, sample);
             error_signal_update
               = (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
@@ -460,14 +460,14 @@ class local_response_normalization_layer : public regularizer_layer {
 
           // Shift normalization window by one entry
           if(window_start >= 0) {
-            const Int i = pos + num_per_channel*window_start;
+            const int i = pos + num_per_channel*window_start;
             const DataType x = prev_activations_local.Get(i, sample);
             window_sum -= x * x;
           }
           ++window_start;
           ++window_end;
           if(window_end < m_num_channels) {
-            const Int i = pos + num_per_channel*window_end;
+            const int i = pos + num_per_channel*window_end;
             const DataType x = prev_activations_local.Get(i, sample);
             window_sum += x * x;
           }

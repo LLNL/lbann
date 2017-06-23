@@ -58,11 +58,17 @@ class batch_normalization : public regularizer_layer {
    * @param beta The initial value for beta. This should almost always
    * stay at zero.
    */
-  batch_normalization(const uint index, const uint num_neurons,
-                      lbann_comm *comm, uint mini_batch_size,
-                      DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
+  batch_normalization(int index,
+                      int num_neurons,
+                      lbann_comm *comm,
+                      int mini_batch_size,
+                      DataType decay=0.9,
+                      DataType gamma=1.0,
+                      DataType beta=0.0)
     : regularizer_layer(index, comm, mini_batch_size),
-      m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
+      m_gamma_init(gamma),
+      m_beta_init(beta),
+      m_decay(decay) {
     set_name("batch_normalization");
     // Setup the data distribution
     initialize_distributed_matrices();

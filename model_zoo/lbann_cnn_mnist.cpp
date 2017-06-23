@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
     // Number of GPUs per node to use
-    Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+    int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
     ///////////////////////////////////////////////////////////////////
     // initalize grid, block
@@ -199,19 +199,19 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     // First convolution layer
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 1;
-      Int inputDims[] = {28, 28};
-      Int outputChannels = 32;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {0, 0};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 1;
+      int inputDims[] = {28, 28};
+      int outputChannels = 32;
+      int filterDims[] = {3, 3};
+      int convPads[] = {0, 0};
+      int convStrides[] = {1, 1};
 
       convolution_layer<> *layer
         = new convolution_layer<>(1,
@@ -240,13 +240,13 @@ int main(int argc, char *argv[]) {
     // Second convolution layer
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 32;
-      Int inputDims[] = {26, 26};
-      Int outputChannels = 32;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {0, 0};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 32;
+      int inputDims[] = {26, 26};
+      int outputChannels = 32;
+      int filterDims[] = {3, 3};
+      int convPads[] = {0, 0};
+      int convStrides[] = {1, 1};
 
       convolution_layer<> *layer
         = new convolution_layer<>(3,
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;

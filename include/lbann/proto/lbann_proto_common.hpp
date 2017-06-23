@@ -1,3 +1,5 @@
+#if 0
+
 #ifndef LBANN_PROTO__INCLUDED
 #define LBANN_PROTO__INCLUDED
 
@@ -49,5 +51,7 @@ void writePrototextFile(
   string fn,
   lbann_data::LbannPB& pb);
 
+
+#endif
 
 #endif

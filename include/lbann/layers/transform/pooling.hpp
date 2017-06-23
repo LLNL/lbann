@@ -48,22 +48,22 @@ class pooling_layer : public transform {
   const pool_mode m_pool_mode;
 
   /// Number of data dimensions
-  const Int m_num_dims;
+  const int m_num_dims;
   /// Number of channels
-  const Int m_num_channels;
+  const int m_num_channels;
   /// Input dimensions
   /** In HW or DHW format */
-  std::vector<Int> m_input_dims;
+  std::vector<int> m_input_dims;
   /// Output dimensions
-  std::vector<Int> m_output_dims;
+  std::vector<int> m_output_dims;
   /// Pooling window dimensions
-  std::vector<Int> m_pool_dims;
+  std::vector<int> m_pool_dims;
   /// Pooling padding
-  std::vector<Int> m_pool_pads;
+  std::vector<int> m_pool_pads;
   /// Pooling strides
-  std::vector<Int> m_pool_strides;
+  std::vector<int> m_pool_strides;
   /// Size of pooling window
-  Int m_pool_size;
+  int m_pool_size;
 
 #ifdef __LIB_CUDNN
   /// Input tensor descriptor
@@ -76,7 +76,7 @@ class pooling_layer : public transform {
 
  public:
   /// Constructor
-  pooling_layer(uint index,
+  pooling_layer(int index,
                 int num_dims,
                 int num_channels,
                 const int *input_dims,
@@ -84,7 +84,7 @@ class pooling_layer : public transform {
                 const int *pool_pads,
                 const int *pool_strides,
                 pool_mode _pool_mode,
-                uint mini_batch_size,
+                int mini_batch_size,
                 lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm, mini_batch_size),
@@ -177,7 +177,7 @@ class pooling_layer : public transform {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(const int num_prev_neurons) {
+  void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
 
   #ifdef __LIB_CUDNN
@@ -219,12 +219,12 @@ class pooling_layer : public transform {
     std::vector<int> input_dims(m_num_dims+2);
     input_dims[0] = this->m_mini_batch_size_per_gpu;
     input_dims[1] = m_num_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       input_dims[i+2] = m_input_dims[i];
     }
     std::vector<int> input_strides(m_num_dims+2);
     input_strides[m_num_dims + 1]  = 1;
-    for(Int i=m_num_dims; i>=0; --i) {
+    for(int i=m_num_dims; i>=0; --i) {
       input_strides[i] = input_strides[i+1] * input_dims[i+1];
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
@@ -248,7 +248,7 @@ class pooling_layer : public transform {
     std::vector<int> pool_dims(m_num_dims);
     std::vector<int> pool_pads(m_num_dims);
     std::vector<int> pool_strides(m_num_dims);
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       pool_dims[i] = m_pool_dims[i];
       pool_pads[i] = m_pool_pads[i];
       pool_strides[i] = m_pool_strides[i];
@@ -274,7 +274,7 @@ class pooling_layer : public transform {
     if(output_dims[1] != m_num_channels) {
       throw lbann_exception("lbann_layer_pooling: invalid output dimensions");
     }
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       if(output_dims[i+2] != m_output_dims[i]) {
         throw lbann_exception("lbann_layer_pooling: invalid output dimensions");
       }
@@ -282,13 +282,13 @@ class pooling_layer : public transform {
   #else
     output_dims[0] = this->m_mini_batch_size_per_gpu;
     output_dims[1] = m_num_channels;
-    for(Int i=0; i<m_num_dims; ++i) {
+    for(int i=0; i<m_num_dims; ++i) {
       output_dims[i+2] = m_output_dims[i];
     }
   #endif // #ifdef LBANN_DEBUG
     std::vector<int> output_strides(m_num_dims+2);
     output_strides[m_num_dims + 1]  = 1;
-    for(Int i=m_num_dims; i>=0; --i) {
+    for(int i=m_num_dims; i>=0; --i) {
       output_strides[i] = output_strides[i+1] * output_dims[i+1];
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
@@ -349,8 +349,8 @@ class pooling_layer : public transform {
     const DataType zero = 0;
 
     // Perform pooling with each GPU
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
-    for(Int i=0; i<num_gpus; ++i) {
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
@@ -378,7 +378,7 @@ class pooling_layer : public transform {
     const DataType zero = 0;
 
     // Get number of GPUs
-    const Int num_gpus = this->m_cudnn->get_num_gpus();
+    const int num_gpus = this->m_cudnn->get_num_gpus();
 
     // Perform back propagation on each GPU
     for(int i=0; i<num_gpus; ++i) {
@@ -416,13 +416,13 @@ class pooling_layer : public transform {
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Output entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_channels;
 
     // Initialize im2col matrix
     Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
 
     // Iterate through data samples
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Construct im2col matrix from input
       const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
@@ -434,14 +434,14 @@ class pooling_layer : public transform {
       if(m_pool_mode == pool_mode::max) {
         DataType *output_buffer = activations_local.Buffer(0, sample);
         #pragma omp parallel for collapse(2)
-        for(Int c = 0; c < m_num_channels; ++c) {
-          for(Int j = 0; j < num_per_output_channel; ++j) {
+        for(int c = 0; c < m_num_channels; ++c) {
+          for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
             DataType output_entry = -INFINITY;
-            for(Int i = 0; i < m_pool_size; ++i) {
+            for(int i = 0; i < m_pool_size; ++i) {
               output_entry = Max(output_entry, im2col_buffer[i]);
             }
-            const Int output_index = j + c * num_per_output_channel;
+            const int output_index = j + c * num_per_output_channel;
             output_buffer[output_index] = output_entry;
           }
         }
@@ -451,15 +451,15 @@ class pooling_layer : public transform {
       if(m_pool_mode == pool_mode::average) {
         DataType *output_buffer = activations_local.Buffer(0, sample);
         #pragma omp parallel for collapse(2)
-        for(Int c = 0; c < m_num_channels; ++c) {
-          for(Int j = 0; j < num_per_output_channel; ++j) {
+        for(int c = 0; c < m_num_channels; ++c) {
+          for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
             DataType output_entry = 0;
-            for(Int i = 0; i < m_pool_size; ++i) {
+            for(int i = 0; i < m_pool_size; ++i) {
               output_entry += im2col_buffer[i];
             }
             output_entry /= m_pool_size;
-            const Int output_index = j + c * num_per_output_channel;
+            const int output_index = j + c * num_per_output_channel;
             output_buffer[output_index] = output_entry;
           }
         }
@@ -484,13 +484,13 @@ class pooling_layer : public transform {
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Output entries are divided amongst channels
-    const Int num_per_output_channel = this->m_num_neurons / m_num_channels;
+    const int num_per_output_channel = this->m_num_neurons / m_num_channels;
 
     // Initialize im2col matrix
     Mat im2col_mat(m_pool_size * m_num_channels, num_per_output_channel);
 
     // Iterate through data samples
-    for(Int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Compute gradient w.r.t. im2col matrix for max pooling
       if(m_pool_mode == pool_mode::max) {
@@ -506,12 +506,12 @@ class pooling_layer : public transform {
         const DataType *prev_error_signal_buffer
           = prev_error_signal_local.LockedBuffer(0, sample);
         #pragma omp parallel for collapse(2)
-        for(Int j = 0; j < num_per_output_channel; ++j) {
-          for(Int c = 0; c < m_num_channels; ++c) {
+        for(int j = 0; j < num_per_output_channel; ++j) {
+          for(int c = 0; c < m_num_channels; ++c) {
             DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
-            Int max_index = 0;
+            int max_index = 0;
             DataType max_entry = -INFINITY;
-            for(Int i = 0; i < m_pool_size; ++i) {
+            for(int i = 0; i < m_pool_size; ++i) {
               const DataType current_entry = im2col_buffer[i];
               im2col_buffer[i] = 0;
               if(current_entry > max_entry) {
@@ -519,7 +519,7 @@ class pooling_layer : public transform {
                 max_entry = current_entry;
               }
             }
-            const Int prev_error_signal_index = j + c * num_per_output_channel;
+            const int prev_error_signal_index = j + c * num_per_output_channel;
             im2col_buffer[max_index]
               = prev_error_signal_buffer[prev_error_signal_index];
           }
@@ -530,13 +530,13 @@ class pooling_layer : public transform {
       // Compute gradient w.r.t. im2col matrix for average pooling
       if(m_pool_mode == pool_mode::average) {
         #pragma omp parallel for collapse(2)
-        for(Int j = 0; j < num_per_output_channel; ++j) {
-          for(Int c = 0; c < m_num_channels; ++c) {
+        for(int j = 0; j < num_per_output_channel; ++j) {
+          for(int c = 0; c < m_num_channels; ++c) {
             DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
-            const Int input_index = j + c * num_per_output_channel;
+            const int input_index = j + c * num_per_output_channel;
             const DataType output_entry
               = prev_error_signal_local(input_index, sample) / m_pool_size;
-            for(Int i = 0; i < m_pool_size; ++i) {
+            for(int i = 0; i < m_pool_size; ++i) {
               im2col_buffer[i] = output_entry;
             }
           }

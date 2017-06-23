@@ -193,11 +193,11 @@ int main(int argc, char *argv[]) {
                                                           };
 
 
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
-                                                        mnist_trainset.get_linearized_data_size(), 1000,trainParams.MBSize,
+                                                        mnist_trainset.get_linearized_data_size(), 1000, trainParams.MBSize,
                                                         weight_initialization::uniform, comm,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode1);

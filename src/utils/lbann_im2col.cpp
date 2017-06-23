@@ -32,11 +32,11 @@ namespace lbann {
 
 void im2col(const Mat& im,
             Mat& col,
-            const std::vector<Int>& im_dims,
-            const std::vector<Int>& im_pads,
-            Int num_im_channels,
-            const std::vector<Int>& window_dims,
-            const std::vector<Int>& window_strides) {
+            const std::vector<int>& im_dims,
+            const std::vector<int>& im_pads,
+            int num_im_channels,
+            const std::vector<int>& window_dims,
+            const std::vector<int>& window_strides) {
 
   // Input and output parameters
   const int num_channels = num_im_channels;
@@ -119,11 +119,11 @@ void im2col(const Mat& im,
 
 void col2im(const Mat& col,
             Mat& im,
-            const std::vector<Int>& im_dims,
-            const std::vector<Int>& im_pads,
-            Int num_im_channels,
-            const std::vector<Int>& window_dims,
-            const std::vector<Int>& window_strides) {
+            const std::vector<int>& im_dims,
+            const std::vector<int>& im_pads,
+            int num_im_channels,
+            const std::vector<int>& window_dims,
+            const std::vector<int>& window_strides) {
 
   // Input and output parameters
   const int num_channels = num_im_channels;

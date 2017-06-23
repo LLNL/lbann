@@ -41,7 +41,7 @@ class target_layer : public io_layer {
   bool m_shared_data_reader;
 
  public:
-  target_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
       this->m_num_neurons = io_layer::get_linearized_response_size();
@@ -85,7 +85,7 @@ class target_layer : public io_layer {
   }
 
   void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     this->m_neural_network_model->m_obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
     for (auto&& m : this->m_neural_network_model->m_metrics) {
@@ -93,7 +93,7 @@ class target_layer : public io_layer {
     }
   }
 
-  void summarize(lbann_summary& summarizer, int64_t step) {
+  void summarize(lbann_summary& summarizer, int step) {
     Layer::summarize(summarizer, step);
     std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/CrossEntropyCost";
@@ -123,12 +123,12 @@ class target_layer : public io_layer {
     this->m_neural_network_model->m_obj_fn->reset_obj_fn();
   }
 
-  bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
     /// @todo should probably save m_shared_data_reader
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
 
-  bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
     /// @todo should probably save m_shared_data_reader
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }

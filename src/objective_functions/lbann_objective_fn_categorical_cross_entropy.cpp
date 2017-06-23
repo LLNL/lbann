@@ -40,19 +40,19 @@ lbann::objective_functions::categorical_cross_entropy::~categorical_cross_entrop
 
 void lbann::objective_functions::categorical_cross_entropy::setup(int num_neurons, int mini_batch_size) {}
 
-void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
+void lbann::objective_functions::categorical_cross_entropy::fp_set_std_matrix_view(int cur_mini_batch_size) {}
 
 /// Compute the cross-entropy cost function - comparing the activations from the previous layer and the ground truth (activations of this layer)
 /// cost=-1/m*(sum(sum(groundTruth.*log(a))))
 /// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
 /// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
 double lbann::objective_functions::categorical_cross_entropy::compute_categorical_cross_entropy(ElMat& predictions_v,
-    ElMat& groundtruth_v) {
+                                                                                                ElMat& groundtruth_v) {
 
   // Compute categorical cross entropy on current process
   double total_error = 0;
-  for(Int c = 0; c < groundtruth_v.LocalWidth(); c++) {
-    for(Int r = 0; r < groundtruth_v.LocalHeight(); r++) {
+  for(int c = 0; c < groundtruth_v.LocalWidth(); c++) {
+    for(int r = 0; r < groundtruth_v.LocalHeight(); r++) {
       const DataType true_val = groundtruth_v.GetLocal(r,c);
       if(true_val != DataType(0)) {
         double pred_val = predictions_v.GetLocal(r,c);
@@ -73,7 +73,7 @@ double lbann::objective_functions::categorical_cross_entropy::compute_categorica
 
 /// Compute the average categorical cross entropy over the mini-batch
 double lbann::objective_functions::categorical_cross_entropy::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
-  Int cur_mini_batch_size = groundtruth_v.Width();
+  int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_categorical_cross_entropy(predictions_v, groundtruth_v);
 
@@ -98,7 +98,7 @@ void lbann::objective_functions::categorical_cross_entropy::compute_obj_fn_deriv
   // Note: error_signal = - groundtruth ./ predictions
   else {
     IndexDependentFill(error_signal_v.Matrix(),
-                       (std::function<DataType(Int,Int)>)
+                       (std::function<DataType(El::Int,El::Int)>)
     ([&predictions_v, &groundtruth_v](Int r, Int c)->DataType {
       const DataType true_val = groundtruth_v.GetLocal(r,c);
       if(true_val != DataType(0))

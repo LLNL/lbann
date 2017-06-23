@@ -98,18 +98,18 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
   const DataType correction = Sqrt(DataType(1) - m_current_beta2) /
                               (DataType(1) - m_current_beta1);
 
-  const Int local_height = m_parameters->LocalHeight();
-  const Int local_width = m_parameters->LocalWidth();
+  const int local_height = m_parameters->LocalHeight();
+  const int local_width = m_parameters->LocalWidth();
   DataType *parameters_buffer = m_parameters->Buffer();
-  const Int parameters_ldim = m_parameters->LDim();
+  const int parameters_ldim = m_parameters->LDim();
   const DataType *gradient_buffer = gradient->LockedBuffer();
-  const Int gradient_ldim = gradient->LDim();
+  const int gradient_ldim = gradient->LDim();
   DataType *moment1_buffer = m_moment1->Buffer();
-  const Int moment1_ldim = m_moment1->LDim();
+  const int moment1_ldim = m_moment1->LDim();
   DataType *moment2_buffer = m_moment2->Buffer();
-  const Int moment2_ldim = m_moment2->LDim();
+  const int moment2_ldim = m_moment2->LDim();
   DataType *old_gradient_buffer = m_old_gradient->Buffer();
-  const Int old_gradient_ldim = m_old_gradient->LDim();
+  const int old_gradient_ldim = m_old_gradient->LDim();
 
   // Compute the learning rate update.
   DataType lr_update = El::Dot(*gradient, *m_old_gradient);
@@ -123,8 +123,8 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
       || old_gradient_ldim != local_height) {
     // Non-contiguous data.
     #pragma omp parallel for collapse(2)
-    for (Int j = 0; j < local_width; ++j) {
-      for (Int i = 0; i < local_height; ++i) {
+    for (int j = 0; j < local_width; ++j) {
+      for (int i = 0; i < local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
         const DataType g = gradient_buffer[i+j*gradient_ldim] + m_eps;
         DataType& m1 = moment1_buffer[i+j*moment1_ldim];
@@ -139,7 +139,7 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
   } else {
     // Contiguous data.
     #pragma omp parallel for
-    for (Int i = 0; i < local_height * local_width; ++i) {
+    for (int i = 0; i < local_height * local_width; ++i) {
       DataType& x = parameters_buffer[i];
       // Add eps here to avoid denormalized floats.
       const DataType g = gradient_buffer[i] + m_eps;

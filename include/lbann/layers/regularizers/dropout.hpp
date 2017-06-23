@@ -48,8 +48,11 @@ template <data_layout T_layout>
 class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(const uint index, const uint num_neurons, lbann_comm *comm,
-          uint mini_batch_size, float keep_prob=0.5f) :
+  dropout(int index,
+          int num_neurons,
+          lbann_comm *comm,
+          int mini_batch_size,
+          float keep_prob=0.5f) :
     regularizer_layer(index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
     set_name("dropout");

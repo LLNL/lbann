@@ -49,13 +49,15 @@ class relu_layer : public entrywise_activation_layer {
 #endif
 
  public:
-  relu_layer(uint index,
+  relu_layer(int index,
              lbann_comm *comm,
-             uint mini_batch_size,
-             uint num_neurons,
+             int mini_batch_size,
+             int num_neurons,
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) {
+    entrywise_activation_layer(index,
+                               comm,
+                               mini_batch_size,
+                               num_neurons) {
     set_name("relu_layer");
 
     initialize_distributed_matrices();

@@ -45,9 +45,10 @@ class reconstruction_layer : public target_layer {
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(size_t index,lbann_comm *comm,
+  reconstruction_layer(int index,
+                       lbann_comm *comm,
                        optimizer *opt,/*needed?*/
-                       const uint minim_batch_size,
+                       int minim_batch_size,
                        Layer *original_layer)
     :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
     set_name("reconstruction_layer");
