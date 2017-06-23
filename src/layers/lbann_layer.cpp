@@ -299,6 +299,18 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
+  // Initialize matrices.
+  if (m_mini_batch_size == 0) {
+    throw lbann_exception("lbann_layer: mini_batch_size is 0");
+  }
+  if (m_num_neurons == 0) {
+    throw lbann_exception("lbann_layer: num_neurons is 0");
+  }
+  El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  if (num_prev_neurons > 0) {
+    // Don't initialize for the first layer.
+    El::Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  }
 }
 
 void lbann::Layer::check_setup() {}
