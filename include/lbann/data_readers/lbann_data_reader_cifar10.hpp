@@ -80,6 +80,11 @@ class cifar10_reader : public generic_data_reader {
   int get_linearized_label_size(void) const {
     return 10;
   }
+  
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
+    internal_save_image(pixels, filename, m_image_height, m_image_width,
+                        m_image_num_channels, do_scale);
+  }
 
  private:
   std::vector<std::vector<unsigned char> > m_data;
