@@ -50,7 +50,10 @@ class selu_layer : public entrywise_activation_layer {
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),
     m_alpha(alpha), m_scale(scale)
-  { initialize_distributed_matrices(); }
+  {
+    initialize_distributed_matrices();
+    set_name("selu_layer");
+  }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

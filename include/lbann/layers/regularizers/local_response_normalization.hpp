@@ -172,12 +172,6 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   #endif
 
-    // Initialize matrices
-    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
-
   }
 
  private:

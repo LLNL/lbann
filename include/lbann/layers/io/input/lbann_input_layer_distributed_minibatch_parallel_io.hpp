@@ -83,7 +83,6 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
                                                             m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
 
-    Zeros(*this->m_activations, this->m_num_neurons, Layer::m_mini_batch_size);
     Zeros(X_local, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;

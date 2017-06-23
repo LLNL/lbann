@@ -81,8 +81,6 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
                                                             m_num_parallel_readers_testing);
     }
 
-    Zeros(*this->m_activations, this->m_num_neurons, Layer::m_mini_batch_size);
-
     m_local_data_valid = false;
     m_local_reader_done = false;
     m_num_data_per_epoch = 0;

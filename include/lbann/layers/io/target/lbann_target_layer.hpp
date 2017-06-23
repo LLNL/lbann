@@ -56,6 +56,7 @@ class target_layer : public io_layer {
   }
 
   void setup(int num_prev_neurons) {
+    io_layer::setup(num_prev_neurons);
     if(this->m_neural_network_model->m_obj_fn == NULL) {
       throw lbann_exception("target layer has invalid objective function pointer");
     }
@@ -64,7 +65,6 @@ class target_layer : public io_layer {
       m->setup(this->m_num_neurons, this->m_mini_batch_size);
       m->m_neural_network_model = this->m_neural_network_model;
     }
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
   }
 
   /**

@@ -42,8 +42,8 @@ class sigmoid_layer : public entrywise_activation_layer {
                 const uint mini_batch_size, uint num_neurons) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons) { 
-      initialize_distributed_matrices(); 
-      set_name("sigmoid_layer");
+    initialize_distributed_matrices(); 
+    set_name("sigmoid_layer");
   }    
 
   virtual inline void initialize_distributed_matrices() {

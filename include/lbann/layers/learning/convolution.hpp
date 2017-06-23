@@ -266,10 +266,6 @@ class convolution_layer : public learning {
             this->m_cudnn->get_num_gpus());
     }
   #endif // #ifdef __LIB_CUDNN
-    Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_prev_error_signal), this->m_num_neurons, this->m_mini_batch_size);
 
   #ifdef __LIB_CUDNN
     // Pin host memory
