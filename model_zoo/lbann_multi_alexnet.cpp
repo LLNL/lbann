@@ -675,6 +675,9 @@ int main(int argc, char *argv[]) {
                               {1, 5, 9, 11, 13, 16, 19, 22}, &summarizer);
     dnn->add_callback(&imcomm_cb);
 
+    lbann_callback_profiler profiler_cb;
+    dnn->add_callback(&profiler_cb);
+
     dnn->setup();
 
     if (comm->am_world_master()) {

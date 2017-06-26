@@ -100,6 +100,7 @@
 #include "lbann/callbacks/lbann_callback_early_stopping.hpp"
 #include "lbann/callbacks/lbann_callback_ltfb.hpp"
 #include "lbann/callbacks/lbann_callback_save_images.hpp"
+#include "lbann/callbacks/profiler.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
