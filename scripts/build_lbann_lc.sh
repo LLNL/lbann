@@ -90,6 +90,7 @@ Options:
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--vtune${N}                 Build with VTune profiling libraries.
+  ${C}--nvprof${N}                Build with region annotations for NVPROF.
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
@@ -168,6 +169,9 @@ while :; do
         --vtune)
             # VTune libraries
             WITH_VTUNE=ON
+            ;;
+        --nvprof)
+            WITH_NVPROF=ON
             ;;
         --clean-build|--build-clean)
             # Clean build directory
@@ -494,6 +498,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable VTUNE_DIR
     print_variable WITH_CUDA
     print_variable WITH_CUDNN
+    print_variable WITH_NVPROF
     print_variable ELEMENTAL_USE_CUBLAS
     print_variable ELEMENTAL_MATH_LIBS
     print_variable PATCH_OPENBLAS
@@ -544,6 +549,7 @@ cmake \
 -D WITH_CUDNN=${WITH_CUDNN} \
 -D WITH_TBINF=${WITH_TBINF} \
 -D WITH_VTUNE=${WITH_VTUNE} \
+-D WITH_NVPROF=${WITH_NVPROF} \
 -D Elemental_DIR=${Elemental_DIR} \
 -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
 -D cuDNN_DIR=${cuDNN_DIR} \
