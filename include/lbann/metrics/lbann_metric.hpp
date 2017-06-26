@@ -56,6 +56,8 @@ static const char *__attribute__((used)) _to_string(metric_type m) {
   switch(m) {
   case metric_type::categorical_accuracy:
     return "categorical accuracy";
+  case metric_type::top_k_categorical_accuracy:
+    return "top-k categorical accuracy";
   case metric_type::mean_squared_error:
     return "mean squared error";
   default:
@@ -67,6 +69,7 @@ static const char *__attribute__((used)) _to_string(metric_type m) {
 static const char *__attribute__((used)) _disp_unit(metric_type m) {
   switch(m) {
   case metric_type::categorical_accuracy:
+  case metric_type::top_k_categorical_accuracy:
     return "%";
   case metric_type::mean_squared_error:
     return "";
