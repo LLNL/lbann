@@ -35,6 +35,9 @@ class input_layer : public io_layer {
   input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : io_layer(comm, mini_batch_size, data_readers) {
     this->m_num_neurons = io_layer::get_linearized_data_size();
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
+
   }
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {

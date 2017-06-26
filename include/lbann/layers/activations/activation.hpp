@@ -55,6 +55,8 @@ class activation_layer : public Layer {
                    int num_neurons) :
     Layer(index, comm, mini_batch_size) {
     this->m_num_neurons = num_neurons;
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, num_neurons);
     this->m_type = layer_type::activation;
   }
 
@@ -84,6 +86,8 @@ class entrywise_activation_layer : public activation_layer {
 
   virtual void setup(int num_prev_neurons) {
     Layer::setup(num_prev_neurons);
+    this->m_num_prev_neuron_dims = 1;
+    this->m_prev_neuron_dims.assign(1, num_prev_neurons);
 
     // Initialize matrices
     Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);

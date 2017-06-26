@@ -74,7 +74,9 @@ class batch_normalization : public regularizer_layer {
     initialize_distributed_matrices();
     this->m_type = layer_type::batch_normalization;
     this->m_num_neurons = num_neurons;
-  }
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, num_neurons);
+   }
 
   ~batch_normalization() {
     delete m_gamma;
@@ -93,6 +95,8 @@ class batch_normalization : public regularizer_layer {
   /** Initializes matrices. */
   void setup(int num_prev_neurons) {
     regularizer_layer::setup(num_prev_neurons);
+    this->m_num_prev_neuron_dims = 1;
+    this->m_prev_neuron_dims.assign(1, num_prev_neurons);
     this->m_num_neurons = num_prev_neurons;
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);

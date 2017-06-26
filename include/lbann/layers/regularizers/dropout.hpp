@@ -60,6 +60,8 @@ class dropout : public regularizer_layer {
     initialize_distributed_matrices();
     this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, num_neurons);
   }
   ~dropout() {
     delete m_cur_mask;
@@ -70,6 +72,8 @@ class dropout : public regularizer_layer {
 
   void setup(int num_prev_neurons) {
     regularizer_layer::setup(num_prev_neurons);
+    this->m_num_prev_neuron_dims = 1;
+    this->m_prev_neuron_dims.assign(1, num_prev_neurons);
     this->m_num_neurons = num_prev_neurons;
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
     Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);

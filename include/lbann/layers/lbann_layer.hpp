@@ -150,38 +150,46 @@ class Layer {
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 
-  /** Return the type of this layer. */
+  /** Return the layer type. */
   inline layer_type get_type(void) const {
     return m_type;
   }
 
-  /** Return this layer's name */
+  /** Return the layer name. */
   inline std::string get_name() const { 
     return m_name;
   }
 
-  /** Set the layer's name **/
+  /** Set the layer name. **/
   inline void set_name(std::string name) {
     m_name = name;
   }
 
-  /** Return the index of this layer. */
+  /** Return the layer index. */
   inline int get_index(void) const {
     return m_index;
   }
-  /** Set the index of this layer. */
+  /** Set the layer index. */
   inline void set_index(int i) {
     m_index = i;
   }
-  /** Return the number of neurons of this layer. */
+  /** Return the number of neurons. */
   inline int get_num_neurons(void) const {
     return m_num_neurons;
   }
-  /** Return the execution mode of this layer */
+  /** Return the number of dimensions in neuron tensor. */
+  inline int get_num_neuron_dims(void) const {
+    return m_num_neuron_dims;
+  }
+  /** Return the dimensions of neuron tensor. */
+  inline const std::vector<int>& get_neuron_dims(void) const {
+    return m_neuron_dims;
+  }
+  /** Return the execution mode. */
   inline execution_mode get_execution_mode(void) const {
     return m_execution_mode;
   }
-  /** Set the execution mode of this layer */
+  /** Set the execution mode. */
   inline void set_execution_mode(execution_mode mode) {
     m_execution_mode = mode;
   }
@@ -260,12 +268,16 @@ class Layer {
 
   lbann_comm *m_comm;
 
-  layer_type m_type;            ///< Type of this layer
-  layer_type m_prev_layer_type; ///< Type of previous layer
-  layer_type m_next_layer_type; ///< Type of next layer
+  layer_type m_type;            ///< Layer type
+  layer_type m_prev_layer_type; ///< Previous layer's type
+  layer_type m_next_layer_type; ///< Next layer's type
 
-  int m_num_neurons;           ///< Number of neurons
-  int m_num_prev_neurons;      ///< Number of neurons in previous layer
+  int m_num_neurons;                    ///< Number of neurons
+  int m_num_neuron_dims;                ///< Number of dimensions in neuron tensor
+  std::vector<int> m_neuron_dims;       ///< Neuron tensor dimensions
+  int m_num_prev_neurons;               ///< Number of neurons in previous layer
+  int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
+  std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
   execution_mode  m_execution_mode;
 

@@ -98,12 +98,12 @@ void lbann_callback_imcomm::setup(model *m) {
           convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
             dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
           filter_size = conv_layer->m_filter_size;
-          num_output_channels = conv_layer->m_num_output_channels;
+          num_output_channels = conv_layer->m_neuron_dims[0];
         } else {
           convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
             dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
           filter_size = conv_layer->m_filter_size;
-          num_output_channels = conv_layer->m_num_output_channels;
+          num_output_channels = conv_layer->m_neuron_dims[0];
         }
         params.reshape_height = filter_size / num_output_channels;
         params.reshape_width = num_output_channels;

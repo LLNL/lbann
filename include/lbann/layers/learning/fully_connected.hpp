@@ -100,6 +100,8 @@ class fully_connected_layer : public learning {
 
     this->m_index = index;
     this->m_num_neurons = numNeurons;
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, numNeurons);
     WBL2NormSum = 0.0;
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
   }
@@ -118,6 +120,8 @@ class fully_connected_layer : public learning {
 
   void setup(int numPrevNeurons) {
     learning::setup(numPrevNeurons);
+    this->m_num_prev_neuron_dims = 1;
+    this->m_prev_neuron_dims.assign(1, numPrevNeurons);
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term

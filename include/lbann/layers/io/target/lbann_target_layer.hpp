@@ -48,6 +48,8 @@ class target_layer : public io_layer {
     } else {
       this->m_num_neurons = io_layer::get_linearized_label_size();
     }
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
     m_shared_data_reader = shared_data_reader;
   }
 

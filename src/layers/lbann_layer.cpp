@@ -84,10 +84,22 @@ lbann::Layer::Layer(int index,
 {
   set_name("the name has not been set for this layer");
 
-  fp_input = NULL;
-  bp_input = NULL;
+  // Initialize neuron tensor dimensions
+  m_num_neurons = 0;
+  m_num_neuron_dims = 1;
+  m_neuron_dims = std::vector<int>(1, 0);
+  m_num_prev_neurons = 0;
+  m_num_prev_neuron_dims = 1;
+  m_neuron_dims = std::vector<int>(1, 0);
+
+  // Initialize model
   m_neural_network_model = NULL;
 
+  // Initialize inputs from other layers
+  fp_input = NULL;
+  bp_input = NULL;
+
+  // Initialize GPU information
   m_using_gpus = false;
   m_prev_layer_using_gpus = false;
   m_next_layer_using_gpus = false;

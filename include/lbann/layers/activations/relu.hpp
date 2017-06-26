@@ -135,13 +135,21 @@ void setup_gpu() {
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
 
     // Set tensor descriptor
-    int tensor_dims[] = {1,1,(int)this->m_mini_batch_size_per_gpu, (int)this->m_num_neurons};
-    int tensor_strides[] = {(int)this->m_num_neurons, (int)this->m_num_neurons, (int)this->m_num_neurons, 1};
+    // Note: hackily pad the tensor dimensions with ones to ensure the tensor is at least 4D
+    std::vector<int> tensor_dims = this->m_neuron_dims;
+    tensor_dims.insert(tensor_dims.begin(), this->m_mini_batch_size_per_gpu);
+    tensor_dims.insert(tensor_dims.begin(), 1);
+    tensor_dims.insert(tensor_dims.begin(), 1);
+    std::vector<int> tensor_strides(tensor_dims.size());
+    tensor_strides[tensor_strides.size()-1] = 1;
+    for(int i=tensor_strides.size()-2; i>=0; --i) {
+      tensor_strides[i] = tensor_strides[i+1] * tensor_dims[i+1];
+    }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
                                            this->m_cudnn->get_cudnn_data_type(),
-                                           4,
-                                           tensor_dims,
-                                           tensor_strides));
+                                           tensor_dims.size(),
+                                           tensor_dims.data(),
+                                           tensor_strides.data()));
     
     // Set activation descriptor
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,

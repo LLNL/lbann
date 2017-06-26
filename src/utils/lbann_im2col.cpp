@@ -32,23 +32,22 @@ namespace lbann {
 
 void im2col(const Mat& im,
             Mat& col,
-            const std::vector<int>& im_dims,
-            const std::vector<int>& im_pads,
-            int num_im_channels,
-            const std::vector<int>& window_dims,
-            const std::vector<int>& window_strides) {
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides) {
 
   // Input and output parameters
-  const int num_channels = num_im_channels;
-  const int num_dims = im_dims.size();
-  const int output_height = col.Height();
-  const int output_width = col.Width();
-  const DataType *__restrict__ input_buffer = im.LockedBuffer();
-  DataType *__restrict__ output_buffer = col.Buffer();
+  const int col_height = col.Height();
+  const int col_width = col.Width();
+  const DataType *__restrict__ im_buffer = im.LockedBuffer();
+  DataType *__restrict__ col_buffer = col.Buffer();
 
   // Call optimized routine if data is 2D
-  if(num_dims == 2) {
-    im2col_2d(input_buffer, output_buffer,
+  if(im_num_dims == 2) {
+    im2col_2d(im_buffer, col_buffer,
               im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
               window_dims[1], window_dims[0],
               window_strides[1], window_strides[0]);
@@ -56,61 +55,57 @@ void im2col(const Mat& im,
   }
 
   // im2col parameters
-  std::vector<int> input_dim(num_dims);
-  std::vector<int> window_dim(num_dims);
-  std::vector<int> offset_start(num_dims);
-  std::vector<int> offset_end(num_dims);
-  std::vector<int> offset_stride(num_dims);
-  std::vector<int> offset_num(num_dims);
-  for(int d = 0; d < num_dims; ++d) {
-    input_dim[d] = im_dims[d];
-    window_dim[d] = window_dims[d];
+  std::vector<int> offset_start(im_num_dims);
+  std::vector<int> offset_end(im_num_dims);
+  std::vector<int> offset_stride(im_num_dims);
+  std::vector<int> offset_num(im_num_dims);
+  for(int d = 0; d < im_num_dims; ++d) {
     offset_start[d] = -im_pads[d];
     offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
     offset_stride[d] = window_strides[d];
     offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
   }
 
-  // Iterate through output matrix columns
+  // Iterate through col matrix columns
   #pragma omp parallel for
-  for(int output_col = 0; output_col < output_width; ++output_col) {
+  for(int col_col = 0; col_col < col_width; ++col_col) {
 
     // Initialize arrays
-    std::vector<int> offset_pos(num_dims);
-    std::vector<int> window_pos(num_dims);
+    std::vector<int> offset_pos(im_num_dims);
+    std::vector<int> window_pos(im_num_dims);
 
     // Get position of current offset
-    int output_col_remainder = output_col;
-    for(int d = num_dims-1; d >= 0; --d) {
-      const int offset = output_col_remainder % offset_num[d];
+    int col_col_remainder = col_col;
+    for(int d = im_num_dims-1; d >= 0; --d) {
+      const int offset = col_col_remainder % offset_num[d];
       offset_pos[d] = offset_start[d] + offset * offset_stride[d];
-      output_col_remainder /= offset_num[d];
+      col_col_remainder /= offset_num[d];
     }
 
-    // Iterate through output matrix entries
-    for(int output_row = 0; output_row < output_height; ++output_row) {
-      const int output_index = output_row + output_col * output_height;
+    // Iterate through col matrix entries
+    for(int col_row = 0; col_row < col_height; ++col_row) {
+      const int col_index = col_row + col_col * col_height;
 
       // Get position in window and channel
-      int output_row_remainder = output_row;
-      for(int d = num_dims-1; d >= 0; --d) {
-        window_pos[d] = output_row_remainder % window_dim[d];
-        output_row_remainder /= window_dim[d];
+      int col_row_remainder = col_row;
+      for(int d = im_num_dims-1; d >= 0; --d) {
+        window_pos[d] = col_row_remainder % window_dims[d];
+        col_row_remainder /= window_dims[d];
       }
-      const int channel = output_row_remainder;
+      const int channel = col_row_remainder;
 
-      // Get input matrix entry
-      bool input_pos_valid = true;
-      int input_index = channel;
-      for(int d = 0; d < num_dims; ++d) {
-        const int input_pos = offset_pos[d] + window_pos[d];
-        input_pos_valid = input_pos_valid && 0 <= input_pos && input_pos < input_dim[d];
-        input_index = input_pos + input_index * input_dim[d];
+      // Get im matrix entry
+      bool im_pos_valid = true;
+      int im_index = channel;
+      for(int d = 0; d < im_num_dims; ++d) {
+        const int im_pos = offset_pos[d] + window_pos[d];
+        im_pos_valid = im_pos_valid && 0 <= im_pos && im_pos < im_dims[d];
+        im_index = im_pos + im_index * im_dims[d];
       }
 
-      // Copy input matrix entry to output matrix if valid
-      output_buffer[output_index]
-        = input_pos_valid ? input_buffer[input_index] : DataType(0);
+      // Copy im matrix entry to col matrix if valid
+      col_buffer[col_index]
+        = im_pos_valid ? im_buffer[im_index] : DataType(0);
 
     }
   }
@@ -119,94 +114,89 @@ void im2col(const Mat& im,
 
 void col2im(const Mat& col,
             Mat& im,
-            const std::vector<int>& im_dims,
-            const std::vector<int>& im_pads,
-            int num_im_channels,
-            const std::vector<int>& window_dims,
-            const std::vector<int>& window_strides) {
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides) {
 
   // Input and output parameters
-  const int num_channels = num_im_channels;
-  const int num_dims = im_dims.size();
-  const int input_height = col.Height();
-  const int output_size = im.Height() * im.Width();
-  const DataType *__restrict__ input_buffer = col.LockedBuffer();
-  DataType *__restrict__ output_buffer = im.Buffer();
+  const int col_height = col.Height();
+  const int im_size = im.Height() * im.Width();
+  const DataType *__restrict__ col_buffer = col.LockedBuffer();
+  DataType *__restrict__ im_buffer = im.Buffer();
 
   // Call optimized routine if data is 2D
-  if(num_dims == 2) {
-    col2im_2d(input_buffer, output_buffer,
+  if(im_num_dims == 2) {
+    col2im_2d(col_buffer, im_buffer,
               im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
               window_dims[1], window_dims[0],
               window_strides[1], window_strides[0]);
     return;
   }
 
-  // col2im parameters
-  std::vector<int> output_dim(num_dims);
-  std::vector<int> window_dim(num_dims);
-  std::vector<int> offset_start(num_dims);
-  std::vector<int> offset_end(num_dims);
-  std::vector<int> offset_stride(num_dims);
-  std::vector<int> offset_num(num_dims);
-  for(int d = 0; d < num_dims; ++d) {
-    output_dim[d] = im_dims[d];
-    window_dim[d] = window_dims[d];
+  // im2col parameters
+  std::vector<int> offset_start(im_num_dims);
+  std::vector<int> offset_end(im_num_dims);
+  std::vector<int> offset_stride(im_num_dims);
+  std::vector<int> offset_num(im_num_dims);
+  for(int d = 0; d < im_num_dims; ++d) {
     offset_start[d] = -im_pads[d];
     offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
     offset_stride[d] = window_strides[d];
     offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
   }
 
-  // Iterate through output entries
+  // Iterate through im matrix entries
   #pragma omp parallel for
-  for(int output_index = 0; output_index < output_size; ++output_index) {
+  for(int im_index = 0; im_index < im_size; ++im_index) {
 
     // Initialize arrays
-    std::vector<int> output_pos(num_dims);
-    std::vector<int> first_offset(num_dims);
-    std::vector<int> last_offset(num_dims);
-    std::vector<int> offset(num_dims);
+    std::vector<int> im_pos(im_num_dims);
+    std::vector<int> first_offset(im_num_dims);
+    std::vector<int> last_offset(im_num_dims);
+    std::vector<int> offset(im_num_dims);
 
-    // Get position of output entry
-    int output_index_remainder = output_index;
-    for(int d = num_dims-1; d >= 0; --d) {
-      output_pos[d] = output_index_remainder % output_dim[d];
-      output_index_remainder /= output_dim[d];
+    // Get position of im matrix entry
+    int im_index_remainder = im_index;
+    for(int d = im_num_dims-1; d >= 0; --d) {
+      im_pos[d] = im_index_remainder % im_dims[d];
+      im_index_remainder /= im_dims[d];
     }
-    const int channel = output_index_remainder;
+    const int channel = im_index_remainder;
 
-    // Initialize output entry
-    DataType output_entry = 0;
+    // Initialize im matrix entry
+    DataType im_entry = 0;
 
-    // Get window offsets containing output entry
-    for(int d = 0; d < num_dims; ++d) {
-      first_offset[d] = (output_pos[d] - offset_start[d] - window_dim[d]) / offset_stride[d] + 1;
+    // Get window offsets containing im matrix entry
+    for(int d = 0; d < im_num_dims; ++d) {
+      first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d]) / offset_stride[d] + 1;
       first_offset[d] = Max(first_offset[d], 0);
-      last_offset[d] = (output_pos[d] - offset_start[d]) / offset_stride[d];
+      last_offset[d] = (im_pos[d] - offset_start[d]) / offset_stride[d];
       last_offset[d] = Min(last_offset[d], offset_num[d] - 1);
       offset[d] = first_offset[d];
     }
 
-    // Iterate through window offsets containing output entry
+    // Iterate through window offsets containing im matrix entry
     while(offset[0] <= last_offset[0]) {
 
-      // Get input entry corresponding to input entry
-      int input_col = 0;
-      int input_row = channel;
-      for(int d = 0; d < num_dims; ++d) {
-        const int window_pos = output_pos[d] - (offset_start[d] + offset[d] * offset_stride[d]);
-        input_col = offset[d] + input_col * offset_num[d];
-        input_row = window_pos + input_row * window_dim[d];
+      // Get col matrix entry corresponding to im matrix entry
+      int col_col = 0;
+      int col_row = channel;
+      for(int d = 0; d < im_num_dims; ++d) {
+        const int window_pos = im_pos[d] - (offset_start[d] + offset[d] * offset_stride[d]);
+        col_col = offset[d] + col_col * offset_num[d];
+        col_row = window_pos + col_row * window_dims[d];
       }
-      const int input_index = input_row + input_col * input_height;
+      const int col_index = col_row + col_col * col_height;
 
-      // Add input entry to output entry
-      output_entry += input_buffer[input_index];
+      // Add col matrix entry to im matrix entry
+      im_entry += col_buffer[col_index];
 
       // Move to next window offset
-      ++offset[num_dims-1];
-      for(int d = num_dims-1; d >= 1; --d) {
+      ++offset[im_num_dims-1];
+      for(int d = im_num_dims-1; d >= 1; --d) {
         if(offset[d] > last_offset[d]) {
           offset[d] = first_offset[d];
           ++offset[d-1];
@@ -216,7 +206,7 @@ void col2im(const Mat& col,
     }
 
     // Update output entry
-    output_buffer[output_index] = output_entry;
+    im_buffer[im_index] = im_entry;
 
   }
 
@@ -224,15 +214,15 @@ void col2im(const Mat& col,
 
 void im2col_2d(const DataType *__restrict__ input_buffer,
                DataType *__restrict__ output_buffer,
-               int input_dim_x,
-               int input_dim_y,
-               int input_pad_x,
-               int input_pad_y,
-               int num_channels,
-               int window_dim_x,
-               int window_dim_y,
-               int offset_stride_x,
-               int offset_stride_y) {
+               const int input_dim_x,
+               const int input_dim_y,
+               const int input_pad_x,
+               const int input_pad_y,
+               const int num_channels,
+               const int window_dim_x,
+               const int window_dim_y,
+               const int offset_stride_x,
+               const int offset_stride_y) {
 
   // im2col parameters
   const int offset_start_x = -input_pad_x;
@@ -289,15 +279,15 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
 
 void col2im_2d(const DataType *__restrict__ input_buffer,
                DataType *__restrict__ output_buffer,
-               int output_dim_x,
-               int output_dim_y,
-               int output_pad_x,
-               int output_pad_y,
-               int num_channels,
-               int window_dim_x,
-               int window_dim_y,
-               int offset_stride_x,
-               int offset_stride_y) {
+               const int output_dim_x,
+               const int output_dim_y,
+               const int output_pad_x,
+               const int output_pad_y,
+               const int num_channels,
+               const int window_dim_x,
+               const int window_dim_y,
+               const int offset_stride_x,
+               const int offset_stride_y) {
 
   // col2im parameters
   const int offset_start_x = -output_pad_x;

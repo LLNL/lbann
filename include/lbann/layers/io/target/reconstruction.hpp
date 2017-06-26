@@ -57,6 +57,8 @@ class reconstruction_layer : public target_layer {
     this->m_type = layer_type::reconstruction;
     this->m_index = index;
     this->m_num_neurons = original_layer->get_num_neurons();
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
   }
