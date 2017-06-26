@@ -87,9 +87,6 @@ class batch_normalization : public regularizer_layer {
   /** Initializes matrices. */
   void setup(int num_prev_neurons) {
     regularizer_layer::setup(num_prev_neurons);
-    this->m_num_neurons = num_prev_neurons;
-    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
     Ones(*m_gamma, this->get_num_neurons(), 1);
     Scale(m_gamma_init, *m_gamma);
     Ones(*m_beta, this->get_num_neurons(), 1);

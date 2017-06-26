@@ -282,11 +282,35 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+    "/activations/";
+  summarizer.reduce_mean(prefix + "mean", *m_activations, step);
+  summarizer.reduce_min(prefix + "min", *m_activations, step);
+  summarizer.reduce_max(prefix + "max", *m_activations, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_activations, step);
+  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+    "/error_signal/";
+  summarizer.reduce_mean(prefix + "mean", *m_error_signal, step);
+  summarizer.reduce_min(prefix + "min", *m_error_signal, step);
+  summarizer.reduce_max(prefix + "max", *m_error_signal, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal, step);
   reset_counters();
 }
 
 void lbann::Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
+  // Initialize matrices.
+  if (m_mini_batch_size == 0) {
+    throw lbann_exception("lbann_layer: mini_batch_size is 0");
+  }
+  if (m_num_neurons == 0) {
+    throw lbann_exception("lbann_layer: num_neurons is 0");
+  }
+  El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  if (num_prev_neurons > 0) {
+    // Don't initialize for the first layer.
+    El::Zeros(*m_error_signal, num_prev_neurons, m_mini_batch_size);
+  }
 }
 
 void lbann::Layer::check_setup() {}

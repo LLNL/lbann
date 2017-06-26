@@ -65,12 +65,6 @@ class dropout : public regularizer_layer {
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    regularizer_layer::setup(num_prev_neurons);
-    this->m_num_neurons = num_prev_neurons;
-    Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
-  }
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() {

@@ -36,6 +36,11 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
   set_name("summary");
 }
 
+void lbann_callback_summary::on_train_begin(model *m) {
+  ElMat& acts = m->get_layers()[1]->get_activations();
+  save_histograms(m);
+}
+
 void lbann_callback_summary::on_batch_end(model *m) {
   m->summarize(*m_summarizer);
   // Note that these comm stats are a running sum, so they count from the last
@@ -67,14 +72,7 @@ void lbann_callback_summary::on_epoch_end(model *m) {
     phase += _to_string(metric->type);
     m_summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
   }
-  for (const auto& layer : m->get_layers()) {
-    learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
-    if(learning_layer != NULL) {
-      std::string prefix = "layer" + std::to_string(learning_layer->get_index()) + "/";
-      m_summarizer->reduce_histogram(prefix + "WB", learning_layer->get_weights_biases(),
-                                     m->get_cur_step());
-    }
-  }
+  save_histograms(m);
   m_summarizer->flush();
 }
 
@@ -90,6 +88,26 @@ void lbann_callback_summary::on_test_end(model *m) {
   comm->reset_stats_counters();
   for (auto&& layer : m->get_layers()) {
     layer->reset_counters();
+  }
+}
+
+void lbann_callback_summary::save_histograms(model *m) {
+  for (const auto& layer : m->get_layers()) {
+    std::string prefix = "layer" + std::to_string(layer->get_index()) +
+      "/";
+    m_summarizer->reduce_histogram(prefix + "activations",
+                                   layer->get_activations(),
+                                   m->get_cur_step());
+    learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
+    if(learning_layer != nullptr) {
+      m_summarizer->reduce_histogram(prefix + "weights",
+                                     learning_layer->get_weights_biases(),
+                                     m->get_cur_step());
+      m_summarizer->reduce_histogram(
+        prefix + "weights_gradient",
+        learning_layer->get_weights_biases_gradient(),
+        m->get_cur_step());
+    }
   }
 }
 

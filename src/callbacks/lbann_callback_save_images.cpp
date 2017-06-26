@@ -32,6 +32,17 @@
 
 namespace lbann {
 
+
+void lbann_callback_save_images::on_epoch_end(model *m) {
+  auto epoch = m->get_cur_epoch();
+  auto layers = m->get_layers();
+  //@todo: generalize to two matching layers
+  //@todo: use view so we can save arbitrary number of valid images
+  //using layer just before reconstruction layer because prev_layer_act is protected
+  save_image(m, layers[0]->m_activations,layers[layers.size()-2]->m_activations,epoch);
+}
+
+
 void lbann_callback_save_images::on_phase_end(model *m) {
   auto layers = m->get_layers();
   auto phase = m->get_current_phase();

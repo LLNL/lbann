@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
                                                         mnist_trainset.get_linearized_data_size(), 1000,trainParams.MBSize,
-                                                        weight_initialization::uniform, comm,
+                                                        weight_initialization::glorot_uniform, comm,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode1);
 
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     //third layer 
     Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(3,
                                                         1000, 500, trainParams.MBSize,
-                                                        weight_initialization::uniform, 
+                                                        weight_initialization::glorot_uniform, 
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode2);
 
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
     Layer *encode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
                                                         500, 250, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode3);
     
@@ -244,13 +244,13 @@ int main(int argc, char *argv[]) {
 
     Layer *encode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(7,
                                                         250, 30, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode4);
     //decoder
     Layer *decode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
                                                         30, 250, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode4);
     
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
    
     Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(10,
                                                       250, 500, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode3);
     
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
 
     Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(12,
                                                         500,1000, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode2);
     
@@ -296,13 +296,13 @@ int main(int argc, char *argv[]) {
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(14,
                                                         1000, 784, trainParams.MBSize,
-                                                        weight_initialization::uniform,
+                                                        weight_initialization::glorot_uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *relu7 = new relu_layer<data_layout::MODEL_PARALLEL>(15, comm,
+    Layer *sigmoid1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(15, comm,
                                                trainParams.MBSize, 784);
-    dnn.add(relu7);
+    dnn.add(sigmoid1);
 
     /*Layer *dropout7 = new dropout<data_layout::MODEL_PARALLEL>(22, 784,
                                                comm, trainParams.MBSize,
@@ -317,6 +317,8 @@ int main(int argc, char *argv[]) {
     
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
+    lbann_callback_save_images save_images_cb(&mnist_trainset,"/p/lscratchf/jacobs32/lbann/mnist_images/", "pgm");
+    dnn.add_callback(&save_images_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
     lbann_callback_dump_gradients *dump_gradients_cb = nullptr;

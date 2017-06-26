@@ -50,7 +50,10 @@ class selu_layer : public entrywise_activation_layer {
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),
     m_alpha(alpha), m_scale(scale)
-  { initialize_distributed_matrices(); }
+  {
+    initialize_distributed_matrices();
+    set_name("selu_layer");
+  }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
@@ -59,10 +62,10 @@ class selu_layer : public entrywise_activation_layer {
 
  protected:
   DataType activation_function(DataType z) {
-    return (z > DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
+    return (z >= DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
   }
   DataType activation_function_gradient(DataType z) {
-    return (z > DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
+    return (z >= DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
   }
  private:
   /** Alpha parameter for the ELU. */

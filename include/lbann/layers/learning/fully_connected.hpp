@@ -122,10 +122,6 @@ class fully_connected_layer : public learning {
     // Note: the weights-bias matrix has an extra column so it includes bias term
     El::Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons+1);
     El::Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons + 1);
-    El::Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-    El::Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
-    El::Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations
     El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, numPrevNeurons));
