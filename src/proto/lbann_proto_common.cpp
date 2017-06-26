@@ -117,6 +117,7 @@ void add_layers(
 {
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
+  bool master = comm->am_world_master();
 
   std::unordered_map<int, Layer*> all_layers;
 
@@ -202,7 +203,7 @@ void add_layers(
       const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
       //please do not delete this! it's here to remind me that something needs
       //fixing. Thanks, Dave H.
-      cout << "XX numreaders: " << m.num_parallel_readers() << endl;
+      if (master) cout << "XX numreaders: " << m.num_parallel_readers() << endl;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
@@ -560,20 +561,20 @@ void add_layers(
     // LAYER: tanh
     //////////////////////////////////////////////////////////////////
     if (layer.has_tanh()) {
-      const lbann_data::Tanh& ell = layer.tanh();
+      //const lbann_data::Tanh& ell = layer.tanh();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       }
       model->add(d);
@@ -584,20 +585,20 @@ void add_layers(
     // LAYER: softplus
     //////////////////////////////////////////////////////////////////
     if (layer.has_softplus()) {
-      const lbann_data::Softplus& ell = layer.softplus();
+      //const lbann_data::Softplus& ell = layer.softplus();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       }
       model->add(d);
@@ -608,20 +609,20 @@ void add_layers(
     // LAYER: smooth_relu
     //////////////////////////////////////////////////////////////////
     if (layer.has_smooth_relu()) {
-      const lbann_data::SmoothRelu& ell = layer.smooth_relu();
+      //const lbann_data::SmoothRelu& ell = layer.smooth_relu();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       }
       model->add(d);
@@ -638,7 +639,7 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          prev_num_neurons,
           ell.leak()
         );
       } else {
@@ -646,7 +647,7 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          prev_num_neurons,
           ell.leak()
         );
       }
@@ -658,20 +659,20 @@ void add_layers(
     // LAYER: id
     //////////////////////////////////////////////////////////////////
     if (layer.has_id()) {
-      const lbann_data::ID& ell = layer.id();
+      //const lbann_data::ID& ell = layer.id();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new id_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons()
+          prev_num_neurons
         );  
       }
       model->add(d);
@@ -688,7 +689,7 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          prev_num_neurons,
           ell.alpha()
         );
       } else {
@@ -696,7 +697,7 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          prev_num_neurons,
           ell.alpha()
         );
       }
@@ -709,22 +710,20 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_dropout()) {
       const lbann_data::Dropout& ell = layer.dropout();
-
-      double keep_prob = ell.keep_prob();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
+          prev_num_neurons,
           comm,
           mb_size,
-          keep_prob);
+          ell.keep_prob());
       } else {
         d = new dropout<data_layout::DATA_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
+          prev_num_neurons,
           comm,
           mb_size,
-          keep_prob);
+          ell.keep_prob());
       }
       model->add(d);
       all_layers[layer.index()] = d;
@@ -825,7 +824,7 @@ void init_callbacks(
 
   const lbann_data::Model& m = p.model();
 
-  cerr << endl << "STARTING init_callbacks; size: " << m.callback_size() << endl;
+  if (master) cerr << endl << "starting init_callbacks; size: " << m.callback_size() << endl;
 
   //loop over the callbacks
   int size = m.callback_size();

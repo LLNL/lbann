@@ -202,48 +202,39 @@ message Layer {
 // Activation Layers //
 ///////////////////////
 message ELU {
-  int64 num_neurons = 1;
   double alpha = 2; //default: 1.0; must be >= 0
 }
 
 message ID {
-  int64 num_neurons = 1;
 }
 
 message LeakyRelu {
-  int64 num_neurons = 1;
   double leak = 2; //default: 0.01
 }
 
 message Relu {
-  int64 num_neurons = 2;
 }
 
 message Sigmoid {
-  int64 num_neurons = 2;
 }
 
 message SmoothRelu {
-  int64 num_neurons = 2;
 }
 
 message Softplus {
-  int64 num_neurons = 2;
 }
 
 message Tanh {
-  int64 num_neurons = 2;
+}
+
+message Selu {
+  double alpha = 2;
+  double scale = 3;
 }
 
 message Softmax {
   int64 num_neurons = 2;
   string weight_initialization = 3;
-}
-
-message Selu {
-  int64 num_neurons = 1;
-  double alpha = 2;
-  double scale = 3;
 }
 
 ///////////////////////////
@@ -274,7 +265,6 @@ message LocalResponseNormalization {
 }
 
 message Dropout {
-  int64 num_neurons = 1;
   double keep_prob = 2;  //default: 0.5
 }
 
