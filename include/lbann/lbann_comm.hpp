@@ -52,6 +52,10 @@ class lbann_comm {
    * defaulting to every process in one model.
    */
   lbann_comm(int procs_per_model = 0);
+  /** Don't allow copying; it doesn't make sense for the communicator. */
+  lbann_comm(const lbann_comm&) = delete;
+  /** Don't allow assignment; it doesn't make sense for the communicator. */
+  lbann_comm& operator=(const lbann_comm&) = delete;
   ~lbann_comm();
 
   /**
