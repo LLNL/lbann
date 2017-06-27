@@ -34,7 +34,7 @@
 namespace lbann {
 
 cv_process_patches::cv_process_patches(const cv_process_patches& rhs)
-  : cv_process(rhs), m_pd(rhs.m_pd)
+  : cv_process(rhs), m_pd(rhs.m_pd), m_self_label(rhs.m_self_label)
 {}
 
 cv_process_patches& cv_process_patches::operator=(const cv_process_patches& rhs) {
@@ -43,6 +43,7 @@ cv_process_patches& cv_process_patches::operator=(const cv_process_patches& rhs)
   }
   cv_process::operator=(rhs);
   m_pd = rhs.m_pd;
+  m_self_label = rhs.m_self_label;
 
   return (*this);
 }

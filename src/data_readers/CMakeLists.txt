@@ -16,6 +16,7 @@ add_sources(lbann_data_reader.cpp
             lbann_cv_normalizer.cpp
             lbann_cv_process.cpp
             lbann_cv_process_patches.cpp
+            lbann_cv_resizer.cpp
             lbann_cv_utils.cpp
             lbann_data_reader_cnpy.cpp
             lbann_data_reader_synthetic.cpp

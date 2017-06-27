@@ -41,6 +41,7 @@ class imagenet_reader_cv : public generic_data_reader {
   ~imagenet_reader_cv(void);
 
   virtual int fetch_data(Mat& X);
+  virtual int fetch_data(std::vector<Mat>& X); ///< feed multiple layer stacks per sample
   virtual int fetch_label(Mat& Y);
 
   int get_num_labels(void) const {

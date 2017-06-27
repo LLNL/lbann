@@ -95,6 +95,54 @@ int lbann::imagenet_reader_cv::fetch_data(Mat& X) {
   return end_pos - m_current_pos;
 }
 
+int lbann::imagenet_reader_cv::fetch_data(std::vector<Mat>& X) {
+  if(!generic_data_reader::position_valid()) {
+    stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader load error: !position_valid";
+    throw lbann_exception(err.str());
+  }
+
+  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
+  const int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
+
+  std::shared_ptr<cv_process_patches> pp_ptr = std::dynamic_pointer_cast<cv_process_patches>(m_pp);
+
+  if (!pp_ptr) {
+    throw lbann_exception("ImageNet: image_utils::invalid patch processor");
+  }
+
+  #pragma omp parallel for
+  for (int n = m_current_pos; n < end_pos; ++n) {
+
+    int k = n - m_current_pos;
+    int index = m_shuffled_indices[n];
+    string imagepath = m_image_dir + image_list[index].first;
+
+    int width=0, height=0, img_type=0;
+
+    std::vector<::Mat> X_v(X.size());
+    for(unsigned int i=0u; i < X.size(); ++i) {
+      View(X_v[i], X[i], IR(0, X[i].Height()), IR(k, k + 1));
+    }
+
+    cv_process_patches pp(*pp_ptr);
+    bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, pp, X_v);
+
+    if (pp.is_self_labeling()) {
+      image_list[index].second = pp.get_patch_label();
+    }
+    if (!ret) {
+      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
+    }
+    if (_BUILTIN_FALSE((width * height * CV_MAT_CN(img_type)) != num_channel_values)) {
+      throw lbann_exception("ImageNet: mismatch data size -- either width or height");
+    }
+  }
+
+  return end_pos - m_current_pos;
+}
+
 int lbann::imagenet_reader_cv::fetch_label(Mat& Y) {
   if(!position_valid()) {
     stringstream err;
@@ -102,12 +150,10 @@ int lbann::imagenet_reader_cv::fetch_label(Mat& Y) {
     throw lbann_exception(err.str());
   }
 
-  int current_batch_size = getm_batch_size();
+  const int current_batch_size = getm_batch_size();
+  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
   int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; n++) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
+  for (n = m_current_pos; n < end_pos; ++n) {
 
     int k = n - m_current_pos;
     int index = m_shuffled_indices[n];
