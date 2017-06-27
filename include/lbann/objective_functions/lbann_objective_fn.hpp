@@ -50,17 +50,9 @@ static const char *__attribute__((used)) _to_string(obj_fn_type o) {
 
 class statistics {
  public:
-  statistics() {
-    init_stats();
-  }
+  statistics() {}
 
   ~statistics() {}
-
-  void init_stats() {
-    m_last_mini_batch_avg_cost = 0.0;
-    m_aggregate_avg_cost_per_epoch = 0.0;
-    m_num_mini_batch_per_epoch = 0;
-  }
 
   void reset_stats() {
     m_last_mini_batch_avg_cost = 0.0;
@@ -70,9 +62,9 @@ class statistics {
 
   /// Error is accumulated as a double -- this works for both sum of
   /// squared errors and categorical errors
-  double m_last_mini_batch_avg_cost;
-  double m_aggregate_avg_cost_per_epoch;
-  long m_num_mini_batch_per_epoch;
+  double m_last_mini_batch_avg_cost = 0.0;
+  double m_aggregate_avg_cost_per_epoch = 0.0;
+  long m_num_mini_batch_per_epoch = 0;
 };
 
 /**
@@ -82,9 +74,6 @@ class statistics {
 class objective_fn {
  public:
   objective_fn() {
-    m_training_stats.init_stats();
-    m_validation_stats.init_stats();
-    m_testing_stats.init_stats();
     this->type = obj_fn_type::INVALID;
   }
   objective_fn(std::string nm): m_name(nm) {

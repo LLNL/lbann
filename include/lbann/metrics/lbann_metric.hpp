@@ -84,14 +84,6 @@ class statistics {
   statistics() {}
   ~statistics() {}
 
-  void init_stats() {
-    m_error_per_epoch = 0;
-    m_samples_per_epoch = 0;
-
-    m_total_error = 0;
-    m_total_num_samples = 0;
-  }
-
   void reset_stats() {
     m_total_error += m_error_per_epoch;
     m_total_num_samples += m_samples_per_epoch;
@@ -101,11 +93,11 @@ class statistics {
 
   /// Error is accumulated as a double -- this works for both sum of
   /// squared errors and categorical errors
-  double m_error_per_epoch;
-  long m_samples_per_epoch;
+  double m_error_per_epoch = 0.0;
+  long m_samples_per_epoch = 0;
 
-  double m_total_error;
-  long m_total_num_samples;
+  double m_total_error = 0.0;
+  long m_total_num_samples = 0;
 };
 
 //template <class T, class V>
@@ -114,10 +106,6 @@ class metric {
   /// Constructor
   metric(data_layout data_dist, lbann_comm *comm) :
     m_comm(comm) {
-    m_training_stats.init_stats();
-    m_validation_stats.init_stats();
-    m_testing_stats.init_stats();
-
     m_data_layout = data_dist;
   }
 
