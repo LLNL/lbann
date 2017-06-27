@@ -53,68 +53,8 @@ class transform : public Layer {
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();
   }
-
-#if 0
-  static std::string weight_initialization_name(weight_initialization id);
-
-  virtual void forwardProp(void);
-  virtual void backProp(void);
-  virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
-
-  virtual void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
-  }
-  /** Validate that the setup is reasonable. */
-  virtual void check_setup(void);
-
-  /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases(void) {
-    return *m_weights;
-  }
-  /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient(void) {
-    return *m_weights_gradient;
-  }
-
-  ElMat *fp_output(void);
-  ElMat *bp_output(void);
-  void setup_fp_input(ElMat *fp_input);
-  void setup_bp_input(ElMat *bp_input);
-
-  void set_prev_layer_type(layer_type type);
-  void set_next_layer_type(layer_type type);
-  bool using_gpus(void) const;
-  void set_prev_layer_using_gpus(bool using_gpus);
-  void set_next_layer_using_gpus(bool using_gpus);
-#ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d(void);
-  std::vector<DataType *> *bp_output_d(void);
-  void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
-  void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
-#endif
-
-#endif
-#if 0
- protected:
-
-  /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view(void);
-#if 0
-  /** Setup views of the matrices for the layer's backward propagation. */
-  virtual void bp_set_std_matrix_view(void);
-#endif
-  /** Apply the layer's linear update in forward propagation. */
-  virtual void fp_linearity(void) {}
-  /** Handle the layer's linearity in backward propagation. */
-  virtual void bp_linearity(void) {}
-  /** Apply the layer's nonlinearity in forward propagation. */
-  virtual void fp_nonlinearity(void);
-  /** Handle the layer's nonlinearity in backward propagation. */
-  virtual void bp_nonlinearity(void);
-#endif
 };
-}
 
+}  // namespace lbann
 
-#endif // LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+#endif  // LBANN_LAYER_TRANSFORM_HPP_INCLUDED

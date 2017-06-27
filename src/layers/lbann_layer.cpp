@@ -36,10 +36,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-using namespace std;
 using namespace El;
 
 namespace lbann {
+
 /// Matrices should be in MC,MR distributions
 template <>
 void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
@@ -69,11 +69,8 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
   m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
   m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
-}
 
-lbann::Layer::Layer(const uint index,
-                    lbann_comm *comm,
-                    uint mbsize)
+Layer::Layer(const uint index, lbann_comm *comm, uint mbsize)
   : m_index(index),
     m_comm(comm),
     m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
@@ -82,8 +79,6 @@ lbann::Layer::Layer(const uint index,
     m_mini_batch_size(mbsize),
     m_effective_mbsize(mbsize)
 {
-  set_name("the name has not been set for this layer");
-
   fp_input = NULL;
   bp_input = NULL;
   m_neural_network_model = NULL;
@@ -101,10 +96,9 @@ lbann::Layer::Layer(const uint index,
 #endif
 
   reset_counters();
-
 }
 
-lbann::Layer::~Layer() {
+Layer::~Layer() {
 #ifdef __LIB_CUDNN
   if(m_fp_input_pinned) {
     m_cudnn->unpin_matrix(*m_prev_activations);
@@ -129,7 +123,7 @@ lbann::Layer::~Layer() {
   delete m_prev_activations_v;
 }
 
-void lbann::Layer::forwardProp() {
+void Layer::forwardProp() {
   double fp_start = get_time();
 
 #ifdef __LIB_CUDNN
@@ -200,7 +194,7 @@ void lbann::Layer::forwardProp() {
   fp_time += get_time() - fp_start;
 }
 
-void lbann::Layer::backProp() {
+void Layer::backProp() {
   double bp_start = get_time();
 
 #ifdef __LIB_CUDNN
@@ -267,7 +261,7 @@ void lbann::Layer::backProp() {
   bp_time += get_time() - bp_start;
 }
 
-bool lbann::Layer::update() {
+bool Layer::update() {
   bool layer_done = false;
   // Apply any updates.
   double update_compute_start = get_time();
@@ -276,7 +270,7 @@ bool lbann::Layer::update() {
   return layer_done;
 }
 
-void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
+void Layer::summarize(lbann_summary& summarizer, int64_t step) {
   // TODO: implement summarizer functions for other matrix distributions
   std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
@@ -297,7 +291,7 @@ void lbann::Layer::summarize(lbann_summary& summarizer, int64_t step) {
   reset_counters();
 }
 
-void lbann::Layer::setup(int num_prev_neurons) {
+void Layer::setup(int num_prev_neurons) {
   m_num_prev_neurons = num_prev_neurons;
   // Initialize matrices.
   if (m_mini_batch_size == 0) {
@@ -313,26 +307,26 @@ void lbann::Layer::setup(int num_prev_neurons) {
   }
 }
 
-void lbann::Layer::check_setup() {}
+void Layer::check_setup() {}
 
-ElMat *lbann::Layer::fp_output() {
+ElMat *Layer::fp_output() {
   return m_activations;
 }
 
-ElMat *lbann::Layer::bp_output() {
+ElMat *Layer::bp_output() {
   return m_error_signal;
 }
 
-void lbann::Layer::setup_fp_input(ElMat *input) {
+void Layer::setup_fp_input(ElMat *input) {
   this->fp_input = input;
 }
 
-void lbann::Layer::setup_bp_input(ElMat *input) {
+void Layer::setup_bp_input(ElMat *input) {
   this->bp_input = input;
 }
 
 #ifdef __LIB_CUDNN
-std::vector<DataType *> *lbann::Layer::fp_output_d() {
+std::vector<DataType *> *Layer::fp_output_d() {
   if(m_using_gpus) {
     return &m_activations_d;
   } else {
@@ -340,7 +334,7 @@ std::vector<DataType *> *lbann::Layer::fp_output_d() {
   }
 }
 
-std::vector<DataType *> *lbann::Layer::bp_output_d() {
+std::vector<DataType *> *Layer::bp_output_d() {
   if(m_using_gpus) {
     return &m_error_signal_d;
   } else {
@@ -348,36 +342,36 @@ std::vector<DataType *> *lbann::Layer::bp_output_d() {
   }
 }
 
-void lbann::Layer::setup_fp_input_d(std::vector<DataType *> *fp_input_d) {
+void Layer::setup_fp_input_d(std::vector<DataType *> *fp_input_d) {
   this->fp_input_d = fp_input_d;
 }
 
-void lbann::Layer::setup_bp_input_d(std::vector<DataType *> *bp_input_d) {
+void Layer::setup_bp_input_d(std::vector<DataType *> *bp_input_d) {
   this->bp_input_d = bp_input_d;
 }
 #endif
 
-void lbann::Layer::set_prev_layer_type(layer_type type) {
+void Layer::set_prev_layer_type(layer_type type) {
   this->m_prev_layer_type = type;
 }
 
-void lbann::Layer::set_next_layer_type(layer_type type) {
+void Layer::set_next_layer_type(layer_type type) {
   this->m_next_layer_type = type;
 }
 
-bool lbann::Layer::using_gpus() const {
+bool Layer::using_gpus() const {
   return m_using_gpus;
 }
 
-void lbann::Layer::set_prev_layer_using_gpus(bool using_gpus) {
+void Layer::set_prev_layer_using_gpus(bool using_gpus) {
   m_prev_layer_using_gpus = using_gpus;
 }
 
-void lbann::Layer::set_next_layer_using_gpus(bool using_gpus) {
+void Layer::set_next_layer_using_gpus(bool using_gpus) {
   m_next_layer_using_gpus = using_gpus;
 }
 
-bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+bool Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   //writeDist(fd, filename, *m_weights, bytes);
 
   // Need to catch return value from function
@@ -385,7 +379,7 @@ bool lbann::Layer::saveToCheckpoint(int fd, const char *filename, uint64_t *byte
   return true;
 }
 
-bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+bool Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
   // TODO: implement reader for other matrix distributions
   //readDist(fd, filename, (DistMat&) *m_weights, bytes);
 
@@ -394,15 +388,15 @@ bool lbann::Layer::loadFromCheckpoint(int fd, const char *filename, uint64_t *by
   return true;
 }
 
-bool lbann::Layer::saveToCheckpointShared(lbann::persist& p) {
+bool Layer::saveToCheckpointShared(persist& p) {
   return true;
 }
 
-bool lbann::Layer::loadFromCheckpointShared(lbann::persist& p) {
+bool Layer::loadFromCheckpointShared(persist& p) {
   return true;
 }
 
-void lbann::Layer::fp_set_std_matrix_view() {
+void Layer::fp_set_std_matrix_view() {
   Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
@@ -422,7 +416,7 @@ void lbann::Layer::fp_set_std_matrix_view() {
   }
 }
 
-void lbann::Layer::bp_set_std_matrix_view() {
+void Layer::bp_set_std_matrix_view() {
   int64_t cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
   View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
@@ -432,3 +426,5 @@ void lbann::Layer::bp_set_std_matrix_view() {
   }
   View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
 }
+
+}  // namespace lbann

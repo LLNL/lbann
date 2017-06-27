@@ -126,9 +126,6 @@ class convolution_layer : public learning {
       m_num_dims(num_dims),
       m_num_input_channels(num_input_channels),
       m_num_output_channels(num_output_channels) {
-
-    set_name("convolution");
-
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -229,6 +226,8 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
   }
+
+  std::string get_name() const { return "convolution"; }
 
   void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();

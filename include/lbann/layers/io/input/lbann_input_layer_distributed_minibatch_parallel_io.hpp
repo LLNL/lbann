@@ -50,12 +50,12 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
 
-    set_name("input_layer_distributed_minibatch_parallel_io");
-
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::input_distributed_minibatch;
   }
+
+  std::string get_name() const { return "input layer distributed minibatch parallel io"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
@@ -144,6 +144,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
     return &Xs;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

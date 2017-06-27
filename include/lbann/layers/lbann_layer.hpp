@@ -156,14 +156,7 @@ class Layer {
   }
 
   /** Return this layer's name */
-  inline std::string get_name() const { 
-    return m_name;
-  }
-
-  /** Set the layer's name **/
-  inline void set_name(std::string name) {
-    m_name = name;
-  }
+  virtual std::string get_name() const = 0;
 
   /** Return the index of this layer. */
   inline uint get_index(void) const {
@@ -255,8 +248,6 @@ class Layer {
 
  protected:
   uint m_index;                 ///< Layer index (start with 0)
-
-  std::string m_name;
 
   lbann_comm *m_comm;
 

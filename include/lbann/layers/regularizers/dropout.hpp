@@ -52,15 +52,17 @@ class dropout : public regularizer_layer {
           uint mini_batch_size, float keep_prob=0.5f) :
     regularizer_layer(index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
-    set_name("dropout");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
   }
+
   ~dropout() {
     delete m_cur_mask;
   }
+
+  std::string get_name() const { return "dropout"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }

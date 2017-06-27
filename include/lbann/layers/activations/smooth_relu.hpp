@@ -42,9 +42,10 @@ class smooth_relu_layer : public entrywise_activation_layer {
                     const uint mini_batch_size, uint num_neurons) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons) { 
-    set_name("smooth_relu_layer");
     initialize_distributed_matrices(); 
   }
+
+  std::string get_name() const { return "smooth relu"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

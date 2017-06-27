@@ -57,7 +57,6 @@ class softmax_layer: public activation_layer {
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size,
                                   numNeurons) {
-    set_name("softmax_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::softmax;
@@ -68,6 +67,8 @@ class softmax_layer: public activation_layer {
     delete m_workspace;
     delete m_workspace_v;
   }
+
+  std::string get_name() const { return "softmax"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }

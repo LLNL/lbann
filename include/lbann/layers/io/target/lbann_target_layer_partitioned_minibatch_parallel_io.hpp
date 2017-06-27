@@ -37,19 +37,20 @@
 #include <unistd.h>
 
 namespace lbann {
-  //template <data_layout DATA_DIST>
+
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch_parallel_io {
  public:
   target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
-    set_name("target_layer_partitioned_minibatch_parallel_io");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::target_partitioned_minibatch_parallel_io;
     //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
+
+  std::string get_name() const { return "target layer partitioned minibatch parallel io"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
@@ -165,6 +166,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     return this->m_execution_mode;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

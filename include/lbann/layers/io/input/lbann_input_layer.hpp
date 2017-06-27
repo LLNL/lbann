@@ -78,6 +78,7 @@ class input_layer : public io_layer {
     return true;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED

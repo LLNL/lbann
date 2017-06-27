@@ -53,6 +53,8 @@ class target_layer_distributed_minibatch : public target_layer {
     //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
+  std::string get_name() const { return "target layer distributed minibatch"; }
+
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }

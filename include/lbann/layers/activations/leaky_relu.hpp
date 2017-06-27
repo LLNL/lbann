@@ -48,9 +48,10 @@ class leaky_relu_layer : public entrywise_activation_layer {
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),
     m_leak(leak) { 
-    set_name("leaky_relu_layer");
     initialize_distributed_matrices(); 
   }
+
+  std::string get_name() const { return "leaky relu"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

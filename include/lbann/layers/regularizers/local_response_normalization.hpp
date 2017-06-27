@@ -82,8 +82,6 @@ class local_response_normalization_layer : public regularizer_layer {
   m_num_dims(num_dims), m_num_channels(num_channels),
   m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
   m_lrn_k(lrn_k) {
-  set_name("local_response_normalization_layer");
-
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::local_response_normalization;
@@ -117,7 +115,6 @@ class local_response_normalization_layer : public regularizer_layer {
 
     }
   #endif // __LIB_CUDNN
-
   }
 
   ~local_response_normalization_layer() {
@@ -145,6 +142,8 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   #endif // __LIB_CUDNN
   }
+
+  std::string get_name() const { return "local response normalization"; }
 
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
@@ -475,6 +474,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
 };
-}
 
-#endif // LBANN_LAYER_POOLING_HPP_INCLUDED
+}  // namespace lbann
+
+#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED
