@@ -31,7 +31,9 @@
 #include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
 
 namespace lbann {
+
 namespace metrics {
+
 class mean_squared_error : public metric {
  public:
   /// Constructor
@@ -47,11 +49,14 @@ class mean_squared_error : public metric {
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
 
+  std::string to_string() const { return "mean squared error"; }
+
  protected:
   lbann::objective_functions::mean_squared_error internal_obj_fn;
 };
-}
-}
 
+}  // namespace metrics
 
-#endif // LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
+}  // namespace lbann
+
+#endif  // LBANN_METRIC_MEAN_SQUARED_ERROR_HPP

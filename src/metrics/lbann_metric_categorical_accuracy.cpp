@@ -27,14 +27,14 @@
 #include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
 #include "lbann/models/lbann_model.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *comm)
+namespace metrics {
+
+categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
     YsColMaxStar(comm->get_model_grid()),
     YsColMaxStar_v(comm->get_model_grid()) {
-  this->type = metric_type::categorical_accuracy;
 
   // Setup the data distribution
   switch(data_dist) {
@@ -51,24 +51,24 @@ lbann::metrics::categorical_accuracy::categorical_accuracy(data_layout data_dist
   }
 }
 
-lbann::metrics::categorical_accuracy::~categorical_accuracy() {
+categorical_accuracy::~categorical_accuracy() {
   delete YsColMax;
   delete YsColMax_v;
 }
 
 /// Workspace matrices should be in MR,Star distributions
-void lbann::metrics::categorical_accuracy::initialize_model_parallel_distribution() {
+void categorical_accuracy::initialize_model_parallel_distribution() {
   YsColMax = new ColSumMat(m_comm->get_model_grid());
   YsColMax_v = new ColSumMat(m_comm->get_model_grid());
 }
 
 /// Workspace matrices should be in VC,Star distributions
-void lbann::metrics::categorical_accuracy::initialize_data_parallel_distribution() {
+void categorical_accuracy::initialize_data_parallel_distribution() {
   YsColMax = new ColSumStarVCMat(m_comm->get_model_grid());
   YsColMax_v = new ColSumStarVCMat(m_comm->get_model_grid());
 }
 
-void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
+void categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
   // Clear the contents of the intermediate matrices
   Zeros(*YsColMax, mini_batch_size, 1);
@@ -78,7 +78,7 @@ void lbann::metrics::categorical_accuracy::setup(int num_neurons, int mini_batch
   m_max_mini_batch_size = mini_batch_size;
 }
 
-void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   // Note that these matrices are transposed (column max matrices) and thus the mini-batch size effects the number of rows, not columns
   View(*YsColMax_v, *YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax->Width()));
@@ -87,7 +87,7 @@ void lbann::metrics::categorical_accuracy::fp_set_std_matrix_view(int64_t cur_mi
   View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
 }
 
-double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+double categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
 
   // Clear the contents of the intermediate matrices
   Zeros(*YsColMax, m_max_mini_batch_size, 1);
@@ -157,7 +157,7 @@ double lbann::metrics::categorical_accuracy::compute_metric(ElMat& predictions_v
   return num_errors;
 }
 
-double lbann::metrics::categorical_accuracy::report_metric(execution_mode mode) {
+double categorical_accuracy::report_metric(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   double errors_per_epoch = stats->m_error_per_epoch;
   long samples_per_epoch = stats->m_samples_per_epoch;
@@ -168,7 +168,7 @@ double lbann::metrics::categorical_accuracy::report_metric(execution_mode mode) 
   return accuracy;
 }
 
-double lbann::metrics::categorical_accuracy::report_lifetime_metric(execution_mode mode) {
+double categorical_accuracy::report_lifetime_metric(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   double total_error = stats->m_total_error;
   long total_num_samples = stats->m_total_num_samples;
@@ -178,3 +178,7 @@ double lbann::metrics::categorical_accuracy::report_lifetime_metric(execution_mo
 
   return accuracy;
 }
+
+}  // namespace metrics
+
+}  // namespace lbann

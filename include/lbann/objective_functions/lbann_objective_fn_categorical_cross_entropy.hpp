@@ -30,7 +30,9 @@
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 
 namespace lbann {
+
 namespace objective_functions {
+
 class categorical_cross_entropy : public objective_fn {
  public:
   categorical_cross_entropy(lbann_comm *comm);
@@ -44,8 +46,11 @@ class categorical_cross_entropy : public objective_fn {
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);
+  std::string to_string() const { return "categorical cross entropy"; }
 };
-}
-}
 
-#endif // LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED
+}  // namespace objective_functions
+
+}  // namespace lbann
+
+#endif  // LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED

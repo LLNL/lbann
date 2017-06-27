@@ -106,8 +106,9 @@ class target_layer : public io_layer {
       std::vector<double> avg_obj_fn_costs(this->m_comm->get_num_models());
       this->m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
       for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
-        std::cout << "Model " << i << " average " << _to_string(this->m_neural_network_model->m_obj_fn->type) << ": " << avg_obj_fn_costs[i] <<
-          std::endl;
+        std::cout << "Model " << i << " average " <<
+          this->m_neural_network_model->m_obj_fn->to_string() << ": " <<
+          avg_obj_fn_costs[i] << std::endl;
       }
     } else {
       this->m_comm->intermodel_gather(obj_cost, this->m_comm->get_world_master());

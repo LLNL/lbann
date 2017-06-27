@@ -32,6 +32,7 @@
 namespace lbann {
 
 namespace metrics {
+
 class categorical_accuracy : public metric {
  public:
   /// Constructor
@@ -49,6 +50,9 @@ class categorical_accuracy : public metric {
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
 
+  std::string to_string() const { return "categorical accuracy"; }
+  std::string display_unit() const { return "%"; }
+
  protected:
   AbsDistMat *YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
   StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
@@ -64,8 +68,10 @@ class categorical_accuracy : public metric {
 
   int64_t m_max_mini_batch_size;
 };
-}
-}
+
+}  // namespace metrics
+
+}  // namespace lbann
 
 
-#endif // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
+#endif  // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP

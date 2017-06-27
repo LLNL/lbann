@@ -27,9 +27,11 @@
 #include "lbann/metrics/lbann_metric.hpp"
 #include "lbann/models/lbann_model.hpp"
 
-using namespace std;
+namespace lbann {
 
-lbann::metrics::statistics *lbann::metrics::metric::get_statistics(execution_mode mode) {
+namespace metrics {
+
+statistics *metric::get_statistics(execution_mode mode) {
   statistics *stats;
 
   switch(mode) {
@@ -48,14 +50,18 @@ lbann::metrics::statistics *lbann::metrics::metric::get_statistics(execution_mod
   return stats;
 }
 
-void lbann::metrics::metric::record_error(double error, long num_samples) {
+void metric::record_error(double error, long num_samples) {
   statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
   stats->m_error_per_epoch += error;
   stats->m_samples_per_epoch += num_samples;
   return;
 }
 
-void lbann::metrics::metric::reset_metric() {
+void metric::reset_metric() {
   statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
   stats->reset_stats();
 }
+
+}  // namespace metrics
+
+}  // namespace lbann

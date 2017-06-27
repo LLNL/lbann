@@ -32,52 +32,11 @@
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {
-/**
- * Usage of metrics - NOTE FROM KERAS DOCUMENTATION
- * A metric is a function that is used to judge the performance of your
- * model. Metric functions are to be supplied in the metrics parameter
- * when a model is compiled.
-
- * A metric function is similar to an objective function, except that the
- * results from evaluating a metric are not used when training the model.
- */
 
 // Forward-declare this.
 class model;
 
 namespace metrics {
-enum class metric_type {binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy,
-                        mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error,
-                        hinge, squared_hinge, categorical_crossentropy, sparse_categorical_crossentropy, binary_crossentropy, kullback_leibler_divergence,
-                        poisson, cosine_proximity, matthews_correlation, precision, recall, fbeta_score, fmeasure, INVALID
-                       };
-
-static const char *__attribute__((used)) _to_string(metric_type m) {
-  switch(m) {
-  case metric_type::categorical_accuracy:
-    return "categorical accuracy";
-  case metric_type::top_k_categorical_accuracy:
-    return "top-k categorical accuracy";
-  case metric_type::mean_squared_error:
-    return "mean squared error";
-  default:
-    throw lbann_exception("Invalid metric type specified");
-  }
-  return NULL;
-}
-
-static const char *__attribute__((used)) _disp_unit(metric_type m) {
-  switch(m) {
-  case metric_type::categorical_accuracy:
-  case metric_type::top_k_categorical_accuracy:
-    return "%";
-  case metric_type::mean_squared_error:
-    return "";
-  default:
-    throw lbann_exception("Invalid metric type specified");
-  }
-  return NULL;
-}
 
 class statistics {
  public:
@@ -100,7 +59,10 @@ class statistics {
   long m_total_num_samples = 0;
 };
 
-//template <class T, class V>
+/**
+ * A metric is used to judge the performance of a model. These are similar to an
+ * objective function, but metrics are not used to train the model.
+ */
 class metric {
  public:
   /// Constructor
@@ -129,6 +91,11 @@ class metric {
   void record_error(double error, long num_samples);
   void reset_metric();
 
+  /** Return a string name for this metric. */
+  virtual std::string to_string() const = 0;
+  /** Return a display unit, e.g. %, for this metric. */
+  virtual std::string display_unit() const { return ""; }
+
  protected:
   statistics m_training_stats;
   statistics m_validation_stats;
@@ -138,13 +105,13 @@ class metric {
 
  public:
   model *m_neural_network_model;
-  metric_type type = metric_type::INVALID;
 
  protected:
   data_layout m_data_layout;
 };
-}
-}
 
+}  // namespace metrics
 
-#endif // LBANN_METRIC_HPP
+}  // namespace lbann
+
+#endif  // LBANN_METRIC_HPP

@@ -53,6 +53,11 @@ class top_k_categorical_accuracy : public metric {
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
 
+  std::string to_string() const {
+    return "top-" + std::to_string(m_top_k) + " categorical accuracy";
+  }
+  std::string display_unit() const { return "%"; }
+
  protected:
   /** Number of top classes to check for correct prediction. */
   int m_top_k;

@@ -33,8 +33,11 @@
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
+#include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
+#include <typeinfo>
+#include <typeindex>
 
 namespace lbann {
 template <data_layout T_layout>
@@ -139,7 +142,9 @@ class softmax_layer: public activation_layer {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
-    if(this->m_neural_network_model->m_obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
+    const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
+    if (std::type_index(obj_fn_type) ==
+        std::type_index(typeid(objective_functions::categorical_cross_entropy))
        && (this->m_next_layer_type == layer_type::target_distributed_minibatch
            || this->m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
            || this->m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io

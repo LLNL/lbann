@@ -67,8 +67,7 @@ void lbann_callback_summary::on_batch_end(model *m) {
 void lbann_callback_summary::on_epoch_end(model *m) {
   for (auto&& metric : m->m_metrics) {
     double train_score = metric->report_metric(execution_mode::training);
-    string phase = "train_";
-    phase += _to_string(metric->type);
+    string phase = "train_" + metric->to_string();
     m_summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
   }
   save_histograms(m);
@@ -79,8 +78,7 @@ void lbann_callback_summary::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (auto&& metric : m->m_metrics) {
     double test_score = metric->report_metric(execution_mode::testing);
-    string phase = "test_";
-    phase += _to_string(metric->type);
+    string phase = "test_" + metric->to_string();
     m_summarizer->reduce_scalar(phase, test_score, m->get_cur_step());
   }
   // Reset counters incremented during test phase.

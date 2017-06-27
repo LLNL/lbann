@@ -30,7 +30,9 @@
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 
 namespace lbann {
+
 namespace objective_functions {
+
 class mean_squared_error : public objective_fn {
  public:
   mean_squared_error(lbann_comm *comm);
@@ -44,13 +46,16 @@ class mean_squared_error : public objective_fn {
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);
+  std::string to_string() const { return "mean squared error"; }
 
  protected:
   /** Workspace to compute the squared error differences */
   DistMat m_errors;
   DistMat m_errors_v;
 };
-}
-}
 
-#endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
+}  // namespace objective_functions
+
+}  // namespace lbann
+
+#endif  // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
