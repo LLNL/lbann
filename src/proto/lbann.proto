@@ -103,6 +103,25 @@ message Callback {
    CallbackImComm imcomm = 7;
    CallbackSaveImages save_images = 8;
    CallbackDebug debug = 9;
+   CallbackAdaptiveLearningRate adaptive_learning_rate = 10;
+   CallbackStepLearningRate step_learning_rate = 11;
+   CallbackCustomLearningRate custom_learning_rate = 12;
+}
+
+message CallbackStepLearningRate {
+  string layers = 1; //e.g: "1 5 6" use "10000" to apply to all layers
+  int64 step = 2;
+  double amt = 3;
+}
+
+message CallbackCustomLearningRate {
+  //don't know how to support this, since it takes an std::function as an argument
+}
+
+message CallbackAdaptiveLearningRate {
+  string layers = 1; //e.g: "1 5 6" use "10000" to apply to all layers
+  int64 patience = 2;
+  double amt = 3;
 }
 
 message CallbackSaveImages {
@@ -139,7 +158,8 @@ message CallbackDumpGradients {
 }
 
 message CallbackImComm {
-  //todo
+  string intermodel_comm_method = 1;
+  string layers = 2; //e.g: "2 4 5"; use "10000" to apply to all layers
 }
 
 message CallbackDebug {

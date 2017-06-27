@@ -26,7 +26,8 @@ void add_layers(
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p);
+  const lbann_data::LbannPB& p,
+  std::unordered_map<uint, uint> &layer_mapping);
 
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
 lbann::optimizer_factory *init_optimizer_factory(
@@ -37,7 +38,8 @@ void init_callbacks(
   lbann::lbann_comm *comm,
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p);
+  const lbann_data::LbannPB& p,
+  const std::unordered_map<uint, uint> &layer_mapping);
 
 ///
 void readPrototextFile(

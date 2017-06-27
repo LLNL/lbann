@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
     ProcessInput();
     PrintInputReport();
 
-    std::cout << "Finished with the inut report" << std::endl;
     //error check the command line
     if (prototext_dr_fn == "none" or prototext_model_fn == "none"
         or prototext_opt_fn == "none") {
@@ -79,7 +78,6 @@ int main(int argc, char *argv[]) {
     readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
     readPrototextFile(prototext_opt_fn.c_str(), pb_optimizer);
     lbann_data::Model *pb_model = pb.mutable_model();
-    lbann_data::Model *pb_opt = pb_optimizer.mutable_model();
 
     //adjust the prototext with any over-rides
     if (mini_batch_size != 0) {
@@ -106,7 +104,7 @@ int main(int argc, char *argv[]) {
     comm->split_models(pb_model->procs_per_model());
     //please do not delete this! it's here to remind me that something needs
     //fixing. Thanks, Dave H.
-    cout << "XX procs_per_model: " << pb_model->procs_per_model() << endl;
+    if (comm->am_world_master()) cout << "XX procs_per_model: " << pb_model->procs_per_model() << endl;
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -174,8 +172,9 @@ int main(int argc, char *argv[]) {
     }
 #endif
     sequential_model *model = init_model(comm, optimizer_fac, pb);
-    add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, data_readers, pb);
+    std::unordered_map<uint,uint> layer_mapping;
+    add_layers(model, data_readers, cudnn, pb, layer_mapping);
+    init_callbacks(comm, model, data_readers, pb, layer_mapping);
     model->setup();
 
     // Optionally run ltfb

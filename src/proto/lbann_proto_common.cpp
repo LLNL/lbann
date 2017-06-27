@@ -13,6 +13,26 @@
 
 using namespace lbann;
 
+lbann_callback_imcomm::comm_type get_comm_type(const string &s) {
+  if (s == "none") {
+    return lbann_callback_imcomm::comm_type::NONE;
+  } else if (s == "normal") {
+    return lbann_callback_imcomm::comm_type::NORMAL;
+  } else if (s == "onebit_quantization") {
+    return lbann_callback_imcomm::comm_type::ONEBIT_QUANTIZATION;
+  } else if (s == "thresh_quantization") {
+    return lbann_callback_imcomm::comm_type::THRESH_QUANTIZATION;
+  } else if (s == "adaptive_quantization") {
+    return lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
+  } else {
+    std::stringstream err;
+    err << __FILE__ << " " <<__LINE__
+        << " :: unkown comm_type: " << s
+        << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
+    throw lbann_exception(err.str());
+  }
+}
+
 pool_mode get_pool_mode(const string& s)
 {
   if (s == "max") {
@@ -40,33 +60,6 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
     prev_num_neurons = prev_layer->get_num_neurons();
   }
   cur_index = layers.size();
-}
-
-activation_type get_activation_type(const string& s)
-{
-  if (s == "sigmoid") {
-    return activation_type::SIGMOID;
-  } else if (s == "tanh") {
-    return activation_type::TANH;
-  } else if (s == "relu") {
-    return activation_type::RELU;
-  } else if (s == "id") {
-    return activation_type::ID;
-  } else if (s == "leaky_relu") {
-    return activation_type::LEAKY_RELU;
-  } else if (s == "softplus") {
-    return activation_type::SOFTPLUS;
-  } else if (s == "smooth_relu") {
-    return activation_type::SMOOTH_RELU;
-  } else if (s == "elu") {
-    return activation_type::ELU;
-  } else {
-    std::stringstream err;
-    err << __FILE__ << " " <<__LINE__
-        << " :: unkown activation_type: " << s
-        << " should be one of: sigmoid tanh relu id leaky_relu softplus smooth_relu elu";
-    throw lbann_exception(err.str());
-  }
 }
 
 weight_initialization get_weight_initialization(const string& s)
@@ -113,7 +106,8 @@ void add_layers(
   lbann::sequential_model *model,
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p)
+  const lbann_data::LbannPB& p,
+  std::unordered_map<uint,uint> &layer_mapping)
 {
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
@@ -146,6 +140,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -160,6 +155,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -194,6 +190,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -219,6 +216,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -241,6 +239,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -275,6 +274,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -342,6 +342,7 @@ void add_layers(
 
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -421,6 +422,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -471,6 +473,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -501,6 +504,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -529,6 +533,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -555,6 +560,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -579,6 +585,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -603,6 +610,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -627,6 +635,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -653,6 +662,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -677,6 +687,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -703,6 +714,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -727,6 +739,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -757,6 +770,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -783,6 +797,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
 
     //////////////////////////////////////////////////////////////////
@@ -809,6 +824,7 @@ void add_layers(
       }
       model->add(d);
       all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
     }
   }
 }
@@ -817,7 +833,8 @@ void init_callbacks(
   lbann_comm *comm,
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p)
+  const lbann_data::LbannPB& p,
+  const std::unordered_map<uint,uint> &layer_mapping)
 {
   std::stringstream err;
   bool master = comm->am_world_master();
@@ -831,6 +848,9 @@ void init_callbacks(
   for (int j=0; j<size; j++) {
     const lbann_data::Callback& callback = m.callback(j);
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: save_images
+    //////////////////////////////////////////////////////////////////
     if (callback.has_save_images()) {
       const lbann_data::CallbackSaveImages& c = callback.save_images();
       string image_dir = c.image_dir();
@@ -840,6 +860,9 @@ void init_callbacks(
       model->add_callback(image_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: print
+    //////////////////////////////////////////////////////////////////
     if (callback.has_print()) {
       const lbann_data::CallbackPrint& c = callback.print();
       if (c.interval() > 0) {
@@ -851,6 +874,9 @@ void init_callbacks(
       }
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: timer
+    //////////////////////////////////////////////////////////////////
     if (callback.has_timer()) {
       const lbann_data::CallbackTimer& c = callback.timer();
       if (master) {
@@ -864,6 +890,9 @@ void init_callbacks(
       model->add_callback(timer_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: summary
+    //////////////////////////////////////////////////////////////////
     if (callback.has_summary()) {
       const lbann_data::CallbackSummary& c = callback.summary();
       if (master) {
@@ -877,6 +906,9 @@ void init_callbacks(
       model->add_callback(summary_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: dump_weights
+    //////////////////////////////////////////////////////////////////
     if (callback.has_dump_weights()) {
       const lbann_data::CallbackDumpWeights& c = callback.dump_weights();
       if (master) {
@@ -887,6 +919,9 @@ void init_callbacks(
       model->add_callback(weights_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: dump_activations
+    //////////////////////////////////////////////////////////////////
     if (callback.has_dump_activations()) {
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
@@ -897,6 +932,9 @@ void init_callbacks(
       model->add_callback(activations_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: dump_gradients
+    //////////////////////////////////////////////////////////////////
     if (callback.has_dump_gradients()) {
       const lbann_data::CallbackDumpGradients& c = callback.dump_gradients();
       if (master) {
@@ -907,10 +945,109 @@ void init_callbacks(
       model->add_callback(gradients_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: imcomm
+    //////////////////////////////////////////////////////////////////
     if (callback.has_imcomm()) {
-      //TODO todo
+      const lbann_data::CallbackImComm& c = callback.imcomm();
+      if (master) {
+        cout << "adding imcomm callback\n";
+      }
+      std::stringstream s(c.layers());
+      std::unordered_set<uint> which;
+      uint a;
+      bool all_layers = false;
+      while (s >> a) {
+        if (a == 10000) {
+          all_layers = true;
+        } else {
+          if (layer_mapping.find(a) == layer_mapping.end()) {
+            err << __FILE__ << " " << __LINE__
+                << " :: callback imcomm: you specified the layer index " << a
+                << " wrt the prototext file, but we don't have a layer with that"
+                << " index; please check your prototext file";
+            throw lbann_exception(err.str());
+          }
+          which.insert(layer_mapping.find(a)->second);
+        }
+      }
+      lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method());
+      lbann_callback_imcomm *im;
+      if (all_layers) {
+        im = new lbann_callback_imcomm(c_type);
+      } else {
+        im = new lbann_callback_imcomm(c_type, which);
+      }
+      model->add_callback(im);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: step_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_step_learning_rate()) {
+      const lbann_data::CallbackStepLearningRate &c = callback.step_learning_rate();
+      std::stringstream s(c.layers());
+      std::unordered_set<uint> which;
+      uint a;
+      bool all_layers = false;
+      while (s >> a) {
+        if (a == 10000) {
+          all_layers = true;
+        } else {
+          if (layer_mapping.find(a) == layer_mapping.end()) {
+            err << __FILE__ << " " << __LINE__
+                << " :: callback step_learning_rate: you specified the layer index "
+                << a << " wrt the prototext file, but we don't have a layer with that"
+                << " index; please check your prototext file";
+            throw lbann_exception(err.str());
+          }
+          which.insert(layer_mapping.find(a)->second);
+        }
+      }
+      lbann_callback_adaptive_learning_rate *learn;
+      if (all_layers) {
+        learn = new lbann_callback_adaptive_learning_rate(c.step(), c.amt());
+      } else {
+        learn = new lbann_callback_adaptive_learning_rate(c.step(), c.amt(), which);
+      }
+      model->add_callback(learn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: adaptive_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_adaptive_learning_rate()) {
+      const lbann_data::CallbackAdaptiveLearningRate &c = callback.adaptive_learning_rate();
+      std::stringstream s(c.layers());
+      std::unordered_set<uint> which;
+      uint a;
+      bool all_layers = false;
+      while (s >> a) {
+        if (a == 10000) {
+          all_layers = true;
+        } else {
+          if (layer_mapping.find(a) == layer_mapping.end()) {
+            err << __FILE__ << " " << __LINE__
+                << " :: callback adaptive_learning_rate: you specified the layer index "
+                << a << " wrt the prototext file, but we don't have a layer with that"
+                << " index; please check your prototext file";
+            throw lbann_exception(err.str());
+          }
+          which.insert(layer_mapping.find(a)->second);
+        }
+      }
+      lbann_callback_adaptive_learning_rate *learn;
+      if (all_layers) {
+        learn = new lbann_callback_adaptive_learning_rate(c.patience(), c.amt());
+      } else {
+        learn = new lbann_callback_adaptive_learning_rate(c.patience(), c.amt(), which);
+      }
+      model->add_callback(learn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: debug
+    //////////////////////////////////////////////////////////////////
     if (callback.has_debug()) {
       const lbann_data::CallbackDebug& c = callback.debug();
       if (master) {
@@ -919,11 +1056,11 @@ void init_callbacks(
       lbann_callback_debug *debug_cb = nullptr;
       if(c.phase() == "train") {
         debug_cb = new lbann_callback_debug(execution_mode::training);
-      }else if (c.phase() == "validation") {
+      } else if (c.phase() == "validation") {
         debug_cb = new lbann_callback_debug(execution_mode::validation);
-      }else if (c.phase() == "test") {
+      } else if (c.phase() == "test") {
         debug_cb = new lbann_callback_debug(execution_mode::testing);
-      }else {
+      } else {
         debug_cb = new lbann_callback_debug();
       }
       model->add_callback(debug_cb);
