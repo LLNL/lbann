@@ -37,7 +37,6 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
 }
 
 void lbann_callback_summary::on_train_begin(model *m) {
-  ElMat& acts = m->get_layers()[1]->get_activations();
   save_histograms(m);
 }
 
