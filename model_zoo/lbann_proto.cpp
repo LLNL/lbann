@@ -126,7 +126,6 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    std::cout << "Setting up the data readers" << std::endl;
     ///////////////////////////////////////////////////////////////////
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
