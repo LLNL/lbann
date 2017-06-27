@@ -78,14 +78,6 @@ class statistics {
 /**
  * Objective functions / loss functions are computed and averaged on a batch by batch basis.
  * Additionally, the average loss per batch is averaged over the epoch.
- *
-
- *eturns
- A `History` object. Its `History.history` attribute is
- a record of training loss values and metrics values
- at successive epochs, as well as validation loss values
- and validation metrics values (if applicable).
- *
  */
 class objective_fn {
  public:

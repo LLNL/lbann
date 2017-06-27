@@ -60,11 +60,6 @@ class sgd : public optimizer {
   /// Momentum
   DataType m_momentum;
   /// Learning rate decay
-  /** Uses Keras' decay rate formula:
-   *  \f[
-   *    {lr}_{n+1} = {lr}_{n} \frac{1}{1 + decay * n}
-   *  \f]
-   */
   DataType m_decay;
   /// Nesterov acceleration
   bool m_nesterov;
