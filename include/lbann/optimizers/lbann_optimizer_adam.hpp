@@ -45,6 +45,7 @@ class adam : public optimizer {
    DataType beta1 = DataType(0.9),
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
+  adam(const adam& other);
   /// Destructor
   ~adam();
   /// Set parameters to optimize and initialize optimizer

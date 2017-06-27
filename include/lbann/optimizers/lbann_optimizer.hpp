@@ -41,10 +41,11 @@ class optimizer {
  public:
 
   /// Constructor
-  optimizer
-  (lbann_comm *comm,
-   const std::string name,
-   DataType learning_rate = DataType(0));
+  optimizer(lbann_comm *comm, const std::string name,
+            DataType learning_rate = DataType(0));
+  optimizer(const optimizer&) = default;
+  // const members mean no copy assignment.
+  optimizer& operator=(const optimizer&) = delete;
 
   /// Destructor
   virtual ~optimizer();

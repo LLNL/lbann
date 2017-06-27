@@ -29,25 +29,29 @@
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::rmsprop::rmsprop
-(lbann_comm *comm,
- DataType learning_rate,
- DataType decay_rate,
- DataType eps)
+rmsprop::rmsprop(lbann_comm *comm, DataType learning_rate, DataType decay_rate,
+                 DataType eps)
   : optimizer(comm, "rmsprop", learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
-lbann::rmsprop::~rmsprop() {
+rmsprop::rmsprop(const rmsprop& other) :
+  optimizer(other), m_decay_rate(other.m_decay_rate), m_eps(other.m_eps),
+  m_cache(nullptr) {
+  if (other.m_cache) {
+    m_cache = other.m_cache->Copy();
+  }
+}
+
+rmsprop::~rmsprop() {
   if(m_cache) {
     delete m_cache;
   }
 }
 
-void lbann::rmsprop::setup(AbsDistMat *parameters) {
+void rmsprop::setup(AbsDistMat *parameters) {
   optimizer::setup(parameters);
 
   // Initialize RMSprop cache
@@ -68,11 +72,9 @@ void lbann::rmsprop::setup(AbsDistMat *parameters) {
     throw lbann_exception("lbann_optimizer_rmsprop: invalid data layout");
   }
   Zeros(*m_cache, m_height, m_width);
-
 }
 
-void lbann::rmsprop::update(const AbsDistMat *gradient) {
-
+void rmsprop::update(const AbsDistMat *gradient) {
   // Get local matrix data
   const Int local_height = m_parameters->LocalHeight();
   const Int local_width = m_parameters->LocalWidth();
@@ -109,21 +111,19 @@ void lbann::rmsprop::update(const AbsDistMat *gradient) {
       x -= m_learning_rate * g / (Sqrt(c) + m_eps);
     }
   }
-
 }
 
-lbann::rmsprop_factory::rmsprop_factory
-(lbann_comm *comm,
- DataType learning_rate,
- DataType decay_rate,
- DataType eps)
+rmsprop_factory::rmsprop_factory(lbann_comm *comm, DataType learning_rate,
+                                 DataType decay_rate, DataType eps)
   : optimizer_factory(comm, "rmsprop"),
     m_learning_rate(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
-lbann::rmsprop_factory::~rmsprop_factory() {}
+rmsprop_factory::~rmsprop_factory() {}
 
-lbann::optimizer *lbann::rmsprop_factory::create_optimizer() {
+optimizer *rmsprop_factory::create_optimizer() {
   return new rmsprop(m_comm, m_learning_rate, m_decay_rate, m_eps);
 }
+
+}  // namespace lbann

@@ -29,22 +29,25 @@
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::adagrad::adagrad
-(lbann_comm *comm,
- DataType learning_rate,
- DataType eps)
-  : optimizer(comm, "adagrad", learning_rate), m_eps(eps) {}
+adagrad::adagrad(lbann_comm *comm, DataType learning_rate, DataType eps)
+  : optimizer(comm, "adagrad", learning_rate), m_eps(eps), m_cache(nullptr) {}
 
-lbann::adagrad::~adagrad() {
+adagrad::adagrad(const adagrad& other) : optimizer(other), m_eps(other.m_eps),
+                                         m_cache(nullptr) {
+  if (other.m_cache) {
+    m_cache = other.m_cache->Copy();
+  }
+}
+
+adagrad::~adagrad() {
   if(m_cache) {
     delete m_cache;
   }
 }
 
-void lbann::adagrad::setup(AbsDistMat *parameters) {
+void adagrad::setup(AbsDistMat *parameters) {
   optimizer::setup(parameters);
 
   // Initialize AdaGrad cache
@@ -65,11 +68,9 @@ void lbann::adagrad::setup(AbsDistMat *parameters) {
     throw lbann_exception("lbann_optimizer_adagrad: invalid data layout");
   }
   Zeros(*m_cache, m_height, m_width);
-
 }
 
-void lbann::adagrad::update(const AbsDistMat *gradient) {
-
+void adagrad::update(const AbsDistMat *gradient) {
   // Get local matrix data
   const Int local_height = m_parameters->LocalHeight();
   const Int local_width = m_parameters->LocalWidth();
@@ -106,20 +107,19 @@ void lbann::adagrad::update(const AbsDistMat *gradient) {
       x -= m_learning_rate * g / (Sqrt(c) + m_eps);
     }
   }
-
 }
 
-lbann::adagrad_factory::adagrad_factory
-(lbann_comm *comm,
- DataType learning_rate,
- DataType eps)
+adagrad_factory::adagrad_factory(lbann_comm *comm, DataType learning_rate,
+                                 DataType eps)
   : optimizer_factory(comm, "adagrad"),
     m_eps(eps),
     m_learning_rate(learning_rate)
 {}
 
-lbann::adagrad_factory::~adagrad_factory() {}
+adagrad_factory::~adagrad_factory() {}
 
-lbann::optimizer *lbann::adagrad_factory::create_optimizer() {
+optimizer *adagrad_factory::create_optimizer() {
   return new adagrad(m_comm, m_learning_rate, m_eps);
 }
+
+}  // namespace lbann

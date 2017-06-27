@@ -31,29 +31,38 @@
 #include "lbann/optimizers/lbann_optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-lbann::adam::adam
-(lbann_comm *comm,
- DataType learning_rate,
- DataType beta1,
- DataType beta2,
- DataType eps)
+namespace lbann {
+
+adam::adam(lbann_comm *comm, DataType learning_rate, DataType beta1,
+           DataType beta2, DataType eps)
   : optimizer(comm, "adam", learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
     m_current_beta1(1),
-    m_current_beta2(1) {}
+    m_current_beta2(1),
+    m_moment1(nullptr),
+    m_moment2(nullptr) {}
 
-lbann::adam::~adam() {
+adam::adam(const adam& other)
+  : optimizer(other), m_beta1(other.m_beta1), m_beta2(other.m_beta2),
+    m_eps(other.m_eps), m_current_beta1(other.m_current_beta1),
+    m_current_beta2(other.m_current_beta2), m_moment1(nullptr),
+    m_moment2(nullptr) {
+  if (other.m_moment1) {
+    m_moment1 = other.m_moment1->Copy();
+    m_moment2 = other.m_moment2->Copy();
+  }
+}
+
+adam::~adam() {
   if(m_moment1) {
     delete m_moment1;
-  }
-  if(m_moment2) {
     delete m_moment2;
   }
 }
 
-void lbann::adam::setup(AbsDistMat *parameters) {
+void adam::setup(AbsDistMat *parameters) {
   optimizer::setup(parameters);
 
   // Initialize Adam cache
@@ -79,11 +88,9 @@ void lbann::adam::setup(AbsDistMat *parameters) {
   }
   Zeros(*m_moment1, m_height, m_width);
   Zeros(*m_moment2, m_height, m_width);
-
 }
 
-void lbann::adam::update(const AbsDistMat *gradient) {
-
+void adam::update(const AbsDistMat *gradient) {
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
   // Precompute the bias correction and learning rate.
@@ -138,23 +145,20 @@ void lbann::adam::update(const AbsDistMat *gradient) {
       x -= correction * m1 / (Sqrt(m2) + m_eps);
     }
   }
-
 }
 
-lbann::adam_factory::adam_factory
-(lbann_comm *comm,
- DataType learning_rate,
- DataType beta1,
- DataType beta2,
- DataType eps)
+adam_factory::adam_factory(lbann_comm *comm, DataType learning_rate,
+                           DataType beta1, DataType beta2, DataType eps)
   : optimizer_factory(comm, "adam"),
     m_learning_rate(learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps) {}
 
-lbann::adam_factory::~adam_factory() {}
+adam_factory::~adam_factory() {}
 
-lbann::optimizer *lbann::adam_factory::create_optimizer() {
+optimizer *adam_factory::create_optimizer() {
   return new adam(m_comm, m_learning_rate, m_beta1, m_beta2, m_eps);
 }
+
+}  // namespace lbann

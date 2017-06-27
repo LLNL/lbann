@@ -29,27 +29,31 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::sgd::sgd
-(lbann_comm *comm,
- DataType learning_rate,
- DataType momentum,
- DataType decay,
- bool nesterov)
+sgd::sgd(lbann_comm *comm, DataType learning_rate, DataType momentum,
+         DataType decay, bool nesterov)
   : optimizer(comm, "sgd", learning_rate),
     m_momentum(momentum),
     m_decay(decay),
     m_nesterov(nesterov) {}
 
-lbann::sgd::~sgd() {
+sgd::sgd(const sgd& other) :
+  optimizer(other), m_iterations(other.m_iterations),
+  m_momentum(other.m_momentum), m_decay(other.m_decay),
+  m_nesterov(other.m_nesterov), m_velocity(nullptr) {
+  if (other.m_velocity) {
+    m_velocity = other.m_velocity->Copy();
+  }
+}
+
+sgd::~sgd() {
   if(m_velocity) {
     delete m_velocity;
   }
 }
 
-void lbann::sgd::setup(AbsDistMat *parameters) {
+void sgd::setup(AbsDistMat *parameters) {
   optimizer::setup(parameters);
 
   // Initialize iteration count
@@ -75,11 +79,9 @@ void lbann::sgd::setup(AbsDistMat *parameters) {
     }
     Zeros(*m_velocity, m_height, m_width);
   }
-
 }
 
-void lbann::sgd::update(const AbsDistMat *gradient) {
-
+void sgd::update(const AbsDistMat *gradient) {
   // Update learning rate and iteration count
   m_learning_rate *= DataType(1) / ( 1 + m_decay * m_iterations );
   ++m_iterations;
@@ -139,23 +141,20 @@ void lbann::sgd::update(const AbsDistMat *gradient) {
     }
 
   }
-
 }
 
-lbann::sgd_factory::sgd_factory
-(lbann_comm *comm,
- DataType learning_rate,
- DataType momentum,
- DataType decay,
- bool nesterov)
+sgd_factory::sgd_factory(lbann_comm *comm, DataType learning_rate,
+                         DataType momentum, DataType decay, bool nesterov)
   : optimizer_factory(comm, "sgd"),
     m_learning_rate(learning_rate),
     m_momentum(momentum),
     m_decay(decay),
     m_nesterov(nesterov) {}
 
-lbann::sgd_factory::~sgd_factory() {}
+sgd_factory::~sgd_factory() {}
 
-lbann::optimizer *lbann::sgd_factory::create_optimizer() {
+optimizer *sgd_factory::create_optimizer() {
   return new sgd(m_comm, m_learning_rate, m_momentum, m_decay, m_nesterov);
 }
+
+}  // namespace lbann

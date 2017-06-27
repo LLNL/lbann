@@ -43,6 +43,7 @@ class rmsprop : public optimizer {
    DataType learning_rate,
    DataType decay_rate,
    DataType eps = DataType(1e-8));
+  rmsprop(const rmsprop& other);
   /// Destructor
   ~rmsprop();
   /// Set parameters to optimize and initialize optimizer

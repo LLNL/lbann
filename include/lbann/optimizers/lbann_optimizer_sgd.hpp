@@ -46,6 +46,7 @@ class sgd : public optimizer {
    DataType momentum = DataType(0),
    DataType decay_rate = DataType(0),
    bool nesterov = false);
+  sgd(const sgd& other);
   /// Destructor
   ~sgd();
   /// Set parameters to optimize and initialize optimizer

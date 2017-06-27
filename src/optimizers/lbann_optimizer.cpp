@@ -28,20 +28,19 @@
 
 #include "lbann/optimizers/lbann_optimizer.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::optimizer::optimizer
-(lbann_comm *comm, const std::string name, DataType learning_rate)
+optimizer::optimizer(lbann_comm *comm, const std::string name,
+                     DataType learning_rate)
   : m_comm(comm), m_learning_rate(learning_rate), m_name(name) {}
 
-lbann::optimizer::~optimizer() {}
+optimizer::~optimizer() {}
 
-void lbann::optimizer::setup(AbsDistMat *parameters) {
+void optimizer::setup(AbsDistMat *parameters) {
   m_parameters = parameters;
   m_height = m_parameters->Height();
   m_width = m_parameters->Width();
-  DistData dist(*m_parameters);
+  El::DistData dist(*m_parameters);
   if(dist.colDist == MC && dist.rowDist == MR) {
     m_matrix_format = matrix_format::MC_MR;
   } else if(dist.colDist == CIRC && dist.rowDist == CIRC) {
@@ -57,9 +56,10 @@ void lbann::optimizer::setup(AbsDistMat *parameters) {
   }
 }
 
-lbann::optimizer_factory::optimizer_factory
-(lbann_comm *comm,
- const std::string name)
+optimizer_factory::optimizer_factory(lbann_comm *comm,
+                                     const std::string name)
   : m_comm(comm), m_name(name) {}
 
-lbann::optimizer_factory::~optimizer_factory() {}
+optimizer_factory::~optimizer_factory() {}
+
+}  // namespace lbann
