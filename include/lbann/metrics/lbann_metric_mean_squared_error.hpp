@@ -49,7 +49,7 @@ class mean_squared_error : public metric {
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
 
-  std::string to_string() const { return "mean squared error"; }
+  std::string name() const { return "mean squared error"; }
 
  protected:
   lbann::objective_functions::mean_squared_error internal_obj_fn;

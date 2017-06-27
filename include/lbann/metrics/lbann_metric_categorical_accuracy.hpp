@@ -50,7 +50,7 @@ class categorical_accuracy : public metric {
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
 
-  std::string to_string() const { return "categorical accuracy"; }
+  std::string name() const { return "categorical accuracy"; }
   std::string display_unit() const { return "%"; }
 
  protected:

@@ -92,7 +92,7 @@ class metric {
   void reset_metric();
 
   /** Return a string name for this metric. */
-  virtual std::string to_string() const = 0;
+  virtual std::string name() const = 0;
   /** Return a display unit, e.g. %, for this metric. */
   virtual std::string display_unit() const { return ""; }
 

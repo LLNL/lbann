@@ -46,7 +46,7 @@ class mean_squared_error : public objective_fn {
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);
-  std::string to_string() const { return "mean squared error"; }
+  std::string name() const { return "mean squared error"; }
 
  protected:
   /** Workspace to compute the squared error differences */

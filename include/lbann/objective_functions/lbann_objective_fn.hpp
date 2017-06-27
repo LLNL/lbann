@@ -81,7 +81,7 @@ class objective_fn {
   void reset_obj_fn();
 
   /** Return a string name for this objective function. */
-  virtual std::string to_string() const = 0;
+  virtual std::string name() const = 0;
 
  protected:
   statistics m_training_stats;
