@@ -75,6 +75,8 @@ class cv_process {
   cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
     : m_flip(flip_code), m_split(tosplit) {}
 
+  virtual ~cv_process(void) {}
+
   /// Check whether to flip
   bool to_flip(void) const {
     return (m_flip != cv_transform::_no_flip_);

@@ -6,27 +6,82 @@
 #include <sstream>
 #include <algorithm>
 #include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/lbann_cv_resizer.hpp"
+#include "lbann/data_readers/lbann_cv_colorizer.hpp"
 
 
 using namespace lbann::patchworks;
 
-bool test_image_io(const std::string filename, int sz);
+struct resizer_params {
+  bool m_is_set;
+  std::pair<int, int> m_desired_sz;
+  std::pair<float, float> m_center;
+  std::pair<int, int> m_roi_sz;
+
+  resizer_params(void)
+    : m_is_set(false),
+      m_desired_sz(std::make_pair(400, 400)),
+      m_center(std::make_pair(0.5, 0.5)),
+      m_roi_sz(std::make_pair(0,0)) {}
+};
+
+struct augmenter_params {
+  bool m_is_set;
+  bool m_hflip;
+  bool m_vflip;
+  float m_rot;
+  float m_hshift;
+  float m_vshift;
+  float m_shear;
+
+  augmenter_params(void)
+    : m_is_set(false),
+      m_hflip(false),
+      m_vflip(false),
+      m_rot(0.0f),
+      m_hshift(0.0f),
+      m_vshift(0.0f),
+      m_shear(0.0f) {}
+};
+
+
+bool test_image_io(const std::string filename, int sz, const resizer_params& rp, const augmenter_params& ap, const bool do_colorize);
+
 
 int main(int argc, char *argv[]) {
+
   if (argc < 2) {
-    std::cout << "Usage: > " << argv[0] << " image_filenamei [n]" << std::endl;
+    std::cout << "Usage: > " << argv[0] << " image_filename [n]|[w h xc yc rw rh]" << std::endl;
     std::cout << "    n: the number of channel values in the images (i.e., width*height*num_channels)" << std::endl;
+    std::cout << "    w: the desired width of image" << std::endl;
+    std::cout << "    h: the desired height of image" << std::endl;
+    std::cout << "   xc: the fractional horizontal position of the desired center in the image" << std::endl;
+    std::cout << "   yc: the fractional vertical position of the desired center in the image" << std::endl;
+    std::cout << "   rw: the width of the region of interest" << std::endl;
+    std::cout << "   rh: the height of the region of interest" << std::endl;
     return 0;
   }
 
   std::string filename = argv[1];
   int sz = 0;
-  if (argc > 2) {
+  resizer_params rp;
+
+  if (argc == 3) {
     sz = atoi(argv[2]);
+  } else if (argc == 8) {
+    rp.m_desired_sz.first = atoi(argv[2]);
+    rp.m_desired_sz.second = atoi(argv[3]);
+    rp.m_center.first = atof(argv[4]);
+    rp.m_center.second = atof(argv[5]);
+    rp.m_roi_sz.first = atoi(argv[6]);
+    rp.m_roi_sz.second = atoi(argv[7]);
+    rp.m_is_set = true;
   }
 
+  augmenter_params ap;
+
   // read write test with converting to/from a serialized buffer
-  bool ok = test_image_io(filename, sz);
+  bool ok = test_image_io(filename, sz, rp, ap, false);
   if (!ok) {
     std::cout << "Test failed" << std::endl;
     return 0;
@@ -82,12 +137,50 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
   file.close();
 }
 
-bool test_image_io(const std::string filename, int sz) {
+bool test_image_io(const std::string filename, int sz, const resizer_params& rp, const augmenter_params& ap, const bool do_colorize) {
+#if 0
+  std::shared_ptr<lbann::cv_process> pp1;
+
+  // Initialize the image processor
+  // while testing the scope of transform objects managed by smart pointers
+  {
+    std::shared_ptr<lbann::cv_process> pp0 = std::make_shared<lbann::cv_process>();
+
+    if (rp.m_is_set) { // If resizer parameters are given
+      // Setup a resizer
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set(rp.m_desired_sz.first, rp.m_desired_sz.second, true, rp.m_center, rp.m_roi_sz);
+      pp0->set_custom_transform1(std::move(resizer));
+      sz = rp.m_desired_sz.first * rp.m_desired_sz.second * 3;
+    }
+
+    if (ap.m_is_set) { // If augmenter parameters are given
+      // Set up an augmenter
+      std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
+      augmenter->set(ap.m_hflip, ap.m_vflip, ap.m_rot, ap.m_hshift, ap.m_vshift, ap.m_shear);
+      pp0->set_augmenter(std::move(augmenter));
+    }
+
+    if (do_colorize) {
+      // Set up a colorizer
+      std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+      pp0->set_custom_transform2(std::move(colorizer));
+    }
+
+    // Set up a normalizer
+    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+    normalizer->z_score(true);
+    pp0->set_normalizer(std::move(normalizer));
+
+    pp1 = pp0;
+  }
+  lbann::cv_process pp(*pp1); // testing copy-constructor
+#else
+  lbann::cv_process pp;
   std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
   normalizer->z_score(true);
-
-  lbann::cv_process pp;
   pp.set_normalizer(std::move(normalizer));
+#endif
 
   std::vector<unsigned char> buf;
   bool ok = read_file(filename, buf);
@@ -151,6 +244,11 @@ bool test_image_io(const std::string filename, int sz) {
     return false;
   }
   show_image_size(width, height, type);
+
+  if (pp.custom_transform1()) {
+    std::cout << std::endl << "resizing method: "<< std::endl;
+    std::cout << *(pp.custom_transform1()) << std::endl;
+  }
 
   Image_v1 = Image_v0;
 

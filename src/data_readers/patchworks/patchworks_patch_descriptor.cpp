@@ -196,6 +196,7 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
 
   patches.push_back(img(roi.rect()).clone());
 
+#if 0 // to generate all the patches defined in the set
   unsigned int i = 1u;
 
   while (get_next_patch(roi)) {
@@ -205,6 +206,21 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
   if (i == 1u) {
     return false;
   }
+#else // to randomly generate another patch. The label will be recorded to m_cur_patch_idx.
+  if (m_displacements.size() == 0) {
+    return false;
+  }
+
+  std::uniform_int_distribution<int> rg_patch_idx(0, m_displacements.size()-1);
+  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  m_cur_patch_idx = rg_patch_idx(gen);
+
+  if (!get_next_patch(roi)) {
+    return false;
+  }
+  patches.push_back(img(roi.rect()).clone());
+#endif
+
   return true;
 }
 

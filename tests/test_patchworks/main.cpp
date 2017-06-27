@@ -16,7 +16,6 @@ using namespace lbann::patchworks;
 bool test_patch(const int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
-  (void) DataTypeMPI;
   if (argc < 2) {
     std::cout << "Usage: > " << argv[0] << " filename [patch_size [gap_size [jitter [ceteringMode [ca_mode]]]]]" << std::endl;
     return 0;
@@ -97,6 +96,8 @@ bool test_patch(const int argc, char *argv[]) {
     sstr << "patch." << i << ".png";
     image::write(sstr.str(), patches[i]);
   }
+  std::cout << "the id of the last patch generated (label in case of paired patches): "
+            << pi.get_current_patch_idx() << std::endl;
 
   std::cout << pi;
   img->draw_patches(pi);

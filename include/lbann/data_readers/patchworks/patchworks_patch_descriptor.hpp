@@ -136,6 +136,8 @@ class patch_descriptor {
   virtual bool get_next_patch(ROI& patch);
   /// extract all the patches defined
   virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
+  /// return the id (vector index + 1) of the last patch generated
+  virtual unsigned int get_current_patch_idx(void) const { return m_cur_patch_idx; }
 
   /// Allow read-only access to the positions of the patches generated
   const std::vector<ROI>& access_positions(void) const {

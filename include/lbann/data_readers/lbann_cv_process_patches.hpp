@@ -40,14 +40,18 @@ namespace lbann {
 class cv_process_patches : public cv_process {
  protected:
   patchworks::patch_descriptor m_pd;
+  bool m_self_label;
 
  public:
-  cv_process_patches(void) : cv_process() {}
+  cv_process_patches(void) : cv_process(), m_self_label(false) {}
+  cv_process_patches(const bool self_label) : cv_process(), m_self_label(self_label) {}
   cv_process_patches(const cv_process_patches& rhs);
   cv_process_patches& operator=(const cv_process_patches& rhs);
 
   cv_process_patches(const cv_transform::cv_flipping flip_code, const bool tosplit)
     : cv_process(flip_code, tosplit) {}
+
+  virtual ~cv_process_patches(void) {}
 
   void set_patch_descriptor(const patchworks::patch_descriptor& pd) {
     m_pd = pd;
@@ -58,6 +62,8 @@ class cv_process_patches : public cv_process {
   const patchworks::patch_descriptor& patch_descriptor(void) const {
     return m_pd;
   }
+  bool is_self_labeling(void) const { return m_self_label; }
+  virtual unsigned int get_patch_label(void) const { return m_pd.get_current_patch_idx(); }
 
   bool preprocess(const cv::Mat& image, std::vector<cv::Mat>& patches);
 };

@@ -34,9 +34,16 @@ set(Elemental_LIBS ${Elemental_LIBRARIES})
 file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/lbann_random.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_cv_augmenter.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_colorizer.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_cv_normalizer.cpp
                           ${LBANN_DIR}/src/data_readers/lbann_cv_process.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_utils.cpp)
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_process_patches.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_resizer.cpp
+                          ${LBANN_DIR}/src/data_readers/lbann_cv_utils.cpp
+                          ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
+                          ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp
+                          ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp
+                          ${LBANN_DIR}/src/data_readers/patchworks/patchworks_stats.cpp)
 
 add_executable(${IMGPIPE_EXE} ${IMGPIPE_SRCS} ${IMGPIPE_TEST_SRCS} )
 target_link_libraries(${IMGPIPE_EXE} ${OpenCV_LIBS} ${Elemental_LIBS})
