@@ -32,20 +32,6 @@
 
 namespace lbann {
 
-/** Represent the type of activation function. */
-enum class activation_type {
-  SIGMOID = 1,
-  TANH,
-  RELU,
-  ID,
-  LEAKY_RELU,
-  SOFTPLUS,
-  SMOOTH_RELU,
-  ELU,
-  SOFTMAX,
-  SELU  
-};
-
 class activation_layer : public Layer {
 
  public:
@@ -53,7 +39,6 @@ class activation_layer : public Layer {
                    lbann_comm *comm,
                    int mini_batch_size) :
     Layer(index, comm, mini_batch_size) {
-    this->m_type = layer_type::activation;
   }
 
   virtual ~activation_layer() {}

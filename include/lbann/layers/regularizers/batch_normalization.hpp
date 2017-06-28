@@ -68,10 +68,8 @@ class batch_normalization : public regularizer_layer {
       m_gamma_init(gamma),
       m_beta_init(beta),
       m_decay(decay) {
-    set_name("batch_normalization");
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::batch_normalization;
    }
 
   ~batch_normalization() {
@@ -84,6 +82,8 @@ class batch_normalization : public regularizer_layer {
     delete m_running_mean;
     delete m_running_stdev;
   }
+
+  std::string get_name() const { return "batch normalization"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }

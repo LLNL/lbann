@@ -177,6 +177,7 @@ class target_layer : public io_layer {
     return true;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED

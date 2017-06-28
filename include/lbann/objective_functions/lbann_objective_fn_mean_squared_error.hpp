@@ -42,7 +42,7 @@ class mean_squared_error : public objective_fn {
   void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v);
   double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v);
-  void compute_obj_fn_derivative(layer_type prev_layer_type,
+  void compute_obj_fn_derivative(Layer* prev_layer,
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);

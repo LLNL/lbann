@@ -110,13 +110,8 @@ class convolution_layer : public learning {
                     cudnn::cudnn_manager *cudnn = NULL)
     : learning(index, mini_batch_size, comm, opt),
       m_weight_initialization(init) {
-
-    set_name("convolution");
-
     // Setup the data distribution
     initialize_distributed_matrices();
-
-    this->m_type = layer_type::convolution;
 
     // Initialize convolution parameters
     m_conv_dims.assign(conv_dims, conv_dims+num_data_dims);
@@ -200,6 +195,8 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
   }
+
+  std::string get_name() const { return "convolution"; }
 
   void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();

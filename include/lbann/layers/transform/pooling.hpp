@@ -78,12 +78,8 @@ class pooling_layer : public transform {
                 cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm, mini_batch_size),
       m_pool_mode(_pool_mode) {
-    set_name("pooling_layer");
-
     // Setup the data distribution
     initialize_distributed_matrices();
-
-    this->m_type = layer_type::pooling;
 
     // Initialize input dimensions and pooling parameters
     m_pool_dims.assign(pool_dims, pool_dims+num_data_dims);
@@ -147,6 +143,8 @@ class pooling_layer : public transform {
     }
   #endif // __LIB_CUDNN
   }
+
+  std::string get_name() const { return "pooling"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
@@ -535,6 +533,7 @@ class pooling_layer : public transform {
   }
 
 };
-}
 
-#endif // LBANN_LAYER_POOLING_HPP_INCLUDED
+}  // namespace lbann
+
+#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED

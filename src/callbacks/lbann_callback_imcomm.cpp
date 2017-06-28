@@ -26,6 +26,8 @@
 // lbann_callback_imcomm .hpp .cpp - Send gradient updates between models
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <typeinfo>
+#include <typeindex>
 #include "lbann/callbacks/lbann_callback_imcomm.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/utils/lbann_exception.hpp"
@@ -73,17 +75,17 @@ void lbann_callback_imcomm::setup(model *m) {
   m_layer_params.resize(layers.size());
   for (size_t layer = 0; layer < layers.size(); ++layer) {
     imcomm_params& params = m_layer_params[layer];
-    layer_category layer_cat = _layer_type_to_category(layers[layer]->get_type());
+    learning *learning_layer = dynamic_cast<learning*>(layers[layer]);
     if (m_param_choices.find(layer) != m_param_choices.end()) {
       params = m_param_choices[layer];
-    } else if (layer_cat == layer_category::learning) {
+    } else if (learning_layer) {
       // Only do communication for learning layers unless explicitly told.
       params.ct = m_default_ct;
     } else {
       params.ct = NONE;
     }
     if (params.ct != NONE) {
-      if (layer_cat != layer_category::learning) {
+      if (!learning_layer) {
         throw lbann_exception("imcomm: trying to do inter-model gradient "
                               "communication on layer " + std::to_string(layer)
                               + " without gradients");
@@ -92,25 +94,23 @@ void lbann_callback_imcomm::setup(model *m) {
       layers[layer]->set_effective_minibatch_size(
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
       // Support reshaping for convolutional layers.
-      if (layers[layer]->get_type() == layer_type::convolution) {
-        El::Int filter_size, num_output_channels;
-        if (layers[layer]->get_data_layout() == data_layout::MODEL_PARALLEL) {
-          convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
-            dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
-          filter_size = conv_layer->m_conv_size;
-          num_output_channels = conv_layer->m_neuron_dims[0];
-        } else {
-          convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
-            dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
-          filter_size = conv_layer->m_conv_size;
-          num_output_channels = conv_layer->m_neuron_dims[0];
-        }
-        params.reshape_height = filter_size / num_output_channels;
-        params.reshape_width = num_output_channels;
+      const std::type_info& layer_type = typeid(*(layers[layer]));
+      if (std::type_index(layer_type) ==
+          std::type_index(typeid(convolution_layer<data_layout::MODEL_PARALLEL>))) {
+        convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
+          dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
+        params.reshape_height = conv_layer->m_conv_size /
+          conv_layer->m_neuron_dims[0];;
+        params.reshape_width = conv_layer->m_neuron_dims[0];
+      } else if (std::type_index(layer_type) ==
+                 std::type_index(typeid(convolution_layer<data_layout::DATA_PARALLEL>))) {
+        convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
+          dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
+        params.reshape_height = conv_layer->m_conv_size /
+          conv_layer->m_neuron_dims[0];
+        params.reshape_width = conv_layer->m_neuron_dims[0];
       }
       if (ct_does_quantization(params.ct)) {
-        learning *learning_layer =
-          dynamic_cast<learning*>(layers[layer]);
         const ElMat& gradients = learning_layer->get_weights_gradient();
         if (params.reshape_height > 0) {
           Zeros(params.error, params.reshape_height, params.reshape_width);
@@ -138,13 +138,9 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
       learning *learning_layer =
         dynamic_cast<learning*>(layers[layer]);
       if (params.reshape_height > 0) {
-        if (layers[layer]->get_type() == layer_type::convolution) {
-          reshape_mat(learning_layer->get_weights_gradient().Matrix(),
-                      reshaped, params.reshape_height, params.reshape_width);
-          local_gradients = &reshaped;
-        } else {
-          throw lbann_exception("imcomm: unsupported layer reshaping");
-        }
+        reshape_mat(learning_layer->get_weights_gradient().Matrix(),
+                    reshaped, params.reshape_height, params.reshape_width);
+        local_gradients = &reshaped;
       } else {
         local_gradients = &(learning_layer->get_weights_gradient().Matrix());
       }
@@ -174,13 +170,9 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     learning *learning_layer =
       dynamic_cast<learning*>(layers[layer]);
     if (params.reshape_height > 0) {
-      if (layers[layer]->get_type() == layer_type::convolution) {
-        reshape_mat(learning_layer->get_weights_gradient().Matrix(),
-                    reshaped, params.reshape_height, params.reshape_width);
-        local_gradients = &reshaped;
-      } else {
-        throw lbann_exception("imcomm: unsupported layer reshaping");
-      }
+      reshape_mat(learning_layer->get_weights_gradient().Matrix(),
+                  reshaped, params.reshape_height, params.reshape_width);
+      local_gradients = &reshaped;
     } else {
       local_gradients = &(learning_layer->get_weights_gradient().Matrix());
     }

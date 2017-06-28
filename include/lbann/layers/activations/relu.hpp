@@ -54,7 +54,6 @@ class relu_layer : public entrywise_activation_layer {
              int mini_batch_size,
              cudnn::cudnn_manager *cudnn = NULL) :
     entrywise_activation_layer(index, comm, mini_batch_size) {
-    set_name("relu_layer");
 
     initialize_distributed_matrices();
 
@@ -103,6 +102,8 @@ class relu_layer : public entrywise_activation_layer {
   #endif
 
   }
+
+  std::string get_name() const { return "relu"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

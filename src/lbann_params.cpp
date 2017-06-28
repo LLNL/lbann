@@ -37,7 +37,7 @@ lbann::TrainingParams::TrainingParams(void)
     EpochStart(0), EpochCount(2), MBSize(192),
     LearnRate(0.3), LearnRateMethod(2),
     LrDecayRate(0.5), LrDecayCycles(5000),
-    ActivationType(activation_type::SIGMOID), DropOut(-1), Lambda(0),
+    ActivationType(1), DropOut(-1), Lambda(0),
     DatasetRootDir("."), SaveImageDir("."), ParameterDir("."),
     SaveModel(false), LoadModel(false),
     CkptEpochs(0), CkptSteps(0), CkptSecs(0.0),
@@ -68,7 +68,7 @@ void lbann::TrainingParams::parse_params(void) {
   LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);
   LrDecayRate = Input("--lr-decay-rate", "How much does the learning rate decay when it decays", LrDecayRate);
   LrDecayCycles = Input("--lr-decay-cycle", "How often does the learning rate decay", LrDecayCycles);
-  ActivationType = static_cast<activation_type>(Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", static_cast<int>(ActivationType)));
+  ActivationType = Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", ActivationType);
   DropOut = Input("--drop-out", "% dropout", DropOut);
   Lambda = Input("--lambda", "Lambda for L2 Regularization", Lambda);
 

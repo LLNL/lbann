@@ -43,9 +43,10 @@ public :
                  lbann_comm *comm,
                  int mini_batch_size) :
     entrywise_activation_layer(index, comm, mini_batch_size) { 
-    set_name("softplus_layer");
     initialize_distributed_matrices(); 
   }
+
+  std::string get_name() const { return "softplus"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

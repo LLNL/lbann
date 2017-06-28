@@ -53,48 +53,8 @@ class transform : public Layer {
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();
   }
-
-#if 0
-  static std::string weight_initialization_name(weight_initialization id);
-
-  virtual void forwardProp(void);
-  virtual void backProp(void);
-  virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int step);
-
-  /** Validate that the setup is reasonable. */
-  virtual void check_setup(void);
-
-  /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases(void) {
-    return *m_weights;
-  }
-  /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient(void) {
-    return *m_weights_gradient;
-  }
-
-#endif
-#if 0
- protected:
-
-  /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view(void);
-#if 0
-  /** Setup views of the matrices for the layer's backward propagation. */
-  virtual void bp_set_std_matrix_view(void);
-#endif
-  /** Apply the layer's linear update in forward propagation. */
-  virtual void fp_linearity(void) {}
-  /** Handle the layer's linearity in backward propagation. */
-  virtual void bp_linearity(void) {}
-  /** Apply the layer's nonlinearity in forward propagation. */
-  virtual void fp_nonlinearity(void);
-  /** Handle the layer's nonlinearity in backward propagation. */
-  virtual void bp_nonlinearity(void);
-#endif
 };
-}
 
+}  // namespace lbann
 
-#endif // LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+#endif  // LBANN_LAYER_TRANSFORM_HPP_INCLUDED

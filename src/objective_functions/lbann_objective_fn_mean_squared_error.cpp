@@ -69,11 +69,10 @@ double mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtru
 }
 
 /// Compute derivative of mean squared error objective function
-void mean_squared_error::compute_obj_fn_derivative(layer_type prev_layer_type,
-                                                   ElMat& predictions_v,
-                                                   ElMat& groundtruth_v,
-                                                   ElMat& error_signal_v) {
-  const int num_neurons = predictions_v.Height();
+void mean_squared_error::compute_obj_fn_derivative(
+  Layer* prev_layer, ElMat& predictions_v, ElMat& groundtruth_v,
+  ElMat& error_signal_v) {
+  const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, error_signal_v);
   Axpy(DataType(-1), groundtruth_v, error_signal_v);
   Scale(DataType(2)/num_neurons, error_signal_v);

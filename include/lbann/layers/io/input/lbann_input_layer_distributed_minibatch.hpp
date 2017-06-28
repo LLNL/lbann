@@ -48,13 +48,13 @@ class input_layer_distributed_minibatch : public input_layer {
     : input_layer(comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::input_distributed_minibatch;
 
     //  m_index = index;
     this->m_root = 0;
     this->m_num_data_per_epoch = 0;
-
   }
+
+  std::string get_name() const { return "input layer distributed minibatch"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
@@ -122,6 +122,7 @@ class input_layer_distributed_minibatch : public input_layer {
     return &Xs;
   };
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED

@@ -48,11 +48,11 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
-    set_name("target_layer_distributed_minibatch_parallel_io");
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::target_distributed_minibatch_parallel_io;
   }
+
+  std::string get_name() const { return "target layer distributed minibatch parallel io"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
@@ -125,7 +125,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   void bp_compute() {
 
     // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer->get_type(),
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer,
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);
@@ -169,6 +169,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     return this->m_execution_mode;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

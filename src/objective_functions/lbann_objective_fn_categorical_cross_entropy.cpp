@@ -25,8 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 #include <sys/types.h>
 #include <unistd.h>
+#include <typeinfo>
+#include <typeindex>
 
 namespace lbann {
 
@@ -80,14 +83,15 @@ double categorical_cross_entropy::compute_obj_fn(ElMat& predictions_v, ElMat& gr
   return avg_error;
 }
 
-void categorical_cross_entropy::compute_obj_fn_derivative(layer_type prev_layer_type,
-                                                          ElMat& predictions_v,
-                                                          ElMat& groundtruth_v,
-                                                          ElMat& error_signal_v) {
-
+void categorical_cross_entropy::compute_obj_fn_derivative(
+  Layer* prev_layer, ElMat& predictions_v, ElMat& groundtruth_v,
+  ElMat& error_signal_v) {
   // Compute error signal (softmax output layer case)
   // Note: error_signal = predictions - groundtruth
-  if(prev_layer_type == layer_type::softmax) {
+  if (std::type_index(typeid(*prev_layer)) ==
+      std::type_index(typeid(softmax_layer<data_layout::MODEL_PARALLEL>)) ||
+      std::type_index(typeid(*prev_layer)) ==
+      std::type_index(typeid(softmax_layer<data_layout::DATA_PARALLEL>))) {
     Copy(predictions_v, error_signal_v);
     Axpy(DataType(-1), groundtruth_v, error_signal_v);
   }

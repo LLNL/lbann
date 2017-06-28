@@ -51,14 +51,14 @@ class reconstruction_layer : public target_layer {
                        int minim_batch_size,
                        Layer *original_layer)
     :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
-    set_name("reconstruction_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::reconstruction;
     this->m_index = index;
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
   }
+
+  std::string get_name() const { return "reconstruction"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
@@ -96,7 +96,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() {
     // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer->get_type(), *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer

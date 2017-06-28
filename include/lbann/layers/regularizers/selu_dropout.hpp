@@ -56,7 +56,6 @@ class selu_dropout : public regularizer_layer {
 #endif
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::dropout;
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
@@ -68,6 +67,8 @@ class selu_dropout : public regularizer_layer {
   ~selu_dropout() {
     delete m_cur_mask;
   }
+
+  std::string get_name() const { return "selu dropout"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }

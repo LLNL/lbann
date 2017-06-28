@@ -233,6 +233,6 @@ template<> inline void learning::initialize_distributed_matrices<data_layout::DA
   m_weights_gradient    = new StarMat(m_comm->get_model_grid());
 }
 
-}
+}  // namespace lbann
 
-#endif // LBANN_LAYER_LEARNING_HPP_INCLUDED
+#endif  // LBANN_LAYER_LEARNING_HPP_INCLUDED

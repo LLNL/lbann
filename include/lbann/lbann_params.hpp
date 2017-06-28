@@ -82,7 +82,7 @@ class TrainingParams {
   float LrMomentum;
   /// Activation function
   /** 1 - Sigmoid, 2 - Tanh, 3 - reLU */
-  activation_type ActivationType;
+  int ActivationType;
   /// Dropout probability
   /** Probability of dropping a neuron/input in
       dropout_layer. Default is -1 (no dropout). */

@@ -29,19 +29,30 @@
 #ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
-#include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
 #include <unistd.h>
 #include <string>
 #include <typeinfo>
 #include <typeindex>
 
+// Forward declaration.
 namespace lbann {
+namespace objective_functions {
+class categorical_cross_entropy;
+}
+}
+
+namespace lbann {
+
 template <data_layout T_layout>
-class softmax_layer: public activation_layer {
+class softmax_layer : public activation_layer {
 
  private:
   AbsDistMat *m_workspace;
@@ -53,17 +64,17 @@ class softmax_layer: public activation_layer {
                 lbann_comm *comm,
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size) {
-    set_name("softmax_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::softmax;
     this->m_index = index;
   }
 
-  ~softmax_layer(void) {
+  ~softmax_layer() {
     delete m_workspace;
     delete m_workspace_v;
   }
+
+  std::string get_name() const { return "softmax"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }
@@ -81,7 +92,7 @@ class softmax_layer: public activation_layer {
     El::Zeros(*this->m_workspace, 1, this->m_mini_batch_size);
   }
 
-  void fp_set_std_matrix_view(void) {
+  void fp_set_std_matrix_view() {
     Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
@@ -136,18 +147,21 @@ class softmax_layer: public activation_layer {
                       }));
   }
 
-  void bp_compute(void) {
+  void bp_compute() {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
     const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
+    const std::type_info& next_layer_type = typeid(*m_next_layer);
+    // Note: Assumes next layer uses same data distribution.
     if (std::type_index(obj_fn_type) ==
         std::type_index(typeid(objective_functions::categorical_cross_entropy))
-        && (this->m_next_layer->get_type() == layer_type::target_distributed_minibatch
-            || this->m_next_layer->get_type() == layer_type::target_distributed_minibatch_parallel_io
-            || this->m_next_layer->get_type() == layer_type::target_partitioned_minibatch_parallel_io
-            // || this->m_next_layer->get_type() == layer_type::target_unsupervised
-            )) {
+        && (std::type_index(next_layer_type) ==
+            std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
+            || std::type_index(next_layer_type) ==
+            std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
+            || std::type_index(next_layer_type) ==
+            std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
       View(*this->m_error_signal, *this->m_prev_error_signal);
       View(*this->m_error_signal_v, *this->m_error_signal,
            ALL, IR(0,this->m_error_signal->Width()));
@@ -182,7 +196,7 @@ class softmax_layer: public activation_layer {
 
   }
 
-  bool update_compute(void) {
+  bool update_compute() {
     return true;
   }
 
@@ -217,6 +231,6 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
   m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
 }
 
-}
+}  // namespace lbann
 
-#endif // LBANN_LAYER_SOFTMAX_HPP_INCLUDED
+#endif  // LBANN_LAYER_SOFTMAX_HPP_INCLUDED

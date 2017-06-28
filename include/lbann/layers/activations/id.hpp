@@ -40,9 +40,10 @@ class id_layer : public entrywise_activation_layer {
            lbann_comm *comm,
            int mini_batch_size) :
     entrywise_activation_layer(index, comm, mini_batch_size) { 
-     set_name("id_layer");
      initialize_distributed_matrices(); 
   }
+
+  std::string get_name() const { return "id"; }
 
   virtual DataType activation_function(DataType x)  {
      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");

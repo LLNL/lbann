@@ -49,75 +49,6 @@ namespace lbann {
 // Forward-declare this.
 class model;
 
-// @todo: check list of layer types
-/**
- * Different layer types.
- */
-enum class layer_type {
-  fully_connected,
-  convolution,
-  softmax,
-  activation,
-  pooling,
-  local_response_normalization,
-  dropout,
-  batch_normalization,
-  input_distributed_minibatch,
-  input_distributed_minibatch_parallel_io,
-  input_partitioned_minibatch_parallel_io,
-  target_distributed_minibatch,
-  target_distributed_minibatch_parallel_io,
-  target_partitioned_minibatch_parallel_io,
-  reconstruction,
-  INVALID
-};
-
-/**
- * Broad categories into which layers are divided.
- */
-enum class layer_category {
-  io,
-  learning,
-  activation,
-  regularizer,
-  transform,
-  special,
-  invalid
-};
-
-
-static layer_category __attribute__((used)) _layer_type_to_category(layer_type l) {
-  switch(l) {
-  case layer_type::fully_connected:
-  case layer_type::convolution:
-    return layer_category::learning;
-  case layer_type::softmax:
-  case layer_type::activation:
-    return layer_category::activation;
-  case layer_type::pooling:
-    return layer_category::transform;
-  case layer_type::local_response_normalization:
-  case layer_type::dropout:
-  case layer_type::batch_normalization:
-    return layer_category::regularizer;
-  case layer_type::input_distributed_minibatch:
-  case layer_type::input_distributed_minibatch_parallel_io:
-  case layer_type::input_partitioned_minibatch_parallel_io:
-  case layer_type::target_distributed_minibatch:
-  case layer_type::target_distributed_minibatch_parallel_io:
-  case layer_type::target_partitioned_minibatch_parallel_io:
-    return layer_category::io;
-  case layer_type::reconstruction:
-    return layer_category::special;
-  case layer_type::INVALID:
-    return layer_category::invalid;
-  default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid layer_type specified");
-  }
-  return layer_category::invalid;
-}
-
-
 class Layer {
  public:
   Layer(const int index, lbann_comm *comm, int mbsize);
@@ -150,20 +81,8 @@ class Layer {
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 
-  /** Return the layer type. */
-  inline layer_type get_type(void) const {
-    return m_type;
-  }
-
-  /** Return the layer name. */
-  inline std::string get_name() const { 
-    return m_name;
-  }
-
-  /** Set the layer name. **/
-  inline void set_name(std::string name) {
-    m_name = name;
-  }
+  /** Return this layer's name */
+  virtual std::string get_name() const = 0;
 
   /** Return the layer index. */
   inline int get_index(void) const {
@@ -263,11 +182,7 @@ class Layer {
  protected:
   int m_index;                 ///< Layer index (start with 0)
 
-  std::string m_name;
-
   lbann_comm *m_comm;
-
-  layer_type m_type;            ///< Layer type
 
   int m_num_neurons;                    ///< Number of neurons
   int m_num_neuron_dims;                ///< Number of dimensions in neuron tensor

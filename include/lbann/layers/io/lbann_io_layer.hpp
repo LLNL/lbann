@@ -354,6 +354,7 @@ class io_layer : public Layer {
     return m_for_regression;
   }
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_LAYERS_IO_LAYER_HPP_INCLUDED

@@ -51,8 +51,9 @@ class selu_layer : public entrywise_activation_layer {
     m_alpha(alpha), m_scale(scale)
   {
     initialize_distributed_matrices();
-    set_name("selu_layer");
   }
+
+  std::string get_name() const { return "SELU"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

@@ -83,12 +83,8 @@ class fully_connected_layer : public learning {
     : learning(index, mini_batch_size, comm, opt),
       m_weight_initialization(init) {
 
-    set_name("fully_connected");
-
     // Setup the data distribution
     initialize_distributed_matrices();
-
-    this->m_type = layer_type::fully_connected;
 
     this->m_index = index;
     this->m_num_neurons = num_neurons;
@@ -105,6 +101,8 @@ class fully_connected_layer : public learning {
     delete m_bias_weights_v;
     delete m_bias_weights_gradient_v;
   }
+
+  std::string get_name() const { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices(void);
   virtual inline data_layout get_data_layout() { return T_layout; }
