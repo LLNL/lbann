@@ -53,39 +53,39 @@ class Layer {
  public:
   Layer(const int index, lbann_comm *comm, int mbsize);
 
-  virtual ~Layer(void);
+  virtual ~Layer();
 
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
-  virtual void forwardProp(void);
-  virtual void backProp(void);
-  virtual bool update(void);
+  virtual void forwardProp();
+  virtual void backProp();
+  virtual bool update();
   virtual void summarize(lbann_summary& summarizer, int step);
   /**
    * Print information at the end of an epoch.
    * This is always called on the model masters and should synchronize
    * printing if needed.
    */
-  virtual void epoch_print(void) const {}
+  virtual void epoch_print() const {}
   /**
    * Called on every layer at the end of each epoch to give it the chance to
    * reset/clean up.
    */
-  virtual void epoch_reset(void) {}
+  virtual void epoch_reset() {}
   virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
     return 0.0;
   };
 
   virtual void setup(Layer *prev_layer, Layer *next_layer);
   /** Validate that the setup is reasonable. */
-  virtual void check_setup(void);
+  virtual void check_setup();
 
   /** Return this layer's name */
   virtual std::string get_name() const = 0;
 
   /** Return the layer index. */
-  inline int get_index(void) const {
+  inline int get_index() const {
     return m_index;
   }
   /** Set the layer index. */
@@ -93,31 +93,31 @@ class Layer {
     m_index = i;
   }
   /** Return the number of neurons from previous layer. */
-  inline int get_num_prev_neurons(void) const {
+  inline int get_num_prev_neurons() const {
     return m_num_prev_neurons;
   }
   /** Return the number of dimensions in neuron tensor from previous layer. */
-  inline int get_num_prev_neuron_dims(void) const {
+  inline int get_num_prev_neuron_dims() const {
     return m_num_prev_neuron_dims;
   }
   /** Return the dimensions of neuron tensor from previous layer. */
-  inline const std::vector<int>& get_prev_neuron_dims(void) const {
+  inline const std::vector<int>& get_prev_neuron_dims() const {
     return m_prev_neuron_dims;
   }
   /** Return the number of neurons. */
-  inline int get_num_neurons(void) const {
+  inline int get_num_neurons() const {
     return m_num_neurons;
   }
   /** Return the number of dimensions in neuron tensor. */
-  inline int get_num_neuron_dims(void) const {
+  inline int get_num_neuron_dims() const {
     return m_num_neuron_dims;
   }
   /** Return the dimensions of neuron tensor. */
-  inline const std::vector<int>& get_neuron_dims(void) const {
+  inline const std::vector<int>& get_neuron_dims() const {
     return m_neuron_dims;
   }
   /** Return the execution mode. */
-  inline execution_mode get_execution_mode(void) const {
+  inline execution_mode get_execution_mode() const {
     return m_execution_mode;
   }
   /** Set the execution mode. */
@@ -126,20 +126,20 @@ class Layer {
   }
   /** Return the data layout of the given layer -- Every concrete
       layer has to overrride this with its T_layout template parameter */
-  virtual inline data_layout get_data_layout() { return data_layout::MODEL_PARALLEL; };
+  virtual data_layout get_data_layout() const = 0;
   /** Return (a view of) the activations matrix for this layer. */
-  virtual ElMat& get_activations(void) {
+  virtual ElMat& get_activations() {
     return *m_activations;
   }
   /** Reset layer stat counters. */
-  virtual void reset_counters(void) {
+  virtual void reset_counters() {
     fp_time = 0.0;
     bp_time = 0.0;
     update_time = 0.0;
   }
 
   /** Return the size of mini-batch this layer uses. */
-  virtual int get_minibatch_size(void) const {
+  virtual int get_minibatch_size() const {
     return m_mini_batch_size;
   }
   /**
@@ -148,7 +148,7 @@ class Layer {
    * contributed than the local mini-batch size implies (e.g. when doing
    * inter-model updates).
    */
-  virtual int get_effective_minibatch_size(void) const {
+  virtual int get_effective_minibatch_size() const {
     return m_effective_mbsize;
   }
   /** Set the effective size of a mini-batch to size. */
@@ -156,19 +156,19 @@ class Layer {
     m_effective_mbsize = size;
   }
 
-  bool using_gpus(void) const {
+  bool using_gpus() const {
     return m_using_gpus;
   }
 
   /** Return the neural network model of this layer. */
-  inline model* get_neural_network_model(void) const {
+  inline model* get_neural_network_model() const {
     return m_neural_network_model;
   }
   /** Set the neural network model of this layer. */
   inline void set_neural_network_model(model* const m) {
     m_neural_network_model = m;
   }
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb(void) { return nullptr; };
+  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
   virtual bool saveToFile(int fd, const char *filename) { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
