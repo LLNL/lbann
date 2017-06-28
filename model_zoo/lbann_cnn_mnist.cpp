@@ -271,13 +271,13 @@ int main(int argc, char *argv[]) {
       pool_mode poolMode = pool_mode::max;
       pooling_layer<> *layer
         = new pooling_layer<>(4,
+                              comm,
+                              trainParams.MBSize,
                               numDims,
                               poolWindowDims,
                               poolPads,
                               poolStrides,
                               poolMode,
-                              trainParams.MBSize,
-                              comm,
                               cudnn);
       dnn.add(layer);
     }

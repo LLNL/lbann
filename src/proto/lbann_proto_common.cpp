@@ -310,25 +310,25 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new pooling_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           ell.num_dims(),
           &pool_dims[0],
           &pool_pads[0],
           &pool_strides[0],
           get_pool_mode(ell.pool_mode()),
-          mb_size,
-          comm,
           cudnn
         );
       } else {
         d = new pooling_layer<data_layout::DATA_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           ell.num_dims(),
           &pool_dims[0],
           &pool_pads[0],
           &pool_strides[0],
           get_pool_mode(ell.pool_mode()),
-          mb_size,
-          comm,
           cudnn
         );
       }
