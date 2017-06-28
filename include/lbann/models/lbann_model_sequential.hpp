@@ -42,7 +42,7 @@ class sequential_model : public model {
  public:
 
   /// Constructor
-  sequential_model(const uint mini_batch_size,
+  sequential_model(int mini_batch_size,
                    lbann_comm *comm,
                    objective_functions::objective_fn *obj_fn,
                    optimizer_factory *optimizer_fac);
@@ -59,10 +59,10 @@ class sequential_model : public model {
 
   /// Save model to checkpoint
   /** @todo This is old and likely broken */
-  bool save_to_checkpoint(int fd, const char *filename, uint64_t *bytes);
+  bool save_to_checkpoint(int fd, const char *filename, size_t *bytes);
   /// Load model from checkpoint
   /** @todo This is old and likely broken */
-  bool load_from_checkpoint(int fd, const char *filename, uint64_t *bytes);
+  bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
 
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
@@ -86,7 +86,7 @@ class sequential_model : public model {
   /** @todo Consider removing this function. The destructor
    *  deallocates all layers, so we might run into problems if a
    *  layer is deallocated externally. */
-  virtual uint add(Layer *new_layer);
+  virtual int add(Layer *new_layer);
 
   /// Remove layer from sequential model
   /** @todo This will mess up layer indices */
@@ -102,14 +102,8 @@ class sequential_model : public model {
   /// Replace layer in sequential model
   virtual Layer *swap(int index, Layer *new_layer);
 
-  /// Establish model layers' forward pass input pointers
-  virtual void set_fp_input(size_t start_index,size_t end_index);
-
-  /// Establish model layers' backward pass input pointers
-  virtual void set_bp_input(size_t start_index,size_t end_index);
-
   /// Setup sequential model
-  virtual void setup(size_t start_index=0,size_t end_index=0);
+  virtual void setup(int start_index=0, int end_index=0);
 
   /// Train model
   /** @param num_epochs Number of epochs to train

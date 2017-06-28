@@ -33,7 +33,7 @@ namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
   // Skip output layer.
-  if (l->get_index() == m->get_layers().size() - 1) {
+  if (l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
   ElMat& acts = l->get_activations();
@@ -48,7 +48,7 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
 
 void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
   // Skip input/output layers.
-  if (l->get_index() == 0 || l->get_index() == m->get_layers().size() - 1) {
+  if (l->get_index() == 0 || l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
   // Skip non-learning layers.

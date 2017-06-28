@@ -38,7 +38,7 @@ namespace lbann {
 class deep_neural_network : public sequential_model {
  public:
   /// Constructor
-  deep_neural_network(uint mini_batch_size,
+  deep_neural_network(int mini_batch_size,
                       lbann_comm *comm,
                       objective_functions::objective_fn *obj_fn,
                       optimizer_factory *_optimizer_fac);

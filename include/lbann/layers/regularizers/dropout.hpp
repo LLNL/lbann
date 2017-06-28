@@ -48,13 +48,14 @@ template <data_layout T_layout>
 class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(const uint index, const uint num_neurons, lbann_comm *comm,
-          uint mini_batch_size, float keep_prob=0.5f) :
+  dropout(int index,
+          lbann_comm *comm,
+          int mini_batch_size,
+          float keep_prob=0.5f) :
     regularizer_layer(index, comm, mini_batch_size),
     m_keep_prob(keep_prob) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_num_neurons = num_neurons;
   }
 
   ~dropout() {
@@ -65,6 +66,19 @@ class dropout : public regularizer_layer {
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }
+
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
+
+    // Initialize activations matrix
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+
+  }
 
  protected:
   /** Drop out units in forward propagation. */

@@ -49,10 +49,10 @@
 using namespace std;
 using namespace El;
 
-lbann::sequential_model::sequential_model(const uint mini_batch_size,
-    lbann_comm *comm,
-    objective_functions::objective_fn *obj_fn,
-    optimizer_factory *optimizer_fac)
+lbann::sequential_model::sequential_model(int mini_batch_size,
+                                          lbann_comm *comm,
+                                          objective_functions::objective_fn *obj_fn,
+                                          optimizer_factory *optimizer_fac)
   : model(comm, obj_fn, optimizer_fac),
     m_mini_batch_size(mini_batch_size)
     {}
@@ -134,7 +134,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir) {
   return true;
 }
 
-bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, uint64_t *bytes) {
+bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
   // write number of layers (we'll check this on read)
   int layers = m_layers.size();
   int write_rc = write(fd, &layers, sizeof(int));
@@ -155,7 +155,7 @@ bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, u
   return true;
 }
 
-bool lbann::sequential_model::load_from_checkpoint(int fd, const char *filename, uint64_t *bytes) {
+bool lbann::sequential_model::load_from_checkpoint(int fd, const char *filename, size_t *bytes) {
   // read number of layers
   unsigned int file_layers;
   int read_rc = read(fd, &file_layers, sizeof(unsigned int));
@@ -249,7 +249,7 @@ int lbann::sequential_model::num_previous_neurons() {
   return prev_layer->get_num_neurons();
 }
 
-uint lbann::sequential_model::add(Layer *new_layer) {
+int lbann::sequential_model::add(Layer *new_layer) {
   const uint layer_index = m_layers.size();
   new_layer->set_index(layer_index);
   m_layers.push_back(new_layer);
@@ -295,26 +295,23 @@ void lbann::sequential_model::set_bp_input(size_t start_index, size_t end_index)
   }
 }
 
-void lbann::sequential_model::setup(size_t start_index,size_t end_index) {
+void lbann::sequential_model::setup(int start_index, int end_index) {
   if(end_index <= 0) {
     end_index = m_layers.size();
   }
 
-  // Get properties from adjacent layers
-  set_fp_input(start_index, end_index);
-  set_bp_input(start_index, end_index);
-
   // Setup each layer
   int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->get_num_neurons() : -1;
-  for (size_t l=start_index; l<end_index; ++l) {
-    if (m_comm->am_world_master()) {
-      cout << std::setw(3) << l << ":[" << std::setw(15) << m_layers[l]->get_name() <<  "] Setting up a layer with input " << std::setw(7) << prev_layer_dim << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
-    }
+  for (int l=start_index; l<end_index; ++l) {
     m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    m_layers[l]->setup(prev_layer_dim);
+    Layer* prev_layer = l > 0 ? m_layers[l-1] : NULL;
+    Layer* next_layer = l < end_index-1 ? m_layers[l+1] : NULL;
+    m_layers[l]->setup(prev_layer, next_layer);
     m_layers[l]->check_setup();
-    prev_layer_dim = m_layers[l]->get_num_neurons();
     m_layers[l]->set_index(l);
+    if (m_comm->am_world_master()) {
+      cout << std::setw(3) << l << ":[" << std::setw(15) << m_layers[l]->get_name() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
+    }
   }
 
   // Set up callbacks

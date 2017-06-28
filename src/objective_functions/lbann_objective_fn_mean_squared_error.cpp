@@ -42,7 +42,7 @@ void mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   Zeros(m_errors, num_neurons, mini_batch_size);
 }
 
-void mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
 }
@@ -51,7 +51,7 @@ void mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
 /** MSE = (predictions-groundtruth)^T (predictions-groundtruth)
  */
 double mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v) {
-  const Int num_neurons = predictions_v.Height();
+  const int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
   return Pow(FrobeniusNorm(m_errors_v), 2) / num_neurons;
@@ -59,7 +59,7 @@ double mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMa
 
 /// Compute the average mean squared error over the mini-batch
 double mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
-  Int cur_mini_batch_size = groundtruth_v.Width();
+  int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
 

@@ -60,7 +60,7 @@ class lbann_callback_learning_rate : public lbann_callback {
   virtual float schedule(model *m, Layer *l) = 0;
   /** Return true if l is the last layer to update this epoch. */
   bool is_last_layer(const Layer *l) const {
-    return l->get_index() == m_last_idx;
+    return l->get_index() == (int) m_last_idx;
   }
  private:
   /** Indicies of layers to update. */

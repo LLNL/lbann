@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.

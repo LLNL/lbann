@@ -45,15 +45,15 @@ class reconstruction_layer : public target_layer {
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(size_t index,lbann_comm *comm,
+  reconstruction_layer(int index,
+                       lbann_comm *comm,
                        optimizer *opt,/*needed?*/
-                       const uint minim_batch_size,
+                       int minim_batch_size,
                        Layer *original_layer)
     :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_index = index;
-    this->m_num_neurons = original_layer->get_num_neurons();
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
   }
@@ -64,6 +64,16 @@ class reconstruction_layer : public target_layer {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
+
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    target_layer::setup(prev_layer, next_layer);
+
+    // Initialize other matrices
+    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
+    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
+  }
 
  protected:
   void fp_set_std_matrix_view() {

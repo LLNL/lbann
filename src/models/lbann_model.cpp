@@ -349,8 +349,8 @@ static bool read_latest(const char *dir, const char *name, int *epochLast, int *
 }
 
 struct lbann_checkpoint {
-  int64_t epoch; // current epoch number
-  int64_t step;  // current offset into list of training example indices array
+  int epoch; // current epoch number
+  int step;  // current offset into list of training example indices array
   float learning_rate; // current learning rate
 };
 
@@ -368,14 +368,14 @@ bool lbann::model::checkpointShared() {
   const char *dir = m_checkpoint_dir.c_str();
 
   // read current epoch and step counters from model
-  int64_t epoch = m_current_epoch;
-  int64_t step  = m_current_step;
+  int epoch = m_current_epoch;
+  int step  = m_current_step;
 
   // let user know we're saving a checkpoint
   MPI_Barrier(MPI_COMM_WORLD);
   if (m_rank == 0) {
     timer.Start();
-    printf("Checkpoint: epoch %ld step %ld ...\n", epoch, step);
+    printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
     fflush(stdout);
   }
 
@@ -385,7 +385,7 @@ bool lbann::model::checkpointShared() {
 
   // create subdirectory for this epoch
   char epochdir[1024];
-  snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%ld.step.%ld", dir, epoch, step);
+  snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
 
   // start our checkpoint
   lbann::persist p;
@@ -413,7 +413,7 @@ bool lbann::model::checkpointShared() {
     if (secs > 0.0) {
       bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("Checkpoint complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
+    printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
            epoch, step, secs, (unsigned long long) bytes_count, bw
           );
     fflush(stdout);
@@ -532,8 +532,8 @@ bool lbann::model::load_from_checkpoint_shared(lbann::persist& p) {
   // set our member params from values read from disk
   m_execution_mode     = (execution_mode) header.execution_mode;
   m_terminate_training = (bool)           header.terminate_training;
-  m_current_epoch      = (int64_t)        header.current_epoch;
-  m_current_step       = (int64_t)        header.current_step;
+  m_current_epoch      = (int)            header.current_epoch;
+  m_current_step       = (int)            header.current_step;
   m_current_phase      =                  header.current_phase;
 
   return true;

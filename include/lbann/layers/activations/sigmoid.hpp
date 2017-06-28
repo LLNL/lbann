@@ -38,10 +38,11 @@ namespace lbann {
 template <data_layout T_layout>
 class sigmoid_layer : public entrywise_activation_layer {
  public:
-  sigmoid_layer(uint index, lbann_comm *comm,
-                const uint mini_batch_size, uint num_neurons) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) { 
+
+  sigmoid_layer(int index,
+                lbann_comm *comm,
+                int mini_batch_size) :
+    entrywise_activation_layer(index, comm, mini_batch_size) { 
     initialize_distributed_matrices(); 
   }
 

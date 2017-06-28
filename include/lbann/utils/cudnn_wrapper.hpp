@@ -78,7 +78,7 @@ class cudnn_manager {
    *  @param max_num_gpus  Maximum Number of available GPUs. If
    *                       negative, then use all available GPUs.
    */
-  cudnn_manager(lbann::lbann_comm *_comm, Int max_num_gpus = -1);
+  cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus = -1);
 
   /** Destructor */
   ~cudnn_manager();
@@ -89,78 +89,78 @@ class cudnn_manager {
   cudnnDataType_t get_cudnn_data_type() const;
 
   /** Get number of GPUs assigned to current process. */
-  Int get_num_gpus() const;
+  int get_num_gpus() const;
   /** Get number of GPUs on current node. */
-  Int get_num_total_gpus() const;
+  int get_num_total_gpus() const;
   /** Get GPUs. */
   std::vector<int>& get_gpus();
   /** Get GPUs (const). */
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
-  int get_gpu(Int i=0) const;
+  int get_gpu(int i=0) const;
   /** Get CUDA streams. */
   std::vector<cudaStream_t>& get_streams();
   /** Get CUDA streams (const). */
   const std::vector<cudaStream_t>& get_streams() const;
   /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(Int i=0);
+  cudaStream_t& get_stream(int i=0);
   /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(Int i=0) const;
+  const cudaStream_t& get_stream(int i=0) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
   const std::vector<cudnnHandle_t>& get_handles() const;
   /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(Int i=0);
+  cudnnHandle_t& get_handle(int i=0);
   /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(Int i=0) const;
+  const cudnnHandle_t& get_handle(int i=0) const;
   /** Get GPU work spaces. */
   std::vector<void *> get_work_spaces();
   /** Get ith GPU work space. */
-  void *get_work_space(Int i=0);
+  void *get_work_space(int i=0);
   /** Get GPU work space sizes (in bytes). */
   std::vector<size_t> get_work_space_sizes();
   /** Get GPU work space sizes (in bytes) (const). */
   const std::vector<size_t> get_work_space_sizes() const;
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(Int i=0) const;
+  size_t get_work_space_size(int i=0) const;
   /** Set ith GPU work space size (in bytes). */
-  void set_work_space_size(Int i, size_t size);
+  void set_work_space_size(int i, size_t size);
 
   /** Allocate memory on GPUs. */
   void allocate_on_gpus(std::vector<DataType *>& gpu_data,
-                        Int height,
-                        Int width_per_gpu);
+                        int height,
+                        int width_per_gpu);
   /** Deallocate memory on GPUs. */
   void deallocate_on_gpus(std::vector<DataType *>& gpu_data);
 
   /** Zero out memory on GPUs. */
   void clear_on_gpus(std::vector<DataType *>& gpu_data,
-                     Int height,
-                     Int width_per_gpu);
+                     int height,
+                     int width_per_gpu);
   /** Zero out memory corresponding to unused columns on GPUs. */
   void clear_unused_columns_on_gpus(std::vector<DataType *>& gpu_data,
-                                    Int height,
-                                    Int width,
-                                    Int width_per_gpu);
+                                    int height,
+                                    int width,
+                                    int width_per_gpu);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
                     const std::vector<DataType *>& gpu_src_data,
-                    Int height,
-                    Int width_per_gpu);
+                    int height,
+                    int width_per_gpu);
   /** Copy data from CPU to GPUs.
    *  Matrix columns are scattered amongst GPUs.
    */
   void scatter_to_gpus(std::vector<DataType *>& gpu_data,
                        const Mat& cpu_data,
-                       Int width_per_gpu);
+                       int width_per_gpu);
   /** Copy data from GPUs to CPU.
    *  Matrix columns are gathered from GPUs.
    */
   void gather_from_gpus(Mat& cpu_data,
                         const std::vector<DataType *>& gpu_data,
-                        Int width_per_gpu);
+                        int width_per_gpu);
   /** Copy data from CPU to GPUs.
    *  Data is duplicated across GPUs.
    */
@@ -193,9 +193,9 @@ class cudnn_manager {
   lbann::lbann_comm *comm;
 
   /** Number of GPUs for current process. */
-  Int m_num_gpus;
+  int m_num_gpus;
   /** Number of available GPUs. */
-  Int m_num_total_gpus;
+  int m_num_total_gpus;
 
   /** List of GPUs. */
   std::vector<int> m_gpus;
@@ -203,8 +203,6 @@ class cudnn_manager {
   std::vector<cudaStream_t> m_streams;
   /** List of cuDNN handles. */
   std::vector<cudnnHandle_t> m_handles;
-  /** Pinned memory addresses. */
-  std::map<void *, size_t> pinned_ptr;
 
   /** List of GPU work spaces. */
   std::vector<void *> m_work_spaces;

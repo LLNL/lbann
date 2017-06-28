@@ -99,16 +99,16 @@ void adam::update(const AbsDistMat *gradient) {
                                / (DataType(1) - m_current_beta1));
 
   // Get local matrix data
-  const Int local_height = m_parameters->LocalHeight();
-  const Int local_width = m_parameters->LocalWidth();
+  const int local_height = m_parameters->LocalHeight();
+  const int local_width = m_parameters->LocalWidth();
   DataType *parameters_buffer = m_parameters->Buffer();
-  const Int parameters_ldim = m_parameters->LDim();
+  const int parameters_ldim = m_parameters->LDim();
   const DataType *gradient_buffer = gradient->LockedBuffer();
-  const Int gradient_ldim = gradient->LDim();
+  const int gradient_ldim = gradient->LDim();
   DataType *moment1_buffer = m_moment1->Buffer();
-  const Int moment1_ldim = m_moment1->LDim();
+  const int moment1_ldim = m_moment1->LDim();
   DataType *moment2_buffer = m_moment2->Buffer();
-  const Int moment2_ldim = m_moment2->LDim();
+  const int moment2_ldim = m_moment2->LDim();
 
   // Check if matrix data is contiguous
   if(parameters_ldim != local_height
@@ -117,8 +117,8 @@ void adam::update(const AbsDistMat *gradient) {
       || moment2_ldim != local_height) {
     // Update with non-contiguous data
     #pragma omp parallel for collapse(2)
-    for(Int j=0; j<local_width; ++j) {
-      for(Int i=0; i<local_height; ++i) {
+    for(int j=0; j<local_width; ++j) {
+      for(int i=0; i<local_height; ++i) {
         DataType& x = parameters_buffer[i+j*parameters_ldim];
         // See below; avoid denormalization.
         const DataType g = gradient_buffer[i+j*gradient_ldim] + m_eps;
@@ -132,7 +132,7 @@ void adam::update(const AbsDistMat *gradient) {
   } else {
     // Update with contiguous data
     #pragma omp parallel for
-    for(Int i=0; i<local_height*local_width; ++i) {
+    for(int i=0; i<local_height*local_width; ++i) {
       DataType& x = parameters_buffer[i];
       // We add eps here because sometimes the gradient is small enough that
       // g*g can become denormalized, which can significantly impact the

@@ -38,7 +38,7 @@ using namespace El;
 
 // layer definition
 const std::vector<int> g_LayerDim = {784, 100, 30, 10};
-const uint g_NumLayers = g_LayerDim.size(); // # layers
+const int g_NumLayers = g_LayerDim.size(); // # layers
 
 const string g_cifar10_dir = "/p/lscratchf/brainusr/datasets/cifar10-bin/";
 const string g_cifar10_train = "data_all.bin";
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
                                                           };
 
     //first layer
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
     //second layer
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     dnn.add("softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
     //fifth layer
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       cout << "Layer initialized:" << endl;
-      for (uint n = 0; n < g_NumLayers; n++) {
+      for (int n = 0; n < g_NumLayers; n++) {
         cout << "\tLayer[" << n << "]: " << g_LayerDim[n] << endl;
       }
       cout << endl;

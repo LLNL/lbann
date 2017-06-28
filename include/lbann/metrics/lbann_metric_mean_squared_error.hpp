@@ -43,7 +43,7 @@ class mean_squared_error : public metric {
   ~mean_squared_error();
 
   void setup(int num_neurons, int mini_batch_size);
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
   double report_metric(execution_mode mode);

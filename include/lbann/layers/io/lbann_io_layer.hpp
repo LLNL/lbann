@@ -52,7 +52,11 @@ class io_layer : public Layer {
   const bool m_for_regression;
 
  public:
-  io_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool data_sets_span_models = true, bool for_regression = false)
+  io_layer(lbann_comm *comm,
+           int mini_batch_size,
+           std::map<execution_mode, generic_data_reader *> data_readers,
+           bool data_sets_span_models = true,
+           bool for_regression = false)
     : Layer(0, comm, mini_batch_size),
       m_training_dataset(data_readers[execution_mode::training]),
       m_testing_dataset(data_readers[execution_mode::testing]),
@@ -76,7 +80,7 @@ class io_layer : public Layer {
     Layer::initialize_distributed_matrices<T_layout>();
   }
 
-  // io_layer(lbann_comm* comm, uint mini_batch_size, generic_data_reader *training_data_reader)
+  // io_layer(lbann_comm* comm, int mini_batch_size, generic_data_reader *training_data_reader)
   //   : io_layer(comm, mini_batch_size, training_data_reader, NULL, {}) {}
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader) {
@@ -167,6 +171,19 @@ class io_layer : public Layer {
     default:
       throw lbann_exception("lbann_io_layer: invalid execution phase");
     }
+  }
+
+  const std::vector<int> get_data_dims() {
+    if(m_training_dataset.data_reader != NULL) {
+      return m_training_dataset.data_reader->get_data_dims();
+    }
+    if(m_validation_dataset.data_reader != NULL) {
+      return m_validation_dataset.data_reader->get_data_dims();
+    }
+    if(m_testing_dataset.data_reader != NULL) {
+      return m_testing_dataset.data_reader->get_data_dims();
+    }
+    return std::vector<int>(1, 0);
   }
 
   long get_linearized_data_size() {
