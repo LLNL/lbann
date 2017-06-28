@@ -47,13 +47,14 @@ class sgd : public optimizer {
    DataType decay_rate = DataType(0),
    bool nesterov = false);
   sgd(const sgd& other);
+  sgd& operator=(const sgd& other);
   /// Destructor
   ~sgd();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
-
+  std::string name() const { return "sgd"; }
  private:
   /// Number of iterations
   int m_iterations;
@@ -63,7 +64,6 @@ class sgd : public optimizer {
   DataType m_decay;
   /// Nesterov acceleration
   bool m_nesterov;
-
   /// Velocity term for momentum SGD
   AbsDistMat *m_velocity;
 

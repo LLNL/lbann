@@ -55,8 +55,8 @@ class learning : public Layer {
 
  public:
   learning(int index, 
-           int mini_batch_size,
            lbann_comm *comm,
+           int mini_batch_size,
            optimizer *opt)
     : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
     }

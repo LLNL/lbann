@@ -194,13 +194,17 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
     //second layer
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
-                                                        100,trainParams.MBSize,
-                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    1,
+                    comm, 
+                    trainParams.MBSize,
+                    100,
+                    weight_initialization::glorot_uniform, 
+                    optimizer_fac->create_optimizer());
     dnn.add(fc1);
 
     Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
@@ -213,9 +217,13 @@ int main(int argc, char *argv[]) {
     dnn.add(dropout1);
 
     //third layer 
-    Layer *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(4,
-                                                        30, trainParams.MBSize,
-                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
+    Layer *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    4,
+                    comm, 
+                    trainParams.MBSize,
+                    30, 
+                    weight_initialization::glorot_uniform, 
+                    optimizer_fac->create_optimizer());
     dnn.add(fc2);
 
     Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(5, comm,
@@ -228,10 +236,13 @@ int main(int argc, char *argv[]) {
                                                trainParams.DropOut);
     dnn.add(dropout2);
 
-    Layer *fc3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(7,
-                                                        10, trainParams.MBSize,
-                                                        weight_initialization::glorot_uniform,
-                                                        comm, optimizer_fac->create_optimizer(),
+    Layer *fc3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    7,
+                    comm, 
+                    trainParams.MBSize,
+                    10, 
+                    weight_initialization::glorot_uniform,
+                    optimizer_fac->create_optimizer(),
                                                         false);
     dnn.add(fc3);
     
@@ -244,7 +255,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     //fifth layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;

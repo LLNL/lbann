@@ -74,13 +74,13 @@ class fully_connected_layer : public learning {
   // [Acts     ]
 
   fully_connected_layer(int index,
-                        int num_neurons,  // TODO: accept a vector for neuron dims
-                        int mini_batch_size,
-                        weight_initialization init,
                         lbann_comm *comm,
+                        int mini_batch_size,
+                        int num_neurons,  // TODO: accept a vector for neuron dims
+                        weight_initialization init,
                         optimizer *opt,
                         bool has_bias = true)
-    : learning(index, mini_batch_size, comm, opt),
+    : learning(index, comm, mini_batch_size, opt),
       m_weight_initialization(init) {
 
     // Setup the data distribution
@@ -105,7 +105,7 @@ class fully_connected_layer : public learning {
   std::string get_name() const { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices(void);
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);

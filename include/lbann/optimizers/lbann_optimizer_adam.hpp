@@ -46,12 +46,14 @@ class adam : public optimizer {
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
   adam(const adam& other);
+  adam& operator=(const adam& other);
   /// Destructor
   ~adam();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
+  std::string name() const { return "adam"; }
  private:
   /// Update factor for first moment estimate
   DataType m_beta1;

@@ -41,6 +41,9 @@ class top_k_categorical_accuracy : public metric {
  public:
   top_k_categorical_accuracy(data_layout data_dist, int top_k,
                              lbann_comm *comm);
+  top_k_categorical_accuracy(const top_k_categorical_accuracy& other) = default;
+  top_k_categorical_accuracy& operator=(
+    const top_k_categorical_accuracy& other) = default;
   ~top_k_categorical_accuracy();
 
   void initialize_model_parallel_distribution();

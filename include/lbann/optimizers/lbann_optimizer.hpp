@@ -41,11 +41,11 @@ class optimizer {
  public:
 
   /// Constructor
-  optimizer(lbann_comm *comm, const std::string name,
+  optimizer(lbann_comm *comm,
             DataType learning_rate = DataType(0));
   optimizer(const optimizer&) = default;
   // const members mean no copy assignment.
-  optimizer& operator=(const optimizer&) = delete;
+  optimizer& operator=(const optimizer&) = default;
 
   /// Destructor
   virtual ~optimizer();
@@ -72,9 +72,7 @@ class optimizer {
   }
 
   /// Get optimizer name
-  const string name() const {
-    return m_name;
-  }
+  virtual std::string name() const = 0;
 
  protected:
   /// LBANN communicator
@@ -89,11 +87,6 @@ class optimizer {
   matrix_format m_matrix_format;
   /// Learning rate
   DataType m_learning_rate;
-
- private:
-  /// Optimizer name
-  const std::string m_name;
-
 };
 
 /// Optimizer factory base class

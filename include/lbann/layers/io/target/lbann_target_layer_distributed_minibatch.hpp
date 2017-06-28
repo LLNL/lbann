@@ -56,7 +56,7 @@ class target_layer_distributed_minibatch : public target_layer {
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   virtual void setup(Layer *prev_layer, Layer *next_layer) {
     target_layer::setup(prev_layer, next_layer);

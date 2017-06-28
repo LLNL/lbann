@@ -44,12 +44,14 @@ class rmsprop : public optimizer {
    DataType decay_rate,
    DataType eps = DataType(1e-8));
   rmsprop(const rmsprop& other);
+  rmsprop& operator=(const rmsprop& other);
   /// Destructor
   ~rmsprop();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
+  std::string name() const { return "rmsprop"; }
  private:
   /// Decay rate
   DataType m_decay_rate;

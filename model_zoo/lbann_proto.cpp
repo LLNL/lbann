@@ -44,9 +44,12 @@ int main(int argc, char *argv[]) {
     bool ltfb = Input("--ltfb", "run ltfb", false);
 
     //get input prototext filenames
-    string prototext_model_fn = Input("--prototext_fn", "prototext model filename", "none");
-    string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename", "none");
-    string prototext_opt_fn = Input("--prototext_opt_fn", "prototext optimizer filename", "none");
+    string prototext_model_fn = Input("--prototext_fn", "prototext model filename",
+                                      std::string("none"));
+    string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename",
+                                   std::string("none"));
+    string prototext_opt_fn = Input("--prototext_opt_fn", "prototext optimizer filename",
+                                    std::string("none"));
 
     //Get optional over-rides for various fields in the prototext.
     //If you add anything here, also change the section below:

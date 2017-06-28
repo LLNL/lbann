@@ -30,9 +30,8 @@
 
 namespace lbann {
 
-optimizer::optimizer(lbann_comm *comm, const std::string name,
-                     DataType learning_rate)
-  : m_comm(comm), m_learning_rate(learning_rate), m_name(name) {}
+optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
+  : m_comm(comm), m_learning_rate(learning_rate) {}
 
 optimizer::~optimizer() {}
 

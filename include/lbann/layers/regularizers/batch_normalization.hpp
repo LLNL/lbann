@@ -86,7 +86,7 @@ class batch_normalization : public regularizer_layer {
   std::string get_name() const { return "batch normalization"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   /** Initializes matrices. */
   virtual void setup(Layer *prev_layer, Layer *next_layer) {

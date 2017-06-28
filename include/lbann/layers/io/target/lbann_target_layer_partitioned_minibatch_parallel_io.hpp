@@ -41,7 +41,7 @@ namespace lbann {
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch_parallel_io {
  public:
-  target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
+  target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
@@ -53,7 +53,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   virtual void setup(Layer *prev_layer, Layer *next_layer) {
     target_layer::setup(prev_layer, next_layer);

@@ -39,6 +39,8 @@ namespace objective_functions {
 class statistics {
  public:
   statistics() {}
+  statistics(const statistics& other) = default;
+  statistics& operator=(const statistics& other) = default;
 
   ~statistics() {}
 
@@ -62,6 +64,8 @@ class statistics {
 class objective_fn {
  public:
   objective_fn() {}
+  objective_fn(const objective_fn& other) = default;
+  objective_fn& operator=(const objective_fn& other) = default;
   virtual ~objective_fn() {}
   virtual void setup(int num_neurons, int mini_batch_size) {}
   virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}

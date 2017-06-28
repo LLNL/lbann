@@ -68,13 +68,13 @@ class pooling_layer : public transform {
  public:
   /// Constructor
   pooling_layer(int index,
+                lbann_comm *comm,
+                int mini_batch_size,
                 int num_data_dims,
                 const int *pool_dims,
                 const int *pool_pads,
                 const int *pool_strides,
                 pool_mode _pool_mode,
-                int mini_batch_size,
-                lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm, mini_batch_size),
       m_pool_mode(_pool_mode) {
@@ -149,7 +149,7 @@ class pooling_layer : public transform {
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);

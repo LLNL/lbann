@@ -35,7 +35,7 @@ namespace lbann {
 
 adam::adam(lbann_comm *comm, DataType learning_rate, DataType beta1,
            DataType beta2, DataType eps)
-  : optimizer(comm, "adam", learning_rate),
+  : optimizer(comm, learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
@@ -53,6 +53,23 @@ adam::adam(const adam& other)
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
   }
+}
+
+adam& adam::operator=(const adam& other) {
+  optimizer::operator=(other);
+  m_beta1 = other.m_beta1;
+  m_beta2 = other.m_beta2;
+  m_eps = other.m_eps;
+  m_current_beta1 = other.m_current_beta1;
+  m_current_beta2 = other.m_current_beta2;
+  if (other.m_moment1) {
+    m_moment1 = other.m_moment1->Copy();
+    m_moment2 = other.m_moment2->Copy();
+  } else {
+    m_moment1 = nullptr;
+    m_moment2 = nullptr;
+  }
+  return *this;
 }
 
 adam::~adam() {

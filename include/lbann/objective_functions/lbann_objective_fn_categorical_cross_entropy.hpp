@@ -36,6 +36,9 @@ namespace objective_functions {
 class categorical_cross_entropy : public objective_fn {
  public:
   categorical_cross_entropy(lbann_comm *comm);
+  categorical_cross_entropy(const categorical_cross_entropy& other) = default;
+  categorical_cross_entropy& operator=(
+    const categorical_cross_entropy& other) = default;
   ~categorical_cross_entropy();
 
   void setup(int num_neurons, int mini_batch_size);

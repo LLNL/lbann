@@ -77,7 +77,7 @@ class softmax_layer : public activation_layer {
   std::string get_name() const { return "softmax"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);

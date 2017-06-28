@@ -58,7 +58,7 @@ class id_layer : public entrywise_activation_layer {
   virtual inline void initialize_distributed_matrices() {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void fp_compute() {
     El::View(*this->m_activations, *this->m_prev_activations);

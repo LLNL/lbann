@@ -98,17 +98,17 @@ class convolution_layer : public learning {
   public:
 
   convolution_layer(int index,
+                    lbann_comm *comm,
+                    int mini_batch_size,
                     int num_data_dims,
                     int num_output_channels,
                     const int *conv_dims,
                     const int *conv_pads,
                     const int *conv_strides,
-                    int mini_batch_size,
                     weight_initialization init,
-                    lbann_comm *comm,
                     optimizer *opt,
                     cudnn::cudnn_manager *cudnn = NULL)
-    : learning(index, mini_batch_size, comm, opt),
+    : learning(index, comm, mini_batch_size, opt),
       m_weight_initialization(init) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -201,7 +201,7 @@ class convolution_layer : public learning {
   void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);

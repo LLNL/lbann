@@ -36,6 +36,8 @@ namespace objective_functions {
 class mean_squared_error : public objective_fn {
  public:
   mean_squared_error(lbann_comm *comm);
+  mean_squared_error(const mean_squared_error& other) = default;
+  mean_squared_error& operator=(const mean_squared_error& other) = default;
   ~mean_squared_error();
 
   void setup(int num_neurons, int mini_batch_size);
