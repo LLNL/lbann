@@ -37,6 +37,8 @@ class categorical_accuracy : public metric {
  public:
   /// Constructor
   categorical_accuracy(data_layout data_dist, lbann_comm *comm);
+  categorical_accuracy(const categorical_accuracy& other);
+  categorical_accuracy& operator=(const categorical_accuracy& other);
 
   /// Destructor
   ~categorical_accuracy();
@@ -54,17 +56,19 @@ class categorical_accuracy : public metric {
   std::string display_unit() const { return "%"; }
 
  protected:
-  AbsDistMat *YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
-  StarMat YsColMaxStar; /// Fully replicated set of the column max matrix
+  /// The maximum value within each minibatch (column).
+  AbsDistMat *m_prediction_col_maxes;
+  /// m_prediction_col_maxes, replicated onto every rank.
+  StarMat m_replicated_prediction_col_maxes;
   Mat m_max_index;    /// Local array to hold max indicies
   Mat m_reduced_max_indices;  /// Local array to build global view of maximum indicies
-  //    Mat Y_local;
 
-  AbsDistMat *YsColMax_v;
-  StarMat YsColMaxStar_v;
+  /// View of m_prediction_col_maxes for the current minibatch size.
+  AbsDistMat *m_prediction_col_maxes_v;
+  /// View of m_replicated_prediction_col_maxes for the current minibatch size.
+  StarMat m_replicated_prediction_col_maxes_v;
   Mat m_max_index_v;
   Mat m_reduced_max_indices_v;
-  //    Mat Y_local_v;
 
   int m_max_mini_batch_size;
 };

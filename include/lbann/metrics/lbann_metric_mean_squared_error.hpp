@@ -38,6 +38,8 @@ class mean_squared_error : public metric {
  public:
   /// Constructor
   mean_squared_error(data_layout data_dist, lbann_comm *comm);
+  mean_squared_error(const mean_squared_error& other) = default;
+  mean_squared_error& operator=(const mean_squared_error& other) = default;
 
   /// Destructor
   ~mean_squared_error();

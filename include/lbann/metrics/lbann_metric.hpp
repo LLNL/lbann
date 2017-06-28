@@ -41,6 +41,8 @@ namespace metrics {
 class statistics {
  public:
   statistics() {}
+  statistics(const statistics& other) = default;
+  statistics& operator=(const statistics& other) = default;
   ~statistics() {}
 
   void reset_stats() {
@@ -70,6 +72,10 @@ class metric {
     m_comm(comm) {
     m_data_layout = data_dist;
   }
+
+  // m_comm and the model pointer are not changed-- copy by value.
+  metric(const metric& other) = default;
+  metric& operator=(const metric& other) = default;
 
   /// Destructor
   virtual ~metric() {};

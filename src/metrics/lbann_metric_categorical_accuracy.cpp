@@ -33,8 +33,8 @@ namespace metrics {
 
 categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
-    YsColMaxStar(comm->get_model_grid()),
-    YsColMaxStar_v(comm->get_model_grid()) {
+    m_replicated_prediction_col_maxes(comm->get_model_grid()),
+    m_replicated_prediction_col_maxes_v(comm->get_model_grid()) {
 
   // Setup the data distribution
   switch(data_dist) {
@@ -51,28 +51,56 @@ categorical_accuracy::categorical_accuracy(data_layout data_dist, lbann_comm *co
   }
 }
 
+categorical_accuracy::categorical_accuracy(const categorical_accuracy& other) :
+  metric(other), m_prediction_col_maxes(other.m_prediction_col_maxes->Copy()),
+  m_replicated_prediction_col_maxes(other.m_replicated_prediction_col_maxes),
+  m_max_index(other.m_max_index),
+  m_reduced_max_indices(other.m_reduced_max_indices),
+  m_prediction_col_maxes_v(other.m_prediction_col_maxes_v->Copy()),
+  m_replicated_prediction_col_maxes_v(other.m_replicated_prediction_col_maxes_v),
+  m_max_index_v(other.m_max_index_v),
+  m_reduced_max_indices_v(other.m_reduced_max_indices_v),
+  m_max_mini_batch_size(other.m_max_mini_batch_size) {}
+
+categorical_accuracy& categorical_accuracy::operator=(
+  const categorical_accuracy& other) {
+  metric::operator=(other);
+  m_prediction_col_maxes = other.m_prediction_col_maxes->Copy();
+  m_replicated_prediction_col_maxes =
+    other.m_replicated_prediction_col_maxes;
+  m_max_index = other.m_max_index;
+  m_reduced_max_indices = other.m_reduced_max_indices;
+  m_prediction_col_maxes_v = other.m_prediction_col_maxes_v->Copy();
+  m_replicated_prediction_col_maxes_v =
+    other.m_replicated_prediction_col_maxes_v;
+  m_max_index_v = other.m_max_index_v;
+  m_reduced_max_indices_v = other.m_reduced_max_indices_v;
+  m_max_mini_batch_size = other.m_max_mini_batch_size;
+  return *this;
+}
+
 categorical_accuracy::~categorical_accuracy() {
-  delete YsColMax;
-  delete YsColMax_v;
+  delete m_prediction_col_maxes;
+  delete m_prediction_col_maxes_v;
 }
 
 /// Workspace matrices should be in MR,Star distributions
 void categorical_accuracy::initialize_model_parallel_distribution() {
-  YsColMax = new ColSumMat(m_comm->get_model_grid());
-  YsColMax_v = new ColSumMat(m_comm->get_model_grid());
+  m_prediction_col_maxes = new ColSumMat(m_comm->get_model_grid());
+  m_prediction_col_maxes_v = new ColSumMat(m_comm->get_model_grid());
 }
 
 /// Workspace matrices should be in VC,Star distributions
 void categorical_accuracy::initialize_data_parallel_distribution() {
-  YsColMax = new ColSumStarVCMat(m_comm->get_model_grid());
-  YsColMax_v = new ColSumStarVCMat(m_comm->get_model_grid());
+  m_prediction_col_maxes = new ColSumStarVCMat(m_comm->get_model_grid());
+  m_prediction_col_maxes_v = new ColSumStarVCMat(m_comm->get_model_grid());
 }
 
 void categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
   // Clear the contents of the intermediate matrices
-  Zeros(*YsColMax, mini_batch_size, 1);
-  Zeros(YsColMaxStar, mini_batch_size, 1);
+  Zeros(*m_prediction_col_maxes, mini_batch_size, 1);
+  Zeros(m_replicated_prediction_col_maxes, mini_batch_size, 1);
   Zeros(m_max_index, mini_batch_size, 1); // Clear the entire matrix
   Zeros(m_reduced_max_indices, mini_batch_size, 1); // Clear the entire matrix
   m_max_mini_batch_size = mini_batch_size;
@@ -81,40 +109,45 @@ void categorical_accuracy::setup(int num_neurons, int mini_batch_size) {
 void categorical_accuracy::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   // Note that these matrices are transposed (column max matrices) and thus the mini-batch size effects the number of rows, not columns
-  View(*YsColMax_v, *YsColMax, IR(0, cur_mini_batch_size), IR(0, YsColMax->Width()));
-  View(YsColMaxStar_v, YsColMaxStar, IR(0, cur_mini_batch_size), IR(0, YsColMaxStar.Width()));
-  View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size), IR(0, m_max_index.Width()));
-  View(m_reduced_max_indices_v, m_reduced_max_indices, IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
+  View(*m_prediction_col_maxes_v, *m_prediction_col_maxes,
+       IR(0, cur_mini_batch_size), IR(0, m_prediction_col_maxes->Width()));
+  View(m_replicated_prediction_col_maxes_v, m_replicated_prediction_col_maxes,
+       IR(0, cur_mini_batch_size),
+       IR(0, m_replicated_prediction_col_maxes.Width()));
+  View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size),
+       IR(0, m_max_index.Width()));
+  View(m_reduced_max_indices_v, m_reduced_max_indices,
+       IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
 }
 
 double categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
 
   // Clear the contents of the intermediate matrices
-  Zeros(*YsColMax, m_max_mini_batch_size, 1);
-  Zeros(YsColMaxStar, m_max_mini_batch_size, 1);
+  Zeros(*m_prediction_col_maxes, m_max_mini_batch_size, 1);
+  Zeros(m_replicated_prediction_col_maxes, m_max_mini_batch_size, 1);
 
   /// Compute the error between the previous layers activations and the ground truth
   /// For each minibatch (column) find the maximimum value
   switch(m_data_layout) {
   case data_layout::MODEL_PARALLEL:
-    ColumnMaxNorms((DistMat) predictions_v, *((ColSumMat *) YsColMax_v));
+    ColumnMaxNorms((DistMat) predictions_v, *((ColSumMat *) m_prediction_col_maxes_v));
     break;
   case data_layout::DATA_PARALLEL:
-    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) YsColMax_v));
+    ColumnMaxNorms((StarVCMat) predictions_v, *((ColSumStarVCMat *) m_prediction_col_maxes_v));
     break;
   default:
     throw lbann_exception(std::string{} + __FILE__ + " " +
                           std::to_string(__LINE__) +
                           "Invalid data layout selected");
   }
-  Copy(*YsColMax_v, YsColMaxStar_v); /// Give every rank a copy so that they can find the max index locally
+  Copy(*m_prediction_col_maxes_v, m_replicated_prediction_col_maxes_v); /// Give every rank a copy so that they can find the max index locally
 
   Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 
   /// Find which rank holds the index for the maxmimum value
   for(int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
     int mb_global_index = predictions_v.GlobalCol(mb_index);
-    DataType sample_max = YsColMaxStar_v.GetLocal(mb_global_index, 0);
+    DataType sample_max = m_replicated_prediction_col_maxes_v.GetLocal(mb_global_index, 0);
     for(int f_index = 0; f_index < predictions_v.LocalHeight(); f_index++) { /// For each feature
       if(predictions_v.GetLocal(f_index, mb_index) == sample_max) {
         m_max_index_v.Set(mb_global_index, 0, predictions_v.GlobalRow(f_index));
@@ -125,7 +158,9 @@ double categorical_accuracy::compute_metric(ElMat& predictions_v, ElMat& groundt
   Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
   /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
   /// Note that this has to operate on the raw buffer, not the view
-  m_comm->model_allreduce(m_max_index.Buffer(), m_max_index.Height() * m_max_index.Width(), m_reduced_max_indices.Buffer(), mpi::MAX);
+  m_comm->model_allreduce(m_max_index.Buffer(),
+                          m_max_index.Height() * m_max_index.Width(),
+                          m_reduced_max_indices.Buffer(), mpi::MAX);
 
   /// Check to see if the predicted results match the target results
   int num_errors = 0;
