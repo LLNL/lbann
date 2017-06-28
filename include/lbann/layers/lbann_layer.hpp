@@ -77,7 +77,7 @@ class Layer {
     return 0.0;
   };
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer);
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer);
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 
@@ -204,8 +204,8 @@ class Layer {
 
  protected:
 
-  Layer *m_prev_layer;  ///< Pointer to previous layer
-  Layer *m_next_layer;  ///< Pointer to next layer
+  const Layer *m_prev_layer;  ///< Pointer to previous layer
+  const Layer *m_next_layer;  ///< Pointer to next layer
 
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
@@ -219,6 +219,10 @@ class Layer {
   virtual void fp_set_std_matrix_view();
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view();
+  /** Pin host memory if needed for GPU memory transfers during layer's forward propagation. */
+  virtual void fp_pin_memory();
+  /** Pin host memory if needed for GPU memory transfers during layer's backward propagation. */
+  virtual void bp_pin_memory();
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */

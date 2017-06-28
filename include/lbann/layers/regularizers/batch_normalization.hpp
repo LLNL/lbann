@@ -89,7 +89,7 @@ class batch_normalization : public regularizer_layer {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   /** Initializes matrices. */
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
 
     // Initialize neuron tensor dimensions

@@ -47,8 +47,8 @@ void categorical_cross_entropy::fp_set_std_matrix_view(int cur_mini_batch_size) 
 /// cost=-1/m*(sum(sum(groundTruth.*log(a))))
 /// predictions_v - a.k.a. coding_dist - coding distribution (e.g. prev_activations)
 /// groundtruth_v - a.k.a. true_dist - true distribution (e.g. activations)
-double categorical_cross_entropy::compute_categorical_cross_entropy(ElMat& predictions_v,
-                                                                    ElMat& groundtruth_v) {
+double categorical_cross_entropy::compute_categorical_cross_entropy(const AbsDistMat& predictions_v,
+                                                                    const AbsDistMat& groundtruth_v) {
 
   // Compute categorical cross entropy on current process
   double total_error = 0;
@@ -73,7 +73,8 @@ double categorical_cross_entropy::compute_categorical_cross_entropy(ElMat& predi
 }
 
 /// Compute the average categorical cross entropy over the mini-batch
-double categorical_cross_entropy::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
+double categorical_cross_entropy::compute_obj_fn(const AbsDistMat& predictions_v,
+                                                 const AbsDistMat& groundtruth_v) {
   int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_categorical_cross_entropy(predictions_v, groundtruth_v);
@@ -83,14 +84,15 @@ double categorical_cross_entropy::compute_obj_fn(ElMat& predictions_v, ElMat& gr
   return avg_error;
 }
 
-void categorical_cross_entropy::compute_obj_fn_derivative(
-  Layer* prev_layer, ElMat& predictions_v, ElMat& groundtruth_v,
-  ElMat& error_signal_v) {
+void categorical_cross_entropy::compute_obj_fn_derivative(const Layer& prev_layer,
+                                                          const AbsDistMat& predictions_v,
+                                                          const AbsDistMat& groundtruth_v,
+                                                          AbsDistMat& error_signal_v) {
   // Compute error signal (softmax output layer case)
   // Note: error_signal = predictions - groundtruth
-  if (std::type_index(typeid(*prev_layer)) ==
+  if (std::type_index(typeid(prev_layer)) ==
       std::type_index(typeid(softmax_layer<data_layout::MODEL_PARALLEL>)) ||
-      std::type_index(typeid(*prev_layer)) ==
+      std::type_index(typeid(prev_layer)) ==
       std::type_index(typeid(softmax_layer<data_layout::DATA_PARALLEL>))) {
     Copy(predictions_v, error_signal_v);
     Axpy(DataType(-1), groundtruth_v, error_signal_v);

@@ -42,7 +42,7 @@ const int g_ImageNet_Height = 256;
 
 
 
-//#define PARTITIONED
+// #define PARTITIONED
 
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
@@ -431,8 +431,8 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           11,
           comm,
-          numDims,
           trainParams.MBSize,
+          numDims,
           outputChannels,
           filterDims,
           convPads,

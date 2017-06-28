@@ -62,7 +62,7 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
     std::stringstream err;
 

@@ -107,7 +107,7 @@ class fully_connected_layer : public learning {
   virtual inline void initialize_distributed_matrices(void);
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(Layer *prev_layer, Layer *next_layer) {
+  void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
 
     // Initialize matrices
