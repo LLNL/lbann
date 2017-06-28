@@ -436,22 +436,22 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
           lrn_k,
-          mb_size,
-          comm,
           cudnn);
       } else {
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
           lrn_k,
-          mb_size,
-          comm,
           cudnn);
       }
       all_layers[layer.index()] = d;

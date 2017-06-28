@@ -391,12 +391,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           3,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
@@ -464,12 +464,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           7,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
