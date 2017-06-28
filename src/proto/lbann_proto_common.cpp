@@ -799,6 +799,7 @@ void init_callbacks(
   bool master = comm->am_world_master();
 
   const lbann_data::Model& m = p.model();
+  lbann_summary *summarizer = nullptr;
 
   if (master) cerr << endl << "starting init_callbacks; size: " << m.callback_size() << endl;
 
@@ -841,8 +842,7 @@ void init_callbacks(
       if (master) {
         cout << "adding timer callback with dir: " << c.dir() << endl;
       }
-      lbann_summary *summarizer = nullptr;
-      if (c.dir() != "none") {
+      if (c.dir() != "none" && !summarizer) {
         summarizer = new lbann_summary(c.dir(), comm);
       }
       lbann_callback_timer *timer_cb = new lbann_callback_timer(summarizer);
@@ -857,9 +857,13 @@ void init_callbacks(
       if (master) {
         cout << "adding summary callback with dir: " << c.dir() << endl;
       }
-      lbann_summary *summarizer = nullptr;
-      if (c.dir() != "none") {
+      if (c.dir() != "none" && !summarizer) {
         summarizer = new lbann_summary(c.dir(), comm);
+      }
+      if (!summarizer) {
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+          "summary callback requires a valid summarizer directory");
       }
       lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.interval());
       model->add_callback(summary_cb);
