@@ -169,8 +169,13 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
    else()
      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
    endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")
+  # Version requirement for xlc++? The latest compiler on ray is 14.1.0
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.1.0)
+    message(WARNING "LBANN & Elemental may not work with xlc++ Version < 14.1.0")
+  endif()
 else()
-   message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor")
+   message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor (${CMAKE_CXX_COMPILER_ID})")
 endif()
 
 ################################################################
