@@ -203,14 +203,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       }
       all_layers[layer.index()] = d;
@@ -226,14 +226,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       }
       all_layers[layer.index()] = d;
@@ -740,16 +740,16 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
         d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
@@ -767,16 +767,16 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());

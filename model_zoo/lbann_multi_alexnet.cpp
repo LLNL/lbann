@@ -230,16 +230,16 @@ int main(int argc, char *argv[]) {
     Layer *input_layer =
       new input_layer_partitioned_minibatch_parallel_io<>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers);
     dnn->add(input_layer);
 #else
     Layer *input_layer =
       new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers);
     dnn->add(input_layer);
 #endif
@@ -585,8 +585,8 @@ int main(int argc, char *argv[]) {
     Layer *target_layer =
       new target_layer_partitioned_minibatch_parallel_io<>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers,
         true);
     dnn->add(target_layer);
@@ -594,8 +594,8 @@ int main(int argc, char *argv[]) {
     Layer *target_layer =
       new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers,
         true);
     dnn->add(target_layer);

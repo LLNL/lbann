@@ -343,9 +343,9 @@ int main(int argc, char *argv[]) {
    dnn->add_metric(new metrics::categorical_accuracy(DATA_LAYOUT/*::DATA_PARALLEL*/, comm));
     // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, trainParams.MBSize, parallel_io, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers);
 #endif
     dnn->add(input_layer);
 
@@ -700,9 +700,9 @@ int main(int argc, char *argv[]) {
 
     // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, trainParams.MBSize, parallel_io, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
 #endif
     dnn->add(target_layer);
 
