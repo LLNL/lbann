@@ -125,9 +125,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   void bp_compute() {
 
     // Compute initial error signal
-    // TODO: Replace with previous layer pointer.
-    Layer* prev_layer = this->m_neural_network_model->get_layers()[this->m_index - 1];
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(prev_layer,
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer,
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);

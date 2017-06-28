@@ -29,6 +29,7 @@
 #ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
+#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/lbann_layer.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
@@ -40,6 +41,13 @@
 #include <string>
 #include <typeinfo>
 #include <typeindex>
+
+// Forward declaration.
+namespace lbann {
+namespace objective_functions {
+class categorical_cross_entropy;
+}
+}
 
 namespace lbann {
 
@@ -143,10 +151,8 @@ class softmax_layer : public activation_layer {
 
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
-    /*const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
-    // TODO: Replace this with using prev/next layer pointers.
-    const std::type_info& next_layer_type =
-      typeid(*(this->m_neural_network_model->get_layers()[this->m_index + 1]));
+    const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
+    const std::type_info& next_layer_type = typeid(*m_next_layer);
     // Note: Assumes next layer uses same data distribution.
     if (std::type_index(obj_fn_type) ==
         std::type_index(typeid(objective_functions::categorical_cross_entropy))
@@ -160,7 +166,7 @@ class softmax_layer : public activation_layer {
       View(*this->m_error_signal_v, *this->m_error_signal,
            ALL, IR(0,this->m_error_signal->Width()));
       return;
-      }*/
+    }
 
     // Get local matrices and parameters
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
