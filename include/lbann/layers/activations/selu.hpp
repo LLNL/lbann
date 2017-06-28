@@ -58,7 +58,7 @@ class selu_layer : public entrywise_activation_layer {
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
  protected:
   DataType activation_function(DataType z) {

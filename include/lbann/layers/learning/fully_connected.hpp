@@ -105,7 +105,7 @@ class fully_connected_layer : public learning {
   std::string get_name() const { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices(void);
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);

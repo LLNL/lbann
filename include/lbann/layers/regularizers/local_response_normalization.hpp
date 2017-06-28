@@ -128,7 +128,7 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  virtual data_layout get_data_layout() const { return T_layout; }
 
   virtual void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
