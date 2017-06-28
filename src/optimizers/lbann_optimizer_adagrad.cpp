@@ -32,13 +32,24 @@
 namespace lbann {
 
 adagrad::adagrad(lbann_comm *comm, DataType learning_rate, DataType eps)
-  : optimizer(comm, "adagrad", learning_rate), m_eps(eps), m_cache(nullptr) {}
+  : optimizer(comm, learning_rate), m_eps(eps), m_cache(nullptr) {}
 
 adagrad::adagrad(const adagrad& other) : optimizer(other), m_eps(other.m_eps),
                                          m_cache(nullptr) {
   if (other.m_cache) {
     m_cache = other.m_cache->Copy();
   }
+}
+
+adagrad& adagrad::operator=(const adagrad& other) {
+  optimizer::operator=(other);
+  m_eps = other.m_eps;
+  if (other.m_cache) {
+    m_cache = other.m_cache->Copy();
+  } else {
+    m_cache = nullptr;
+  }
+  return *this;
 }
 
 adagrad::~adagrad() {

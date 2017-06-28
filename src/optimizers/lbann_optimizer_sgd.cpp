@@ -33,7 +33,7 @@ namespace lbann {
 
 sgd::sgd(lbann_comm *comm, DataType learning_rate, DataType momentum,
          DataType decay, bool nesterov)
-  : optimizer(comm, "sgd", learning_rate),
+  : optimizer(comm, learning_rate),
     m_momentum(momentum),
     m_decay(decay),
     m_nesterov(nesterov) {}
@@ -45,6 +45,20 @@ sgd::sgd(const sgd& other) :
   if (other.m_velocity) {
     m_velocity = other.m_velocity->Copy();
   }
+}
+
+sgd& sgd::operator=(const sgd& other) {
+  optimizer::operator=(other);
+  m_iterations = other.m_iterations;
+  m_momentum = other.m_momentum;
+  m_decay = other.m_decay;
+  m_nesterov = other.m_nesterov;
+  if (other.m_velocity) {
+    m_velocity = other.m_velocity->Copy();
+  } else {
+    m_velocity = nullptr;
+  }
+  return *this;
 }
 
 sgd::~sgd() {

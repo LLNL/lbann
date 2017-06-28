@@ -53,12 +53,14 @@ class hypergradient_adam : public optimizer {
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
   hypergradient_adam(const hypergradient_adam& other);
+  hypergradient_adam& operator=(const hypergradient_adam& other);
   /// Destructor
   ~hypergradient_adam();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
+  std::string name() const { return "hypergradient adam"; }
  private:
   /// Hypergradient learning rate.
   DataType m_hyper_learning_rate;

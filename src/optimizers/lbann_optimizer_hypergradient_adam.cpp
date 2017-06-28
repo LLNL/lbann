@@ -40,7 +40,7 @@ hypergradient_adam::hypergradient_adam(
   DataType beta1,
   DataType beta2,
   DataType eps) :
-  optimizer(comm, "hypergradient_adam", init_learning_rate),
+  optimizer(comm, init_learning_rate),
   m_hyper_learning_rate(hyper_learning_rate),
   m_beta1(beta1), m_beta2(beta2), m_eps(eps), m_current_beta1(1),
   m_current_beta2(1), m_moment1(nullptr), m_moment2(nullptr),
@@ -57,6 +57,26 @@ hypergradient_adam::hypergradient_adam(const hypergradient_adam& other) :
     m_moment2 = other.m_moment2->Copy();
     m_old_gradient = other.m_old_gradient->Copy();
   }
+}
+
+hypergradient_adam& hypergradient_adam::operator=(
+  const hypergradient_adam& other) {
+  optimizer::operator=(other);
+  m_beta1 = other.m_beta1;
+  m_beta2 = other.m_beta2;
+  m_eps = other.m_eps;
+  m_current_beta1 = other.m_current_beta1;
+  m_current_beta2 = other.m_current_beta2;
+  if (other.m_moment1) {
+    m_moment1 = other.m_moment1->Copy();
+    m_moment2 = other.m_moment2->Copy();
+    m_old_gradient = other.m_old_gradient->Copy();
+  } else {
+    m_moment1 = nullptr;
+    m_moment2 = nullptr;
+    m_old_gradient = nullptr;
+  }
+  return *this;
 }
 
 hypergradient_adam::~hypergradient_adam() {

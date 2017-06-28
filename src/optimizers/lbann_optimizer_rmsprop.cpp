@@ -33,7 +33,7 @@ namespace lbann {
 
 rmsprop::rmsprop(lbann_comm *comm, DataType learning_rate, DataType decay_rate,
                  DataType eps)
-  : optimizer(comm, "rmsprop", learning_rate),
+  : optimizer(comm, learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
@@ -43,6 +43,18 @@ rmsprop::rmsprop(const rmsprop& other) :
   if (other.m_cache) {
     m_cache = other.m_cache->Copy();
   }
+}
+
+rmsprop& rmsprop::operator=(const rmsprop& other) {
+  optimizer::operator=(other);
+  m_decay_rate = other.m_decay_rate;
+  m_eps = other.m_eps;
+  if (other.m_cache) {
+    m_cache = other.m_cache->Copy();
+  } else {
+    m_cache = nullptr;
+  }
+  return *this;
 }
 
 rmsprop::~rmsprop() {

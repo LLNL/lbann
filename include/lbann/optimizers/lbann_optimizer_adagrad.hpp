@@ -42,12 +42,14 @@ class adagrad : public optimizer {
    DataType learning_rate,
    DataType eps = DataType(1e-8));
   adagrad(const adagrad& other);
+  adagrad& operator=(const adagrad& other);
   /// Destructor
   ~adagrad();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
+  std::string name() const { return "adagrad"; }
  private:
   /// Small factor to avoid division by zero
   DataType m_eps;
