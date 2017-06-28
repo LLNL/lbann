@@ -249,19 +249,19 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
+          mb_size,
+          ell.num_neurons(),
+          get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
+          mb_size,
+          ell.num_neurons(),
+          get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
       }
@@ -378,28 +378,28 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           num_dims,
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
           &conv_strides[0],
-          mb_size,
           get_weight_initialization(ell.weight_initialization()),
-          comm,
           model->create_optimizer(),
           cudnn
         );
       } else {
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           num_dims,
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
           &conv_strides[0],
-          mb_size,
           get_weight_initialization(ell.weight_initialization()),
-          comm,
           model->create_optimizer(),
           cudnn
         );

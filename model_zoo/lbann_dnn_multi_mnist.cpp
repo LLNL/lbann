@@ -200,10 +200,10 @@ int main(int argc, char *argv[]) {
     int fcidx1 = layer_id;
     Layer *fc1 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
-       1024,
-       trainParams.MBSize,
-       weight_initialization::glorot_uniform,
        comm,
+       trainParams.MBSize,
+       1024,
+       weight_initialization::glorot_uniform,
        dnn.create_optimizer());
     dnn.add(fc1);
 
@@ -226,10 +226,10 @@ int main(int argc, char *argv[]) {
     int fcidx2 = layer_id;
     Layer *fc2 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
-       1024,
-       trainParams.MBSize,
-       weight_initialization::glorot_uniform,
        comm,
+       trainParams.MBSize,
+       1024,
+       weight_initialization::glorot_uniform,
        dnn.create_optimizer());
     dnn.add(fc2);
 
@@ -252,10 +252,10 @@ int main(int argc, char *argv[]) {
     int fcidx3 = layer_id;
     Layer *fc3 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
-       1024,
-       trainParams.MBSize,
-       weight_initialization::glorot_uniform,
        comm,
+       trainParams.MBSize,
+       1024,
+       weight_initialization::glorot_uniform,
        dnn.create_optimizer());
     dnn.add(fc3);
 
@@ -278,10 +278,10 @@ int main(int argc, char *argv[]) {
     int fcidx4 = layer_id;
     Layer *fc4 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
-       10,
-       trainParams.MBSize,
-       weight_initialization::glorot_uniform,
        comm,
+       trainParams.MBSize,
+       10,
+       weight_initialization::glorot_uniform,
        dnn.create_optimizer(),
        false);
     dnn.add(fc4);

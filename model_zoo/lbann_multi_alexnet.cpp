@@ -254,14 +254,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           1,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -326,14 +326,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           5,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -398,14 +398,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           9,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -430,14 +430,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           11,
+          comm,
           numDims,
+          trainParams.MBSize,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -462,14 +462,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           13,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -509,10 +509,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           16,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer());
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
@@ -536,10 +536,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           19,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer());
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
@@ -564,10 +564,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           22,
-          1000,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          1000,
+          weight_initialization::he_normal,
           dnn->create_optimizer(),
           false);
       fc->set_l2_regularization_factor(0.0005);

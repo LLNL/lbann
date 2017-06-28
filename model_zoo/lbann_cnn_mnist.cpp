@@ -213,14 +213,14 @@ int main(int argc, char *argv[]) {
 
       convolution_layer<> *layer
         = new convolution_layer<>(1,
+                                  comm,
+                                  trainParams.MBSize,
                                   numDims,
                                   outputChannels,
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  trainParams.MBSize,
                                   weight_initialization::glorot_uniform,
-                                  comm,
                                   convolution_layer_optimizer,
                                   cudnn);
       dnn.add(layer);
@@ -243,14 +243,14 @@ int main(int argc, char *argv[]) {
 
       convolution_layer<> *layer
         = new convolution_layer<>(3,
+                                  comm,
+                                  trainParams.MBSize,
                                   numDims,
                                   outputChannels,
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  trainParams.MBSize,
                                   weight_initialization::glorot_uniform,
-                                  comm,
                                   convolution_layer_optimizer,
                                   cudnn);
       dnn.add(layer);
@@ -285,10 +285,10 @@ int main(int argc, char *argv[]) {
     // First fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
-                                                                         128,
-                                                                         trainParams.MBSize,
-                                                                         weight_initialization::glorot_uniform,
                                                                          comm,
+                                                                         trainParams.MBSize,
+                                                                         128,
+                                                                         weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer());
       dnn.add(fc);
       Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(6,
@@ -306,10 +306,10 @@ int main(int argc, char *argv[]) {
     // Second fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
-                                                                         10,
-                                                                         trainParams.MBSize,
-                                                                         weight_initialization::glorot_uniform,
                                                                          comm,
+                                                                         trainParams.MBSize,
+                                                                         10,
+                                                                         weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer(),
                                                                          false);
       dnn.add(fc);
