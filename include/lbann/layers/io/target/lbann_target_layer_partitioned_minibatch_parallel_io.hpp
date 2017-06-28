@@ -46,7 +46,6 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::target_partitioned_minibatch_parallel_io;
     //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
@@ -123,7 +122,9 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   void bp_compute(void) {
 
     // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type,
+    // TODO: Replace with previous layer pointer.
+    Layer* prev_layer = this->m_neural_network_model->get_layers()[this->m_index - 1];
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(prev_layer,
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);

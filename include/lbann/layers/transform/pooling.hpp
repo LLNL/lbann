@@ -92,7 +92,6 @@ class pooling_layer : public transform {
   m_num_dims(num_dims), m_num_channels(num_channels) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::pooling;
 
     // Initialize input dimensions and pooling parameters
     m_input_dims.resize(num_dims);

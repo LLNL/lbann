@@ -65,7 +65,6 @@ class batch_normalization : public regularizer_layer {
       m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::batch_normalization;
     this->m_num_neurons = num_neurons;
   }
 

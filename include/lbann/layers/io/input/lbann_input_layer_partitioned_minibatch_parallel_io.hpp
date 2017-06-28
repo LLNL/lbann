@@ -47,7 +47,6 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::input_partitioned_minibatch_parallel_io;
   }
 
   std::string get_name() const { return "input layer partitioned minibatch parallel io"; }

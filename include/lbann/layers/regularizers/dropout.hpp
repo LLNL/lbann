@@ -54,7 +54,6 @@ class dropout : public regularizer_layer {
     m_keep_prob(keep_prob) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
   }
 

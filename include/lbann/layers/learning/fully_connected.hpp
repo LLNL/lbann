@@ -93,8 +93,6 @@ class fully_connected_layer : public learning {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    this->m_type = layer_type::fully_connected;
-
     this->m_index = index;
     this->m_num_neurons = numNeurons;
     WBL2NormSum = 0.0;

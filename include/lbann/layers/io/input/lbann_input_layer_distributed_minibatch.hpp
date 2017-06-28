@@ -48,7 +48,6 @@ class input_layer_distributed_minibatch : public input_layer {
     : input_layer(comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::input_distributed_minibatch;
 
     //  m_index = index;
     this->m_root = 0;

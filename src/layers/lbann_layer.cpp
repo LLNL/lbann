@@ -73,7 +73,6 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
 Layer::Layer(const uint index, lbann_comm *comm, uint mbsize)
   : m_index(index),
     m_comm(comm),
-    m_type(layer_type::INVALID), m_prev_layer_type(layer_type::INVALID), m_next_layer_type(layer_type::INVALID),
     m_execution_mode(execution_mode::training),
     m_cudnn(nullptr),
     m_mini_batch_size(mbsize),
@@ -350,14 +349,6 @@ void Layer::setup_bp_input_d(std::vector<DataType *> *bp_input_d) {
   this->bp_input_d = bp_input_d;
 }
 #endif
-
-void Layer::set_prev_layer_type(layer_type type) {
-  this->m_prev_layer_type = type;
-}
-
-void Layer::set_next_layer_type(layer_type type) {
-  this->m_next_layer_type = type;
-}
 
 bool Layer::using_gpus() const {
   return m_using_gpus;

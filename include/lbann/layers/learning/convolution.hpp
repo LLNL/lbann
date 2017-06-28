@@ -129,8 +129,6 @@ class convolution_layer : public learning {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    this->m_type = layer_type::convolution;
-
     // Initialize input dimensions and convolution parameters
     m_input_dims.resize(m_num_dims);
     m_filter_dims.resize(m_num_dims);

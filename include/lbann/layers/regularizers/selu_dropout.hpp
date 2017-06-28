@@ -54,7 +54,6 @@ class selu_dropout : public regularizer_layer {
 #endif
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::dropout;
     this->m_num_neurons = num_neurons;
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;

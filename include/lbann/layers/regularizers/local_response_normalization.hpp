@@ -84,7 +84,6 @@ class local_response_normalization_layer : public regularizer_layer {
   m_lrn_k(lrn_k) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::local_response_normalization;
 
     // Initialize data dimensions
     m_dims.resize(num_dims);

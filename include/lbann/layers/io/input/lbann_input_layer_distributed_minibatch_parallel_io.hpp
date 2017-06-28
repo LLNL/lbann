@@ -52,7 +52,6 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
 
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_type = layer_type::input_distributed_minibatch;
   }
 
   std::string get_name() const { return "input layer distributed minibatch parallel io"; }

@@ -275,7 +275,6 @@ void lbann::sequential_model::set_fp_input(size_t start_index, size_t end_index)
   // Get properties from previous layers
   // Note: the first layer has no previous layer
   for (size_t l = std::max(start_index, (size_t) 1); l < end_index; ++l) {
-    m_layers[l]->set_prev_layer_type(m_layers[l-1]->get_type());
     m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
 #ifdef __LIB_CUDNN
     m_layers[l]->setup_fp_input_d(m_layers[l-1]->fp_output_d());
@@ -288,7 +287,6 @@ void lbann::sequential_model::set_bp_input(size_t start_index, size_t end_index)
   // Get properties from next layers
   // Note: the last layer has no next layer
   for (Int l=end_index-2; l>=Max(start_index-1,0); --l) {
-    m_layers[l]->set_next_layer_type(m_layers[l+1]->get_type());
     m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
 #ifdef __LIB_CUDNN
     m_layers[l]->setup_bp_input_d(m_layers[l+1]->bp_output_d());
