@@ -59,7 +59,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     target_layer::setup(prev_layer, next_layer);
 
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
@@ -125,7 +125,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   void bp_compute() {
 
     // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer,
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer,
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);

@@ -130,7 +130,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
 
     // Initialize neuron tensor dimensions

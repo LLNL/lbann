@@ -61,7 +61,7 @@ class input_layer_distributed_minibatch : public input_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(Layer *prev_layer, Layer *next_layer) {
+  void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,

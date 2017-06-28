@@ -70,13 +70,14 @@ class objective_fn {
   virtual void setup(int num_neurons, int mini_batch_size) {}
   virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
   /// Compute the object function -- Note that it is averaged across a mini-batch
-  virtual double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
+  virtual double compute_obj_fn(const AbsDistMat& predictions_v,
+                                const AbsDistMat& groundtruth_v) {
     return 0.0;
   }
-  virtual void compute_obj_fn_derivative(Layer* prev_layer,
-                                         ElMat& predictions_v,
-                                         ElMat& groundtruth_v,
-                                         ElMat& error_signal_v) {}
+  virtual void compute_obj_fn_derivative(const Layer& prev_layer,
+                                         const AbsDistMat& predictions_v,
+                                         const AbsDistMat& groundtruth_v,
+                                         AbsDistMat& error_signal_v) {}
 
   statistics *get_statistics(execution_mode mode);
   double report_obj_fn(execution_mode mode);
