@@ -79,7 +79,6 @@ model {
     parent: 2
     data_layout: "model_parallel"
     relu {
-      num_neurons: 1000
     }
   }
 
@@ -105,7 +104,6 @@ model {
     parent: 5
     data_layout: "model_parallel"
     relu {
-      num_neurons: 500
     }
   }
 
@@ -131,7 +129,6 @@ model {
     parent: 8
     data_layout: "model_parallel"
     relu {
-      num_neurons: 250
     }
   }
 
@@ -171,7 +168,6 @@ model {
     parent: 11
     data_layout: "model_parallel"
     relu {
-      num_neurons: 250
     }
   }
 
@@ -198,7 +194,6 @@ model {
     parent: 13
     data_layout: "model_parallel"
     relu {
-      num_neurons: 500
     }
   }
 
@@ -224,7 +219,6 @@ model {
     parent: 15
     data_layout: "model_parallel"
     relu {
-      num_neurons: 1000
     }
   }
 
@@ -250,7 +244,6 @@ model {
     parent: 16
     data_layout: "model_parallel"
     relu {
-      num_neurons: 784
     }
   }
 
