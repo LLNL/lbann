@@ -137,9 +137,9 @@ void add_layers(
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, cudnn);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -152,9 +152,9 @@ void add_layers(
       } else {
         d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -187,9 +187,9 @@ void add_layers(
           all_layers[original_layer]
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -213,9 +213,9 @@ void add_layers(
           mb_size,
           data_readers);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -236,9 +236,9 @@ void add_layers(
           mb_size,
           data_readers);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -269,9 +269,9 @@ void add_layers(
       if(l2_regularization_factor != double(0.0)) {
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -333,9 +333,9 @@ void add_layers(
         );
       }
 
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -409,9 +409,9 @@ void add_layers(
       if(l2_regularization_factor != double(0.0)) {
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -454,9 +454,9 @@ void add_layers(
           comm,
           cudnn);
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -483,9 +483,9 @@ void add_layers(
           ell.scale()
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -510,9 +510,9 @@ void add_layers(
           ell.gamma(),
           ell.beta());
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -537,9 +537,9 @@ void add_layers(
           ell.scale()
         );
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -560,9 +560,9 @@ void add_layers(
           mb_size
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -583,9 +583,9 @@ void add_layers(
           mb_size
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -606,9 +606,9 @@ void add_layers(
           mb_size
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -631,9 +631,9 @@ void add_layers(
           ell.leak()
         );
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -654,9 +654,9 @@ void add_layers(
           mb_size
         );  
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -679,9 +679,9 @@ void add_layers(
           ell.alpha()
         );
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -702,9 +702,9 @@ void add_layers(
           mb_size,
           ell.keep_prob());
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -727,9 +727,9 @@ void add_layers(
           model->create_optimizer()
         );
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -754,9 +754,9 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -781,9 +781,9 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       }
-      model->add(d);
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
     }
   }
 }
@@ -928,6 +928,9 @@ void init_callbacks(
             throw lbann_exception(err.str());
           }
           which.insert(layer_mapping.find(a)->second);
+          if (master) {
+            cout << "CALLBACK: imcomm: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << endl;
+          }
         }
       }
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method());
