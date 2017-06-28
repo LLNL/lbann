@@ -577,11 +577,17 @@ class convolution_layer : public learning {
 
     }
 
-    // Transfer outputs from GPUs to CPU
-    this->m_cudnn->reduce_from_gpus(this->m_weights_gradient->Matrix(),
-                                    m_weights_gradient_d);
+    // Transfer outputs from GPUs to CPU and reduce
+    this->m_cudnn->gather_from_gpus(m_weights_gradient_per_gpu.Matrix(),
+                                    m_weights_gradient_d, 1);
+    El::Zero(*this->m_weights_gradient);
+    this->m_cudnn->synchronize();
+    for(int i=0; i<num_gpus; ++i) {
+      *this->m_weights_gradient += m_weights_gradient_per_gpu(ALL, IR(i));
+    }
+    El::AllReduce(*this->m_weights_gradient,
+                  this->m_weights_gradient->RedundantComm());
     *this->m_weights_gradient *= DataType(1) / this->get_effective_minibatch_size();
-    AllReduce(*this->m_weights_gradient, this->m_weights_gradient->RedundantComm());
 
   #endif // #ifndef __LIB_CUDNN
   }
