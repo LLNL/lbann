@@ -51,8 +51,7 @@ class activation_layer : public Layer {
  public:
   activation_layer(int index,
                    lbann_comm *comm,
-                   int mini_batch_size,
-                   int num_neurons  /** TODO: Remove. This is not used */) :
+                   int mini_batch_size) :
     Layer(index, comm, mini_batch_size) {
     this->m_type = layer_type::activation;
   }
@@ -70,9 +69,8 @@ class entrywise_activation_layer : public activation_layer {
  public:
   entrywise_activation_layer(int index,
                              lbann_comm *comm,
-                             int mini_batch_size,
-                             int num_neurons  /** TODO: Remove. This is not used */) :
-    activation_layer(index, comm, mini_batch_size, num_neurons) {
+                             int mini_batch_size) :
+    activation_layer(index, comm, mini_batch_size) {
   }
 
   virtual ~entrywise_activation_layer() {}

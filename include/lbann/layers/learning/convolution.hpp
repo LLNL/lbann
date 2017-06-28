@@ -99,8 +99,6 @@ class convolution_layer : public learning {
 
   convolution_layer(int index,
                     int num_data_dims,
-                    int num_input_channels,  // TODO: Remove. This is not used.
-                    const int *input_dims,   // TODO: Remove. This is not used.
                     int num_output_channels,
                     const int *conv_dims,
                     const int *conv_pads,

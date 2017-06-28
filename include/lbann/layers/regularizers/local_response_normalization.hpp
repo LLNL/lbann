@@ -61,9 +61,6 @@ class local_response_normalization_layer : public regularizer_layer {
  public:
   local_response_normalization_layer
   (int index,
-   int num_data_dims,  /** TODO: Remove. This is not used */
-   int num_channels,  /** TODO: Remove. This is not used */
-   const int *dims,  /** TODO: Remove. This is not used */
    int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,

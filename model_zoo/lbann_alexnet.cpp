@@ -353,8 +353,6 @@ int main(int argc, char *argv[]) {
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
-      int inputChannels = 3;
-      int inputDims[] = {256, 256};
       int outputChannels = 96;
       int filterDims[] = {11, 11};
       int convPads[] = {0, 0};
@@ -363,8 +361,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           1,
           numDims,
-          inputChannels,
-          inputDims,
           outputChannels,
           filterDims,
           convPads,
@@ -381,7 +377,6 @@ int main(int argc, char *argv[]) {
           2,
           comm,
           trainParams.MBSize,
-          layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
     }
@@ -389,8 +384,6 @@ int main(int argc, char *argv[]) {
     // Layer 2 (LRN)
     {
       int numDims = 2;
-      int channels = 96;
-      int dims[] = {62, 62};
       int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
@@ -398,9 +391,6 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           3,
-          numDims,
-          channels,
-          dims,
           windowWidth,
           alpha,
           beta,
@@ -414,8 +404,6 @@ int main(int argc, char *argv[]) {
     // Layer 3 (pooling)
     {
       int numDims = 2;
-      int channels = 96;
-      int inputDim[] = {62, 62};
       int poolWindowDims[] = {3, 3};
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
@@ -424,8 +412,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           4,
           numDims,
-          channels,
-          inputDim,
           poolWindowDims,
           poolPads,
           poolStrides,
@@ -440,8 +426,6 @@ int main(int argc, char *argv[]) {
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
-      int inputChannels = 96;
-      int inputDims[] = {30, 30};
       int outputChannels = 256;
       int filterDims[] = {5, 5};
       int convPads[] = {2, 2};
@@ -450,8 +434,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           5,
           numDims,
-          inputChannels,
-          inputDims,
           outputChannels,
           filterDims,
           convPads,
@@ -468,7 +450,6 @@ int main(int argc, char *argv[]) {
           6,
           comm,
           trainParams.MBSize,
-          layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
     }
@@ -476,8 +457,6 @@ int main(int argc, char *argv[]) {
     // Layer 5 (LRN)
     {
       int numDims = 2;
-      int channels = 256;
-      int dims[] = {30, 30};
       int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
@@ -485,9 +464,6 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           7,
-          numDims,
-          channels,
-          dims,
           windowWidth,
           alpha,
           beta,
@@ -501,8 +477,6 @@ int main(int argc, char *argv[]) {
     // Layer 6 (pooling)
     {
       int numDims = 2;
-      int channels = 256;
-      int inputDim[] = {30, 30};
       int poolWindowDims[] = {3, 3};
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
@@ -511,8 +485,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           8,
           numDims,
-          channels,
-          inputDim,
           poolWindowDims,
           poolPads,
           poolStrides,
@@ -527,8 +499,6 @@ int main(int argc, char *argv[]) {
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
-      int inputChannels = 256;
-      int inputDims[] = {14, 14};
       int outputChannels = 384;
       int filterDims[] = {3, 3};
       int convPads[] = {1, 1};
@@ -537,8 +507,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           9,
           numDims,
-          inputChannels,
-          inputDims,
           outputChannels,
           filterDims,
           convPads,
@@ -555,7 +523,6 @@ int main(int argc, char *argv[]) {
           10,
           comm,
           trainParams.MBSize,
-          layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
     }
@@ -564,8 +531,6 @@ int main(int argc, char *argv[]) {
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
-      int inputChannels = 384;
-      int inputDims[] = {14, 14};
       int outputChannels = 384;
       int filterDims[] = {3, 3};
       int convPads[] = {1, 1};
@@ -574,8 +539,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           11,
           numDims,
-          inputChannels,
-          inputDims,
           outputChannels,
           filterDims,
           convPads,
@@ -592,7 +555,6 @@ int main(int argc, char *argv[]) {
           12,
           comm,
           trainParams.MBSize,
-          layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
       dnn->add(layer);
@@ -602,8 +564,6 @@ int main(int argc, char *argv[]) {
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
-      int inputChannels = 384;
-      int inputDims[] = {14, 14};
       int outputChannels = 256;
       int filterDims[] = {3, 3};
       int convPads[] = {1, 1};
@@ -612,8 +572,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           13,
           numDims,
-          inputChannels,
-          inputDims,
           outputChannels,
           filterDims,
           convPads,
@@ -630,7 +588,6 @@ int main(int argc, char *argv[]) {
           14,
           comm,
           trainParams.MBSize,
-          layer->get_num_neurons(),
           cudnn);
       dnn->add(relu);
     }
@@ -638,8 +595,6 @@ int main(int argc, char *argv[]) {
     // Layer 10 (pooling)
     {
       int numDims = 2;
-      int channels = 256;
-      int inputDim[] = {14, 14};
       int poolWindowDims[] = {3, 3};
       int poolPads[] = {0, 0};
       int poolStrides[] = {2, 2};
@@ -648,8 +603,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           15,
           numDims,
-          channels,
-          inputDim,
           poolWindowDims,
           poolPads,
           poolStrides,
@@ -670,7 +623,6 @@ int main(int argc, char *argv[]) {
           // layer_id,
           // prev_num_neurons,
           16,
-          dnn->get_layers().back()->get_num_neurons(),
           4096,
           trainParams.MBSize,
           weight_initialization::he_normal,
@@ -682,13 +634,11 @@ int main(int argc, char *argv[]) {
         = new relu_layer<DATA_LAYOUT>(
           17,
           comm,
-          trainParams.MBSize,
-          fc->get_num_neurons());
+          trainParams.MBSize);
       dnn->add(relu);
       Layer *dropout_layer
         = new dropout<DATA_LAYOUT>(
           18,
-          fc->get_num_neurons(),
           comm,
           trainParams.MBSize,
           0.5);
@@ -703,7 +653,6 @@ int main(int argc, char *argv[]) {
           // layer_id,
           // prev_num_neurons,
           19,
-          dnn->get_layers().back()->get_num_neurons(),
           4096,
           trainParams.MBSize,
           weight_initialization::he_normal,
@@ -716,13 +665,11 @@ int main(int argc, char *argv[]) {
         = new relu_layer<DATA_LAYOUT>(
           20,
           comm,
-          trainParams.MBSize,
-          fc->get_num_neurons());
+          trainParams.MBSize);
       dnn->add(relu);
       Layer *dropout_layer
         = new dropout<DATA_LAYOUT>(
           21,
-          fc->get_num_neurons(),
           comm,
           trainParams.MBSize,
           0.5);
@@ -735,7 +682,6 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<DATA_LAYOUT> *fc
         = new fully_connected_layer<DATA_LAYOUT>(
           22,
-          dnn->get_layers().back()->get_num_neurons(),
           1000,
           trainParams.MBSize,
           weight_initialization::he_normal,
@@ -750,10 +696,7 @@ int main(int argc, char *argv[]) {
           // layer_id,
           // prev_num_neurons,
           23,
-          1000,
-          1000,
           trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
           dnn->create_optimizer());
       dnn->add(softmax);

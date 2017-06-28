@@ -44,7 +44,6 @@ class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(int index,
-               int num_neurons,
                lbann_comm *comm,
                int mini_batch_size,
                float keep_prob=0.95f,

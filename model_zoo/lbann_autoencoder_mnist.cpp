@@ -197,114 +197,114 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
-                                                        mnist_trainset.get_linearized_data_size(), 1000, trainParams.MBSize,
+                                                        1000, trainParams.MBSize,
                                                         weight_initialization::uniform, comm,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode1);
 
     Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize, 1000);
+                                               trainParams.MBSize);
     dnn.add(relu1);
 
-    /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 1000,
+    /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout1);*/
 
     //third layer 
     Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(3,
-                                                        1000, 500, trainParams.MBSize,
+                                                        500, trainParams.MBSize,
                                                         weight_initialization::uniform, 
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode2);
 
     Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(4, comm,
-                                               trainParams.MBSize, 500);
+                                               trainParams.MBSize);
     dnn.add(relu2);
 
-    /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6, 500,
+    /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);*/
 
     Layer *encode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
-                                                        500, 250, trainParams.MBSize,
+                                                        250, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode3);
     
     Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(6, comm,
-                                               trainParams.MBSize, 250);
+                                               trainParams.MBSize);
     dnn.add(relu3);
 
-    /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(9, 250,
+    /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(9,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout3);*/
 
     Layer *encode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(7,
-                                                        250, 30, trainParams.MBSize,
+                                                        30, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(encode4);
     //decoder
     Layer *decode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
-                                                        30, 250, trainParams.MBSize,
+                                                        250, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode4);
     
     Layer *relu4 = new relu_layer<data_layout::MODEL_PARALLEL>(9, comm,
-                                               trainParams.MBSize, 250);
+                                               trainParams.MBSize);
     dnn.add(relu4);
 
-    /*Layer *dropout4 = new dropout<data_layout::MODEL_PARALLEL>(13, 250,
+    /*Layer *dropout4 = new dropout<data_layout::MODEL_PARALLEL>(13,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout4);*/
 
    
     Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(10,
-                                                      250, 500, trainParams.MBSize,
+                                                        500, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode3);
     
     Layer *relu5 = new relu_layer<data_layout::MODEL_PARALLEL>(11, comm,
-                                               trainParams.MBSize, 500);
+                                               trainParams.MBSize);
     dnn.add(relu5);
 
-    /*Layer *dropout5 = new dropout<data_layout::MODEL_PARALLEL>(16, 500,
+    /*Layer *dropout5 = new dropout<data_layout::MODEL_PARALLEL>(16,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout5);*/
 
     Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(12,
-                                                        500,1000, trainParams.MBSize,
+                                                        1000, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode2);
     
     Layer *relu6 = new relu_layer<data_layout::MODEL_PARALLEL>(13, comm,
-                                               trainParams.MBSize, 1000);
+                                               trainParams.MBSize);
     dnn.add(relu6);
 
-    /*Layer *dropout6 = new dropout<data_layout::MODEL_PARALLEL>(14, 1000,
+    /*Layer *dropout6 = new dropout<data_layout::MODEL_PARALLEL>(14,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout6);*/
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(14,
-                                                        1000, 784, trainParams.MBSize,
+                                                        784, trainParams.MBSize,
                                                         weight_initialization::uniform,
                                                         comm, optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
     Layer *relu7 = new relu_layer<data_layout::MODEL_PARALLEL>(15, comm,
-                                               trainParams.MBSize, 784);
+                                               trainParams.MBSize);
     dnn.add(relu7);
 
-    /*Layer *dropout7 = new dropout<data_layout::MODEL_PARALLEL>(22, 784,
+    /*Layer *dropout7 = new dropout<data_layout::MODEL_PARALLEL>(22,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout7);*/

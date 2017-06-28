@@ -52,12 +52,8 @@ class relu_layer : public entrywise_activation_layer {
   relu_layer(int index,
              lbann_comm *comm,
              int mini_batch_size,
-             int num_neurons,  /// TODO: Remove. This is not used.
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer(index,
-                               comm,
-                               mini_batch_size,
-                               num_neurons) {
+    entrywise_activation_layer(index, comm, mini_batch_size) {
     set_name("relu_layer");
 
     initialize_distributed_matrices();

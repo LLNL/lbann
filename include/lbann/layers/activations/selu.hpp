@@ -45,13 +45,9 @@ class selu_layer : public entrywise_activation_layer {
  public:
   selu_layer(int index, lbann_comm *comm,
              int mini_batch_size,
-             int num_neurons,  // TODO: Remove. This is not used.
              DataType alpha = DataType(1.6732632423543772848170429916717),
              DataType scale = DataType(1.0507009873554804934193349852946)) :
-    entrywise_activation_layer(index,
-                               comm,
-                               mini_batch_size,
-                               num_neurons),
+    entrywise_activation_layer(index, comm, mini_batch_size),
     m_alpha(alpha), m_scale(scale)
   { initialize_distributed_matrices(); }
 

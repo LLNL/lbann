@@ -38,11 +38,8 @@ class id_layer : public entrywise_activation_layer {
   // TODO: Optimize this to copy instead of applying elementwise.
   id_layer(int index,
            lbann_comm *comm,
-           int mini_batch_size,
-           int num_neurons  /** TODO: Remove. This is not used. */) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size,
-                               num_neurons) { 
+           int mini_batch_size) :
+    entrywise_activation_layer(index, comm, mini_batch_size) { 
      set_name("id_layer");
      initialize_distributed_matrices(); 
   }

@@ -59,7 +59,6 @@ class batch_normalization : public regularizer_layer {
    * stay at zero.
    */
   batch_normalization(int index,
-                      int num_neurons,  /** TODO: Remove. This is not used */
                       lbann_comm *comm,
                       int mini_batch_size,
                       DataType decay=0.9,

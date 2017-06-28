@@ -46,16 +46,10 @@ class softmax_layer: public activation_layer {
 
  public:
   softmax_layer(int index,
-                int num_prev_neurons,  /** TODO: Remove. This is not used. */
-                int num_neurons,       /** TODO: Remove. This is not used. */
                 int mini_batch_size,
-                weight_initialization init,
                 lbann_comm *comm,
                 optimizer *opt)
-     :  activation_layer(index,
-                         comm,
-                         mini_batch_size,
-                         num_neurons) {
+     :  activation_layer(index, comm, mini_batch_size) {
     set_name("softmax_layer");
     // Setup the data distribution
     initialize_distributed_matrices();

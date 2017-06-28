@@ -69,8 +69,6 @@ class pooling_layer : public transform {
   /// Constructor
   pooling_layer(int index,
                 int num_data_dims,
-                int num_channels,       // TODO: Remove. This is not used.
-                const int *input_dims,  // TODO: Remove. This is not used.
                 const int *pool_dims,
                 const int *pool_pads,
                 const int *pool_strides,

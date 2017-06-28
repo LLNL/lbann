@@ -74,8 +74,7 @@ class fully_connected_layer : public learning {
   // [Acts     ]
 
   fully_connected_layer(int index,
-                        int num_prev_neurons, // TODO: Remove. This is not used.
-                        int num_neurons,
+                        int num_neurons,  // TODO: accept a vector for neuron dims
                         int mini_batch_size,
                         weight_initialization init,
                         lbann_comm *comm,
