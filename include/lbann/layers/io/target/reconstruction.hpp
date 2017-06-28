@@ -68,7 +68,7 @@ class reconstruction_layer : public target_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     target_layer::setup(prev_layer, next_layer);
 
     // Initialize other matrices
@@ -99,7 +99,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() {
     // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(m_prev_layer, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer

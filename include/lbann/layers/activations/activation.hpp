@@ -64,7 +64,7 @@ class entrywise_activation_layer : public activation_layer {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
 
     // Initialize neuron tensor dimensions

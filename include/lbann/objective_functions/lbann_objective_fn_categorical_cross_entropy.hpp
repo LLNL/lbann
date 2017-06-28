@@ -43,12 +43,14 @@ class categorical_cross_entropy : public objective_fn {
 
   void setup(int num_neurons, int mini_batch_size);
   void fp_set_std_matrix_view(int cur_mini_batch_size);
-  double compute_categorical_cross_entropy(ElMat& predictions_v, ElMat& groundtruth_v);
-  double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v);
-  void compute_obj_fn_derivative(Layer* prev_layer,
-                                 ElMat& predictions_v,
-                                 ElMat& groundtruth_v,
-                                 ElMat& error_signal_v);
+  double compute_categorical_cross_entropy(const AbsDistMat& predictions_v,
+                                           const AbsDistMat& groundtruth_v);
+  double compute_obj_fn(const AbsDistMat& predictions_v,
+                        const AbsDistMat& groundtruth_v);
+  void compute_obj_fn_derivative(const Layer& prev_layer,
+                                 const AbsDistMat& predictions_v,
+                                 const AbsDistMat& groundtruth_v,
+                                 AbsDistMat& error_signal_v);
   std::string name() const { return "categorical cross entropy"; }
 };
 

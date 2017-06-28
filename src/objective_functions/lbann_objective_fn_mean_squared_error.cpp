@@ -50,7 +50,8 @@ void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
 /// Compute mean squared error
 /** MSE = (predictions-groundtruth)^T (predictions-groundtruth)
  */
-double mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v) {
+double mean_squared_error::compute_mean_squared_error(const AbsDistMat& predictions_v,
+                                                      const AbsDistMat& groundtruth_v) {
   const int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
@@ -58,7 +59,8 @@ double mean_squared_error::compute_mean_squared_error(ElMat& predictions_v, ElMa
 }
 
 /// Compute the average mean squared error over the mini-batch
-double mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
+double mean_squared_error::compute_obj_fn(const AbsDistMat& predictions_v,
+                                          const AbsDistMat& groundtruth_v) {
   int cur_mini_batch_size = groundtruth_v.Width();
 
   double total_error = compute_mean_squared_error(predictions_v, groundtruth_v);
@@ -69,9 +71,10 @@ double mean_squared_error::compute_obj_fn(ElMat& predictions_v, ElMat& groundtru
 }
 
 /// Compute derivative of mean squared error objective function
-void mean_squared_error::compute_obj_fn_derivative(
-  Layer* prev_layer, ElMat& predictions_v, ElMat& groundtruth_v,
-  ElMat& error_signal_v) {
+void mean_squared_error::compute_obj_fn_derivative(const Layer& prev_layer,
+                                                   const AbsDistMat& predictions_v,
+                                                   const AbsDistMat& groundtruth_v,
+                                                   AbsDistMat& error_signal_v) {
   const Int num_neurons = predictions_v.Height();
   Copy(predictions_v, error_signal_v);
   Axpy(DataType(-1), groundtruth_v, error_signal_v);

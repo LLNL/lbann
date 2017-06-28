@@ -151,7 +151,7 @@ class pooling_layer : public transform {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(Layer *prev_layer, Layer *next_layer) {
+  void setup(const Layer *prev_layer, const Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
 
     // Initialize neuron tensor dimensions
