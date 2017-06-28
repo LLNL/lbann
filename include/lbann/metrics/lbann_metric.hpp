@@ -68,9 +68,8 @@ class statistics {
 class metric {
  public:
   /// Constructor
-  metric(data_layout data_dist, lbann_comm *comm) :
+  metric(lbann_comm *comm) :
     m_comm(comm) {
-    m_data_layout = data_dist;
   }
 
   // m_comm and the model pointer are not changed-- copy by value.
@@ -111,9 +110,6 @@ class metric {
 
  public:
   model *m_neural_network_model;
-
- protected:
-  data_layout m_data_layout;
 };
 
 }  // namespace metrics

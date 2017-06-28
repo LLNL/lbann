@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
     //layer_factory *lfac = new layer_factory();
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
-    metrics::categorical_accuracy acc(DATA_LAYOUT, comm);
+    metrics::categorical_accuracy<DATA_LAYOUT> acc(comm);
     dnn.add_metric(&acc);
     std::map<execution_mode, generic_data_reader *> data_readers = {
       std::make_pair(execution_mode::training,&mnist_trainset),

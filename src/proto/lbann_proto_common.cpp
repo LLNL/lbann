@@ -1075,15 +1075,15 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
     data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__);
     if (metric == "categorical_accuracy") {
       if (dl == data_layout::MODEL_PARALLEL) {
-      model->add_metric(new metrics::categorical_accuracy(data_layout::MODEL_PARALLEL, comm));
+        model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
       } else {
-      model->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
+        model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
       }
     } else if (metric == "mean_squared_error") {
       if (dl == data_layout::MODEL_PARALLEL) {
-      model->add_metric(new metrics::mean_squared_error(data_layout::MODEL_PARALLEL, comm));
+        model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
-      model->add_metric(new metrics::mean_squared_error(data_layout::DATA_PARALLEL, comm));
+        model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
       }
     } else {
       err << __FILE__ << " " << __LINE__

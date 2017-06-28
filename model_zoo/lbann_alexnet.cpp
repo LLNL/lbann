@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
 
     deep_neural_network *dnn = NULL;
    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
-   dnn->add_metric(new metrics::categorical_accuracy(DATA_LAYOUT/*::DATA_PARALLEL*/, comm));
+   dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
     // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
     input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, trainParams.MBSize, parallel_io, data_readers);
