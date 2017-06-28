@@ -60,6 +60,10 @@ class mnist_reader : public generic_data_reader {
   int get_linearized_label_size(void) const {
     return m_num_labels;
   }
+  const std::vector<int> get_data_dims(void) const {
+    return {1, m_image_height, m_image_width};
+  }
+
 
   //don't need this, since default ctor is adequate; eliminating
   //explict implementation reduces possible bugs

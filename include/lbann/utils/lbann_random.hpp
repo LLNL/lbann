@@ -160,7 +160,7 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n,
  * Using one of the available initialization methods, initialize a
  * matrix
  */
-void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out);
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out);
 
 template<typename DistType,typename DType=DataType>
 class rng {

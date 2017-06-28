@@ -49,13 +49,11 @@ class relu_layer : public entrywise_activation_layer {
 #endif
 
  public:
-  relu_layer(uint index,
+  relu_layer(int index,
              lbann_comm *comm,
-             uint mini_batch_size,
-             uint num_neurons,
+             int mini_batch_size,
              cudnn::cudnn_manager *cudnn = NULL) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) {
+    entrywise_activation_layer(index, comm, mini_batch_size) {
     set_name("relu_layer");
 
     initialize_distributed_matrices();
@@ -94,10 +92,10 @@ class relu_layer : public entrywise_activation_layer {
       // Deallocate GPU memory
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
       this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer_using_gpus) {
+      if(!this->m_prev_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
       }
-      if(!this->m_next_layer_using_gpus) {
+      if(!this->m_next_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
       }
 
@@ -111,8 +109,8 @@ class relu_layer : public entrywise_activation_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    entrywise_activation_layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    entrywise_activation_layer::setup(prev_layer, next_layer);
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -133,13 +131,23 @@ void setup_gpu() {
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
 
     // Set tensor descriptor
-    int tensor_dims[] = {1,1,(int)this->m_mini_batch_size_per_gpu, (int)this->m_num_neurons};
-    int tensor_strides[] = {(int)this->m_num_neurons, (int)this->m_num_neurons, (int)this->m_num_neurons, 1};
+    // Note: cuDNN expects at least a 4D tensor, so we pad the
+    //   dimensions with ones if needed.
+    std::vector<int> tensor_dims = this->m_neuron_dims;
+    tensor_dims.insert(tensor_dims.begin(), this->m_mini_batch_size_per_gpu);
+    while(tensor_dims.size() < 4) {
+      tensor_dims.insert(tensor_dims.begin(), 1);
+    }
+    std::vector<int> tensor_strides(tensor_dims.size());
+    tensor_strides[tensor_strides.size()-1] = 1;
+    for(int i=tensor_strides.size()-2; i>=0; --i) {
+      tensor_strides[i] = tensor_strides[i+1] * tensor_dims[i+1];
+    }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
                                            this->m_cudnn->get_cudnn_data_type(),
-                                           4,
-                                           tensor_dims,
-                                           tensor_strides));
+                                           tensor_dims.size(),
+                                           tensor_dims.data(),
+                                           tensor_strides.data()));
     
     // Set activation descriptor
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,
@@ -154,12 +162,12 @@ void setup_gpu() {
     this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
                                     this->m_num_prev_neurons,
                                     this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer_using_gpus) {
+    if(!this->m_prev_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
                                       this->m_num_prev_neurons,
                                       this->m_mini_batch_size_per_gpu);
     }
-    if(!this->m_next_layer_using_gpus) {
+    if(!this->m_next_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
                                       this->m_num_neurons,
                                       this->m_mini_batch_size_per_gpu);

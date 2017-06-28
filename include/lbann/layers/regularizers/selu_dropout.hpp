@@ -43,8 +43,10 @@ template <data_layout T_layout>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  selu_dropout(const uint index, const uint num_neurons, lbann_comm *comm,
-               uint mini_batch_size, float keep_prob=0.95f,
+  selu_dropout(int index,
+               lbann_comm *comm,
+               int mini_batch_size,
+               float keep_prob=0.95f,
                DataType alpha = DataType(1.6732632423543772848170429916717),
                DataType scale = DataType(1.0507009873554804934193349852946)) :
     regularizer_layer(index, comm, mini_batch_size),
@@ -55,7 +57,6 @@ class selu_dropout : public regularizer_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::dropout;
-    this->m_num_neurons = num_neurons;
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
@@ -70,6 +71,19 @@ class selu_dropout : public regularizer_layer {
 
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }
+
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
+
+    // Initialize activations matrix
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+
+  }
 
  protected:
   /** Drop out units in forward propagation. */

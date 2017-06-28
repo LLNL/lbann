@@ -82,9 +82,9 @@ class optimizer {
   /// Parameters to optimize
   AbsDistMat *m_parameters;
   /// Parameter matrix height
-  Int m_height;
+  int m_height;
   /// Parameter matrix width
-  Int m_width;
+  int m_width;
   /// Parameter matrix format
   matrix_format m_matrix_format;
   /// Learning rate

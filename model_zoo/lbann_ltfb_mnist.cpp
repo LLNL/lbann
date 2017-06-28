@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
-    input_layer *input_layer_ = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    input_layer *input_layer_ = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers);
     dnn.add(input_layer_);
     dnn.add(
       "FullyConnected", data_layout::MODEL_PARALLEL, 100,
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     dnn.add(
       "softmax", data_layout::MODEL_PARALLEL, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
-    target_layer *target_layer_ = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    target_layer *target_layer_ = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers, true);
     dnn.add(target_layer_);
 
     //lbann_summary summarizer(trainParams.SummaryDir, comm);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
       std::make_pair(execution_mode::testing, &mnist_testset2)
     };
     input_layer *input_layer2 = new input_layer_distributed_minibatch_parallel_io(
-      data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers2);
+      data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers2);
     dnn2.add(input_layer2);
     dnn2.add(
       "FullyConnected", data_layout::MODEL_PARALLEL, 100,
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
       "softmax", data_layout::MODEL_PARALLEL, 10,
       activation_type::ID, weight_initialization::glorot_uniform, {});
     target_layer *target_layer2 = new target_layer_distributed_minibatch_parallel_io(
-      data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers2, true);
+      data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers2, true);
     dnn2.add(target_layer2);
 
     // LTFB.

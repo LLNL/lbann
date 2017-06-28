@@ -41,12 +41,19 @@ class target_layer : public io_layer {
   bool m_shared_data_reader;
 
  public:
-  target_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
-      this->m_num_neurons = io_layer::get_linearized_response_size();
+      this->m_neuron_dims = io_layer::get_data_dims();
+      this->m_num_neuron_dims = this->m_neuron_dims.size();
+      this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
+                                            this->m_neuron_dims.end(),
+                                            1,
+                                            std::multiplies<int>());
     } else {
       this->m_num_neurons = io_layer::get_linearized_label_size();
+      this->m_num_neuron_dims = 1;
+      this->m_neuron_dims.assign(1, this->m_num_neurons);
     }
     m_shared_data_reader = shared_data_reader;
   }
@@ -55,8 +62,13 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  void setup(int num_prev_neurons) {
-    io_layer::setup(num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    if(this->m_num_prev_neurons != this->m_num_neurons) {
+      throw lbann_exception("lbann_target_layer: target layer does not match input data");
+    }
+
     if(this->m_neural_network_model->m_obj_fn == NULL) {
       throw lbann_exception("target layer has invalid objective function pointer");
     }
@@ -65,13 +77,9 @@ class target_layer : public io_layer {
       m->setup(this->m_num_neurons, this->m_mini_batch_size);
       m->m_neural_network_model = this->m_neural_network_model;
     }
-  }
 
-  /**
-   * Target layers are not able to return target matrices for forward propagation
-   */
-  DistMat *fp_output() {
-    return NULL;
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
@@ -85,7 +93,7 @@ class target_layer : public io_layer {
   }
 
   void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     this->m_neural_network_model->m_obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
     for (auto&& m : this->m_neural_network_model->m_metrics) {
@@ -93,7 +101,7 @@ class target_layer : public io_layer {
     }
   }
 
-  void summarize(lbann_summary& summarizer, int64_t step) {
+  void summarize(lbann_summary& summarizer, int step) {
     Layer::summarize(summarizer, step);
     std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/CrossEntropyCost";
@@ -124,12 +132,12 @@ class target_layer : public io_layer {
     this->m_neural_network_model->m_obj_fn->reset_obj_fn();
   }
 
-  bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
     /// @todo should probably save m_shared_data_reader
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
 
-  bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes) {
+  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
     /// @todo should probably save m_shared_data_reader
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }

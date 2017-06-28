@@ -45,7 +45,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
@@ -62,8 +62,8 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    input_layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
       int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
@@ -83,7 +83,8 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
                                                             m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
 
-    Zeros(X_local, this->m_num_neurons, Layer::m_mini_batch_size);
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    El::Zeros(X_local, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;

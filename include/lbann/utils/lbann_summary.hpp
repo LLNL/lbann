@@ -70,19 +70,19 @@ class lbann_summary {
   ~lbann_summary();
 
   /** Report the mean of mat. */
-  void reduce_mean(const std::string tag, const ElMat& mat, int64_t step);
+  void reduce_mean(const std::string tag, const ElMat& mat, int step);
   /** Report the minimum value of mat. */
-  void reduce_min(const std::string tag, const ElMat& mat, int64_t step);
+  void reduce_min(const std::string tag, const ElMat& mat, int step);
   /** Report the maximum value of mat. */
-  void reduce_max(const std::string tag, const ElMat& mat, int64_t step);
+  void reduce_max(const std::string tag, const ElMat& mat, int step);
   /** Report the standard deviation of mat. */
-  void reduce_stdev(const std::string tag, const ElMat& mat, int64_t step);
+  void reduce_stdev(const std::string tag, const ElMat& mat, int step);
   /** Report a scalar from each model (only meaningful on model masters). */
-  void reduce_scalar(const std::string tag, DataType s, int64_t step);
+  void reduce_scalar(const std::string tag, DataType s, int step);
   /** Do a model_reduce (sum) on a scalar, then report that sum. */
-  void sum_reduce_scalar(const std::string tag, DataType s, int64_t step);
+  void sum_reduce_scalar(const std::string tag, DataType s, int step);
   /** Report a histogram of the values in mat. */
-  void reduce_histogram(const std::string tag, const ElMat& mat, int64_t step);
+  void reduce_histogram(const std::string tag, const ElMat& mat, int step);
 
   /**
    * Write all summaries out.
@@ -97,13 +97,13 @@ class lbann_summary {
 
   /** Represent a pending summary operation. */
   struct pending_op {
-    pending_op(const std::string tag_, int64_t step_, DataType local_,
+    pending_op(const std::string tag_, int step_, DataType local_,
                DataType local2_ = 0.0f, int num_ = 0) :
       tag(tag_), step(step_), local(local_), local2(local2_), num(num_) {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
-    int64_t step;
+    int step;
     /** Locally-computed data. */
     DataType local;
     /** More locally-computed data (for stdev). */
@@ -113,7 +113,7 @@ class lbann_summary {
   };
   /** Represent a pending histogram operation. */
   struct pending_histogram {
-    pending_histogram(const std::string tag_, int64_t step_,
+    pending_histogram(const std::string tag_, int step_,
                       std::vector<float> buckets_,
                       DataType min_, DataType max_, DataType num_,
                       DataType sum_, DataType sqsum_) :
@@ -122,7 +122,7 @@ class lbann_summary {
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
-    int64_t step;
+    int step;
     /** Histogram buckets, using histogram_buckets as the limits. */
     std::vector<float> buckets;
     /** Minimum value in the data. */
@@ -176,7 +176,7 @@ class lbann_summary {
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
-  void gather_scalar_summary(const std::string tag, DataType s, int64_t step);
+  void gather_scalar_summary(const std::string tag, DataType s, int step);
   /** Gather and write out a scalar summary for each entry in a vector. */
   void gather_scalar_summary(const std::vector<pending_op>& ops,
                              std::vector<DataType>& scalars);
@@ -189,13 +189,13 @@ class lbann_summary {
  public:
   lbann_summary(std::string logdir, lbann_comm *comm) {}
 
-  void reduce_mean(const std::string tag, const ElMat& mat, int64_t step) {}
-  void reduce_min(const std::string tag, const ElMat& mat, int64_t step) {}
-  void reduce_max(const std::string tag, const ElMat& mat, int64_t step) {}
-  void reduce_stdev(const std::string tag, const ElMat& mat, int64_t step) {}
-  void reduce_scalar(const std::string tag, DataType s, int64_t step) {}
-  void sum_reduce_scalar(const std::string tag, DataType s, int64_t step) {}
-  void reduce_histogram(const std::string tag, const ElMat& mat, int64_t step) {}
+  void reduce_mean(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_min(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_max(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_stdev(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_scalar(const std::string tag, DataType s, int step) {}
+  void sum_reduce_scalar(const std::string tag, DataType s, int step) {}
+  void reduce_histogram(const std::string tag, const ElMat& mat, int step) {}
   void flush() {}
 };
 

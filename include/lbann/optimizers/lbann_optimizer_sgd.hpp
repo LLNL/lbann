@@ -56,7 +56,7 @@ class sgd : public optimizer {
 
  private:
   /// Number of iterations
-  Int m_iterations;
+  int m_iterations;
   /// Momentum
   DataType m_momentum;
   /// Learning rate decay

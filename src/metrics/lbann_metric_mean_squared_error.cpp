@@ -44,7 +44,7 @@ void mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   internal_obj_fn.setup(num_neurons, mini_batch_size);
 }
 
-void mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   internal_obj_fn.fp_set_std_matrix_view(cur_mini_batch_size);
 }

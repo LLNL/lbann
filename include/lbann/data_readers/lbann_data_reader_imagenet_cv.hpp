@@ -67,6 +67,9 @@ class imagenet_reader_cv : public generic_data_reader {
   int get_linearized_label_size(void) const {
     return m_num_labels;
   }
+  const std::vector<int> get_data_dims(void) const {
+    return {m_image_num_channels, m_image_height, m_image_width};
+  }
 
   imagenet_reader_cv& operator=(const imagenet_reader_cv& source);
 

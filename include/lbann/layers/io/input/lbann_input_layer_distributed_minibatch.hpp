@@ -44,7 +44,7 @@ class input_layer_distributed_minibatch : public input_layer {
   long m_num_data_per_epoch;
 
  public:
-  input_layer_distributed_minibatch(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers), Xs(this->m_comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -61,8 +61,8 @@ class input_layer_distributed_minibatch : public input_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    input_layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       io_layer::setup_data_readers_for_training(0, Layer::m_comm->get_num_models() * Layer::m_mini_batch_size,
                                                           Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size);
@@ -72,7 +72,8 @@ class input_layer_distributed_minibatch : public input_layer {
       io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
     }
 
-    Zeros(X_local, this->m_num_neurons, this->m_mini_batch_size);
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
+    El::Zeros(X_local, this->m_num_neurons, this->m_mini_batch_size);
   }
 
  protected:

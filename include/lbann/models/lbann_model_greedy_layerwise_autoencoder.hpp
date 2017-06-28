@@ -38,7 +38,7 @@ namespace lbann {
 class greedy_layerwise_autoencoder : public sequential_model {
  public:
   /// Constructor
-  greedy_layerwise_autoencoder(uint mini_batch_size,
+  greedy_layerwise_autoencoder(int mini_batch_size,
                                lbann_comm *comm,
                                objective_functions::objective_fn *obj_fn,
                                optimizer_factory *_optimizer_fac);

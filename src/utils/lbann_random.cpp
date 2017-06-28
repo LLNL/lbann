@@ -204,7 +204,7 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
 }
 
 
-void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, Int fan_in, Int fan_out) {
+void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out) {
   switch(initialization) {
   case weight_initialization::uniform:
     uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),

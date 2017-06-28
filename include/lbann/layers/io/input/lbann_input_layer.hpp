@@ -32,20 +32,18 @@
 namespace lbann {
 class input_layer : public io_layer {
  public:
-  input_layer(lbann_comm *comm, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : io_layer(comm, mini_batch_size, data_readers) {
-    this->m_num_neurons = io_layer::get_linearized_data_size();
+    this->m_neuron_dims = io_layer::get_data_dims();
+    this->m_num_neuron_dims = this->m_neuron_dims.size();
+    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
+                                          this->m_neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
   }
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
-  }
-
-  /**
-   * Input layers are not able to return output matrices for backward propagation
-   */
-  DistMat *bp_output() {
-    return NULL;
   }
 
   /** No setting the standard view of the matrix -- it defines the standard view */

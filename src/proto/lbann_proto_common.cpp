@@ -1,4 +1,3 @@
-
 #include "lbann/proto/lbann_proto_common.hpp"
 
 #include "lbann/lbann.hpp"
@@ -134,9 +133,9 @@ void add_layers(
     if (layer.has_relu()) {
       const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, cudnn);
       } else {
-        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons, cudnn);
+        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, cudnn);
       }
       model->add(d);
       all_layers[layer.index()] = d;
@@ -149,9 +148,9 @@ void add_layers(
     if (layer.has_sigmoid()) {
       const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size);
       } else {
-        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, prev_num_neurons);
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size);
       }
       model->add(d);
       all_layers[layer.index()] = d;
@@ -250,7 +249,6 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          prev_num_neurons,
           ell.num_neurons(),
           mb_size,
           get_weight_initialization(ell.weight_initialization()),
@@ -260,7 +258,6 @@ void add_layers(
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          prev_num_neurons,
           ell.num_neurons(),
           mb_size,
           get_weight_initialization(ell.weight_initialization()),
@@ -314,8 +311,6 @@ void add_layers(
         d = new pooling_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           ell.num_dims(),
-          ell.num_channels(),
-          &input_dims[0],
           &pool_dims[0],
           &pool_pads[0],
           &pool_strides[0],
@@ -328,8 +323,6 @@ void add_layers(
         d = new pooling_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           ell.num_dims(),
-          ell.num_channels(),
-          &input_dims[0],
           &pool_dims[0],
           &pool_pads[0],
           &pool_strides[0],
@@ -351,43 +344,41 @@ void add_layers(
     if (layer.has_convolution()) {
       const lbann_data::Convolution& ell = layer.convolution();
 
-      vector<Int> input_dims;
+      vector<int> input_dims;
       std::stringstream ss(ell.input_dims());
       int i;
       while (ss >> i) {
         input_dims.push_back(i);
       }
 
-      vector<Int> filter_dims;
+      vector<int> filter_dims;
       ss.clear();
       ss.str(ell.filter_dims());
       while (ss >> i) {
         filter_dims.push_back(i);
       }
 
-      vector<Int> conv_pads;
+      vector<int> conv_pads;
       ss.clear();
       ss.str(ell.conv_pads());
       while (ss >> i) {
         conv_pads.push_back(i);
       }
 
-      vector<Int> conv_strides;
+      vector<int> conv_strides;
       ss.clear();
       ss.str(ell.conv_strides());
       while (ss >> i) {
         conv_strides.push_back(i);
       }
 
-      Int num_dims = ell.num_dims();
-      Int num_input_channels = ell.num_input_channels();
-      Int num_output_channels = ell.num_output_channels();
+      int num_dims = ell.num_dims();
+      int num_input_channels = ell.num_input_channels();
+      int num_output_channels = ell.num_output_channels();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           num_dims,
-          num_input_channels,
-          &input_dims[0],
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
@@ -402,8 +393,6 @@ void add_layers(
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           num_dims,
-          num_input_channels,
-          &input_dims[0],
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
@@ -431,25 +420,22 @@ void add_layers(
     if (layer.has_local_response_normalization()) {
       const lbann_data::LocalResponseNormalization& ell = layer.local_response_normalization();
 
-      vector<El::Int> dims;
+      vector<int> dims;
       std::stringstream ss(ell.dims());
       int i;
       while (ss >> i) {
         dims.push_back(i);
       }
 
-      Int num_dims = ell.num_dims();
-      Int num_channels = ell.num_channels();
+      int num_dims = ell.num_dims();
+      int num_channels = ell.num_channels();
       DataType lrn_alpha = ell.lrn_alpha();
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
-      Int window_width = ell.window_width();
+      int window_width = ell.window_width();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          num_dims,
-          num_channels,
-          &dims[0],
           window_width,
           lrn_alpha,
           lrn_beta,
@@ -460,9 +446,6 @@ void add_layers(
       } else {
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          num_dims,
-          num_channels,
-          &dims[0],
           window_width,
           lrn_alpha,
           lrn_beta,
@@ -484,7 +467,6 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
           comm,
           mb_size,
           ell.keep_prob(),
@@ -494,7 +476,6 @@ void add_layers(
       } else {
         d = new selu_dropout<data_layout::DATA_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
           comm,
           mb_size,
           ell.keep_prob(),
@@ -515,7 +496,6 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new batch_normalization<data_layout::MODEL_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
           comm,
           mb_size,
           ell.decay(),
@@ -524,7 +504,6 @@ void add_layers(
       } else {
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
           comm,
           mb_size,
           ell.decay(),
@@ -572,15 +551,13 @@ void add_layers(
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       }
       model->add(d);
@@ -597,15 +574,13 @@ void add_layers(
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       }
       model->add(d);
@@ -622,15 +597,13 @@ void add_layers(
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       }
       model->add(d);
@@ -648,7 +621,6 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          prev_num_neurons,
           ell.leak()
         );
       } else {
@@ -656,7 +628,6 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          prev_num_neurons,
           ell.leak()
         );
       }
@@ -674,15 +645,13 @@ void add_layers(
         d = new id_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
-          prev_num_neurons
+          mb_size
         );  
       }
       model->add(d);
@@ -700,7 +669,6 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          prev_num_neurons,
           ell.alpha()
         );
       } else {
@@ -708,7 +676,6 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          prev_num_neurons,
           ell.alpha()
         );
       }
@@ -725,14 +692,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
-          prev_num_neurons,
           comm,
           mb_size,
           ell.keep_prob());
       } else {
         d = new dropout<data_layout::DATA_PARALLEL>(
           layer_id,
-          prev_num_neurons,
           comm,
           mb_size,
           ell.keep_prob());
@@ -750,20 +715,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          prev_num_neurons,
-          ell.num_neurons(),
           mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
           model->create_optimizer()
         );
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          prev_num_neurons,
-          ell.num_neurons(),
           mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
           model->create_optimizer()
         );
