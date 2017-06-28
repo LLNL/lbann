@@ -230,16 +230,16 @@ int main(int argc, char *argv[]) {
     Layer *input_layer =
       new input_layer_partitioned_minibatch_parallel_io<>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers);
     dnn->add(input_layer);
 #else
     Layer *input_layer =
       new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers);
     dnn->add(input_layer);
 #endif
@@ -254,14 +254,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           1,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -284,12 +284,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           3,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
@@ -326,14 +326,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           5,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -356,12 +356,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           7,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
@@ -398,14 +398,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           9,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -430,14 +430,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           11,
+          comm,
           numDims,
+          trainParams.MBSize,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -462,14 +462,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           13,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -509,10 +509,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           16,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer());
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
@@ -536,10 +536,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           19,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer());
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
@@ -564,10 +564,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<data_layout::MODEL_PARALLEL> *fc =
         new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           22,
-          1000,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          1000,
+          weight_initialization::he_normal,
           dnn->create_optimizer(),
           false);
       fc->set_l2_regularization_factor(0.0005);
@@ -585,8 +585,8 @@ int main(int argc, char *argv[]) {
     Layer *target_layer =
       new target_layer_partitioned_minibatch_parallel_io<>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers,
         true);
     dnn->add(target_layer);
@@ -594,8 +594,8 @@ int main(int argc, char *argv[]) {
     Layer *target_layer =
       new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
         comm,
-        parallel_io,
         trainParams.MBSize,
+        parallel_io,
         data_readers,
         true);
     dnn->add(target_layer);

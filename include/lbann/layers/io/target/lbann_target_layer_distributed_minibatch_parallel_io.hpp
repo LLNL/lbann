@@ -44,7 +44,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {

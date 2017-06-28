@@ -42,7 +42,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch_parallel_io {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution

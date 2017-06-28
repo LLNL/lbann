@@ -74,13 +74,13 @@ class fully_connected_layer : public learning {
   // [Acts     ]
 
   fully_connected_layer(int index,
-                        int num_neurons,  // TODO: accept a vector for neuron dims
-                        int mini_batch_size,
-                        weight_initialization init,
                         lbann_comm *comm,
+                        int mini_batch_size,
+                        int num_neurons,  // TODO: accept a vector for neuron dims
+                        weight_initialization init,
                         optimizer *opt,
                         bool has_bias = true)
-    : learning(index, mini_batch_size, comm, opt),
+    : learning(index, comm, mini_batch_size, opt),
       m_weight_initialization(init) {
 
     // Setup the data distribution

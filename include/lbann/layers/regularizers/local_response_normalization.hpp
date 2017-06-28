@@ -61,12 +61,12 @@ class local_response_normalization_layer : public regularizer_layer {
  public:
   local_response_normalization_layer
   (int index,
+   lbann_comm *comm,
+   int mini_batch_size,
    int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
-   int mini_batch_size,
-   lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
     : regularizer_layer(index, comm, mini_batch_size),
       m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),

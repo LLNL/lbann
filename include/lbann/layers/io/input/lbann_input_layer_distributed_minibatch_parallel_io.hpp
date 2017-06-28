@@ -45,7 +45,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {

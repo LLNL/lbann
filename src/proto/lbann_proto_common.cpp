@@ -203,14 +203,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       }
       all_layers[layer.index()] = d;
@@ -226,14 +226,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers);
       }
       all_layers[layer.index()] = d;
@@ -249,19 +249,19 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
+          mb_size,
+          ell.num_neurons(),
+          get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          ell.num_neurons(),
-          mb_size,
-          get_weight_initialization(ell.weight_initialization()),
           comm,
+          mb_size,
+          ell.num_neurons(),
+          get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
       }
@@ -378,28 +378,28 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           num_dims,
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
           &conv_strides[0],
-          mb_size,
           get_weight_initialization(ell.weight_initialization()),
-          comm,
           model->create_optimizer(),
           cudnn
         );
       } else {
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           num_dims,
           num_output_channels,
           &filter_dims[0],
           &conv_pads[0],
           &conv_strides[0],
-          mb_size,
           get_weight_initialization(ell.weight_initialization()),
-          comm,
           model->create_optimizer(),
           cudnn
         );
@@ -436,22 +436,22 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
           lrn_k,
-          mb_size,
-          comm,
           cudnn);
       } else {
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
+          comm,
+          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
           lrn_k,
-          mb_size,
-          comm,
           cudnn);
       }
       all_layers[layer.index()] = d;
@@ -740,16 +740,16 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
         d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
@@ -767,16 +767,16 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
         d = new  target_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
           comm,
-          m.num_parallel_readers(),
           mb_size,
+          m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
           ell.for_regression());

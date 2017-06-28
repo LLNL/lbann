@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
     // First convolution layer
@@ -213,14 +213,14 @@ int main(int argc, char *argv[]) {
 
       convolution_layer<> *layer
         = new convolution_layer<>(1,
+                                  comm,
+                                  trainParams.MBSize,
                                   numDims,
                                   outputChannels,
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  trainParams.MBSize,
                                   weight_initialization::glorot_uniform,
-                                  comm,
                                   convolution_layer_optimizer,
                                   cudnn);
       dnn.add(layer);
@@ -243,14 +243,14 @@ int main(int argc, char *argv[]) {
 
       convolution_layer<> *layer
         = new convolution_layer<>(3,
+                                  comm,
+                                  trainParams.MBSize,
                                   numDims,
                                   outputChannels,
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  trainParams.MBSize,
                                   weight_initialization::glorot_uniform,
-                                  comm,
                                   convolution_layer_optimizer,
                                   cudnn);
       dnn.add(layer);
@@ -285,10 +285,10 @@ int main(int argc, char *argv[]) {
     // First fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
-                                                                         128,
-                                                                         trainParams.MBSize,
-                                                                         weight_initialization::glorot_uniform,
                                                                          comm,
+                                                                         trainParams.MBSize,
+                                                                         128,
+                                                                         weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer());
       dnn.add(fc);
       Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(6,
@@ -306,10 +306,10 @@ int main(int argc, char *argv[]) {
     // Second fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
-                                                                         10,
-                                                                         trainParams.MBSize,
-                                                                         weight_initialization::glorot_uniform,
                                                                          comm,
+                                                                         trainParams.MBSize,
+                                                                         10,
+                                                                         weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer(),
                                                                          false);
       dnn.add(fc);
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;

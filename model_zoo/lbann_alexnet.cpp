@@ -343,9 +343,9 @@ int main(int argc, char *argv[]) {
    dnn->add_metric(new metrics::categorical_accuracy(DATA_LAYOUT/*::DATA_PARALLEL*/, comm));
     // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<>(comm, trainParams.MBSize, parallel_io, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers);
 #endif
     dnn->add(input_layer);
 
@@ -360,14 +360,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           1,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -391,12 +391,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           3,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
@@ -433,14 +433,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           5,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -464,12 +464,12 @@ int main(int argc, char *argv[]) {
       local_response_normalization_layer<> *layer
         = new local_response_normalization_layer<>(
           7,
+          comm,
+          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
           k,
-          trainParams.MBSize,
-          comm,
           cudnn);
       dnn->add(layer);
     }
@@ -506,14 +506,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           9,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -538,14 +538,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           11,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -571,14 +571,14 @@ int main(int argc, char *argv[]) {
       convolution_layer<> *layer
         = new convolution_layer<>(
           13,
+          comm,
+          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
           convPads,
           convStrides,
-          trainParams.MBSize,
           weight_initialization::he_normal,
-          comm,
           convolution_layer_optimizer,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
@@ -620,13 +620,11 @@ int main(int argc, char *argv[]) {
       //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
       fully_connected_layer<DATA_LAYOUT> *fc 
         = new fully_connected_layer<DATA_LAYOUT>(
-          // layer_id,
-          // prev_num_neurons,
           16,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer());
       fc->set_l2_regularization_factor(0.0005);
       dnn->add(fc);
@@ -650,13 +648,11 @@ int main(int argc, char *argv[]) {
       //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
       fully_connected_layer<DATA_LAYOUT> *fc 
         = new fully_connected_layer<DATA_LAYOUT>(
-          // layer_id,
-          // prev_num_neurons,
           19,
-          4096,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          4096,
+          weight_initialization::he_normal,
           dnn->create_optimizer(), 
           false);
       fc->set_l2_regularization_factor(0.0005);
@@ -682,10 +678,10 @@ int main(int argc, char *argv[]) {
       fully_connected_layer<DATA_LAYOUT> *fc
         = new fully_connected_layer<DATA_LAYOUT>(
           22,
-          1000,
-          trainParams.MBSize,
-          weight_initialization::he_normal,
           comm,
+          trainParams.MBSize,
+          1000,
+          weight_initialization::he_normal,
           dnn->create_optimizer(),
           false);
       fc->set_l2_regularization_factor(0.0005);
@@ -704,9 +700,9 @@ int main(int argc, char *argv[]) {
 
     // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, trainParams.MBSize, data_readers, true);
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<>(comm, trainParams.MBSize, parallel_io, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, parallel_io, trainParams.MBSize, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
 #endif
     dnn->add(target_layer);
 
