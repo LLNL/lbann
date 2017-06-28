@@ -64,13 +64,18 @@ class target_layer : public io_layer {
 
   virtual void setup(Layer *prev_layer, Layer *next_layer) {
     Layer::setup(prev_layer, next_layer);
+    std::stringstream err;
 
     if(this->m_num_prev_neurons != this->m_num_neurons) {
-      throw lbann_exception("lbann_target_layer: target layer does not match input data");
+      err << __FILE__ << " " << __LINE__ 
+          << " :: " << get_name() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << endl;
+      throw lbann_exception(err.str());
     }
 
     if(this->m_neural_network_model->m_obj_fn == NULL) {
-      throw lbann_exception("target layer has invalid objective function pointer");
+      err << __FILE__ << " " << __LINE__ 
+          << " :: lbann_target_layer: target layer has invalid objective function pointer";
+      throw lbann_exception(err.str());
     }
     this->m_neural_network_model->m_obj_fn->setup(this->m_num_neurons, this->m_mini_batch_size);
     for (auto&& m : this->m_neural_network_model->m_metrics) {
