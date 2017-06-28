@@ -32,6 +32,7 @@
 namespace lbann {
 
 namespace metrics {
+
 class categorical_accuracy : public metric {
  public:
   /// Constructor
@@ -43,11 +44,14 @@ class categorical_accuracy : public metric {
   void initialize_data_parallel_distribution();
 
   void setup(int num_neurons, int mini_batch_size);
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v);
 
   double report_metric(execution_mode mode);
   double report_lifetime_metric(execution_mode mode);
+
+  std::string name() const { return "categorical accuracy"; }
+  std::string display_unit() const { return "%"; }
 
  protected:
   AbsDistMat *YsColMax; /// Note that the column max matrix has the number of mini-batches on the rows instead of columns
@@ -62,10 +66,12 @@ class categorical_accuracy : public metric {
   Mat m_reduced_max_indices_v;
   //    Mat Y_local_v;
 
-  int64_t m_max_mini_batch_size;
+  int m_max_mini_batch_size;
 };
-}
-}
+
+}  // namespace metrics
+
+}  // namespace lbann
 
 
-#endif // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
+#endif  // LBANN_METRIC_CATEGORICAL_ACCURACY_HPP

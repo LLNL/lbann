@@ -40,16 +40,16 @@ void entrywise_mean_and_stdev(const Mat& data,
   // the loop.
 
   // Matrix dimensions
-  const Int height = data.Height();
-  const Int width = data.Width();
-  const Int size = height * width;
+  const El::Int height = data.Height();
+  const El::Int width = data.Width();
+  const El::Int size = height * width;
 
   // Compute sums over matrix entries
   const DataType shift = data(0, 0);
   DataType shifted_sum = 0;
   DataType shifted_sqsum = 0;
-  for(Int col = 0; col < width; ++col) {
-    for(Int row = 0; row < height; ++row) {
+  for(El::Int col = 0; col < width; ++col) {
+    for(El::Int row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -71,8 +71,8 @@ void columnwise_mean_and_stdev(const Mat& data,
                                Mat& stdevs) {
 
   // Matrix dimensions
-  const Int height = data.Height();
-  const Int width = data.Width();
+  const El::Int height = data.Height();
+  const El::Int width = data.Width();
 
   // Initialize outputs
   means.Resize(1, width);
@@ -80,11 +80,11 @@ void columnwise_mean_and_stdev(const Mat& data,
 
   // Compute mean and standard deviation of each matrix column
   #pragma omp parallel for
-  for(Int col = 0; col < width; ++col) {
+  for(El::Int col = 0; col < width; ++col) {
     const DataType shift = data(0, col);
     DataType shifted_sum = 0;
     DataType shifted_sqsum = 0;
-    for(Int row = 0; row < height; ++row) {
+    for(El::Int row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -117,10 +117,10 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
-  const Int height = data.Height();
-  const Int width = data.Width();
-  const Int local_height = data.LocalHeight();
-  const Int local_width = data.LocalWidth();
+  const El::Int height = data.Height();
+  const El::Int width = data.Width();
+  const El::Int local_height = data.LocalHeight();
+  const El::Int local_width = data.LocalWidth();
 
   // Initialize outputs
   means.Resize(1, width);
@@ -133,10 +133,10 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 
   // Compute sum and sum of squares of each matrix column
   #pragma omp parallel for
-  for(Int col = 0; col < local_width; ++col) {
+  for(El::Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     DataType sqsum = 0;
-    for(Int row = 0; row < local_height; ++row) {
+    for(El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       sum += val;
       sqsum += val * val;
@@ -151,7 +151,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 
   // Compute mean and standard deviation of each matrix column
   #pragma omp parallel for
-  for(Int col = 0; col < local_width; ++col) {
+  for(El::Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
     const DataType var = Max(sqmean - mean * mean, DataType(0));
@@ -167,34 +167,34 @@ void rowwise_mean_and_stdev(const Mat& data,
                             Mat& stdevs) {
 
   // Matrix dimensions
-  const Int height = data.Height();
-  const Int width = data.Width();
+  const El::Int height = data.Height();
+  const El::Int width = data.Width();
 
   // Initialize outputs
   means.Resize(height, 1);
   stdevs.Resize(height, 1);
 
   // Iterate through row blocks
-  const Int block_size = 16;
+  const El::Int block_size = 16;
   #pragma omp parallel for
-  for(Int row_start = 0; row_start < height; row_start += block_size) {
-    const Int row_end = Min(row_start + block_size, height);
+  for(El::Int row_start = 0; row_start < height; row_start += block_size) {
+    const El::Int row_end = Min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
     DataType *shifts = new DataType[block_size];
-    for(Int row = row_start; row < row_end; ++row) {
+    for(El::Int row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;
       shifts[row-row_start] = data(row, 0);
     }
 
     // Iterate through blocks in row block
-    for(Int col_start = 0; col_start < width; col_start += block_size) {
-      const Int col_end = Min(col_start + block_size, width);
+    for(El::Int col_start = 0; col_start < width; col_start += block_size) {
+      const El::Int col_end = Min(col_start + block_size, width);
 
       // Compute sums by iterating through block entries
-      for(Int col = col_start; col < col_end; ++col) {
-        for(Int row = row_start; row < row_end; ++row) {
+      for(El::Int col = col_start; col < col_end; ++col) {
+        for(El::Int row = row_start; row < row_end; ++row) {
           const DataType shift = shifts[row - row_start];
           const DataType shifted_val = data(row, col) - shift;
           means(row, 0) += shifted_val;
@@ -205,7 +205,7 @@ void rowwise_mean_and_stdev(const Mat& data,
     }
 
     // Compute mean and standard deviation of each row
-    for(Int row = row_start; row < row_end; ++row) {
+    for(El::Int row = row_start; row < row_end; ++row) {
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];

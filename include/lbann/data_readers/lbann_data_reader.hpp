@@ -245,6 +245,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     return 1;
   }
 
+  virtual const std::vector<int> get_data_dims() const {
+    return std::vector<int>(0);
+  }
+
   bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }

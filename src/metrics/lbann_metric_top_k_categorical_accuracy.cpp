@@ -35,7 +35,6 @@ top_k_categorical_accuracy::top_k_categorical_accuracy(
   metric(data_dist, comm), m_top_k(top_k),
   m_gathered_predictions(comm->get_model_grid()),
   m_gathered_ground_truth(comm->get_model_grid()) {
-  this->type = metric_type::top_k_categorical_accuracy;
 
   // Setup the data distribution
   switch (data_dist) {

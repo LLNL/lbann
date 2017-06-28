@@ -39,11 +39,11 @@ namespace lbann {
 class transform : public Layer {
 
  public:
-  transform(const uint index, 
-            //           const int numPrevNeurons,
-            //           const uint numNeurons,
+  transform(int index, 
+            // int numPrevNeurons,
+            // int numNeurons,
            lbann_comm *comm,
-           const uint mini_batch_size)
+           int mini_batch_size)
     : Layer(index, comm, mini_batch_size) {
 
   }
@@ -60,11 +60,8 @@ class transform : public Layer {
   virtual void forwardProp(void);
   virtual void backProp(void);
   virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
+  virtual void summarize(lbann_summary& summarizer, int step);
 
-  virtual void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
-  }
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 
@@ -76,23 +73,6 @@ class transform : public Layer {
   virtual ElMat& get_weights_biases_gradient(void) {
     return *m_weights_gradient;
   }
-
-  ElMat *fp_output(void);
-  ElMat *bp_output(void);
-  void setup_fp_input(ElMat *fp_input);
-  void setup_bp_input(ElMat *bp_input);
-
-  void set_prev_layer_type(layer_type type);
-  void set_next_layer_type(layer_type type);
-  bool using_gpus(void) const;
-  void set_prev_layer_using_gpus(bool using_gpus);
-  void set_next_layer_using_gpus(bool using_gpus);
-#ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d(void);
-  std::vector<DataType *> *bp_output_d(void);
-  void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
-  void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
-#endif
 
 #endif
 #if 0

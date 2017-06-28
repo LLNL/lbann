@@ -30,27 +30,32 @@
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 
 namespace lbann {
+
 namespace objective_functions {
+
 class mean_squared_error : public objective_fn {
  public:
   mean_squared_error(lbann_comm *comm);
   ~mean_squared_error();
 
   void setup(int num_neurons, int mini_batch_size);
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_mean_squared_error(ElMat& predictions_v, ElMat& groundtruth_v);
   double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v);
   void compute_obj_fn_derivative(layer_type prev_layer_type,
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);
+  std::string name() const { return "mean squared error"; }
 
  protected:
   /** Workspace to compute the squared error differences */
   DistMat m_errors;
   DistMat m_errors_v;
 };
-}
-}
 
-#endif // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED
+}  // namespace objective_functions
+
+}  // namespace lbann
+
+#endif  // LBANN_OBJECTIVE_FN_MEAN_SQUARED_ERROR_HPP_INCLUDED

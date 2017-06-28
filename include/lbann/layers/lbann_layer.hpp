@@ -120,7 +120,7 @@ static layer_category __attribute__((used)) _layer_type_to_category(layer_type l
 
 class Layer {
  public:
-  Layer(const uint index, lbann_comm *comm, uint mbsize);
+  Layer(const int index, lbann_comm *comm, int mbsize);
 
   virtual ~Layer(void);
 
@@ -130,7 +130,7 @@ class Layer {
   virtual void forwardProp(void);
   virtual void backProp(void);
   virtual bool update(void);
-  virtual void summarize(lbann_summary& summarizer, int64_t step);
+  virtual void summarize(lbann_summary& summarizer, int step);
   /**
    * Print information at the end of an epoch.
    * This is always called on the model masters and should synchronize
@@ -142,47 +142,67 @@ class Layer {
    * reset/clean up.
    */
   virtual void epoch_reset(void) {}
-  virtual DataType checkGradientMB(Layer& PrevLayer, const DataType Epsilon=1e-4) {
+  virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
     return 0.0;
   };
 
-  virtual void setup(int);
+  virtual void setup(Layer *prev_layer, Layer *next_layer);
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 
-  /** Return the type of this layer. */
+  /** Return the layer type. */
   inline layer_type get_type(void) const {
     return m_type;
   }
 
-  /** Return this layer's name */
+  /** Return the layer name. */
   inline std::string get_name() const { 
     return m_name;
   }
 
-  /** Set the layer's name **/
+  /** Set the layer name. **/
   inline void set_name(std::string name) {
     m_name = name;
   }
 
-  /** Return the index of this layer. */
-  inline uint get_index(void) const {
+  /** Return the layer index. */
+  inline int get_index(void) const {
     return m_index;
   }
-  /** Set the index of this layer. */
-  inline void set_index(const uint i) {
+  /** Set the layer index. */
+  inline void set_index(int i) {
     m_index = i;
   }
-  /** Return the number of neurons of this layer. */
-  inline uint get_num_neurons(void) const {
+  /** Return the number of neurons from previous layer. */
+  inline int get_num_prev_neurons(void) const {
+    return m_num_prev_neurons;
+  }
+  /** Return the number of dimensions in neuron tensor from previous layer. */
+  inline int get_num_prev_neuron_dims(void) const {
+    return m_num_prev_neuron_dims;
+  }
+  /** Return the dimensions of neuron tensor from previous layer. */
+  inline const std::vector<int>& get_prev_neuron_dims(void) const {
+    return m_prev_neuron_dims;
+  }
+  /** Return the number of neurons. */
+  inline int get_num_neurons(void) const {
     return m_num_neurons;
   }
-  /** Return the execution mode of this layer */
+  /** Return the number of dimensions in neuron tensor. */
+  inline int get_num_neuron_dims(void) const {
+    return m_num_neuron_dims;
+  }
+  /** Return the dimensions of neuron tensor. */
+  inline const std::vector<int>& get_neuron_dims(void) const {
+    return m_neuron_dims;
+  }
+  /** Return the execution mode. */
   inline execution_mode get_execution_mode(void) const {
     return m_execution_mode;
   }
-  /** Set the execution mode of this layer */
-  inline void set_execution_mode(const execution_mode mode) {
+  /** Set the execution mode. */
+  inline void set_execution_mode(execution_mode mode) {
     m_execution_mode = mode;
   }
   /** Return the data layout of the given layer -- Every concrete
@@ -200,7 +220,7 @@ class Layer {
   }
 
   /** Return the size of mini-batch this layer uses. */
-  virtual uint get_minibatch_size(void) const {
+  virtual int get_minibatch_size(void) const {
     return m_mini_batch_size;
   }
   /**
@@ -209,30 +229,17 @@ class Layer {
    * contributed than the local mini-batch size implies (e.g. when doing
    * inter-model updates).
    */
-  virtual uint get_effective_minibatch_size(void) const {
+  virtual int get_effective_minibatch_size(void) const {
     return m_effective_mbsize;
   }
   /** Set the effective size of a mini-batch to size. */
-  virtual void set_effective_minibatch_size(uint size) {
+  virtual void set_effective_minibatch_size(int size) {
     m_effective_mbsize = size;
   }
 
-  ElMat *fp_output(void);
-  ElMat *bp_output(void);
-  void setup_fp_input(ElMat *input);
-  void setup_bp_input(ElMat *input);
-
-  void set_prev_layer_type(layer_type type);
-  void set_next_layer_type(layer_type type);
-  bool using_gpus(void) const;
-  void set_prev_layer_using_gpus(bool using_gpus);
-  void set_next_layer_using_gpus(bool using_gpus);
-#ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d(void);
-  std::vector<DataType *> *bp_output_d(void);
-  void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
-  void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
-#endif
+  bool using_gpus(void) const {
+    return m_using_gpus;
+  }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model(void) const {
@@ -247,50 +254,49 @@ class Layer {
   virtual bool saveToFile(int fd, const char *filename) { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
-  virtual bool saveToCheckpoint(int fd, const char *filename, uint64_t *bytes);
-  virtual bool loadFromCheckpoint(int fd, const char *filename, uint64_t *bytes);
+  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes);
+  virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
   virtual bool saveToCheckpointShared(persist& p);
   virtual bool loadFromCheckpointShared(persist& p);
 
  protected:
-  uint m_index;                 ///< Layer index (start with 0)
+  int m_index;                 ///< Layer index (start with 0)
 
   std::string m_name;
 
   lbann_comm *m_comm;
 
-  layer_type m_type;            ///< Type of this layer
-  layer_type m_prev_layer_type; ///< Type of previous layer
-  layer_type m_next_layer_type; ///< Type of next layer
+  layer_type m_type;            ///< Layer type
 
-  uint m_num_neurons;           ///< Number of neurons
-  Int  m_num_prev_neurons;      ///< Number of neurons in previous layer
+  int m_num_neurons;                    ///< Number of neurons
+  int m_num_neuron_dims;                ///< Number of dimensions in neuron tensor
+  std::vector<int> m_neuron_dims;       ///< Neuron tensor dimensions
+  int m_num_prev_neurons;               ///< Number of neurons in previous layer
+  int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
+  std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
   execution_mode  m_execution_mode;
 
  public:
-  ElMat *m_prev_error_signal;   ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  ElMat *m_prev_error_signal;    ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  ElMat *m_prev_error_signal_v;  ///< View of active columns in previous error signal matrix
 
-  ElMat *m_activations;         ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
-
-  /// Create a view of each matrix so that it can accomodate partial mini-batches
-  ElMat *m_prev_error_signal_v;
-  ElMat *m_activations_v;
-
-  ElMat *fp_input;              ///< Pointer to input for the forward propagation - no local storage
-  ElMat *bp_input;              ///< Pointer to the input for the backward propagation - no local storage
+  ElMat *m_activations;          ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
+  ElMat *m_activations_v;        ///< View of active columns in activations matrix
 
   model *m_neural_network_model;
 
  protected:
 
+  Layer *m_prev_layer;  ///< Pointer to previous layer
+  Layer *m_next_layer;  ///< Pointer to next layer
+
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
+  ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
+
   ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
-
-  ElMat *m_error_signal_v;
-  ElMat *m_prev_activations_v;
-
+  ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
 
  protected:
 
@@ -307,10 +313,6 @@ class Layer {
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;
-  /** Previous layer is using GPUs. */
-  bool m_prev_layer_using_gpus;
-  /** Next layer is using GPUs. */
-  bool m_next_layer_using_gpus;
 
   /// cuDNN manager
   cudnn::cudnn_manager *m_cudnn;
@@ -327,7 +329,7 @@ class Layer {
   bool m_bp_output_pinned;
 
   /** Number of mini-batch samples per GPU. */
-  Int m_mini_batch_size_per_gpu;
+  int m_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType *> m_prev_activations_d;
@@ -345,9 +347,9 @@ class Layer {
 #endif
 
   /** Size of the local mini-batch. */
-  uint m_mini_batch_size;
+  int m_mini_batch_size;
   /** "Effective" mini-batch size for backward propagation, etc.. */
-  uint m_effective_mbsize;
+  int m_effective_mbsize;
 
   /** Time spent in forward propagation. */
   double fp_time;

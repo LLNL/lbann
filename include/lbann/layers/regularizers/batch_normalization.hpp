@@ -58,17 +58,21 @@ class batch_normalization : public regularizer_layer {
    * @param beta The initial value for beta. This should almost always
    * stay at zero.
    */
-  batch_normalization(const uint index, const uint num_neurons,
-                      lbann_comm *comm, uint mini_batch_size,
-                      DataType decay=0.9, DataType gamma=1.0, DataType beta=0.0)
+  batch_normalization(int index,
+                      lbann_comm *comm,
+                      int mini_batch_size,
+                      DataType decay=0.9,
+                      DataType gamma=1.0,
+                      DataType beta=0.0)
     : regularizer_layer(index, comm, mini_batch_size),
-      m_gamma_init(gamma), m_beta_init(beta), m_decay(decay) {
+      m_gamma_init(gamma),
+      m_beta_init(beta),
+      m_decay(decay) {
     set_name("batch_normalization");
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::batch_normalization;
-    this->m_num_neurons = num_neurons;
-  }
+   }
 
   ~batch_normalization() {
     delete m_gamma;
@@ -85,8 +89,16 @@ class batch_normalization : public regularizer_layer {
   virtual inline data_layout get_data_layout() { return T_layout; }
 
   /** Initializes matrices. */
-  void setup(int num_prev_neurons) {
-    regularizer_layer::setup(num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
+
+    // Initialize parameters
+    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     Ones(*m_gamma, this->get_num_neurons(), 1);
     Scale(m_gamma_init, *m_gamma);
     Ones(*m_beta, this->get_num_neurons(), 1);

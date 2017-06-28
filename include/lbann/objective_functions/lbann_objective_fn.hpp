@@ -33,20 +33,8 @@
 #include "lbann/layers/lbann_layer.hpp"
 
 namespace lbann {
-namespace objective_functions {
-enum class obj_fn_type {categorical_cross_entropy, mean_squared_error, INVALID};
 
-static const char *__attribute__((used)) _to_string(obj_fn_type o) {
-  switch(o) {
-  case obj_fn_type::categorical_cross_entropy:
-    return "categorical cross entropy";
-  case obj_fn_type::mean_squared_error:
-    return "mean squared error";
-  default:
-    throw lbann_exception("Invalid obj_fn type specified");
-  }
-  return NULL;
-}
+namespace objective_functions {
 
 class statistics {
  public:
@@ -73,15 +61,10 @@ class statistics {
  */
 class objective_fn {
  public:
-  objective_fn() {
-    this->type = obj_fn_type::INVALID;
-  }
-  objective_fn(std::string nm): m_name(nm) {
-    objective_fn();
-  }
+  objective_fn() {}
   virtual ~objective_fn() {}
   virtual void setup(int num_neurons, int mini_batch_size) {}
-  virtual void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
+  virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
   /// Compute the object function -- Note that it is averaged across a mini-batch
   virtual double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v) {
     return 0.0;
@@ -96,22 +79,18 @@ class objective_fn {
   double report_aggregate_avg_obj_fn(execution_mode mode);
   void record_obj_fn(execution_mode mode, double avg_cost);
   void reset_obj_fn();
-  const std::string& name() {
-    return m_name;
-  }
+
+  /** Return a string name for this objective function. */
+  virtual std::string name() const = 0;
 
  protected:
   statistics m_training_stats;
   statistics m_validation_stats;
   statistics m_testing_stats;
-
- public:
-  obj_fn_type type;
-
- private:
-  std::string m_name;
 };
-}
-}
 
-#endif // LBANN_OBJECTIVE_FN_INCLUDED
+}  // namespace objective_functions
+
+}  // namespace lbann
+
+#endif  // LBANN_OBJECTIVE_FN_INCLUDED

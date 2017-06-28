@@ -27,34 +27,34 @@
 #include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
 #include "lbann/models/lbann_model.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::metrics::mean_squared_error::mean_squared_error(data_layout data_dist, lbann_comm *comm)
+namespace metrics {
+
+mean_squared_error::mean_squared_error(data_layout data_dist, lbann_comm *comm)
   : metric(data_dist, comm),
     internal_obj_fn(comm) {
-  this->type = metric_type::mean_squared_error;
 }
 
-lbann::metrics::mean_squared_error::~mean_squared_error() {}
+mean_squared_error::~mean_squared_error() {}
 
-void lbann::metrics::mean_squared_error::setup(int num_neurons, int mini_batch_size) {
+void mean_squared_error::setup(int num_neurons, int mini_batch_size) {
   metric::setup(num_neurons, mini_batch_size);
   // Setup the internal objective function
   internal_obj_fn.setup(num_neurons, mini_batch_size);
 }
 
-void lbann::metrics::mean_squared_error::fp_set_std_matrix_view(int64_t cur_mini_batch_size) {
+void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
   internal_obj_fn.fp_set_std_matrix_view(cur_mini_batch_size);
 }
 
-double lbann::metrics::mean_squared_error::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+double mean_squared_error::compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
   double num_errors = internal_obj_fn.compute_mean_squared_error(predictions_v, groundtruth_v);
   return num_errors;
 }
 
-double lbann::metrics::mean_squared_error::report_metric(execution_mode mode) {
+double mean_squared_error::report_metric(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   double error_per_epoch = stats->m_error_per_epoch;
   long samples_per_epoch = stats->m_samples_per_epoch;
@@ -65,7 +65,7 @@ double lbann::metrics::mean_squared_error::report_metric(execution_mode mode) {
   return mse;
 }
 
-double lbann::metrics::mean_squared_error::report_lifetime_metric(execution_mode mode) {
+double mean_squared_error::report_lifetime_metric(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   double total_error = stats->m_total_error;
   long total_num_samples = stats->m_total_num_samples;
@@ -75,3 +75,7 @@ double lbann::metrics::mean_squared_error::report_lifetime_metric(execution_mode
 
   return mse;
 }
+
+}  // namespace metrics
+
+}  // namespace lbann

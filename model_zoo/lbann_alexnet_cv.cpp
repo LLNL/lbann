@@ -58,8 +58,8 @@ const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const uint g_ImageNet_Width = 256;
-const uint g_ImageNet_Height = 256;
+const int g_ImageNet_Width = 256;
+const int g_ImageNet_Height = 256;
 
 int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
@@ -100,10 +100,10 @@ int main(int argc, char *argv[]) {
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
     // Number of GPUs
-    Int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+    int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 
     // Number of class labels
-    Int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
+    int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
 
     ProcessInput();
     PrintInputReport();
@@ -355,20 +355,20 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::testing, &imagenet_testset)
                                                           };
     dnn->add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
-    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, (int) trainParams.MBSize, data_readers);
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers);
     dnn->add(input_layer);
 
     // Layer 1 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 3;
-      Int inputDims[] = {256, 256};
-      Int outputChannels = 96;
-      Int filterDims[] = {11, 11};
-      Int convPads[] = {0, 0};
-      Int convStrides[] = {4, 4};
+      int numDims = 2;
+      int inputChannels = 3;
+      int inputDims[] = {256, 256};
+      int outputChannels = 96;
+      int filterDims[] = {11, 11};
+      int convPads[] = {0, 0};
+      int convStrides[] = {4, 4};
       convolutional_layer *layer
         = new convolutional_layer(1, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
       int numDims = 2;
       int channels = 96;
       int dims[] = {62, 62};
-      Int windowWidth = 5;
+      int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
@@ -419,13 +419,13 @@ int main(int argc, char *argv[]) {
     // Layer 4 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 96;
-      Int inputDims[] = {30, 30};
-      Int outputChannels = 256;
-      Int filterDims[] = {5, 5};
-      Int convPads[] = {2, 2};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 96;
+      int inputDims[] = {30, 30};
+      int outputChannels = 256;
+      int filterDims[] = {5, 5};
+      int convPads[] = {2, 2};
+      int convStrides[] = {1, 1};
       convolutional_layer *layer
         = new convolutional_layer(4, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
       int numDims = 2;
       int channels = 256;
       int dims[] = {30, 30};
-      Int windowWidth = 5;
+      int windowWidth = 5;
       DataType alpha = 0.0001;
       DataType beta = 0.75;
       DataType k = 2;
@@ -476,13 +476,13 @@ int main(int argc, char *argv[]) {
     // Layer 7 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 256;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 384;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 256;
+      int inputDims[] = {14, 14};
+      int outputChannels = 384;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolutional_layer *layer
         = new convolutional_layer(7, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
@@ -499,13 +499,13 @@ int main(int argc, char *argv[]) {
     // Layer 8 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 384;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 384;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 384;
+      int inputDims[] = {14, 14};
+      int outputChannels = 384;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolutional_layer *layer
         = new convolutional_layer(8, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
@@ -522,13 +522,13 @@ int main(int argc, char *argv[]) {
     // Layer 9 (convolutional)
     {
       optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      Int numDims = 2;
-      Int inputChannels = 384;
-      Int inputDims[] = {14, 14};
-      Int outputChannels = 256;
-      Int filterDims[] = {3, 3};
-      Int convPads[] = {1, 1};
-      Int convStrides[] = {1, 1};
+      int numDims = 2;
+      int inputChannels = 384;
+      int inputDims[] = {14, 14};
+      int outputChannels = 256;
+      int filterDims[] = {3, 3};
+      int convPads[] = {1, 1};
+      int convStrides[] = {1, 1};
       convolutional_layer *layer
         = new convolutional_layer(9, numDims, inputChannels, inputDims,
                                   outputChannels, filterDims,
@@ -588,8 +588,8 @@ int main(int argc, char *argv[]) {
              weight_initialization::he_normal,
     {new l2_regularization(0.0005)});
 
-    // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, (int) trainParams.MBSize, data_readers, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, (int) trainParams.MBSize, data_readers, true);
+    // target_layer *target_layer = new target_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, trainParams.MBSize, data_readers, true);
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers, true);
     dnn->add(target_layer);
 
 

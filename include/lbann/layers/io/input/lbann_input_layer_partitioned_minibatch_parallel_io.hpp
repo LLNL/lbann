@@ -42,7 +42,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch_parallel_io {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, uint mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     set_name("input_layer_partitioned_minibatch_parallel_io");
@@ -56,8 +56,8 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    input_layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       int base_offset = Layer::m_comm->get_rank_in_model();
       int batch_stride = Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
@@ -80,6 +80,8 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
                                                             Layer::m_mini_batch_size,
                                                             m_num_parallel_readers_testing);
     }
+
+    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;

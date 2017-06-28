@@ -30,22 +30,27 @@
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 
 namespace lbann {
+
 namespace objective_functions {
+
 class categorical_cross_entropy : public objective_fn {
  public:
   categorical_cross_entropy(lbann_comm *comm);
   ~categorical_cross_entropy();
 
   void setup(int num_neurons, int mini_batch_size);
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size);
+  void fp_set_std_matrix_view(int cur_mini_batch_size);
   double compute_categorical_cross_entropy(ElMat& predictions_v, ElMat& groundtruth_v);
   double compute_obj_fn(ElMat& predictions_v, ElMat& groundtruth_v);
   void compute_obj_fn_derivative(layer_type prev_layer_type,
                                  ElMat& predictions_v,
                                  ElMat& groundtruth_v,
                                  ElMat& error_signal_v);
+  std::string name() const { return "categorical cross entropy"; }
 };
-}
-}
 
-#endif // LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED
+}  // namespace objective_functions
+
+}  // namespace lbann
+
+#endif  // LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED

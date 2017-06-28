@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
 
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, (int) trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
     gla.add(input_layer);
     Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
                                                         mnist_trainset.get_linearized_data_size(), 32,trainParams.MBSize,

@@ -27,9 +27,11 @@
 #include "lbann/objective_functions/lbann_objective_fn.hpp"
 #include "lbann/models/lbann_model.hpp"
 
-using namespace std;
+namespace lbann {
 
-lbann::objective_functions::statistics *lbann::objective_functions::objective_fn::get_statistics(execution_mode mode) {
+namespace objective_functions {
+
+statistics *objective_fn::get_statistics(execution_mode mode) {
   statistics *stats;
 
   switch(mode) {
@@ -49,7 +51,7 @@ lbann::objective_functions::statistics *lbann::objective_functions::objective_fn
 }
 
 
-void lbann::objective_functions::objective_fn::record_obj_fn(execution_mode mode, double avg_cost) {
+void objective_fn::record_obj_fn(execution_mode mode, double avg_cost) {
   statistics *stats = get_statistics(mode);
   stats->m_last_mini_batch_avg_cost = avg_cost;
   stats->m_aggregate_avg_cost_per_epoch += avg_cost;
@@ -57,12 +59,12 @@ void lbann::objective_functions::objective_fn::record_obj_fn(execution_mode mode
   return;
 }
 
-double lbann::objective_functions::objective_fn::report_obj_fn(execution_mode mode) {
+double objective_fn::report_obj_fn(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   return stats->m_last_mini_batch_avg_cost;
 }
 
-double lbann::objective_functions::objective_fn::report_aggregate_avg_obj_fn(execution_mode mode) {
+double objective_fn::report_aggregate_avg_obj_fn(execution_mode mode) {
   statistics *stats = get_statistics(mode);
   if(stats->m_num_mini_batch_per_epoch == 0) {
     return std::numeric_limits<double>::max();
@@ -71,8 +73,12 @@ double lbann::objective_functions::objective_fn::report_aggregate_avg_obj_fn(exe
   }
 }
 
-void lbann::objective_functions::objective_fn::reset_obj_fn() {
+void objective_fn::reset_obj_fn() {
   m_training_stats.reset_stats();
   m_validation_stats.reset_stats();
   m_testing_stats.reset_stats();
 }
+
+}  // namespace objective_functions
+
+}  // namespace lbann
