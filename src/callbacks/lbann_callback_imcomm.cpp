@@ -100,15 +100,15 @@ void lbann_callback_imcomm::setup(model *m) {
         convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
           dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
         params.reshape_height = conv_layer->m_conv_size /
-          conv_layer->m_num_output_channels;
-        params.reshape_width = conv_layer->m_num_output_channels;
+          conv_layer->m_neuron_dims[0];;
+        params.reshape_width = conv_layer->m_neuron_dims[0];
       } else if (std::type_index(layer_type) ==
                  std::type_index(typeid(convolution_layer<data_layout::DATA_PARALLEL>))) {
         convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
           dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
         params.reshape_height = conv_layer->m_conv_size /
-          conv_layer->m_num_output_channels;
-        params.reshape_width = conv_layer->m_num_output_channels;
+          conv_layer->m_neuron_dims[0];
+        params.reshape_width = conv_layer->m_neuron_dims[0];
       }
       if (ct_does_quantization(params.ct)) {
         const ElMat& gradients = learning_layer->get_weights_gradient();

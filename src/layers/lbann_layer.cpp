@@ -70,7 +70,7 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
   m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
 
-Layer::Layer(const uint index, lbann_comm *comm, uint mbsize)
+Layer::Layer(const int index, lbann_comm *comm, int mbsize)
   : m_index(index),
     m_comm(comm),
     m_execution_mode(execution_mode::training),
