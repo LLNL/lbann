@@ -46,8 +46,8 @@ class softmax_layer: public activation_layer {
 
  public:
   softmax_layer(int index,
-                int numPrevNeurons,
-                int numNeurons,
+                int num_prev_neurons,  /** TODO: Remove. This is not used. */
+                int num_neurons,       /** TODO: Remove. This is not used. */
                 int mini_batch_size,
                 weight_initialization init,
                 lbann_comm *comm,
@@ -55,7 +55,7 @@ class softmax_layer: public activation_layer {
      :  activation_layer(index,
                          comm,
                          mini_batch_size,
-                         numNeurons) {
+                         num_neurons) {
     set_name("softmax_layer");
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -71,14 +71,19 @@ class softmax_layer: public activation_layer {
   virtual inline void initialize_distributed_matrices();
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
 
     // Initialize other matrices
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size);
+    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size);
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
     Zeros(*this->m_workspace, 1, this->m_mini_batch_size);
   }
 
@@ -142,10 +147,10 @@ class softmax_layer: public activation_layer {
     // Stop early if objective function is categorical cross entropy
     // Note: error signal is already computed in objective function object
     if(this->m_neural_network_model->m_obj_fn->type == objective_functions::obj_fn_type::categorical_cross_entropy
-       && (this->m_next_layer_type == layer_type::target_distributed_minibatch
-           || this->m_next_layer_type == layer_type::target_distributed_minibatch_parallel_io
-           || this->m_next_layer_type == layer_type::target_partitioned_minibatch_parallel_io
-           // || m_next_layer_type == layer_type::target_unsupervised
+       && (this->m_next_layer->get_type() == layer_type::target_distributed_minibatch
+           || this->m_next_layer->get_type() == layer_type::target_distributed_minibatch_parallel_io
+           || this->m_next_layer->get_type() == layer_type::target_partitioned_minibatch_parallel_io
+           // || this->m_next_layer->get_type() == layer_type::target_unsupervised
            )) {
       View(*this->m_error_signal, *this->m_prev_error_signal);
       View(*this->m_error_signal_v, *this->m_error_signal,

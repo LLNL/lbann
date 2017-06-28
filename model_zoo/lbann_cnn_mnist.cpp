@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
                                                                 NULL);
       dnn.add(relu);
       Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(7,
-                                                                 100,
+                                                                 128,
                                                                  comm,
                                                                  trainParams.MBSize,
                                                                  0.5);

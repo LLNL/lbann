@@ -52,11 +52,8 @@ class activation_layer : public Layer {
   activation_layer(int index,
                    lbann_comm *comm,
                    int mini_batch_size,
-                   int num_neurons) :
+                   int num_neurons  /** TODO: Remove. This is not used */) :
     Layer(index, comm, mini_batch_size) {
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, num_neurons);
     this->m_type = layer_type::activation;
   }
 
@@ -74,7 +71,7 @@ class entrywise_activation_layer : public activation_layer {
   entrywise_activation_layer(int index,
                              lbann_comm *comm,
                              int mini_batch_size,
-                             int num_neurons) :
+                             int num_neurons  /** TODO: Remove. This is not used */) :
     activation_layer(index, comm, mini_batch_size, num_neurons) {
   }
 
@@ -84,10 +81,13 @@ class entrywise_activation_layer : public activation_layer {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual void setup(int num_prev_neurons) {
-    Layer::setup(num_prev_neurons);
-    this->m_num_prev_neuron_dims = 1;
-    this->m_prev_neuron_dims.assign(1, num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
 
     // Initialize matrices
     Zeros(*(this->m_prev_activations), this->m_num_prev_neurons, this->m_mini_batch_size);

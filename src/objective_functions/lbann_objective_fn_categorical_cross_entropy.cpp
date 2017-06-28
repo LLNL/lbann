@@ -83,9 +83,9 @@ double lbann::objective_functions::categorical_cross_entropy::compute_obj_fn(ElM
 }
 
 void lbann::objective_functions::categorical_cross_entropy::compute_obj_fn_derivative(layer_type prev_layer_type,
-    ElMat& predictions_v,
-    ElMat& groundtruth_v,
-    ElMat& error_signal_v) {
+                                                                                      ElMat& predictions_v,
+                                                                                      ElMat& groundtruth_v,
+                                                                                      ElMat& error_signal_v) {
 
   // Compute error signal (softmax output layer case)
   // Note: error_signal = predictions - groundtruth

@@ -54,10 +54,10 @@ class convolution_layer : public learning {
 
   /// Weight initialization scheme
   const weight_initialization m_weight_initialization;
-  /// Filter dimensions
-  std::vector<int> m_filter_dims;
-  /// Number of filter weights
-  int m_filter_size;
+  /// Convolutional filter dimensions
+  std::vector<int> m_conv_dims;
+  /// Size of convolutional filters
+  int m_conv_size;
   /// Convolution padding
   std::vector<int> m_conv_pads;
   /// Convolution strides
@@ -99,10 +99,10 @@ class convolution_layer : public learning {
 
   convolution_layer(int index,
                     int num_data_dims,
-                    int num_input_channels,
-                    const int *input_dims,
+                    int num_input_channels,  // TODO: Remove. This is not used.
+                    const int *input_dims,   // TODO: Remove. This is not used.
                     int num_output_channels,
-                    const int *filter_dims,
+                    const int *conv_dims,
                     const int *conv_pads,
                     const int *conv_strides,
                     int mini_batch_size,
@@ -110,7 +110,7 @@ class convolution_layer : public learning {
                     lbann_comm *comm,
                     optimizer *opt,
                     cudnn::cudnn_manager *cudnn = NULL)
-    : learning(index, 0, 0, mini_batch_size, comm, opt),
+    : learning(index, mini_batch_size, comm, opt),
       m_weight_initialization(init) {
 
     set_name("convolution");
@@ -121,37 +121,14 @@ class convolution_layer : public learning {
     this->m_type = layer_type::convolution;
 
     // Initialize convolution parameters
-    m_filter_dims.assign(filter_dims, filter_dims+num_data_dims);
-    m_filter_size = std::accumulate(m_filter_dims.begin(),
-                                    m_filter_dims.end(),
-                                    num_input_channels * num_output_channels,
-                                    std::multiplies<int>());
+    m_conv_dims.assign(conv_dims, conv_dims+num_data_dims);
     m_conv_pads.assign(conv_pads, conv_pads+num_data_dims);
     m_conv_strides.assign(conv_strides, conv_strides+num_data_dims);
 
-    // Initialize previous neuron tensor dimensions
-    this->m_num_prev_neuron_dims = num_data_dims + 1;
-    this->m_prev_neuron_dims.assign(input_dims,
-                                    input_dims+num_data_dims);
-    this->m_prev_neuron_dims.insert(this->m_prev_neuron_dims.begin(),
-                                    num_input_channels);
-    this->m_num_prev_neurons = std::accumulate(this->m_prev_neuron_dims.begin(),
-                                               this->m_prev_neuron_dims.end(),
-                                               1,
-                                               std::multiplies<int>());
-
     // Initialize neuron tensor dimensions
     this->m_num_neuron_dims = num_data_dims + 1;
-    this->m_neuron_dims.resize(num_data_dims + 1);
+    this->m_neuron_dims.resize(this->m_num_neuron_dims);
     this->m_neuron_dims[0] = num_output_channels;
-    for(int i=0; i<num_data_dims; ++i) {
-      this->m_neuron_dims[i+1] = input_dims[i]+2*conv_pads[i]-filter_dims[i]+1;
-      this->m_neuron_dims[i+1] = (this->m_neuron_dims[i+1]+conv_strides[i]-1)/conv_strides[i];
-    }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
 
   #ifdef __LIB_CUDNN
     m_weights_gradient_per_gpu = StarMat(this->m_comm->get_model_grid());
@@ -209,10 +186,10 @@ class convolution_layer : public learning {
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
       this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
       this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer_using_gpus) {
+      if(!this->m_prev_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
       }
-      if(!this->m_next_layer_using_gpus) {
+      if(!this->m_next_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
       }
 
@@ -231,8 +208,26 @@ class convolution_layer : public learning {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    Layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+    
+    // Initialize neuron tensor dimensions
+    for(int i=0; i<m_num_neuron_dims-1; ++i) {
+      const int effective_dim = (this->m_prev_neuron_dims[i+1]
+                                 + 2*m_conv_pads[i] - m_conv_dims[i] + 1);
+      this->m_neuron_dims[i+1] = ((effective_dim + m_conv_strides[i] - 1)
+                                  / m_conv_strides[i]);
+    }
+    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
+                                          this->m_neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
+
+    // Get size of convolutional filters
+    m_conv_size = std::accumulate(m_conv_dims.begin(),
+                                  m_conv_dims.end(),
+                                  this->m_prev_neuron_dims[0] * this->m_neuron_dims[0],
+                                  std::multiplies<int>());
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -241,28 +236,17 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
 
-  #ifdef LBANN_DEBUG
-    // Check if input dimensions are valid
-    const int num_inputs = std::accumulate(this->m_prev_neuron_dims.begin(),
-                                           this->m_prev_neuron_dims.end(),
-                                           1,
-                                           std::multiplies<int>());
-    if(num_inputs != this->m_num_prev_neurons) {
-      throw lbann_exception("convolution_layer: unexpected number of input neurons");
-    }
-  #endif // #ifdef LBANN_DEBUG
-
     // Initialize matrices
     Zeros(*this->m_weights,
-          m_filter_size + this->m_neuron_dims[0],
+          m_conv_size + this->m_neuron_dims[0],
           1);
     Zeros(*this->m_weights_gradient,
-          m_filter_size + this->m_neuron_dims[0],
+          m_conv_size + this->m_neuron_dims[0],
           1);
   #ifdef __LIB_CUDNN
     if(this->m_using_gpus) {
       Zeros(m_weights_gradient_per_gpu,
-            m_filter_size + this->m_neuron_dims[0],
+            m_conv_size + this->m_neuron_dims[0],
             this->m_cudnn->get_num_gpus());
     }
   #endif // #ifdef __LIB_CUDNN
@@ -274,16 +258,16 @@ class convolution_layer : public learning {
   #ifdef __LIB_CUDNN
     // Pin host memory
     if(this->m_using_gpus) {
-      this->m_cudnn->pin_matrix(*(this->m_weights));
+      this->m_cudnn->pin_matrix(*this->m_weights);
       this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
     }
   #endif // #ifdef __LIB_CUDNN
 
     // Initialize filters
     StarMat filter;
-    View(filter, *this->m_weights, IR(0,m_filter_size), ALL);
-    const int fan_in = m_filter_size / this->m_neuron_dims[0];
-    const int fan_out = m_filter_size / this->m_prev_neuron_dims[0];
+    View(filter, *this->m_weights, IR(0,m_conv_size), ALL);
+    const int fan_in = m_conv_size / this->m_neuron_dims[0];
+    const int fan_out = m_conv_size / this->m_prev_neuron_dims[0];
     initialize_matrix(filter, this->m_weight_initialization, fan_in, fan_out);
 
     // Initialize optimizer
@@ -329,14 +313,14 @@ class convolution_layer : public learning {
                                            input_strides.data()));
 
     // Set filter descriptor
-    std::vector<int> filter_dims = m_filter_dims;
-    filter_dims.insert(filter_dims.begin(), this->m_prev_neuron_dims[0]);
-    filter_dims.insert(filter_dims.begin(), this->m_neuron_dims[0]);
+    std::vector<int> conv_dims = m_conv_dims;
+    conv_dims.insert(conv_dims.begin(), this->m_prev_neuron_dims[0]);
+    conv_dims.insert(conv_dims.begin(), this->m_neuron_dims[0]);
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_filter_desc,
                                            this->m_cudnn->get_cudnn_data_type(),
                                            CUDNN_TENSOR_NCHW,
-                                           filter_dims.size(),
-                                           filter_dims.data()));
+                                           conv_dims.size(),
+                                           conv_dims.data()));
 
     // Set convolution descriptor
     // Note: upscales are not supported as of cuDNN v5.1
@@ -453,10 +437,10 @@ class convolution_layer : public learning {
 
     // Allocate GPU memory
     this->m_cudnn->allocate_on_gpus(m_weights_d,
-                                    m_filter_size+this->m_neuron_dims[0],
+                                    m_conv_size+this->m_neuron_dims[0],
                                     1);
     this->m_cudnn->allocate_on_gpus(m_weights_gradient_d,
-                                    m_filter_size+this->m_neuron_dims[0],
+                                    m_conv_size+this->m_neuron_dims[0],
                                     1);
     this->m_cudnn->allocate_on_gpus(this->m_activations_d,
                                     this->m_num_neurons,
@@ -464,12 +448,12 @@ class convolution_layer : public learning {
     this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
                                     this->m_num_prev_neurons,
                                     this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer_using_gpus) {
+    if(!this->m_prev_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
                                       this->m_num_prev_neurons,
                                       this->m_mini_batch_size_per_gpu);
     }
-    if(!this->m_next_layer_using_gpus) {
+    if(!this->m_next_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
                                       this->m_num_neurons,
                                       this->m_mini_batch_size_per_gpu);
@@ -534,7 +518,7 @@ class convolution_layer : public learning {
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                  &one,
                                  m_bias_desc,
-                                 m_weights_d[i] + m_filter_size,
+                                 m_weights_d[i] + m_conv_size,
                                  &one,
                                  m_output_desc,
                                  this->m_activations_d[i]));
@@ -571,7 +555,7 @@ class convolution_layer : public learning {
                                                this->m_prev_error_signal_d[i],
                                                &zero,
                                                m_bias_desc,
-                                               m_weights_gradient_d[i] + m_filter_size));
+                                               m_weights_gradient_d[i] + m_conv_size));
       CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                  &one,
                                                  m_input_desc,
@@ -619,14 +603,14 @@ class convolution_layer : public learning {
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get filters and bias
-    const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
-    const Mat bias_local = LockedView(weights_local, IR(m_filter_size,END), ALL);
+    const Mat filter_local = LockedView(weights_local, IR(0,m_conv_size), ALL);
+    const Mat bias_local = LockedView(weights_local, IR(m_conv_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
     const int num_input_channels = this->m_prev_neuron_dims[0];
     const int num_output_channels = this->m_neuron_dims[0];
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
-    const int current_filter_size = m_filter_size / num_output_channels;
+    const int current_filter_size = m_conv_size / num_output_channels;
 
     // Apply bias
     for(int i=0; i<num_output_channels; ++i) {
@@ -655,7 +639,7 @@ class convolution_layer : public learning {
              this->m_num_prev_neuron_dims - 1,
              this->m_prev_neuron_dims.data() + 1,
              m_conv_pads.data(),
-             m_filter_dims.data(),
+             m_conv_dims.data(),
              m_conv_strides.data());
 
       // Apply convolution to current data sample
@@ -680,9 +664,9 @@ class convolution_layer : public learning {
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get filters and bias
-    const Mat filter_local = LockedView(weights_local, IR(0,m_filter_size), ALL);
-    Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_filter_size), ALL);
-    Mat bias_gradient_local = View(weights_gradient_local, IR(m_filter_size,END), ALL);
+    const Mat filter_local = LockedView(weights_local, IR(0,m_conv_size), ALL);
+    Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_conv_size), ALL);
+    Mat bias_gradient_local = View(weights_gradient_local, IR(m_conv_size,END), ALL);
 
     // Initialize weight gradients to zero
     Zero(weights_gradient_local);
@@ -691,7 +675,7 @@ class convolution_layer : public learning {
     const int num_input_channels = this->m_prev_neuron_dims[0];
     const int num_output_channels = this->m_neuron_dims[0];
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
-    const int current_filter_size = m_filter_size / num_output_channels;
+    const int current_filter_size = m_conv_size / num_output_channels;
 
     // Compute bias gradient
     #pragma omp parallel for
@@ -737,7 +721,7 @@ class convolution_layer : public learning {
              this->m_num_prev_neuron_dims - 1,
              this->m_prev_neuron_dims.data() + 1,
              m_conv_pads.data(),
-             m_filter_dims.data(),
+             m_conv_dims.data(),
              m_conv_strides.data());
 
       // Construct im2col matrix from input
@@ -749,7 +733,7 @@ class convolution_layer : public learning {
              this->m_num_prev_neuron_dims - 1,
              this->m_prev_neuron_dims.data() + 1,
              m_conv_pads.data(),
-             m_filter_dims.data(),
+             m_conv_dims.data(),
              m_conv_strides.data());
 
       // Compute gradient w.r.t. filter

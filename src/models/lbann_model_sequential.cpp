@@ -271,52 +271,23 @@ lbann::Layer *lbann::sequential_model::swap(int index, Layer *new_layer) {
   return tmp;
 }
 
-void lbann::sequential_model::set_fp_input(int start_index, int end_index) {
-  // Get properties from previous layers
-  // Note: the first layer has no previous layer
-  for (int l = std::max(start_index, 1); l < end_index; ++l) {
-    m_layers[l]->set_prev_layer_type(m_layers[l-1]->get_type());
-    m_layers[l]->setup_fp_input(m_layers[l-1]->fp_output());
-#ifdef __LIB_CUDNN
-    m_layers[l]->setup_fp_input_d(m_layers[l-1]->fp_output_d());
-    m_layers[l]->set_prev_layer_using_gpus(m_layers[l-1]->using_gpus());
-#endif
-  }
-}
-
-void lbann::sequential_model::set_bp_input(int start_index, int end_index) {
-  // Get properties from next layers
-  // Note: the last layer has no next layer
-  for (int l=end_index-2; l>=Max(start_index-1,0); --l) {
-    m_layers[l]->set_next_layer_type(m_layers[l+1]->get_type());
-    m_layers[l]->setup_bp_input(m_layers[l+1]->bp_output());
-#ifdef __LIB_CUDNN
-    m_layers[l]->setup_bp_input_d(m_layers[l+1]->bp_output_d());
-    m_layers[l]->set_next_layer_using_gpus(m_layers[l+1]->using_gpus());
-#endif
-  }
-}
-
 void lbann::sequential_model::setup(int start_index, int end_index) {
   if(end_index <= 0) {
     end_index = m_layers.size();
   }
 
-  // Get properties from adjacent layers
-  set_fp_input(start_index, end_index);
-  set_bp_input(start_index, end_index);
-
   // Setup each layer
   int prev_layer_dim = start_index > 0 ? m_layers[start_index-1]->get_num_neurons() : -1;
   for (int l=start_index; l<end_index; ++l) {
-    if (m_comm->am_world_master()) {
-      cout << std::setw(3) << l << ":[" << std::setw(15) << m_layers[l]->get_name() <<  "] Setting up a layer with input " << std::setw(7) << prev_layer_dim << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
-    }
     m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    m_layers[l]->setup(prev_layer_dim);
+    Layer* prev_layer = l > 0 ? m_layers[l-1] : NULL;
+    Layer* next_layer = l < end_index-1 ? m_layers[l+1] : NULL;
+    m_layers[l]->setup(prev_layer, next_layer);
     m_layers[l]->check_setup();
-    prev_layer_dim = m_layers[l]->get_num_neurons();
     m_layers[l]->set_index(l);
+    if (m_comm->am_world_master()) {
+      cout << std::setw(3) << l << ":[" << std::setw(15) << m_layers[l]->get_name() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
+    }
   }
 
   // Set up callbacks

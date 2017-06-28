@@ -62,9 +62,6 @@ class transform : public Layer {
   virtual bool update(void);
   virtual void summarize(lbann_summary& summarizer, int step);
 
-  virtual void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
-  }
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 

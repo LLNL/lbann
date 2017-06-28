@@ -44,12 +44,17 @@ class target_layer : public io_layer {
   target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
     if (this->is_for_regression()) {
-      this->m_num_neurons = io_layer::get_linearized_response_size();
+      this->m_neuron_dims = io_layer::get_data_dims();
+      this->m_num_neuron_dims = this->m_neuron_dims.size();
+      this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
+                                            this->m_neuron_dims.end(),
+                                            1,
+                                            std::multiplies<int>());
     } else {
       this->m_num_neurons = io_layer::get_linearized_label_size();
+      this->m_num_neuron_dims = 1;
+      this->m_neuron_dims.assign(1, this->m_num_neurons);
     }
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
     m_shared_data_reader = shared_data_reader;
   }
 
@@ -57,7 +62,13 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  void setup(int num_prev_neurons) {
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    if(this->m_num_prev_neurons != this->m_num_neurons) {
+      throw lbann_exception("lbann_target_layer: target layer does not match input data");
+    }
+
     if(this->m_neural_network_model->m_obj_fn == NULL) {
       throw lbann_exception("target layer has invalid objective function pointer");
     }
@@ -67,13 +78,6 @@ class target_layer : public io_layer {
       m->m_neural_network_model = this->m_neural_network_model;
     }
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-  }
-
-  /**
-   * Target layers are not able to return target matrices for forward propagation
-   */
-  DistMat *fp_output() {
-    return NULL;
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {

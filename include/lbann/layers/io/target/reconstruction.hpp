@@ -56,9 +56,6 @@ class reconstruction_layer : public target_layer {
     initialize_distributed_matrices();
     this->m_type = layer_type::reconstruction;
     this->m_index = index;
-    this->m_num_neurons = original_layer->get_num_neurons();
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
   }
@@ -68,15 +65,14 @@ class reconstruction_layer : public target_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    target_layer::setup(num_prev_neurons);
-    Layer::setup(num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    target_layer::setup(prev_layer, next_layer);
 
     // Initialize other matrices
-    Zeros(*this->m_error_signal, num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
     Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
     Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
-    Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
   }
 
  protected:
@@ -100,7 +96,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() {
     // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer->get_type(), *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer

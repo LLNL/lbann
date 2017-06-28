@@ -386,7 +386,6 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   for(size_t l = mrs_index; l < mls; ++l) {
     m_layers[l]->set_index(l);
   }
-  set_fp_input(mrs_index,mls);
 
   //@todo loop for epochs??
   m_phase_end = mls-1;

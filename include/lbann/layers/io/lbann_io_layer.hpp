@@ -173,6 +173,19 @@ class io_layer : public Layer {
     }
   }
 
+  const std::vector<int> get_data_dims() {
+    if(m_training_dataset.data_reader != NULL) {
+      return m_training_dataset.data_reader->get_data_dims();
+    }
+    if(m_validation_dataset.data_reader != NULL) {
+      return m_validation_dataset.data_reader->get_data_dims();
+    }
+    if(m_testing_dataset.data_reader != NULL) {
+      return m_testing_dataset.data_reader->get_data_dims();
+    }
+    return std::vector<int>(1, 0);
+  }
+
   long get_linearized_data_size() {
     long linearized_data_size = -1;
 

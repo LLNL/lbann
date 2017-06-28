@@ -69,8 +69,8 @@ class pooling_layer : public transform {
   /// Constructor
   pooling_layer(int index,
                 int num_data_dims,
-                int num_channels,
-                const int *input_dims,
+                int num_channels,       // TODO: Remove. This is not used.
+                const int *input_dims,  // TODO: Remove. This is not used.
                 const int *pool_dims,
                 const int *pool_pads,
                 const int *pool_strides,
@@ -95,30 +95,6 @@ class pooling_layer : public transform {
                                   std::multiplies<int>());
     m_pool_pads.assign(pool_pads, pool_pads+num_data_dims);
     m_pool_strides.assign(pool_strides, pool_strides+num_data_dims);
-
-    // Initialize previous neuron tensor dimensions
-    this->m_num_prev_neuron_dims = num_data_dims + 1;
-    this->m_prev_neuron_dims.assign(input_dims,
-                                    input_dims+num_data_dims);
-    this->m_prev_neuron_dims.insert(this->m_prev_neuron_dims.begin(),
-                                    num_channels);
-    this->m_num_prev_neurons = std::accumulate(this->m_prev_neuron_dims.begin(),
-                                               this->m_prev_neuron_dims.end(),
-                                               1,
-                                               std::multiplies<int>());
-
-    // Calculate output dimensions
-    this->m_num_prev_neuron_dims = num_data_dims + 1;
-    this->m_neuron_dims.resize(num_data_dims + 1);
-    this->m_neuron_dims[0] = num_channels;
-    for(int i=0; i<num_data_dims; ++i) {
-      this->m_neuron_dims[i+1] = input_dims[i]+2*pool_pads[i]-pool_dims[i]+1;
-      this->m_neuron_dims[i+1] = (this->m_neuron_dims[i+1]+pool_strides[i]-1)/pool_strides[i];
-    }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
 
   #ifdef __LIB_CUDNN
 
@@ -163,10 +139,10 @@ class pooling_layer : public transform {
       // Deallocate GPU memory
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
       this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer_using_gpus) {
+      if(!this->m_prev_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
       }
-      if(!this->m_next_layer_using_gpus) {
+      if(!this->m_next_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
       }
 
@@ -179,8 +155,23 @@ class pooling_layer : public transform {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    Layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims.resize(this->m_num_neuron_dims);
+    this->m_neuron_dims[0] = this->m_prev_neuron_dims[0];
+    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
+      const int effective_dim = (this->m_prev_neuron_dims[i+1]
+                                 + 2*m_pool_pads[i] - m_pool_dims[i] + 1);
+      this->m_neuron_dims[i+1] = ((effective_dim + m_pool_strides[i] - 1)
+                                  / m_pool_strides[i]);
+    }
+    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
+                                          this->m_neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -281,12 +272,12 @@ class pooling_layer : public transform {
     this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
                                     this->m_num_prev_neurons,
                                     this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer_using_gpus) {
+    if(!this->m_prev_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
                                       this->m_num_prev_neurons,
                                       this->m_mini_batch_size_per_gpu);
     }
-    if(!this->m_next_layer_using_gpus) {
+    if(!this->m_next_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
                                       this->m_num_neurons,
                                       this->m_mini_batch_size_per_gpu);

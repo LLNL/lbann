@@ -59,7 +59,7 @@ class batch_normalization : public regularizer_layer {
    * stay at zero.
    */
   batch_normalization(int index,
-                      int num_neurons,
+                      int num_neurons,  /** TODO: Remove. This is not used */
                       lbann_comm *comm,
                       int mini_batch_size,
                       DataType decay=0.9,
@@ -73,9 +73,6 @@ class batch_normalization : public regularizer_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::batch_normalization;
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, num_neurons);
    }
 
   ~batch_normalization() {
@@ -93,13 +90,17 @@ class batch_normalization : public regularizer_layer {
   virtual inline data_layout get_data_layout() { return T_layout; }
 
   /** Initializes matrices. */
-  void setup(int num_prev_neurons) {
-    regularizer_layer::setup(num_prev_neurons);
-    this->m_num_prev_neuron_dims = 1;
-    this->m_prev_neuron_dims.assign(1, num_prev_neurons);
-    this->m_num_neurons = num_prev_neurons;
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
+
+    // Initialize parameters
     Zeros(*(this->m_activations), this->m_num_neurons, this->m_mini_batch_size);
-    Zeros(*(this->m_error_signal), num_prev_neurons, this->m_mini_batch_size);
+    Zeros(*(this->m_error_signal), this->m_num_prev_neurons, this->m_mini_batch_size);
     Ones(*m_gamma, this->get_num_neurons(), 1);
     Scale(m_gamma_init, *m_gamma);
     Ones(*m_beta, this->get_num_neurons(), 1);

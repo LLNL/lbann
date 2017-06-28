@@ -53,7 +53,7 @@ class elu_layer : public entrywise_activation_layer {
   elu_layer(int index,
             lbann_comm *comm,
             int mini_batch_size,
-            int num_neurons,
+            int num_neurons, /// TODO: Remove. This is not used.
             DataType alpha = DataType(1.0)) :
     entrywise_activation_layer(index, comm,
                                mini_batch_size, num_neurons),

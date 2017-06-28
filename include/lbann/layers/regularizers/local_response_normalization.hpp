@@ -60,15 +60,15 @@ class local_response_normalization_layer : public regularizer_layer {
 
  public:
   local_response_normalization_layer
-  (uint index,
-   int num_data_dims,
-   int num_channels,
-   const int *dims,
+  (int index,
+   int num_data_dims,  /** TODO: Remove. This is not used */
+   int num_channels,  /** TODO: Remove. This is not used */
+   const int *dims,  /** TODO: Remove. This is not used */
    int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
-   uint mini_batch_size,
+   int mini_batch_size,
    lbann_comm *comm,
    cudnn::cudnn_manager *cudnn = NULL)
     : regularizer_layer(index, comm, mini_batch_size),
@@ -79,20 +79,6 @@ class local_response_normalization_layer : public regularizer_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::local_response_normalization;
-
-    // Initialize data dimensions
-    this->m_num_prev_neuron_dims = num_data_dims + 1;
-    this->m_prev_neuron_dims.assign(dims,
-                                    dims+num_data_dims);
-    this->m_prev_neuron_dims.insert(this->m_prev_neuron_dims.begin(),
-                                    num_channels);
-    this->m_num_prev_neurons = std::accumulate(this->m_prev_neuron_dims.begin(),
-                                               this->m_prev_neuron_dims.end(),
-                                               1,
-                                               std::multiplies<int>());
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
 
   #ifdef __LIB_CUDNN
 
@@ -133,10 +119,10 @@ class local_response_normalization_layer : public regularizer_layer {
       // Deallocate GPU memory
       this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
       this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer_using_gpus) {
+      if(!this->m_prev_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
       }
-      if(!this->m_next_layer_using_gpus) {
+      if(!this->m_next_layer->using_gpus()) {
         this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
       }
 
@@ -149,8 +135,13 @@ class local_response_normalization_layer : public regularizer_layer {
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    Layer::setup(num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = this->m_num_prev_neurons;
+    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
+    this->m_neuron_dims = this->m_prev_neuron_dims;
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -206,12 +197,12 @@ class local_response_normalization_layer : public regularizer_layer {
     this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
                                     this->m_num_prev_neurons,
                                     this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer_using_gpus) {
+    if(!this->m_prev_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
                                       this->m_num_prev_neurons,
                                       this->m_mini_batch_size_per_gpu);
     }
-    if(!this->m_next_layer_using_gpus) {
+    if(!this->m_next_layer->using_gpus()) {
       this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
                                       this->m_num_neurons,
                                       this->m_mini_batch_size_per_gpu);

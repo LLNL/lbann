@@ -55,12 +55,9 @@ class learning : public Layer {
 
  public:
   learning(int index, 
-           int numPrevNeurons,
-           int numNeurons,
            int mini_batch_size,
            lbann_comm *comm,
-           optimizer *opt
-           )
+           optimizer *opt)
     : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
     }
 
@@ -108,20 +105,6 @@ class learning : public Layer {
         std::string(__FILE__) + " " + std::to_string(__LINE__) + " :: "
         "unknown weight_initialization: " + std::to_string((int) id));
     }
-  }
-
-  virtual void setup(int numPrevNeurons) {
-    Layer::setup(numPrevNeurons);
-#if 0
-    // Zero the weight-bias matrix
-    Zeros(*m_weights, m_num_neurons, numPrevNeurons);
-
-    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*m_weights, m_weight_initialization, numPrevNeurons, m_num_neurons);
-
-    // Initialize other matrices
-    Zeros(*m_weights_gradient, m_num_neurons, numPrevNeurons);
-#endif
   }
 
   virtual void summarize(lbann_summary& summarizer, int step) {

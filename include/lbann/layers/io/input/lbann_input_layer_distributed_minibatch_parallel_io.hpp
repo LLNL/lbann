@@ -62,8 +62,8 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    input_layer::setup(num_prev_neurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
       int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;

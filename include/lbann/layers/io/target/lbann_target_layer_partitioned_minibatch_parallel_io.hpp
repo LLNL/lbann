@@ -48,7 +48,6 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_type = layer_type::target_partitioned_minibatch_parallel_io;
-    //  m_num_neurons = m_training_data_reader->get_linearized_label_size(); /// @todo m_num_neurons should be hidden inside of an accessor function
   }
 
   virtual inline void initialize_distributed_matrices() {
@@ -56,8 +55,9 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    target_layer::setup(num_prev_neurons);
+  virtual void setup(Layer *prev_layer, Layer *next_layer) {
+    target_layer::setup(prev_layer, next_layer);
+
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(io_layer::m_data_sets_span_models) {
         int base_offset = Layer::m_comm->get_rank_in_model();
@@ -83,15 +83,10 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
       }
     }
 
-    /// @todo put in warning about bad target size
-    if(num_prev_neurons != this->m_num_neurons) {
-      throw lbann_exception("lbann_target_layer_partitioned_minibatch_parallel_io: number of neurons in previous layer does not match the number of neurons in the target layer.");
-    }
-
     Zeros(*this->m_error_signal, this->m_num_neurons, Layer::m_mini_batch_size);
     // Zeros(Y_local, m_num_neurons, Layer::m_mini_batch_size);
     // Zeros(Ys, m_num_neurons, Layer::m_mini_batch_size);
-    Zeros(*this->m_prev_activations, num_prev_neurons, Layer::m_mini_batch_size); // I am not sure that this is good
+    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, Layer::m_mini_batch_size); // I am not sure that this is good
     Zeros(*this->m_activations, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
@@ -122,7 +117,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   void bp_compute(void) {
 
     // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type,
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer->get_type(),
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);

@@ -146,7 +146,7 @@ class Layer {
     return 0.0;
   };
 
-  virtual void setup(int);
+  virtual void setup(Layer *prev_layer, Layer *next_layer);
   /** Validate that the setup is reasonable. */
   virtual void check_setup(void);
 
@@ -172,6 +172,18 @@ class Layer {
   /** Set the layer index. */
   inline void set_index(int i) {
     m_index = i;
+  }
+  /** Return the number of neurons from previous layer. */
+  inline int get_num_prev_neurons(void) const {
+    return m_num_prev_neurons;
+  }
+  /** Return the number of dimensions in neuron tensor from previous layer. */
+  inline int get_num_prev_neuron_dims(void) const {
+    return m_num_prev_neuron_dims;
+  }
+  /** Return the dimensions of neuron tensor from previous layer. */
+  inline const std::vector<int>& get_prev_neuron_dims(void) const {
+    return m_prev_neuron_dims;
   }
   /** Return the number of neurons. */
   inline int get_num_neurons(void) const {
@@ -225,22 +237,9 @@ class Layer {
     m_effective_mbsize = size;
   }
 
-  ElMat *fp_output(void);
-  ElMat *bp_output(void);
-  void setup_fp_input(ElMat *input);
-  void setup_bp_input(ElMat *input);
-
-  void set_prev_layer_type(layer_type type);
-  void set_next_layer_type(layer_type type);
-  bool using_gpus(void) const;
-  void set_prev_layer_using_gpus(bool using_gpus);
-  void set_next_layer_using_gpus(bool using_gpus);
-#ifdef __LIB_CUDNN
-  std::vector<DataType *> *fp_output_d(void);
-  std::vector<DataType *> *bp_output_d(void);
-  void setup_fp_input_d(std::vector<DataType *> *fp_input_d);
-  void setup_bp_input_d(std::vector<DataType *> *bp_input_d);
-#endif
+  bool using_gpus(void) const {
+    return m_using_gpus;
+  }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model(void) const {
@@ -269,8 +268,6 @@ class Layer {
   lbann_comm *m_comm;
 
   layer_type m_type;            ///< Layer type
-  layer_type m_prev_layer_type; ///< Previous layer's type
-  layer_type m_next_layer_type; ///< Next layer's type
 
   int m_num_neurons;                    ///< Number of neurons
   int m_num_neuron_dims;                ///< Number of dimensions in neuron tensor
@@ -282,27 +279,24 @@ class Layer {
   execution_mode  m_execution_mode;
 
  public:
-  ElMat *m_prev_error_signal;   ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  ElMat *m_prev_error_signal;    ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  ElMat *m_prev_error_signal_v;  ///< View of active columns in previous error signal matrix
 
-  ElMat *m_activations;         ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
-
-  /// Create a view of each matrix so that it can accomodate partial mini-batches
-  ElMat *m_prev_error_signal_v;
-  ElMat *m_activations_v;
-
-  ElMat *fp_input;              ///< Pointer to input for the forward propagation - no local storage
-  ElMat *bp_input;              ///< Pointer to the input for the backward propagation - no local storage
+  ElMat *m_activations;          ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
+  ElMat *m_activations_v;        ///< View of active columns in activations matrix
 
   model *m_neural_network_model;
 
  protected:
 
+  Layer *m_prev_layer;  ///< Pointer to previous layer
+  Layer *m_next_layer;  ///< Pointer to next layer
+
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
+  ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
+
   ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
-
-  ElMat *m_error_signal_v;
-  ElMat *m_prev_activations_v;
-
+  ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
 
  protected:
 
@@ -319,10 +313,6 @@ class Layer {
 
   /** Current layer is using GPUs. */
   bool m_using_gpus;
-  /** Previous layer is using GPUs. */
-  bool m_prev_layer_using_gpus;
-  /** Next layer is using GPUs. */
-  bool m_next_layer_using_gpus;
 
   /// cuDNN manager
   cudnn::cudnn_manager *m_cudnn;

@@ -55,11 +55,6 @@ class fully_connected_layer : public learning {
   ElMat *m_bias_weights_gradient_repl;
   DataType m_bias_scaling_factor;
 
- protected:
-  //Probability of dropping neuron/input used in dropout_layer
-  //Range 0 to 1; default is -1 => no dropout
-  DataType  WBL2NormSum;
-
  public:
   ////////////////////////////////////////////////////////////////////////////////
   // fully_connected_layer : single network layer class
@@ -79,17 +74,15 @@ class fully_connected_layer : public learning {
   // [Acts     ]
 
   fully_connected_layer(int index,
-                        int numPrevNeurons,
-                        int numNeurons,
+                        int num_prev_neurons, // TODO: Remove. This is not used.
+                        int num_neurons,
                         int mini_batch_size,
                         weight_initialization init,
                         lbann_comm *comm,
                         optimizer *opt,
                         bool has_bias = true)
-    : learning(index, numPrevNeurons, 
-               numNeurons, mini_batch_size, 
-               comm, opt),
-    m_weight_initialization(init) {
+    : learning(index, mini_batch_size, comm, opt),
+      m_weight_initialization(init) {
 
     set_name("fully_connected");
 
@@ -99,10 +92,9 @@ class fully_connected_layer : public learning {
     this->m_type = layer_type::fully_connected;
 
     this->m_index = index;
-    this->m_num_neurons = numNeurons;
+    this->m_num_neurons = num_neurons;
     this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, numNeurons);
-    WBL2NormSum = 0.0;
+    this->m_neuron_dims.assign(1, num_neurons);
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
   }
 
@@ -118,32 +110,30 @@ class fully_connected_layer : public learning {
   virtual inline void initialize_distributed_matrices(void);
   virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int numPrevNeurons) {
-    learning::setup(numPrevNeurons);
-    this->m_num_prev_neuron_dims = 1;
-    this->m_prev_neuron_dims.assign(1, numPrevNeurons);
+  void setup(Layer *prev_layer, Layer *next_layer) {
+    Layer::setup(prev_layer, next_layer);
 
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
-    El::Zeros(*this->m_weights, this->m_num_neurons, numPrevNeurons+1);
-    El::Zeros(*this->m_weights_gradient, this->m_num_neurons, numPrevNeurons + 1);
-    El::Zeros(*this->m_prev_activations, numPrevNeurons, this->m_mini_batch_size);
+    El::Zeros(*this->m_weights, this->m_num_neurons, this->m_num_prev_neurons+1);
+    El::Zeros(*this->m_weights_gradient, this->m_num_neurons, this->m_num_prev_neurons + 1);
+    El::Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
     El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     El::Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size);
-    El::Zeros(*this->m_error_signal, numPrevNeurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
+    El::Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
 
     /// Setup independent views of the weight matrix for the activations
-    El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, numPrevNeurons));
+    El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
 
     /// Setup independent views of the weights gradient matrix for the activations
-    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, numPrevNeurons));
+    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, this->m_num_prev_neurons));
 
     /// Setup independent views of the weights and gradient matrix for the bias terms
-    El::View(*m_bias_weights_v, *this->m_weights, ALL, IR(numPrevNeurons));
-    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(numPrevNeurons));
+    El::View(*m_bias_weights_v, *this->m_weights, ALL, IR(this->m_num_prev_neurons));
+    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(this->m_num_prev_neurons));
 
     /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, numPrevNeurons, this->m_num_neurons);
+    initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, this->m_num_prev_neurons, this->m_num_neurons);
 
     // Initialize optimizer
     if(this->m_optimizer != NULL) {

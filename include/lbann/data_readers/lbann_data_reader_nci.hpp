@@ -65,6 +65,9 @@ class data_reader_nci : public generic_data_reader {
   int get_linearized_label_size(void) const {
     return m_num_labels;
   }
+  const std::vector<int> get_data_dims(void) const {
+    return {m_num_features};
+  }
 
  private:
   //@todo add response mode {binary, ternary, continuous}
