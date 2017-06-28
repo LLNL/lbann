@@ -56,6 +56,9 @@ class reconstruction_layer : public target_layer {
     this->m_index = index;
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
+    this->m_num_neurons = m_original_layer->get_num_neurons();
+    this->m_neuron_dims = m_original_layer->get_neuron_dims();
+    this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
   }
 
   std::string get_name() const { return "reconstruction"; }
