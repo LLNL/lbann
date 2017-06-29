@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_ACTIVATION_HPP_INCLUDED
 #define LBANN_LAYER_ACTIVATION_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

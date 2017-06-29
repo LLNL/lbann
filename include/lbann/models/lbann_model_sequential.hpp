@@ -30,7 +30,7 @@
 #define LBANN_MODEL_SEQUENTIAL_HPP
 
 #include "lbann/models/lbann_model.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/io/lbann_persist.hpp"

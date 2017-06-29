@@ -30,7 +30,7 @@
 #define LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 
 #include "lbann/models/lbann_model_sequential.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include <vector>
 #include <string>
 

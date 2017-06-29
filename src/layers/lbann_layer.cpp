@@ -26,7 +26,7 @@
 // lbann_layer .hpp .cpp - Parent class for all layer types
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/io/lbann_file_io.hpp"

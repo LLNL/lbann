@@ -30,7 +30,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/utils/lbann_exception.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 

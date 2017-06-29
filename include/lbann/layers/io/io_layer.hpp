@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_IO_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_IO_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/utils/lbann_dataset.hpp"
 #include "lbann/io/lbann_persist.hpp"

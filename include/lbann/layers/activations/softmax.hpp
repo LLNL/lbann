@@ -30,13 +30,13 @@
 #define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
 #include <unistd.h>
 #include <string>
 #include <typeinfo>

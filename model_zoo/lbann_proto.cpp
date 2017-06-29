@@ -202,6 +202,12 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
+    if (pb_model->data_layout() == "model_parallel") {
+      if (comm->am_world_master()) {
+        cout << "MODEL_PARALLEL, so calling: init_random(comm->get_rank_in_world() + 1)\n";
+      }
+      init_random(comm->get_rank_in_world() + 1);
+    }
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
       model->train(1, true);
       model->evaluate(execution_mode::testing);

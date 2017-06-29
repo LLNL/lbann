@@ -31,7 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/io/lbann_file_io.hpp"
 #include "lbann/io/lbann_persist.hpp"

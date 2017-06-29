@@ -63,10 +63,10 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/input_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
