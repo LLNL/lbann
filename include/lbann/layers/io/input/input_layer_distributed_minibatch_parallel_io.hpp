@@ -27,8 +27,8 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 
-#include "lbann/layers/io/input/lbann_input_layer.hpp"
-#include "lbann/io/lbann_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/io/distributed_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>

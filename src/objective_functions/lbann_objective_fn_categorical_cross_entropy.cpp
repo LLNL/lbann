@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include <sys/types.h>
 #include <unistd.h>

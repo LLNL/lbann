@@ -33,8 +33,8 @@
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/io/lbann_file_io.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/file_io.hpp"
+#include "lbann/io/persist.hpp"
 #include "lbann/data_readers/lbann_image_preprocessor.hpp"
 #include <assert.h>
 #include <algorithm>

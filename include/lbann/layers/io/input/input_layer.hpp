@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/io/lbann_io_layer.hpp"
+#include "lbann/layers/io/io_layer.hpp"
 
 namespace lbann {
 class input_layer : public io_layer {

@@ -41,9 +41,6 @@ lbann::data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samp
   m_num_features = num_features;
 }
 
-lbann::data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, int num_features)
-  : data_reader_synthetic(batch_size, num_samples, num_features, true) {}
-
 //copy constructor
 lbann::data_reader_synthetic::data_reader_synthetic(const data_reader_synthetic& source)
   : generic_data_reader((const generic_data_reader&) source),

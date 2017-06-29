@@ -40,7 +40,7 @@
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_timer.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/persist.hpp"
 #include <string>
 #include <vector>
 

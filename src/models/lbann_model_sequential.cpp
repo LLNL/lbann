@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/lbann_model_sequential.hpp"
-#include "lbann/layers/io/lbann_io_layer.hpp"
+#include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -36,7 +36,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>

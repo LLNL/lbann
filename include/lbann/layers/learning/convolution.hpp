@@ -33,7 +33,7 @@
 #include <vector>
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/lbann_base.hpp"
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_random.hpp"

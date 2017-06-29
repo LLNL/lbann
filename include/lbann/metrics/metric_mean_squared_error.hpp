@@ -27,8 +27,8 @@
 #ifndef LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 #define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 
-#include "lbann/metrics/lbann_metric.hpp"
-#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
+#include "lbann/metrics/metric.hpp"
+#include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
 
 namespace lbann {
 

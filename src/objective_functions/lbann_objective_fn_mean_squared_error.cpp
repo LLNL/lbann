@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
+#include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
 #include <sys/types.h>
 #include <unistd.h>
 

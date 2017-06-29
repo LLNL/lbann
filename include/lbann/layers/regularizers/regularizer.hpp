@@ -29,7 +29,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include <string>
 #include <vector>
 

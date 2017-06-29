@@ -26,7 +26,7 @@
 // lbann_partitioned_minibatch_parallel_io .hpp .cpp - parallel I/O routines for distriubted minibatches
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/io/lbann_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/io/partitioned_minibatch_parallel_io.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 using namespace std;

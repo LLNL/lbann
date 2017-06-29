@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/metric.hpp"
 #include "lbann/models/lbann_model.hpp"
 
 namespace lbann {

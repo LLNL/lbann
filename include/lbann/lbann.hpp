@@ -63,10 +63,10 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/input/lbann_input_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/input/lbann_input_layer_partitioned_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/lbann_target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/input_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/input/input_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
@@ -110,18 +110,18 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
-#include "lbann/objective_functions/lbann_objective_fn_categorical_cross_entropy.hpp"
-#include "lbann/objective_functions/lbann_objective_fn_mean_squared_error.hpp"
+#include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
+#include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
 
 /// Metrics
-#include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
-#include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
+#include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include "lbann/metrics/metric_mean_squared_error.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/lbann_params.hpp"
-#include "lbann/io/lbann_file_io.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/file_io.hpp"
+#include "lbann/io/persist.hpp"
 
 #endif // LBANN_HPP_INCLUDED

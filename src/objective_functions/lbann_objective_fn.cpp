@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/objective_functions/objective_fn.hpp"
 #include "lbann/models/lbann_model.hpp"
 
 namespace lbann {

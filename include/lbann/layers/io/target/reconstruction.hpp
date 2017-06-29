@@ -27,8 +27,8 @@
 #ifndef LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/io/target/lbann_target_layer.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include "lbann/utils/lbann_random.hpp"

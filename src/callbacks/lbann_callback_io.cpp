@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/lbann_callback_io.hpp"
-#include "lbann/layers/io/input/lbann_input_layer.hpp"
-#include "lbann/layers/io/target/lbann_target_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
