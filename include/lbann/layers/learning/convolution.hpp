@@ -338,7 +338,7 @@ class convolution_layer : public learning {
       throw lbann_exception("convolution_layer: invalid output dimensions");
     }
     for(int i=0; i<m_num_neuron_dims; ++i) {
-      if(output_dims[i+1] != m_neuron_dims_dims[i]) {
+      if(output_dims[i+1] != m_neuron_dims[i]) {
         throw lbann_exception("convolution_layer: invalid output dimensions");
       }
     }
