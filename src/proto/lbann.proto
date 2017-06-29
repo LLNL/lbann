@@ -17,7 +17,7 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet
+  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet, synthetic
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
@@ -29,6 +29,8 @@ message Reader {
   int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int64 num_samples = 100; //only for synthetic
+  int64 num_features = 101; //only for synthetic
 }
 
 message ImagePreprocessor {

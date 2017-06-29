@@ -36,8 +36,7 @@ namespace lbann {
 class data_reader_synthetic : public generic_data_reader {
  public:
   //@todo: add what data distribution to use
-  data_reader_synthetic(int batchSize, int num_samples, int num_features, bool shuffle);
-  data_reader_synthetic(int batchSize, int num_samples, int num_features);
+  data_reader_synthetic(int batchSize, int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic& source); //copy constructor
   data_reader_synthetic& operator=(const data_reader_synthetic& source); //assignment operator
   ~data_reader_synthetic(void);

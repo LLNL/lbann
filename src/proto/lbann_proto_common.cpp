@@ -1186,10 +1186,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new cnpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
-      /*
       } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(mini_batch_size, shuffle);
-      */
+      reader = new data_reader_synthetic(mini_batch_size, readme.num_samples(), readme.num_features(), shuffle);
     } else {
       err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
           << name;
