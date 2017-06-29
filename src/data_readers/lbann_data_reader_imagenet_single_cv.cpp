@@ -146,7 +146,7 @@ int lbann::imagenet_readerSingle_cv::fetch_data(Mat& X) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int width, height;
   int current_batch_size = getm_batch_size();
-  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
+  const int end_pos = std::min(size_t{m_current_pos+current_batch_size}, m_shuffled_indices.size());
 
   for (int n = m_current_pos; n < end_pos; ++n) {
     int k = n - m_current_pos;

@@ -172,9 +172,9 @@ void col2im(const Mat& col,
     // Get window offsets containing im matrix entry
     for(int d = 0; d < im_num_dims; ++d) {
       first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d]) / offset_stride[d] + 1;
-      first_offset[d] = Max(first_offset[d], 0);
+      first_offset[d] = std::max(first_offset[d], 0);
       last_offset[d] = (im_pos[d] - offset_start[d]) / offset_stride[d];
-      last_offset[d] = Min(last_offset[d], offset_num[d] - 1);
+      last_offset[d] = std::min(last_offset[d], offset_num[d] - 1);
       offset[d] = first_offset[d];
     }
 
@@ -319,10 +319,10 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
         const int offset_y_lower = (output_pos_y - offset_start_y - window_dim_y) / offset_stride_y + 1;
         const int offset_x_upper = (output_pos_x - offset_start_x) / offset_stride_x;
         const int offset_y_upper = (output_pos_y - offset_start_y) / offset_stride_y;
-        const int first_offset_x = Max(offset_x_lower, 0);
-        const int first_offset_y = Max(offset_y_lower, 0);
-        const int last_offset_x = Min(offset_x_upper, offset_num_x - 1);
-        const int last_offset_y = Min(offset_y_upper, offset_num_y - 1);
+        const int first_offset_x = std::max(offset_x_lower, 0);
+        const int first_offset_y = std::max(offset_y_lower, 0);
+        const int last_offset_x = std::min(offset_x_upper, offset_num_x - 1);
+        const int last_offset_y = std::min(offset_y_upper, offset_num_y - 1);
 
         // Iterate through window offsets
         for(int offset_y = first_offset_y;

@@ -60,8 +60,8 @@ void entrywise_mean_and_stdev(const Mat& data,
   const DataType shifted_mean = shifted_sum / size;
   const DataType shifted_sqmean = shifted_sqsum / size;
   mean = shifted_mean + shift;
-  const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
-                           DataType(0));
+  const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
+                                DataType(0));
   stdev = Sqrt(var);
 
 }
@@ -92,8 +92,8 @@ void columnwise_mean_and_stdev(const Mat& data,
     const DataType shifted_mean = shifted_sum / height;
     const DataType shifted_sqmean = shifted_sqsum / height;
     const DataType mean = shifted_mean + shift;
-    const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
-                             DataType(0));
+    const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
+                                  DataType(0));
     const DataType stdev = Sqrt(var);
     means(0, col) = mean;
     stdevs(0, col) = stdev;
@@ -154,7 +154,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   for(El::Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
-    const DataType var = Max(sqmean - mean * mean, DataType(0));
+    const DataType var = std::max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(0, col) = mean;
     local_stdevs(0, col) = stdev;
@@ -178,7 +178,7 @@ void rowwise_mean_and_stdev(const Mat& data,
   const El::Int block_size = 16;
   #pragma omp parallel for
   for(El::Int row_start = 0; row_start < height; row_start += block_size) {
-    const El::Int row_end = Min(row_start + block_size, height);
+    const El::Int row_end = std::min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
     DataType *shifts = new DataType[block_size];
@@ -190,7 +190,7 @@ void rowwise_mean_and_stdev(const Mat& data,
 
     // Iterate through blocks in row block
     for(El::Int col_start = 0; col_start < width; col_start += block_size) {
-      const El::Int col_end = Min(col_start + block_size, width);
+      const El::Int col_end = std::min(col_start + block_size, width);
 
       // Compute sums by iterating through block entries
       for(El::Int col = col_start; col < col_end; ++col) {
@@ -209,8 +209,8 @@ void rowwise_mean_and_stdev(const Mat& data,
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];
-      const DataType var = Max(shifted_sqmean - shifted_mean * shifted_mean,
-                               DataType(0));
+      const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
+                                    DataType(0));
       const DataType stdev = Sqrt(var);
       means(row, 0) = mean;
       stdevs(row, 0) = stdev;
@@ -257,11 +257,11 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   const Int block_size = 16;
   #pragma omp parallel for
   for(Int row_start = 0; row_start < local_height; row_start += block_size) {
-    const Int row_end = Min(row_start + block_size, local_height);
+    const Int row_end = std::min(row_start + block_size, local_height);
 
     // Iterate through blocks in row block
     for(Int col_start = 0; col_start < local_width; col_start += block_size) {
-      const Int col_end = Min(col_start + block_size, local_width);
+      const Int col_end = std::min(col_start + block_size, local_width);
 
       // Compute sums by iterating through block entries
       for(Int col = col_start; col < col_end; ++col) {
@@ -285,7 +285,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   for(Int row = 0; row < local_height; ++row) {
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
-    const DataType var = Max(sqmean - mean * mean, DataType(0));
+    const DataType var = std::max(sqmean - mean * mean, DataType(0));
     const DataType stdev = Sqrt(var);
     local_means(row, 0) = mean;
     local_stdevs(row, 0) = stdev;

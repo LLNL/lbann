@@ -112,7 +112,7 @@ class softmax_layer : public activation_layer {
     for(El::Int col = 0; col < local_width; ++col) {
       DataType max_entry = prev_activations_local(El::Int(0), col);
       for(El::Int row = 1; row < local_height; ++row) {
-        max_entry = Max(max_entry, prev_activations_local(row,col));
+        max_entry = std::max(max_entry, prev_activations_local(row,col));
       }
       workspace_local(El::Int(0), col) = max_entry;
     }

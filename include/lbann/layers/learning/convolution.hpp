@@ -404,7 +404,7 @@ class convolution_layer : public learning {
                                                         m_output_desc,
                                                         m_forward_algo,
                                                         &required_work_space));
-    max_work_space = Max(max_work_space, required_work_space);
+    max_work_space = std::max(max_work_space, required_work_space);
     CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(this->m_cudnn->get_handle(),
                                                                m_input_desc,
                                                                m_output_desc,
@@ -412,7 +412,7 @@ class convolution_layer : public learning {
                                                                m_filter_desc,
                                                                m_backward_filter_algo,
                                                                &required_work_space));
-    max_work_space = Max(max_work_space, required_work_space);
+    max_work_space = std::max(max_work_space, required_work_space);
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(this->m_cudnn->get_handle(),
                                                              m_filter_desc,
                                                              m_output_desc,
@@ -420,7 +420,7 @@ class convolution_layer : public learning {
                                                              m_input_desc,
                                                              m_backward_data_algo,
                                                              &required_work_space));
-    max_work_space = Max(max_work_space, required_work_space);
+    max_work_space = std::max(max_work_space, required_work_space);
     for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
       if(max_work_space > this->m_cudnn->get_work_space_size(i)) {
         this->m_cudnn->set_work_space_size(i, max_work_space);

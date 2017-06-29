@@ -315,8 +315,8 @@ class local_response_normalization_layer : public regularizer_layer {
         int window_start = - m_window_width / 2;
         int window_end = m_window_width / 2;
         DataType window_sum = 0;
-        for(int c = Max(window_start, 0);
-            c <= Min(window_end, num_channels-1);
+        for(int c = std::max(window_start, 0);
+            c <= std::min(window_end, num_channels-1);
             ++c) {
           const DataType x
             = prev_activations_local(pos + num_per_channel*c, sample);
@@ -392,8 +392,8 @@ class local_response_normalization_layer : public regularizer_layer {
         int window_start = - m_window_width / 2;
         int window_end = m_window_width / 2;
         DataType window_sum = 0;
-        for(int c = Max(window_start, 0);
-            c <= Min(window_end, num_channels-1);
+        for(int c = std::max(window_start, 0);
+            c <= std::min(window_end, num_channels-1);
             ++c) {
           const DataType x
             = prev_activations_local.Get(pos + num_per_channel*c, sample);
@@ -415,8 +415,8 @@ class local_response_normalization_layer : public regularizer_layer {
           error_signal_local.Update(index, sample, error_signal_update);
 
           // Update error signal entries in normalization window
-          for(int c = Max(window_start, 0);
-              c <= Min(window_end, num_channels-1);
+          for(int c = std::max(window_start, 0);
+              c <= std::min(window_end, num_channels-1);
               ++c) {
             const int i = pos + num_per_channel * c;
             const DataType prev_activations_entry = prev_activations_local.Get(i, sample);

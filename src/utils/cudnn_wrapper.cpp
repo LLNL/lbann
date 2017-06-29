@@ -203,8 +203,8 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns on each GPU
-    const int first_pos = Min(i * width_per_gpu, width);
-    const int last_pos = Min((i+1) * width_per_gpu, width);
+    const int first_pos = std::min(i * width_per_gpu, width);
+    const int last_pos = std::min((i+1) * width_per_gpu, width);
     const int current_width = last_pos - first_pos;
 
     // Set unused GPU memory to zero
@@ -250,8 +250,8 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns to transfer to current GPU
-    const int first_pos = Min(i * width_per_gpu, width);
-    const int last_pos = Min((i+1) * width_per_gpu, width);
+    const int first_pos = std::min(i * width_per_gpu, width);
+    const int last_pos = std::min((i+1) * width_per_gpu, width);
     const int current_width = last_pos - first_pos;
 
     // Transfer data to current GPU
@@ -300,8 +300,8 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Find number of columns to transfer to current GPU
-    const int first_pos = Min(i * width_per_gpu, width);
-    const int last_pos = Min((i+1) * width_per_gpu, width);
+    const int first_pos = std::min(i * width_per_gpu, width);
+    const int last_pos = std::min((i+1) * width_per_gpu, width);
     const int current_width = last_pos - first_pos;
 
     // Transfer data from current GPU

@@ -68,8 +68,11 @@ int lbann::imagenet_reader::fetch_data(Mat& X) {
 
   int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int current_batch_size = getm_batch_size();
-  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
-  const int mb_size = Min(ceil((float)(end_pos - m_current_pos)/(float)m_sample_stride), X.Width());
+  const int end_pos = std::min(size_t{m_current_pos+current_batch_size},
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    X.Width());
 
   Zeros(X, X.Height(), X.Width());
   Zeros(m_indices_fetched_per_mb, mb_size, 1);
@@ -112,8 +115,11 @@ int lbann::imagenet_reader::fetch_label(Mat& Y) {
   }
 
   int current_batch_size = getm_batch_size();
-  const int end_pos = Min(m_current_pos+current_batch_size, m_shuffled_indices.size());
-  const int mb_size = Min(ceil((float)(end_pos - m_current_pos)/(float)m_sample_stride), Y.Width());
+  const int end_pos = std::min(size_t{m_current_pos+current_batch_size},
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    Y.Width());
   Zeros(Y, Y.Height(), Y.Width());
 
   for (int s = 0; s < mb_size; s++) {

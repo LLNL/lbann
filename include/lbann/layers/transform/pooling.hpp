@@ -406,7 +406,7 @@ class pooling_layer : public transform {
             DataType *im2col_buffer = im2col_mat.Buffer(c*m_pool_size, j);
             DataType output_entry = -INFINITY;
             for(int i = 0; i < m_pool_size; ++i) {
-              output_entry = Max(output_entry, im2col_buffer[i]);
+              output_entry = std::max(output_entry, im2col_buffer[i]);
             }
             const int output_index = j + c * num_per_output_channel;
             output_buffer[output_index] = output_entry;
