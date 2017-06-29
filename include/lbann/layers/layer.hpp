@@ -77,6 +77,11 @@ class Layer {
     return 0.0;
   };
 
+  /**
+   * This is called on every layer to set up its prev/next layer pointers,
+   * dimensions, and allocate data. By default, it calls the setup_dims and
+   * setup_data methods.
+   */
   virtual void setup(const Layer *prev_layer, const Layer *next_layer);
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
@@ -220,6 +225,20 @@ class Layer {
   /** Pin host memory if needed for GPU memory transfers during layer's backward propagation. */
   virtual void bp_pin_memory();
 #endif
+
+  /**
+   * Called by setup(), each layer should override this to call its parent and
+   * set up the layer's m_num_neurons and m_neuron_dims. This base method sets
+   * up m_num_prev_neurons and related methods.
+   */
+  virtual void setup_dims();
+  /**
+   * Called by setup(), each layer should override to call its parent and
+   * set up the layer's data (e.g. weights). This base method sets up the
+   * activations and error signal matrices. This is always called after
+   * setup_dims.
+   */
+  virtual void setup_data();
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */
