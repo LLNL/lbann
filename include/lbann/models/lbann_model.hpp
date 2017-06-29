@@ -36,7 +36,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_fn.hpp"
-#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/metric.hpp"
 #include "lbann/optimizers/lbann_optimizer.hpp"
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"

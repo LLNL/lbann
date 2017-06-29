@@ -27,7 +27,7 @@
 #ifndef LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
 #define LBANN_METRIC_CATEGORICAL_ACCURACY_HPP
 
-#include "lbann/metrics/lbann_metric.hpp"
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 

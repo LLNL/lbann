@@ -114,8 +114,8 @@
 #include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
 
 /// Metrics
-#include "lbann/metrics/lbann_metric_categorical_accuracy.hpp"
-#include "lbann/metrics/lbann_metric_mean_squared_error.hpp"
+#include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include "lbann/metrics/metric_mean_squared_error.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/lbann_exception.hpp"
