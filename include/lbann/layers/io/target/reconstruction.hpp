@@ -85,7 +85,8 @@ class reconstruction_layer : public target_layer {
     target_layer::fp_set_std_matrix_view();
 
     //view of original layer
-    View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));
+    ElMat& orig_acts = m_original_layer->get_activations();
+    View(original_layer_act_v, orig_acts, El::ALL, IR(0, cur_mini_batch_size));
   }
 
 

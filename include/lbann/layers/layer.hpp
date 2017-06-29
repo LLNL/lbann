@@ -193,7 +193,6 @@ class Layer {
 
   execution_mode  m_execution_mode;
 
- public:
   ElMat *m_prev_error_signal;    ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
   ElMat *m_prev_error_signal_v;  ///< View of active columns in previous error signal matrix
 
@@ -201,8 +200,6 @@ class Layer {
   ElMat *m_activations_v;        ///< View of active columns in activations matrix
 
   model *m_neural_network_model;
-
- protected:
 
   const Layer *m_prev_layer;  ///< Pointer to previous layer
   const Layer *m_next_layer;  ///< Pointer to next layer
@@ -212,8 +209,6 @@ class Layer {
 
   ElMat *m_prev_activations;    ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
   ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
-
- protected:
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();

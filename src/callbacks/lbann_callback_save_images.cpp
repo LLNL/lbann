@@ -39,7 +39,8 @@ void lbann_callback_save_images::on_epoch_end(model *m) {
   //@todo: generalize to two matching layers
   //@todo: use view so we can save arbitrary number of valid images
   //using layer just before reconstruction layer because prev_layer_act is protected
-  save_image(m, layers[0]->m_activations,layers[layers.size()-2]->m_activations,epoch);
+  save_image(m, &(layers[0]->get_activations()),
+             &(layers[layers.size()-2]->get_activations()), epoch);
 }
 
 
@@ -48,7 +49,8 @@ void lbann_callback_save_images::on_phase_end(model *m) {
   auto phase = m->get_current_phase();
   auto epoch = m->get_cur_epoch();
   auto index = phase*epoch + epoch;
-  save_image(m,layers[phase]->m_activations, layers[phase+2]->m_activations,index);
+  save_image(m, &(layers[phase]->get_activations()),
+             &(layers[phase+2]->get_activations()), index);
 }
 
 void lbann_callback_save_images::save_image(model *m, ElMat *input, ElMat *output,uint index) {
