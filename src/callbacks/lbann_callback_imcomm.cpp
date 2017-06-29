@@ -100,7 +100,7 @@ void lbann_callback_imcomm::setup(model *m) {
         convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
           dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
         params.reshape_height = conv_layer->m_conv_size /
-          conv_layer->m_neuron_dims[0];;
+          conv_layer->m_neuron_dims[0];
         params.reshape_width = conv_layer->m_neuron_dims[0];
       } else if (std::type_index(layer_type) ==
                  std::type_index(typeid(convolution_layer<data_layout::DATA_PARALLEL>))) {
@@ -196,11 +196,11 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       throw lbann_exception("imcomm: unknown comm type");
     }
     double im_time = get_time() - start_time;
-    do_summary(m, layers[layer], im_time);
+    do_summary(m, learning_layer, im_time);
   }
 }
 
-void lbann_callback_imcomm::do_summary(model *m, Layer *layer,
+void lbann_callback_imcomm::do_summary(model *m, learning *layer,
                                        double im_time) {
   if (m_summarizer == nullptr) {
     return;
@@ -218,12 +218,12 @@ void lbann_callback_imcomm::do_summary(model *m, Layer *layer,
     bytes_received = comm->get_ar_bytes_received();
   } else {
     // Use the same approximation the comm layer does.
-    /*const Mat& local_gradients =
-      layer->get_weights_biases_gradient().LockedMatrix();
+    const Mat& local_gradients =
+      layer->get_weights_gradient().LockedMatrix();
     bytes_sent =
       sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
     bytes_received =
-    sizeof(DataType) * local_gradients.Height() * local_gradients.Width();*/
+      sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
   }
   m_summarizer->reduce_scalar(prefix + "bytes_sent",
                               bytes_sent, m->get_cur_step());

@@ -121,7 +121,7 @@ class lbann_callback_imcomm : public lbann_callback {
   }
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, Layer *layer, double im_time);
+  void do_summary(model *m, learning *layer, double im_time);
 };
 
 }  // namespace lbann
