@@ -97,9 +97,7 @@ class fully_connected_layer : public learning {
     initialize_distributed_matrices();
 
     this->m_index = index;
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, num_neurons);
+    this->m_num_neurons = num_neurons;  // Set here since it's passed in.
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
   }
 
@@ -117,14 +115,18 @@ class fully_connected_layer : public learning {
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
+  void setup_dims() {
+    learning::setup_dims();
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
+  }
 
+  void setup_data() {
+    learning::setup_data();
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
     El::Zeros(*this->m_weights, this->m_num_neurons, this->m_num_prev_neurons+1);
     El::Zeros(*this->m_weights_gradient, this->m_num_neurons, this->m_num_prev_neurons + 1);
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
 
     /// Setup independent views of the weight matrix for the activations
     El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
@@ -140,10 +142,9 @@ class fully_connected_layer : public learning {
     initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, this->m_num_prev_neurons, this->m_num_neurons);
 
     // Initialize optimizer
-    if(this->m_optimizer != NULL) {
+    if (this->m_optimizer != NULL) {
       this->m_optimizer->setup(this->m_weights);
     }
-
   }
 
   void fp_compute() {

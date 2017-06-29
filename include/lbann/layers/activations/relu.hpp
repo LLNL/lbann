@@ -110,8 +110,8 @@ class relu_layer : public entrywise_activation_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(const Layer *prev_layer, const Layer *next_layer) {
-    entrywise_activation_layer::setup(prev_layer, next_layer);
+  void setup_data() {
+    entrywise_activation_layer::setup_data();
 
   #ifdef __LIB_CUDNN
     // Setup cuDNN objects
@@ -119,10 +119,9 @@ class relu_layer : public entrywise_activation_layer {
       setup_gpu();
     }
   #endif // #ifdef __LIB_CUDNN
-
   }
 
-void setup_gpu() {
+  void setup_gpu() {
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
@@ -173,9 +172,8 @@ void setup_gpu() {
                                       this->m_num_neurons,
                                       this->m_mini_batch_size_per_gpu);
     }
-
   #endif
-}
+  }
 
  protected:
 

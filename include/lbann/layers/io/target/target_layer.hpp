@@ -43,6 +43,15 @@ class target_layer : public io_layer {
  public:
   target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
+    m_shared_data_reader = shared_data_reader;
+  }
+
+  template<data_layout T_layout> inline void initialize_distributed_matrices() {
+    io_layer::initialize_distributed_matrices<T_layout>();
+  }
+
+  virtual void setup_dims() {
+    io_layer::setup_dims();
     if (this->is_for_regression()) {
       this->m_neuron_dims = io_layer::get_data_dims();
       this->m_num_neuron_dims = this->m_neuron_dims.size();
@@ -55,15 +64,10 @@ class target_layer : public io_layer {
       this->m_num_neuron_dims = 1;
       this->m_neuron_dims.assign(1, this->m_num_neurons);
     }
-    m_shared_data_reader = shared_data_reader;
   }
 
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    io_layer::initialize_distributed_matrices<T_layout>();
-  }
-
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
+  virtual void setup_data() {
+    io_layer::setup_data();
     std::stringstream err;
 
     if(this->m_num_prev_neurons != this->m_num_neurons) {
@@ -82,9 +86,6 @@ class target_layer : public io_layer {
       m->setup(this->m_num_neurons, this->m_mini_batch_size);
       m->m_neural_network_model = this->m_neural_network_model;
     }
-
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {

@@ -55,8 +55,8 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    target_layer::setup(prev_layer, next_layer);
+  virtual void setup_data() {
+    target_layer::setup_data();
 
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(io_layer::m_data_sets_span_models) {
@@ -82,12 +82,6 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
                                                               m_num_parallel_readers_testing);
       }
     }
-
-    Zeros(*this->m_error_signal, this->m_num_neurons, Layer::m_mini_batch_size);
-    // Zeros(Y_local, m_num_neurons, Layer::m_mini_batch_size);
-    // Zeros(Ys, m_num_neurons, Layer::m_mini_batch_size);
-    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, Layer::m_mini_batch_size); // I am not sure that this is good
-    Zeros(*this->m_activations, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;

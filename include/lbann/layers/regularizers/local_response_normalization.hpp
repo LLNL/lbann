@@ -130,24 +130,22 @@ class local_response_normalization_layer : public regularizer_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
-
+  void setup_dims() {
+    regularizer_layer::setup_dims();
     // Initialize neuron tensor dimensions
     this->m_num_neurons = this->m_num_prev_neurons;
     this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
     this->m_neuron_dims = this->m_prev_neuron_dims;
+  }
 
-  #ifdef __LIB_CUDNN
+  void setup_data() {
+    regularizer_layer::setup_data();
+    #ifdef __LIB_CUDNN
     // Setup cuDNN objects
     if(this->m_using_gpus) {
       setup_gpu();
     }
-  #endif // __LIB_CUDNN
-
-    // Initialize activations matrix
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-
+    #endif // __LIB_CUDNN
   }
 
  private:

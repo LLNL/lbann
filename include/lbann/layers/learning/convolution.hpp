@@ -203,9 +203,8 @@ class convolution_layer : public learning {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
-    
+  void setup_dims() {
+    learning::setup_dims();
     // Initialize neuron tensor dimensions
     for(int i=0; i<m_num_neuron_dims-1; ++i) {
       const int effective_dim = (this->m_prev_neuron_dims[i+1]
@@ -223,8 +222,11 @@ class convolution_layer : public learning {
                                   m_conv_dims.end(),
                                   this->m_prev_neuron_dims[0] * this->m_neuron_dims[0],
                                   std::multiplies<int>());
+  }
 
-  #ifdef __LIB_CUDNN
+  void setup_data() {
+    learning::setup_data();
+    #ifdef __LIB_CUDNN
     // Setup cuDNN objects
     if(this->m_using_gpus) {
       setup_gpu();
@@ -245,7 +247,6 @@ class convolution_layer : public learning {
                 this->m_cudnn->get_num_gpus());
     }
   #endif // #ifdef __LIB_CUDNN
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
 
   #ifdef __LIB_CUDNN
     // Pin host memory
@@ -266,7 +267,6 @@ class convolution_layer : public learning {
     if(this->m_optimizer != NULL) {
       this->m_optimizer->setup(this->m_weights);
     }
-
   }
 
   /// Initialize GPU objects

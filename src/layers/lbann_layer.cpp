@@ -270,11 +270,15 @@ void Layer::summarize(lbann_summary& summarizer, int step) {
 }
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
-
   // Set adjacent layers
   m_prev_layer = prev_layer;
   m_next_layer = next_layer;
 
+  setup_dims();
+  setup_data();  
+}
+
+void Layer::setup_dims() {
   // Get dimensions of previous neuron tensor
   if(m_prev_layer != NULL) {
     m_num_prev_neurons = m_prev_layer->m_num_neurons;
@@ -285,12 +289,22 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
     m_num_prev_neuron_dims = 0;
     m_prev_neuron_dims.assign(1, 0);
   }
+}
 
+void Layer::setup_data() {
   // Initialize error signal matrix
-  if(m_num_prev_neurons > 0) {
+  if (m_num_neurons == 0) {
+    throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
+                          " num_neurons is 0");
+  }
+  if (m_mini_batch_size == 0) {
+    throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
+                          " mini_batch_size is 0");
+  }
+  if (m_num_prev_neurons > 0) {
     El::Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
   }
-
+  El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
 }
 
 void Layer::check_setup() {}

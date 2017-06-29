@@ -58,8 +58,8 @@ class target_layer_distributed_minibatch : public target_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    target_layer::setup(prev_layer, next_layer);
+  virtual void setup_data() {
+    target_layer::setup_data();
 
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(io_layer::m_data_sets_span_models) {
@@ -72,10 +72,8 @@ class target_layer_distributed_minibatch : public target_layer {
       }
     }
 
-    Zeros(*this->m_error_signal, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(Y_local, this->m_num_neurons, this->m_mini_batch_size);
     Zeros(Ys, this->m_num_neurons, this->m_mini_batch_size);
-
   }
 
   void fp_compute() {

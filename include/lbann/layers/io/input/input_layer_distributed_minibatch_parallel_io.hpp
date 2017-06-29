@@ -61,8 +61,8 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(const Layer *prev_layer, const Layer *next_layer) {
-    input_layer::setup(prev_layer, next_layer);
+  void setup_data() {
+    input_layer::setup_data();
     if(io_layer::m_data_sets_span_models) {
       int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
       int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
@@ -82,7 +82,6 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
                                                             m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
 
-    El::Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
     El::Zeros(X_local, this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;

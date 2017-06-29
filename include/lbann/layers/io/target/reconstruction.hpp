@@ -56,9 +56,6 @@ class reconstruction_layer : public target_layer {
     this->m_index = index;
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
-    this->m_num_neurons = m_original_layer->get_num_neurons();
-    this->m_neuron_dims = m_original_layer->get_neuron_dims();
-    this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
   }
 
   std::string get_name() const { return "reconstruction"; }
@@ -68,14 +65,11 @@ class reconstruction_layer : public target_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    target_layer::setup(prev_layer, next_layer);
-
-    // Initialize other matrices
-    Zeros(*this->m_error_signal, this->m_num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
-    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
-    Zeros(*this->m_prev_activations, this->m_num_prev_neurons, this->m_mini_batch_size);
+  void setup_dims() {
+    target_layer::setup_dims();
+    this->m_num_neurons = m_original_layer->get_num_neurons();
+    this->m_neuron_dims = m_original_layer->get_neuron_dims();
+    this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
   }
 
  protected:

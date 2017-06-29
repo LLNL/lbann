@@ -151,9 +151,8 @@ class pooling_layer : public transform {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
-
+  void setup_dims() {
+    transform::setup_dims();
     // Initialize neuron tensor dimensions
     this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
     this->m_neuron_dims.resize(this->m_num_neuron_dims);
@@ -168,17 +167,16 @@ class pooling_layer : public transform {
                                           this->m_neuron_dims.end(),
                                           1,
                                           std::multiplies<int>());
+  }
 
-  #ifdef __LIB_CUDNN
+  void setup_data() {
+    transform::setup_data();
+    #ifdef __LIB_CUDNN
     // Setup cuDNN objects
     if(this->m_using_gpus) {
       setup_gpu();
     }
-  #endif // __LIB_CUDNN
-
-    // Initialize activations matrix
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-
+    #endif // __LIB_CUDNN
   }
 
   /// Initialize GPU objects

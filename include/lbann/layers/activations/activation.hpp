@@ -64,17 +64,12 @@ class entrywise_activation_layer : public activation_layer {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
-
+  void setup_dims() {
+    activation_layer::setup_dims();
     // Initialize neuron tensor dimensions
     this->m_num_neurons = this->m_num_prev_neurons;
     this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
     this->m_neuron_dims = this->m_prev_neuron_dims;
-
-    // Initialize activations matrix
-    El::Zeros(*m_activations, this->m_num_neurons, this->m_mini_batch_size);
-
   }
 
  protected:

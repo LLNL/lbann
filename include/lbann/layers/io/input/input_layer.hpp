@@ -33,7 +33,10 @@ namespace lbann {
 class input_layer : public io_layer {
  public:
   input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer(comm, mini_batch_size, data_readers) {
+    : io_layer(comm, mini_batch_size, data_readers) {}
+
+  void setup_dims() {
+    io_layer::setup_dims();
     this->m_neuron_dims = io_layer::get_data_dims();
     this->m_num_neuron_dims = this->m_neuron_dims.size();
     this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
