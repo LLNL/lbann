@@ -121,7 +121,7 @@
 #include "lbann/utils/lbann_exception.hpp"
 #include "lbann/utils/lbann_summary.hpp"
 #include "lbann/lbann_params.hpp"
-#include "lbann/io/lbann_file_io.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/file_io.hpp"
+#include "lbann/io/persist.hpp"
 
 #endif // LBANN_HPP_INCLUDED

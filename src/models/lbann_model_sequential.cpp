@@ -36,7 +36,7 @@
 #include "lbann/optimizers/lbann_optimizer_sgd.hpp"
 #include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
 #include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>

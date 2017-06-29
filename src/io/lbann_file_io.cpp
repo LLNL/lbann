@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/file_io.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>

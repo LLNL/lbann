@@ -33,7 +33,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/persist.hpp"
 #include <vector>
 #include <string>
 

@@ -30,7 +30,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
 #include "lbann/utils/lbann_dataset.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/persist.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 #include <string>
 #include <sys/types.h>

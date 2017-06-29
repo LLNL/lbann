@@ -32,8 +32,8 @@
 #include <stdio.h>
 
 #include "lbann/utils/lbann_exception.hpp"
-#include "lbann/io/lbann_file_io.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/file_io.hpp"
+#include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>

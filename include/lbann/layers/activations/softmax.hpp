@@ -31,7 +31,7 @@
 
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/io/lbann_file_io.hpp"
+#include "lbann/io/file_io.hpp"
 #include "lbann/utils/lbann_random.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"

@@ -29,8 +29,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/lbann_timer.hpp"
 #include "lbann/models/lbann_model.hpp"
-#include "lbann/io/lbann_file_io.hpp"
-#include "lbann/io/lbann_persist.hpp"
+#include "lbann/io/file_io.hpp"
+#include "lbann/io/persist.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
