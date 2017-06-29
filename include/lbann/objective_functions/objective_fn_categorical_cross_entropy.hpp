@@ -27,7 +27,7 @@
 #ifndef LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FN_CATEGORICAL_CROSS_ENTROPY_HPP_INCLUDED
 
-#include "lbann/objective_functions/lbann_objective_fn.hpp"
+#include "lbann/objective_functions/objective_fn.hpp"
 
 namespace lbann {
 
