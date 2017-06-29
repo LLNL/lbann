@@ -55,6 +55,16 @@ class fully_connected_layer : public learning {
   ElMat *m_bias_weights_gradient_repl;
   DataType m_bias_scaling_factor;
 
+  /**
+   * Do layout-dependent forward propagation computation of the weights.
+   */
+  inline void fp_compute_weights();
+  /**
+   * Do layout-dependent backward propagation. This handles computing the error
+   * signal for the next layer and the gradients for the weights.
+   */
+  inline void bp_compute_weights();
+
  public:
   ////////////////////////////////////////////////////////////////////////////////
   // fully_connected_layer : single network layer class
@@ -93,7 +103,7 @@ class fully_connected_layer : public learning {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
   }
 
-  ~fully_connected_layer(void) {
+  ~fully_connected_layer() {
     delete m_bias_weights_repl;
     delete m_bias_weights_gradient_repl;
     delete m_activation_weights_v;
@@ -104,7 +114,7 @@ class fully_connected_layer : public learning {
 
   std::string get_name() const { return "fully connected"; }
 
-  virtual inline void initialize_distributed_matrices(void);
+  virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(const Layer *prev_layer, const Layer *next_layer) {
@@ -136,25 +146,9 @@ class fully_connected_layer : public learning {
 
   }
 
-  void fp_compute(void) {
-
+  void fp_compute() {
     // Apply weight matrix
-    switch(T_layout) {
-    case data_layout::MODEL_PARALLEL:
-      El::Gemm(NORMAL, NORMAL, DataType(1),
-               *this->m_activation_weights_v,
-               *this->m_prev_activations_v,
-               DataType(0),
-               *this->m_activations_v);
-      break;
-    case data_layout::DATA_PARALLEL:
-      El::Gemm(NORMAL, NORMAL, DataType(1),
-               this->m_activation_weights_v->LockedMatrix(),
-               this->m_prev_activations_v->LockedMatrix(),
-               DataType(0),
-               this->m_activations_v->Matrix());
-      break;
-    }
+    fp_compute_weights();
 
     // Apply bias if needed
     if(m_bias_scaling_factor != DataType(0)) {
@@ -166,48 +160,11 @@ class fully_connected_layer : public learning {
                               return z + m_bias_scaling_factor * local_bias_weights.Get(r, 0);
                             }));
     }
-
   }
 
-  void bp_compute(void) {
-
-    switch(T_layout) {
-    case data_layout::MODEL_PARALLEL:
-
-      // Compute the partial delta update for the next lower layer
-      El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
-               *this->m_activation_weights_v,
-               *this->m_prev_error_signal_v,
-               DataType(0),
-               *this->m_error_signal_v);
-
-      // Compute update for activation weights
-      El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
-               *this->m_prev_error_signal_v,
-               *this->m_prev_activations_v,
-               DataType(0),
-               *this->m_activation_weights_gradient_v);
-      break;
-
-    case data_layout::DATA_PARALLEL:
-
-      // Compute the partial delta update for the next lower layer
-      El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
-               this->m_activation_weights_v->LockedMatrix(),
-               this->m_prev_error_signal_v->LockedMatrix(),
-               DataType(0),
-               this->m_error_signal_v->Matrix());
-
-      // Compute update for activation weights
-      El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
-               this->m_prev_error_signal_v->LockedMatrix(),
-               this->m_prev_activations_v->LockedMatrix(),
-               DataType(0),
-               this->m_activation_weights_gradient_v->Matrix());
-      El::AllReduce(*this->m_activation_weights_gradient_v,
-                    this->m_activation_weights_gradient_v->RedundantComm());
-      break;
-    }
+  void bp_compute() {
+    // Compute the error signal and gradients.
+    bp_compute_weights();
 
     // Compute bias update if needed
     if(m_bias_scaling_factor != DataType(0)) {
@@ -217,7 +174,6 @@ class fully_connected_layer : public learning {
                 *m_bias_weights_gradient_v);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
-
   }
 
   DataType computeCost(DistMat& deltas) {
@@ -242,7 +198,7 @@ class fully_connected_layer : public learning {
     return (1 / sqrt(x + 1e-8));
   }
 
-  bool update_compute(void) {
+  bool update_compute() {
     if(this->m_execution_mode == execution_mode::training) {
       this->l2_regularize();
       this->m_optimizer->update(this->m_weights_gradient);
@@ -253,7 +209,7 @@ class fully_connected_layer : public learning {
 };
 
 /// Matrices should be in MC,MR distributions
-template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices(void) {
+template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_bias_weights_repl = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
   m_bias_weights_gradient_repl = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
@@ -266,7 +222,7 @@ template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initi
 }
 
 /// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices(void) {
+template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_bias_weights_repl = new StarMat(this->m_comm->get_model_grid());
   m_bias_weights_gradient_repl = new StarMat(this->m_comm->get_model_grid());
@@ -278,7 +234,59 @@ template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initia
   m_bias_weights_gradient_v        = new StarMat(this->m_comm->get_model_grid());
 }
 
+template<> inline void
+fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
+  El::Gemm(NORMAL, NORMAL, DataType(1),
+           *this->m_activation_weights_v,
+           *this->m_prev_activations_v,
+           DataType(0),
+           *this->m_activations_v);
 }
 
+template<> inline void
+fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights() {
+  El::Gemm(NORMAL, NORMAL, DataType(1),
+           this->m_activation_weights_v->LockedMatrix(),
+           this->m_prev_activations_v->LockedMatrix(),
+           DataType(0),
+           this->m_activations_v->Matrix());
+}
 
-#endif // LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
+template<> inline void
+fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
+  // Compute the partial delta update for the next lower layer
+  El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
+           *this->m_activation_weights_v,
+           *this->m_prev_error_signal_v,
+           DataType(0),
+           *this->m_error_signal_v);
+
+  // Compute update for activation weights
+  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+           *this->m_prev_error_signal_v,
+           *this->m_prev_activations_v,
+           DataType(0),
+           *this->m_activation_weights_gradient_v);
+}
+
+template<> inline void
+fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights() {
+  El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
+           this->m_activation_weights_v->LockedMatrix(),
+           this->m_prev_error_signal_v->LockedMatrix(),
+           DataType(0),
+           this->m_error_signal_v->Matrix());
+
+  // Compute update for activation weights
+  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+           this->m_prev_error_signal_v->LockedMatrix(),
+           this->m_prev_activations_v->LockedMatrix(),
+           DataType(0),
+           this->m_activation_weights_gradient_v->Matrix());
+  El::AllReduce(*this->m_activation_weights_gradient_v,
+                this->m_activation_weights_gradient_v->RedundantComm());
+}
+
+}  // namespace lbann
+
+#endif  // LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
