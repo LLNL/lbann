@@ -57,7 +57,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup(const Layer *prev_layer, const Layer *next_layer) {
-    Layer::setup(prev_layer, next_layer);
+    input_layer::setup(prev_layer, next_layer);
     if(io_layer::m_data_sets_span_models) {
       int base_offset = Layer::m_comm->get_rank_in_model();
       int batch_stride = Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;

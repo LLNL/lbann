@@ -210,7 +210,7 @@ class Layer {
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
 
-  ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
+  ElMat *m_prev_activations;    ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
   ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
 
  protected:
@@ -219,10 +219,12 @@ class Layer {
   virtual void fp_set_std_matrix_view();
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view();
+#ifdef __LIB_CUDNN
   /** Pin host memory if needed for GPU memory transfers during layer's forward propagation. */
   virtual void fp_pin_memory();
   /** Pin host memory if needed for GPU memory transfers during layer's backward propagation. */
   virtual void bp_pin_memory();
+#endif
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */
