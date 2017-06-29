@@ -501,6 +501,8 @@ void cudnn_manager::set_work_space_size(int i, size_t size) {
 }
 
 void cudnn_manager::pin_matrix(ElMat& mat) {
+  // TODO: Who is responsible for deallocating the original buffer?
+  // It isn't deallocated in this function.
   
   // Get local matrix
   const Mat& mat_local = mat.LockedMatrix();
@@ -509,7 +511,12 @@ void cudnn_manager::pin_matrix(ElMat& mat) {
   DataType* pinned_buffer;
   CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
                             mat_local.Height()*mat_local.Width()*sizeof(DataType)));
-
+  Mat pinned_mat(mat_local.Height(), mat_local.Width(),
+                 pinned_buffer, mat_local.LDim());
+  // Copying must be done before attaching as it will be replaced by
+  // the new matrix
+  Copy(mat_local, pinned_mat);
+  
   // Reconfigure matrix around pinned memory
   mat.Attach(mat.Height(),
              mat.Width(),
@@ -519,10 +526,6 @@ void cudnn_manager::pin_matrix(ElMat& mat) {
              pinned_buffer,
              mat_local.Height(),
              mat.Root());
-
-  // Copy data
-  Copy(mat_local, mat.Matrix());
-
 }
 
 void cudnn_manager::unpin_matrix(ElMat& mat) {
@@ -530,8 +533,9 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
   // Get local matrix
   Mat& mat_local = mat.Matrix();
   Mat new_mat_local(mat_local);
+
+  DataType* pinned_buf = mat_local.Buffer();    
   
-  // Reconfigure matrix around unpinned memory
   mat.Attach(mat.Height(),
              mat.Width(),
              mat.Grid(),
@@ -539,10 +543,8 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
              mat.RowAlign(),
              new_mat_local,
              mat.Root());
-
-  // Deallocate pinned memory
-  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
-
+  
+  CHECK_CUDA(cudaFreeHost(pinned_buf));
 }
 
 #endif // #ifdef __LIB_CUDNN
