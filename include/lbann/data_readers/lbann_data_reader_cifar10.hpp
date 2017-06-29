@@ -81,6 +81,10 @@ class cifar10_reader : public generic_data_reader {
     return 10;
   }
   
+  const std::vector<int> get_data_dims(void) const {
+    return {m_image_num_channels, m_image_height, m_image_width};
+  }
+  
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
