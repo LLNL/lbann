@@ -210,7 +210,7 @@ class Layer {
   ElMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
 
-  ElMat *m_prev_activations;    ///< Local copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
+  ElMat *m_prev_activations;    ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
   ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
 
  protected:
