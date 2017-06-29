@@ -54,9 +54,11 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   }
 
   if(m_comm->get_model_grid().Size() < num_parallel_readers) {
-    cout << "Warning the grid size "<<m_comm->get_model_grid().Size()
-         <<"is smaller than the number of requested parallel readers "
-         <<num_parallel_readers<<"." << endl;
+    if (m_comm->am_model_master()) {
+      cout << "Warning the grid size "<<m_comm->get_model_grid().Size()
+           <<"is smaller than the number of requested parallel readers "
+           <<num_parallel_readers<<"." << endl;
+    }
     m_num_parallel_readers_training = m_comm->get_model_grid().Size();
     m_num_parallel_readers_validating = m_comm->get_model_grid().Size();
     m_num_parallel_readers_testing = m_comm->get_model_grid().Size();
