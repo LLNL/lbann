@@ -125,7 +125,7 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
   // Precompute the bias correction.
-  const DataType correction = Sqrt(DataType(1) - m_current_beta2) /
+  const DataType correction = std::sqrt(DataType(1) - m_current_beta2) /
                               (DataType(1) - m_current_beta1);
 
   const int local_height = m_parameters->LocalHeight();
@@ -162,7 +162,7 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
         DataType& old_c = old_gradient_buffer[i+j*old_gradient_ldim];
         m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
         m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-        old_c = correction * m1 / (Sqrt(m2) + m_eps);
+        old_c = correction * m1 / (std::sqrt(m2) + m_eps);
         x -= m_learning_rate * old_c;
       }
     }
@@ -180,7 +180,7 @@ void hypergradient_adam::update(const AbsDistMat *gradient) {
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
       // Compute the unbiased gradient estimate.
-      old_c = correction * m1 / (Sqrt(m2) + m_eps);
+      old_c = correction * m1 / (std::sqrt(m2) + m_eps);
       // Parameter update.
       x -= m_learning_rate * old_c;
     }

@@ -112,7 +112,7 @@ void adam::update(const AbsDistMat *gradient) {
   m_current_beta2 *= m_beta2;
   // Precompute the bias correction and learning rate.
   const DataType correction = m_learning_rate *
-                              (Sqrt(DataType(1) - m_current_beta2)
+                              (std::sqrt(DataType(1) - m_current_beta2)
                                / (DataType(1) - m_current_beta1));
 
   // Get local matrix data
@@ -143,7 +143,7 @@ void adam::update(const AbsDistMat *gradient) {
         DataType& m2 = moment2_buffer[i+j*moment2_ldim];
         m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
         m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-        x -= correction * m1 / (Sqrt(m2) + m_eps);
+        x -= correction * m1 / (std::sqrt(m2) + m_eps);
       }
     }
   } else {
@@ -159,7 +159,7 @@ void adam::update(const AbsDistMat *gradient) {
       DataType& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-      x -= correction * m1 / (Sqrt(m2) + m_eps);
+      x -= correction * m1 / (std::sqrt(m2) + m_eps);
     }
   }
 }

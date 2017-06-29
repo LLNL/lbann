@@ -104,7 +104,7 @@ void adagrad::update(const AbsDistMat *gradient) {
         const DataType g = gradient_buffer[i+j*gradient_ldim];
         DataType& c = cache_buffer[i+j*cache_ldim];
         c += g * g;
-        x -= m_learning_rate * g / (Sqrt(c) + m_eps);
+        x -= m_learning_rate * g / (std::sqrt(c) + m_eps);
       }
     }
   } else {
@@ -115,7 +115,7 @@ void adagrad::update(const AbsDistMat *gradient) {
       const DataType g = gradient_buffer[i];
       DataType& c = cache_buffer[i];
       c += g * g;
-      x -= m_learning_rate * g / (Sqrt(c) + m_eps);
+      x -= m_learning_rate * g / (std::sqrt(c) + m_eps);
     }
   }
 }
