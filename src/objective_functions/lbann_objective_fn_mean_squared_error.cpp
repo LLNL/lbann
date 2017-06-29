@@ -55,7 +55,7 @@ double mean_squared_error::compute_mean_squared_error(const AbsDistMat& predicti
   const int num_neurons = predictions_v.Height();
   Copy(predictions_v, m_errors_v);
   Axpy(DataType(-1), groundtruth_v, m_errors_v);
-  return Pow(FrobeniusNorm(m_errors_v), 2) / num_neurons;
+  return std::pow(FrobeniusNorm(m_errors_v), DataType{2}) / num_neurons;
 }
 
 /// Compute the average mean squared error over the mini-batch
