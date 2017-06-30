@@ -48,10 +48,13 @@ class lbann_callback_dump_gradients : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_gradients");
-  }
+    lbann_callback(batch_interval), m_basename(basename) {}
+  lbann_callback_dump_gradients(
+    const lbann_callback_dump_gradients&) = default;
+  lbann_callback_dump_gradients& operator=(
+    const lbann_callback_dump_gradients&) = default;
   void on_backward_prop_end(model *m, Layer *l);
+  std::string name() const { return "dump gradients"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

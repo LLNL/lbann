@@ -38,13 +38,14 @@ namespace lbann {
  */
 class lbann_callback_print : public lbann_callback {
  public:
-  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {
-    set_name("print");
-  }
+  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {}
+  lbann_callback_print(const lbann_callback_print&) = default;
+  lbann_callback_print& operator=(const lbann_callback_print&) = default;
   void setup(model *m);
   void on_epoch_begin(model *m);
   void on_epoch_end(model *m);
   void on_test_end(model *m);
+  std::string name() const { return "print"; }
 };
 
 }  // namespace lbann

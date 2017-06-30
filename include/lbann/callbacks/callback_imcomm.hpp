@@ -58,6 +58,8 @@ class lbann_callback_imcomm : public lbann_callback {
    */
   lbann_callback_imcomm(comm_type ct = NORMAL,
                         lbann_summary *summarizer = nullptr);
+  lbann_callback_imcomm(const lbann_callback_imcomm&) = default;
+  lbann_callback_imcomm& operator=(const lbann_callback_imcomm&) = default;
   /**
    * Convenience initialization to do one update type for a set of layers.
    * Implies no inter-model updates for other layers.
@@ -79,6 +81,8 @@ class lbann_callback_imcomm : public lbann_callback {
   void on_epoch_end(model *m);
   /** Do inter-model gradient updates. */
   void on_backward_prop_end(model *m);
+
+  std::string name() const { return "imcomm"; }
 
  private:
   /** Parameters for a given layer. */

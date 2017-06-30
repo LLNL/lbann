@@ -39,15 +39,17 @@ namespace lbann {
  */
 class lbann_callback_checknan : public lbann_callback {
  public:
-  lbann_callback_checknan() : lbann_callback() {
-    set_name("checknan");
-  }
+  lbann_callback_checknan() : lbann_callback() {}
+  lbann_callback_checknan(const lbann_callback_checknan&) = default;
+  lbann_callback_checknan& operator=(
+    const lbann_callback_checknan&) = default;
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l);
   /** Check that gradients are good. */
   void on_backward_prop_end(model *m, Layer *l);
   /** Check that weights are good. */
   void on_batch_end(model *m);
+  std::string name() const { return "checknan"; }
  private:
   /** Return true if there are no problems with m. */
   bool is_good(const DistMat& m);

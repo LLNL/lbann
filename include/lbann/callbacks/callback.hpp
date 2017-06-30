@@ -114,23 +114,17 @@ class lbann_callback {
   /** Called when a layer ends forward propagation for evaluation (validation / testing). */
   virtual void on_evaluate_forward_prop_end(model *m, Layer *l) {}
 
-  /** Batch methods should once every this many steps. */
-  const int m_batch_interval;
+  /** Return the batch interval. */
+  int get_batch_interval() const { return m_batch_interval; }
 
-  /** sets the callback's name **/
-  void set_name(std::string nm) {
-    m_name = nm;
-  }
+  /** Return this callback's name. */
+  virtual std::string name() const = 0;
 
-  /** Returns the callback's name **/
-  const std::string& name() {
-    return m_name;
-  }
  protected:
+  /** Batch methods should once every this many steps. */
+  int m_batch_interval;
   /** Optional summarizer for the callbacks to use. */
   lbann_summary *m_summarizer;
-  /** string representation of the callback, for use with protocol buffers **/
-  std::string m_name;
 };
 
 }  // namespace lbann

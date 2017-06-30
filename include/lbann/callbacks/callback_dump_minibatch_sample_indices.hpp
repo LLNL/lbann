@@ -47,14 +47,17 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_minibatch_sample_indices");
-  }
+    lbann_callback(batch_interval), m_basename(basename) {}
+  lbann_callback_dump_minibatch_sample_indices(
+    const lbann_callback_dump_minibatch_sample_indices&) = default;
+  lbann_callback_dump_minibatch_sample_indices& operator=(
+    const lbann_callback_dump_minibatch_sample_indices&) = default;
   void on_forward_prop_end(model *m, Layer *l);
   void on_evaluate_forward_prop_end(model *m, Layer *l);
 
   void dump_to_file(model *m, Layer *l, int64_t step);
 
+  std::string name() const { return "dump minibatch sample indices"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

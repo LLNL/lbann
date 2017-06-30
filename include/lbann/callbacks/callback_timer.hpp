@@ -43,9 +43,9 @@ namespace lbann {
 class lbann_callback_timer : public lbann_callback {
  public:
   lbann_callback_timer(lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer) {
-    set_name("timer");
-  }
+    lbann_callback(1, summarizer) {}
+  lbann_callback_timer(const lbann_callback_timer&) = default;
+  lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
   /** Start recording time for the epoch. */
   void on_epoch_begin(model *m);
   /** Report epoch and mean minibatch times. */
@@ -54,6 +54,7 @@ class lbann_callback_timer : public lbann_callback {
   void on_batch_begin(model *m);
   /** Stop and save time for a batch. */
   void on_batch_end(model *m);
+  std::string name() const { return "timer"; }
  private:
   /** Start time for the current epoch. */
   double m_epoch_start;

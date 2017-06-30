@@ -41,11 +41,14 @@ namespace lbann {
 class lbann_callback_io : public lbann_callback {
  public:
   lbann_callback_io();
+  lbann_callback_io(const lbann_callback_io&) = default;
+  lbann_callback_io& operator=(const lbann_callback_io&) = default;
   /** Only apply to specific layers. */
   lbann_callback_io(std::unordered_set<uint> layers);
   /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m);
   void on_test_end(model *m);
+  std::string name() const { return "io"; }
  private:
   /** Indicies of layers to monitor. */
   std::unordered_set<uint> m_layer_indices;

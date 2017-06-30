@@ -44,8 +44,12 @@ class lbann_callback_early_stopping : public lbann_callback {
    * Continue training until score has not improved for patience epochs.
    */
   lbann_callback_early_stopping(int64_t patience);
+  lbann_callback_early_stopping(const lbann_callback_early_stopping&) = default;
+  lbann_callback_early_stopping& operator=(
+    const lbann_callback_early_stopping&) = default;
   /** Update validation score and check for early stopping. */
   void on_validation_end(model *m);
+  std::string name() const { return "early stopping"; }
  private:
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;

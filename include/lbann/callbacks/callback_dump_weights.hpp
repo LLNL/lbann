@@ -46,10 +46,12 @@ class lbann_callback_dump_weights : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_weights(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_weights");
-  }
+    lbann_callback(batch_interval), m_basename(basename) {}
+  lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
+  lbann_callback_dump_weights& operator=(
+    const lbann_callback_dump_weights&) = default;
   void on_epoch_end(model *m);
+  std::string name() const { return "dump weights"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

@@ -47,12 +47,13 @@ class lbann_callback_save_images : public lbann_callback {
   lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
                              std::string extension="jpg") :
     lbann_callback(), m_image_dir(image_dir), m_extension(extension),
-    m_reader(reader) {
-    set_name("save_images");
-  }
+    m_reader(reader) {}
+  lbann_callback_save_images(const lbann_callback_save_images&) = default;
+  lbann_callback_save_images& operator=(
+    const lbann_callback_save_images&) = default;
   void on_epoch_end(model *m);
   void on_phase_end(model *m);
-
+  std::string name() const { return "save images"; }
  private:
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc

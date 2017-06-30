@@ -38,11 +38,13 @@ namespace lbann {
  */
 class lbann_callback_check_init : public lbann_callback {
  public:
-  lbann_callback_check_init() : lbann_callback() {
-    set_name("check_init");
-  }
+  lbann_callback_check_init() : lbann_callback() {}
+  lbann_callback_check_init(const lbann_callback_check_init&) = default;
+  lbann_callback_check_init& operator=(
+    const lbann_callback_check_init&) = default;
   /** Check initializations. */
   void on_train_begin(model *m);
+  std::string name() const { return "check init"; }
  private:
   /** Return true if x == y. */
   bool check_equal(const Mat& x, const Mat& y) const;

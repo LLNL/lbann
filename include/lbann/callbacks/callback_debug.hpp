@@ -45,9 +45,10 @@ class lbann_callback_debug : public lbann_callback {
    */
   lbann_callback_debug(execution_mode phase = execution_mode::invalid,
                        lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_debug_phase(phase) {
-    set_name("debug");
-  }
+    lbann_callback(1, summarizer), m_debug_phase(phase) {}
+  lbann_callback_debug(const lbann_callback_debug&) = default;
+  lbann_callback_debug& operator=(
+    const lbann_callback_debug&) = default;
   /** Print that a batch is being started. */
   void on_batch_begin(model *m);
   /** Print that forward prop for a layer is beginning. */
@@ -67,6 +68,7 @@ class lbann_callback_debug : public lbann_callback {
   void on_evaluate_forward_prop_begin(model *m, Layer *l);
   /** Print that an evaluation forward prop has completed. */
   void on_evaluate_forward_prop_end(model *m, Layer *l);
+  std::string name() const { return "debug"; }
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;

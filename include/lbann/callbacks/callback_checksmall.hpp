@@ -43,15 +43,17 @@ namespace lbann {
  */
 class lbann_callback_checksmall : public lbann_callback {
  public:
-  lbann_callback_checksmall() : lbann_callback() {
-    set_name("checksmall");
-  }
+  lbann_callback_checksmall() : lbann_callback() {}
+  lbann_callback_checksmall(const lbann_callback_checksmall&) = default;
+  lbann_callback_checksmall& operator=(
+    const lbann_callback_checksmall&) = default;
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l);
   /** Check that gradients are good. */
   void on_backward_prop_end(model *m, Layer *l);
   /** Check that weights are good. */
   void on_batch_end(model *m);
+  std::string name() const { return "checksmall"; }
  private:
   /** Smallest allowable value. */
   const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());

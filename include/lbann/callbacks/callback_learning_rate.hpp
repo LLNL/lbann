@@ -44,6 +44,9 @@ namespace lbann {
 class lbann_callback_learning_rate : public lbann_callback {
  public:
   lbann_callback_learning_rate();
+  lbann_callback_learning_rate(const lbann_callback_learning_rate&) = default;
+  lbann_callback_learning_rate& operator=(
+    const lbann_callback_learning_rate&) = default;
   /** Only apply to specific layers. */
   lbann_callback_learning_rate(std::unordered_set<uint> layers);
   /** Do some initialization. */
@@ -80,6 +83,11 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   lbann_callback_step_learning_rate(int step, float amt);
   lbann_callback_step_learning_rate(int step, float amt,
                                     std::unordered_set<uint> layers);
+  lbann_callback_step_learning_rate(
+    const lbann_callback_step_learning_rate&) = default;
+  lbann_callback_step_learning_rate& operator=(
+    const lbann_callback_step_learning_rate&) = default;
+  std::string name() const { return "step learning rate"; }
  protected:
   float schedule(model *m, Layer *l);
  private:
@@ -102,6 +110,11 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
                                         std::unordered_set<uint> layers);
+  lbann_callback_adaptive_learning_rate(
+    const lbann_callback_adaptive_learning_rate&) = default;
+  lbann_callback_adaptive_learning_rate& operator=(
+    const lbann_callback_adaptive_learning_rate&) = default;
+  std::string name() const { return "adaptive learning rate"; }
  protected:
   float schedule(model *m, Layer *l);
  private:
@@ -126,6 +139,14 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
   lbann_callback_custom_learning_rate(
     std::function<float(model *, Layer *)> custom_schedule,
     std::unordered_set<uint> layers);
+  /**
+   * @todo Need to provide a way for model/layer to be updated after copy.
+   */
+  lbann_callback_custom_learning_rate(
+    const lbann_callback_custom_learning_rate&) = default;
+  lbann_callback_custom_learning_rate& operator=(
+    const lbann_callback_custom_learning_rate&) = default;
+  std::string name() const { return "custom learning rate"; }
  protected:
   float schedule(model *m, Layer *l);
  private:

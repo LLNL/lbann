@@ -34,9 +34,7 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
                                                int batch_interval,
                                                int mat_interval) :
   lbann_callback(batch_interval, summarizer),
-  m_mat_interval(mat_interval) {
-  set_name("summary");
-}
+  m_mat_interval(mat_interval) {}
 
 void lbann_callback_summary::on_train_begin(model *m) {
   save_histograms(m);

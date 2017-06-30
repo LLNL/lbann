@@ -48,10 +48,13 @@ class lbann_callback_dump_activations : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_activations(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_activations");
-  }
+    lbann_callback(batch_interval), m_basename(basename) {}
+  lbann_callback_dump_activations(
+    const lbann_callback_dump_activations&) = default;
+  lbann_callback_dump_activations& operator=(
+    const lbann_callback_dump_activations&) = default;
   void on_forward_prop_end(model *m, Layer *l);
+  std::string name() const { return "dump activations"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;
