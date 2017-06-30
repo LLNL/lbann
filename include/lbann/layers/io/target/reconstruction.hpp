@@ -114,11 +114,12 @@ class reconstruction_layer : public target_layer {
     return true;
   }
 
-  void summarize(lbann_summary& summarizer, int64_t step) {
-    Layer::summarize(summarizer, step);
+  void summarize_stats(lbann_summary& summarizer, int64_t step) {
     std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, average_cost(), step);
+    // Skip target layer (for now).
+    io_layer::summarize_stats(summarizer, step);
   }
 
   void epoch_print() const {

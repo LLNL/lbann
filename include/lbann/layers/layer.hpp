@@ -61,7 +61,8 @@ class Layer {
   virtual void forwardProp();
   virtual void backProp();
   virtual bool update();
-  virtual void summarize(lbann_summary& summarizer, int step);
+  virtual void summarize_stats(lbann_summary& summarizer, int step);
+  virtual void summarize_matrices(lbann_summary& summarizer, int step);
   /**
    * Print information at the end of an epoch.
    * This is always called on the model masters and should synchronize

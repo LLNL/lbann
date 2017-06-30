@@ -253,13 +253,16 @@ bool Layer::update() {
   return layer_done;
 }
 
-void Layer::summarize(lbann_summary& summarizer, int step) {
-  // TODO: implement summarizer functions for other matrix distributions
+void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+  reset_counters();
+}
+
+void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
     "/activations/";
   summarizer.reduce_mean(prefix + "mean", *m_activations, step);
   summarizer.reduce_min(prefix + "min", *m_activations, step);
@@ -271,7 +274,6 @@ void Layer::summarize(lbann_summary& summarizer, int step) {
   summarizer.reduce_min(prefix + "min", *m_error_signal, step);
   summarizer.reduce_max(prefix + "max", *m_error_signal, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal, step);
-  reset_counters();
 }
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {

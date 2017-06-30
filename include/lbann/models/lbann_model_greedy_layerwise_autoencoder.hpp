@@ -53,7 +53,8 @@ class greedy_layerwise_autoencoder : public sequential_model {
   bool load_from_checkpoint_shared(persist& p);
 
   /// Compute layer summaries
-  void summarize(lbann_summary& summarizer);
+  void summarize_stats(lbann_summary& summarizer);
+  void summarize_matrices(lbann_summary& summarizer);
 
   /// Train neural network
   /** @param num_epochs Number of epochs to train at each phase

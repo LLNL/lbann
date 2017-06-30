@@ -31,8 +31,10 @@
 namespace lbann {
 
 lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
-    int batch_interval) :
-  lbann_callback(batch_interval, summarizer) {
+                                               int batch_interval,
+                                               int mat_interval) :
+  lbann_callback(batch_interval, summarizer),
+  m_mat_interval(mat_interval) {
   set_name("summary");
 }
 
@@ -41,11 +43,10 @@ void lbann_callback_summary::on_train_begin(model *m) {
 }
 
 void lbann_callback_summary::on_batch_end(model *m) {
-  m->summarize(*m_summarizer);
-  // Note that these comm stats are a running sum, so they count from the last
-  // time we reset and thus are over the whole batch_interval period.
-  // Bytes sent/received are the sum of the bytes sent/received by every rank
-  // in a model.
+  m->summarize_stats(*m_summarizer);
+  if (m->get_cur_step() % m_mat_interval == 0) {
+    m->summarize_matrices(*m_summarizer);
+  }
   lbann_comm *comm = m->get_comm();
   size_t bytes_sent = comm->get_bytes_sent();
   size_t bytes_received = comm->get_bytes_received();

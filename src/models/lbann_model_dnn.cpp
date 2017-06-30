@@ -64,12 +64,17 @@ lbann::deep_neural_network::deep_neural_network(int mini_batch_size,
 lbann::deep_neural_network::~deep_neural_network() {}
 
 
-void lbann::deep_neural_network::summarize(lbann_summary& summarizer) {
+void lbann::deep_neural_network::summarize_stats(lbann_summary& summarizer) {
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->summarize(summarizer, get_cur_step());
+    m_layers[l]->summarize_stats(summarizer, get_cur_step());
   }
 }
 
+void lbann::deep_neural_network::summarize_matrices(lbann_summary& summarizer) {
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    m_layers[l]->summarize_matrices(summarizer, get_cur_step());
+  }
+}
 
 void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();

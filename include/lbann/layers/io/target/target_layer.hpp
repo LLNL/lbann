@@ -107,11 +107,11 @@ class target_layer : public io_layer {
     }
   }
 
-  void summarize(lbann_summary& summarizer, int step) {
-    Layer::summarize(summarizer, step);
+  void summarize_stats(lbann_summary& summarizer, int step) {
     std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/CrossEntropyCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
+    io_layer::summarize_stats(summarizer, step);
   }
 
   void epoch_print() const {

@@ -608,7 +608,7 @@ int main(int argc, char *argv[]) {
     lbann_callback_timer timer_cb(&summarizer);
     dnn->add_callback(&timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer, 25);
+    lbann_callback_summary summary_cb(&summarizer);
     dnn->add_callback(&summary_cb);
     // lbann_callback_io io_cb({0});
     // dnn->add_callback(&io_cb);

@@ -48,7 +48,8 @@ class deep_neural_network : public sequential_model {
 
 
   /// Compute layer summaries
-  void summarize(lbann_summary& summarizer);
+  void summarize_stats(lbann_summary& summarizer);
+  void summarize_matrices(lbann_summary& summarizer);
 
   /// Train neural network
   /** @param num_epochs Number of epochs to train

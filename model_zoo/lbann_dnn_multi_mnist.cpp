@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     lbann_callback_timer timer_cb(&summarizer);
     dnn.add_callback(&timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer, 25);
+    lbann_callback_summary summary_cb(&summarizer);
     dnn.add_callback(&summary_cb);
     // Do global inter-model updates.
     lbann_callback_imcomm imcomm_cb(

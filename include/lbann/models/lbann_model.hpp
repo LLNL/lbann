@@ -115,8 +115,16 @@ class model {
     return m_current_phase;
   }
 
-  /** Produce summary information (if any). */
-  virtual void summarize(lbann_summary& summarizer) {}
+  /**
+   * Summarize statistics (e.g. timers, counters); these should be computable
+   * quickly.
+   */
+  virtual void summarize_stats(lbann_summary& summarizer) {}
+  /**
+   * Summarize matrices (e.g. means); these are called less frequently and can
+   * be more expensive.
+   */
+  virtual void summarize_matrices(lbann_summary& summarizer) {}
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
