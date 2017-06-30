@@ -315,7 +315,9 @@ int main(int argc, char *argv[]) {
     lbann_callback_imcomm imcomm_cb(
       static_cast<lbann_callback_imcomm::comm_type>(
         trainParams.IntermodelCommMethod),
-      {fcidx1, fcidx2, fcidx3, fcidx4}, &summarizer);
+      {static_cast<unsigned>(fcidx1), static_cast<unsigned>(fcidx2),
+            static_cast<unsigned>(fcidx3), static_cast<unsigned>(fcidx4)},
+      &summarizer);
     dnn.add_callback(&imcomm_cb);
     lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);

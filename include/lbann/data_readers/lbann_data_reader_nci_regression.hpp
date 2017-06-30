@@ -73,7 +73,7 @@ class data_reader_nci_regression : public generic_data_reader {
     return m_num_responses;
   }
   const std::vector<int> get_data_dims(void) const {
-    return {m_num_features};
+    return {static_cast<int>(m_num_features)};
   }
 
 };

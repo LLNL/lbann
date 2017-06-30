@@ -140,7 +140,7 @@ int lbann::imagenet_readerSingle::fetch_data(Mat& X) {
 
   int width, height;
   int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(size_t{m_current_pos+current_batch_size}, m_shuffled_indices.size());
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size), m_shuffled_indices.size());
 
   for (int n = m_current_pos; n < end_pos; ++n) {
     int k = n - m_current_pos;
