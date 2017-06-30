@@ -220,10 +220,8 @@ class Layer {
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view();
 #ifdef __LIB_CUDNN
-  /** Pin host memory if needed for GPU memory transfers during layer's forward propagation. */
-  virtual void fp_pin_memory();
-  /** Pin host memory if needed for GPU memory transfers during layer's backward propagation. */
-  virtual void bp_pin_memory();
+  /** Pin host memory if needed for GPU memory transfers. */
+  virtual void pin_data();
 #endif
 
   /**
@@ -239,6 +237,13 @@ class Layer {
    * setup_dims.
    */
   virtual void setup_data();
+  /**
+   * Called by setup(), each layer using GPU should override this to
+   * call its parent and set up the layer's GPU data
+   * (e.g. weights). This base method sets up the activations and
+   * error signal matrices. This is always called after setup_data.
+   */
+  virtual void setup_gpu();
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */
@@ -274,10 +279,11 @@ class Layer {
   std::vector<DataType *> m_prev_error_signal_d;
   /** GPU memory for error signal. */
   std::vector<DataType *> m_error_signal_d;
-  /** GPU memory for forward propagation input. */
-  std::vector<DataType *> *fp_input_d;
-  /** GPU memory for backward propagation input. */
-  std::vector<DataType *> *bp_input_d;
+
+  /** cuDNN descriptor for neuron tensor from "previous" layer. */
+  cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;
+  /** cuDNN descriptor for neuron tensor. */
+  cudnnTensorDescriptor_t m_neurons_cudnn_desc;
 
 #endif
 

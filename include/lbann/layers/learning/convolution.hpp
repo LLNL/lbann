@@ -65,10 +65,6 @@ class convolution_layer : public learning {
 
 #ifdef __LIB_CUDNN
 
-  /// Input tensor descriptor
-  cudnnTensorDescriptor_t m_input_desc;
-  /// Output tensor descriptor
-  cudnnTensorDescriptor_t m_output_desc;
   /// Bias tensor descriptor
   cudnnTensorDescriptor_t m_bias_desc;
   /// Filter descriptor
@@ -130,8 +126,6 @@ class convolution_layer : public learning {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_input_desc = NULL;
-    m_output_desc = NULL;
     m_bias_desc = NULL;
     m_filter_desc = NULL;
     m_convolution_desc = NULL;
@@ -143,10 +137,6 @@ class convolution_layer : public learning {
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
-      const int num_gpus = this->m_cudnn->get_num_gpus();
-      const int num_processes = this->m_comm->get_procs_per_model();
-      const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
-      this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
     }
 
   #endif // #ifdef __LIB_CUDNN
@@ -155,44 +145,27 @@ class convolution_layer : public learning {
 
   ~convolution_layer() {
   #ifdef __LIB_CUDNN
-    if(this->m_using_gpus) {
-
-      // Destroy cuDNN objects
-      if(m_input_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
-      }
-      if(m_output_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
-      }
-      if(m_bias_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_desc));
-      }
-      if(m_filter_desc) {
-        CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
-      }
-      if(m_convolution_desc) {
-        CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
-      }
-
-      // Deallocate GPU memory
-      this->m_cudnn->deallocate_on_gpus(m_weights_d);
-      this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-      this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-      this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
-      }
-      if(!this->m_next_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
-      }
-
-      // Unpin host memory
-      if(this->m_using_gpus) {
-        this->m_cudnn->unpin_matrix(*(this->m_weights));
-        this->m_cudnn->unpin_matrix(m_weights_gradient_per_gpu);
-      }
-
+    // Destroy cuDNN objects
+    if(m_bias_desc) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_desc));
     }
+    if(m_filter_desc) {
+      CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_filter_desc));
+    }
+    if(m_convolution_desc) {
+      CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_desc));
+    }
+
+    // Deallocate GPU memory
+    this->m_cudnn->deallocate_on_gpus(m_weights_d);
+    this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
+
+    // Unpin host memory
+    if(this->m_using_gpus) {
+      this->m_cudnn->unpin_matrix(*(this->m_weights));
+      this->m_cudnn->unpin_matrix(m_weights_gradient_per_gpu);
+    }
+
   #endif // #ifdef __LIB_CUDNN
   }
 
@@ -226,12 +199,6 @@ class convolution_layer : public learning {
 
   void setup_data() {
     learning::setup_data();
-    #ifdef __LIB_CUDNN
-    // Setup cuDNN objects
-    if(this->m_using_gpus) {
-      setup_gpu();
-    }
-  #endif // #ifdef __LIB_CUDNN
 
     // Initialize matrices
     El::Zeros(*this->m_weights,
@@ -271,6 +238,7 @@ class convolution_layer : public learning {
 
   /// Initialize GPU objects
   void setup_gpu() {
+    learning::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("convolution_layer: cuDNN not detected");
   #else
@@ -283,26 +251,9 @@ class convolution_layer : public learning {
     const size_t work_space_limit = device_props.totalGlobalMem/2;
 
     // Initialize descriptors
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_input_desc));
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_output_desc));
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_desc));
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_filter_desc));
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_desc));
-
-    // Set input tensor descriptor
-    std::vector<int> input_dims = this->m_prev_neuron_dims;
-    input_dims.insert(input_dims.begin(),
-                      this->m_mini_batch_size_per_gpu);
-    std::vector<int> input_strides(input_dims.size());
-    input_strides[input_strides.size()-1]  = 1;
-    for(int i=input_strides.size()-2; i>=0; --i) {
-      input_strides[i] = input_strides[i+1] * input_dims[i+1];
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
-                                           input_dims.size(),
-                                           input_dims.data(),
-                                           input_strides.data()));
 
     // Set filter descriptor
     std::vector<int> conv_dims = m_conv_dims;
@@ -325,38 +276,6 @@ class convolution_layer : public learning {
                                                 CUDNN_CONVOLUTION,
                                                 this->m_cudnn->get_cudnn_data_type()));
 
-    // Set output tensor descriptor
-    std::vector<int> output_dims;
-  #ifdef LBANN_DEBUG
-    output_dims.resize(this->m_num_neuron_dims+1);
-    CHECK_CUDNN(cudnnGetConvolutionNdForwardOutputDim(m_convolution_desc,
-                                                      m_input_desc,
-                                                      m_filter_desc,
-                                                      output_dims.size(),
-                                                      output_dims.data()));
-    if(output_dims[0] != this->m_mini_batch_size_per_gpu) {
-      throw lbann_exception("convolution_layer: invalid output dimensions");
-    }
-    for(int i=0; i<m_num_neuron_dims; ++i) {
-      if(output_dims[i+1] != m_neuron_dims[i]) {
-        throw lbann_exception("convolution_layer: invalid output dimensions");
-      }
-    }
-  #else
-    output_dims = this->m_neuron_dims;
-    output_dims.insert(output_dims.begin(), this->m_mini_batch_size_per_gpu);
-  #endif // #ifdef LBANN_DEBUG
-    std::vector<int> output_strides(output_dims.size());
-    output_strides[output_strides.size()-1]  = 1;
-    for(int i=output_strides.size()-2; i>=0; --i) {
-      output_strides[i] = output_strides[i+1] * output_dims[i+1];
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
-                                           output_dims.size(),
-                                           output_dims.data(),
-                                           output_strides.data()));
-
     // Set bias tensor descriptor
     std::vector<int> bias_dims(this->m_num_prev_neuron_dims+1, 1);
     bias_dims[1] = this->m_neuron_dims[0];
@@ -370,16 +289,16 @@ class convolution_layer : public learning {
 
     // Choose algorithms
     CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(this->m_cudnn->get_handle(),
-                                                    m_input_desc,
+                                                    this->m_prev_neurons_cudnn_desc,
                                                     m_filter_desc,
                                                     m_convolution_desc,
-                                                    m_output_desc,
+                                                    this->m_neurons_cudnn_desc,
                                                     CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
                                                     work_space_limit,
                                                     &m_forward_algo));
     CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(),
-                                                           m_input_desc,
-                                                           m_output_desc,
+                                                           this->m_prev_neurons_cudnn_desc,
+                                                           this->m_neurons_cudnn_desc,
                                                            m_convolution_desc,
                                                            m_filter_desc,
                                                            CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
@@ -387,9 +306,9 @@ class convolution_layer : public learning {
                                                            &m_backward_filter_algo));
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(),
                                                          m_filter_desc,
-                                                         m_output_desc,
+                                                         this->m_neurons_cudnn_desc,
                                                          m_convolution_desc,
-                                                         m_input_desc,
+                                                         this->m_prev_neurons_cudnn_desc,
                                                          CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
                                                          work_space_limit,
                                                          &m_backward_data_algo));
@@ -398,16 +317,16 @@ class convolution_layer : public learning {
     size_t max_work_space = 0;
     size_t required_work_space;
     CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(this->m_cudnn->get_handle(),
-                                                        m_input_desc,
+                                                        this->m_prev_neurons_cudnn_desc,
                                                         m_filter_desc,
                                                         m_convolution_desc,
-                                                        m_output_desc,
+                                                        this->m_neurons_cudnn_desc,
                                                         m_forward_algo,
                                                         &required_work_space));
     max_work_space = std::max(max_work_space, required_work_space);
     CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(this->m_cudnn->get_handle(),
-                                                               m_input_desc,
-                                                               m_output_desc,
+                                                               this->m_prev_neurons_cudnn_desc,
+                                                               this->m_neurons_cudnn_desc,
                                                                m_convolution_desc,
                                                                m_filter_desc,
                                                                m_backward_filter_algo,
@@ -415,9 +334,9 @@ class convolution_layer : public learning {
     max_work_space = std::max(max_work_space, required_work_space);
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(this->m_cudnn->get_handle(),
                                                              m_filter_desc,
-                                                             m_output_desc,
+                                                             this->m_neurons_cudnn_desc,
                                                              m_convolution_desc,
-                                                             m_input_desc,
+                                                             this->m_prev_neurons_cudnn_desc,
                                                              m_backward_data_algo,
                                                              &required_work_space));
     max_work_space = std::max(max_work_space, required_work_space);
@@ -434,22 +353,6 @@ class convolution_layer : public learning {
     this->m_cudnn->allocate_on_gpus(m_weights_gradient_d,
                                     m_conv_size+this->m_neuron_dims[0],
                                     1);
-    this->m_cudnn->allocate_on_gpus(this->m_activations_d,
-                                    this->m_num_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
-                                    this->m_num_prev_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
-                                      this->m_num_prev_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
-    if(!this->m_next_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
-                                      this->m_num_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
 
   #endif // #ifdef __LIB_CUDNN
   }
@@ -496,7 +399,7 @@ class convolution_layer : public learning {
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnConvolutionForward(this->m_cudnn->get_handle(i),
                                           &one,
-                                          m_input_desc,
+                                          this->m_prev_neurons_cudnn_desc,
                                           this->m_prev_activations_d[i],
                                           m_filter_desc,
                                           m_weights_d[i],
@@ -505,14 +408,14 @@ class convolution_layer : public learning {
                                           this->m_cudnn->get_work_space(i),
                                           this->m_cudnn->get_work_space_size(i),
                                           &zero,
-                                          m_output_desc,
+                                          this->m_neurons_cudnn_desc,
                                           this->m_activations_d[i]));
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                  &one,
                                  m_bias_desc,
                                  m_weights_d[i] + m_conv_size,
                                  &one,
-                                 m_output_desc,
+                                 this->m_neurons_cudnn_desc,
                                  this->m_activations_d[i]));
     }
 
@@ -543,16 +446,16 @@ class convolution_layer : public learning {
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
                                                &one,
-                                               m_output_desc,
+                                               this->m_neurons_cudnn_desc,
                                                this->m_prev_error_signal_d[i],
                                                &zero,
                                                m_bias_desc,
                                                m_weights_gradient_d[i] + m_conv_size));
       CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                  &one,
-                                                 m_input_desc,
+                                                 this->m_prev_neurons_cudnn_desc,
                                                  this->m_prev_activations_d[i],
-                                                 m_output_desc,
+                                                 this->m_neurons_cudnn_desc,
                                                  this->m_prev_error_signal_d[i],
                                                  m_convolution_desc,
                                                  m_backward_filter_algo,
@@ -565,14 +468,14 @@ class convolution_layer : public learning {
                                                &one,
                                                m_filter_desc,
                                                m_weights_d[i],
-                                               m_output_desc,
+                                               this->m_neurons_cudnn_desc,
                                                this->m_prev_error_signal_d[i],
                                                m_convolution_desc,
                                                m_backward_data_algo,
                                                this->m_cudnn->get_work_space(i),
                                                this->m_cudnn->get_work_space_size(i),
                                                &zero,
-                                               m_input_desc,
+                                               this->m_prev_neurons_cudnn_desc,
                                                this->m_error_signal_d[i]));
 
     }
