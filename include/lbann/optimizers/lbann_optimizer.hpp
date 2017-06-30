@@ -44,7 +44,6 @@ class optimizer {
   optimizer(lbann_comm *comm,
             DataType learning_rate = DataType(0));
   optimizer(const optimizer&) = default;
-  // const members mean no copy assignment.
   optimizer& operator=(const optimizer&) = default;
 
   /// Destructor
