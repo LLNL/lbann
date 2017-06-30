@@ -63,6 +63,11 @@ class convolution_layer : public learning {
   /// Convolution strides
   std::vector<int> m_conv_strides;
 
+  ElMat *m_filter_weights_v;
+  ElMat *m_filter_weights_gradient_v;
+  ElMat *m_bias_weights_v;
+  ElMat *m_bias_weights_gradient_v;
+
 #ifdef __LIB_CUDNN
 
   /// Bias tensor descriptor
@@ -81,10 +86,14 @@ class convolution_layer : public learning {
   /** Compute gradient w.r.t. data, which is passed to previous layer. */
   cudnnConvolutionBwdDataAlgo_t m_backward_data_algo;
 
-  /// GPU memory for convolution filters and bias
-  std::vector<DataType *> m_weights_d;
-  /// GPU memory for convolution filters gradient and bias gradient
-  std::vector<DataType *> m_weights_gradient_d;
+  /// GPU memory for convolution filters
+  std::vector<DataType *> m_filter_weights_d;
+  /// GPU memory for convolution filters gradient
+  std::vector<DataType *> m_filter_weights_gradient_d;
+  /// GPU memory for convolution bias
+  std::vector<DataType *> m_bias_weights_d;
+  /// GPU memory for convolution bias gradient
+  std::vector<DataType *> m_bias_weights_gradient_d;
 
   /// Filter and bias gradients computed on each GPU
   StarMat m_weights_gradient_per_gpu;
@@ -157,8 +166,10 @@ class convolution_layer : public learning {
     }
 
     // Deallocate GPU memory
-    this->m_cudnn->deallocate_on_gpus(m_weights_d);
-    this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
+    this->m_cudnn->deallocate_on_gpus(m_filter_weights_d);
+    this->m_cudnn->deallocate_on_gpus(m_filter_weights_gradient_d);
+    this->m_cudnn->deallocate_on_gpus(m_bias_weights_d);
+    this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
 
     // Unpin host memory
     if(this->m_using_gpus) {
@@ -166,6 +177,11 @@ class convolution_layer : public learning {
       this->m_cudnn->unpin_matrix(m_weights_gradient_per_gpu);
     }
 
+    delete m_filter_weights_v;
+    delete m_filter_weights_gradient_v;
+    delete m_bias_weights_v;
+    delete m_bias_weights_gradient_v;
+    
   #endif // #ifdef __LIB_CUDNN
   }
 
@@ -173,6 +189,13 @@ class convolution_layer : public learning {
 
   void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();
+
+    /// Instantiate these view objects but do not allocate data for them
+    /// TODO: model parallel implementation
+    m_filter_weights_v           = new StarMat(this->m_comm->get_model_grid());
+    m_filter_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_v             = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v    = new StarMat(this->m_comm->get_model_grid());
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
@@ -202,20 +225,18 @@ class convolution_layer : public learning {
 
     // Initialize matrices
     El::Zeros(*this->m_weights,
-              m_conv_size + this->m_neuron_dims[0],
-              1);
+              m_conv_size / this->m_neuron_dims[0] + 1,
+              this->m_neuron_dims[0]);
     El::Zeros(*this->m_weights_gradient,
-              m_conv_size + this->m_neuron_dims[0],
-              1);
+              this->m_weights->Height(),
+              this->m_weights->Width());
   #ifdef __LIB_CUDNN
     if(this->m_using_gpus) {
       El::Zeros(m_weights_gradient_per_gpu,
-                m_conv_size + this->m_neuron_dims[0],
-                this->m_cudnn->get_num_gpus());
+                this->m_weights_gradient->Height(),
+                this->m_weights_gradient->Width() * this->m_cudnn->get_num_gpus());
     }
-  #endif // #ifdef __LIB_CUDNN
 
-  #ifdef __LIB_CUDNN
     // Pin host memory
     if(this->m_using_gpus) {
       this->m_cudnn->pin_matrix(*this->m_weights);
@@ -223,17 +244,26 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
 
+    // Set up views into weights and weights gradient
+    El::View(*m_filter_weights_v, *this->m_weights,
+             IR(0,this->m_weights->Height()-1), ALL);
+    El::View(*m_filter_weights_gradient_v, *this->m_weights_gradient,
+             IR(0,this->m_weights_gradient->Height()-1), ALL);
+    El::View(*m_bias_weights_v, *this->m_weights,
+             IR(this->m_weights->Height()-1), ALL);
+    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
+             IR(this->m_weights_gradient->Height()-1), ALL);
+
     // Initialize filters
-    StarMat filter;
-    View(filter, *this->m_weights, IR(0,m_conv_size), ALL);
     const int fan_in = m_conv_size / this->m_neuron_dims[0];
     const int fan_out = m_conv_size / this->m_prev_neuron_dims[0];
-    initialize_matrix(filter, this->m_weight_initialization, fan_in, fan_out);
+    initialize_matrix(*m_filter_weights_v, this->m_weight_initialization, fan_in, fan_out);
 
     // Initialize optimizer
     if(this->m_optimizer != NULL) {
       this->m_optimizer->setup(this->m_weights);
     }
+
   }
 
   /// Initialize GPU objects
@@ -278,7 +308,7 @@ class convolution_layer : public learning {
 
     // Set bias tensor descriptor
     std::vector<int> bias_dims(this->m_num_prev_neuron_dims+1, 1);
-    bias_dims[1] = this->m_neuron_dims[0];
+    bias_dims[1] = this->m_bias_weights_v->Width();
     std::vector<int> bias_strides(this->m_num_prev_neuron_dims+1, 1);
     bias_strides[0] = bias_dims[1];
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_bias_desc,
@@ -347,12 +377,18 @@ class convolution_layer : public learning {
     }
 
     // Allocate GPU memory
-    this->m_cudnn->allocate_on_gpus(m_weights_d,
-                                    m_conv_size+this->m_neuron_dims[0],
-                                    1);
-    this->m_cudnn->allocate_on_gpus(m_weights_gradient_d,
-                                    m_conv_size+this->m_neuron_dims[0],
-                                    1);
+    this->m_cudnn->allocate_on_gpus(this->m_filter_weights_d,
+                                    this->m_filter_weights_v->Height(),
+                                    this->m_filter_weights_v->Width());
+    this->m_cudnn->allocate_on_gpus(this->m_filter_weights_gradient_d,
+                                    this->m_filter_weights_gradient_v->Height(),
+                                    this->m_filter_weights_gradient_v->Width());
+    this->m_cudnn->allocate_on_gpus(this->m_bias_weights_d,
+                                    this->m_bias_weights_v->Height(),
+                                    this->m_bias_weights_v->Width());
+    this->m_cudnn->allocate_on_gpus(this->m_bias_weights_gradient_d,
+                                    this->m_bias_weights_gradient_v->Height(),
+                                    this->m_bias_weights_gradient_v->Width());
 
   #endif // #ifdef __LIB_CUDNN
   }
@@ -388,8 +424,10 @@ class convolution_layer : public learning {
     const DataType zero = 0;
 
     // Transfer filters and bias from CPU to GPUs
-    this->m_cudnn->broadcast_to_gpus(m_weights_d,
-                                     this->m_weights->LockedMatrix());
+    this->m_cudnn->broadcast_to_gpus(m_filter_weights_d,
+                                     this->m_filter_weights_v->LockedMatrix());
+    this->m_cudnn->broadcast_to_gpus(m_bias_weights_d,
+                                     this->m_bias_weights_v->LockedMatrix());
 
     // Perform convolution on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -402,7 +440,7 @@ class convolution_layer : public learning {
                                           this->m_prev_neurons_cudnn_desc,
                                           this->m_prev_activations_d[i],
                                           m_filter_desc,
-                                          m_weights_d[i],
+                                          m_filter_weights_d[i],
                                           m_convolution_desc,
                                           m_forward_algo,
                                           this->m_cudnn->get_work_space(i),
@@ -413,7 +451,7 @@ class convolution_layer : public learning {
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                  &one,
                                  m_bias_desc,
-                                 m_weights_d[i] + m_conv_size,
+                                 m_bias_weights_d[i],
                                  &one,
                                  this->m_neurons_cudnn_desc,
                                  this->m_activations_d[i]));
@@ -450,7 +488,7 @@ class convolution_layer : public learning {
                                                this->m_prev_error_signal_d[i],
                                                &zero,
                                                m_bias_desc,
-                                               m_weights_gradient_d[i] + m_conv_size));
+                                               m_bias_weights_gradient_d[i]));
       CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                  &one,
                                                  this->m_prev_neurons_cudnn_desc,
@@ -463,11 +501,11 @@ class convolution_layer : public learning {
                                                  this->m_cudnn->get_work_space_size(i),
                                                  &zero,
                                                  m_filter_desc,
-                                                 m_weights_gradient_d[i]));
+                                                 m_filter_weights_gradient_d[i]));
       CHECK_CUDNN(cudnnConvolutionBackwardData(this->m_cudnn->get_handle(i),
                                                &one,
                                                m_filter_desc,
-                                               m_weights_d[i],
+                                               m_filter_weights_d[i],
                                                this->m_neurons_cudnn_desc,
                                                this->m_prev_error_signal_d[i],
                                                m_convolution_desc,
@@ -481,12 +519,23 @@ class convolution_layer : public learning {
     }
 
     // Transfer outputs from GPUs to CPU and reduce
-    this->m_cudnn->gather_from_gpus(m_weights_gradient_per_gpu.Matrix(),
-                                    m_weights_gradient_d, 1);
+    Mat filter_weights_gradient_per_gpu
+      = m_weights_gradient_per_gpu.Matrix()(IR(0, m_weights_gradient_per_gpu.Height()-1), ALL);
+    Mat bias_weights_gradient_per_gpu
+      = m_weights_gradient_per_gpu.Matrix()(IR(m_weights_gradient_per_gpu.Height()-1), ALL);
+    this->m_cudnn->gather_from_gpus(filter_weights_gradient_per_gpu,
+                                    m_filter_weights_gradient_d,
+                                    m_filter_weights_gradient_v->Width());
+    this->m_cudnn->gather_from_gpus(bias_weights_gradient_per_gpu,
+                                    m_bias_weights_gradient_d,
+                                    m_bias_weights_gradient_v->Width());
     El::Zero(*this->m_weights_gradient);
     this->m_cudnn->synchronize();
     for(int i=0; i<num_gpus; ++i) {
-      *this->m_weights_gradient += m_weights_gradient_per_gpu(ALL, IR(i));
+      const El::Int col_start = i * this->m_weights_gradient->Width();
+      const El::Int col_end = (i+1) * this->m_weights_gradient->Width();
+      *this->m_weights_gradient
+        += m_weights_gradient_per_gpu(ALL, IR(col_start, col_end));
     }
     El::AllReduce(*this->m_weights_gradient,
                   this->m_weights_gradient->RedundantComm());
@@ -500,12 +549,9 @@ class convolution_layer : public learning {
 
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = this->m_weights->LockedMatrix();
+    const Mat& filter_weights_local = this->m_filter_weights_v->LockedMatrix();
+    const Mat& bias_weights_local = this->m_bias_weights_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
-
-    // Get filters and bias
-    const Mat filter_local = LockedView(weights_local, IR(0,m_conv_size), ALL);
-    const Mat bias_local = LockedView(weights_local, IR(m_conv_size,END), ALL);
 
     // Input, output, and filter entries are divided amongst channels
     const int num_input_channels = this->m_prev_neuron_dims[0];
@@ -519,12 +565,8 @@ class convolution_layer : public learning {
         = View(activations_local,
                IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
                ALL);
-      Fill(activations_channel, bias_local.Get(i,0));
+      Fill(activations_channel, bias_weights_local.Get(0,i));
     }
-
-    // Reshape filters into matrix
-    const Mat filter_mat(current_filter_size, num_output_channels,
-                         filter_local.LockedBuffer(), current_filter_size);
 
     // Initialize im2col matrix
     Mat im2col_mat(current_filter_size, num_per_output_channel);
@@ -547,7 +589,7 @@ class convolution_layer : public learning {
       Mat output_mat(num_per_output_channel, num_output_channels,
                      activations_local.Buffer(0,sample), num_per_output_channel);
       Gemm(TRANSPOSE, NORMAL,
-           DataType(1), im2col_mat, filter_mat,
+           DataType(1), im2col_mat, filter_weights_local,
            DataType(1), output_mat);
 
     }
@@ -559,18 +601,14 @@ class convolution_layer : public learning {
 
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& weights_local = this->m_weights->LockedMatrix();
+    const Mat& filter_weights_local = this->m_filter_weights_v->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
-    Mat& weights_gradient_local = this->m_weights_gradient->Matrix();
+    Mat& filter_weights_gradient_local = this->m_filter_weights_gradient_v->Matrix();
+    Mat& bias_weights_gradient_local = this->m_bias_weights_gradient_v->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
-    // Get filters and bias
-    const Mat filter_local = LockedView(weights_local, IR(0,m_conv_size), ALL);
-    Mat filter_gradient_local = View(weights_gradient_local, IR(0,m_conv_size), ALL);
-    Mat bias_gradient_local = View(weights_gradient_local, IR(m_conv_size,END), ALL);
-
     // Initialize weight gradients to zero
-    Zero(weights_gradient_local);
+    Zero(*this->m_weights_gradient);
 
     // Input, output, and filter entries are divided amongst channels
     const int num_input_channels = this->m_prev_neuron_dims[0];
@@ -583,21 +621,18 @@ class convolution_layer : public learning {
     for(int output_channel = 0;
         output_channel < num_output_channels;
         ++output_channel) {
-      DataType& bias_gradient_entry = bias_gradient_local(output_channel, 0);
+      DataType& bias_weights_gradient_entry
+        = bias_weights_gradient_local(0, output_channel);
       for(int col = 0; col < prev_error_signal_local.Width(); ++col) {
         for(int row = output_channel * num_per_output_channel;
             row < (output_channel+1) * num_per_output_channel;
             ++row) {
-          bias_gradient_entry += prev_error_signal_local(row, col);
+          bias_weights_gradient_entry += prev_error_signal_local(row, col);
         }
       }
     }
 
     // Initialize filter and im2col matrices
-    const Mat filter_mat(current_filter_size, num_output_channels,
-                         filter_local.LockedBuffer(), current_filter_size);
-    Mat filter_gradient_mat(current_filter_size, num_output_channels,
-                            filter_gradient_local.Buffer(), current_filter_size);
     Mat im2col_mat(current_filter_size, num_per_output_channel);
 
     // Iterate through data samples
@@ -611,7 +646,7 @@ class convolution_layer : public learning {
 
       // Compute gradient w.r.t. input im2col matrix
       Gemm(NORMAL, TRANSPOSE,
-           DataType(1), filter_mat, prev_error_signal_mat,
+           DataType(1), filter_weights_local, prev_error_signal_mat,
            DataType(0), im2col_mat);
 
       // Compute error signal (i.e. gradient w.r.t. input)
@@ -640,7 +675,7 @@ class convolution_layer : public learning {
       // Compute gradient w.r.t. filter
       Gemm(NORMAL, NORMAL,
            DataType(1), im2col_mat, prev_error_signal_mat,
-           DataType(1), filter_gradient_mat);
+           DataType(1), filter_weights_gradient_local);
 
     }
 
