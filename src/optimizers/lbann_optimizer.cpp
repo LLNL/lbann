@@ -26,7 +26,7 @@
 // lbann_optimizer .hpp .cpp - Abstract optimizer class
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 

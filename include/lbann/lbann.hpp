@@ -103,11 +103,11 @@
 #include "lbann/callbacks/profiler.hpp"
 
 /// Optimizers
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/optimizers/lbann_optimizer_adam.hpp"
-#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+#include "lbann/optimizers/optimizer_adagrad.hpp"
+#include "lbann/optimizers/optimizer_adam.hpp"
+#include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
+#include "lbann/optimizers/optimizer_rmsprop.hpp"
+#include "lbann/optimizers/optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"

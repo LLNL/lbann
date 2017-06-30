@@ -26,7 +26,7 @@
 // lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
+#include "lbann/optimizers/optimizer_sgd.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

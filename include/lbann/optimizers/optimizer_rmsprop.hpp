@@ -23,77 +23,66 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent
+// lbann_optimizer_rmsprop .hpp .cpp - SGD with RMSprop
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_SGD_HPP
-#define LBANN_OPTIMIZER_SGD_HPP
+#ifndef LBANN_OPTIMIZER_RMSPROP_HPP
+#define LBANN_OPTIMIZER_RMSPROP_HPP
 
-#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#include <sys/stat.h>
 
 namespace lbann {
 
-/// Stochastic gradient descent optimizer
-/** Supports momentum, learning rate decay, and Nesterov acceleration.
- */
-class sgd : public optimizer {
-
+/// RMSprop optimizer
+class rmsprop : public optimizer {
  public:
   /// Constructor
-  sgd
+  rmsprop
   (lbann_comm *comm,
    DataType learning_rate,
-   DataType momentum = DataType(0),
-   DataType decay_rate = DataType(0),
-   bool nesterov = false);
-  sgd(const sgd& other);
-  sgd& operator=(const sgd& other);
+   DataType decay_rate,
+   DataType eps = DataType(1e-8));
+  rmsprop(const rmsprop& other);
+  rmsprop& operator=(const rmsprop& other);
   /// Destructor
-  ~sgd();
+  ~rmsprop();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
-  std::string name() const { return "sgd"; }
+  std::string name() const { return "rmsprop"; }
  private:
-  /// Number of iterations
-  int m_iterations;
-  /// Momentum
-  DataType m_momentum;
-  /// Learning rate decay
-  DataType m_decay;
-  /// Nesterov acceleration
-  bool m_nesterov;
-  /// Velocity term for momentum SGD
-  AbsDistMat *m_velocity;
-
+  /// Decay rate
+  DataType m_decay_rate;
+  /// Small factor to avoid division by zero
+  DataType m_eps;
+  /// RMSprop cache
+  AbsDistMat *m_cache;
 };
 
-/// Factory for stochastic gradient descent optimizer
-class sgd_factory : public optimizer_factory {
+/// Factory for RMSprop optimizer
+class rmsprop_factory : public optimizer_factory {
  public:
   /// Constructor
-  sgd_factory
+  rmsprop_factory
   (lbann_comm *comm,
    DataType learning_rate,
-   DataType momentum = DataType(0),
-   DataType decay = DataType(0),
-   bool nesterov = false);
+   DataType decay_rate = DataType(0.9),
+   DataType eps = DataType(1e-8));
   /// Destructor
-  virtual ~sgd_factory();
-  /// Create SGD optimizer
+  virtual ~rmsprop_factory();
+  /// Create RMSprop optimizer
   optimizer *create_optimizer();
  private:
   /// Learning rate
   DataType m_learning_rate;
-  /// Momentum
-  DataType m_momentum;
-  /// Learning rate decay
-  DataType m_decay;
-  /// Nesterov acceleration
-  bool m_nesterov;
+  /// Decay rate
+  DataType m_decay_rate;
+  /// Small factor to avoid division by zero
+  DataType m_eps;
 };
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_SGD_HPP
+#endif // LBANN_OPTIMIZER_RMSPROP_HPP

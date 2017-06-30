@@ -28,7 +28,7 @@
 // Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
+#include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

@@ -26,7 +26,7 @@
 // lbann_optimizer_adagrad .hpp .cpp - SGD with AdaGrad
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
+#include "lbann/optimizers/optimizer_adagrad.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

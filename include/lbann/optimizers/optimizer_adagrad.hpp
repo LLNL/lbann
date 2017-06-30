@@ -29,7 +29,7 @@
 #ifndef LBANN_OPTIMIZER_ADAGRAD_HPP
 #define LBANN_OPTIMIZER_ADAGRAD_HPP
 
-#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 

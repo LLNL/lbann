@@ -23,38 +23,47 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_adam .hpp .cpp - SGD with Adam
+// lbann_optimizer_hypergradient_adam .hpp .cpp - Hypergradient SGD with Adam
 // Reference:
-// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
+// Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_ADAM_HPP
-#define LBANN_OPTIMIZER_ADAM_HPP
+#ifndef LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
+#define LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
 
-#include "lbann/optimizers/lbann_optimizer.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
-/// Adam optimizer
-class adam : public optimizer {
+/// Hypergradient Adam optimizer
+class hypergradient_adam : public optimizer {
  public:
-  /// Constructor
-  adam
+  /**
+   * @param init_learning_rate Initial Adam learning rate (0.001 reasonable).
+   * @param hyper_learning_rate Hypergradient learning rate.
+   * @param beta1 Decay rate for the first moment moving average.
+   * @param beta2 Decay rate for the second moment moving average.
+   * @param eps A small value.
+   */
+  hypergradient_adam
   (lbann_comm *comm,
-   DataType learning_rate,
+   DataType init_learning_rate,
+   DataType hyper_learning_rate = DataType(1e-7),
    DataType beta1 = DataType(0.9),
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
-  adam(const adam& other);
-  adam& operator=(const adam& other);
+  hypergradient_adam(const hypergradient_adam& other);
+  hypergradient_adam& operator=(const hypergradient_adam& other);
   /// Destructor
-  ~adam();
+  ~hypergradient_adam();
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
-  std::string name() const { return "adam"; }
+  std::string name() const { return "hypergradient adam"; }
  private:
+  /// Hypergradient learning rate.
+  DataType m_hyper_learning_rate;
   /// Update factor for first moment estimate
   DataType m_beta1;
   /// Update factor for second moment estimate
@@ -69,25 +78,30 @@ class adam : public optimizer {
   AbsDistMat *m_moment1;
   /// Second moment estimates
   AbsDistMat *m_moment2;
+  /// Gradient estimate from the prior step (for hypergradient).
+  AbsDistMat *m_old_gradient;
 };
 
 /// Factory for Adam optimizer
-class adam_factory : public optimizer_factory {
+class hypergradient_adam_factory : public optimizer_factory {
  public:
   /// Constructor
-  adam_factory
+  hypergradient_adam_factory
   (lbann_comm *comm,
-   DataType learning_rate,
+   DataType init_learning_rate,
+   DataType hyper_learning_rate = DataType(1e-7),
    DataType beta1 = DataType(0.9),
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
   /// Destructor
-  virtual ~adam_factory();
-  /// Create Adam optimizer
+  virtual ~hypergradient_adam_factory();
+  /// Create hypergradient Adam optimizer
   optimizer *create_optimizer();
  private:
-  /// Learning rate
+  /// Initial learning rate.
   DataType m_learning_rate;
+  /// Hypergradient learning rate.
+  DataType m_hyper_learning_rate;
   /// Update factor for first moment estimate
   DataType m_beta1;
   /// Update factor for second moment estimate
@@ -98,4 +112,4 @@ class adam_factory : public optimizer_factory {
 
 } // namespace lbann
 
-#endif  // LBANN_OPTIMIZER_ADAM_HPP
+#endif  // LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP

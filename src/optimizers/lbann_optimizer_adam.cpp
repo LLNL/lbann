@@ -28,7 +28,7 @@
 // Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_adam.hpp"
+#include "lbann/optimizers/optimizer_adam.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

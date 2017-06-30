@@ -26,7 +26,7 @@
 // lbann_optimizer_rmsprop .hpp .cpp - SGD with RMSprop
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include "lbann/utils/lbann_exception.hpp"
 
 namespace lbann {

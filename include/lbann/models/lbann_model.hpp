@@ -37,10 +37,10 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_fn.hpp"
 #include "lbann/metrics/metric.hpp"
-#include "lbann/optimizers/lbann_optimizer.hpp"
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/optimizers/optimizer_adagrad.hpp"
+#include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include <vector>
 #include <string>
 
