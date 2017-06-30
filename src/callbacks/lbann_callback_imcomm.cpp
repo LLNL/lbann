@@ -93,22 +93,28 @@ void lbann_callback_imcomm::setup(model *m) {
       // Update the effective mini-batch size so averaging is done properly.
       layers[layer]->set_effective_minibatch_size(
         layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
-      // Support reshaping for convolutional layers.
-      const std::type_info& layer_type = typeid(*(layers[layer]));
-      if (std::type_index(layer_type) ==
-          std::type_index(typeid(convolution_layer<data_layout::MODEL_PARALLEL>))) {
-        convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
-          dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(layers[layer]);
-        params.reshape_height = conv_layer->m_conv_size /
-          conv_layer->m_neuron_dims[0];
-        params.reshape_width = conv_layer->m_neuron_dims[0];
-      } else if (std::type_index(layer_type) ==
-                 std::type_index(typeid(convolution_layer<data_layout::DATA_PARALLEL>))) {
-        convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
-          dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(layers[layer]);
-        params.reshape_height = conv_layer->m_conv_size /
-          conv_layer->m_neuron_dims[0];
-        params.reshape_width = conv_layer->m_neuron_dims[0];
+      if (ct_needs_reshape(params.ct)) {
+        // Support reshaping for convolutional layers.
+        const std::type_info& layer_type = typeid(*(layers[layer]));
+        if (std::type_index(layer_type) ==
+            std::type_index(
+              typeid(convolution_layer<data_layout::MODEL_PARALLEL>))) {
+          convolution_layer<data_layout::MODEL_PARALLEL>* conv_layer =
+            dynamic_cast<convolution_layer<data_layout::MODEL_PARALLEL>*>(
+              layers[layer]);
+          params.reshape_height = conv_layer->m_conv_size /
+            conv_layer->m_neuron_dims[0];
+          params.reshape_width = conv_layer->m_neuron_dims[0];
+        } else if (std::type_index(layer_type) ==
+                   std::type_index(
+                     typeid(convolution_layer<data_layout::DATA_PARALLEL>))) {
+          convolution_layer<data_layout::DATA_PARALLEL>* conv_layer =
+            dynamic_cast<convolution_layer<data_layout::DATA_PARALLEL>*>(
+              layers[layer]);
+          params.reshape_height = conv_layer->m_conv_size /
+            conv_layer->m_neuron_dims[0];
+          params.reshape_width = conv_layer->m_neuron_dims[0];
+        }
       }
       if (ct_does_quantization(params.ct)) {
         const ElMat& gradients = learning_layer->get_weights_gradient();

@@ -112,6 +112,11 @@ class lbann_callback_imcomm : public lbann_callback {
             ct == ADAPTIVE_QUANTIZATION);
   }
 
+  /** Return true if the comm type prefers reshaping. */
+  inline bool ct_needs_reshape(comm_type ct) const {
+    return ct_does_quantization(ct);  // Currently, all quantization reshapes.
+  }
+
   /**
    * Get a matrix that reinterprets mat as being height x width.
    * Assumes that mat.Height()*mat.Width() == height*width.
