@@ -187,8 +187,6 @@ model {
     parent: 11
     data_layout: "model_parallel"
     softmax {
-      num_neurons: 10
-      weight_initialization: "glorot_uniform"
     }
   }
 

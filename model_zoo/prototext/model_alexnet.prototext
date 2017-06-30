@@ -406,8 +406,6 @@ model {
     parent: 23
     data_layout: "data_parallel"
     softmax {
-      num_neurons: 1000
-      weight_initialization: "he_normal"
     }
   }
 
