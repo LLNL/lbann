@@ -29,9 +29,9 @@
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 #define LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 
-#include "lbann_data_reader_imagenet.hpp"
-#include "lbann_image_preprocessor.hpp"
-#include "lbann_cv_process.hpp"
+#include "data_reader_imagenet.hpp"
+#include "image_preprocessor.hpp"
+#include "cv_process.hpp"
 
 namespace lbann {
 class imagenet_readerSingle_cv : public imagenet_reader {

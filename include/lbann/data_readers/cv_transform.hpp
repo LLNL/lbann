@@ -23,46 +23,52 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
-//                               3-channel color image
+// lbann_cv_transform .cpp .hpp - base class for the transformation
+//                                on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CV_COLORIZE_HPP
-#define LBANN_CV_COLORIZE_HPP
+#ifndef LBANN_CV_TRANSFORM_HPP
+#define LBANN_CV_TRANSFORM_HPP
 
-#include "lbann_cv_transform.hpp"
+#include "opencv.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {
 
-class cv_colorizer : public cv_transform {
+class cv_transform {
  protected:
-  bool m_gray;
+  bool m_enabled;
+
+  virtual bool check_to_enable(void) const {
+    return true;
+  }
 
  public:
-  cv_colorizer(void) : cv_transform(), m_gray(false) {}
-  cv_colorizer(const cv_colorizer& rhs);
-  cv_colorizer& operator=(const cv_colorizer& rhs);
-  virtual cv_colorizer *clone(void) const;
+  enum cv_flipping {_both_axes_=-1, _vertical_=0, _horizontal_=1, _no_flip_=2};
 
-  virtual ~cv_colorizer(void) {}
+  static const float pi;
 
-  /**
-   * If a given image is in grayscale, the tranform is enabled, and not otherwise.
-   * @return false if not enabled or unsuccessful.
-   */
-  virtual bool determine_transform(const cv::Mat& image);
 
-  /// convert back to color image if it used to be a grayscale image
-  virtual bool determine_inverse_transform(void);
+  cv_transform(void) : m_enabled(false) {}
+  cv_transform(const cv_transform& rhs);
+  cv_transform& operator=(const cv_transform& rhs);
+  virtual cv_transform *clone(void) const;
 
-  /**
-   * Apply color conversion if enabled.
-   * As it is applied, the transform becomes deactivated.
-   * @return false if not successful.
-   */
-  virtual bool apply(cv::Mat& image);
+  virtual ~cv_transform(void) {}
 
+  virtual bool determine_transform(const cv::Mat& image) {
+    m_enabled = check_to_enable();
+    return m_enabled;
+  }
+
+  virtual bool determine_inverse_transform(void) {
+    m_enabled = false;
+    return false;
+  }
+
+  virtual bool apply(cv::Mat& image) = 0;
+
+  //virtual void set(void) {}
   virtual void enable(void) {
     m_enabled = true;
   }
@@ -71,7 +77,6 @@ class cv_colorizer : public cv_transform {
   }
   virtual void reset(void) {
     m_enabled = false;
-    m_gray = false;
   }
   virtual bool is_enabled(void) const {
     return m_enabled;
@@ -82,7 +87,29 @@ class cv_colorizer : public cv_transform {
   }
 };
 
+inline cv_transform::cv_transform(const cv_transform& rhs)
+  : m_enabled(rhs.m_enabled) {}
+
+inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
+  m_enabled = rhs.m_enabled;
+  return *this;
+}
+
+inline bool cv_transform::apply(cv::Mat& image) {
+  m_enabled = false;
+  return true;
+}
+
+inline cv_transform *cv_transform::clone(void) const {
+  return static_cast<cv_transform *>(NULL);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
+  tr.print(os);
+  return os;
+}
+
 } // end of namespace lbann
 #endif // __LIB_OPENCV
 
-#endif // LBANN_CV_COLORIZE_HPP
+#endif // LBANN_CV_TRANSFORM_HPP

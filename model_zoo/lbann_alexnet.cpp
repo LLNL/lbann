@@ -28,7 +28,7 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 
 #include <time.h>
 #include <sys/time.h>

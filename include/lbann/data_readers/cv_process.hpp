@@ -31,9 +31,9 @@
 #define LBANN_CV_PROCESS_HPP
 
 #include "patchworks/patchworks_opencv.hpp"
-#include "lbann_cv_normalizer.hpp"
-#include "lbann_cv_augmenter.hpp"
-#include "lbann_cv_colorizer.hpp"
+#include "cv_normalizer.hpp"
+#include "cv_augmenter.hpp"
+#include "cv_colorizer.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV

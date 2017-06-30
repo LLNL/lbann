@@ -26,7 +26,7 @@
 // lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_mnist.hpp"
 #include <stdio.h>
 
 using namespace std;

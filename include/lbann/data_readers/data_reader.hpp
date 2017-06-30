@@ -35,7 +35,7 @@
 #include "lbann/lbann_comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/lbann_image_preprocessor.hpp"
+#include "lbann/data_readers/image_preprocessor.hpp"
 #include <assert.h>
 #include <algorithm>
 #include <string>

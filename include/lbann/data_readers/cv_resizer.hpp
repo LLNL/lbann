@@ -31,7 +31,7 @@
 #define LBANN_CV_RESIZER_HPP
 
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
-#include "lbann/data_readers/lbann_cv_transform.hpp"
+#include "lbann/data_readers/cv_transform.hpp"
 #include <utility>
 #include <ostream>
 

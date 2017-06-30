@@ -23,38 +23,44 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
-#define LBANN_DATA_READER_IMAGENET_SINGLE_HPP
+#ifndef LBANN_DATA_READER_SYNTHETIC_HPP
+#define LBANN_DATA_READER_SYNTHETIC_HPP
 
-#include "lbann_data_reader_imagenet.hpp"
-#include "lbann_image_preprocessor.hpp"
+#include "data_reader.hpp"
+
+
 
 namespace lbann {
-class imagenet_readerSingle : public imagenet_reader {
+class data_reader_synthetic : public generic_data_reader {
  public:
-  imagenet_readerSingle(int batchSize, bool shuffle = true);
-  imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle(void);
-
-  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
+  //@todo: add what data distribution to use
+  data_reader_synthetic(int batchSize, int num_samples, int num_features, bool shuffle = true);
+  data_reader_synthetic(const data_reader_synthetic& source); //copy constructor
+  data_reader_synthetic& operator=(const data_reader_synthetic& source); //assignment operator
+  ~data_reader_synthetic(void);
 
   int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+
   void load(void);
 
- private:
-  std::ifstream m_data_filestream;
-  size_t m_file_size;
-  std::vector<unsigned char> m_work_buffer;
-  std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
-  std::vector<unsigned char> m_pixels;
+  int get_num_samples(void) const {
+    return m_num_samples;
+  }
+  int get_num_features(void) const {
+    return m_num_features;
+  }
 
-  void open_data_stream(void);
+  int get_linearized_data_size(void) const {
+    return m_num_features;
+  }
+
+ private:
+  int  m_num_samples; //rows
+  int  m_num_features; //cols
 };
 
-}  // namespace lbann
+}
 
-#endif  // LBANN_DATA_READER_IMAGENET_HPP
+#endif // LBANN_DATA_READER_SYNTHETIC_HPP

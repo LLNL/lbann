@@ -23,14 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_image_preprocessor.hpp - Preprocessing utilities for image inputs
+// image_preprocessor.hpp - Preprocessing utilities for image inputs
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_IMAGE_PREPROCESSOR
 #define LBANN_IMAGE_PREPROCESSOR
 
 #ifdef __LIB_OPENCV
-#include "lbann/data_readers/lbann_opencv.hpp"
+#include "lbann/data_readers/opencv.hpp"
 #else
 #error OpenCV required
 #endif

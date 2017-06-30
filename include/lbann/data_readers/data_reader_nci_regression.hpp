@@ -23,30 +23,38 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci_regression .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_NCI_HPP
-#define LBANN_DATA_READER_NCI_HPP
+#ifndef LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED
+#define LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED
 
-#include "lbann_data_reader.hpp"
+#include "data_reader.hpp"
 
 
 
 namespace lbann {
 //@todo rewrite data_reader class to follow coding convention
-class data_reader_nci : public generic_data_reader {
+class data_reader_nci_regression : public generic_data_reader {
+ private:
+  //@todo add response mode {binary,ternary, continuous}
+  int m_num_responses;
+  size_t m_num_samples; //rows
+  size_t m_num_features; //cols
+  std::vector<DataType> m_responses;
+  std::vector<std::streampos> m_index_map; // byte offset of each line in the input file
+  std::string m_infile; //input file name
+
  public:
-  data_reader_nci(int batchSize, bool shuffle);
-  data_reader_nci(int batchSize);
-  data_reader_nci(const data_reader_nci& source); //copy constructor
-  data_reader_nci& operator=(const data_reader_nci& source); //assignment operator
-  ~data_reader_nci(void);
+  data_reader_nci_regression(int batchSize, bool shuffle=true);
+  //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
+  //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
+  ~data_reader_nci_regression(void);
 
   int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  int fetch_response(Mat& Y);
   int get_num_labels(void) const {
-    return m_num_labels;  //@todo; check if used
+    return m_num_responses;  //@todo; check if used
   }
 
   void load(void);
@@ -57,28 +65,19 @@ class data_reader_nci : public generic_data_reader {
   size_t get_num_features(void) const {
     return m_num_features;
   }
-  inline int map_label_2int(const std::string label);
 
   int get_linearized_data_size(void) const {
     return m_num_features;
   }
-  int get_linearized_label_size(void) const {
-    return m_num_labels;
+  int get_linearized_response_size(void) const {
+    return m_num_responses;
   }
   const std::vector<int> get_data_dims(void) const {
     return {static_cast<int>(m_num_features)};
   }
 
- private:
-  //@todo add response mode {binary, ternary, continuous}
-  int m_num_labels;  //2 for binary response mode
-  size_t m_num_samples; //rows
-  size_t m_num_features; //cols
-  std::vector<int> m_labels;
-  std::map<int,double> m_index_map;
-  std::string m_infile; //input file name
 };
 
 }
 
-#endif // LBANN_DATA_READER_NCI_HPP
+#endif // LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED

@@ -36,8 +36,8 @@
 #ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
-#include "lbann/data_readers/lbann_cv_utils.hpp"
-#include "lbann/data_readers/lbann_cv_process_patches.hpp"
+#include "lbann/data_readers/cv_utils.hpp"
+#include "lbann/data_readers/cv_process_patches.hpp"
 #endif
 
 

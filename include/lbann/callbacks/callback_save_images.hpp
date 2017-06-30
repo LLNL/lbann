@@ -30,7 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_readers/lbann_data_reader.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 

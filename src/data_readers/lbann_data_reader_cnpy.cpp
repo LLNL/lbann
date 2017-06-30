@@ -26,7 +26,7 @@
 // lbann_cnpy_reader .hpp .cpp
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_cnpy.hpp"
+#include "lbann/data_readers/data_reader_cnpy.hpp"
 #include <stdio.h>
 #include <string>
 #include <cnpy.h>

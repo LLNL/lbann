@@ -26,7 +26,7 @@
 // lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 using namespace std;
 

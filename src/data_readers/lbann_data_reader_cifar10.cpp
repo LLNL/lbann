@@ -26,7 +26,7 @@
 // lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
+#include "lbann/data_readers/data_reader_cifar10.hpp"
 
 using namespace std;
 using namespace El;

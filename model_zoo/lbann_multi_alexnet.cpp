@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 
 using namespace lbann;
 

@@ -23,79 +23,72 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
+// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_CIFAR10_HPP
-#define LBANN_DATA_READER_CIFAR10_HPP
+#ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
+#define LBANN_DATA_READER_IMAGENET_CV_HPP
 
-#include "lbann_data_reader.hpp"
-
-
+#include "data_reader.hpp"
+#include "image_preprocessor.hpp"
+#include "cv_process.hpp"
 
 namespace lbann {
-class cifar10_reader : public generic_data_reader {
+class imagenet_reader_cv : public generic_data_reader {
  public:
-  /// constructor
-  cifar10_reader(int batchSize, bool shuffle = true);
+  imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_cv(const imagenet_reader_cv& source);
+  ~imagenet_reader_cv(void);
 
-  /// copy constructor
-  cifar10_reader(const cifar10_reader& source);
+  virtual int fetch_data(Mat& X);
+  virtual int fetch_data(std::vector<Mat>& X); ///< feed multiple layer stacks per sample
+  virtual int fetch_label(Mat& Y);
 
-  /// destructor
-  ~cifar10_reader(void);
+  int get_num_labels(void) const {
+    return m_num_labels;
+  }
 
-  /// assignment operator
-  cifar10_reader& operator=(const cifar10_reader& source);
+  // ImageNet specific functions
+  virtual void load(void);
+  void free(void);
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
-  void load();
-
-  /// returns image width (which should be 32)
   int get_image_width(void) const {
     return m_image_width;
   }
-
-  /// returns image height (which should be 32)
   int get_image_height(void) const {
     return m_image_height;
   }
-
-  int get_num_labels(void) const {
-    return 10;
-  }
-
-  /// returns image depth (which should be 3)
   int get_image_num_channels(void) const {
     return m_image_num_channels;
   }
-
-  /// returns the number of pixels in the image (should be 3072)
   int get_linearized_data_size(void) const {
     return m_image_width * m_image_height * m_image_num_channels;
   }
-
-  /// returns
   int get_linearized_label_size(void) const {
-    return 10;
+    return m_num_labels;
   }
-  
   const std::vector<int> get_data_dims(void) const {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
-  
+
+  imagenet_reader_cv& operator=(const imagenet_reader_cv& source);
+
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }
 
- private:
-  std::vector<std::vector<unsigned char> > m_data;
-  int m_image_width;
-  int m_image_height;
-  int m_image_num_channels;
+ protected:
+  std::string m_image_dir; // where images are stored
+  std::vector<std::pair<std::string, int> > image_list; // list of image files and labels
+  int m_image_width; // image width
+  int m_image_height; // image height
+  int m_image_num_channels; // number of image channels
+  int m_num_labels; // number of labels
+  //unsigned char* m_pixels;
+  std::shared_ptr<cv_process> m_pp;
 };
-}
 
-#endif // LBANN_DATA_READER_CIFAR10_HPP
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP

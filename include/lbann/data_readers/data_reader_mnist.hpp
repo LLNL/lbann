@@ -29,8 +29,8 @@
 #ifndef LBANN_DATA_READER_MNIST_HPP
 #define LBANN_DATA_READER_MNIST_HPP
 
-#include "lbann_data_reader.hpp"
-#include "lbann_image_preprocessor.hpp"
+#include "data_reader.hpp"
+#include "image_preprocessor.hpp"
 
 namespace lbann {
 class mnist_reader : public generic_data_reader {

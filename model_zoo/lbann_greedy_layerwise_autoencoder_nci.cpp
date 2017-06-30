@@ -25,7 +25,7 @@
 //
 // lbann_dnn_nci.cpp - Autoencoder application for NCI
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/data_readers/lbann_data_reader_nci.hpp"
+#include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"

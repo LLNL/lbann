@@ -29,7 +29,7 @@
 #ifndef LBANN_DATA_READER_CNPY_HPP
 #define LBANN_DATA_READER_CNPY_HPP
 
-#include "lbann_data_reader.hpp"
+#include "data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {

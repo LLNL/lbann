@@ -29,8 +29,8 @@
 #include "lbann/lbann.hpp"
 #include "lbann/regularization/lbann_l2_regularization.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
-#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 
 #include <time.h>
 #ifdef _WIN32

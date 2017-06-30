@@ -30,7 +30,7 @@
 #ifndef LBANN_CV_NORMALIZER_HPP
 #define LBANN_CV_NORMALIZER_HPP
 
-#include "lbann_cv_transform.hpp"
+#include "cv_transform.hpp"
 #include "patchworks/patchworks_opencv.hpp"
 #include "lbann/lbann_base.hpp" // DataType
 #include "lbann/utils/mild_exception.hpp"

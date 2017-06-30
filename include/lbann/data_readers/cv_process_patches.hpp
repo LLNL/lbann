@@ -30,7 +30,7 @@
 #ifndef LBANN_CV_PROCESS_PATCHES_HPP
 #define LBANN_CV_PROCESS_PATCHES_HPP
 
-#include "lbann_cv_process.hpp"
+#include "cv_process.hpp"
 #include "patchworks/patchworks_patch_descriptor.hpp"
 
 #ifdef __LIB_OPENCV

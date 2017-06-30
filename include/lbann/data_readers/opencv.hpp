@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_opencv.hpp - LBANN header for opencv
+// opencv.hpp - LBANN header for opencv
 ////////////////////////////////////////////////////////////////////////////////
 
 /**

@@ -27,7 +27,7 @@
 //                              in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_cv_resizer.hpp"
+#include "lbann/data_readers/cv_resizer.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include <algorithm>
 #include <ostream>
