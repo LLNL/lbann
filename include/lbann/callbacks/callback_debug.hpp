@@ -31,7 +31,7 @@
 
 #include <chrono>
 #include <vector>
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 

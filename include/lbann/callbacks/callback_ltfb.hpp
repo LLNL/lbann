@@ -29,7 +29,7 @@
 #ifndef __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 #define __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 

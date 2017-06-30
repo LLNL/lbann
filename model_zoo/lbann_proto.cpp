@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/proto/lbann_proto_common.hpp"
-//#include "lbann/callbacks/lbann_callback_ltfb.hpp"
+#include "lbann/proto/proto_common.hpp"
+//#include "lbann/callbacks/callback_ltfb.hpp"
 
 using namespace lbann;
 

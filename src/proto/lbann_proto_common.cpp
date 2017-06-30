@@ -1,4 +1,4 @@
-#include "lbann/proto/lbann_proto_common.hpp"
+#include "lbann/proto/proto_common.hpp"
 
 #include "lbann/lbann.hpp"
 #include "lbann/lbann_base.hpp"

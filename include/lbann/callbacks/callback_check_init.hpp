@@ -23,30 +23,31 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_print .hpp .cpp - Callback hooks to print information
+// lbann_callback_check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Print accuracy information after each epoch and after testing.
+ * Verify that every model uses the same initialization.
  */
-class lbann_callback_print : public lbann_callback {
+class lbann_callback_check_init : public lbann_callback {
  public:
-  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {
-    set_name("print");
+  lbann_callback_check_init() : lbann_callback() {
+    set_name("check_init");
   }
-  void setup(model *m);
-  void on_epoch_begin(model *m);
-  void on_epoch_end(model *m);
-  void on_test_end(model *m);
+  /** Check initializations. */
+  void on_train_begin(model *m);
+ private:
+  /** Return true if x == y. */
+  bool check_equal(const Mat& x, const Mat& y) const;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED

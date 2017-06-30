@@ -23,43 +23,43 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
+// lbann_callback_dump_minibatch_sample_indices .hpp .cpp - Callbacks
+// to dump the list of indices per minibatch
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
-#include "lbann/data_readers/lbann_data_reader.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Save images to file
+ * Dump sample indices for each minibatch to files.
+ * This will dump the list of indices from the training / validation /
+ * testing data that was processed
+ * Note this dumps vectors during each mini-batch. This will be slow and
+ * produce a lot of output.
  */
-class lbann_callback_save_images : public lbann_callback {
+class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
  public:
   /**
-   * @param data reader type e.g., imagenet, mnist, cifar10....
-   * @param image_dir directory to save image
-   * @param image extension e.g., jpg, png, pgm......
+   * @param basename The basename for writing files.
    */
-  lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
-                             std::string extension="jpg") :
-    lbann_callback(), m_image_dir(image_dir), m_extension(extension),
-    m_reader(reader) {
-    set_name("save_images");
+  lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
+    lbann_callback(batch_interval), m_basename(basename) {
+    set_name("dump_minibatch_sample_indices");
   }
-  void on_epoch_end(model *m);
-  void on_phase_end(model *m);
+  void on_forward_prop_end(model *m, Layer *l);
+  void on_evaluate_forward_prop_end(model *m, Layer *l);
+
+  void dump_to_file(model *m, Layer *l, int64_t step);
 
  private:
-  std::string m_image_dir; //directory to save image
-  std::string m_extension; //image extension; pgm, jpg, png etc
-  generic_data_reader *m_reader;
-  void save_image(model *m, ElMat *input, ElMat *output,uint index);
+  /** Basename for writing files. */
+  std::string m_basename;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED

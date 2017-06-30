@@ -23,40 +23,46 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_gradients .hpp .cpp - Callbacks to dump gradients
+// lbann_callback_timer .hpp .cpp - Callback hooks to time training
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include <chrono>
+#include <vector>
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Dump gradient matrices to files.
- * This will dump each hidden layer's gradient matrix after each minibatch.
- * The matrices are written to files using Elemental's simple ASCII format. This
- * is not meant for checkpointing, but for exporting gradient matrices for
- * analysis that isn't easily done in LBANN.
- * Note this dumps matrices during each mini-batch. This will be slow and
- * produce a lot of output.
+ * Record the time to execute minibatches and epochs and report it at the end of
+ * each epoch.
+ * Right now this reports times only for the master node of each model.
  */
-class lbann_callback_dump_gradients : public lbann_callback {
+class lbann_callback_timer : public lbann_callback {
  public:
-  /**
-   * @param basename The basename for writing files.
-   */
-  lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_gradients");
+  lbann_callback_timer(lbann_summary *summarizer = nullptr) :
+    lbann_callback(1, summarizer) {
+    set_name("timer");
   }
-  void on_backward_prop_end(model *m, Layer *l);
+  /** Start recording time for the epoch. */
+  void on_epoch_begin(model *m);
+  /** Report epoch and mean minibatch times. */
+  void on_epoch_end(model *m);
+  /** Start record time for a batch. */
+  void on_batch_begin(model *m);
+  /** Stop and save time for a batch. */
+  void on_batch_end(model *m);
  private:
-  /** Basename for writing files. */
-  std::string m_basename;
+  /** Start time for the current epoch. */
+  double m_epoch_start;
+  /** Start time for the current batch. */
+  double m_batch_start;
+  /** History of batch times for the current epoch. */
+  std::vector<double> m_batch_times;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED

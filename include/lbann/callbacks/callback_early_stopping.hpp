@@ -23,42 +23,38 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checksmall .hpp .cpp - Check matrices for small values
+// lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
+#define LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include <unordered_set>
+#include <unordered_map>
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Check matrices for whether they include any very small values to avoid
- * getting denormalized values. Denormalized values can significantly slow
- * floating point computations.
- * Since we often square values, the check is based on the square root of the
- * smallest floating point value.
- * This will kill the rank if such values are discovered.
+ * Stop training after validation error stops improving.
  */
-class lbann_callback_checksmall : public lbann_callback {
+class lbann_callback_early_stopping : public lbann_callback {
  public:
-  lbann_callback_checksmall() : lbann_callback() {
-    set_name("checksmall");
-  }
-  /** Check that activations are good. */
-  void on_forward_prop_end(model *m, Layer *l);
-  /** Check that gradients are good. */
-  void on_backward_prop_end(model *m, Layer *l);
-  /** Check that weights are good. */
-  void on_batch_end(model *m);
+  /**
+   * Continue training until score has not improved for patience epochs.
+   */
+  lbann_callback_early_stopping(int64_t patience);
+  /** Update validation score and check for early stopping. */
+  void on_validation_end(model *m);
  private:
-  /** Smallest allowable value. */
-  const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());
-  /** Return true if there are no problems with m. */
-  bool is_good(const ElMat& m);
+  /** Number of epochs to wait for improvements. */
+  int64_t m_patience;
+  /** Last recorded score. */
+  double m_last_score = std::numeric_limits<double>::max();
+  /** Current number of epochs without improvement. */
+  int64_t m_wait = 0;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED

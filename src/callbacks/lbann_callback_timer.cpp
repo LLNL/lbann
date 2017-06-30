@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include "lbann/utils/timer.hpp"
-#include "lbann/callbacks/lbann_callback_timer.hpp"
+#include "lbann/callbacks/callback_timer.hpp"
 
 namespace lbann {
 

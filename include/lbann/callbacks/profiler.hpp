@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_PROFILER_HPP_INCLUDED
 #define LBANN_CALLBACKS_PROFILER_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 

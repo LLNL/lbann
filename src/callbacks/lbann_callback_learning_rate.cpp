@@ -26,7 +26,7 @@
 // lbann_learning_rate .hpp .cpp - Callback hooks for learning rate schedules
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_learning_rate.hpp"
+#include "lbann/callbacks/callback_learning_rate.hpp"
 #include <limits>
 
 namespace lbann {

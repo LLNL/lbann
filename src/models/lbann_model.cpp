@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model.hpp"
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
 #include <string>
 #include <unistd.h>

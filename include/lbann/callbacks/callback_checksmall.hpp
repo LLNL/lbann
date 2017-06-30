@@ -23,43 +23,42 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_minibatch_sample_indices .hpp .cpp - Callbacks
-// to dump the list of indices per minibatch
+// lbann_callback_checksmall .hpp .cpp - Check matrices for small values
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Dump sample indices for each minibatch to files.
- * This will dump the list of indices from the training / validation /
- * testing data that was processed
- * Note this dumps vectors during each mini-batch. This will be slow and
- * produce a lot of output.
+ * Check matrices for whether they include any very small values to avoid
+ * getting denormalized values. Denormalized values can significantly slow
+ * floating point computations.
+ * Since we often square values, the check is based on the square root of the
+ * smallest floating point value.
+ * This will kill the rank if such values are discovered.
  */
-class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
+class lbann_callback_checksmall : public lbann_callback {
  public:
-  /**
-   * @param basename The basename for writing files.
-   */
-  lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_minibatch_sample_indices");
+  lbann_callback_checksmall() : lbann_callback() {
+    set_name("checksmall");
   }
+  /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l);
-  void on_evaluate_forward_prop_end(model *m, Layer *l);
-
-  void dump_to_file(model *m, Layer *l, int64_t step);
-
+  /** Check that gradients are good. */
+  void on_backward_prop_end(model *m, Layer *l);
+  /** Check that weights are good. */
+  void on_batch_end(model *m);
  private:
-  /** Basename for writing files. */
-  std::string m_basename;
+  /** Smallest allowable value. */
+  const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());
+  /** Return true if there are no problems with m. */
+  bool is_good(const ElMat& m);
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED

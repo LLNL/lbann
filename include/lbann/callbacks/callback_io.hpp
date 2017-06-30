@@ -23,46 +23,34 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_timer .hpp .cpp - Callback hooks to time training
+// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
+#define LBANN_CALLBACKS_IO_HPP_INCLUDED
 
-#include <chrono>
-#include <vector>
-#include "lbann/callbacks/lbann_callback.hpp"
+#include <unordered_set>
+#include <unordered_map>
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Record the time to execute minibatches and epochs and report it at the end of
- * each epoch.
- * Right now this reports times only for the master node of each model.
+ * Print information on the amount of IO that layers do.
  */
-class lbann_callback_timer : public lbann_callback {
+class lbann_callback_io : public lbann_callback {
  public:
-  lbann_callback_timer(lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer) {
-    set_name("timer");
-  }
-  /** Start recording time for the epoch. */
-  void on_epoch_begin(model *m);
-  /** Report epoch and mean minibatch times. */
+  lbann_callback_io();
+  /** Only apply to specific layers. */
+  lbann_callback_io(std::unordered_set<uint> layers);
+  /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m);
-  /** Start record time for a batch. */
-  void on_batch_begin(model *m);
-  /** Stop and save time for a batch. */
-  void on_batch_end(model *m);
+  void on_test_end(model *m);
  private:
-  /** Start time for the current epoch. */
-  double m_epoch_start;
-  /** Start time for the current batch. */
-  double m_batch_start;
-  /** History of batch times for the current epoch. */
-  std::vector<double> m_batch_times;
+  /** Indicies of layers to monitor. */
+  std::unordered_set<uint> m_layer_indices;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED

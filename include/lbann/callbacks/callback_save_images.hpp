@@ -23,31 +23,43 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_check_init .hpp .cpp - Check multi-model init
+// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/data_readers/lbann_data_reader.hpp"
 
 namespace lbann {
 
 /**
- * Verify that every model uses the same initialization.
+ * Save images to file
  */
-class lbann_callback_check_init : public lbann_callback {
+class lbann_callback_save_images : public lbann_callback {
  public:
-  lbann_callback_check_init() : lbann_callback() {
-    set_name("check_init");
+  /**
+   * @param data reader type e.g., imagenet, mnist, cifar10....
+   * @param image_dir directory to save image
+   * @param image extension e.g., jpg, png, pgm......
+   */
+  lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
+                             std::string extension="jpg") :
+    lbann_callback(), m_image_dir(image_dir), m_extension(extension),
+    m_reader(reader) {
+    set_name("save_images");
   }
-  /** Check initializations. */
-  void on_train_begin(model *m);
+  void on_epoch_end(model *m);
+  void on_phase_end(model *m);
+
  private:
-  /** Return true if x == y. */
-  bool check_equal(const Mat& x, const Mat& y) const;
+  std::string m_image_dir; //directory to save image
+  std::string m_extension; //image extension; pgm, jpg, png etc
+  generic_data_reader *m_reader;
+  void save_image(model *m, ElMat *input, ElMat *output,uint index);
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED

@@ -26,7 +26,7 @@
 // lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_debug.hpp"
+#include "lbann/callbacks/callback_debug.hpp"
 
 void lbann::lbann_callback_debug::on_batch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {

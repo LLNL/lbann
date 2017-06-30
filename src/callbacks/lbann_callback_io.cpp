@@ -26,7 +26,7 @@
 // lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_io.hpp"
+#include "lbann/callbacks/callback_io.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
 

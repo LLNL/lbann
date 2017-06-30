@@ -23,38 +23,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
+// lbann_callback_dump_activations .hpp .cpp - Callbacks to dump activations
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
-#define LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_ACTIVATIONS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_ACTIVATIONS_HPP_INCLUDED
 
-#include <unordered_set>
-#include <unordered_map>
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Stop training after validation error stops improving.
+ * Dump activations matrices to files.
+ * This will dump each hidden layer's activation matrix after each minibatch.
+ * The matrices are written to files using Elemental's simple ASCII format. This
+ * is not meant for checkpointing, but for exporting acitvation matrices for
+ * analysis that isn't easily done in LBANN.
+ * Note this dumps matrices during each mini-batch. This will be slow and
+ * produce a lot of output.
  */
-class lbann_callback_early_stopping : public lbann_callback {
+class lbann_callback_dump_activations : public lbann_callback {
  public:
   /**
-   * Continue training until score has not improved for patience epochs.
+   * @param basename The basename for writing files.
    */
-  lbann_callback_early_stopping(int64_t patience);
-  /** Update validation score and check for early stopping. */
-  void on_validation_end(model *m);
+  lbann_callback_dump_activations(std::string basename, int batch_interval = 1) :
+    lbann_callback(batch_interval), m_basename(basename) {
+    set_name("dump_activations");
+  }
+  void on_forward_prop_end(model *m, Layer *l);
  private:
-  /** Number of epochs to wait for improvements. */
-  int64_t m_patience;
-  /** Last recorded score. */
-  double m_last_score = std::numeric_limits<double>::max();
-  /** Current number of epochs without improvement. */
-  int64_t m_wait = 0;
+  /** Basename for writing files. */
+  std::string m_basename;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ACTIVATIONS_HPP_INCLUDED

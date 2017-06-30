@@ -23,38 +23,30 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_weights .hpp .cpp - Callbacks to dump weight matrices
+// lbann_callback_print .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Dump weight matrices to files.
- * This will dump each hidden layer's weight/bias matrix after each epoch.
- * The matrices are written to files using Elemental's simple ASCII format. This
- * is not meant for checkpointing, but for exporting weight matrices for
- * analysis that isn't easily done in LBANN.
+ * Print accuracy information after each epoch and after testing.
  */
-class lbann_callback_dump_weights : public lbann_callback {
+class lbann_callback_print : public lbann_callback {
  public:
-  /**
-   * @param basename The basename for writing files.
-   */
-  lbann_callback_dump_weights(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {
-    set_name("dump_weights");
+  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {
+    set_name("print");
   }
+  void setup(model *m);
+  void on_epoch_begin(model *m);
   void on_epoch_end(model *m);
- private:
-  /** Basename for writing files. */
-  std::string m_basename;
+  void on_test_end(model *m);
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED

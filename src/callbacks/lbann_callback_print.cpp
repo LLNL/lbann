@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "lbann/callbacks/lbann_callback_print.hpp"
+#include "lbann/callbacks/callback_print.hpp"
 
 namespace lbann {
 

@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "lbann/callbacks/lbann_callback_dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include <iomanip>
 
 namespace lbann {

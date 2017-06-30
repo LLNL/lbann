@@ -26,7 +26,7 @@
 // lbann_callback_summary .hpp .cpp - Callback hooks to summarize to Tensorboard
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_summary.hpp"
+#include "lbann/callbacks/callback_summary.hpp"
 
 namespace lbann {
 

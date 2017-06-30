@@ -28,7 +28,7 @@
 
 #include <typeinfo>
 #include <typeindex>
-#include "lbann/callbacks/lbann_callback_imcomm.hpp"
+#include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/layers/learning/convolution.hpp"

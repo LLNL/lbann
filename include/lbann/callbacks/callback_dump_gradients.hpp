@@ -23,34 +23,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
+// lbann_callback_dump_gradients .hpp .cpp - Callbacks to dump gradients
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
-#define LBANN_CALLBACKS_IO_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
 
-#include <unordered_set>
-#include <unordered_map>
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
 /**
- * Print information on the amount of IO that layers do.
+ * Dump gradient matrices to files.
+ * This will dump each hidden layer's gradient matrix after each minibatch.
+ * The matrices are written to files using Elemental's simple ASCII format. This
+ * is not meant for checkpointing, but for exporting gradient matrices for
+ * analysis that isn't easily done in LBANN.
+ * Note this dumps matrices during each mini-batch. This will be slow and
+ * produce a lot of output.
  */
-class lbann_callback_io : public lbann_callback {
+class lbann_callback_dump_gradients : public lbann_callback {
  public:
-  lbann_callback_io();
-  /** Only apply to specific layers. */
-  lbann_callback_io(std::unordered_set<uint> layers);
-  /** Report how much I/O has occured per data reader */
-  void on_epoch_end(model *m);
-  void on_test_end(model *m);
+  /**
+   * @param basename The basename for writing files.
+   */
+  lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
+    lbann_callback(batch_interval), m_basename(basename) {
+    set_name("dump_gradients");
+  }
+  void on_backward_prop_end(model *m, Layer *l);
  private:
-  /** Indicies of layers to monitor. */
-  std::unordered_set<uint> m_layer_indices;
+  /** Basename for writing files. */
+  std::string m_basename;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED

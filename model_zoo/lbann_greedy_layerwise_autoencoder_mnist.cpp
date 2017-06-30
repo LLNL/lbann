@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_reader_mnist.hpp"
-#include "lbann/callbacks/lbann_callback_save_images.hpp"
+#include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;

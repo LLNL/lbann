@@ -26,7 +26,7 @@
 // lbann_callback_checksmall .hpp .cpp - Check matrices for small values
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_checksmall.hpp"
+#include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
