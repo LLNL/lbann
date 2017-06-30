@@ -224,17 +224,15 @@ class convolution_layer : public learning {
     learning::setup_data();
 
     // Initialize matrices
-    El::Zeros(*this->m_weights,
-              m_conv_size / this->m_neuron_dims[0] + 1,
-              this->m_neuron_dims[0]);
-    El::Zeros(*this->m_weights_gradient,
-              this->m_weights->Height(),
-              this->m_weights->Width());
+    this->m_weights->Resize(m_conv_size / this->m_neuron_dims[0] + 1,
+                            this->m_neuron_dims[0]);
+    this->m_weights_gradient->Resize(this->m_weights->Height(),
+                                     this->m_weights->Width());
   #ifdef __LIB_CUDNN
     if(this->m_using_gpus) {
-      El::Zeros(m_weights_gradient_per_gpu,
-                this->m_weights_gradient->Height(),
-                this->m_weights_gradient->Width() * this->m_cudnn->get_num_gpus());
+      m_weights_gradient_per_gpu.Resize(this->m_weights_gradient->Height(),
+                                        this->m_weights_gradient->Width()
+                                        * this->m_cudnn->get_num_gpus());
     }
 
     // Pin host memory
@@ -675,7 +673,7 @@ class convolution_layer : public learning {
       // Compute gradient w.r.t. filter
       Gemm(NORMAL, NORMAL,
            DataType(1), im2col_mat, prev_error_signal_mat,
-           DataType(1), filter_weights_gradient_local);
+           DataType(0), filter_weights_gradient_local);
 
     }
 

@@ -99,17 +99,16 @@ class batch_normalization : public regularizer_layer {
   void setup_data() {
     regularizer_layer::setup_data();
     // Initialize parameters
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size);
-    Ones(*m_gamma, this->get_num_neurons(), 1);
-    Scale(m_gamma_init, *m_gamma);
-    Ones(*m_beta, this->get_num_neurons(), 1);
-    Scale(m_beta_init, *m_beta);
-    Zeros(*m_dgamma, this->get_num_neurons(), 1);
-    Zeros(*m_dbeta, this->get_num_neurons(), 1);
-    Zeros(*m_mean, this->get_num_neurons(), 1);
-    Zeros(*m_stdev, this->get_num_neurons(), 1);
-    Zeros(*m_running_mean, this->get_num_neurons(), 1);
-    Zeros(*m_running_stdev, this->get_num_neurons(), 1);
+    m_gamma->Resize(this->get_num_neurons(), 1);
+    El::Fill(*m_gamma, m_gamma_init);
+    m_beta->Resize(this->get_num_neurons(), 1);
+    El::Fill(*m_beta, m_beta_init);
+    El::Zeros(*m_dgamma, this->get_num_neurons(), 1);
+    El::Zeros(*m_dbeta, this->get_num_neurons(), 1);
+    El::Zeros(*m_mean, this->get_num_neurons(), 1);
+    El::Zeros(*m_stdev, this->get_num_neurons(), 1);
+    El::Zeros(*m_running_mean, this->get_num_neurons(), 1);
+    El::Zeros(*m_running_stdev, this->get_num_neurons(), 1);
     m_gamma_optimizer = this->get_neural_network_model()->create_optimizer();
     m_beta_optimizer = this->get_neural_network_model()->create_optimizer();
     m_gamma_optimizer->setup(m_gamma);

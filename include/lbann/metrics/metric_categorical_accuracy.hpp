@@ -61,10 +61,10 @@ class categorical_accuracy : public metric {
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
     // Clear the contents of the intermediate matrices
-    Zeros(m_prediction_col_maxes, mini_batch_size, 1);
-    Zeros(m_replicated_prediction_col_maxes, mini_batch_size, 1);
-    Zeros(m_max_index, mini_batch_size, 1); // Clear the entire matrix
-    Zeros(m_reduced_max_indices, mini_batch_size, 1); // Clear the entire matrix
+    El::Zeros(m_prediction_col_maxes, mini_batch_size, 1);
+    El::Zeros(m_replicated_prediction_col_maxes, mini_batch_size, 1);
+    El::Zeros(m_max_index, mini_batch_size, 1); // Clear the entire matrix
+    El::Zeros(m_reduced_max_indices, mini_batch_size, 1); // Clear the entire matrix
     m_max_mini_batch_size = mini_batch_size;
   }
 
@@ -72,30 +72,30 @@ class categorical_accuracy : public metric {
     // Set the view based on the size of the current mini-batch
     // Note that these matrices are transposed (column max matrices) and thus
     // the mini-batch size effects the number of rows, not columns
-    View(m_prediction_col_maxes_v, m_prediction_col_maxes,
-         IR(0, cur_mini_batch_size), IR(0, m_prediction_col_maxes.Width()));
-    View(m_replicated_prediction_col_maxes_v, m_replicated_prediction_col_maxes,
-         IR(0, cur_mini_batch_size),
-         IR(0, m_replicated_prediction_col_maxes.Width()));
-    View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size),
-         IR(0, m_max_index.Width()));
-    View(m_reduced_max_indices_v, m_reduced_max_indices,
-         IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
+    El::View(m_prediction_col_maxes_v, m_prediction_col_maxes,
+             IR(0, cur_mini_batch_size), IR(0, m_prediction_col_maxes.Width()));
+    El::View(m_replicated_prediction_col_maxes_v, m_replicated_prediction_col_maxes,
+             IR(0, cur_mini_batch_size),
+             IR(0, m_replicated_prediction_col_maxes.Width()));
+    El::View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size),
+             IR(0, m_max_index.Width()));
+    El::View(m_reduced_max_indices_v, m_reduced_max_indices,
+             IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
   }
 
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
     // Clear the contents of the intermediate matrices
-    Zeros(m_prediction_col_maxes, m_max_mini_batch_size, 1);
-    Zeros(m_replicated_prediction_col_maxes, m_max_mini_batch_size, 1);
+    El::Zeros(m_prediction_col_maxes, m_max_mini_batch_size, 1);
+    El::Zeros(m_replicated_prediction_col_maxes, m_max_mini_batch_size, 1);
 
     /// Compute the error between the previous layers activations and the ground truth
     /// For each minibatch (column) find the maximimum value
     typedef typename std::conditional<T_layout == data_layout::MODEL_PARALLEL,
                                       DistMat, StarVCMat>::type colnorm_cast_t;
     ColumnMaxNorms((colnorm_cast_t) predictions_v, m_prediction_col_maxes_v);
-    Copy(m_prediction_col_maxes_v, m_replicated_prediction_col_maxes_v); /// Give every rank a copy so that they can find the max index locally
+    El::Copy(m_prediction_col_maxes_v, m_replicated_prediction_col_maxes_v); /// Give every rank a copy so that they can find the max index locally
 
-    Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
+    El::Zeros(m_max_index, m_max_mini_batch_size, 1); // Clear the entire matrix
 
     /// Find which rank holds the index for the maxmimum value
     for(int mb_index = 0; mb_index < predictions_v.LocalWidth(); mb_index++) { /// For each sample in mini-batch that this rank has
@@ -108,7 +108,7 @@ class categorical_accuracy : public metric {
       }
     }
 
-    Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
+    El::Zeros(m_reduced_max_indices, m_max_mini_batch_size, 1); // Clear the entire matrix
     /// Merge all of the local index sets into a common buffer, if there are two potential maximum values, highest index wins
     /// Note that this has to operate on the raw buffer, not the view
     m_comm->model_allreduce(m_max_index.Buffer(),

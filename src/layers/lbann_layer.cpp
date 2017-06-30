@@ -303,7 +303,7 @@ void Layer::setup_dims() {
 }
 
 void Layer::setup_data() {
-  // Initialize error signal matrix
+  // Initialize matrices
   if (m_num_neurons == 0) {
     throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
                           " num_neurons is 0");
@@ -313,10 +313,10 @@ void Layer::setup_data() {
                           " mini_batch_size is 0");
   }
   if (m_num_prev_neurons > 0) {
-    El::Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+    m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
   }
   if (m_num_neurons > 0) {
-    El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+    m_activations->Resize(m_num_neurons, m_mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
@@ -482,7 +482,7 @@ void Layer::pin_data() {
 
     // Pin fp input if needed
     if(pin_fp_input) {
-      El::Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+      m_prev_activations->Resize(m_num_prev_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_activations);
       m_fp_input_pinned = true;
     }
@@ -522,7 +522,7 @@ void Layer::pin_data() {
 
     // Pin output if needed
     if(pin_fp_output) {
-      El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+      m_activations->Resize(m_num_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_activations);
       m_fp_output_pinned = true;
     }
@@ -554,7 +554,7 @@ void Layer::pin_data() {
 
     // Pin bp input if needed
     if(pin_bp_input) {
-      El::Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
+      m_prev_error_signal->Resize(m_num_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_error_signal);
       m_bp_input_pinned = true;
     }
@@ -594,7 +594,7 @@ void Layer::pin_data() {
 
     // Pin bp output if needed
     if(pin_bp_output) {
-      El::Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+      m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_error_signal);
       m_bp_output_pinned = true;
     }

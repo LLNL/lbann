@@ -83,8 +83,8 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
       }
     }
 
-    Zeros(Y_local, this->m_num_neurons, Layer::m_mini_batch_size);
-    Zeros(Ys, this->m_num_neurons, Layer::m_mini_batch_size);
+    Y_local.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
+    Ys.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;
