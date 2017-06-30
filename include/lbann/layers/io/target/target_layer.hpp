@@ -108,9 +108,16 @@ class target_layer : public io_layer {
   }
 
   void summarize_stats(lbann_summary& summarizer, int step) {
-    std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
-      + "/CrossEntropyCost";
-    summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training), step);
+    std::string obj_name = this->m_neural_network_model->m_obj_fn->name();
+    // Replace spaces with _ for consistency.
+    std::transform(obj_name.begin(), obj_name.end(), obj_name.begin(),
+                   [] (char c) { return c == ' ' ? '_' : c; });
+    std::string tag = "layer" + std::to_string(this->m_index) + "/objective_" +
+      obj_name;
+    summarizer.reduce_scalar(
+      tag,
+      this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(
+        execution_mode::training), step);
     io_layer::summarize_stats(summarizer, step);
   }
 

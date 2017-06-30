@@ -68,7 +68,11 @@ void lbann_callback_summary::on_batch_end(model *m) {
 void lbann_callback_summary::on_epoch_end(model *m) {
   for (auto&& metric : m->m_metrics) {
     double train_score = metric->report_metric(execution_mode::training);
-    string phase = "train_" + metric->name();
+    // Replace spaces with _ for consistency.
+    std::string metric_name = metric->name();
+    std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
+                   [] (char c) { return c == ' ' ? '_' : c; });
+    std::string phase = "train_" + metric_name;
     m_summarizer->reduce_scalar(phase, train_score, m->get_cur_step());
   }
   save_histograms(m);
