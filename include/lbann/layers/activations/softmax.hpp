@@ -37,17 +37,11 @@
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
 #include <typeinfo>
 #include <typeindex>
-
-// Forward declaration.
-namespace lbann {
-namespace objective_functions {
-class categorical_cross_entropy;
-}
-}
 
 namespace lbann {
 
@@ -148,54 +142,8 @@ class softmax_layer : public activation_layer {
                       }));
   }
 
-  void bp_compute() {
-
-    // Stop early if objective function is categorical cross entropy
-    // Note: error signal is already computed in objective function object
-    const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
-    const std::type_info& next_layer_type = typeid(*m_next_layer);
-    // Note: Assumes next layer uses same data distribution.
-    if (std::type_index(obj_fn_type) ==
-        std::type_index(typeid(objective_functions::categorical_cross_entropy))
-        && (std::type_index(next_layer_type) ==
-            std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
-            || std::type_index(next_layer_type) ==
-            std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
-            || std::type_index(next_layer_type) ==
-            std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
-      View(*this->m_error_signal, *this->m_prev_error_signal);
-      View(*this->m_error_signal_v, *this->m_error_signal,
-           ALL, IR(0,this->m_error_signal->Width()));
-      return;
-    }
-
-    // Get local matrices and parameters
-    const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    Mat& workspace_local = m_workspace_v->Matrix();
-    Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
-    const Int local_width = activations_local.Width();
-
-    // Compute dot products
-    // Note: prev_error_signal^T activations
-    for(El::Int c=0; c<local_width; ++c) {
-      workspace_local(El::Int(0), c) = Dot(prev_error_signal_local(ALL,IR(c)),
-                                           activations_local(ALL,IR(c)));
-    }
-    AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
-
-    // Update error signal
-    // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-    IndexDependentMap(error_signal_local,
-                      (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                      ([this,&activations_local,&workspace_local]
-                       (El::Int r, El::Int c, const DataType& z)->DataType {
-                        const DataType activations_entry = activations_local(r,c);
-                        const DataType dot_product_entry = workspace_local(Int(0),c);
-                        return activations_entry * (z - dot_product_entry);
-                      }));
-
-  }
+  // Defined below to avoid circular definitions.
+  void bp_compute();
 
   bool update_compute() {
     return true;
@@ -230,6 +178,56 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
   activation_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_workspace = new StarVCMat(this->m_comm->get_model_grid());
   m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
+}
+
+// Definited outside of the class to avoid circular dependencies with
+// categorical_cross_entropy.
+template <data_layout T_layout>
+void softmax_layer<T_layout>::bp_compute() {
+  // Stop early if objective function is categorical cross entropy
+  // Note: error signal is already computed in objective function object
+  const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
+  const std::type_info& next_layer_type = typeid(*m_next_layer);
+  // Note: Assumes next layer uses same data distribution.
+  if (std::type_index(obj_fn_type) ==
+      std::type_index(typeid(objective_functions::categorical_cross_entropy))
+      && (std::type_index(next_layer_type) ==
+          std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
+          || std::type_index(next_layer_type) ==
+          std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
+          || std::type_index(next_layer_type) ==
+          std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
+    View(*this->m_error_signal, *this->m_prev_error_signal);
+    View(*this->m_error_signal_v, *this->m_error_signal,
+         ALL, IR(0,this->m_error_signal->Width()));
+    return;
+  }
+
+  // Get local matrices and parameters
+  const Mat& activations_local = this->m_activations_v->LockedMatrix();
+  Mat& workspace_local = m_workspace_v->Matrix();
+  Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
+  Mat& error_signal_local = this->m_error_signal_v->Matrix();
+  const Int local_width = activations_local.Width();
+
+  // Compute dot products
+  // Note: prev_error_signal^T activations
+  for(El::Int c=0; c<local_width; ++c) {
+    workspace_local(El::Int(0), c) = Dot(prev_error_signal_local(ALL,IR(c)),
+                                         activations_local(ALL,IR(c)));
+  }
+  AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+
+  // Update error signal
+  // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
+  IndexDependentMap(error_signal_local,
+                    (std::function<DataType(El::Int,El::Int,const DataType&)>)
+                    ([this,&activations_local,&workspace_local]
+                     (El::Int r, El::Int c, const DataType& z)->DataType {
+                      const DataType activations_entry = activations_local(r,c);
+                      const DataType dot_product_entry = workspace_local(Int(0),c);
+                      return activations_entry * (z - dot_product_entry);
+                    }));
 }
 
 }  // namespace lbann
