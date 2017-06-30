@@ -83,7 +83,11 @@ void lbann_callback_summary::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (auto&& metric : m->m_metrics) {
     double test_score = metric->report_metric(execution_mode::testing);
-    string phase = "test_" + metric->name();
+    // Replace spaces with _ for consistency.
+    std::string metric_name = metric->name();
+    std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
+                   [] (char c) { return c == ' ' ? '_' : c; });
+    std::string phase = "train_" + metric_name;
     m_summarizer->reduce_scalar(phase, test_score, m->get_cur_step());
   }
   // Reset counters incremented during test phase.
