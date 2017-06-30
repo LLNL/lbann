@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>

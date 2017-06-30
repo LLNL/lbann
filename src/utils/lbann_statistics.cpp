@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/lbann_statistics.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/statistics.hpp"
+#include "lbann/utils/exception.hpp"
 
 using namespace El;
 

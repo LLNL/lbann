@@ -33,7 +33,7 @@
 #include <typeinfo>   // operator typeid
 #include "patchworks/patchworks_opencv.hpp"
 #include "lbann_cv_process.hpp"
-#include "lbann/utils/lbann_mild_exception.hpp"
+#include "lbann/utils/mild_exception.hpp"
 
 
 #ifdef __LIB_OPENCV

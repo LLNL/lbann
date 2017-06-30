@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_cv_resizer.hpp"
-#include "lbann/utils/lbann_mild_exception.hpp"
+#include "lbann/utils/mild_exception.hpp"
 #include <algorithm>
 #include <ostream>
 //#include <iostream>

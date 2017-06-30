@@ -31,15 +31,15 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/optimizers/optimizer_sgd.hpp"
 #include "lbann/optimizers/optimizer_adagrad.hpp"
 #include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include "lbann/optimizers/optimizer_adam.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
 #include <string>
 #include <vector>

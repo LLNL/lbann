@@ -33,7 +33,7 @@
 #ifdef __LIB_OPENCV
 #include <iostream>
 #include "lbann/data_readers/patchworks/patchworks_patch_descriptor.hpp"
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 namespace patchworks {

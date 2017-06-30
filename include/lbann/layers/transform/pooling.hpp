@@ -33,8 +33,8 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/lbann_exception.hpp"
-#include "lbann/utils/lbann_im2col.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/im2col.hpp"
 
 namespace lbann {
 

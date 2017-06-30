@@ -29,7 +29,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

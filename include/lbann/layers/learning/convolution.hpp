@@ -35,10 +35,10 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/lbann_exception.hpp"
-#include "lbann/utils/lbann_random.hpp"
-#include "lbann/utils/lbann_timer.hpp"
-#include "lbann/utils/lbann_im2col.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/random.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/im2col.hpp"
 
 namespace lbann {
 

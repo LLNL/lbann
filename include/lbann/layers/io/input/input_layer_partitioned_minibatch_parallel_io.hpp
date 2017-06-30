@@ -29,7 +29,7 @@
 
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/io/partitioned_minibatch_parallel_io.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
 #include <sys/types.h>

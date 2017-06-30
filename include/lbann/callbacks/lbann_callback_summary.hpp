@@ -30,7 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED
 
 #include "lbann/callbacks/lbann_callback.hpp"
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/summary.hpp"
 
 namespace lbann {
 

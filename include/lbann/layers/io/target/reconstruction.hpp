@@ -31,7 +31,7 @@
 #include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include <string>
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 template <data_layout T_layout>

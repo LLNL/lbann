@@ -30,8 +30,8 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/lbann_base.hpp"
-#include "lbann/utils/lbann_random.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/random.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"

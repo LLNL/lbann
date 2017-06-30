@@ -32,7 +32,7 @@
 
 #include "patchworks/patchworks_opencv.hpp"
 #include "lbann_cv_transform.hpp"
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 #include <iostream>
 #include <ostream>
 #include <cstring>

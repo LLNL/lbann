@@ -118,8 +118,8 @@
 #include "lbann/metrics/metric_mean_squared_error.hpp"
 
 /// Utilities, exceptions, etc.
-#include "lbann/utils/lbann_exception.hpp"
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/lbann_params.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"

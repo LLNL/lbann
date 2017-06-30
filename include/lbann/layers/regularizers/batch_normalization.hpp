@@ -30,7 +30,7 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/lbann_statistics.hpp"
+#include "lbann/utils/statistics.hpp"
 
 namespace lbann {
 

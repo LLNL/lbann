@@ -33,7 +33,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "lbann/callbacks/lbann_callback.hpp"
-#include "lbann/utils/lbann_quantizer.hpp"
+#include "lbann/utils/quantizer.hpp"
 
 namespace lbann {
 

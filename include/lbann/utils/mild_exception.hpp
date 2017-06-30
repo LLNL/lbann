@@ -38,7 +38,7 @@
 
 
 #ifdef LBANN_DEBUG
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 //-----------------------------------------------------------------------------
 #define _LBANN_DEBUG_MSG(_MSG_) \
     std::cerr << __FILE__ << " " << __LINE__ << " : " << _MSG_ << std::endl;

@@ -33,8 +33,8 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/utils/lbann_timer.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/exception.hpp"
 #include <omp.h>
 using namespace El;
 
@@ -360,6 +360,6 @@ class lbann_quantizer {
 
 }  // namespace lbann
 
-#include "lbann_quantizer_impl.hpp"
+#include "quantizer_impl.hpp"
 
 #endif  // LBANN_QUANTIZER_HPP_INCLUDED

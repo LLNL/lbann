@@ -33,7 +33,7 @@
 #include "lbann_cv_transform.hpp"
 #include "patchworks/patchworks_opencv.hpp"
 #include "lbann/lbann_base.hpp" // DataType
-#include "lbann/utils/lbann_mild_exception.hpp"
+#include "lbann/utils/mild_exception.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {

@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 

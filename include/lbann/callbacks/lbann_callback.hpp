@@ -30,7 +30,7 @@
 #define __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
 #include "lbann/lbann_base.hpp"
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/models/lbann_model.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"

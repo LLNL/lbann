@@ -32,7 +32,7 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_fn.hpp"

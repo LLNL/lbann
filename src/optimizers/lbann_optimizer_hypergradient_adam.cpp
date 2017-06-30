@@ -29,7 +29,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
