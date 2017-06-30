@@ -102,7 +102,7 @@ void sgd::update(const AbsDistMat *gradient) {
 
   if(m_momentum == DataType(0)) {
     // Vanilla SGD
-    Axpy(-m_learning_rate, *gradient, *m_parameters);
+    El::Axpy(-m_learning_rate, *gradient, *m_parameters);
   } else {
 
     // Get local matrix data

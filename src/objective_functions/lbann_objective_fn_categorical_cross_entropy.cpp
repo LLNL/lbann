@@ -58,16 +58,16 @@ double categorical_cross_entropy::compute_categorical_cross_entropy(const AbsDis
       if(true_val != DataType(0)) {
         double pred_val = predictions_v.GetLocal(r,c);
         if(pred_val > DataType(0)) {
-          total_error += - true_val * Log(pred_val);
+          total_error += - true_val * std::log(pred_val);
         } else {
-          total_error = INFINITY;
+          total_error = DataType(INFINITY);
         }
       }
     }
   }
 
   // Get categorical cross entropy by summing results from all processes
-  total_error = mpi::AllReduce(total_error, groundtruth_v.DistComm());
+  total_error = El::mpi::AllReduce(total_error, groundtruth_v.DistComm());
   return total_error;
 
 }
@@ -94,23 +94,23 @@ void categorical_cross_entropy::compute_obj_fn_derivative(const Layer& prev_laye
       std::type_index(typeid(softmax_layer<data_layout::MODEL_PARALLEL>)) ||
       std::type_index(typeid(prev_layer)) ==
       std::type_index(typeid(softmax_layer<data_layout::DATA_PARALLEL>))) {
-    Copy(predictions_v, error_signal_v);
-    Axpy(DataType(-1), groundtruth_v, error_signal_v);
+    El::Copy(predictions_v, error_signal_v);
+    El::Axpy(DataType(-1), groundtruth_v, error_signal_v);
   }
 
   // Compute error signal (default case)
   // Note: error_signal = - groundtruth ./ predictions
   else {
-    IndexDependentFill(error_signal_v.Matrix(),
-                       (std::function<DataType(El::Int,El::Int)>)
-    ([&predictions_v, &groundtruth_v](Int r, Int c)->DataType {
-      const DataType true_val = groundtruth_v.GetLocal(r,c);
-      if(true_val != DataType(0))
-        return - true_val / predictions_v.GetLocal(r,c);
-      else {
-        return DataType(0);
-      }
-    }));
+    El::IndexDependentFill(error_signal_v.Matrix(),
+                           (std::function<DataType(El::Int,El::Int)>)
+                           ([&predictions_v, &groundtruth_v](Int r, Int c)->DataType {
+                             const DataType true_val = groundtruth_v.GetLocal(r,c);
+                             if(true_val != DataType(0))
+                               return - true_val / predictions_v.GetLocal(r,c);
+                             else {
+                               return DataType(0);
+                             }
+                           }));
   }
 }
 

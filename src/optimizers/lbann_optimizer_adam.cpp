@@ -103,8 +103,8 @@ void adam::setup(AbsDistMat *parameters) {
   default:
     throw lbann_exception("lbann_optimizer_adam: invalid data layout");
   }
-  Zeros(*m_moment1, m_height, m_width);
-  Zeros(*m_moment2, m_height, m_width);
+  El::Zeros(*m_moment1, m_height, m_width);
+  El::Zeros(*m_moment2, m_height, m_width);
 }
 
 void adam::update(const AbsDistMat *gradient) {

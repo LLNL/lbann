@@ -83,8 +83,7 @@ class softmax_layer : public activation_layer {
 
   void setup_data() {
     activation_layer::setup_data();
-
-    El::Zeros(*this->m_workspace, 1, this->m_mini_batch_size);
+    m_workspace->Resize(1, this->m_mini_batch_size);
   }
 
   void fp_set_std_matrix_view() {

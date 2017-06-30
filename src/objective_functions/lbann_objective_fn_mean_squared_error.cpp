@@ -39,12 +39,12 @@ mean_squared_error::mean_squared_error(lbann_comm *comm)
 mean_squared_error::~mean_squared_error() {}
 
 void mean_squared_error::setup(int num_neurons, int mini_batch_size) {
-  Zeros(m_errors, num_neurons, mini_batch_size);
+  El::Zeros(m_errors, num_neurons, mini_batch_size);
 }
 
 void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
+  El::View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
 }
 
 /// Compute mean squared error
@@ -53,8 +53,8 @@ void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
 double mean_squared_error::compute_mean_squared_error(const AbsDistMat& predictions_v,
                                                       const AbsDistMat& groundtruth_v) {
   const int num_neurons = predictions_v.Height();
-  Copy(predictions_v, m_errors_v);
-  Axpy(DataType(-1), groundtruth_v, m_errors_v);
+  El::Copy(predictions_v, m_errors_v);
+  El::Axpy(DataType(-1), groundtruth_v, m_errors_v);
   return std::pow(FrobeniusNorm(m_errors_v), DataType{2}) / num_neurons;
 }
 
@@ -76,9 +76,9 @@ void mean_squared_error::compute_obj_fn_derivative(const Layer& prev_layer,
                                                    const AbsDistMat& groundtruth_v,
                                                    AbsDistMat& error_signal_v) {
   const Int num_neurons = predictions_v.Height();
-  Copy(predictions_v, error_signal_v);
-  Axpy(DataType(-1), groundtruth_v, error_signal_v);
-  Scale(DataType(2)/num_neurons, error_signal_v);
+  El::Copy(predictions_v, error_signal_v);
+  El::Axpy(DataType(-1), groundtruth_v, error_signal_v);
+  El::Scale(DataType(2)/num_neurons, error_signal_v);
 }
 
 }  // namespace objective_functions

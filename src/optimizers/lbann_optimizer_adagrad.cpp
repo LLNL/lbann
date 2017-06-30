@@ -78,7 +78,7 @@ void adagrad::setup(AbsDistMat *parameters) {
   default:
     throw lbann_exception("lbann_optimizer_adagrad: invalid data layout");
   }
-  Zeros(*m_cache, m_height, m_width);
+  El::Zeros(*m_cache, m_height, m_width);
 }
 
 void adagrad::update(const AbsDistMat *gradient) {
