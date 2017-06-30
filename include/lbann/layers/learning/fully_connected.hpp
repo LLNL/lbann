@@ -32,7 +32,7 @@
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/utils/random.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>

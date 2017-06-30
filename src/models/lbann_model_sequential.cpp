@@ -26,7 +26,7 @@
 // lbann_model_sequential .hpp .cpp - Sequential neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/lbann_model_sequential.hpp"
+#include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/transform/pooling.hpp"

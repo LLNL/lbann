@@ -33,7 +33,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"

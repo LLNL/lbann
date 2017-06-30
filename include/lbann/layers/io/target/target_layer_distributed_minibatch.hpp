@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>

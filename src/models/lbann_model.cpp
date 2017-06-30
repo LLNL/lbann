@@ -26,7 +26,7 @@
 // lbann_model .hpp .cpp - Abstract class for neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/callbacks/lbann_callback.hpp"
 #include "lbann/io/persist.hpp"
 #include <string>

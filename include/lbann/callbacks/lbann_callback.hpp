@@ -31,7 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/utils/summary.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/io/io_layer.hpp"

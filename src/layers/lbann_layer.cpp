@@ -28,7 +28,7 @@
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include <string>

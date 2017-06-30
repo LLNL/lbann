@@ -26,7 +26,7 @@
 // lbann_model_dnn .hpp .cpp - Deep Neural Networks models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/lbann_model_dnn.hpp"
+#include "lbann/models/model_dnn.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/optimizers/optimizer.hpp"

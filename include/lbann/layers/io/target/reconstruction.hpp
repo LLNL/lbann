@@ -29,7 +29,7 @@
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
 #include "lbann/utils/random.hpp"
 

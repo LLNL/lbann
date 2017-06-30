@@ -26,53 +26,77 @@
 // lbann_model_dnn .hpp .cpp - Deep Neural Networks models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_DNN_HPP
-#define LBANN_MODEL_DNN_HPP
+#ifndef LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
+#define LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 
-#include "lbann/models/lbann_model_sequential.hpp"
+#include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/layer.hpp"
 #include <vector>
 #include <string>
 
 namespace lbann {
-class deep_neural_network : public sequential_model {
+class greedy_layerwise_autoencoder : public sequential_model {
  public:
   /// Constructor
-  deep_neural_network(int mini_batch_size,
-                      lbann_comm *comm,
-                      objective_functions::objective_fn *obj_fn,
-                      optimizer_factory *_optimizer_fac);
+  greedy_layerwise_autoencoder(int mini_batch_size,
+                               lbann_comm *comm,
+                               objective_functions::objective_fn *obj_fn,
+                               optimizer_factory *_optimizer_fac);
 
   /// Destructor
-  ~deep_neural_network();
+  ~greedy_layerwise_autoencoder();
 
+  /// Save model to shared checkpoint
+  bool save_to_checkpoint_shared(persist& p);
+
+  /// Restore model from shared checkpoint
+  bool load_from_checkpoint_shared(persist& p);
 
   /// Compute layer summaries
   void summarize_stats(lbann_summary& summarizer);
   void summarize_matrices(lbann_summary& summarizer);
 
   /// Train neural network
-  /** @param num_epochs Number of epochs to train
+  /** @param num_epochs Number of epochs to train at each phase
    *  @param evaluation_frequency How often to evaluate model on
    *  validation set. A value less than 1 will disable evaluation.
    */
   void train(int num_epochs, int evaluation_frequency=0);
+
+  // Train each phase ( a set of (original) input, hidden and mirror layers (output))
+  void train_phase(int num_epochs, int evaluation_frequency);
+
   /// Training step on one mini-batch
   bool train_mini_batch();
 
-  /// Evaluate neural network
+  ///Global evaluation (testing), provide overall cost relative to original input
   void evaluate(execution_mode mode=execution_mode::testing);
+  /// Evaluate (validation) per phase
+  void evaluate_phase(execution_mode mode=execution_mode::validation);
   /// Evaluation step on one mini-batch
   bool evaluate_mini_batch();
 
-  /// Returns the model's name
-  const string& name() {
+  const std::string& name() {
     return m_name;
   }
+  void reset_phase();
 
  protected:
-  ///string name
+  /// Model's name
   std::string m_name;
+  /// index of last layer in a phase
+  size_t m_phase_end;
+  /// containers for  mirror layers
+  std::vector<Layer *> m_reconstruction_layers;
+
+  /// Flag recording whether we have a mirror layer inserted in model for training
+  uint32_t m_have_mirror;
+
+  /// Inserts a mirror layer for specified layer index
+  void insert_mirror(uint32_t layer_index);
+
+  /// Removes mirror for specified layer index
+  void remove_mirror(uint32_t layer_index);
 };
 }
 

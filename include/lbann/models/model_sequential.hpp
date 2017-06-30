@@ -29,7 +29,7 @@
 #ifndef LBANN_MODEL_SEQUENTIAL_HPP
 #define LBANN_MODEL_SEQUENTIAL_HPP
 
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/lbann_data_reader.hpp"
