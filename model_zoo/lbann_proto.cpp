@@ -33,7 +33,6 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-#if 0
   lbann_comm *comm = initialize(argc, argv, 42);
 
 #ifdef EL_USE_CUBLAS
@@ -41,47 +40,81 @@ int main(int argc, char *argv[]) {
 #endif
 
   try {
-    options *opts = options::get();
-    std::stringstream err;
-
-
     //run LTFB?
-    bool ltfb = opts->has_int("ltfb") and opts->get_int("ltfb");
+    bool ltfb = Input("--ltfb", "run ltfb", false);
 
-    //get input prototext filenames;
-    if (not opts->has_string("proto") and (comm->am_world_master()) {
-      err << __FILE__ << " " << __LINE__
-          << " :: you must pass the option: --proto=<string>\n"
-          << "and, unless you're running from a prototext file saved from\n"
-          << "a previous run, you probably also need to specify\n"
-          << "--proto_reader=<string> and --proto_optimizer=<string>\n";
-      throw lbann_exception(err.str());
+    //get input prototext filenames
+    string prototext_model_fn = Input("--prototext_fn", "prototext model filename",
+                                      std::string("none"));
+    string prototext_dr_fn = Input("--prototext_dr_fn", "prototext data reader filename",
+                                   std::string("none"));
+    string prototext_opt_fn = Input("--prototext_opt_fn", "prototext optimizer filename",
+                                    std::string("none"));
+
+    //Get optional over-rides for various fields in the prototext.
+    //If you add anything here, also change the section below:
+    //  "adjust the prototext with any over-rides"
+    int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
+    int num_epochs = Input("--num-epochs", "num epochs", 0);
+
+    ProcessInput();
+    PrintInputReport();
+
+    //error check the command line
+    if (prototext_dr_fn == "none" or prototext_model_fn == "none"
+        or prototext_opt_fn == "none") {
+      if (comm->am_world_master()) {
+        cerr << endl << __FILE__ << " " << __LINE__
+             << " :: error - you must use  --prototext_fn, "
+             << "--prototext_dr_fn, and prototext_opt_fn \n"
+             << "to supply prototext filenames\n\n";
+      }
+      Finalize();
+      return 9;
     }
-   
-    string prototext_model_fn = opts->get_string("proto");
+
+    // read in the prototext files
     lbann_data::LbannPB pb;
+    lbann_data::LbannPB pb_reader;
+    lbann_data::LbannPB pb_optimizer;
     readPrototextFile(prototext_model_fn.c_str(), pb);
-
-    if (opts->has_string("proto_reader")) {
-      lbann_data::LbannPB pb_reader;
-      readPrototextFile(opts->get_string("proto_reader").c_str(), pb_reader);
-      pb.MergeFrom(pb_reader);
-    }
-
-    if (opts->has_string("proto_optimizer")) {
-      string prototext_opt_fn;
-      lbann_data::LbannPB pb_optimizer;
-      readPrototextFile(opts->get_string("proto_optimizer").c_str(), pb_optimizer);
-      pb.MergeFrom(pb_optimizer);
-    }
-
+    readPrototextFile(prototext_dr_fn.c_str(), pb_reader);
+    readPrototextFile(prototext_opt_fn.c_str(), pb_optimizer);
     lbann_data::Model *pb_model = pb.mutable_model();
 
-    set_num_parallel_readers(comm, pb);
-    get_cmdline_overrides(comm, pb);
+    //adjust the prototext with any over-rides
+    if (mini_batch_size != 0) {
+      pb_model->set_mini_batch_size(mini_batch_size);
+    }
+    if (num_epochs != 0) {
+      pb_model->set_num_epochs(num_epochs);
+    }
+    //////////////////////////////////////////////////////////////////////
+    //NOTE: do not use mini_batch_size or num_epochs, etc, after this block;
+    //      instead, use pb_model->mini_batch_size(), etc.
+    //////////////////////////////////////////////////////////////////////
 
-#if 0
-void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
+    if (pb_model->block_size() == 0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " 
+          << pb_model->block_size();
+      throw lbann_exception(err.str());
+    }
+    // Set algorithmic blocksize
+    SetBlocksize(pb_model->block_size());
+
+    // Set up the communicator and get the grid.
+    comm->split_models(pb_model->procs_per_model());
+    //please do not delete this! it's here to remind me that something needs
+    //fixing. Thanks, Dave H.
+    if (comm->am_world_master()) cout << "XX procs_per_model: " << pb_model->procs_per_model() << endl;
+    Grid& grid = comm->get_model_grid();
+    if (comm->am_world_master()) {
+      cout << "Number of models: " << comm->get_num_models() << endl;
+      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
+      cout << endl;
+    }
+
     int parallel_io = pb_model->num_parallel_readers();
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
@@ -95,46 +128,13 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
         cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
       }
     }
-}
-
-void get_cmd_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
-    int mini_batch_size = Input("--mb-size", "mini_batch_size", 0);
-    int num_epochs = Input("--num-epochs", "num epochs", 0);
-
-    if (mini_batch_size != 0) {
-      pb_model->set_mini_batch_size(mini_batch_size);
-    }
-    if (num_epochs != 0) {
-      pb_model->set_num_epochs(num_epochs);
-    }
-}
-#endif
-
-    // Set algorithmic blocksize
-    if (pb_model->block_size() == 0) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
-    }
-    SetBlocksize(pb_model->block_size());
-
-    // Set up the communicator and get the grid.
-    comm->split_models(pb_model->procs_per_model());
-    if (comm->am_world_master()) cout << "procs_per_model: " << pb_model->procs_per_model() << endl;
-    Grid& grid = comm->get_model_grid();
-    if (comm->am_world_master()) {
-      cout << "Number of models: " << comm->get_num_models() << endl;
-      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
-    }
-
 
     ///////////////////////////////////////////////////////////////////
     // initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     ///////////////////////////////////////////////////////////////////
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(comm->am_world_master(), pb, data_readers, pb_model->mini_batch_size());
+    init_data_readers(comm->am_world_master(), pb_reader, data_readers, pb_model->mini_batch_size());
     if (comm->am_world_master()) {
       for (auto it : data_readers) {
         cerr << "data reader; role: " << it.second->get_role()
@@ -146,7 +146,7 @@ void get_cmd_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
     if (comm->am_world_master()) {
       cout << "\nParameter settings:" << endl;
       cout << "\tMini-batch size: " << pb_model->mini_batch_size() << endl;
-      const lbann_data::Optimizer optimizer = pb.optimizer();
+      const lbann_data::Optimizer optimizer = pb_optimizer.optimizer();
       cout << "\tLearning rate: " <<  optimizer.learn_rate() << endl;
       cout << "\tEpoch count: " << pb_model->num_epochs() << endl << endl;
     }
@@ -155,7 +155,7 @@ void get_cmd_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
     // initalize model
     // @todo: not all callbacks code is in place
     ///////////////////////////////////////////////////////////////////
-    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb_optimizer);
     cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
@@ -187,7 +187,7 @@ void get_cmd_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
         cerr << endl << "running ltfb\n\n";
         throw lbann_exception("ltfb is not ready yet; coming soon!");
       }
-      init_data_readers(comm->am_world_master(), pb, data_readers_2, pb_model->mini_batch_size());
+      init_data_readers(comm->am_world_master(), pb_reader, data_readers_2, pb_model->mini_batch_size());
       optimizer_factory *optimizer_fac_2 = init_optimizer_factory(comm, pb);
       model_2 = init_model(comm, optimizer_fac_2, pb);
       model_2->setup();
@@ -223,6 +223,6 @@ void get_cmd_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
 
   // free all resources by El and MPI
   finalize(comm);
-#endif
+
   return 0;
 }
