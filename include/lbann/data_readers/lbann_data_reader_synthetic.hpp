@@ -56,6 +56,10 @@ class data_reader_synthetic : public generic_data_reader {
     return m_num_features;
   }
 
+  const std::vector<int> get_data_dims(void) const {
+    return {m_num_features};
+  }
+
  private:
   int  m_num_samples; //rows
   int  m_num_features; //cols
