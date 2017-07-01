@@ -26,8 +26,8 @@
 // lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_checknan.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/callbacks/callback_checknan.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

@@ -28,8 +28,8 @@
 // Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_hypergradient_adam.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -116,9 +116,9 @@ void hypergradient_adam::setup(AbsDistMat *parameters) {
     throw lbann_exception(
       "lbann_optimizer_hypergradient_adam: invalid data layout");
   }
-  Zeros(*m_moment1, m_height, m_width);
-  Zeros(*m_moment2, m_height, m_width);
-  Zeros(*m_old_gradient, m_height, m_width);
+  El::Zeros(*m_moment1, m_height, m_width);
+  El::Zeros(*m_moment2, m_height, m_width);
+  El::Zeros(*m_old_gradient, m_height, m_width);
 }
 
 void hypergradient_adam::update(const AbsDistMat *gradient) {

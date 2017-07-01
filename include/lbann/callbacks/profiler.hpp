@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_PROFILER_HPP_INCLUDED
 #define LBANN_CALLBACKS_PROFILER_HPP_INCLUDED
 
-#include "lbann/callbacks/lbann_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
@@ -37,9 +37,9 @@ namespace lbann {
  */
 class lbann_callback_profiler : public lbann_callback {
  public:
-  lbann_callback_profiler() {
-    set_name("profiler");
-  }
+  lbann_callback_profiler() : lbann_callback() {}
+  lbann_callback_profiler(const lbann_callback_profiler&) = default;
+  lbann_callback_profiler& operator=(const lbann_callback_profiler&) = default;
   void on_epoch_begin(model *m);
   void on_epoch_end(model *m);
   void on_batch_begin(model *m);
@@ -52,6 +52,7 @@ class lbann_callback_profiler : public lbann_callback {
   void on_forward_prop_end(model *m, Layer *l);
   void on_backward_prop_begin(model *m, Layer *l);
   void on_backward_prop_end(model *m, Layer *l);
+  std::string name() const { return "profiler"; }
  private:
   static const int num_colors = 20;
   // http://there4.io/2012/05/02/google-chart-color-list/

@@ -181,6 +181,7 @@ message Layer {
    int64 index = 50; 
    int64 parent = 51;
    string data_layout = 52;
+   bool num_neurons_from_data_reader = 53;
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in lbann_proto_common.cpp)
@@ -255,8 +256,6 @@ message Selu {
 }
 
 message Softmax {
-  int64 num_neurons = 2;
-  string weight_initialization = 3;
 }
 
 ///////////////////////////
@@ -277,8 +276,6 @@ message SeluDropout {
 }
 
 message LocalResponseNormalization {
-  int64 num_dims = 1;
-  int64 num_channels = 2;
   string dims = 3;  //e.g, "2 2 2"
   int64 window_width = 4;
   double lrn_alpha = 5;

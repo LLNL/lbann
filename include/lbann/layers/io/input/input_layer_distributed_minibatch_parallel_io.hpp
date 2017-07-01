@@ -29,8 +29,8 @@
 
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/io/distributed_minibatch_parallel_io.hpp"
-#include "lbann/utils/lbann_exception.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -82,7 +82,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
                                                             m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
 
-    El::Zeros(X_local, this->m_num_neurons, Layer::m_mini_batch_size);
+    X_local.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;

@@ -26,7 +26,7 @@
 // lbann_data_reader_nci_regression .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_nci_regression.hpp"
+#include "lbann/data_readers/data_reader_nci_regression.hpp"
 #include <cstdio>
 #include <string>
 

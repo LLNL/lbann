@@ -26,7 +26,7 @@
 // lbann_cv_utils .cpp .hpp - operations related to opencv images
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_cv_utils.hpp"
+#include "lbann/data_readers/cv_utils.hpp"
 //#include <iostream>
 
 #ifdef __LIB_OPENCV

@@ -26,10 +26,10 @@
 // lbann_dnn_mnist.cpp - DNN application for mnist
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
-#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
-#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
-#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+#include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/callbacks/callback_dump_weights.hpp"
+#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace lbann;

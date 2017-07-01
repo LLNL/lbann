@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 #include "lbann/lbann_comm.hpp"
-#include "lbann/utils/lbann_quantizer.hpp"
+#include "lbann/utils/quantizer.hpp"
 #include "lbann_test_utils.hpp"
 
 using namespace lbann;

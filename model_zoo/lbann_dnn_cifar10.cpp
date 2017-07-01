@@ -26,9 +26,9 @@
 // lbann_dnn_cifar10.cpp - DNN application for cifar10
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_dump_weights.hpp"
-#include "lbann/callbacks/lbann_callback_dump_activations.hpp"
-#include "lbann/callbacks/lbann_callback_dump_gradients.hpp"
+#include "lbann/callbacks/callback_dump_weights.hpp"
+#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;

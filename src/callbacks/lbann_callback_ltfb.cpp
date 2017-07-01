@@ -26,8 +26,8 @@
 // lbann_callback_ltfb .hpp .cpp - Manage LTFB training for a model
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_ltfb.hpp"
-#include "lbann/models/lbann_model_dnn.hpp"
+#include "lbann/callbacks/callback_ltfb.hpp"
+#include "lbann/models/model_dnn.hpp"
 
 namespace lbann {
 

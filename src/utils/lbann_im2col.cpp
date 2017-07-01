@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/lbann_im2col.hpp"
+#include "lbann/utils/im2col.hpp"
 
 using namespace El;
 

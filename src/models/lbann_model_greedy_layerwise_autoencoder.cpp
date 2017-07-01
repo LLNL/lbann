@@ -25,9 +25,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/lbann_model_greedy_layerwise_autoencoder.hpp"
+#include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
 #include "lbann/layers/io/target/reconstruction.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 
 using namespace std;
 using namespace El;
@@ -99,9 +99,15 @@ bool lbann::greedy_layerwise_autoencoder::load_from_checkpoint_shared(lbann::per
   return true;
 }
 
-void lbann::greedy_layerwise_autoencoder::summarize(lbann_summary& summarizer) {
+void lbann::greedy_layerwise_autoencoder::summarize_stats(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
-    m_layers[l]->summarize(summarizer, get_cur_step());
+    m_layers[l]->summarize_stats(summarizer, get_cur_step());
+  }
+}
+
+void lbann::greedy_layerwise_autoencoder::summarize_matrices(lbann_summary& summarizer) {
+  for (size_t l = 1; l < m_layers.size(); ++l) {
+    m_layers[l]->summarize_matrices(summarizer, get_cur_step());
   }
 }
 

@@ -26,7 +26,7 @@
 // lbann_summary .hpp .cpp - Write summary statistics to Tensorboard
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/lbann_summary.hpp"
+#include "lbann/utils/summary.hpp"
 
 namespace lbann {
 

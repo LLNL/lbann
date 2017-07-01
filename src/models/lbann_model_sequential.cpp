@@ -26,16 +26,16 @@
 // lbann_model_sequential .hpp .cpp - Sequential neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/lbann_model_sequential.hpp"
+#include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/optimizers/lbann_optimizer.hpp"
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/optimizers/optimizer_adagrad.hpp"
+#include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>

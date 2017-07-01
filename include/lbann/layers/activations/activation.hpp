@@ -28,7 +28,7 @@
 #define LBANN_LAYER_ACTIVATION_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <omp.h>
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace {
 #ifdef __ICC

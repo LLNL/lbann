@@ -26,7 +26,7 @@
 // lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_io.hpp"
+#include "lbann/callbacks/callback_io.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
 
@@ -35,9 +35,7 @@ namespace lbann {
 lbann_callback_io::lbann_callback_io() : lbann_callback() {}
 
 lbann_callback_io::lbann_callback_io(
-  std::unordered_set<uint> layers) : lbann_callback(), m_layer_indices(layers) {
-  set_name("io");
-}
+  std::unordered_set<uint> layers) : lbann_callback(), m_layer_indices(layers) {}
 
 void lbann_callback_io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();

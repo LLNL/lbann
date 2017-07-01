@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/data_readers/lbann_data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_mnist.hpp"
 
 using namespace lbann;
 
@@ -309,13 +309,15 @@ int main(int argc, char *argv[]) {
     lbann_callback_timer timer_cb(&summarizer);
     dnn.add_callback(&timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer, 25);
+    lbann_callback_summary summary_cb(&summarizer);
     dnn.add_callback(&summary_cb);
     // Do global inter-model updates.
     lbann_callback_imcomm imcomm_cb(
       static_cast<lbann_callback_imcomm::comm_type>(
         trainParams.IntermodelCommMethod),
-      {fcidx1, fcidx2, fcidx3, fcidx4}, &summarizer);
+      {static_cast<unsigned>(fcidx1), static_cast<unsigned>(fcidx2),
+            static_cast<unsigned>(fcidx3), static_cast<unsigned>(fcidx4)},
+      &summarizer);
     dnn.add_callback(&imcomm_cb);
     lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
     dnn.add_callback(&lrsched);

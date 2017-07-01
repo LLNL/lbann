@@ -27,8 +27,8 @@
 //                               3-channel color image
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_cv_colorizer.hpp"
-#include "lbann/utils/lbann_mild_exception.hpp"
+#include "lbann/data_readers/cv_colorizer.hpp"
+#include "lbann/utils/mild_exception.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {

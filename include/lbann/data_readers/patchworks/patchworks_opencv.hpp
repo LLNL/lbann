@@ -34,7 +34,7 @@
 #ifdef __LIB_OPENCV
 #ifndef _PATCHWORKS_OPENCV_H_INCLUDED_
 #define _PATCHWORKS_OPENCV_H_INCLUDED_
-#include "lbann/data_readers/lbann_opencv.hpp"
+#include "lbann/data_readers/opencv.hpp"
 
 namespace lbann {
 namespace patchworks {

@@ -26,8 +26,8 @@
 // lbann_optimizer_adagrad .hpp .cpp - SGD with AdaGrad
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_adagrad.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/optimizers/optimizer_adagrad.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -78,7 +78,7 @@ void adagrad::setup(AbsDistMat *parameters) {
   default:
     throw lbann_exception("lbann_optimizer_adagrad: invalid data layout");
   }
-  Zeros(*m_cache, m_height, m_width);
+  El::Zeros(*m_cache, m_height, m_width);
 }
 
 void adagrad::update(const AbsDistMat *gradient) {

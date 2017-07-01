@@ -26,7 +26,7 @@
 // lbann_data_reader_synthetic .hpp .cpp - generic_data_reader class for synthetic (unit testing) data
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
+#include "lbann/data_readers/data_reader_synthetic.hpp"
 #include <stdio.h>
 #include <string>
 

@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/utils/lbann_quantizer.hpp"
-#include "lbann/utils/lbann_timer.hpp"
+#include "lbann/utils/quantizer.hpp"
+#include "lbann/utils/timer.hpp"
 #ifdef LBANN_VTUNE
 #include <ittnotify.h>
 #endif

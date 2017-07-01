@@ -31,7 +31,7 @@
 
 #include "lbann/lbann_base.hpp"
 #include "lbann/lbann_comm.hpp"
-#include "lbann/data_readers/lbann_data_reader.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 class partitioned_minibatch_parallel_io {

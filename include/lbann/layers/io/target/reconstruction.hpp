@@ -29,9 +29,9 @@
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 template <data_layout T_layout>
@@ -114,11 +114,12 @@ class reconstruction_layer : public target_layer {
     return true;
   }
 
-  void summarize(lbann_summary& summarizer, int64_t step) {
-    Layer::summarize(summarizer, step);
+  void summarize_stats(lbann_summary& summarizer, int64_t step) {
     std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
       + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, average_cost(), step);
+    // Skip target layer (for now).
+    io_layer::summarize_stats(summarizer, step);
   }
 
   void epoch_print() const {

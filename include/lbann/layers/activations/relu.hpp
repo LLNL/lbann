@@ -42,8 +42,6 @@ class relu_layer : public entrywise_activation_layer {
  private:
 
 #ifdef __LIB_CUDNN
-  /// Tensor descriptor
-  cudnnTensorDescriptor_t m_tensor_desc;
   /// Activation descriptor
   cudnnActivationDescriptor_t m_activation_desc;
 #endif
@@ -59,16 +57,11 @@ class relu_layer : public entrywise_activation_layer {
 
   #ifdef __LIB_CUDNN
 
-    m_tensor_desc = NULL;
     m_activation_desc = NULL;
 
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
-      const int num_gpus = this->m_cudnn->get_num_gpus();
-      const int num_processes = this->m_comm->get_procs_per_model();
-      const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
-      this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
     }
 
   #endif // #ifdef __LIB_CUDNN
@@ -78,26 +71,9 @@ class relu_layer : public entrywise_activation_layer {
   virtual ~relu_layer() {
 
   #ifdef __LIB_CUDNN
-    if(this->m_using_gpus) {
-
-      // Destroy cuDNN objects
-      if(m_tensor_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_tensor_desc));
-      }
-      if(m_activation_desc) {
-        CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
-      }
-
-      // Deallocate GPU memory
-      this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-      this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
-      }
-      if(!this->m_next_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
-      }
-
+    // Destroy cuDNN objects
+    if(m_activation_desc) {
+      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
     }
   #endif
 
@@ -110,68 +86,18 @@ class relu_layer : public entrywise_activation_layer {
   }
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup_data() {
-    entrywise_activation_layer::setup_data();
-
-  #ifdef __LIB_CUDNN
-    // Setup cuDNN objects
-    if(this->m_using_gpus) {
-      setup_gpu();
-    }
-  #endif // #ifdef __LIB_CUDNN
-  }
-
   void setup_gpu() {
+    entrywise_activation_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
 
-    // Initialize descriptors
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_tensor_desc));
+    // Initialize activation descriptor
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
-
-    // Set tensor descriptor
-    // Note: cuDNN expects at least a 4D tensor, so we pad the
-    //   dimensions with ones if needed.
-    std::vector<int> tensor_dims = this->m_neuron_dims;
-    tensor_dims.insert(tensor_dims.begin(), this->m_mini_batch_size_per_gpu);
-    while(tensor_dims.size() < 4) {
-      tensor_dims.insert(tensor_dims.begin(), 1);
-    }
-    std::vector<int> tensor_strides(tensor_dims.size());
-    tensor_strides[tensor_strides.size()-1] = 1;
-    for(int i=tensor_strides.size()-2; i>=0; --i) {
-      tensor_strides[i] = tensor_strides[i+1] * tensor_dims[i+1];
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_tensor_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
-                                           tensor_dims.size(),
-                                           tensor_dims.data(),
-                                           tensor_strides.data()));
-    
-    // Set activation descriptor
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,
                                              CUDNN_ACTIVATION_RELU,
                                              CUDNN_PROPAGATE_NAN,
                                              0.0));
-
-    // Allocate GPU memory
-    this->m_cudnn->allocate_on_gpus(this->m_activations_d,
-                                    this->m_num_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
-                                    this->m_num_prev_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
-                                      this->m_num_prev_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
-    if(!this->m_next_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
-                                      this->m_num_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
   #endif
   }
 
@@ -203,10 +129,10 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
                                          m_activation_desc,
                                          &one,
-                                         m_tensor_desc,
+                                         this->m_prev_neurons_cudnn_desc,
                                          this->m_prev_activations_d[i],
                                          &zero,
-                                         m_tensor_desc,
+                                         this->m_neurons_cudnn_desc,
                                          this->m_activations_d[i]));
     }
 
@@ -231,14 +157,14 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
                                           m_activation_desc,
                                           &one,
-                                          m_tensor_desc,
+                                          this->m_prev_neurons_cudnn_desc,
                                           this->m_prev_activations_d[i],
-                                          m_tensor_desc,
+                                          this->m_neurons_cudnn_desc,
                                           this->m_prev_error_signal_d[i],
-                                          m_tensor_desc, 
+                                          this->m_neurons_cudnn_desc,
                                           this->m_activations_d[i],
                                           &zero,
-                                          m_tensor_desc,
+                                          this->m_prev_neurons_cudnn_desc,
                                           this->m_error_signal_d[i]));
     }
 

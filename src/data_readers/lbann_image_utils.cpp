@@ -26,7 +26,7 @@
 // lbann_image_utils .cpp .hpp - Image I/O utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 

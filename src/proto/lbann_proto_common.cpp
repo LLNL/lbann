@@ -1,4 +1,4 @@
-#include "lbann/proto/lbann_proto_common.hpp"
+#include "lbann/proto/proto_common.hpp"
 
 #include "lbann/lbann.hpp"
 #include "lbann/lbann_base.hpp"
@@ -126,12 +126,13 @@ void add_layers(
     int prev_num_neurons;
     get_prev_neurons_and_index(model, prev_num_neurons, layer_id);
     data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__);
+    bool num_neurons_from_data_reader = layer.num_neurons_from_data_reader();
 
     //////////////////////////////////////////////////////////////////
     // LAYER: Relu
     //////////////////////////////////////////////////////////////////
     if (layer.has_relu()) {
-      const lbann_data::Relu &ell = layer.relu();
+      //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, cudnn);
       } else {
@@ -196,7 +197,7 @@ void add_layers(
     // LAYER: input_distributed_minibatch_parallel_io
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
-      const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
+      //const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
       //please do not delete this! it's here to remind me that something needs
       //fixing. Thanks, Dave H.
       if (master) cout << "XX numreaders: " << m.num_parallel_readers() << endl;
@@ -222,7 +223,7 @@ void add_layers(
     // LAYER: input_partitioned_minibatch_parallel_io
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_partitioned_minibatch_parallel_io()) {
-      const lbann_data::InputPartitionedMiniBatchParallelIO& ell = layer.input_partitioned_minibatch_parallel_io();
+      //const lbann_data::InputPartitionedMiniBatchParallelIO& ell = layer.input_partitioned_minibatch_parallel_io();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
@@ -246,12 +247,18 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected& ell = layer.fully_connected();
+      int num_neurons;
+      if (num_neurons_from_data_reader) {
+        num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
+      } else {
+        num_neurons = ell.num_neurons();
+      }
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
@@ -260,7 +267,7 @@ void add_layers(
           layer_id,
           comm,
           mb_size,
-          ell.num_neurons(),
+          num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias());
@@ -427,8 +434,8 @@ void add_layers(
         dims.push_back(i);
       }
 
-      int num_dims = ell.num_dims();
-      int num_channels = ell.num_channels();
+      //int num_dims = ell.num_dims();
+      //int num_channels = ell.num_channels();
       DataType lrn_alpha = ell.lrn_alpha();
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
@@ -711,7 +718,7 @@ void add_layers(
     // LAYER: softmax
     //////////////////////////////////////////////////////////////////
     if (layer.has_softmax()) {
-      const lbann_data::Softmax& ell = layer.softmax();
+      //const lbann_data::Softmax& ell = layer.softmax();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,

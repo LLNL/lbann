@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/data_readers/lbann_data_reader_synthetic.hpp"
+#include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;

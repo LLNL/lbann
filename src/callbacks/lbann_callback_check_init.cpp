@@ -26,8 +26,8 @@
 // lbann_callback_check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_check_init.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/callbacks/callback_check_init.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

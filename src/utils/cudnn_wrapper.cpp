@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <iostream>
 
@@ -512,9 +512,9 @@ void cudnn_manager::pin_matrix(ElMat& mat) {
   CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
                             mat_local.Height()*mat_local.Width()*sizeof(DataType)));
   Mat pinned_mat(mat_local.Height(), mat_local.Width(),
-                 pinned_buffer, mat_local.LDim());
-  // Copying must be done before attaching as it will be replaced by
-  // the new matrix
+                 pinned_buffer, mat_local.Height());
+
+  // Copy data to pinned memory
   Copy(mat_local, pinned_mat);
   
   // Reconfigure matrix around pinned memory
@@ -523,19 +523,18 @@ void cudnn_manager::pin_matrix(ElMat& mat) {
              mat.Grid(),
              mat.ColAlign(),
              mat.RowAlign(),
-             pinned_buffer,
-             mat_local.Height(),
+             pinned_mat,
              mat.Root());
+
 }
 
 void cudnn_manager::unpin_matrix(ElMat& mat) {
   
-  // Get local matrix
+  // Copy data to unpinned memory
   Mat& mat_local = mat.Matrix();
   Mat new_mat_local(mat_local);
 
-  DataType* pinned_buf = mat_local.Buffer();    
-  
+  // Reconfigure matrix around unpinned memory
   mat.Attach(mat.Height(),
              mat.Width(),
              mat.Grid(),
@@ -543,8 +542,10 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
              mat.RowAlign(),
              new_mat_local,
              mat.Root());
-  
-  CHECK_CUDA(cudaFreeHost(pinned_buf));
+
+  // Deallocate pinned memory
+  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
+
 }
 
 #endif // #ifdef __LIB_CUDNN

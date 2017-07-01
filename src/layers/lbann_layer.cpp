@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/utils/lbann_timer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include <string>
@@ -96,6 +96,9 @@ Layer::Layer(const int index, lbann_comm *comm, int mbsize)
   m_fp_output_pinned = false;
   m_bp_input_pinned = false;
   m_bp_output_pinned = false;
+
+  m_prev_neurons_cudnn_desc = NULL;  
+  m_neurons_cudnn_desc = NULL;  
 #endif
 
   reset_counters();
@@ -103,17 +106,29 @@ Layer::Layer(const int index, lbann_comm *comm, int mbsize)
 
 Layer::~Layer() {
 #ifdef __LIB_CUDNN
-  if(m_fp_input_pinned) {
-    m_cudnn->unpin_matrix(*m_prev_activations);
+  if(m_prev_neurons_cudnn_desc) {
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_neurons_cudnn_desc));
   }
-  if(m_fp_output_pinned) {
-    m_cudnn->unpin_matrix(*m_activations);
+  if(m_neurons_cudnn_desc) {
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
   }
-  if(m_bp_input_pinned) {
-    m_cudnn->unpin_matrix(*m_prev_error_signal);
-  }
-  if(m_bp_output_pinned) {
-    m_cudnn->unpin_matrix(*m_error_signal);
+  if(m_cudnn) {
+    m_cudnn->deallocate_on_gpus(m_activations_d);
+    m_cudnn->deallocate_on_gpus(m_error_signal_d);
+    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    if(m_fp_input_pinned) {
+      m_cudnn->unpin_matrix(*m_prev_activations);
+    }
+    if(m_fp_output_pinned) {
+      m_cudnn->unpin_matrix(*m_activations);
+    }
+    if(m_bp_input_pinned) {
+      m_cudnn->unpin_matrix(*m_prev_error_signal);
+    }
+    if(m_bp_output_pinned) {
+      m_cudnn->unpin_matrix(*m_error_signal);
+    }
   }
 #endif
   delete m_prev_error_signal;
@@ -128,11 +143,6 @@ Layer::~Layer() {
 
 void Layer::forwardProp() {
   double fp_start = get_time();
-
-#ifdef __LIB_CUDNN
-  // Pin host memory if needed for GPU memory transfers
-  fp_pin_memory();
-#endif
 
   // Get incoming activations and convert matrix distribution if necessary
   if(m_prev_layer != NULL) {
@@ -184,11 +194,6 @@ void Layer::forwardProp() {
 
 void Layer::backProp() {
   double bp_start = get_time();
-
-#ifdef __LIB_CUDNN
-  // Pin host memory if needed for GPU memory transfers
-  bp_pin_memory();
-#endif
 
   // Get incoming error signal and convert matrix distribution if necessary
   if(m_next_layer != NULL) {
@@ -248,13 +253,16 @@ bool Layer::update() {
   return layer_done;
 }
 
-void Layer::summarize(lbann_summary& summarizer, int step) {
-  // TODO: implement summarizer functions for other matrix distributions
+void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
+  reset_counters();
+}
+
+void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
+  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
     "/activations/";
   summarizer.reduce_mean(prefix + "mean", *m_activations, step);
   summarizer.reduce_min(prefix + "min", *m_activations, step);
@@ -266,7 +274,6 @@ void Layer::summarize(lbann_summary& summarizer, int step) {
   summarizer.reduce_min(prefix + "min", *m_error_signal, step);
   summarizer.reduce_max(prefix + "max", *m_error_signal, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal, step);
-  reset_counters();
 }
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
@@ -275,7 +282,11 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
   m_next_layer = next_layer;
 
   setup_dims();
-  setup_data();  
+  setup_data();
+  if (m_using_gpus) {
+    setup_gpu();
+  }
+
 }
 
 void Layer::setup_dims() {
@@ -292,7 +303,7 @@ void Layer::setup_dims() {
 }
 
 void Layer::setup_data() {
-  // Initialize error signal matrix
+  // Initialize matrices
   if (m_num_neurons == 0) {
     throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
                           " num_neurons is 0");
@@ -302,9 +313,87 @@ void Layer::setup_data() {
                           " mini_batch_size is 0");
   }
   if (m_num_prev_neurons > 0) {
-    El::Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+    m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
   }
-  El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+  if (m_num_neurons > 0) {
+    m_activations->Resize(m_num_neurons, m_mini_batch_size);
+  }
+
+#ifdef __LIB_CUDNN
+  // Pin host memory if needed for GPU memory transfers
+  pin_data();
+#endif
+
+}
+
+void Layer::setup_gpu() {
+#ifndef __LIB_CUDNN
+  throw lbann_exception("Layer: cuDNN not detected");
+#else
+
+  // Throw error is data layout is not data parallel
+  // TODO: Design a more general interface
+  if(get_data_layout() != data_layout::DATA_PARALLEL) {
+    throw lbann_exception("Layer: GPUs are currently only supported for data parallel layers");
+  }
+  
+  // Split mini-batch amongst GPUs
+  const int num_gpus = m_cudnn->get_num_gpus();
+  const int num_processes = m_comm->get_procs_per_model();
+  const int local_mini_batch_size = (m_mini_batch_size + num_processes - 1) / num_processes;
+  m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+
+  // Initialize descriptors
+  CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_prev_neurons_cudnn_desc));
+  CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_neurons_cudnn_desc));
+
+  // Set input tensor descriptor
+  std::vector<int> input_dims = m_prev_neuron_dims;
+  input_dims.insert(input_dims.begin(), m_mini_batch_size_per_gpu);
+  std::vector<int> input_strides(input_dims.size());
+  input_strides[input_strides.size()-1]  = 1;
+  for(int i=input_strides.size()-2; i>=0; --i) {
+    input_strides[i] = input_strides[i+1] * input_dims[i+1];
+  }
+  CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_prev_neurons_cudnn_desc,
+                                         m_cudnn->get_cudnn_data_type(),
+                                         input_dims.size(),
+                                         input_dims.data(),
+                                         input_strides.data()));
+
+  // Set output tensor descriptor
+  std::vector<int> output_dims = m_neuron_dims;
+  output_dims.insert(output_dims.begin(), m_mini_batch_size_per_gpu);
+  std::vector<int> output_strides(output_dims.size());
+  output_strides[output_strides.size()-1]  = 1;
+  for(int i=output_strides.size()-2; i>=0; --i) {
+    output_strides[i] = output_strides[i+1] * output_dims[i+1];
+  }
+  CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_neurons_cudnn_desc,
+                                         m_cudnn->get_cudnn_data_type(),
+                                         output_dims.size(),
+                                         output_dims.data(),
+                                         output_strides.data()));
+
+  // Allocate GPU memory
+  m_cudnn->allocate_on_gpus(m_activations_d,
+                            m_num_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_error_signal_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+    m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                              m_num_prev_neurons,
+                              m_mini_batch_size_per_gpu);
+  }
+  if(m_prev_layer == NULL || !m_next_layer->using_gpus()) {
+    m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                              m_num_neurons,
+                              m_mini_batch_size_per_gpu);
+  }
+
+#endif
 }
 
 void Layer::check_setup() {}
@@ -366,19 +455,19 @@ void Layer::bp_set_std_matrix_view() {
 }
 
 #ifdef __LIB_CUDNN
-void Layer::fp_pin_memory() {
+void Layer::pin_data() {
 
-  // Pin input on host memory if needed for GPU memory transfers
+  // Pin fp input on host memory if needed for GPU memory transfers
   if(!m_fp_input_pinned) {
     bool pin_fp_input = false;
 
-    // Pin input if there is no input layer and this layer uses GPUs
+    // Pin fp input if there is no input layer and this layer uses GPUs
     if(m_prev_layer == NULL
        && m_using_gpus) {
       pin_fp_input = true;
     }
     
-    // Pin input if input layer does not use GPUs, this layer uses
+    // Pin fp input if input layer does not use GPUs, this layer uses
     // GPUs, and input layer has different distribution
     if(m_prev_layer != NULL
        && !m_prev_layer->m_using_gpus
@@ -391,20 +480,20 @@ void Layer::fp_pin_memory() {
       }
     }
 
-    // Pin input if needed
+    // Pin fp input if needed
     if(pin_fp_input) {
-      El::Zeros(*m_prev_activations, m_num_prev_neurons, m_mini_batch_size);
+      m_prev_activations->Resize(m_num_prev_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_activations);
       m_fp_input_pinned = true;
     }
 
   }
 
-  // Pin output on host memory if needed for GPU memory transfers
+  // Pin fp output on host memory if needed for GPU memory transfers
   if(!m_fp_output_pinned) {
     bool pin_fp_output = false;
 
-    // Pin output if this layer does not use GPUs, output layer uses
+    // Pin fp output if this layer does not use GPUs, output layer uses
     // GPUs, and output layer has same distribution
     if(!m_using_gpus
        && m_next_layer != NULL
@@ -417,7 +506,7 @@ void Layer::fp_pin_memory() {
       }
     }
 
-    // Pin output if this layer uses GPUs and output layer does not
+    // Pin fp output if this layer uses GPUs and output layer does not
     // use GPUs
     if(m_using_gpus
        && m_next_layer != NULL
@@ -425,7 +514,7 @@ void Layer::fp_pin_memory() {
       pin_fp_output = true;
     }
 
-    // Pin output if this layer uses GPUs and there is no output layer
+    // Pin fp output if this layer uses GPUs and there is no output layer
     if(m_using_gpus
        && m_next_layer == NULL) {
       pin_fp_output = true;
@@ -433,28 +522,24 @@ void Layer::fp_pin_memory() {
 
     // Pin output if needed
     if(pin_fp_output) {
-      El::Zeros(*m_activations, m_num_neurons, m_mini_batch_size);
+      m_activations->Resize(m_num_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_activations);
       m_fp_output_pinned = true;
     }
 
   }
 
-}
-
-void Layer::bp_pin_memory() {
-
-  // Pin input on host memory if needed for GPU memory transfers
+  // Pin bp input on host memory if needed for GPU memory transfers
   if(!m_bp_input_pinned) {
     bool pin_bp_input = false;
 
-    // Pin input if there is no input layer and this layer uses GPUs
+    // Pin bp input if there is no input layer and this layer uses GPUs
     if(m_next_layer == NULL
        && m_using_gpus) {
       pin_bp_input = true;
     }
     
-    // Pin input if input layer does not use GPUs, this layer uses
+    // Pin bp input if input layer does not use GPUs, this layer uses
     // GPUs, and input layer has different distribution
     if(m_next_layer != NULL
        && !m_next_layer->m_using_gpus
@@ -467,20 +552,20 @@ void Layer::bp_pin_memory() {
       }
     }
 
-    // Pin input if needed
+    // Pin bp input if needed
     if(pin_bp_input) {
-      El::Zeros(*m_prev_error_signal, m_num_neurons, m_mini_batch_size);
+      m_prev_error_signal->Resize(m_num_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_error_signal);
       m_bp_input_pinned = true;
     }
 
   }
 
-  // Pin output on host memory if needed for GPU memory transfers
+  // Pin bp output on host memory if needed for GPU memory transfers
   if(!m_bp_output_pinned) {
     bool pin_bp_output = false;
 
-    // Pin output if this layer does not use GPUs, output layer uses
+    // Pin bp output if this layer does not use GPUs, output layer uses
     // GPUs, and output layer has same distribution
     if(!m_using_gpus
        && m_prev_layer != NULL
@@ -493,7 +578,7 @@ void Layer::bp_pin_memory() {
       }
     }
 
-    // Pin output if this layer uses GPUs and output layer does not
+    // Pin bp output if this layer uses GPUs and output layer does not
     // use GPUs
     if(m_using_gpus
        && m_prev_layer != NULL
@@ -501,15 +586,15 @@ void Layer::bp_pin_memory() {
       pin_bp_output = true;
     }
 
-    // Pin output if this layer uses GPUs and there is no output layer
+    // Pin bp output if this layer uses GPUs and there is no output layer
     if(m_using_gpus
        && m_prev_layer == NULL) {
       pin_bp_output = true;
     }
 
-    // Pin output if needed
+    // Pin bp output if needed
     if(pin_bp_output) {
-      El::Zeros(*m_error_signal, m_num_prev_neurons, m_mini_batch_size);
+      m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
       m_cudnn->pin_matrix(*m_error_signal);
       m_bp_output_pinned = true;
     }

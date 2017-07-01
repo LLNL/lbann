@@ -27,8 +27,8 @@
 //                                in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_cv_augmenter.hpp"
-#include "lbann/utils/lbann_mild_exception.hpp"
+#include "lbann/data_readers/cv_augmenter.hpp"
+#include "lbann/utils/mild_exception.hpp"
 #include <ostream>
 //#include <iostream>
 

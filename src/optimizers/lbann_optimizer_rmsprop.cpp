@@ -26,8 +26,8 @@
 // lbann_optimizer_rmsprop .hpp .cpp - SGD with RMSprop
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_rmsprop.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/optimizers/optimizer_rmsprop.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -83,7 +83,7 @@ void rmsprop::setup(AbsDistMat *parameters) {
   default:
     throw lbann_exception("lbann_optimizer_rmsprop: invalid data layout");
   }
-  Zeros(*m_cache, m_height, m_width);
+  El::Zeros(*m_cache, m_height, m_width);
 }
 
 void rmsprop::update(const AbsDistMat *gradient) {

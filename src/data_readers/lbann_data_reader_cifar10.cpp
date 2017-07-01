@@ -26,7 +26,7 @@
 // lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_cifar10.hpp"
+#include "lbann/data_readers/data_reader_cifar10.hpp"
 
 using namespace std;
 using namespace El;
@@ -124,7 +124,7 @@ int lbann::cifar10_reader::fetch_data(Mat& X) {
   }
 
   int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(size_t{m_current_pos+current_batch_size},
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   for (int n = m_current_pos; n < end_pos; ++n) {
     int k = n - m_current_pos;

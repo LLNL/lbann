@@ -26,7 +26,7 @@
 // lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/lbann_callback_early_stopping.hpp"
+#include "lbann/callbacks/callback_early_stopping.hpp"
 
 namespace lbann {
 

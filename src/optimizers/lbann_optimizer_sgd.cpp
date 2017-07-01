@@ -26,8 +26,8 @@
 // lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/lbann_optimizer_sgd.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -102,7 +102,7 @@ void sgd::update(const AbsDistMat *gradient) {
 
   if(m_momentum == DataType(0)) {
     // Vanilla SGD
-    Axpy(-m_learning_rate, *gradient, *m_parameters);
+    El::Axpy(-m_learning_rate, *gradient, *m_parameters);
   } else {
 
     // Get local matrix data

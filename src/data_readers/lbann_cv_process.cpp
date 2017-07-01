@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "lbann/data_readers/lbann_cv_process.hpp"
+#include "lbann/data_readers/cv_process.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {

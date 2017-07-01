@@ -26,8 +26,8 @@
 // lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_data_reader_imagenet_single_cv.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 
 #include <fstream>
 using namespace std;
@@ -146,7 +146,7 @@ int lbann::imagenet_readerSingle_cv::fetch_data(Mat& X) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   int width, height;
   int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(size_t{m_current_pos+current_batch_size}, m_shuffled_indices.size());
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size), m_shuffled_indices.size());
 
   for (int n = m_current_pos; n < end_pos; ++n) {
     int k = n - m_current_pos;

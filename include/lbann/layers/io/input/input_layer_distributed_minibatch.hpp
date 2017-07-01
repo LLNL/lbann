@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -72,7 +72,7 @@ class input_layer_distributed_minibatch : public input_layer {
       io_layer::setup_data_readers_for_evaluation(0, this->m_mini_batch_size);
     }
 
-    El::Zeros(X_local, this->m_num_neurons, this->m_mini_batch_size);
+    X_local.Resize(this->m_num_neurons, this->m_mini_batch_size);
   }
 
  protected:
@@ -82,7 +82,6 @@ class input_layer_distributed_minibatch : public input_layer {
     int num_samples_in_batch = 0;
 
     if (this->m_comm->get_rank_in_model() == m_root) {
-      Zero(X_local);
       num_samples_in_batch = data_reader->fetch_data(X_local);
       bool data_valid = (num_samples_in_batch > 0);
       if(data_valid) {

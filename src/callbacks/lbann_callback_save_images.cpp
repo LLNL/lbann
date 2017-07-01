@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "lbann/callbacks/lbann_callback_save_images.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/callbacks/callback_save_images.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 
 namespace lbann {
 

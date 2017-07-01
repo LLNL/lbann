@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-#include "lbann/utils/lbann_quantizer.hpp"
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/quantizer.hpp"
+#include "lbann/utils/random.hpp"
 #include <cmath>
 #include <omp.h>
 

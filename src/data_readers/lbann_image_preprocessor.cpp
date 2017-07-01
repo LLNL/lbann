@@ -26,12 +26,12 @@
 // lbann_image_preprocessor.cpp - Preprocessing utilities for image inputs
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/lbann_image_preprocessor.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
+#include "lbann/data_readers/image_preprocessor.hpp"
+#include "lbann/data_readers/image_utils.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
-#include "lbann/utils/lbann_random.hpp"
-#include "lbann/utils/lbann_statistics.hpp"
-#include "lbann/utils/lbann_exception.hpp"
+#include "lbann/utils/random.hpp"
+#include "lbann/utils/statistics.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

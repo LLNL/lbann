@@ -33,8 +33,8 @@
 #include "lbann/lbann_base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/lbann_exception.hpp"
-#include "lbann/utils/lbann_im2col.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/im2col.hpp"
 
 namespace lbann {
 
@@ -57,10 +57,6 @@ class pooling_layer : public transform {
   int m_pool_size;
 
 #ifdef __LIB_CUDNN
-  /// Input tensor descriptor
-  cudnnTensorDescriptor_t m_input_desc;
-  /// Output tensor descriptor
-  cudnnTensorDescriptor_t m_output_desc;
   /// Pooling descriptor
   cudnnPoolingDescriptor_t m_pooling_desc;
 #endif // __LIB_CUDNN
@@ -93,22 +89,12 @@ class pooling_layer : public transform {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_input_desc = NULL;
-    m_output_desc = NULL;
     m_pooling_desc = NULL;
 
     // Initialize GPU memory if using GPU
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
-
-      // Get number of GPUs
-      const int num_gpus = this->m_cudnn->get_num_gpus();
-
-      // Get number of columns per GPU
-      const int num_processes = this->m_comm->get_procs_per_model();
-      const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
-      this->m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
     }
   #endif // __LIB_CUDNN
 
@@ -117,29 +103,9 @@ class pooling_layer : public transform {
   /// Destructor
   ~pooling_layer() {
   #ifdef __LIB_CUDNN
-    if(this->m_using_gpus) {
-
-      // Destroy cuDNN objects
-      if(m_input_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_input_desc));
-      }
-      if(m_output_desc) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_output_desc));
-      }
-      if(m_pooling_desc) {
-        CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
-      }
-
-      // Deallocate GPU memory
-      this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-      this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-      if(!this->m_prev_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_activations_d);
-      }
-      if(!this->m_next_layer->using_gpus()) {
-        this->m_cudnn->deallocate_on_gpus(this->m_prev_error_signal_d);
-      }
-
+    // Destroy cuDNN objects
+    if(m_pooling_desc) {
+      CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
     }
   #endif // __LIB_CUDNN
   }
@@ -169,41 +135,12 @@ class pooling_layer : public transform {
                                           std::multiplies<int>());
   }
 
-  void setup_data() {
-    transform::setup_data();
-    #ifdef __LIB_CUDNN
-    // Setup cuDNN objects
-    if(this->m_using_gpus) {
-      setup_gpu();
-    }
-    #endif // __LIB_CUDNN
-  }
-
   /// Initialize GPU objects
   void setup_gpu() {
+    transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
   #else
-
-    // Initialize descriptors
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_input_desc));
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_output_desc));
-    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_desc));
-
-    // Set input tensor descriptor
-    std::vector<int> input_dims = this->m_prev_neuron_dims;
-    input_dims.insert(input_dims.begin(),
-                      this->m_mini_batch_size_per_gpu);
-    std::vector<int> input_strides(input_dims.size());
-    input_strides[input_strides.size()-1]  = 1;
-    for(int i=input_strides.size()-2; i>=0; --i) {
-      input_strides[i] = input_strides[i+1] * input_dims[i+1];
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_input_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
-                                           input_dims.size(),
-                                           input_dims.data(),
-                                           input_strides.data()));
 
     // Set pooling descriptor
     cudnnPoolingMode_t cudnn_pool_mode;
@@ -217,6 +154,7 @@ class pooling_layer : public transform {
     default:
       throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
     }
+    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_desc));
     CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_desc,
                                             cudnn_pool_mode,
                                             CUDNN_PROPAGATE_NAN,
@@ -224,55 +162,6 @@ class pooling_layer : public transform {
                                             m_pool_dims.data(),
                                             m_pool_pads.data(),
                                             m_pool_strides.data()));
-
-    // Set output tensor descriptor
-    std::vector<int> output_dims;
-  #ifdef LBANN_DEBUG
-    output_dims.resize(this->m_num_prev_neuron_dims+1);
-    CHECK_CUDNN(cudnnGetPoolingNdForwardOutputDim(m_pooling_desc,
-                                                  m_input_desc,
-                                                  output_dims.size(),
-                                                  output_dims.data()));
-    if(output_dims[0] != this->m_mini_batch_size_per_gpu) {
-      throw lbann_exception("lbann_layer_pooling: invalid output dimensions");
-    }
-    for(int i=0; i<this->m_num_prev_neuron_dims; ++i) {
-      if(output_dims[i+1] != this->m_neuron_dims[i]) {
-        throw lbann_exception("lbann_layer_pooling: invalid output dimensions");
-      }
-    }
-  #else
-    output_dims = this->m_neuron_dims;
-    output_dims.insert(output_dims.begin(), this->m_mini_batch_size_per_gpu);
-  #endif // #ifdef LBANN_DEBUG
-    std::vector<int> output_strides(output_dims.size());
-    output_strides[output_strides.size()-1]  = 1;
-    for(int i=output_strides.size()-2; i>=0; --i) {
-      output_strides[i] = output_strides[i+1] * output_dims[i+1];
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_output_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
-                                           output_dims.size(),
-                                           output_dims.data(),
-                                           output_strides.data()));
-
-    // Allocate GPU memory
-    this->m_cudnn->allocate_on_gpus(this->m_activations_d,
-                                    this->m_num_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    this->m_cudnn->allocate_on_gpus(this->m_error_signal_d,
-                                    this->m_num_prev_neurons,
-                                    this->m_mini_batch_size_per_gpu);
-    if(!this->m_prev_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_activations_d,
-                                      this->m_num_prev_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
-    if(!this->m_next_layer->using_gpus()) {
-      this->m_cudnn->allocate_on_gpus(this->m_prev_error_signal_d,
-                                      this->m_num_neurons,
-                                      this->m_mini_batch_size_per_gpu);
-    }
 
   #endif // #ifndef __LIB_CUDNN
   }
@@ -316,10 +205,10 @@ class pooling_layer : public transform {
       CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(i),
                                       m_pooling_desc,
                                       &one,
-                                      m_input_desc,
+                                      this->m_prev_neurons_cudnn_desc,
                                       this->m_prev_activations_d[i],
                                       &zero,
-                                      m_output_desc,
+                                      this->m_neurons_cudnn_desc,
                                       this->m_activations_d[i]));
     }
 
@@ -327,7 +216,7 @@ class pooling_layer : public transform {
   }
 
   /// Pooling backward propagation with cuDNN
-  void bp_compute_cudnn() {
+  void bp_compute_cudnn() {    
   #ifndef __LIB_CUDNN
     throw lbann_exception("pooling_layer: cuDNN not detected");
   #else
@@ -347,14 +236,14 @@ class pooling_layer : public transform {
       CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(i),
                                        m_pooling_desc,
                                        &one,
-                                       m_output_desc,
+                                       this->m_neurons_cudnn_desc,
                                        this->m_activations_d[i],
-                                       m_output_desc,
+                                       this->m_neurons_cudnn_desc,
                                        this->m_prev_error_signal_d[i],
-                                       m_input_desc,
+                                       this->m_prev_neurons_cudnn_desc,
                                        this->m_prev_activations_d[i],
                                        &zero,
-                                       m_input_desc,
+                                       this->m_prev_neurons_cudnn_desc,
                                        this->m_error_signal_d[i]));
     }
 

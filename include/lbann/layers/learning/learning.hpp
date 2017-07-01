@@ -107,9 +107,9 @@ class learning : public Layer {
     }
   }
 
-  virtual void summarize(lbann_summary& summarizer, int step) {
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) {
+    Layer::summarize_matrices(summarizer, step);
     std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
-    // TODO: implement summarizer functions for other matrix distributions
     const ElMat& wb = get_weights_biases();
     summarizer.reduce_mean(prefix + "mean", wb, step);
     summarizer.reduce_min(prefix + "min", wb, step);
@@ -121,9 +121,6 @@ class learning : public Layer {
     summarizer.reduce_min(prefix + "min", wb_d, step);
     summarizer.reduce_max(prefix + "max", wb_d, step);
     summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
-
-    // Call parent summarizer after local results are summarized
-    Layer::summarize(summarizer, step);
   }
 
   /** Validate that the setup is reasonable. */
