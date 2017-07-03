@@ -29,8 +29,8 @@
 #ifndef LBANN_LAYER_HPP_INCLUDED
 #define LBANN_LAYER_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/optimizers/optimizer_sgd.hpp"

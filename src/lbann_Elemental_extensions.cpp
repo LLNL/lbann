@@ -28,7 +28,7 @@
 
 #include "El.hpp"
 
-#include "lbann/lbann_Elemental_extensions.hpp"
+#include "lbann/Elemental_extensions.hpp"
 
 namespace El {
 

@@ -34,7 +34,7 @@
 #else
 #error OpenCV required
 #endif
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 
 namespace lbann {
 

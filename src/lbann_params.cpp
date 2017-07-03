@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/lbann_params.hpp"
+#include "lbann/params.hpp"
 
 using namespace std;
 using namespace El;

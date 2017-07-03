@@ -29,8 +29,8 @@
 #ifndef LBANN_MODEL_HPP
 #define LBANN_MODEL_HPP
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/io/file_io.hpp"

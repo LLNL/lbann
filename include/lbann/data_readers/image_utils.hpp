@@ -29,7 +29,7 @@
 #ifndef LBANN_IMAGE_UTILS_HPP
 #define LBANN_IMAGE_UTILS_HPP
 
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 #include <type_traits>
 #include <typeinfo>   // operator typeid
 

@@ -28,7 +28,7 @@
 #define LBANN_PARAMS_HPP_INCLUDED
 
 #include "lbann/lbann.hpp"
-#include "lbann_base.hpp"
+#include "base.hpp"
 #include <string>
 
 namespace lbann {

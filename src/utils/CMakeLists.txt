@@ -5,4 +5,5 @@ add_sources(
   lbann_statistics.cpp
   lbann_im2col.cpp
   cudnn_wrapper.cpp
+  options.cpp
 )

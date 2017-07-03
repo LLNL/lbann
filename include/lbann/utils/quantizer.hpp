@@ -31,8 +31,8 @@
 
 #include <unordered_map>
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include <omp.h>

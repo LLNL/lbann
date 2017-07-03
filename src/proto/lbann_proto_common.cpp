@@ -1,8 +1,8 @@
 #include "lbann/proto/proto_common.hpp"
 
 #include "lbann/lbann.hpp"
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>

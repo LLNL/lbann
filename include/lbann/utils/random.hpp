@@ -27,8 +27,8 @@
 #ifndef LBANN_UTILS_RNG_HPP
 #define LBANN_UTILS_RNG_HPP
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include <random>
 
 namespace lbann {

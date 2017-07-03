@@ -27,8 +27,8 @@
 #ifndef LBANN_OBJECTIVE_FN_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FN_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/layers/layer.hpp"
 

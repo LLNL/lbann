@@ -29,8 +29,8 @@
 #ifndef LBANN_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 #define LBANN_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {

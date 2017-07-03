@@ -30,8 +30,8 @@
 #define CUDNN_WRAPPER_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 
 #ifdef __LIB_CUDNN

@@ -29,8 +29,8 @@
 #ifndef LBANN_OPTIMIZER_HPP
 #define LBANN_OPTIMIZER_HPP
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include <string>
 
 namespace lbann {

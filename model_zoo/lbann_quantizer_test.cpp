@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
-#include "lbann/lbann_comm.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/quantizer.hpp"
 #include "lbann_test_utils.hpp"
 

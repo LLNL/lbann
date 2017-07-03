@@ -29,7 +29,7 @@
 #ifndef LBANN_PERSIST_H
 #define LBANN_PERSIST_H
 
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 #include "El.hpp"
 
 namespace lbann {

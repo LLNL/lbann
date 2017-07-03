@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
-#include "lbann/lbann_comm.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann_test_utils.hpp"
 

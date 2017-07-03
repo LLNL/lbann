@@ -26,7 +26,7 @@
 // lbann_comm .hpp .cpp - LBANN communication utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/lbann_comm.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "mpi.h"

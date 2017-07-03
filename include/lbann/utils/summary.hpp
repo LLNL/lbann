@@ -31,8 +31,8 @@
 
 #include <string>
 #include <vector>
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 
 #ifdef __HAVE_TBINF
 #include "TBinf.hpp"

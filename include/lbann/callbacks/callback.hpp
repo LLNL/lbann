@@ -29,7 +29,7 @@
 #ifndef __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"

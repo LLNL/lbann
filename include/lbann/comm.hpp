@@ -31,7 +31,7 @@
 
 #include <vector>
 #include <unordered_map>
-#include "lbann_base.hpp"
+#include "base.hpp"
 using namespace El;
 
 namespace lbann {

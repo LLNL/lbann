@@ -32,7 +32,7 @@
 
 #include <vector>
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"

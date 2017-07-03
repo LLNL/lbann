@@ -27,8 +27,8 @@
 #ifndef LBANN_METRIC_HPP
 #define LBANN_METRIC_HPP
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

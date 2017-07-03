@@ -27,7 +27,7 @@
 #ifndef LBANN_UTILS_STATISTICS_HPP
 #define LBANN_UTILS_STATISTICS_HPP
 
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 
 namespace lbann {
 

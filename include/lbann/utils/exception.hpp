@@ -29,8 +29,8 @@
 #ifndef LBANN_EXCEPTION_HPP_INCLUDED
 #define LBANN_EXCEPTION_HPP_INCLUDED
 
-#include "lbann/lbann_base.hpp"
-#include "lbann/lbann_comm.hpp"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include <iostream>
 #include <exception>
 

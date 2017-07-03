@@ -30,7 +30,7 @@
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/lbann_base.hpp"
+#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
