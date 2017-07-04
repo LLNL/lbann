@@ -1,3 +1,3 @@
 add_sources(
-  lbann_metric.cpp
+  metric.cpp
 )

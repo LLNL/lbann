@@ -1,9 +1,9 @@
 add_sources(
-  lbann_quantizer.cpp
-  lbann_summary.cpp
-  lbann_random.cpp
-  lbann_statistics.cpp
-  lbann_im2col.cpp
+  quantizer.cpp
+  summary.cpp
+  random.cpp
+  statistics.cpp
+  im2col.cpp
   cudnn_wrapper.cpp
   options.cpp
 )

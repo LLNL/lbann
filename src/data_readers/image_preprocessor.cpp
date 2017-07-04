@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_image_preprocessor.cpp - Preprocessing utilities for image inputs
+// image_preprocessor.cpp - Preprocessing utilities for image inputs
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/image_preprocessor.hpp"

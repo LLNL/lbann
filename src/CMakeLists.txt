@@ -10,9 +10,9 @@ add_subdirectory(proto)
 add_subdirectory(metrics)
 
 add_sources(
-  lbann_Elemental_extensions.cpp 
-  lbann_base.cpp
-  lbann_params.cpp
-  lbann_comm.cpp
+  Elemental_extensions.cpp 
+  base.cpp
+  params.cpp
+  comm.cpp
 )
 

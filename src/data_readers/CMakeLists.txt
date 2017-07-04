@@ -1,23 +1,23 @@
 add_subdirectory(patchworks)
 
-add_sources(lbann_data_reader.cpp
-            lbann_data_reader_mnist.cpp
-            lbann_data_reader_imagenet.cpp
-            lbann_data_reader_imagenet_single.cpp
-            lbann_data_reader_imagenet_cv.cpp
-            lbann_data_reader_imagenet_single_cv.cpp
-            lbann_data_reader_nci.cpp
-            lbann_data_reader_nci_regression.cpp
-            lbann_data_reader_cifar10.cpp
-            lbann_image_utils.cpp
-            lbann_image_preprocessor.cpp
-            lbann_cv_augmenter.cpp
-            lbann_cv_colorizer.cpp
-            lbann_cv_normalizer.cpp
-            lbann_cv_process.cpp
-            lbann_cv_process_patches.cpp
-            lbann_cv_resizer.cpp
-            lbann_cv_utils.cpp
-            lbann_data_reader_cnpy.cpp
-            lbann_data_reader_synthetic.cpp
+add_sources(data_reader.cpp
+            data_reader_mnist.cpp
+            data_reader_imagenet.cpp
+            data_reader_imagenet_single.cpp
+            data_reader_imagenet_cv.cpp
+            data_reader_imagenet_single_cv.cpp
+            data_reader_nci.cpp
+            data_reader_nci_regression.cpp
+            data_reader_cifar10.cpp
+            image_utils.cpp
+            image_preprocessor.cpp
+            cv_augmenter.cpp
+            cv_colorizer.cpp
+            cv_normalizer.cpp
+            cv_process.cpp
+            cv_process_patches.cpp
+            cv_resizer.cpp
+            cv_utils.cpp
+            data_reader_cnpy.cpp
+            data_reader_synthetic.cpp
             )

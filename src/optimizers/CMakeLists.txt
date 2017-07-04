@@ -1,8 +1,8 @@
 add_sources(
-  lbann_optimizer.cpp
-  lbann_optimizer_sgd.cpp
-  lbann_optimizer_adagrad.cpp
-  lbann_optimizer_rmsprop.cpp
-  lbann_optimizer_adam.cpp
-  lbann_optimizer_hypergradient_adam.cpp
+  optimizer.cpp
+  optimizer_sgd.cpp
+  optimizer_adagrad.cpp
+  optimizer_rmsprop.cpp
+  optimizer_adam.cpp
+  optimizer_hypergradient_adam.cpp
 )

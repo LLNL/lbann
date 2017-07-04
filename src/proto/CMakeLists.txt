@@ -1,3 +1,3 @@
 add_sources(
-  lbann_proto_common.cpp
+  proto_common.cpp
 )
