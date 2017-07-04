@@ -50,8 +50,8 @@ class input_layer : public io_layer {
   }
 
   /** No setting the standard view of the matrix -- it defines the standard view */
-  void fp_set_std_matrix_view(void) {}
-  void bp_set_std_matrix_view(void) {}
+  void fp_set_std_matrix_view() {}
+  void bp_set_std_matrix_view() {}
 
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {

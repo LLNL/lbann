@@ -61,7 +61,7 @@ class learning : public Layer {
     : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
     }
 
-  virtual ~learning(void) {
+  virtual ~learning() {
     delete m_weights;
     delete m_weights_gradient;
   }
@@ -136,15 +136,15 @@ class learning : public Layer {
   }
 
   /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases(void) {
+  virtual ElMat& get_weights_biases() {
     return *m_weights;
   }
   /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient(void) {
+  virtual ElMat& get_weights_biases_gradient() {
     return *m_weights_gradient;
   }
   /** Return the layer's optimizer. */
-  virtual optimizer *get_optimizer(void) const {
+  virtual optimizer *get_optimizer() const {
     return m_optimizer;
   }
 
@@ -205,13 +205,13 @@ class learning : public Layer {
  protected:
 
   /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view(void) {
+  virtual void fp_set_std_matrix_view() {
     Layer::fp_set_std_matrix_view();
   }
 
 #if 0
   /** Setup views of the matrices for the layer's backward propagation. */
-  virtual void bp_set_std_matrix_view(void);
+  virtual void bp_set_std_matrix_view();
 #endif
 
 };

@@ -35,7 +35,7 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
-cv_augmenter::cv_augmenter(void)
+cv_augmenter::cv_augmenter()
   : cv_transform(),
     m_do_horizontal_flip(false),
     m_do_vertical_flip(false),
@@ -61,7 +61,7 @@ cv_augmenter::cv_augmenter(const cv_augmenter& rhs)
     m_trans(rhs.m_trans) {
 }
 
-cv_augmenter *cv_augmenter::clone(void) const {
+cv_augmenter *cv_augmenter::clone() const {
   return new cv_augmenter(*this);
 }
 
@@ -84,7 +84,7 @@ cv_augmenter& cv_augmenter::operator=(const cv_augmenter& rhs) {
 }
 
 
-bool cv_augmenter::check_to_enable(void) const {
+bool cv_augmenter::check_to_enable() const {
   bool enable = m_do_horizontal_flip || m_do_vertical_flip ||
                 (m_horizontal_shift_range != 0.0f) ||
                 (m_vertical_shift_range != 0.0f) ||
@@ -109,7 +109,7 @@ void cv_augmenter::set(const bool hflip, const bool vflip, const float rot,
 }
 
 
-void cv_augmenter::reset(void) {
+void cv_augmenter::reset() {
   m_enabled = false;
   m_do_horizontal_flip = false;
   m_do_vertical_flip = false;

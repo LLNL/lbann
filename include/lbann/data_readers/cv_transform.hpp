@@ -39,7 +39,7 @@ class cv_transform {
  protected:
   bool m_enabled;
 
-  virtual bool check_to_enable(void) const {
+  virtual bool check_to_enable() const {
     return true;
   }
 
@@ -49,36 +49,36 @@ class cv_transform {
   static const float pi;
 
 
-  cv_transform(void) : m_enabled(false) {}
+  cv_transform() : m_enabled(false) {}
   cv_transform(const cv_transform& rhs);
   cv_transform& operator=(const cv_transform& rhs);
-  virtual cv_transform *clone(void) const;
+  virtual cv_transform *clone() const;
 
-  virtual ~cv_transform(void) {}
+  virtual ~cv_transform() {}
 
   virtual bool determine_transform(const cv::Mat& image) {
     m_enabled = check_to_enable();
     return m_enabled;
   }
 
-  virtual bool determine_inverse_transform(void) {
+  virtual bool determine_inverse_transform() {
     m_enabled = false;
     return false;
   }
 
   virtual bool apply(cv::Mat& image) = 0;
 
-  //virtual void set(void) {}
-  virtual void enable(void) {
+  //virtual void set() {}
+  virtual void enable() {
     m_enabled = true;
   }
-  virtual void disable(void) {
+  virtual void disable() {
     m_enabled = false;
   }
-  virtual void reset(void) {
+  virtual void reset() {
     m_enabled = false;
   }
-  virtual bool is_enabled(void) const {
+  virtual bool is_enabled() const {
     return m_enabled;
   }
 
@@ -100,7 +100,7 @@ inline bool cv_transform::apply(cv::Mat& image) {
   return true;
 }
 
-inline cv_transform *cv_transform::clone(void) const {
+inline cv_transform *cv_transform::clone() const {
   return static_cast<cv_transform *>(NULL);
 }
 

@@ -40,7 +40,7 @@ namespace lbann {
 class lbann_exception : public std::exception {
  public:
   lbann_exception(const std::string m="my custom exception"):msg(m) {}
-  ~lbann_exception(void) {}
+  ~lbann_exception() {}
   const char *what() {
     return msg.c_str();
   }

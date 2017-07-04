@@ -41,31 +41,31 @@ class data_reader_nci : public generic_data_reader {
   data_reader_nci(int batchSize);
   data_reader_nci(const data_reader_nci& source); //copy constructor
   data_reader_nci& operator=(const data_reader_nci& source); //assignment operator
-  ~data_reader_nci(void);
+  ~data_reader_nci();
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int get_num_labels(void) const {
+  int get_num_labels() const {
     return m_num_labels;  //@todo; check if used
   }
 
-  void load(void);
+  void load();
 
-  size_t get_num_samples(void) const {
+  size_t get_num_samples() const {
     return m_num_samples;
   }
-  size_t get_num_features(void) const {
+  size_t get_num_features() const {
     return m_num_features;
   }
   inline int map_label_2int(const std::string label);
 
-  int get_linearized_data_size(void) const {
+  int get_linearized_data_size() const {
     return m_num_features;
   }
-  int get_linearized_label_size(void) const {
+  int get_linearized_label_size() const {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims(void) const {
+  const std::vector<int> get_data_dims() const {
     return {static_cast<int>(m_num_features)};
   }
 

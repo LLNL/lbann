@@ -49,30 +49,30 @@ class data_reader_nci_regression : public generic_data_reader {
   data_reader_nci_regression(int batchSize, bool shuffle=true);
   //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
   //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
-  ~data_reader_nci_regression(void);
+  ~data_reader_nci_regression();
 
   int fetch_data(Mat& X);
   int fetch_response(Mat& Y);
-  int get_num_labels(void) const {
+  int get_num_labels() const {
     return m_num_responses;  //@todo; check if used
   }
 
-  void load(void);
+  void load();
 
-  size_t get_num_samples(void) const {
+  size_t get_num_samples() const {
     return m_num_samples;
   }
-  size_t get_num_features(void) const {
+  size_t get_num_features() const {
     return m_num_features;
   }
 
-  int get_linearized_data_size(void) const {
+  int get_linearized_data_size() const {
     return m_num_features;
   }
-  int get_linearized_response_size(void) const {
+  int get_linearized_response_size() const {
     return m_num_responses;
   }
-  const std::vector<int> get_data_dims(void) const {
+  const std::vector<int> get_data_dims() const {
     return {static_cast<int>(m_num_features)};
   }
 

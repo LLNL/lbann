@@ -230,7 +230,7 @@ void lbann::persist::open_checkpoint(const char *dir) {
   }
 }
 
-void lbann::persist::close_checkpoint(void) {
+void lbann::persist::close_checkpoint() {
   // close model file
   if (m_model_fd >= 0) {
     lbann::closewrite(m_model_fd, m_model_filename);
@@ -270,7 +270,7 @@ void lbann::persist::open_restart(const char *dir) {
   }
 }
 
-void lbann::persist::close_restart(void) {
+void lbann::persist::close_restart() {
   // close model file
   if (m_model_fd >= 0) {
     lbann::closeread(m_model_fd, m_model_filename);

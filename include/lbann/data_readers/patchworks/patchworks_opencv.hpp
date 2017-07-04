@@ -89,7 +89,7 @@ template<typename T, int NCh> struct cv_image_type {};
  */
 #define _def_cv_image_type(_B_, _S_, _T_, _C_) \
 template<> struct cv_image_type< _T_ , _C_ > \
-{ static int T(void) { return CV_ ## _B_ ## _S_ ## C ## _C_; } }
+{ static int T() { return CV_ ## _B_ ## _S_ ## C ## _C_; } }
 
 /// Define cv_image_type<_T_,*> for various number of channels
 #define _def_cv_image_type_B_U(_B_,_S_,_T_) \

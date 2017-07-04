@@ -38,7 +38,7 @@
 namespace lbann {
 namespace patchworks {
 
-void patch_descriptor::init(void) {
+void patch_descriptor::init() {
   m_width = 0u;
   m_height = 0u;
   m_gap = 0u;
@@ -69,7 +69,7 @@ bool patch_descriptor::set_sample_image(const unsigned int img_width, const unsi
   return set_sample_area(whole_image);
 }
 
-void patch_descriptor::define_patch_set(void) {
+void patch_descriptor::define_patch_set() {
   const int wdisp = m_width + m_gap;
   const int hdisp = m_height + m_gap;
   m_displacements.clear();

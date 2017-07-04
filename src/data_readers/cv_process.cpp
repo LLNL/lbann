@@ -73,7 +73,7 @@ cv_process& cv_process::operator=(const cv_process& rhs) {
 }
 
 
-void cv_process::disable_transforms(void) {
+void cv_process::disable_transforms() {
   if (m_normalizer) {
     m_normalizer->disable();
   }

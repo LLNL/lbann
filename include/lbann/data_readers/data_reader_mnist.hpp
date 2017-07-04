@@ -37,30 +37,30 @@ class mnist_reader : public generic_data_reader {
  public:
   mnist_reader(int batchSize, bool shuffle);
   mnist_reader(int batchSize);
-  ~mnist_reader(void);
+  ~mnist_reader();
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  int get_num_labels(void) const {
+  int get_num_labels() const {
     return m_num_labels;
   }
 
   // MNIST-specific functions
-  void load(void);
+  void load();
 
-  int get_image_width(void) const {
+  int get_image_width() const {
     return m_image_width;
   }
-  int get_image_height(void) const {
+  int get_image_height() const {
     return m_image_height;
   }
-  int get_linearized_data_size(void) const {
+  int get_linearized_data_size() const {
     return m_image_width * m_image_height;
   }
-  int get_linearized_label_size(void) const {
+  int get_linearized_label_size() const {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims(void) const {
+  const std::vector<int> get_data_dims() const {
     return {1, m_image_height, m_image_width};
   }
 

@@ -250,25 +250,25 @@ class io_layer : public Layer {
     return linearized_label_size;
   }
 
-  long get_linearized_response_size(void) const {
+  long get_linearized_response_size() const {
     return static_cast<long>(1);
   }
 
 
-  long get_num_samples_trained(void) {
+  long get_num_samples_trained() {
     return m_training_dataset.num_samples_processed;
   }
-  long get_num_samples_tested(void) {
+  long get_num_samples_tested() {
     return m_testing_dataset.num_samples_processed;
   }
-  long get_total_num_training_samples(void) {
+  long get_total_num_training_samples() {
     return m_training_dataset.total_samples;
   }
-  long get_total_num_testing_samples(void) {
+  long get_total_num_testing_samples() {
     return m_testing_dataset.total_samples;
   }
 
-  bool at_new_epoch(void) {
+  bool at_new_epoch() {
     return m_training_dataset.data_reader->at_new_epoch();
   }
 
@@ -350,7 +350,7 @@ class io_layer : public Layer {
     return true;
   }
 
-  bool is_for_regression(void) const {
+  bool is_for_regression() const {
     return m_for_regression;
   }
 };

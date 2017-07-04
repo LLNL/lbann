@@ -36,7 +36,7 @@ namespace lbann {
 class TrainingParams {
  public:
   /// Constructor
-  TrainingParams(void);
+  TrainingParams();
   /// Parse command-line arguments
   void parse_params();
 
@@ -137,7 +137,7 @@ class PerformanceParams {
 
  public:
   /// Constructor
-  PerformanceParams(void);
+  PerformanceParams();
   /// Parse command-line arguments
   void parse_params();
 
@@ -153,13 +153,13 @@ class NetworkParams {
 
  public:
   /// Constructor
-  NetworkParams(void);
+  NetworkParams();
   /// Parse command-line arguments
-  void parse_params(void);
+  void parse_params();
 
  private:
   /// Parse network string
-  void parse_network_string(void);
+  void parse_network_string();
 
  public:
   /// String specifying the hidden layers of the topology
@@ -172,9 +172,9 @@ class NetworkParams {
 class SystemParams {
  public:
   /// Constructor
-  SystemParams(void);
+  SystemParams();
   /// Parse command-line arguments
-  void parse_params(void);
+  void parse_params();
 
  public:
   /// HPC hostname

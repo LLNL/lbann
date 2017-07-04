@@ -76,7 +76,7 @@ class cv_resizer : public cv_transform {
   virtual bool determine_zoom_ratio(const cv::Mat& image);
 
  public:
-  cv_resizer(void);
+  cv_resizer();
 
   /**
    * Set the parameters all at once
@@ -90,7 +90,7 @@ class cv_resizer : public cv_transform {
                    const std::pair<int, int>& roi = std::make_pair(0,0));
 
   /// Reset all the parameters to the default values
-  virtual void reset(void);
+  virtual void reset();
 
   /**
    * Construct an affine transformation matrix based on the options and random
@@ -107,7 +107,7 @@ class cv_resizer : public cv_transform {
   virtual bool apply(cv::Mat& image);
 
   /// The augmentation is nonreversible.
-  bool determine_inverse_transform(void) {
+  bool determine_inverse_transform() {
     return false;
   }
 

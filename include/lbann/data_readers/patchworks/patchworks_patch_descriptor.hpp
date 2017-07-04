@@ -77,11 +77,11 @@ class patch_descriptor {
   std::vector<ROI> m_positions;
 
  public:
-  patch_descriptor(void) {
+  patch_descriptor() {
     init();  ///< Default constructor
   }
   virtual ~patch_descriptor() {}
-  void init(void); ///< Initializer
+  void init(); ///< Initializer
 
   /// Set patch size
   void set_size(const int w, const int h);
@@ -113,20 +113,20 @@ class patch_descriptor {
   }
 
   /// A function that populates the list of displacements from the base patch to the next one
-  virtual void define_patch_set(void);
+  virtual void define_patch_set();
 
   /// transform each pixel by B = I - a'*a/(a*a') where a=[-1 2 -1] to mitigate chromatic aberration
-  bool is_to_correct_chromatic_aberration_at_pixel(void) const {
+  bool is_to_correct_chromatic_aberration_at_pixel() const {
     return (m_mode_chrom == 1);
   }
 
   /// randomly drop two channels to avoid chromatic aberration impact
-  bool is_to_drop_2channels(void) const {
+  bool is_to_drop_2channels() const {
     return (m_mode_chrom == 2);
   }
 
   /// Allow read-only access to the patch displacements
-  const std::vector<displacement_type>& get_displacements(void) const {
+  const std::vector<displacement_type>& get_displacements() const {
     return m_displacements;
   }
 
@@ -137,10 +137,10 @@ class patch_descriptor {
   /// extract all the patches defined
   virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
   /// return the id (vector index + 1) of the last patch generated
-  virtual unsigned int get_current_patch_idx(void) const { return m_cur_patch_idx; }
+  virtual unsigned int get_current_patch_idx() const { return m_cur_patch_idx; }
 
   /// Allow read-only access to the positions of the patches generated
-  const std::vector<ROI>& access_positions(void) const {
+  const std::vector<ROI>& access_positions() const {
     return m_positions;
   }
   /// print out the content of patch descriptor

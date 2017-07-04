@@ -34,7 +34,7 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
-cv_normalizer::cv_normalizer(void)
+cv_normalizer::cv_normalizer()
   : cv_transform(), m_mean_subtraction(false), m_unit_variance(false),
     m_unit_scale(true), m_z_score(false)
 {}
@@ -61,7 +61,7 @@ cv_normalizer& cv_normalizer::operator=(const cv_normalizer& rhs) {
 }
 
 
-cv_normalizer *cv_normalizer::clone(void) const {
+cv_normalizer *cv_normalizer::clone() const {
   return new cv_normalizer(*this);
 }
 
@@ -72,7 +72,7 @@ cv_normalizer::normalization_type& cv_normalizer::set_normalization_type(
 }
 
 
-bool cv_normalizer::check_to_enable(void) const {
+bool cv_normalizer::check_to_enable() const {
   return (m_mean_subtraction || m_unit_variance || m_unit_scale || m_z_score);
 }
 
@@ -87,7 +87,7 @@ void cv_normalizer::set(const bool meansub, const bool unitvar, const bool units
 }
 
 
-void cv_normalizer::reset(void) {
+void cv_normalizer::reset() {
   m_enabled = false;
   m_mean_subtraction = false;
   m_unit_variance = false;
@@ -240,7 +240,7 @@ void cv_normalizer::set_transform(const std::vector<channel_trans_t>& _trans) {
  * during copying from El::Matrix<DataType> data to a cv::Mat image while
  * avoiding reading the image twice.
  */
-bool cv_normalizer::determine_inverse_transform(void) {
+bool cv_normalizer::determine_inverse_transform() {
   m_enabled = false; // unless this method is successful, stays disabled
   const size_t NCh = m_trans.size();
   if (NCh == 0u) {

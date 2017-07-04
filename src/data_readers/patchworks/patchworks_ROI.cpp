@@ -41,14 +41,14 @@ namespace patchworks {
 const int ROI::undefined_coordinate = -1;
 
 /// Reset to the initial condition indicating to cover the whole image
-void ROI::init(void) {
+void ROI::init() {
   m_left = undefined_coordinate;
   m_top = undefined_coordinate;
   m_right = undefined_coordinate;
   m_bottom = undefined_coordinate;
 }
 
-bool ROI::is_undefined(void) const {
+bool ROI::is_undefined() const {
   return ((m_left == undefined_coordinate)  ||
           (m_top == undefined_coordinate)   ||
           (m_right == undefined_coordinate) ||
@@ -57,7 +57,7 @@ bool ROI::is_undefined(void) const {
 }
 
 /// Sanity check on a set of two coordinates that defines a region of interest
-bool ROI::is_valid(void) const {
+bool ROI::is_valid() const {
   return (!is_undefined() && (m_left < m_right) && (m_top < m_bottom));
 }
 

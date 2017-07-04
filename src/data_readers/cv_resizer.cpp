@@ -36,7 +36,7 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
-cv_resizer::cv_resizer(void)
+cv_resizer::cv_resizer()
   : cv_transform(), m_width(0u), m_height(0u), m_uniform_zoom(true),
     m_center(std::pair<float,float>(0.0f, 0.0f)),
     m_roi_sz(std::pair<int,int>(0,0)),
@@ -85,7 +85,7 @@ void cv_resizer::set(const unsigned int width, const unsigned int height, const 
 }
 
 
-void cv_resizer::reset(void) {
+void cv_resizer::reset() {
   m_width = 0u;
   m_height = 0u;
   m_uniform_zoom = true;

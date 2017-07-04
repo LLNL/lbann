@@ -37,35 +37,35 @@ class imagenet_reader : public generic_data_reader {
  public:
   imagenet_reader(int batchSize, bool shuffle = true);
   imagenet_reader(const imagenet_reader& source);
-  ~imagenet_reader(void);
+  ~imagenet_reader();
 
   virtual int fetch_data(Mat& X);
   virtual int fetch_label(Mat& Y);
 
-  int get_num_labels(void) const {
+  int get_num_labels() const {
     return m_num_labels;
   }
 
   // ImageNet specific functions
-  virtual void load(void);
-  void free(void);
+  virtual void load();
+  void free();
 
-  int get_image_width(void) const {
+  int get_image_width() const {
     return m_image_width;
   }
-  int get_image_height(void) const {
+  int get_image_height() const {
     return m_image_height;
   }
-  int get_image_num_channels(void) const {
+  int get_image_num_channels() const {
     return m_image_num_channels;
   }
-  int get_linearized_data_size(void) const {
+  int get_linearized_data_size() const {
     return m_image_width * m_image_height * m_image_num_channels;
   }
-  int get_linearized_label_size(void) const {
+  int get_linearized_label_size() const {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims(void) const {
+  const std::vector<int> get_data_dims() const {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 

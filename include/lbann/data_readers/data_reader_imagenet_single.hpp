@@ -37,13 +37,13 @@ class imagenet_readerSingle : public imagenet_reader {
  public:
   imagenet_readerSingle(int batchSize, bool shuffle = true);
   imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle(void);
+  ~imagenet_readerSingle();
 
   imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
-  void load(void);
+  void load();
 
  private:
   std::ifstream m_data_filestream;
@@ -52,7 +52,7 @@ class imagenet_readerSingle : public imagenet_reader {
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
   std::vector<unsigned char> m_pixels;
 
-  void open_data_stream(void);
+  void open_data_stream();
 };
 
 }  // namespace lbann

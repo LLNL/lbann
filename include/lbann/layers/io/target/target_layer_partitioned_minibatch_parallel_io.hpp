@@ -88,7 +88,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     m_num_data_per_epoch = 0;
   }
 
-  void fp_compute(void) {
+  void fp_compute() {
     int num_samples_in_batch = fetch_to_local_matrix(this->m_activations->Matrix());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
@@ -108,7 +108,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   }
 
 
-  void bp_compute(void) {
+  void bp_compute() {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer,
@@ -120,7 +120,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute(void) {
+  bool update_compute() {
     return is_data_set_processed();
   }
 
@@ -137,7 +137,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     return;
   }
 
-  bool update_data_reader(void) {
+  bool update_data_reader() {
     generic_data_reader *data_reader = target_layer::select_data_reader();
     if(this->m_shared_data_reader) {
       /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done

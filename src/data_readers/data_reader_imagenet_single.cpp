@@ -47,7 +47,7 @@ lbann::imagenet_readerSingle::imagenet_readerSingle(const imagenet_readerSingle&
 }
 
 
-lbann::imagenet_readerSingle::~imagenet_readerSingle(void) {
+lbann::imagenet_readerSingle::~imagenet_readerSingle() {
   m_data_filestream.close();
 }
 
@@ -77,7 +77,7 @@ int lbann::imagenet_readerSingle::fetch_label(Mat& Y) {
   return (n - m_current_pos);
 }
 
-void lbann::imagenet_readerSingle::load(void) {
+void lbann::imagenet_readerSingle::load() {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
 

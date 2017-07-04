@@ -29,7 +29,7 @@
 using namespace std;
 using namespace El;
 
-lbann::TrainingParams::TrainingParams(void)
+lbann::TrainingParams::TrainingParams()
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
     PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
     PercentageTestingSamples(1.00), TestWithTrainData(0),
@@ -46,7 +46,7 @@ lbann::TrainingParams::TrainingParams(void)
     ProcsPerModel(0) {
 }
 
-void lbann::TrainingParams::parse_params(void) {
+void lbann::TrainingParams::parse_params() {
 
   EnableProfiling = Input("--profiling", "Enable profiling", EnableProfiling);
 
@@ -98,23 +98,23 @@ void lbann::TrainingParams::parse_params(void) {
                         ProcsPerModel);
 }
 
-lbann::PerformanceParams::PerformanceParams(void) : BlockSize(256), MaxParIOSize(0) {}
+lbann::PerformanceParams::PerformanceParams() : BlockSize(256), MaxParIOSize(0) {}
 
-void lbann::PerformanceParams::parse_params(void) {
+void lbann::PerformanceParams::parse_params() {
   BlockSize = Input("--block-size", "libElemental Block Size", BlockSize);
   MaxParIOSize = Input("--par-IO", "Maximum parallel I/O size (0 - unlimited)", MaxParIOSize);
 }
 
-lbann::NetworkParams::NetworkParams(void) : NetworkStr("1000") {
+lbann::NetworkParams::NetworkParams() : NetworkStr("1000") {
   parse_network_string();
 }
 
-void lbann::NetworkParams::parse_params(void) {
+void lbann::NetworkParams::parse_params() {
   NetworkStr = Input("--network", "Specify the hidden layers of the topology", NetworkStr);
   parse_network_string();
 }
 
-void lbann::NetworkParams::parse_network_string(void) {
+void lbann::NetworkParams::parse_network_string() {
   Network.clear();
   const std::string delim = ",";
   size_t start = 0U;
@@ -127,10 +127,10 @@ void lbann::NetworkParams::parse_network_string(void) {
   Network.push_back(std::stoi(NetworkStr.substr(start, end), nullptr, 0));
 }
 
-lbann::SystemParams::SystemParams(void)
+lbann::SystemParams::SystemParams()
   : HostName("Unknwn"), NumNodes(-1), NumCores(-1), TasksPerNode(-1) {}
 
-void lbann::SystemParams::parse_params(void) {
+void lbann::SystemParams::parse_params() {
   HostName = Input("--hostname", "HPC hostname", HostName);
   NumNodes = Input("--num-nodes", "Total allocation size", NumNodes);
   NumCores = Input("--num-cores", "Number of cores per node", NumCores);

@@ -55,7 +55,7 @@ lbann::imagenet_reader::imagenet_reader(const imagenet_reader& source)
   memcpy(this->m_pixels, source.m_pixels, m_image_width * m_image_height * m_image_num_channels);
 }
 
-lbann::imagenet_reader::~imagenet_reader(void) {
+lbann::imagenet_reader::~imagenet_reader() {
   delete [] m_pixels;
 }
 
@@ -132,7 +132,7 @@ int lbann::imagenet_reader::fetch_label(Mat& Y) {
   return mb_size;
 }
 
-void lbann::imagenet_reader::load(void) {
+void lbann::imagenet_reader::load() {
   string imageDir = get_file_dir();
   string imageListFile = get_data_filename();
 
@@ -167,7 +167,7 @@ void lbann::imagenet_reader::load(void) {
   select_subset_of_data();
 }
 
-void lbann::imagenet_reader::free(void) {
+void lbann::imagenet_reader::free() {
   delete [] m_pixels;
 }
 

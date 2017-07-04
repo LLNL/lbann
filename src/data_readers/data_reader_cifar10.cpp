@@ -61,9 +61,9 @@ cifar10_reader& cifar10_reader::operator=(const cifar10_reader& source) {
   return (*this);
 }
 
-cifar10_reader::~cifar10_reader(void) { }
+cifar10_reader::~cifar10_reader() { }
 
-void cifar10_reader::load(void) {
+void cifar10_reader::load() {
   stringstream err;
 
   //open data file

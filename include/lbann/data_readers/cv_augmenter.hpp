@@ -71,20 +71,20 @@ class cv_augmenter : public cv_transform {
   cv::Mat_<float> m_trans;
 
   /// Check if there is a reason to enable. (i.e., any option set)
-  virtual bool check_to_enable(void) const;
+  virtual bool check_to_enable() const;
 
  public:
-  cv_augmenter(void);
+  cv_augmenter();
   cv_augmenter(const cv_augmenter& rhs);
   cv_augmenter& operator=(const cv_augmenter& rhs);
-  virtual cv_augmenter *clone(void) const;
+  virtual cv_augmenter *clone() const;
 
   /// Set the parameters all at once
   virtual void set(const bool hflip, const bool vflip, const float rot,
                    const float hshift, const float vshift, const float shear);
 
   /// Reset all the parameters to the default values
-  virtual void reset(void);
+  virtual void reset();
 
   /**
    * Construct an affine transformation matrix based on the options and random
@@ -101,7 +101,7 @@ class cv_augmenter : public cv_transform {
   virtual bool apply(cv::Mat& image);
 
   /// The augmentation is nonreversible.
-  bool determine_inverse_transform(void) {
+  bool determine_inverse_transform() {
     return false;
   }
 

@@ -91,7 +91,7 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
 
  protected:
   /** Handle forward propagation (arguments are unused). */
-  void fp_compute(void) {
+  void fp_compute() {
 
     int num_samples_in_batch = fetch_to_local_matrix(X_local);
     if(is_current_root()) {

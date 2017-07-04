@@ -66,7 +66,7 @@ class cv_process {
 
 
  public:
-  cv_process(void)
+  cv_process()
     : m_flip(cv_transform::_no_flip_), m_split(true) {}
 
   cv_process(const cv_process& rhs);
@@ -75,14 +75,14 @@ class cv_process {
   cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
     : m_flip(flip_code), m_split(tosplit) {}
 
-  virtual ~cv_process(void) {}
+  virtual ~cv_process() {}
 
   /// Check whether to flip
-  bool to_flip(void) const {
+  bool to_flip() const {
     return (m_flip != cv_transform::_no_flip_);
   }
   /// Tell how to flip
-  int how_to_flip(void) const {
+  int how_to_flip() const {
     return static_cast<int>(m_flip);
   }
   /**
@@ -93,26 +93,26 @@ class cv_process {
     m_flip = f;
   }
   /// Set to split channels
-  bool to_split(void) const {
+  bool to_split() const {
     return m_split;
   }
 
 
-  std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(void) const;
+  std::vector<cv_normalizer::channel_trans_t> get_transform_normalize() const;
   std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(const unsigned int ch) const;
 
-  void disable_normalizer(void) {
+  void disable_normalizer() {
     if (m_normalizer) {
       m_normalizer->disable();
     }
   }
-  void determine_inverse_normalization(void);
+  void determine_inverse_normalization();
   /**
    * Call this after preprocessing and image loading to deactivate all the transforms.
    * Then, selectively enable those which require inverse transforms by calling
    * determine_inverse_transform()
    */
-  void disable_transforms(void);
+  void disable_transforms();
 
   /// Set the normalization processor
   void set_normalizer(std::unique_ptr<cv_normalizer> np) {
@@ -136,65 +136,65 @@ class cv_process {
   }
 
   /// Check if the normalizer has been set
-  bool is_set_normalizer(void) const {
+  bool is_set_normalizer() const {
     return !!m_normalizer;
   }
   /// Check if the augmenter has been set
-  bool is_set_augmenter(void) const {
+  bool is_set_augmenter() const {
     return !!m_augmenter;
   }
   /// Check if the custom transform 1 has been set
-  bool is_set_custom_transform1(void) const {
+  bool is_set_custom_transform1() const {
     return !!m_transform1;
   }
   /// Check if the custom transform 2 has been set
-  bool is_set_custom_transform2(void) const {
+  bool is_set_custom_transform2() const {
     return !!m_transform2;
   }
   /// Check if the custom transform 3 has been set
-  bool is_set_custom_transform3(void) const {
+  bool is_set_custom_transform3() const {
     return !!m_transform3;
   }
 
   /// Allow read-only access to the normalization processor
-  const cv_normalizer *normalizer(void) const {
+  const cv_normalizer *normalizer() const {
     return m_normalizer.get();
   }
   /// Allow read-only access to the augmentation processor
-  const cv_augmenter *augmenter(void) const {
+  const cv_augmenter *augmenter() const {
     return m_augmenter.get();
   }
   /// Allow read-only access to the first custom transform
-  const cv_transform *custom_transform1(void) const {
+  const cv_transform *custom_transform1() const {
     return m_transform1.get();
   }
   /// Allow read-only access to the second custom transform
-  const cv_transform *custom_transform2(void) const {
+  const cv_transform *custom_transform2() const {
     return m_transform2.get();
   }
   /// Allow read-only access to the third custom transform
-  const cv_transform *custom_transform3(void) const {
+  const cv_transform *custom_transform3() const {
     return m_transform3.get();
   }
 
   /// Allow read-write access to the normalization processor
-  cv_normalizer *normalizer(void) {
+  cv_normalizer *normalizer() {
     return m_normalizer.get();
   }
   /// Allow read-write access to the augmentation processor
-  cv_augmenter *augmenter(void) {
+  cv_augmenter *augmenter() {
     return m_augmenter.get();
   }
   /// Allow read-write access to the first custom transform
-  cv_transform *custom_transform1(void) {
+  cv_transform *custom_transform1() {
     return m_transform1.get();
   }
   /// Allow read-write access to the second custom transform
-  cv_transform *custom_transform2(void) {
+  cv_transform *custom_transform2() {
     return m_transform2.get();
   }
   /// Allow read-write access to the third custom transform
-  cv_transform *custom_transform3(void) {
+  cv_transform *custom_transform3() {
     return m_transform3.get();
   }
 
@@ -209,7 +209,7 @@ class cv_process {
  * El::Matrix<DataType> to cv::Mat format. Otherwise, it will be done during
  * postprocessing after potentially inversing transform3.
  */
-inline void cv_process::determine_inverse_normalization(void) {
+inline void cv_process::determine_inverse_normalization() {
   if (!m_normalizer) {
     return;
   }
@@ -221,7 +221,7 @@ inline void cv_process::determine_inverse_normalization(void) {
   }
 }
 
-inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(void) const {
+inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize() const {
   return (m_normalizer? m_normalizer->transform() :
           std::vector<cv_normalizer::channel_trans_t>());
 }

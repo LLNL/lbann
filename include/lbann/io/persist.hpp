@@ -55,14 +55,14 @@ class persist {
   persist();
   ~persist() {};
 
-  int get_rank(void) {
+  int get_rank() {
     return m_rank;
   }
   void open_checkpoint(const char *dir);
-  void close_checkpoint(void);
+  void close_checkpoint();
 
   void open_restart(const char *dir);
-  void close_restart(void);
+  void close_restart();
 
   uint64_t get_bytes() {
     return m_bytes;

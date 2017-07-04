@@ -94,14 +94,14 @@ class cv_normalizer : public cv_transform {
   virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
 
   /// Check if there is a reason to enable. (i.e., any option set)
-  virtual bool check_to_enable(void) const;
+  virtual bool check_to_enable() const;
 
  public:
 
-  cv_normalizer(void);
+  cv_normalizer();
   cv_normalizer(const cv_normalizer& rhs);
   cv_normalizer& operator=(const cv_normalizer& rhs);
-  virtual cv_normalizer *clone(void) const;
+  virtual cv_normalizer *clone() const;
 
   /// Set the parameters all at once
   virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
@@ -124,10 +124,10 @@ class cv_normalizer : public cv_transform {
   }
 
   /// Reset all the paramters to the default values
-  virtual void reset(void);
+  virtual void reset();
 
   /// Returns the channel-wise scaling parameter for normalization transform
-  std::vector<channel_trans_t> transform(void) const {
+  std::vector<channel_trans_t> transform() const {
     return (m_enabled? m_trans : std::vector<channel_trans_t>());
   }
 
@@ -154,7 +154,7 @@ class cv_normalizer : public cv_transform {
    * If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  bool determine_inverse_transform(void);
+  bool determine_inverse_transform();
 
   // utilities
   template<class InputIterator, class OutputIterator>

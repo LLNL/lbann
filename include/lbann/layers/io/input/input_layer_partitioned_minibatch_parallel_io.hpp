@@ -86,7 +86,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
     m_num_data_per_epoch = 0;
   }
 
-  void fp_compute(void) {
+  void fp_compute() {
     //  generic_data_reader *data_reader = input_layer::select_data_reader();
     //int num_parallel_readers = get_num_parallel_readers();
 
@@ -103,7 +103,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute(void) {
+  bool update_compute() {
     return is_data_set_processed();
   }
 
@@ -117,12 +117,12 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
     return;
   }
 
-  bool update_data_reader(void) {
+  bool update_data_reader() {
     generic_data_reader *data_reader = input_layer::select_data_reader();
     return data_reader->update();
   }
 
-  execution_mode get_execution_mode(void) {
+  execution_mode get_execution_mode() {
     return this->m_execution_mode;
   }
 };

@@ -63,7 +63,7 @@ lbann::mnist_reader::mnist_reader(const mnist_reader& source)
 }
 */
 
-lbann::mnist_reader::~mnist_reader(void) {
+lbann::mnist_reader::~mnist_reader() {
   //this->free();
 }
 
@@ -138,7 +138,7 @@ int lbann::mnist_reader::fetch_label(Mat& Y) {
 
 //===================================================
 
-void lbann::mnist_reader::load(void) {
+void lbann::mnist_reader::load() {
   if (is_master()) {
     cerr << "starting lbann::mnist_reader::load\n";
   }

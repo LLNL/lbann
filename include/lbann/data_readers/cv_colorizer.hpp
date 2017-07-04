@@ -40,12 +40,12 @@ class cv_colorizer : public cv_transform {
   bool m_gray;
 
  public:
-  cv_colorizer(void) : cv_transform(), m_gray(false) {}
+  cv_colorizer() : cv_transform(), m_gray(false) {}
   cv_colorizer(const cv_colorizer& rhs);
   cv_colorizer& operator=(const cv_colorizer& rhs);
-  virtual cv_colorizer *clone(void) const;
+  virtual cv_colorizer *clone() const;
 
-  virtual ~cv_colorizer(void) {}
+  virtual ~cv_colorizer() {}
 
   /**
    * If a given image is in grayscale, the tranform is enabled, and not otherwise.
@@ -54,7 +54,7 @@ class cv_colorizer : public cv_transform {
   virtual bool determine_transform(const cv::Mat& image);
 
   /// convert back to color image if it used to be a grayscale image
-  virtual bool determine_inverse_transform(void);
+  virtual bool determine_inverse_transform();
 
   /**
    * Apply color conversion if enabled.
@@ -63,17 +63,17 @@ class cv_colorizer : public cv_transform {
    */
   virtual bool apply(cv::Mat& image);
 
-  virtual void enable(void) {
+  virtual void enable() {
     m_enabled = true;
   }
-  virtual void disable(void) {
+  virtual void disable() {
     m_enabled = false;
   }
-  virtual void reset(void) {
+  virtual void reset() {
     m_enabled = false;
     m_gray = false;
   }
-  virtual bool is_enabled(void) const {
+  virtual bool is_enabled() const {
     return m_enabled;
   }
 

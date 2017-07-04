@@ -113,10 +113,10 @@ class input_layer_distributed_minibatch : public input_layer {
     return !data_reader->update();
   }
 
-  Mat *get_local_mat(void) {
+  Mat *get_local_mat() {
     return &X_local;
   };
-  CircMat *get_dist_mat(void) {
+  CircMat *get_dist_mat() {
     return &Xs;
   };
 };

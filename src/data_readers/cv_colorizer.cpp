@@ -47,7 +47,7 @@ bool cv_colorizer::determine_transform(const cv::Mat& image) {
   return m_enabled;
 }
 
-bool cv_colorizer::determine_inverse_transform(void) {
+bool cv_colorizer::determine_inverse_transform() {
   m_enabled = m_gray;
   m_gray = false;
   return true;
@@ -73,7 +73,7 @@ bool cv_colorizer::apply(cv::Mat& image) {
   return true;
 }
 
-cv_colorizer *cv_colorizer::clone(void) const {
+cv_colorizer *cv_colorizer::clone() const {
   return (new cv_colorizer(*this));
 }
 

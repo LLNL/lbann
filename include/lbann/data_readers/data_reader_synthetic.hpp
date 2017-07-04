@@ -39,24 +39,24 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic(int batchSize, int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic& source); //copy constructor
   data_reader_synthetic& operator=(const data_reader_synthetic& source); //assignment operator
-  ~data_reader_synthetic(void);
+  ~data_reader_synthetic();
 
   int fetch_data(Mat& X);
 
-  void load(void);
+  void load();
 
-  int get_num_samples(void) const {
+  int get_num_samples() const {
     return m_num_samples;
   }
-  int get_num_features(void) const {
+  int get_num_features() const {
     return m_num_features;
   }
 
-  int get_linearized_data_size(void) const {
+  int get_linearized_data_size() const {
     return m_num_features;
   }
 
-  const std::vector<int> get_data_dims(void) const {
+  const std::vector<int> get_data_dims() const {
     return {m_num_features};
   }
 
