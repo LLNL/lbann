@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_nci.cpp - DNN application for NCI
+// dnn_nci.cpp - DNN application for NCI
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_nci_regression.hpp"

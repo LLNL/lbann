@@ -23,27 +23,33 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_cifar10.cpp - DNN application for cifar10
+// dnn_cifar10.cpp - DNN application for cifar10
 ////////////////////////////////////////////////////////////////////////////////
 
-//#include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
+using namespace std;
 using namespace lbann;
+using namespace El;
+
+
+// layer definition
+const std::vector<int> g_LayerDim = {784, 100, 30, 10};
+const int g_NumLayers = g_LayerDim.size(); // # layers
 
 const string g_cifar10_dir = "/p/lscratchf/brainusr/datasets/cifar10-bin/";
 const string g_cifar10_train = "data_all.bin";
 const string g_cifar10_test = "test_batch.bin";
+
+
 /// Main function
 int main(int argc, char *argv[]) {
-  lbann_comm *comm = initialize(argc, argv, 42);
-
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
+  // El initialization (similar to MPI_Init)
+  Initialize(argc, argv);
+  lbann_comm *comm = NULL;
 
   try {
 
@@ -63,11 +69,11 @@ int main(int argc, char *argv[]) {
 
     // Initialize parameter defaults
     TrainingParams trainParams;
+    //trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 20;
     trainParams.MBSize = 128;
     trainParams.LearnRate = 0.01;
-    //trainParams.DropOut = -1.0f;
-    trainParams.DropOut = 0.8;
+    trainParams.DropOut = -1.0f;
     trainParams.ProcsPerModel = 0;
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.1;
@@ -85,29 +91,36 @@ int main(int argc, char *argv[]) {
     SetBlocksize(perfParams.BlockSize);
 
     // Set up the communicator and get the grid.
-    comm->split_models(trainParams.ProcsPerModel);
+    comm = new lbann_comm(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      std::cout << "Number of models: " << comm->get_num_models() << std::endl;
-      std::cout << "Grid is " << grid.Height() << " x " << grid.Width() << std::endl;
-      std::cout << std::endl;
+      cout << "Number of models: " << comm->get_num_models() << endl;
+      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
+      cout << endl;
     }
+
+    // Initialize lbann with the communicator.
+    lbann::initialize(comm);
+    init_random(42);
+    init_data_seq_random(42);
+
 
     int parallel_io = perfParams.MaxParIOSize;
     if (parallel_io == 0) {
       if (comm->am_world_master()) {
-        std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-             " (Limited to # Processes)" << std::endl;
+        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+             " (Limited to # Processes)" << endl;
       }
       parallel_io = comm->get_procs_per_model();
     } else {
       if (comm->am_world_master()) {
-        std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
+        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
       }
     }
 
+
     ///////////////////////////////////////////////////////////////////
-    // load training data (CIFAR10)
+    // load training data
     ///////////////////////////////////////////////////////////////////
     if (comm->am_world_master()) {
       cout << endl << "USING cifar10_reader\n\n";
@@ -127,25 +140,23 @@ int main(int argc, char *argv[]) {
     cifar10_trainset.z_score(z_score);
 
     ///////////////////////////////////////////////////////////////////
-    // create a validation set from the unused training data (CIFAR10)
+    // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     cifar10_reader cifar10_validation_set(cifar10_trainset); // Clone the training set object
     cifar10_validation_set.set_role("validation");
     cifar10_validation_set.use_unused_index_set();
 
-    cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
     if (comm->am_world_master()) {
       size_t num_train = cifar10_trainset.getNumData();
       size_t num_validate = cifar10_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
       cout << "Training using " << train_percent << "% of the training data set, which is " << cifar10_trainset.getNumData() << " samples." << endl
            << "Validating training using " << validate_percent << "% of the training data set, which is " << cifar10_validation_set.getNumData() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
-    // load testing data (CIFAR10)
+    // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     cifar10_reader cifar10_testset(trainParams.MBSize, true);
     cifar10_testset.set_firstN(false);
@@ -176,77 +187,45 @@ int main(int argc, char *argv[]) {
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-      cout << "XX adagrad\n";
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-      cout << "XX rmsprop\n";
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
-      cout << "XX adam\n";
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
-      cout << "XX sgd\n";
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
-    dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
+    layer_factory *lfac = new layer_factory();
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    dnn.add_metric(new metrics::categorical_accuracy(data_layout::DATA_PARALLEL, comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
                                                            std::make_pair(execution_mode::validation, &cifar10_validation_set),
                                                            std::make_pair(execution_mode::testing, &cifar10_testset)
                                                           };
 
-
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
+    //first layer
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers);
     dnn.add(input_layer);
 
-    Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm, trainParams.MBSize,
-                       1000, 
-                       weight_initialization::glorot_uniform,
-                       optimizer_fac->create_optimizer());
-    dnn.add(encode1);
-    
+    //second layer
+    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize);
-    dnn.add(relu1);
+    //third layer
+    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 30, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
 
-    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout1);
+    //fourth layer
+    dnn.add("softmax", data_layout::MODEL_PARALLEL, 10, activation_type::ID, weight_initialization::glorot_uniform, {});
 
+    //fifth layer
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers, true);
+    dnn.add(target_layer);
 
-    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       4, comm, trainParams.MBSize,
-                       cifar10_trainset.get_linearized_data_size(),
-                       weight_initialization::glorot_uniform,
-                       optimizer_fac->create_optimizer());
-    dnn.add(decode1);
-    
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm,
-                                               trainParams.MBSize);
-    dnn.add(relu2);
-
-    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout2);
-
-
-    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
-                                                          optimizer_fac->create_optimizer(), 
-                                                          trainParams.MBSize, input_layer);
-    dnn.add(rcl);
-
-    
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
-
-    lbann_callback_dump_weights *dump_weights_cb = nullptr;
-    lbann_callback_dump_activations *dump_activations_cb = nullptr;
-    lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
+    lbann_callback_dump_weights *dump_weights_cb;
+    lbann_callback_dump_activations *dump_activations_cb;
+    lbann_callback_dump_gradients *dump_gradients_cb;
     if (trainParams.DumpWeights) {
       dump_weights_cb = new lbann_callback_dump_weights(
         trainParams.DumpDir);
@@ -264,10 +243,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (comm->am_world_master()) {
-      std::cout << "Parameter settings:" << std::endl;
-      std::cout << "\tMini-batch size: " << trainParams.MBSize << std::endl;
-      std::cout << "\tLearning rate: " << trainParams.LearnRate << std::endl << std::endl;
-      std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl;
+      cout << "Layer initialized:" << endl;
+      for (int n = 0; n < g_NumLayers; n++) {
+        cout << "\tLayer[" << n << "]: " << g_LayerDim[n] << endl;
+      }
+      cout << endl;
+    }
+
+    if (comm->am_world_master()) {
+      cout << "Parameter settings:" << endl;
+      cout << "\tMini-batch size: " << trainParams.MBSize << endl;
+      cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
+      cout << "\tEpoch count: " << trainParams.EpochCount << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -289,7 +276,6 @@ int main(int argc, char *argv[]) {
     // train/test
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
       dnn.train(1, true);
-      // testing
       dnn.evaluate(execution_mode::testing);
     }
 
@@ -307,13 +293,15 @@ int main(int argc, char *argv[]) {
       delete dump_gradients_cb;
     }
     delete optimizer_fac;
+    delete comm;
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   } catch (exception& e) {
     ReportException(e);  /// Elemental exceptions
   }
 
-  finalize(comm);
+  // free all resources by El and MPI
+  Finalize();
 
   return 0;
 }

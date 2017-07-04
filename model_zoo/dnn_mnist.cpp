@@ -23,37 +23,27 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_multi_mnist.cpp - DNN application for mnist with multiple, parallel models
+// dnn_mnist.cpp - DNN application for mnist
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/lbann.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/callbacks/callback_dump_weights.hpp"
+#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_gradients.hpp"
+#include "lbann/lbann.hpp"
 
 using namespace lbann;
 
-//#define PARTITIONED
-#if defined(PARTITIONED)
-#define DATA_LAYOUT data_layout::DATA_PARALLEL
-#else
-#define DATA_LAYOUT data_layout::MODEL_PARALLEL
-#endif
-
-void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index) {
-  std::vector<Layer *>& layers = model->get_layers();
-  prev_num_neurons = -1;
-  if(layers.size() != 0) {
-    Layer *prev_layer = layers.back();
-    prev_num_neurons = prev_layer->get_num_neurons();
-  }
-  cur_index = layers.size();
-}
-
-
+/// Main function
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
 
+#ifdef EL_USE_CUBLAS
+  El::GemmUseGPU(32,32,32);
+#endif
+
   try {
-    // Get data files.
+    // Get data files
     const string g_MNIST_TrainLabelFile = Input("--train-label-file",
                                           "MNIST training set label file",
                                           std::string("train-labels-idx1-ubyte"));
@@ -67,16 +57,28 @@ int main(int argc, char *argv[]) {
                                          "MNIST test set image file",
                                          std::string("t10k-images-idx3-ubyte"));
 
-    // Set up parameter defaults.
+    //determine if we're going to scale, subtract mean, etc;
+    //scaling/standardization is on a per-example basis (computed independantly
+    //for each image)
+    bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+    bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", false);
+    bool unit_variance = Input("--unit-variance", "standardize to unit-variance", false);
+
+    //if set to true, above three settings have no effect
+    bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
+
+    ///////////////////////////////////////////////////////////////////
+    // initalize grid, block
+    ///////////////////////////////////////////////////////////////////
+
+    // Initialize parameter defaults
     TrainingParams trainParams;
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 20;
-    trainParams.MBSize = 10;
-    trainParams.LearnRate = 0.0001;
+    trainParams.MBSize = 128;
+    trainParams.LearnRate = 0.01;
     trainParams.DropOut = -1.0f;
-    trainParams.ProcsPerModel = 12;  // Use one Catalyst node.
-    trainParams.IntermodelCommMethod = static_cast<int>(
-                                         lbann_callback_imcomm::NORMAL/*ADAPTIVE_THRESH_QUANTIZATION*/);
+    trainParams.ProcsPerModel = 0;
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.1;
     PerformanceParams perfParams;
@@ -89,19 +91,14 @@ int main(int argc, char *argv[]) {
     ProcessInput();
     PrintInputReport();
 
-    // set algorithmic blocksize
+    // Set algorithmic blocksize
     SetBlocksize(perfParams.BlockSize);
-    
-#ifdef EL_USE_CUBLAS
-    El::GemmUseGPU(512,512,512);
-#endif
-    
+
     // Set up the communicator and get the grid.
     comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
-      std::cout << "Number of models: " << comm->get_num_models() <<
-           " (" << comm->get_procs_per_model() << " procs per model)" << std::endl;
+      std::cout << "Number of models: " << comm->get_num_models() << std::endl;
       std::cout << "Grid is " << grid.Height() << " x " << grid.Width() << std::endl;
       std::cout << std::endl;
     }
@@ -121,14 +118,17 @@ int main(int argc, char *argv[]) {
 
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
-    ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_trainset(trainParams.MBSize);
+    mnist_reader mnist_trainset(trainParams.MBSize, true);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-    mnist_trainset.set_use_percent(trainParams.PercentageTrainingSamples);
     mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     mnist_trainset.load();
+
+    mnist_trainset.scale(scale);
+    mnist_trainset.subtract_mean(subtract_mean);
+    mnist_trainset.unit_variance(unit_variance);
+    mnist_trainset.z_score(z_score);
 
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
@@ -148,17 +148,20 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_testset(trainParams.MBSize);
+    mnist_reader mnist_testset(trainParams.MBSize, true);
     mnist_testset.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
     mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
     mnist_testset.load();
 
+    mnist_testset.scale(scale);
+    mnist_testset.subtract_mean(subtract_mean);
+    mnist_testset.unit_variance(unit_variance);
+    mnist_testset.z_score(z_score);
+
     if (comm->am_world_master()) {
-      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) <<
-           "% of the testing data set, which is " << mnist_testset.getNumData() <<
-           " samples." << std::endl;
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -169,164 +172,118 @@ int main(int argc, char *argv[]) {
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+      cout << "XX adagrad\n";
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+      cout << "XX rmsprop\n";
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+      cout << "XX adam\n";
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+      cout << "XX sgd\n";
     }
 
-    //layer_factory *lfac = new layer_factory();
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
-    metrics::categorical_accuracy<DATA_LAYOUT> acc(comm);
-    dnn.add_metric(&acc);
-    std::map<execution_mode, generic_data_reader *> data_readers = {
-      std::make_pair(execution_mode::training,&mnist_trainset),
-      std::make_pair(execution_mode::validation, &mnist_validation_set),
-      std::make_pair(execution_mode::testing, &mnist_testset)
-    };
-    //input_layer *input_layer = new input_layer_distributed_minibatch(comm, trainParams.MBSize, data_readers);
-#ifdef PARTITIONED
-    Layer *input_layer = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
-#else
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers);
-#endif
+    // Initialize network
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm),optimizer_fac);
+    dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
+                                                           std::make_pair(execution_mode::validation, &mnist_validation_set),
+                                                           std::make_pair(execution_mode::testing, &mnist_testset)
+                                                          };
+
+
+    //first layer
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
-    int prev_num_neurons;
-    int layer_id;
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    int fcidx1 = layer_id;
-    Layer *fc1 = new fully_connected_layer<DATA_LAYOUT>(
-       layer_id,
-       comm,
-       trainParams.MBSize,
-       1024,
-       weight_initialization::glorot_uniform,
-       dnn.create_optimizer());
+    //second layer
+    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    1,
+                    comm, 
+                    trainParams.MBSize,
+                    100,
+                    weight_initialization::glorot_uniform, 
+                    optimizer_fac->create_optimizer());
     dnn.add(fc1);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu1 = new relu_layer<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
+                                               trainParams.MBSize);
     dnn.add(relu1);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout1 = new dropout<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize,
-      trainParams.DropOut);
+    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
     dnn.add(dropout1);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    int fcidx2 = layer_id;
-    Layer *fc2 = new fully_connected_layer<DATA_LAYOUT>(
-       layer_id,
-       comm,
-       trainParams.MBSize,
-       1024,
-       weight_initialization::glorot_uniform,
-       dnn.create_optimizer());
+    //third layer 
+    Layer *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    4,
+                    comm, 
+                    trainParams.MBSize,
+                    30, 
+                    weight_initialization::glorot_uniform, 
+                    optimizer_fac->create_optimizer());
     dnn.add(fc2);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu2 = new relu_layer<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize);
+    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(5, comm,
+                                               trainParams.MBSize);
     dnn.add(relu2);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout2 = new dropout<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize,
-      trainParams.DropOut);
+    // trainParams.ActivationType,
+    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
     dnn.add(dropout2);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    int fcidx3 = layer_id;
-    Layer *fc3 = new fully_connected_layer<DATA_LAYOUT>(
-       layer_id,
-       comm,
-       trainParams.MBSize,
-       1024,
-       weight_initialization::glorot_uniform,
-       dnn.create_optimizer());
+    Layer *fc3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                    7,
+                    comm, 
+                    trainParams.MBSize,
+                    10, 
+                    weight_initialization::glorot_uniform,
+                    optimizer_fac->create_optimizer(),
+                                                        false);
     dnn.add(fc3);
+    
+    //fourth layer
+    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
+      8,
+      trainParams.MBSize, 
+      comm, optimizer_fac->create_optimizer()
+    );
+    dnn.add(sl);
 
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *relu3 = new relu_layer<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize);
-    dnn.add(relu3);
-
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *dropout3 = new dropout<DATA_LAYOUT>(
-      layer_id,
-      comm,
-      trainParams.MBSize,
-      trainParams.DropOut);
-    dnn.add(dropout3);
-
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id); 
-    int fcidx4 = layer_id;
-    Layer *fc4 = new fully_connected_layer<DATA_LAYOUT>(
-       layer_id,
-       comm,
-       trainParams.MBSize,
-       10,
-       weight_initialization::glorot_uniform,
-       dnn.create_optimizer(),
-       false);
-    dnn.add(fc4);
-
-    get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
-    Layer *softmax = new softmax_layer<DATA_LAYOUT>(
-       layer_id,
-       trainParams.MBSize,
-       comm,
-       dnn.create_optimizer());
-    dnn.add(softmax);
-
-#ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
-#else
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
-#endif
+    //fifth layer
+    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
     dnn.add(target_layer);
 
-    lbann_summary summarizer(trainParams.SummaryDir, comm);
-    // Print out information for each epoch.
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
-    // Record training time information.
-    lbann_callback_timer timer_cb(&summarizer);
-    dnn.add_callback(&timer_cb);
-    // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer);
-    dnn.add_callback(&summary_cb);
-    // Do global inter-model updates.
-    lbann_callback_imcomm imcomm_cb(
-      static_cast<lbann_callback_imcomm::comm_type>(
-        trainParams.IntermodelCommMethod),
-      {static_cast<unsigned>(fcidx1), static_cast<unsigned>(fcidx2),
-            static_cast<unsigned>(fcidx3), static_cast<unsigned>(fcidx4)},
-      &summarizer);
-    dnn.add_callback(&imcomm_cb);
-    lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
-    dnn.add_callback(&lrsched);
-    // lbann_callback_io io_cb({0,4}); // Monitor layers 0 and 4
+    lbann_callback_dump_weights *dump_weights_cb = nullptr;
+    lbann_callback_dump_activations *dump_activations_cb = nullptr;
+    lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
+    if (trainParams.DumpWeights) {
+      dump_weights_cb = new lbann_callback_dump_weights(
+        trainParams.DumpDir);
+      dnn.add_callback(dump_weights_cb);
+    }
+    if (trainParams.DumpActivations) {
+      dump_activations_cb = new lbann_callback_dump_activations(
+        trainParams.DumpDir);
+      dnn.add_callback(dump_activations_cb);
+    }
+    if (trainParams.DumpGradients) {
+      dump_gradients_cb = new lbann_callback_dump_gradients(
+        trainParams.DumpDir);
+      dnn.add_callback(dump_gradients_cb);
+    }
+    // lbann_callback_io io_cb({0,3});
     // dnn.add_callback(&io_cb);
-    lbann_callback_debug debug_cb(execution_mode::training);
-    //dnn.add_callback(&debug_cb);
-    //lbann_callback_early_stopping stopping_cb(1);
-    //dnn.add_callback(&stopping_cb);
+    //lbann_callback_io io_cb({0,3});
+    //        dnn.add_callback(&io_cb);
+    //lbann_callback_debug debug_cb(execution_mode::testing);
+    //        dnn.add_callback(&debug_cb);
 
     if (comm->am_world_master()) {
       std::cout << "Parameter settings:" << std::endl;
@@ -335,8 +292,6 @@ int main(int argc, char *argv[]) {
       std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl;
     }
 
-    comm->global_barrier();
-
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
@@ -344,20 +299,40 @@ int main(int argc, char *argv[]) {
     // Initialize the model's data structures
     dnn.setup();
 
-    // Reinitialize the RNG differently for each rank.
-    init_random(comm->get_rank_in_world() + 1);
+    // set checkpoint directory and checkpoint interval
+    dnn.set_checkpoint_dir(trainParams.ParameterDir);
+    dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
+    dnn.set_checkpoint_steps(trainParams.CkptSteps);
+    dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
-    comm->global_barrier();
+    // restart model from checkpoint if we have one
+    dnn.restartShared();
 
     // train/test
-    for (int t = 0; t < trainParams.EpochCount; t++) {
+    while (dnn.get_cur_epoch() < trainParams.EpochCount) {
       dnn.train(1, true);
-      dnn.evaluate();
+      // testing
+      dnn.evaluate(execution_mode::testing);
     }
+
+    // Free dynamically allocated memory
+    // delete target_layer;  // Causes segfault
+    // delete input_layer;  // Causes segfault
+    // delete lfac;  // Causes segfault
+    if (trainParams.DumpWeights) {
+      delete dump_weights_cb;
+    }
+    if (trainParams.DumpActivations) {
+      delete dump_activations_cb;
+    }
+    if (trainParams.DumpGradients) {
+      delete dump_gradients_cb;
+    }
+    delete optimizer_fac;
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   } catch (exception& e) {
-    ReportException(e);
+    ReportException(e);  /// Elemental exceptions
   }
 
   finalize(comm);

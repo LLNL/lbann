@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_quantizer_bm.cpp - Benchmark's LBANN's quantizer
+// quantizer_bm.cpp - Benchmark's LBANN's quantizer
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"

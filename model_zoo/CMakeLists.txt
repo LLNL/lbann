@@ -1,9 +1,9 @@
-# Add a parallel test (MPI)
+#Add a parallel test (MPI)
 function(add_mpi_ctest TEST_NAME)
 
   # Add test executable
-  set(TEST_SOURCE lbann_${TEST_NAME}.cpp)
-  set(TEST_EXE lbann_${TEST_NAME})
+  set(TEST_SOURCE ${TEST_NAME}.cpp)
+  set(TEST_EXE ${TEST_NAME})
   add_executable(${TEST_EXE} ${TEST_SOURCE})
 
   # Include header files and link libraries

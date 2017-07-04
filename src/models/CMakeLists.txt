@@ -1,6 +1,6 @@
 add_sources(
-  lbann_model.cpp
-  lbann_model_sequential.cpp
-  lbann_model_dnn.cpp
-  lbann_model_greedy_layerwise_autoencoder.cpp
+  model.cpp
+  model_sequential.cpp
+  model_dnn.cpp
+  model_greedy_layerwise_autoencoder.cpp
 )

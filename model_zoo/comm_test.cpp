@@ -23,12 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_comm_test.cpp - Tests lbann_comm
+// comm_test.cpp - Tests lbann_comm
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
 #include "lbann/comm.hpp"
-#include "lbann_test_utils.hpp"
+#include "test_utils.hpp"
 
 using namespace lbann;
 

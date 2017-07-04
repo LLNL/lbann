@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_mnist.cpp - DNN application for mnist
+// dnn_mnist.cpp - DNN application for mnist
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"

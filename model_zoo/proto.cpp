@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_proto.cpp - prototext application
+// proto.cpp - prototext application
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"

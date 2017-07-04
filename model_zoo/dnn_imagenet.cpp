@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_imagenet.cpp - DNN application for image-net classification
+// dnn_imagenet.cpp - DNN application for image-net classification
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"

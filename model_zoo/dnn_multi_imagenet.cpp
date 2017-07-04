@@ -23,13 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_multi_imagenet.cpp - DNN application for ImageNet with multiple models
+// dnn_multi_imagenet.cpp - DNN application for ImageNet with multiple models
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
 #include "lbann/regularization/lbann_dropout.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_readers/data_reader_imagenet_cv.hpp"
 
 #include <time.h>
 #ifdef _WIN32
@@ -129,36 +128,25 @@ int main(int argc, char *argv[]) {
     }
     parallel_io = 1;
 
-    // set up the normalizer
-    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-    normalizer->unit_scale(scale);
-    normalizer->subtract_mean(subtract_mean);
-    normalizer->unit_variance(unit_variance);
-    normalizer->z_score(z_score);
-
-    // set up a custom transform (colorizer)
-    std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-
-    // set up the image preprocessor
-    std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
-    pp->set_normalizer(std::move(normalizer));
-    pp->set_custom_transform2(std::move(colorizer));
-
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-
-    imagenet_reader_cv imagenet_trainset(trainParams.MBSize, pp, true);
+    imagenet_reader imagenet_trainset(trainParams.MBSize, true);
     imagenet_trainset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TrainDir);
     imagenet_trainset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
     imagenet_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     imagenet_trainset.load();
 
+    imagenet_trainset.scale(scale);
+    imagenet_trainset.subtract_mean(subtract_mean);
+    imagenet_trainset.unit_variance(unit_variance);
+    imagenet_trainset.z_score(z_score);
+
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     // Clone the training set object
-    imagenet_reader_cv imagenet_validation_set(imagenet_trainset);
+    imagenet_reader imagenet_validation_set(imagenet_trainset);
     // Swap the used and unused index sets so that it validates on the remaining data
     imagenet_validation_set.use_unused_index_set();
 
@@ -171,10 +159,11 @@ int main(int argc, char *argv[]) {
            << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
     }
 
+
     ///////////////////////////////////////////////////////////////////
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
-    imagenet_reader_cv imagenet_testset(trainParams.MBSize, pp, true);
+    imagenet_reader imagenet_testset(trainParams.MBSize, true);
     imagenet_testset.set_file_dir(trainParams.DatasetRootDir + g_ImageNet_TestDir);
     imagenet_testset.set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TestLabelFile);
     imagenet_testset.set_use_percent(trainParams.PercentageTestingSamples);
@@ -185,6 +174,12 @@ int main(int argc, char *argv[]) {
            "% of the testing data set, which is " << imagenet_testset.getNumData() <<
            " samples." << endl;
     }
+
+    imagenet_testset.scale(scale);
+    imagenet_testset.subtract_mean(subtract_mean);
+    imagenet_testset.unit_variance(unit_variance);
+    imagenet_testset.z_score(z_score);
+
 
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
@@ -217,7 +212,7 @@ int main(int argc, char *argv[]) {
     std::unordered_set<int> layer_indices;
     for (int l = 0; l < NumLayers; l++) {
       int idx;
-      if (l < (int)NumLayers-1) {
+      if (l < NumLayers-1) {
         idx = dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[l],
                       trainParams.ActivationType,
                       weight_initialization::glorot_uniform,

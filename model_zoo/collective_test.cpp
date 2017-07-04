@@ -23,13 +23,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_collective_test.cpp - Tests custom LBANN collective implementations
+// collective_test.cpp - Tests custom LBANN collective implementations
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann_test_utils.hpp"
+#include "test_utils.hpp"
 
 using namespace lbann;
 

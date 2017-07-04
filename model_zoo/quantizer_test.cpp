@@ -23,13 +23,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_quantizer_test.cpp - Tests lbann_quantizer
+// quantizer_test.cpp - Tests lbann_quantizer
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
 #include "lbann/comm.hpp"
 #include "lbann/utils/quantizer.hpp"
-#include "lbann_test_utils.hpp"
+#include "test_utils.hpp"
 
 using namespace lbann;
 

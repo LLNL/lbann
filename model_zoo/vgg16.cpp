@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_vgg16.cpp - VGG-16 application for ImageNet classification
+// vgg16.cpp - VGG-16 application for ImageNet classification
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"

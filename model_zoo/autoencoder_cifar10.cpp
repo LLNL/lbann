@@ -23,10 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_mnist.cpp - DNN application for mnist
+// dnn_cifar10.cpp - DNN application for cifar10
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_mnist.hpp"
+//#include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
@@ -34,6 +34,9 @@
 
 using namespace lbann;
 
+const string g_cifar10_dir = "/p/lscratchf/brainusr/datasets/cifar10-bin/";
+const string g_cifar10_train = "data_all.bin";
+const string g_cifar10_test = "test_batch.bin";
 /// Main function
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
@@ -43,19 +46,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   try {
-    // Get data files
-    const string g_MNIST_TrainLabelFile = Input("--train-label-file",
-                                          "MNIST training set label file",
-                                          std::string("train-labels-idx1-ubyte"));
-    const string g_MNIST_TrainImageFile = Input("--train-image-file",
-                                          "MNIST training set image file",
-                                          std::string("train-images-idx3-ubyte"));
-    const string g_MNIST_TestLabelFile = Input("--test-label-file",
-                                         "MNIST test set label file",
-                                         std::string("t10k-labels-idx1-ubyte"));
-    const string g_MNIST_TestImageFile = Input("--test-image-file",
-                                         "MNIST test set image file",
-                                         std::string("t10k-images-idx3-ubyte"));
 
     //determine if we're going to scale, subtract mean, etc;
     //scaling/standardization is on a per-example basis (computed independantly
@@ -73,11 +63,11 @@ int main(int argc, char *argv[]) {
 
     // Initialize parameter defaults
     TrainingParams trainParams;
-    trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 20;
     trainParams.MBSize = 128;
     trainParams.LearnRate = 0.01;
-    trainParams.DropOut = -1.0f;
+    //trainParams.DropOut = -1.0f;
+    trainParams.DropOut = 0.8;
     trainParams.ProcsPerModel = 0;
     trainParams.PercentageTrainingSamples = 1.0;
     trainParams.PercentageValidationSamples = 0.1;
@@ -117,51 +107,65 @@ int main(int argc, char *argv[]) {
     }
 
     ///////////////////////////////////////////////////////////////////
-    // load training data (MNIST)
-    mnist_reader mnist_trainset(trainParams.MBSize, true);
-    mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
-    mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
-    mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-    mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
-    mnist_trainset.load();
-
-    mnist_trainset.scale(scale);
-    mnist_trainset.subtract_mean(subtract_mean);
-    mnist_trainset.unit_variance(unit_variance);
-    mnist_trainset.z_score(z_score);
-
+    // load training data (CIFAR10)
     ///////////////////////////////////////////////////////////////////
-    // create a validation set from the unused training data (MNIST)
-    ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
-    mnist_validation_set.use_unused_index_set();
-
     if (comm->am_world_master()) {
-      size_t num_train = mnist_trainset.getNumData();
-      size_t num_validate = mnist_trainset.getNumData();
+      cout << endl << "USING cifar10_reader\n\n";
+    }
+    cifar10_reader cifar10_trainset(trainParams.MBSize, true);
+    cifar10_trainset.set_firstN(false);
+    cifar10_trainset.set_role("train");
+    cifar10_trainset.set_master(comm->am_world_master());
+    cifar10_trainset.set_file_dir(g_cifar10_dir);
+    cifar10_trainset.set_data_filename(g_cifar10_train);
+    cifar10_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
+    cifar10_trainset.load();
+
+    cifar10_trainset.scale(scale);
+    cifar10_trainset.subtract_mean(subtract_mean);
+    cifar10_trainset.unit_variance(unit_variance);
+    cifar10_trainset.z_score(z_score);
+
+    ///////////////////////////////////////////////////////////////////
+    // create a validation set from the unused training data (CIFAR10)
+    ///////////////////////////////////////////////////////////////////
+    cifar10_reader cifar10_validation_set(cifar10_trainset); // Clone the training set object
+    cifar10_validation_set.set_role("validation");
+    cifar10_validation_set.use_unused_index_set();
+
+    cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
+    if (comm->am_world_master()) {
+      size_t num_train = cifar10_trainset.getNumData();
+      size_t num_validate = cifar10_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << std::endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << std::endl;
+      cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << cifar10_trainset.getNumData() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << cifar10_validation_set.getNumData() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
-    // load testing data (MNIST)
+    // load testing data (CIFAR10)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_testset(trainParams.MBSize, true);
-    mnist_testset.set_file_dir(trainParams.DatasetRootDir);
-    mnist_testset.set_data_filename(g_MNIST_TestImageFile);
-    mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
-    mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
-    mnist_testset.load();
-
-    mnist_testset.scale(scale);
-    mnist_testset.subtract_mean(subtract_mean);
-    mnist_testset.unit_variance(unit_variance);
-    mnist_testset.z_score(z_score);
+    cifar10_reader cifar10_testset(trainParams.MBSize, true);
+    cifar10_testset.set_firstN(false);
+    cifar10_testset.set_role("test");
+    cifar10_testset.set_master(comm->am_world_master());
+    cifar10_testset.set_file_dir(g_cifar10_dir);
+    cifar10_testset.set_data_filename(g_cifar10_test);
+    cifar10_testset.set_use_percent(trainParams.PercentageTestingSamples);
+    cifar10_testset.load();
 
     if (comm->am_world_master()) {
-      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << std::endl;
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.getNumData() << " samples." << endl;
+    }
+
+    cifar10_testset.scale(scale);
+    cifar10_testset.subtract_mean(subtract_mean);
+    cifar10_testset.unit_variance(unit_variance);
+    cifar10_testset.z_score(z_score);
+    if (comm->am_world_master()) {
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.getNumData() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -185,81 +189,61 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm),optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
-    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
-                                                           std::make_pair(execution_mode::validation, &mnist_validation_set),
-                                                           std::make_pair(execution_mode::testing, &mnist_testset)
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
+                                                           std::make_pair(execution_mode::validation, &cifar10_validation_set),
+                                                           std::make_pair(execution_mode::testing, &cifar10_testset)
                                                           };
 
 
-    //first layer
     Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
-    //second layer
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                    1,
-                    comm, 
-                    trainParams.MBSize,
-                    100,
-                    weight_initialization::glorot_uniform, 
-                    optimizer_fac->create_optimizer());
-    dnn.add(fc1);
+    Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       1, comm, trainParams.MBSize,
+                       1000, 
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    dnn.add(encode1);
+    
 
     Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
                                                trainParams.MBSize);
     dnn.add(relu1);
 
-    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
+    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
-    //third layer 
-    Layer *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                    4,
-                    comm, 
-                    trainParams.MBSize,
-                    30, 
-                    weight_initialization::glorot_uniform, 
-                    optimizer_fac->create_optimizer());
-    dnn.add(fc2);
 
-    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(5, comm,
+    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       4, comm, trainParams.MBSize,
+                       cifar10_trainset.get_linearized_data_size(),
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    dnn.add(decode1);
+    
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm,
                                                trainParams.MBSize);
     dnn.add(relu2);
 
-    // trainParams.ActivationType,
     Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);
 
-    Layer *fc3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                    7,
-                    comm, 
-                    trainParams.MBSize,
-                    10, 
-                    weight_initialization::glorot_uniform,
-                    optimizer_fac->create_optimizer(),
-                                                        false);
-    dnn.add(fc3);
+
+    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
+                                                          optimizer_fac->create_optimizer(), 
+                                                          trainParams.MBSize, input_layer);
+    dnn.add(rcl);
+
     
-    //fourth layer
-    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
-      8,
-      trainParams.MBSize, 
-      comm, optimizer_fac->create_optimizer()
-    );
-    dnn.add(sl);
-
-    //fifth layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
-    dnn.add(target_layer);
-
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
+
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
     lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
@@ -278,12 +262,6 @@ int main(int argc, char *argv[]) {
         trainParams.DumpDir);
       dnn.add_callback(dump_gradients_cb);
     }
-    // lbann_callback_io io_cb({0,3});
-    // dnn.add_callback(&io_cb);
-    //lbann_callback_io io_cb({0,3});
-    //        dnn.add_callback(&io_cb);
-    //lbann_callback_debug debug_cb(execution_mode::testing);
-    //        dnn.add_callback(&debug_cb);
 
     if (comm->am_world_master()) {
       std::cout << "Parameter settings:" << std::endl;

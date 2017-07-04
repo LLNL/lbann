@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_alexnet.cpp - AlexNet application for ImageNet classification
+// alexnet.cpp - AlexNet application for ImageNet classification
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"

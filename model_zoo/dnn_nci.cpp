@@ -23,12 +23,9 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_dnn_nci.cpp - Autoencoder application for NCI
+// dnn_nci.cpp - DNN application for NCI
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
-#include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -42,9 +39,10 @@ using namespace El;
 
 int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
-  lbann_comm *comm = initialize(argc, argv, 42);
-
-  El::GemmUseGPU(32,32,32);
+  Initialize(argc, argv);
+  init_random(42);
+  init_data_seq_random(42);
+  lbann_comm *comm = NULL;
 
   try {
 
@@ -56,6 +54,7 @@ int main(int argc, char *argv[]) {
     trainParams.DatasetRootDir = "/usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/";
     //trainParams.DumpWeights = "false"; //set to true to dump weight bias matrices
     //trainParams.DumpDir = "."; //provide directory to dump weight bias matrices
+    trainParams.EpochCount = 2;
     trainParams.MBSize = 50;
     trainParams.LearnRate = 0.0001;
     trainParams.DropOut = -1.0f;
@@ -82,7 +81,7 @@ int main(int argc, char *argv[]) {
     const string test_data  = trainParams.DatasetRootDir + trainParams.TestFile;
 
     // Set up the communicator and get the grid.
-    comm->split_models(trainParams.ProcsPerModel);
+    comm = new lbann_comm(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -110,11 +109,13 @@ int main(int argc, char *argv[]) {
     nci_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     nci_trainset.load();
 
+
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (NCI)
     ///////////////////////////////////////////////////////////////////
     data_reader_nci nci_validation_set(nci_trainset); // Clone the training set object
     nci_validation_set.use_unused_index_set();
+
     if (comm->am_world_master()) {
       size_t num_train = nci_trainset.getNumData();
       size_t num_validate = nci_trainset.getNumData();
@@ -136,6 +137,9 @@ int main(int argc, char *argv[]) {
       cout << "Load Time " << ((double)clock() - load_time) / CLOCKS_PER_SEC << endl;
     }
 
+    //nci_testset.setup(-1);
+
+
 
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
@@ -150,66 +154,76 @@ int main(int argc, char *argv[]) {
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
-    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), optimizer_fac);
-
+    layer_factory *lfac = new layer_factory();
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
+    metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
+    dnn.add_metric(&acc);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&nci_trainset),
                                                            std::make_pair(execution_mode::validation, &nci_validation_set),
                                                            std::make_pair(execution_mode::testing, &nci_testset)
                                                           };
 
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
-    gla.add(input_layer);
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
-                                                        nci_trainset.get_linearized_data_size(), 500,trainParams.MBSize,
-                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
-    gla.add(fc1);
+    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
+                                                                                 trainParams.MBSize, data_readers);
+    dnn.add(input_layer);
 
-    /*gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-    gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 300, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
+    dnn.add("softmax", data_layout::MODEL_PARALLEL, 2, activation_type::ID, weight_initialization::glorot_uniform, {});
 
-    gla.add("FullyConnected", data_layout::MODEL_PARALLEL, 100, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-*/
+
+    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
+                                                                                    trainParams.MBSize, data_readers, true);
+    dnn.add(target_layer);
+
+    //lbann_summary summarizer("/p/lscratchf/jacobs32", comm);
+    // Print out information for each epoch.
+    lbann_callback_print print_cb;
+    dnn.add_callback(&print_cb);
 
     //Dump Weight-Bias matrices to files in DumpDir
     lbann_callback_dump_weights *dump_weights_cb;
     if (trainParams.DumpWeights) {
       dump_weights_cb = new lbann_callback_dump_weights(
         trainParams.DumpDir);
-      gla.add_callback(dump_weights_cb);
+      dnn.add_callback(dump_weights_cb);
     }
+    // Record training time information.
+    //lbann_callback_timer timer_cb(&summarizer);
+    //dnn.add_callback(&timer_cb);
+    // Summarize information to Tensorboard.
+    //lbann_callback_summary summary_cb(&summarizer, 25);
+    //dnn.add_callback(&summary_cb);
 
+    if (comm->am_world_master()) {
+      cout << "Layer initialized:" << endl;
+      cout << "Print Layers using factory ";
+      lfac->print();
+      cout << endl;
+    }
 
     if (comm->am_world_master()) {
       cout << "Parameter settings:" << endl;
       cout << "\tMini-batch size: " << trainParams.MBSize << endl;
       cout << "\tLearning rate: " << trainParams.LearnRate << endl;
       cout << "\tEpoch count: " << trainParams.EpochCount << endl;
-      cout << "\t Dump Weights? " << trainParams.DumpWeights << endl;
+      cout << "\tDump Weights? " << trainParams.DumpWeights << endl;
       cout << "\tDump Dir : " << trainParams.DumpDir << endl;
     }
 
 
+    ///////////////////////////////////////////////////////////////////
+    // main loop for training/testing
+    ///////////////////////////////////////////////////////////////////
 
-    gla.setup();
+    // Initialize the model's data structures
+    dnn.setup();
 
-    // set checkpoint directory and checkpoint interval
-    // @TODO: add to lbann_proto
-    gla.set_checkpoint_dir(trainParams.ParameterDir);
-    gla.set_checkpoint_epochs(trainParams.CkptEpochs);
-    gla.set_checkpoint_steps(trainParams.CkptSteps);
-    gla.set_checkpoint_secs(trainParams.CkptSecs);
-
-    // restart model from checkpoint if we have one
-    gla.restartShared();
-
-    for(int i =1; i <= trainParams.EpochCount; i++) {
-
-      if (comm->am_world_master()) {
-        std::cout << "\n(Pre) train autoencoder - unsupersived training, global epoch [ " << i << " ]" << std::endl;
-        std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
-      }
-      gla.train(1,true);
-      gla.reset_phase();
+    //train/test
+    for(int t = 0; t < trainParams.EpochCount; t++) {
+      dnn.train(1,true);
+      // testing
+      dnn.evaluate(execution_mode::testing);
     }
 
     if (trainParams.DumpWeights) {
@@ -217,12 +231,12 @@ int main(int argc, char *argv[]) {
     }
 
     delete optimizer_fac;
-    delete comm;
   } catch (exception& e) {
     ReportException(e);
   }
 
   // free all resources by El and MPI
+  delete comm;
   Finalize();
 
   return 0;
