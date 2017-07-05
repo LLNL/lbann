@@ -115,6 +115,7 @@
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include "lbann/metrics/metric_top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/metric_mean_squared_error.hpp"
 
 /// Utilities, exceptions, etc.

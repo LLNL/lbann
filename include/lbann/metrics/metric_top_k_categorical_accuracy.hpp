@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_METRIC_TOP_K_CATEGORICAL_ACCURACY_HPP
-#define LBANN_METRIC_TOP_KCATEGORICAL_ACCURACY_HPP
+#define LBANN_METRIC_TOP_K_CATEGORICAL_ACCURACY_HPP
 
 #include "lbann/metrics/metric.hpp"
 
@@ -103,7 +103,7 @@ class top_k_categorical_accuracy : public metric {
       // Broadcast the number of errors to the rest of the models.
       this->m_comm->model_broadcast(0, num_errors);
     } else {
-      num_errors = this->m_comm->model_broadcast<int>(0);
+      num_errors = this->m_comm->template model_broadcast<int>(0);
     }
     return num_errors;
   }
