@@ -191,8 +191,8 @@ int main(int argc, char **argv) {
     if (El::mpi::Rank(El::mpi::COMM_WORLD) == 0) {
       std::cout << "All tests passed" << std::endl;
     }
-  } catch (exception& e) {
-    ReportException(e);
+  } catch (std::exception& e) {
+    El::ReportException(e);
   }
   El::Finalize();
   return 0;

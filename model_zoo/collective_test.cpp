@@ -36,18 +36,18 @@ using namespace lbann;
 const int num_trials = 20;
 
 void add_buffer_into_mat(const uint8_t *buf_, Mat& accum) {
-  const Int height = accum.Height();
-  const Int width = accum.Width();
+  const El::Int height = accum.Height();
+  const El::Int width = accum.Width();
   const DataType *buf = (const DataType *) buf_;
   DataType *accum_buf = accum.Buffer();
-  for (Int i = 0; i < height*width; ++i) {
+  for (El::Int i = 0; i < height*width; ++i) {
     accum_buf[i] += buf[i];
   }
 }
 
 void test_rd_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+    [] (Mat& mat, El::IR h, El::IR w, int& send_size, bool const_data,
   int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
@@ -62,13 +62,13 @@ void test_rd_allreduce(lbann_comm *comm, DistMat& dmat) {
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->recursive_doubling_allreduce_pow2(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), {});
 }
 
 void test_pe_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+    [] (Mat& mat, El::IR h, El::IR w, int& send_size, bool const_data,
   int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
@@ -93,14 +93,14 @@ void test_pe_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->pe_ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void test_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+    [] (Mat& mat, El::IR h, El::IR w, int& send_size, bool const_data,
   int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
@@ -125,14 +125,14 @@ void test_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->ring_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
 
 void test_rabenseifner_allreduce(lbann_comm *comm, DistMat& dmat) {
   auto send_transform =
-    [] (Mat& mat, IR h, IR w, int& send_size, bool const_data,
+    [] (Mat& mat, El::IR h, El::IR w, int& send_size, bool const_data,
   int call_idx) {
     auto to_send = mat(h, w);
     send_size = sizeof(DataType) * to_send.Height() * to_send.Width();
@@ -157,7 +157,7 @@ void test_rabenseifner_allreduce(lbann_comm *comm, DistMat& dmat) {
   opts.id_recv = true;
   comm->rabenseifner_allreduce(
     comm->get_intermodel_comm(), mat, max_recv_count,
-    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
 }
@@ -185,7 +185,7 @@ void print_stats(const std::vector<double>& times) {
 int main(int argc, char **argv) {
   El::Initialize(argc, argv);
   lbann_comm *comm = new lbann_comm(1);
-  for (Int mat_size = 1; mat_size <= 16384; mat_size *= 2) {
+  for (El::Int mat_size = 1; mat_size <= 16384; mat_size *= 2) {
     std::vector<double> mpi_times, rd_times, pe_ring_times, ring_times,
         rab_times;
     // First trial is a warmup.

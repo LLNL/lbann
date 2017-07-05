@@ -36,7 +36,6 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include <omp.h>
-using namespace El;
 
 #ifndef LBANN_QUANTIZER_TERNARY
 #define LBANN_QUANTIZER_TERNARY 0
