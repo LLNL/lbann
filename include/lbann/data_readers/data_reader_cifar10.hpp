@@ -31,22 +31,17 @@
 
 #include "data_reader.hpp"
 
-
-
 namespace lbann {
+
 class cifar10_reader : public generic_data_reader {
  public:
   /// constructor
   cifar10_reader(int batchSize, bool shuffle = true);
-
-  /// copy constructor
-  cifar10_reader(const cifar10_reader& source);
+  cifar10_reader(const cifar10_reader&) = default;
+  cifar10_reader& operator=(const cifar10_reader&) = default;
 
   /// destructor
   ~cifar10_reader();
-
-  /// assignment operator
-  cifar10_reader& operator=(const cifar10_reader& source);
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
@@ -96,6 +91,7 @@ class cifar10_reader : public generic_data_reader {
   int m_image_height;
   int m_image_num_channels;
 };
-}
 
-#endif // LBANN_DATA_READER_CIFAR10_HPP
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_CIFAR10_HPP

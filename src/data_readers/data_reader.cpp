@@ -28,8 +28,6 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 
-using namespace std;
-
 namespace lbann {
 
 void generic_data_reader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
@@ -124,11 +122,11 @@ void generic_data_reader::select_subset_of_data() {
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
     if(count > getNumData()) {
-      stringstream err;
-      err << __FILE__ << " " << __LINE__
-          << " :: generic_data_reader::select_subset_of_data() - max_sample_count=" << count
-          << " is > getNumData=" << getNumData();
-      throw lbann_exception(err.str());
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
+        std::to_string(count) + " is > getNumData=" +
+        std::to_string(getNumData()));
     }
     m_shuffled_indices.resize(get_max_sample_count());
   } else if (has_use_percent()) {
@@ -154,25 +152,6 @@ void generic_data_reader::use_unused_index_set() {
   m_shuffled_indices.swap(m_unused_indices);
   m_unused_indices.clear();
   std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
-}
-
-generic_data_reader& generic_data_reader::operator=(const generic_data_reader& source) {
-  this->m_batch_size = source.m_batch_size;
-  this->m_current_pos = source.m_current_pos;
-  this->m_first_n = source.m_first_n;
-  this->m_batch_stride = source.m_batch_stride;
-  this->m_sample_stride = source.m_sample_stride;
-  this->m_base_offset = source.m_base_offset;
-  this->m_model_offset = source.m_model_offset;
-  this->m_use_alt_last_mini_batch_size = source.m_use_alt_last_mini_batch_size;
-  this->m_last_mini_batch_threshold = source.m_last_mini_batch_threshold;
-  this->m_last_mini_batch_size = source.m_last_mini_batch_size;
-  this->m_last_mini_batch_stride = source.m_last_mini_batch_stride;
-
-  // Vectors implement a deep copy
-  this->m_shuffled_indices = source.m_shuffled_indices;
-  this->m_unused_indices = source.m_unused_indices;
-  return *this;
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
@@ -271,10 +250,9 @@ void generic_data_reader::set_data_filename(std::string s) {
 
 std::string generic_data_reader::get_data_filename() const {
   if (m_data_fn == "") {
-    std::stringstream s;
-    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-      << "set_data_filename; this is an error!";
-    throw lbann_exception(s.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_data_filename; error!");
   }
   return m_data_fn;
 }
@@ -285,10 +263,9 @@ void generic_data_reader::set_label_filename(std::string s) {
 
 string generic_data_reader::get_label_filename() const {
   if (m_label_fn == "") {
-    std::stringstream s;
-    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-      << "set_label_filename; this is an error!";
-    throw lbann_exception(s.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_label_filename; error!");
   }
   return m_label_fn;
 }
@@ -316,9 +293,10 @@ bool generic_data_reader::get_firstN() const {
 
 void generic_data_reader::set_validation_percent(double s) {
   if (s < 0 or s > 1.0) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      std::to_string(s));
   }
   m_validation_percent = s;
 }
@@ -336,9 +314,10 @@ double generic_data_reader::get_validation_percent() const {
 
 void generic_data_reader::set_use_percent(double s) {
   if (s < 0 or s > 1.0) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      std::to_string(s));
   }
   m_use_percent = s;
 }
@@ -351,11 +330,10 @@ bool generic_data_reader::has_use_percent() const {
 }
 
 double generic_data_reader::get_use_percent() const {
-  stringstream err;
-  if (not has_use_percent()) {
-    err << __FILE__ << " " << __LINE__ << " :: you must call set_use_percent()"
-        << " but apparently have not done so";
-    throw lbann_exception(err.str());
+  if (!has_use_percent()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you must call set_use_percent(); error!");
   }
   return m_use_percent;
 }

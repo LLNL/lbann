@@ -28,68 +28,37 @@
 
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 
-using namespace std;
-using namespace El;
-using namespace lbann;
-
+namespace lbann {
 
 cifar10_reader::cifar10_reader(int batchSize, bool shuffle)
   : generic_data_reader(batchSize, shuffle),
     m_image_width(32), m_image_height(32), m_image_num_channels(3) {
 }
 
-cifar10_reader::cifar10_reader(const cifar10_reader& source)
-  : generic_data_reader((const generic_data_reader&) source),
-    m_data(source.m_data),
-    m_image_width(source.m_image_width),
-    m_image_height(source.m_image_height),
-    m_image_num_channels(source.m_image_num_channels) {
-}
-
-cifar10_reader& cifar10_reader::operator=(const cifar10_reader& source) {
-  // check for self-assignment
-  if (this == &source) {
-    return *this;
-  }
-
-  generic_data_reader::operator=(source);
-  m_image_width = source.m_image_width;
-  m_image_height = source.m_image_height;
-  m_image_num_channels = source.m_image_num_channels;
-  m_data = source.m_data;
-
-  return (*this);
-}
-
 cifar10_reader::~cifar10_reader() { }
 
 void cifar10_reader::load() {
-  stringstream err;
-
   //open data file
-  string image_dir = get_file_dir();
-  string filename = get_data_filename();
-  stringstream b;
-  b << image_dir << "/" << filename;
-  if (is_master()) {
-    cout << "opening: " << b.str() << endl;
-  }
-  ifstream in(b.str().c_str(), ios::binary);
+  std::string image_dir = get_file_dir();
+  std::string filename = get_data_filename();
+  std::string path = image_dir + "/" + filename;
+  std::ifstream in(path, std::ios::binary);
   if (not in.good()) {
-    err << __FILE__ << " " << __LINE__
-        << " ::  failed to open " << b.str() << " for reading";
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: failed to open " + path + " for reading");
   }
 
   //get number of images, with error checking
   int len = get_linearized_data_size() + 1;  //should be 3073
   in.seekg(0, in.end);
-  streampos fs = in.tellg();
+  std::streampos fs = in.tellg();
   in.seekg(0, in.beg);
   if (fs % len != 0) {
-    err << __FILE__ << " " << __LINE__
-        << " ::  fs % len != 0; fs: " << fs << " len: " << len;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " ::  fs % len != 0; fs: " + std::to_string(fs) + " len: " +
+      std::to_string(len));
   }
 
   //reserve space for string images
@@ -116,11 +85,11 @@ void cifar10_reader::load() {
 
 
 int lbann::cifar10_reader::fetch_data(Mat& X) {
-  stringstream err;
-
   if(!generic_data_reader::position_valid()) {
-    err << __FILE__ << " " << __LINE__ << " :: lbann::imagenet_reader::fetch_data() - !generic_data_reader::position_valid()";
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: lbann::imagenet_reader::fetch_data() - " +
+      "!generic_data_reader::position_valid()");
   }
 
   int current_batch_size = getm_batch_size();
@@ -143,9 +112,9 @@ int lbann::cifar10_reader::fetch_data(Mat& X) {
 
 int lbann::cifar10_reader::fetch_label(Mat& Y) {
   if(!position_valid()) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: Imagenet data reader error: !position_valid");
   }
 
   int current_batch_size = getm_batch_size();
@@ -161,3 +130,5 @@ int lbann::cifar10_reader::fetch_label(Mat& Y) {
   }
   return (n - m_current_pos);
 }
+
+}  // namespace lbann

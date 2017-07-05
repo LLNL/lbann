@@ -67,6 +67,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_max_sample_count_was_set(false), m_use_percent(1.0),
     m_master(false)
   {}
+  generic_data_reader(const generic_data_reader&) = default;
+  generic_data_reader& operator=(const generic_data_reader&) = default;
 
   virtual ~generic_data_reader() {}
 
@@ -353,8 +355,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    *  The unused index set is emptied.
    */
   void use_unused_index_set();
-
-  generic_data_reader& operator=(const generic_data_reader& source);
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool saveToCheckpointShared(persist& p, const char *name);
