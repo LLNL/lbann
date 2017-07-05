@@ -58,6 +58,11 @@ int imagenet_reader::fetch_data(Mat& X) {
 
   El::Zeros(X, X.Height(), X.Width());
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  // Preallocate buffer space for each thread.
+  std::vector<std::vector<unsigned char>> pixel_bufs(omp_get_max_threads());
+  for (int i = 0; i < omp_get_max_threads(); ++i) {
+    pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
+  }
   #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
@@ -65,7 +70,8 @@ int imagenet_reader::fetch_data(Mat& X) {
     string imagepath = m_image_dir + image_list[index].first;
 
     int width, height;
-    unsigned char *pixels = (unsigned char *) std::malloc(num_channel_values*sizeof(unsigned char));
+
+    unsigned char *pixels = pixel_bufs[omp_get_thread_num()].data();
     bool ret = image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
     if(!ret) {
       throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
@@ -79,7 +85,6 @@ int imagenet_reader::fetch_data(Mat& X) {
     for (int p = 0; p < num_channel_values; p++) {
       X.Set(p, s, pixels[p]);
     }
-    std::free(pixels);
 
     auto pixel_col = X(El::IR(0, X.Height()), El::IR(s, s + 1));
     augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
