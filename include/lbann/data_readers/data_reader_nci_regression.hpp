@@ -31,10 +31,8 @@
 
 #include "data_reader.hpp"
 
-
-
 namespace lbann {
-//@todo rewrite data_reader class to follow coding convention
+
 class data_reader_nci_regression : public generic_data_reader {
  private:
   //@todo add response mode {binary,ternary, continuous}
@@ -47,9 +45,10 @@ class data_reader_nci_regression : public generic_data_reader {
 
  public:
   data_reader_nci_regression(int batchSize, bool shuffle=true);
-  //data_reader_nci_regression(const data_reader_nci_regression& source); //copy constructor
-  //data_reader_nci_regression& operator=(const data_reader_nci_regression& source); //assignment operator
-  ~data_reader_nci_regression();
+  data_reader_nci_regression(const data_reader_nci_regression&) = default;
+  data_reader_nci_regression& operator=(
+    const data_reader_nci_regression&) = default;
+  ~data_reader_nci_regression() {}
 
   int fetch_data(Mat& X);
   int fetch_response(Mat& Y);
@@ -78,6 +77,6 @@ class data_reader_nci_regression : public generic_data_reader {
 
 };
 
-}
+}  // namespace lbann
 
-#endif // LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED
+#endif  // LBANN_DATA_READER_NCI_REGRESSION_HPP_INCLUDED

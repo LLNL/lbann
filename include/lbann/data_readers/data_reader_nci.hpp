@@ -31,17 +31,15 @@
 
 #include "data_reader.hpp"
 
-
-
 namespace lbann {
-//@todo rewrite data_reader class to follow coding convention
+
 class data_reader_nci : public generic_data_reader {
  public:
   data_reader_nci(int batchSize, bool shuffle);
   data_reader_nci(int batchSize);
-  data_reader_nci(const data_reader_nci& source); //copy constructor
-  data_reader_nci& operator=(const data_reader_nci& source); //assignment operator
-  ~data_reader_nci();
+  data_reader_nci(const data_reader_nci& source) = default;
+  data_reader_nci& operator=(const data_reader_nci& source) = default;
+  ~data_reader_nci() {}
 
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
@@ -79,6 +77,6 @@ class data_reader_nci : public generic_data_reader {
   std::string m_infile; //input file name
 };
 
-}
+}  // namespace lbann
 
-#endif // LBANN_DATA_READER_NCI_HPP
+#endif  // LBANN_DATA_READER_NCI_HPP
