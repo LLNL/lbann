@@ -62,7 +62,7 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
       int base_offset = Layer::m_comm->get_rank_in_model();
       int batch_stride = Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
       int model_offset = Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size;
-      cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
+      //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
       io_layer::setup_data_readers_for_training(base_offset,
                                                           batch_stride,
                                                           m_num_parallel_readers_training,
