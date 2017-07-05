@@ -53,7 +53,9 @@ namespace lbann {
 class lbann_image_preprocessor {
  public:
   lbann_image_preprocessor();
-  lbann_image_preprocessor(const lbann_image_preprocessor& source);
+  lbann_image_preprocessor(const lbann_image_preprocessor&) = default;
+  lbann_image_preprocessor& operator=(
+    const lbann_image_preprocessor&) = default;
   virtual ~lbann_image_preprocessor() {}
 
   /** Whether to do random horizontal flips. */
@@ -157,9 +159,6 @@ class lbann_image_preprocessor {
   bool m_scale;
   /** Whether to normalize via z-score. */
   bool m_z_score;
-
-  /** The mathematical constant (this is the way to get it in C++). */
-  const float pi = std::acos(-1);
 
   void mean_subtraction(Mat& pixels, unsigned num_channels);
   void unit_variance(Mat& pixels, unsigned num_channels);

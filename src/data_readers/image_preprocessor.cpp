@@ -33,6 +33,10 @@
 #include "lbann/utils/statistics.hpp"
 #include "lbann/utils/exception.hpp"
 
+namespace {
+const float pi = std::acos(-1);
+};
+
 namespace lbann {
 
 lbann_image_preprocessor::lbann_image_preprocessor() :
@@ -47,18 +51,6 @@ lbann_image_preprocessor::lbann_image_preprocessor() :
   m_scale(true),  // We always did scaling by default.
   m_z_score(false) {
 }
-
-lbann_image_preprocessor::lbann_image_preprocessor(
-  const lbann_image_preprocessor& source) :
-  m_horizontal_flip(source.m_horizontal_flip),
-  m_vertical_flip(source.m_vertical_flip),
-  m_horizontal_shift(source.m_horizontal_shift),
-  m_vertical_shift(source.m_vertical_shift),
-  m_shear_range(source.m_shear_range),
-  m_mean_subtraction(source.m_mean_subtraction),
-  m_unit_variance(source.m_unit_variance),
-  m_scale(source.m_scale),
-  m_z_score(source.m_z_score) {}
 
 void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
                                        unsigned imwidth,
@@ -117,7 +109,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     if (m_rotation_range) {
       std::uniform_real_distribution<float> dist(-m_rotation_range,
           m_rotation_range);
-      rotate = pi / 180.0f * dist(gen);
+      rotate = ::pi / 180.0f * dist(gen);
     }
     Mat rot_mat;
     El::Zeros(rot_mat, 3, 3);
