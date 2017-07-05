@@ -31,20 +31,17 @@
 #include <string>
 #include <cnpy.h>
 
+namespace lbann {
 
-using namespace std;
-using namespace El;
-
-lbann::cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
+cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
   : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0) {
 }
 
-lbann::cnpy_reader::~cnpy_reader() {
+cnpy_reader::~cnpy_reader() {
   m_data.destruct();
 }
 
-
-int lbann::cnpy_reader::fetch_data(Mat& X) {
+int cnpy_reader::fetch_data(Mat& X) {
   if(!generic_data_reader::position_valid()) {
     return 0;
   }
@@ -72,24 +69,23 @@ int lbann::cnpy_reader::fetch_data(Mat& X) {
         X.Set(j, k, data[j]);
       }
     } else {
-      stringstream err;
-      err << __FILE__ << " " << __LINE__ << " unknown word size: " << m_data.word_size
-          << " we only support 4 (float) or 8 (double)";
-      throw lbann_exception(err.str());
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " unknown word size: " + std::to_string(m_data.word_size) +
+        " we only support 4 (float) or 8 (double)");
     }
   }
 
   return (n - m_current_pos);
 }
 
-void lbann::cnpy_reader::load() {
-  string infile = get_data_filename();
-  ifstream ifs(infile.c_str());
+void cnpy_reader::load() {
+  std::string infile = get_data_filename();
+  std::ifstream ifs(infile);
   if (!ifs) {
-    stringstream err;
-    err << endl << __FILE__ << " " << __LINE__
-        << "  cnpy_reader::load() - can't open file : " << infile;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " cnpy_reader::load() - can't open file : " + infile);
   }
   ifs.close();
 
@@ -107,7 +103,7 @@ void lbann::cnpy_reader::load() {
   select_subset_of_data();
 }
 
-lbann::cnpy_reader::cnpy_reader(const cnpy_reader& source) :
+cnpy_reader::cnpy_reader(const cnpy_reader& source) :
   generic_data_reader((const generic_data_reader&) source), m_num_features(source.m_num_features),
   m_num_samples(source.m_num_samples), m_data(source.m_data) {
   int n = m_num_features * m_num_samples * m_data.word_size;
@@ -115,9 +111,7 @@ lbann::cnpy_reader::cnpy_reader(const cnpy_reader& source) :
   memcpy(m_data.data, source.m_data.data, n);
 }
 
-
-
-lbann::cnpy_reader& lbann::cnpy_reader::operator=(const cnpy_reader& source) {
+cnpy_reader& cnpy_reader::operator=(const cnpy_reader& source) {
 
   // check for self-assignment
   if (this == &source) {
@@ -135,3 +129,5 @@ lbann::cnpy_reader& lbann::cnpy_reader::operator=(const cnpy_reader& source) {
   memcpy(m_data.data, source.m_data.data, n);
   return *this;
 }
+
+}  // namespace lbann
