@@ -39,7 +39,7 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() {}
 
-  int fetch_data(Mat& X);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 
   void load();
 

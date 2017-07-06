@@ -40,8 +40,8 @@ class imagenet_reader : public generic_data_reader {
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() {}
 
-  virtual int fetch_data(Mat& X);
-  virtual int fetch_label(Mat& Y);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
   int get_num_labels() const {
     return m_num_labels;
@@ -81,6 +81,7 @@ class imagenet_reader : public generic_data_reader {
   int m_image_height; // image height
   int m_image_num_channels; // number of image channels
   int m_num_labels; // number of labels
+  std::vector<std::vector<unsigned char>> m_pixel_bufs;
 };
 
 }  // namespace lbann

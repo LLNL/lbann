@@ -41,8 +41,7 @@ class cnpy_reader : public generic_data_reader {
 
   cnpy_reader& operator=(const cnpy_reader& source);
 
-
-  int fetch_data(Mat& X);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   void load();
 
   int get_linearized_data_size() const {

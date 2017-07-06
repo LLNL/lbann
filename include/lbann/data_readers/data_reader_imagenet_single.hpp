@@ -41,8 +41,8 @@ class imagenet_readerSingle : public imagenet_reader {
 
   imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
   void load();
 
  private:
@@ -50,7 +50,6 @@ class imagenet_readerSingle : public imagenet_reader {
   size_t m_file_size;
   std::vector<unsigned char> m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
-  std::vector<unsigned char> m_pixels;
 
   void open_data_stream();
 };

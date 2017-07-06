@@ -1187,8 +1187,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
-    } else if (name == "nci_regression") {
-      reader = new data_reader_nci_regression(mini_batch_size, shuffle);
     } else if (name == "cnpy") {
       reader = new cnpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
@@ -1262,9 +1260,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
-      } else if (name == "nci_regression") {
-        reader_validation = new data_reader_nci_regression(mini_batch_size, shuffle);
-        (*(data_reader_nci_regression *)reader_validation) = (*(data_reader_nci_regression *)reader);
       } else if (name == "cnpy") {
         reader_validation = new cnpy_reader(mini_batch_size, shuffle);
         (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);

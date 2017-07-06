@@ -41,42 +41,27 @@ cnpy_reader::~cnpy_reader() {
   m_data.destruct();
 }
 
-int cnpy_reader::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    return 0;
-  }
-  int current_batch_size = getm_batch_size();
-
-  int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
+bool cnpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  if (m_data.word_size == 4) {
+    float *tmp = (float *)m_data.data;
+    float *data = tmp + data_id;
+    for (int j=0; j<m_num_features; j++) {
+      X.Set(j, mb_idx, data[j]);
     }
-
-    int k = n - m_current_pos;
-    int index = m_shuffled_indices[n];
-
-    if (m_data.word_size == 4) {
-      float *tmp = (float *)m_data.data;
-      float *data = tmp + index;
-      for (int j=0; j<m_num_features; j++) {
-        X.Set(j, k, data[j]);
-      }
-    } else if (m_data.word_size == 8) {
-      double *tmp = (double *)m_data.data;
-      double *data = tmp + index;
-      for (int j=0; j<m_num_features; j++) {
-        X.Set(j, k, data[j]);
-      }
-    } else {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " unknown word size: " + std::to_string(m_data.word_size) +
-        " we only support 4 (float) or 8 (double)");
+  } else if (m_data.word_size == 8) {
+    double *tmp = (double *)m_data.data;
+    double *data = tmp + data_id;
+    for (int j=0; j<m_num_features; j++) {
+      X.Set(j, mb_idx, data[j]);
     }
+  } else {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " unknown word size: " + std::to_string(m_data.word_size) +
+      " we only support 4 (float) or 8 (double)");
   }
 
-  return (n - m_current_pos);
+  return true;
 }
 
 void cnpy_reader::load() {

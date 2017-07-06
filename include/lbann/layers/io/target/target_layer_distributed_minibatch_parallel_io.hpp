@@ -139,9 +139,9 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   int fetch_from_data_reader(Mat& M_local) {
     generic_data_reader *data_reader = target_layer::select_data_reader();
     if (target_layer::is_for_regression()) {
-      return data_reader->fetch_response(M_local);
+      return data_reader->fetch_responses(M_local);
     } else {
-      return data_reader->fetch_label(M_local);
+      return data_reader->fetch_labels(M_local);
     }
   }
 

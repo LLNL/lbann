@@ -43,8 +43,9 @@ class cifar10_reader : public generic_data_reader {
   /// destructor
   ~cifar10_reader();
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+
   void load();
 
   /// returns image width (which should be 32)

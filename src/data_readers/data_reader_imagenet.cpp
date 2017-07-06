@@ -39,84 +39,44 @@ imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
   m_image_height = 256;
   m_image_num_channels = 3;
   m_num_labels = 1000;
-}
 
-int imagenet_reader::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Imagenet data reader load error: !position_valid");
-  }
-
-  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    X.Width());
-
-  El::Zeros(X, X.Height(), X.Width());
-  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
   // Preallocate buffer space for each thread.
-  std::vector<std::vector<unsigned char>> pixel_bufs(omp_get_max_threads());
+  m_pixel_bufs.resize(omp_get_max_threads());
+  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   for (int i = 0; i < omp_get_max_threads(); ++i) {
-    pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
+    m_pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
   }
-  #pragma omp parallel for
-  for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    string imagepath = m_image_dir + image_list[index].first;
-
-    int width, height;
-
-    unsigned char *pixels = pixel_bufs[omp_get_thread_num()].data();
-    bool ret = image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
-    if(!ret) {
-      throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
-    }
-    if(width != m_image_width || height != m_image_height) {
-      throw lbann_exception("ImageNet: mismatch data size -- either width or height");
-    }
-
-    m_indices_fetched_per_mb.Set(s, 0, index);
-
-    for (int p = 0; p < num_channel_values; p++) {
-      X.Set(p, s, pixels[p]);
-    }
-
-    auto pixel_col = X(El::IR(0, X.Height()), El::IR(s, s + 1));
-    augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
-    normalize(pixel_col, m_image_num_channels);
-  }
-
-  return mb_size;
 }
 
-int imagenet_reader::fetch_label(Mat& Y) {
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Imagenet data reader error: !position_valid");
+bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
+  string imagepath = m_image_dir + image_list[data_id].first;
+
+  int width, height;
+  unsigned char *pixels = m_pixel_bufs[tid].data();
+  bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
+  if(!ret) {
+    throw lbann_exception("ImageNet: image_utils::loadJPG failed to load");
+  }
+  if(width != m_image_width || height != m_image_height) {
+    throw lbann_exception("ImageNet: mismatch data size -- either width or height");
   }
 
-  int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    Y.Width());
-  El::Zeros(Y, Y.Height(), Y.Width());
-
-  for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    int label = image_list[index].second;
-
-    Y.Set(label, s, 1);
+  for (int p = 0; p < num_channel_values; p++) {
+    X.Set(p, mb_idx, pixels[p]);
   }
-  return mb_size;
+
+  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
+  normalize(pixel_col, m_image_num_channels);
+
+  return true;
+}
+
+bool imagenet_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  int label = image_list[data_id].second;
+  Y.Set(label, mb_idx, 1);
+  return true;
 }
 
 void imagenet_reader::load() {
