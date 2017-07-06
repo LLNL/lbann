@@ -34,9 +34,14 @@
 #include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
+
 class distributed_minibatch_parallel_io {
  public:
   distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  distributed_minibatch_parallel_io(
+    const distributed_minibatch_parallel_io&) = default;
+  distributed_minibatch_parallel_io& operator=(
+    const distributed_minibatch_parallel_io&) = default;
   virtual ~distributed_minibatch_parallel_io() {}
 
   int fetch_to_local_matrix(Mat& M_local);
@@ -84,6 +89,7 @@ class distributed_minibatch_parallel_io {
   int m_num_data_per_epoch;
   int m_num_valid_readers;
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED

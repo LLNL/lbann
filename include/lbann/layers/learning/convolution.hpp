@@ -53,7 +53,7 @@ class convolution_layer : public learning {
   friend class lbann_callback_imcomm;
 
   /// Weight initialization scheme
-  const weight_initialization m_weight_initialization;
+  weight_initialization m_weight_initialization;
   /// Convolutional filter dimensions
   std::vector<int> m_conv_dims;
   /// Size of convolutional filters
@@ -152,6 +152,45 @@ class convolution_layer : public learning {
 
   }
 
+  convolution_layer(const convolution_layer& other) :
+    learning(other),
+    m_weight_initialization(other.m_weight_initialization),
+    m_conv_dims(other.m_conv_dims),
+    m_conv_size(other.m_conv_size),
+    m_conv_pads(other.m_conv_pads),
+    m_conv_strides(other.m_conv_strides) {
+    if (m_filter_weights_v) {
+      delete m_filter_weights_v;
+      delete m_filter_weights_gradient_v;
+      delete m_bias_weights_v;
+      delete m_bias_weights_gradient_v;
+    }
+    m_filter_weights_v = other.m_filter_weights_v->Copy();
+    m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
+    m_bias_weights_v = other.m_bias_weights_v->Copy();
+    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+  }
+
+  convolution_layer& operator=(const convolution_layer& other) {
+    learning::operator=(other);
+    m_weight_initialization = other.m_weight_initialization;
+    m_conv_dims = other.m_conv_dims;
+    m_conv_size = other.m_conv_size;
+    m_conv_pads = other.m_conv_pads;
+    m_conv_strides = other.m_conv_strides;
+    if (m_filter_weights_v) {
+      delete m_filter_weights_v;
+      delete m_filter_weights_gradient_v;
+      delete m_bias_weights_v;
+      delete m_bias_weights_gradient_v;
+    }
+    m_filter_weights_v = other.m_filter_weights_v->Copy();
+    m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
+    m_bias_weights_v = other.m_bias_weights_v->Copy();
+    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    return *this;
+  }
+
   ~convolution_layer() {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
@@ -176,14 +215,15 @@ class convolution_layer : public learning {
       this->m_cudnn->unpin_matrix(*(this->m_weights));
       this->m_cudnn->unpin_matrix(m_weights_gradient_per_gpu);
     }
+  #endif // #ifdef __LIB_CUDNN
 
     delete m_filter_weights_v;
     delete m_filter_weights_gradient_v;
     delete m_bias_weights_v;
     delete m_bias_weights_gradient_v;
-    
-  #endif // #ifdef __LIB_CUDNN
   }
+
+  convolution_layer* copy() const { return new convolution_layer(*this); }
 
   std::string get_name() const { return "convolution"; }
 

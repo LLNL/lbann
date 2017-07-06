@@ -50,6 +50,8 @@ class leaky_relu_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
+  leaky_relu_layer* copy() const { return new leaky_relu_layer(*this); }
+
   std::string get_name() const { return "leaky relu"; }
 
   virtual inline void initialize_distributed_matrices() {

@@ -57,6 +57,8 @@ class Layer {
 
   virtual ~Layer();
 
+  virtual Layer* copy() const = 0;
+
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 

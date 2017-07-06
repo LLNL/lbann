@@ -88,6 +88,8 @@ class softmax_layer : public activation_layer {
     delete m_workspace_v;
   }
 
+  softmax_layer* copy() const { return new softmax_layer(*this); }
+
   std::string get_name() const { return "softmax"; }
 
   virtual inline void initialize_distributed_matrices();

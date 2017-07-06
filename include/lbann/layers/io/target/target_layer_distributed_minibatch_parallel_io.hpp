@@ -51,6 +51,13 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
     // Setup the data distribution
     initialize_distributed_matrices();
   }
+  target_layer_distributed_minibatch_parallel_io(
+    const target_layer_distributed_minibatch_parallel_io&) = default;
+  target_layer_distributed_minibatch_parallel_io& operator=(
+    const target_layer_distributed_minibatch_parallel_io&) = default;
+  target_layer_distributed_minibatch_parallel_io* copy() const {
+    return new target_layer_distributed_minibatch_parallel_io(*this);
+  }
 
   std::string get_name() const { return "target layer distributed minibatch parallel io"; }
 

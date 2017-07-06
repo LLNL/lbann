@@ -81,6 +81,8 @@ class relu_layer : public entrywise_activation_layer {
 
   }
 
+  relu_layer* copy() const { return new relu_layer(*this); }
+
   std::string get_name() const { return "relu"; }
 
   virtual inline void initialize_distributed_matrices() {

@@ -112,6 +112,8 @@ class pooling_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  pooling_layer* copy() const { return new pooling_layer(*this); }
+
   std::string get_name() const { return "pooling"; }
 
   virtual inline void initialize_distributed_matrices() {

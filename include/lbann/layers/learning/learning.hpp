@@ -58,8 +58,22 @@ class learning : public Layer {
            lbann_comm *comm,
            int mini_batch_size,
            optimizer *opt)
-    : Layer(index, comm, mini_batch_size), m_optimizer(opt) { 
+    : Layer(index, comm, mini_batch_size), m_optimizer(opt) {}
+
+  learning(const learning& other) :
+    Layer(other),
+    m_l2_regularization_factor(other.m_l2_regularization_factor) {
+    if (m_weights) {
+      delete m_weights;
+      delete m_weights_gradient;
     }
+    m_weights = other.m_weights->Copy();
+    m_weights_gradient = other.m_weights_gradient->Copy();
+    if (m_optimizer) {
+      delete m_optimizer;
+    }
+    m_optimizer = other.m_optimizer->copy();
+  }
 
   virtual ~learning() {
     delete m_weights;
