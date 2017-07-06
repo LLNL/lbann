@@ -28,14 +28,6 @@
 
 #include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/io/io_layer.hpp"
-#include "lbann/layers/learning/convolution.hpp"
-#include "lbann/layers/transform/pooling.hpp"
-#include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/activations/softmax.hpp"
-#include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
@@ -46,25 +38,24 @@
 
 #include "mpi.h"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::sequential_model::sequential_model(int mini_batch_size,
-                                          lbann_comm *comm,
-                                          objective_functions::objective_fn *obj_fn,
-                                          optimizer_factory *optimizer_fac)
+sequential_model::sequential_model(int mini_batch_size,
+                                   lbann_comm *comm,
+                                   objective_functions::objective_fn *obj_fn,
+                                   optimizer_factory *optimizer_fac)
   : model(comm, obj_fn, optimizer_fac),
     m_mini_batch_size(mini_batch_size)
     {}
 
-lbann::sequential_model::~sequential_model() {
+sequential_model::~sequential_model() {
   // Free layers
   for (size_t l = 0; l < m_layers.size(); ++l) {
     delete m_layers[l];
   }
 }
 
-bool lbann::sequential_model::save_to_file(const string file_dir) {
+bool sequential_model::save_to_file(const string file_dir) {
   // get our directory name
   const char *dir = file_dir.c_str();
 
@@ -73,14 +64,14 @@ bool lbann::sequential_model::save_to_file(const string file_dir) {
 
   // start timer
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     timer.Start();
     printf("Saving parameters to %s ...\n", dir);
     fflush(stdout);
   }
 
   // create directory to hold files
-  int mkdir_success = lbann::makedir(dir);
+  int mkdir_success = makedir(dir);
   if (! mkdir_success) {
     // failed to create the directory
     return false;
@@ -94,7 +85,7 @@ bool lbann::sequential_model::save_to_file(const string file_dir) {
 
   // stop timer
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     double secs = timer.Stop();
     printf("Saved parameters to %s (%f secs)\n", dir, secs);
     fflush(stdout);
@@ -103,7 +94,7 @@ bool lbann::sequential_model::save_to_file(const string file_dir) {
   return true;
 }
 
-bool lbann::sequential_model::load_from_file(const string file_dir) {
+bool sequential_model::load_from_file(const string file_dir) {
   // get our directory name
   const char *dir = file_dir.c_str();
 
@@ -112,7 +103,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir) {
 
   // start timer
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     timer.Start();
     printf("Loading parameters from %s ...\n", dir);
     fflush(stdout);
@@ -125,7 +116,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir) {
 
   // stop timer
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     double secs = timer.Stop();
     printf("Loaded parameters from %s (%f secs)\n", dir, secs);
     fflush(stdout);
@@ -134,7 +125,7 @@ bool lbann::sequential_model::load_from_file(const string file_dir) {
   return true;
 }
 
-bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
+bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
   // write number of layers (we'll check this on read)
   int layers = m_layers.size();
   int write_rc = write(fd, &layers, sizeof(int));
@@ -155,7 +146,7 @@ bool lbann::sequential_model::save_to_checkpoint(int fd, const char *filename, s
   return true;
 }
 
-bool lbann::sequential_model::load_from_checkpoint(int fd, const char *filename, size_t *bytes) {
+bool sequential_model::load_from_checkpoint(int fd, const char *filename, size_t *bytes) {
   // read number of layers
   unsigned int file_layers;
   int read_rc = read(fd, &file_layers, sizeof(unsigned int));
@@ -184,7 +175,7 @@ struct lbann_model_sequential_header {
   uint32_t layers;
 };
 
-bool lbann::sequential_model::save_to_checkpoint_shared(lbann::persist& p) {
+bool sequential_model::save_to_checkpoint_shared(persist& p) {
   // write parameters from base class first
   model::save_to_checkpoint_shared(p);
 
@@ -208,7 +199,7 @@ bool lbann::sequential_model::save_to_checkpoint_shared(lbann::persist& p) {
   return true;
 }
 
-bool lbann::sequential_model::load_from_checkpoint_shared(lbann::persist& p) {
+bool sequential_model::load_from_checkpoint_shared(persist& p) {
   // read parameters from base class first
   model::load_from_checkpoint_shared(p);
 
@@ -241,7 +232,7 @@ bool lbann::sequential_model::load_from_checkpoint_shared(lbann::persist& p) {
   return true;
 }
 
-int lbann::sequential_model::num_previous_neurons() {
+int sequential_model::num_previous_neurons() {
   if (m_layers.size() == 0) {
     return -1;
   }
@@ -249,29 +240,29 @@ int lbann::sequential_model::num_previous_neurons() {
   return prev_layer->get_num_neurons();
 }
 
-int lbann::sequential_model::add(Layer *new_layer) {
+int sequential_model::add(Layer *new_layer) {
   const uint layer_index = m_layers.size();
   new_layer->set_index(layer_index);
   m_layers.push_back(new_layer);
   return layer_index;
 }
 
-void lbann::sequential_model::remove(int index) {
+void sequential_model::remove(int index) {
   delete m_layers[index];
   m_layers.erase(m_layers.begin()+index);
 }
 
-void lbann::sequential_model::insert(int index, Layer *new_layer) {
+void sequential_model::insert(int index, Layer *new_layer) {
   m_layers.insert(m_layers.begin()+index, new_layer);
 }
 
-lbann::Layer *lbann::sequential_model::swap(int index, Layer *new_layer) {
+Layer *sequential_model::swap(int index, Layer *new_layer) {
   Layer *tmp = m_layers[index];
   m_layers[index] = new_layer;
   return tmp;
 }
 
-void lbann::sequential_model::setup(int start_index, int end_index) {
+void sequential_model::setup(int start_index, int end_index) {
   if(end_index <= 0) {
     end_index = m_layers.size();
   }
@@ -293,10 +284,11 @@ void lbann::sequential_model::setup(int start_index, int end_index) {
   setup_callbacks();
 }
 
-bool lbann::sequential_model::at_epoch_start() {
+bool sequential_model::at_epoch_start() {
   // use mini batch index in data reader to signify start of epoch
-  lbann::io_layer *input = (lbann::io_layer *) m_layers[0];
+  io_layer *input = (io_layer *) m_layers[0];
   bool flag = input->at_new_epoch();
   return flag;
 }
 
+}  // namespace lbann
