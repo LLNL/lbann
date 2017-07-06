@@ -47,6 +47,9 @@ class lbann_callback_early_stopping : public lbann_callback {
   lbann_callback_early_stopping(const lbann_callback_early_stopping&) = default;
   lbann_callback_early_stopping& operator=(
     const lbann_callback_early_stopping&) = default;
+  lbann_callback_early_stopping* copy() const {
+    return new lbann_callback_early_stopping(*this);
+  }
   /** Update validation score and check for early stopping. */
   void on_validation_end(model *m);
   std::string name() const { return "early stopping"; }

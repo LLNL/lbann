@@ -63,10 +63,32 @@ class softmax_layer : public activation_layer {
     this->m_index = index;
   }
 
+  softmax_layer(const softmax_layer& other) :
+    activation_layer(other) {
+    if (m_workspace) {
+      delete m_workspace;
+      delete m_workspace_v;
+    }
+    m_workspace = other.m_workspace->Copy();
+    m_workspace_v = other.m_workspace_v->Copy();
+  }
+
+  softmax_layer& operator=(const softmax_layer& other) {
+    activation_layer::operator=(other);
+    if (m_workspace) {
+      delete m_workspace;
+      delete m_workspace_v;
+    }
+    m_workspace = other.m_workspace->Copy();
+    m_workspace_v = other.m_workspace_v->Copy();
+  }
+
   ~softmax_layer() {
     delete m_workspace;
     delete m_workspace_v;
   }
+
+  softmax_layer* copy() const { return new softmax_layer(*this); }
 
   std::string get_name() const { return "softmax"; }
 

@@ -30,9 +30,29 @@
 #include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
+
 class dataset {
  public:
   dataset(generic_data_reader *d_reader) : data_reader(d_reader), num_samples_processed(0), total_samples(0) {};
+  dataset(const dataset& other) :
+    num_samples_processed(other.num_samples_processed),
+    total_samples(other.total_samples),
+    num_iterations_per_epoch(other.num_iterations_per_epoch) {
+    if (data_reader) {
+      delete data_reader;
+    }
+    data_reader = other.data_reader->copy();
+  }
+  dataset& operator=(const dataset& other) {
+    num_samples_processed = other.num_samples_processed;
+    total_samples = other.total_samples;
+    num_iterations_per_epoch = other.num_iterations_per_epoch;
+    if (data_reader) {
+      delete data_reader;
+    }
+    data_reader = other.data_reader->copy();
+    return *this;
+  }
 
  public:
   generic_data_reader *data_reader;
@@ -40,6 +60,7 @@ class dataset {
   long total_samples;
   long num_iterations_per_epoch;
 };
-}
+
+}  // namespace lbann
 
 #endif  // LBANN_DATASET_HPP_INCLUDED

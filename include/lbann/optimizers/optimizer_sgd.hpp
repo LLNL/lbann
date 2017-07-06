@@ -50,6 +50,7 @@ class sgd : public optimizer {
   sgd& operator=(const sgd& other);
   /// Destructor
   ~sgd();
+  sgd* copy() const { return new sgd(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

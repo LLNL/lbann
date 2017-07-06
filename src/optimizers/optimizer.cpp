@@ -40,15 +40,15 @@ void optimizer::setup(AbsDistMat *parameters) {
   m_height = m_parameters->Height();
   m_width = m_parameters->Width();
   El::DistData dist(*m_parameters);
-  if(dist.colDist == MC && dist.rowDist == MR) {
+  if(dist.colDist == El::MC && dist.rowDist == El::MR) {
     m_matrix_format = matrix_format::MC_MR;
-  } else if(dist.colDist == CIRC && dist.rowDist == CIRC) {
+  } else if(dist.colDist == El::CIRC && dist.rowDist == El::CIRC) {
     m_matrix_format = matrix_format::CIRC_CIRC;
-  } else if(dist.colDist == STAR && dist.rowDist == STAR) {
+  } else if(dist.colDist == El::STAR && dist.rowDist == El::STAR) {
     m_matrix_format = matrix_format::STAR_STAR;
-  } else if(dist.colDist == STAR && dist.rowDist == VC) {
+  } else if(dist.colDist == El::STAR && dist.rowDist == El::VC) {
     m_matrix_format = matrix_format::STAR_VC;
-  } else if(dist.colDist == MC && dist.rowDist == STAR) {
+  } else if(dist.colDist == El::MC && dist.rowDist == El::STAR) {
     m_matrix_format = matrix_format::MC_STAR;
   } else {
     m_matrix_format = matrix_format::invalid;

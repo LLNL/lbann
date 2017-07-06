@@ -67,8 +67,11 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_max_sample_count_was_set(false), m_use_percent(1.0),
     m_master(false)
   {}
+  generic_data_reader(const generic_data_reader&) = default;
+  generic_data_reader& operator=(const generic_data_reader&) = default;
 
   virtual ~generic_data_reader() {}
+  virtual generic_data_reader* copy() const = 0;
 
   /** @name Methods related to construction and loading
    *  These methods are used in drivers (front ends) to construct data readers,
@@ -203,21 +206,30 @@ class generic_data_reader : public lbann_image_preprocessor {
   void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
-  virtual int fetch_data(Mat& X) {
-    NOT_IMPLEMENTED("fetch_data");
-    return 0;
+  virtual int fetch_data(Mat& X);
+  virtual int fetch_labels(Mat& Y);
+  virtual int fetch_responses(Mat& Y);
+
+ protected:
+  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+    NOT_IMPLEMENTED("fetch_dataum");
+    return false;
   }
 
-  virtual int fetch_label(Mat& Y) {
+  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_label");
-    return 0;
+    return false;
   }
 
-  virtual int fetch_response(Mat& Y) {
+  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_response");
-    return 0;
+    return false;
   }
 
+  virtual void preprocess_data_source(int tid) {};
+  virtual void postprocess_data_source(int tid) {};
+
+ public:
   virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     NOT_IMPLEMENTED("save_image");
   }
@@ -353,8 +365,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    *  The unused index set is emptied.
    */
   void use_unused_index_set();
-
-  generic_data_reader& operator=(const generic_data_reader& source);
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool saveToCheckpointShared(persist& p, const char *name);

@@ -35,6 +35,7 @@
 #include <string>
 
 namespace lbann {
+
 class deep_neural_network : public sequential_model {
  public:
   /// Constructor
@@ -46,6 +47,7 @@ class deep_neural_network : public sequential_model {
   /// Destructor
   ~deep_neural_network();
 
+  std::string name() const { return "deep neural network"; }
 
   /// Compute layer summaries
   void summarize_stats(lbann_summary& summarizer);
@@ -65,16 +67,8 @@ class deep_neural_network : public sequential_model {
   /// Evaluation step on one mini-batch
   bool evaluate_mini_batch();
 
-  /// Returns the model's name
-  const string& name() {
-    return m_name;
-  }
-
- protected:
-  ///string name
-  std::string m_name;
 };
-}
 
+}  // namespace lbann
 
-#endif // LBANN_MODEL_DNN_HPP
+#endif  // LBANN_MODEL_DNN_HPP

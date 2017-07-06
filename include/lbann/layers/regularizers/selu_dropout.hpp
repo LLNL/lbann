@@ -64,9 +64,36 @@ class selu_dropout : public regularizer_layer {
     m_b = -m_a * m_alpha_prime*(DataType(1) - keep_prob);
   }
 
+  selu_dropout(const selu_dropout& other) :
+    regularizer_layer(other),
+    m_alpha_prime(other.m_alpha_prime),
+    m_a(other.m_a),
+    m_b(other.m_b),
+    m_keep_prob(other.m_keep_prob) {
+    if (m_cur_mask) {
+      delete m_cur_mask;
+    }
+    m_cur_mask = new Mat(*other.m_cur_mask);
+  }
+
+  selu_dropout& operator=(const selu_dropout& other) {
+    regularizer_layer::operator=(other);
+    m_alpha_prime = other.m_alpha_prime;
+    m_a = other.m_a;
+    m_b = other.m_b;
+    m_keep_prob = other.m_keep_prob;
+    if (m_cur_mask) {
+      delete m_cur_mask;
+    }
+    m_cur_mask = new Mat(*other.m_cur_mask);
+    return *this;
+  }
+
   ~selu_dropout() {
     delete m_cur_mask;
   }
+
+  selu_dropout* copy() const { return new selu_dropout(*this); }
 
   std::string get_name() const { return "selu dropout"; }
 

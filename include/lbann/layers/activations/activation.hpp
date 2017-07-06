@@ -40,6 +40,8 @@ class activation_layer : public Layer {
                    int mini_batch_size) :
     Layer(index, comm, mini_batch_size) {
   }
+  activation_layer(const activation_layer&) = default;
+  activation_layer& operator=(const activation_layer&) = default;
 
   virtual ~activation_layer() {}
 
@@ -57,6 +59,9 @@ class entrywise_activation_layer : public activation_layer {
                              int mini_batch_size) :
     activation_layer(index, comm, mini_batch_size) {
   }
+  entrywise_activation_layer(const entrywise_activation_layer&) = default;
+  entrywise_activation_layer& operator=(
+    const entrywise_activation_layer&) = default;
 
   virtual ~entrywise_activation_layer() {}
 

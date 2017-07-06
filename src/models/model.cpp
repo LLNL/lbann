@@ -34,10 +34,9 @@
 
 #include "mpi.h"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-lbann::model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
+model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
                     optimizer_factory *optimizer_fac) :
   m_obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
@@ -48,60 +47,53 @@ lbann::model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
   m_comm(comm),
   m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
   m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
-  m_optimizer_fac(optimizer_fac) {
-  /* store our global rank and size since we refer to this a lot */
-  int rank, ranks;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &ranks);
-  m_rank  = rank;
-  m_ranks = ranks;
-}
+  m_optimizer_fac(optimizer_fac) {}
 
-void lbann::model::add_callback(lbann::lbann_callback *cb) {
+void model::add_callback(lbann_callback *cb) {
   m_callbacks.push_back(cb);
 }
 
-void lbann::model::setup_callbacks() {
+void model::setup_callbacks() {
   for (auto&& cb : m_callbacks) {
     cb->setup(this);
   }
 }
 
-void lbann::model::add_metric(lbann::metrics::metric *m) {
+void model::add_metric(metrics::metric *m) {
   m_metrics.push_back(m);
 }
 
-void lbann::model::do_train_begin_cbs() {
+void model::do_train_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_train_begin(this);
   }
 }
 
-void lbann::model::do_train_end_cbs() {
+void model::do_train_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_train_end(this);
   }
 }
 
-void lbann::model::do_phase_end_cbs() {
+void model::do_phase_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_phase_end(this);
   }
 }
 
-void lbann::model::do_epoch_begin_cbs() {
+void model::do_epoch_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_epoch_begin(this);
   }
 }
 
-void lbann::model::do_epoch_end_cbs() {
+void model::do_epoch_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_epoch_end(this);
   }
 }
 
-void lbann::model::do_batch_begin_cbs() {
+void model::do_batch_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_begin(this);
@@ -109,7 +101,7 @@ void lbann::model::do_batch_begin_cbs() {
   }
 }
 
-void lbann::model::do_batch_end_cbs() {
+void model::do_batch_end_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_end(this);
@@ -117,31 +109,31 @@ void lbann::model::do_batch_end_cbs() {
   }
 }
 
-void lbann::model::do_test_begin_cbs() {
+void model::do_test_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_test_begin(this);
   }
 }
 
-void lbann::model::do_test_end_cbs() {
+void model::do_test_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_test_end(this);
   }
 }
 
-void lbann::model::do_validation_begin_cbs() {
+void model::do_validation_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_validation_begin(this);
   }
 }
 
-void lbann::model::do_validation_end_cbs() {
+void model::do_validation_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_validation_end(this);
   }
 }
 
-void lbann::model::do_model_forward_prop_begin_cbs() {
+void model::do_model_forward_prop_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_forward_prop_begin(this);
@@ -149,7 +141,7 @@ void lbann::model::do_model_forward_prop_begin_cbs() {
   }
 }
 
-void lbann::model::do_layer_forward_prop_begin_cbs(Layer *l) {
+void model::do_layer_forward_prop_begin_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_forward_prop_begin(this, l);
@@ -157,7 +149,7 @@ void lbann::model::do_layer_forward_prop_begin_cbs(Layer *l) {
   }
 }
 
-void lbann::model::do_model_forward_prop_end_cbs() {
+void model::do_model_forward_prop_end_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_forward_prop_end(this);
@@ -165,7 +157,7 @@ void lbann::model::do_model_forward_prop_end_cbs() {
   }
 }
 
-void lbann::model::do_layer_forward_prop_end_cbs(Layer *l) {
+void model::do_layer_forward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_forward_prop_end(this, l);
@@ -173,7 +165,7 @@ void lbann::model::do_layer_forward_prop_end_cbs(Layer *l) {
   }
 }
 
-void lbann::model::do_model_backward_prop_begin_cbs() {
+void model::do_model_backward_prop_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
@@ -181,7 +173,7 @@ void lbann::model::do_model_backward_prop_begin_cbs() {
   }
 }
 
-void lbann::model::do_layer_backward_prop_begin_cbs(Layer *l) {
+void model::do_layer_backward_prop_begin_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this, l);
@@ -189,7 +181,7 @@ void lbann::model::do_layer_backward_prop_begin_cbs(Layer *l) {
   }
 }
 
-void lbann::model::do_model_backward_prop_end_cbs() {
+void model::do_model_backward_prop_end_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this);
@@ -197,7 +189,7 @@ void lbann::model::do_model_backward_prop_end_cbs() {
   }
 }
 
-void lbann::model::do_layer_backward_prop_end_cbs(Layer *l) {
+void model::do_layer_backward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
@@ -209,7 +201,7 @@ void lbann::model::do_layer_backward_prop_end_cbs(Layer *l) {
 // Evaluation callbacks
 ////////////////////////////////////////////////////////////////////////////////
 
-void lbann::model::do_batch_evaluate_begin_cbs() {
+void model::do_batch_evaluate_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_evaluate_begin(this);
@@ -217,7 +209,7 @@ void lbann::model::do_batch_evaluate_begin_cbs() {
   }
 }
 
-void lbann::model::do_batch_evaluate_end_cbs() {
+void model::do_batch_evaluate_end_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_evaluate_end(this);
@@ -225,32 +217,32 @@ void lbann::model::do_batch_evaluate_end_cbs() {
   }
 }
 
-void lbann::model::do_model_evaluate_forward_prop_begin_cbs() {
+void model::do_model_evaluate_forward_prop_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_begin(this);
   }
 }
 
-void lbann::model::do_layer_evaluate_forward_prop_begin_cbs(Layer *l) {
+void model::do_layer_evaluate_forward_prop_begin_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_begin(this, l);
   }
 }
 
-void lbann::model::do_model_evaluate_forward_prop_end_cbs() {
+void model::do_model_evaluate_forward_prop_end_cbs() {
   for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_end(this);
   }
 }
 
-void lbann::model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
+void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_end(this, l);
   }
 }
 
 /** \brief Returns true if a checkpoint should be taken, false otherwise */
-bool lbann::model::need_checkpoint() {
+bool model::need_checkpoint() {
   /* TODO: since we're using clocks, this requires a bcast for each call,
    * we could use number of samples processed to make a local decision */
 
@@ -281,7 +273,7 @@ bool lbann::model::need_checkpoint() {
   if (flag == 0 && m_checkpoint_secs != 0.0) {
     // have rank 0 determine whether we should checkpoint
     // to avoid issues with clock skew, we rely on rank 0 to make decision
-    if (m_rank == 0) {
+    if (m_comm->am_world_master()) {
       // get the current time
       double current = MPI_Wtime();
 
@@ -306,13 +298,13 @@ static bool write_latest(const char *dir, const char *name, int epoch, int train
   sprintf(filename, "%s/%s", dir, name);
 
   // open the file for writing
-  int fd = lbann::openwrite(filename);
+  int fd = openwrite(filename);
   if (fd != -1) {
-    lbann::write_uint32(fd, "epoch", (uint32_t)epoch);
-    lbann::write_uint32(fd, "train", (uint32_t)train);
+    write_uint32(fd, "epoch", (uint32_t)epoch);
+    write_uint32(fd, "train", (uint32_t)train);
 
     // close our file
-    lbann::closewrite(fd, filename);
+    closewrite(fd, filename);
   }
 
   return true;
@@ -329,20 +321,20 @@ static bool read_latest(const char *dir, const char *name, int *epochLast, int *
   sprintf(filename, "%s/%s", dir, name);
 
   // open the file for reading
-  int fd = lbann::openread(filename);
+  int fd = openread(filename);
   if (fd != -1) {
     // read epoch from file
     uint32_t epoch;
-    lbann::read_uint32(fd, "epoch", &epoch);
+    read_uint32(fd, "epoch", &epoch);
     *epochLast = (int) epoch;
 
     // read epoch from file
     uint32_t train;
-    lbann::read_uint32(fd, "train", &train);
+    read_uint32(fd, "train", &train);
     *trainLast = train;
 
     // close our file
-    lbann::closeread(fd, filename);
+    closeread(fd, filename);
   }
 
   return true;
@@ -354,8 +346,8 @@ struct lbann_checkpoint {
   float learning_rate; // current learning rate
 };
 
-//bool lbann::model::checkpointShared(TrainingParams& trainParams)
-bool lbann::model::checkpointShared() {
+//bool model::checkpointShared(TrainingParams& trainParams)
+bool model::checkpointShared() {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0) {
     return false;
@@ -373,7 +365,7 @@ bool lbann::model::checkpointShared() {
 
   // let user know we're saving a checkpoint
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     timer.Start();
     printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
     fflush(stdout);
@@ -381,14 +373,14 @@ bool lbann::model::checkpointShared() {
 
   // create top level directory
   //const char* dir = trainParams.ParameterDir.c_str();
-  lbann::makedir(dir);
+  makedir(dir);
 
   // create subdirectory for this epoch
   char epochdir[1024];
   snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
 
   // start our checkpoint
-  lbann::persist p;
+  persist p;
   p.open_checkpoint(epochdir);
 
   // call virtual function to checkpoint model state
@@ -401,13 +393,13 @@ bool lbann::model::checkpointShared() {
 
   // write epoch number to current file, we do this at the end so as to only update
   // this file when we know we have a new valid checkpoint
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     write_latest(dir, "shared.last", epoch, step);
   }
 
   // stop timer and report cost
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     double secs = timer.Stop();
     double bw = 0.0;
     if (secs > 0.0) {
@@ -425,7 +417,7 @@ bool lbann::model::checkpointShared() {
   return true;
 }
 
-bool lbann::model::restartShared() {
+bool model::restartShared() {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0) {
     return false;
@@ -436,7 +428,7 @@ bool lbann::model::restartShared() {
 
   // read epoch number from current file
   int epoch, step;
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     read_latest(dir, "shared.last", &epoch, &step);
   }
   MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -452,7 +444,7 @@ bool lbann::model::restartShared() {
 
   // let user know we're restarting from a checkpoint
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     timer.Start();
     printf("Restart: epoch %d ...\n", epoch);
     fflush(stdout);
@@ -463,7 +455,7 @@ bool lbann::model::restartShared() {
   sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
 
   // open our checkpoint
-  lbann::persist p;
+  persist p;
   p.open_restart(epochdir);
 
   // call virtual function to restore model from checkpoint
@@ -476,7 +468,7 @@ bool lbann::model::restartShared() {
 
   // let user know we've completed reading our restart
   MPI_Barrier(MPI_COMM_WORLD);
-  if (m_rank == 0) {
+  if (m_comm->am_world_master()) {
     double secs = timer.Stop();
     double bw = 0.0;
     if (secs > 0.0) {
@@ -500,7 +492,7 @@ struct lbann_model_header {
   uint32_t current_phase;
 };
 
-bool lbann::model::save_to_checkpoint_shared(lbann::persist& p) {
+bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (p.get_rank() == 0) {
     p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
@@ -513,7 +505,7 @@ bool lbann::model::save_to_checkpoint_shared(lbann::persist& p) {
   return true;
 }
 
-bool lbann::model::load_from_checkpoint_shared(lbann::persist& p) {
+bool model::load_from_checkpoint_shared(persist& p) {
   // have rank 0 read the file
   // read state from file
   struct lbann_model_header header;
@@ -538,3 +530,5 @@ bool lbann::model::load_from_checkpoint_shared(lbann::persist& p) {
 
   return true;
 }
+
+}  // namespace lbann

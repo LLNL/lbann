@@ -42,7 +42,7 @@ namespace lbann {
 template <data_layout T_layout>
 class fully_connected_layer : public learning {
  private:
-  const weight_initialization m_weight_initialization;
+  weight_initialization m_weight_initialization;
 
   /// Views of the weight matrix that allow you to separate activation weights from bias weights
   ElMat *m_activation_weights_v;
@@ -101,6 +101,47 @@ class fully_connected_layer : public learning {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
   }
 
+  fully_connected_layer(const fully_connected_layer& other) :
+    learning(other),
+    m_weight_initialization(other.m_weight_initialization),
+    m_bias_scaling_factor(other.m_bias_scaling_factor) {
+    if (m_activation_weights_v) {
+      delete m_bias_weights_repl;
+      delete m_bias_weights_gradient_repl;
+      delete m_activation_weights_v;
+      delete m_activation_weights_gradient_v;
+      delete m_bias_weights_v;
+      delete m_bias_weights_gradient_v;
+    }
+    m_bias_weights_repl = other.m_bias_weights_repl->Copy();
+    m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
+    m_activation_weights_v = other.m_activation_weights_v->Copy();
+    m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
+    m_bias_weights_v = other.m_bias_weights_v->Copy();
+    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+  }
+
+  fully_connected_layer& operator=(const fully_connected_layer& other) {
+    learning::operator=(other);
+    m_weight_initialization = other.m_weight_initialization;
+    m_bias_scaling_factor = other.m_bias_scaling_factor;
+    if (m_activation_weights_v) {
+      delete m_bias_weights_repl;
+      delete m_bias_weights_gradient_repl;
+      delete m_activation_weights_v;
+      delete m_activation_weights_gradient_v;
+      delete m_bias_weights_v;
+      delete m_bias_weights_gradient_v;
+    }
+    m_bias_weights_repl = other.m_bias_weights_repl->Copy();
+    m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
+    m_activation_weights_v = other.m_activation_weights_v->Copy();
+    m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
+    m_bias_weights_v = other.m_bias_weights_v->Copy();
+    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    return *this;
+  }
+
   ~fully_connected_layer() {
     delete m_bias_weights_repl;
     delete m_bias_weights_gradient_repl;
@@ -108,6 +149,10 @@ class fully_connected_layer : public learning {
     delete m_activation_weights_gradient_v;
     delete m_bias_weights_v;
     delete m_bias_weights_gradient_v;
+  }
+
+  fully_connected_layer* copy() const {
+    return new fully_connected_layer(*this);
   }
 
   std::string get_name() const { return "fully connected"; }
@@ -190,13 +235,6 @@ class fully_connected_layer : public learning {
     mpi::AllReduce(total_error, norms.DistComm());
     avg_error = total_error / norms.Height();
     return avg_error;
-  }
-
-  inline DataType _sq(DataType x) {
-    return (x * x);
-  }
-  inline DataType _sqrt(DataType x) {
-    return (1 / sqrt(x + 1e-8));
   }
 
   bool update_compute() {

@@ -27,13 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model_dnn.hpp"
-#include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/activations/softmax.hpp"
-#include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/layers/io/target/target_layer.hpp" // temporary
 
 #include <string>
 #include <chrono>
@@ -45,38 +38,33 @@
 #include <stdio.h>
 #include "mpi.h"
 
-using namespace std;
-using namespace El;
-
+namespace lbann {
 
 ////////////////////////////////////////////////////////////////////////////////
 // deep_neural_network : main deep neural network class
 ////////////////////////////////////////////////////////////////////////////////
 
-lbann::deep_neural_network::deep_neural_network(int mini_batch_size,
-                                                lbann_comm *comm,
-                                                objective_functions::objective_fn *obj_fn,
-                                                optimizer_factory *_optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
-    m_name("deep_neural_network") {
-}
+deep_neural_network::deep_neural_network(int mini_batch_size,
+                                         lbann_comm *comm,
+                                         objective_functions::objective_fn *obj_fn,
+                                         optimizer_factory *_optimizer_fac)
+  : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac) {}
 
-lbann::deep_neural_network::~deep_neural_network() {}
+deep_neural_network::~deep_neural_network() {}
 
-
-void lbann::deep_neural_network::summarize_stats(lbann_summary& summarizer) {
+void deep_neural_network::summarize_stats(lbann_summary& summarizer) {
   for (size_t l = 0; l < m_layers.size(); ++l) {
     m_layers[l]->summarize_stats(summarizer, get_cur_step());
   }
 }
 
-void lbann::deep_neural_network::summarize_matrices(lbann_summary& summarizer) {
+void deep_neural_network::summarize_matrices(lbann_summary& summarizer) {
   for (size_t l = 0; l < m_layers.size(); ++l) {
     m_layers[l]->summarize_matrices(summarizer, get_cur_step());
   }
 }
 
-void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency) {
+void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -143,7 +131,7 @@ void lbann::deep_neural_network::train(int num_epochs, int evaluation_frequency)
   do_train_end_cbs();
 }
 
-bool lbann::deep_neural_network::train_mini_batch() {
+bool deep_neural_network::train_mini_batch() {
   do_batch_begin_cbs();
 
   // Forward propagation
@@ -176,7 +164,7 @@ bool lbann::deep_neural_network::train_mini_batch() {
   return data_set_processed;
 }
 
-void lbann::deep_neural_network::evaluate(execution_mode mode) {
+void deep_neural_network::evaluate(execution_mode mode) {
   switch(mode) {
   case execution_mode::validation:
     do_validation_begin_cbs();
@@ -222,7 +210,7 @@ void lbann::deep_neural_network::evaluate(execution_mode mode) {
   return;
 }
 
-bool lbann::deep_neural_network::evaluate_mini_batch() {
+bool deep_neural_network::evaluate_mini_batch() {
   do_batch_evaluate_begin_cbs();
 
   // forward propagation (mini-batch)
@@ -253,3 +241,5 @@ bool lbann::deep_neural_network::evaluate_mini_batch() {
   }
   return data_set_processed;
 }
+
+}  // namespace lbann

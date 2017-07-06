@@ -33,51 +33,31 @@
 using namespace std;
 using namespace El;
 
+namespace lbann {
 
-lbann::imagenet_readerSingle::imagenet_readerSingle(int batchSize, bool shuffle)
+imagenet_readerSingle::imagenet_readerSingle(int batchSize, bool shuffle)
   : imagenet_reader(batchSize, shuffle) {
-  m_pixels.resize(m_image_width * m_image_height * m_image_num_channels);
 }
 
-lbann::imagenet_readerSingle::imagenet_readerSingle(const imagenet_readerSingle& source)
+imagenet_readerSingle::imagenet_readerSingle(const imagenet_readerSingle& source)
   : imagenet_reader(source) {
   m_offsets = source.m_offsets;
-  m_pixels = source.m_pixels;
   open_data_stream();
 }
 
 
-lbann::imagenet_readerSingle::~imagenet_readerSingle() {
+imagenet_readerSingle::~imagenet_readerSingle() {
   m_data_filestream.close();
 }
 
 
-int lbann::imagenet_readerSingle::fetch_label(Mat& Y) {
-//@todo only one line is different from ImageNet:
-//label = ... should be refactored to eliminate duplicate code
-  if(!position_valid()) {
-    stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader error: !position_valid";
-    throw lbann_exception(err.str());
-  }
-
-  int current_batch_size = getm_batch_size();
-  int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; n++) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
-
-    int k = n - m_current_pos;
-    int index = m_shuffled_indices[n];
-    int label = m_offsets[index+1].second;
-
-    Y.Set(label, k, 1);
-  }
-  return (n - m_current_pos);
+bool imagenet_readerSingle::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  int label = m_offsets[data_id+1].second;
+  Y.Set(label, mb_idx, 1);
+  return true;
 }
 
-void lbann::imagenet_readerSingle::load() {
+void imagenet_readerSingle::load() {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
 
@@ -130,70 +110,59 @@ void lbann::imagenet_readerSingle::load() {
 }
 
 
-int lbann::imagenet_readerSingle::fetch_data(Mat& X) {
+bool imagenet_readerSingle::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   stringstream err;
+  int width, height;
 
-  if(!generic_data_reader::position_valid()) {
-    err << __FILE__ << " " << __LINE__ << " :: lbann::imagenet_reader::fetch_data() - !generic_data_reader::position_valid()";
+  if (data_id > m_offsets.size()-1) {
+    err << __FILE__ << " " << __LINE__ << " :: data_id= " << data_id << " is larger than m_offsets.size()= " << m_offsets.size() << " -2";
+    throw lbann_exception(err.str());
+  }
+  size_t start = m_offsets[data_id].first;
+  size_t end = m_offsets[data_id+1].first;
+
+  if (end > m_file_size) {
+    err << __FILE__ << " " << __LINE__ << " :: end= " << end << " is larger than m_file_size= " << m_file_size << " for P_" << get_rank() << " with role: " << get_role() << " m_offsets.size(): " << m_offsets.size() << " mb_idx: " << mb_idx << " data_id: " << data_id;
     throw lbann_exception(err.str());
   }
 
-  int width, height;
-  int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size), m_shuffled_indices.size());
+  int ssz = end - start;
 
-  for (int n = m_current_pos; n < end_pos; ++n) {
-    int k = n - m_current_pos;
-    int idx = m_shuffled_indices[n];
-    if (idx > m_offsets.size()-1) {
-      err << __FILE__ << " " << __LINE__ << " :: idx= " << idx << " is larger than m_offsets.size()= " << m_offsets.size() << " -2";
-      throw lbann_exception(err.str());
-    }
-    size_t start = m_offsets[idx].first;
-    size_t end = m_offsets[idx+1].first;
-
-    if (end > m_file_size) {
-      err << __FILE__ << " " << __LINE__ << " :: end= " << end << " is larger than m_file_size= " << m_file_size << " for P_" << get_rank() << " with role: " << get_role() << " m_offsets.size(): " << m_offsets.size() << " n: " << n << " idx: " << idx;
-      throw lbann_exception(err.str());
-    }
-
-    int ssz = end - start;
-
-    if (ssz <= 0) {
-      err << "P_" << get_rank() << " start: " << start << " end: " << end << " ssz= " << ssz << " is <= 0";
-      throw lbann_exception(err.str());
-    }
-
-    m_work_buffer.resize(ssz);
-    m_data_filestream.seekg(start);
-    m_data_filestream.read((char *)&m_work_buffer[0], ssz);
-
-    unsigned char *pixel_buf = m_pixels.data();
-    bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, pixel_buf);
-
-    if(!ret) {
-      err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << idx;
-      throw lbann_exception(err.str());
-    }
-    if(width != m_image_width || height != m_image_height) {
-      err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
-      throw lbann_exception(err.str());
-    }
-
-    for (size_t p = 0; p < m_pixels.size(); p++) {
-      X.Set(p, k, m_pixels[p]);
-    }
-
-    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
-    augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
-    normalize(pixel_col, m_image_num_channels);
+  if (ssz <= 0) {
+    err << "P_" << get_rank() << " start: " << start << " end: " << end << " ssz= " << ssz << " is <= 0";
+    throw lbann_exception(err.str());
   }
 
-  return end_pos - m_current_pos;
+  m_work_buffer.resize(ssz);
+  m_data_filestream.seekg(start);
+  m_data_filestream.read((char *)&m_work_buffer[0], ssz);
+
+  unsigned char *pixels = m_pixel_bufs[tid].data();
+  bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, pixels);
+
+  if(!ret) {
+    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << data_id;
+    throw lbann_exception(err.str());
+  }
+  if(width != m_image_width || height != m_image_height) {
+    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
+    throw lbann_exception(err.str());
+  }
+
+  for (size_t p = 0; p < num_channel_values; p++) {
+    X.Set(p, mb_idx, pixels[p]);
+  }
+
+  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
+  normalize(pixel_col, m_image_num_channels);
+
+  return true;
 }
 
 // Assignment operator
-lbann::imagenet_readerSingle& lbann::imagenet_readerSingle::operator=(const imagenet_readerSingle& source) {
+imagenet_readerSingle& imagenet_readerSingle::operator=(const imagenet_readerSingle& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
@@ -203,13 +172,12 @@ lbann::imagenet_readerSingle& lbann::imagenet_readerSingle::operator=(const imag
   imagenet_reader::operator=(source);
 
   m_offsets = source.m_offsets;
-  m_pixels = source.m_pixels;
   open_data_stream();
 
   return (*this);
 }
 
-void lbann::imagenet_readerSingle::open_data_stream() {
+void imagenet_readerSingle::open_data_stream() {
   string image_dir = get_file_dir();
   string base_filename = get_data_filename();
   stringstream b;
@@ -228,3 +196,5 @@ void lbann::imagenet_readerSingle::open_data_stream() {
   m_file_size = m_data_filestream.tellg();
   m_data_filestream.seekg(0, m_data_filestream.beg);
 }
+
+}  // namespace lbann

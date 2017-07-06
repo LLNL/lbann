@@ -53,6 +53,9 @@ class lbann_callback_dump_activations : public lbann_callback {
     const lbann_callback_dump_activations&) = default;
   lbann_callback_dump_activations& operator=(
     const lbann_callback_dump_activations&) = default;
+  lbann_callback_dump_activations* copy() const {
+    return new lbann_callback_dump_activations(*this);
+  }
   void on_forward_prop_end(model *m, Layer *l);
   std::string name() const { return "dump activations"; }
  private:

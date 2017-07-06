@@ -48,6 +48,8 @@ class mean_squared_error : public metric {
   /// Destructor
   ~mean_squared_error() {}
 
+  mean_squared_error* copy() const { return new mean_squared_error(*this); }
+
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
     // Setup the internal objective function

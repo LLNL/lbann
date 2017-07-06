@@ -42,6 +42,8 @@ class tanh_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
+  tanh_layer* copy() const { return new tanh_layer(*this); }
+
   std::string get_name() const { return "tanh"; }
 
   virtual inline void initialize_distributed_matrices() {

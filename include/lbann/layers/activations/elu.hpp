@@ -58,6 +58,7 @@ class elu_layer : public entrywise_activation_layer {
     m_alpha(alpha) { 
     initialize_distributed_matrices(); 
   }
+  elu_layer* copy() const { return new elu_layer(*this); }
 
   std::string get_name() const { return "ELU"; }
 

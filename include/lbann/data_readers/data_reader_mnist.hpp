@@ -33,14 +33,19 @@
 #include "image_preprocessor.hpp"
 
 namespace lbann {
+
 class mnist_reader : public generic_data_reader {
  public:
   mnist_reader(int batchSize, bool shuffle);
   mnist_reader(int batchSize);
-  ~mnist_reader();
+  mnist_reader(const mnist_reader&) = default;
+  mnist_reader& operator=(const mnist_reader&) = default;
+  ~mnist_reader() {}
+  mnist_reader* copy() const { return new mnist_reader(*this); }
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+
   int get_num_labels() const {
     return m_num_labels;
   }
@@ -76,7 +81,7 @@ class mnist_reader : public generic_data_reader {
 
  private:
 
-  std::vector<std::vector<unsigned char> > m_image_data;
+  std::vector<std::vector<unsigned char>> m_image_data;
   int m_image_width;
   int m_image_height;
   int m_num_labels;

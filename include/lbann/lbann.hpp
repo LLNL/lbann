@@ -79,7 +79,6 @@
 #include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/data_readers/data_reader_nci_regression.hpp"
 #include "lbann/data_readers/data_reader_cnpy.hpp"
 
 /// Callbacks

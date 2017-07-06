@@ -80,7 +80,7 @@ class target_layer_distributed_minibatch : public target_layer {
     generic_data_reader *data_reader = target_layer::select_data_reader();
 
     if (this->m_comm->get_rank_in_model() == m_root) {
-      data_reader->fetch_label(Y_local);
+      data_reader->fetch_labels(Y_local);
     }
 
     if (this->m_comm->get_rank_in_model() == m_root) {

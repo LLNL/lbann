@@ -39,6 +39,7 @@ class mean_squared_error : public objective_fn {
   mean_squared_error(const mean_squared_error& other) = default;
   mean_squared_error& operator=(const mean_squared_error& other) = default;
   ~mean_squared_error();
+  mean_squared_error* copy() const { return new mean_squared_error(*this); }
 
   void setup(int num_neurons, int mini_batch_size);
   void fp_set_std_matrix_view(int cur_mini_batch_size);

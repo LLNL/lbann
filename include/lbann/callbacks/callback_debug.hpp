@@ -49,6 +49,7 @@ class lbann_callback_debug : public lbann_callback {
   lbann_callback_debug(const lbann_callback_debug&) = default;
   lbann_callback_debug& operator=(
     const lbann_callback_debug&) = default;
+  lbann_callback_debug* copy() const { return new lbann_callback_debug(*this); }
   /** Print that a batch is being started. */
   void on_batch_begin(model *m);
   /** Print that forward prop for a layer is beginning. */

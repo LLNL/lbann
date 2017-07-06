@@ -58,6 +58,11 @@ class reconstruction_layer : public target_layer {
     num_forwardprop_steps = 0;
   }
 
+  reconstruction_layer* copy() const {
+    throw lbann_exception("reconstruction_layer can't be copied");
+    return nullptr;
+  }
+
   std::string get_name() const { return "reconstruction"; }
 
   virtual inline void initialize_distributed_matrices() {

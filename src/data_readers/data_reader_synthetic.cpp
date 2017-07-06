@@ -30,45 +30,25 @@
 #include <stdio.h>
 #include <string>
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-
-
-lbann::data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, int num_features, bool shuffle)
+data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, int num_features, bool shuffle)
   : generic_data_reader(batch_size, shuffle) {
   m_num_samples = num_samples;
   m_num_features = num_features;
 }
 
-//copy constructor
-lbann::data_reader_synthetic::data_reader_synthetic(const data_reader_synthetic& source)
-  : generic_data_reader((const generic_data_reader&) source),
-    m_num_samples(source.m_num_samples), m_num_features(source.m_num_features)
-{ }
-
-lbann::data_reader_synthetic::~data_reader_synthetic() {
-
-}
-
-
-
-//fetch one MB of data
-int lbann::data_reader_synthetic::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    return 0;
-  }
-
-  int current_batch_size = getm_batch_size();
+/// Generate one datum of the mini-batch
+bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  Mat X_v;
+  View(X_v, X, ALL, IR(mb_idx, mb_idx + 1));
   //@todo: generalize to take different data distribution/generator
-  El::Gaussian(X, m_num_features, current_batch_size, DataType(0), DataType(1));
+  El::Gaussian(X_v, m_num_features, 1, DataType(0), DataType(1));
 
-  return current_batch_size;
+  return true;
 }
 
-
-
-void lbann::data_reader_synthetic::load() {
+void data_reader_synthetic::load() {
   //set indices/ number of features
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
@@ -76,19 +56,4 @@ void lbann::data_reader_synthetic::load() {
   select_subset_of_data();
 }
 
-lbann::data_reader_synthetic& lbann::data_reader_synthetic::operator=(const data_reader_synthetic& source) {
-
-  // check for self-assignment
-  if (this == &source) {
-    return *this;
-  }
-
-  // Call the parent operator= function
-  generic_data_reader::operator=(source);
-
-
-  this->m_num_samples = source.m_num_samples;
-  this->m_num_features = source.m_num_features;
-
-  return *this;
-}
+}  // namespace lbann

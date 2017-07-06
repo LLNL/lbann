@@ -52,8 +52,12 @@ class model;
 class Layer {
  public:
   Layer(const int index, lbann_comm *comm, int mbsize);
+  Layer(const Layer& other);
+  Layer& operator=(const Layer& other);
 
   virtual ~Layer();
+
+  virtual Layer* copy() const = 0;
 
   template <data_layout T_layout>
   void initialize_distributed_matrices();

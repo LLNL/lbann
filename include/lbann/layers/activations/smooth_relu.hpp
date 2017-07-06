@@ -45,6 +45,8 @@ class smooth_relu_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
+  smooth_relu_layer* copy() const { return new smooth_relu_layer(*this); }
+
   std::string get_name() const { return "smooth relu"; }
 
   virtual inline void initialize_distributed_matrices() {

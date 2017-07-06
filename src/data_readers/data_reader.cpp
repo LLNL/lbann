@@ -28,8 +28,6 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 
-using namespace std;
-
 namespace lbann {
 
 void generic_data_reader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
@@ -64,6 +62,160 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
 void generic_data_reader::setup() {
   generic_data_reader::setup(0, m_batch_size);
+}
+
+int lbann::generic_data_reader::fetch_data(Mat& X) {
+  int nthreads = omp_get_num_threads();
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic data reader load error: !position_valid");
+  }
+
+  /// Allow each thread to perform any preprocessing necessary on the
+  /// data source prior to fetching data
+  #pragma omp parallel for
+  for (int t = 0; t < nthreads; t++) {
+    preprocess_data_source(omp_get_thread_num());
+  }
+
+  int current_batch_size = getm_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    X.Width());
+
+  El::Zeros(X, X.Height(), X.Width());
+  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  #pragma omp parallel for
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+    if (!valid) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic data reader load error: datum not valid");
+    }
+  }
+
+  /// Allow each thread to perform any postprocessing necessary on the
+  /// data source prior to fetching data
+  #pragma omp parallel for
+  for (int t = 0; t < nthreads; t++) {
+    postprocess_data_source(omp_get_thread_num());
+  }
+
+  return mb_size;
+}
+
+#if 0
+int lbann::generic_data_reader::fetch_data(std::vector<Mat>& X) {
+  int nthreads = omp_get_num_threads();
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic data reader load error: !position_valid");
+  }
+
+  /// Allow each thread to perform any preprocessing necessary on the
+  /// data source prior to fetching data
+  #pragma omp parallel for
+  for (int t = 0; t < nthreads; t++) {
+    preprocess_data_source(omp_get_thread_num());
+  }
+
+  int current_batch_size = getm_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    X.Width());
+
+  //  El::Zeros(X, X.Height(), X.Width());
+  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  #pragma omp parallel for
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+    if (!valid) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic data reader load error: datum not valid");
+    }
+    m_indices_fetched_per_mb.Set(s, 0, index);
+  }
+
+  /// Allow each thread to perform any postprocessing necessary on the
+  /// data source prior to fetching data
+  #pragma omp parallel for
+  for (int t = 0; t < nthreads; t++) {
+    postprocess_data_source(omp_get_thread_num());
+  }
+
+  return mb_size;
+}
+#endif
+int lbann::generic_data_reader::fetch_labels(Mat& Y) {
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic data reader load error: !position_valid");
+  }
+
+  int current_batch_size = getm_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    Y.Width());
+
+  El::Zeros(Y, Y.Height(), Y.Width());
+  #pragma omp parallel for
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+
+    bool valid = fetch_label(Y, index, s, omp_get_thread_num());
+    if (!valid) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic data reader load error: label not valid");
+    }
+  }
+  return mb_size;
+}
+
+int lbann::generic_data_reader::fetch_responses(Mat& Y) {
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic data reader load error: !position_valid");
+  }
+
+  int current_batch_size = getm_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    Y.Width());
+
+  El::Zeros(Y, Y.Height(), Y.Width());
+  #pragma omp parallel for
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+
+    bool valid = fetch_response(Y, index, s, omp_get_thread_num());
+    if (!valid) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic data reader load error: response not valid");
+    }
+  }
+  return mb_size;
 }
 
 bool generic_data_reader::update() {
@@ -124,11 +276,11 @@ void generic_data_reader::select_subset_of_data() {
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
     if(count > getNumData()) {
-      stringstream err;
-      err << __FILE__ << " " << __LINE__
-          << " :: generic_data_reader::select_subset_of_data() - max_sample_count=" << count
-          << " is > getNumData=" << getNumData();
-      throw lbann_exception(err.str());
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
+        std::to_string(count) + " is > getNumData=" +
+        std::to_string(getNumData()));
     }
     m_shuffled_indices.resize(get_max_sample_count());
   } else if (has_use_percent()) {
@@ -154,25 +306,6 @@ void generic_data_reader::use_unused_index_set() {
   m_shuffled_indices.swap(m_unused_indices);
   m_unused_indices.clear();
   std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
-}
-
-generic_data_reader& generic_data_reader::operator=(const generic_data_reader& source) {
-  this->m_batch_size = source.m_batch_size;
-  this->m_current_pos = source.m_current_pos;
-  this->m_first_n = source.m_first_n;
-  this->m_batch_stride = source.m_batch_stride;
-  this->m_sample_stride = source.m_sample_stride;
-  this->m_base_offset = source.m_base_offset;
-  this->m_model_offset = source.m_model_offset;
-  this->m_use_alt_last_mini_batch_size = source.m_use_alt_last_mini_batch_size;
-  this->m_last_mini_batch_threshold = source.m_last_mini_batch_threshold;
-  this->m_last_mini_batch_size = source.m_last_mini_batch_size;
-  this->m_last_mini_batch_stride = source.m_last_mini_batch_stride;
-
-  // Vectors implement a deep copy
-  this->m_shuffled_indices = source.m_shuffled_indices;
-  this->m_unused_indices = source.m_unused_indices;
-  return *this;
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
@@ -271,10 +404,9 @@ void generic_data_reader::set_data_filename(std::string s) {
 
 std::string generic_data_reader::get_data_filename() const {
   if (m_data_fn == "") {
-    std::stringstream s;
-    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-      << "set_data_filename; this is an error!";
-    throw lbann_exception(s.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_data_filename; error!");
   }
   return m_data_fn;
 }
@@ -285,10 +417,9 @@ void generic_data_reader::set_label_filename(std::string s) {
 
 string generic_data_reader::get_label_filename() const {
   if (m_label_fn == "") {
-    std::stringstream s;
-    s << __FILE__ << " " << __LINE__ << " :: you apparently did not call "
-      << "set_label_filename; this is an error!";
-    throw lbann_exception(s.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_label_filename; error!");
   }
   return m_label_fn;
 }
@@ -316,9 +447,10 @@ bool generic_data_reader::get_firstN() const {
 
 void generic_data_reader::set_validation_percent(double s) {
   if (s < 0 or s > 1.0) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      std::to_string(s));
   }
   m_validation_percent = s;
 }
@@ -336,9 +468,10 @@ double generic_data_reader::get_validation_percent() const {
 
 void generic_data_reader::set_use_percent(double s) {
   if (s < 0 or s > 1.0) {
-    stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " << s;
-    throw lbann_exception(err.str());
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      std::to_string(s));
   }
   m_use_percent = s;
 }
@@ -351,11 +484,10 @@ bool generic_data_reader::has_use_percent() const {
 }
 
 double generic_data_reader::get_use_percent() const {
-  stringstream err;
-  if (not has_use_percent()) {
-    err << __FILE__ << " " << __LINE__ << " :: you must call set_use_percent()"
-        << " but apparently have not done so";
-    throw lbann_exception(err.str());
+  if (!has_use_percent()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you must call set_use_percent(); error!");
   }
   return m_use_percent;
 }

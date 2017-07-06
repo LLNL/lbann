@@ -52,6 +52,9 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
     const lbann_callback_dump_minibatch_sample_indices&) = default;
   lbann_callback_dump_minibatch_sample_indices& operator=(
     const lbann_callback_dump_minibatch_sample_indices&) = default;
+  lbann_callback_dump_minibatch_sample_indices* copy() const {
+    return new lbann_callback_dump_minibatch_sample_indices(*this);
+  }
   void on_forward_prop_end(model *m, Layer *l);
   void on_evaluate_forward_prop_end(model *m, Layer *l);
 

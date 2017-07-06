@@ -60,6 +60,9 @@ class lbann_callback_imcomm : public lbann_callback {
                         lbann_summary *summarizer = nullptr);
   lbann_callback_imcomm(const lbann_callback_imcomm&) = default;
   lbann_callback_imcomm& operator=(const lbann_callback_imcomm&) = default;
+  lbann_callback_imcomm* copy() const {
+    return new lbann_callback_imcomm(*this);
+  }
   /**
    * Convenience initialization to do one update type for a set of layers.
    * Implies no inter-model updates for other layers.

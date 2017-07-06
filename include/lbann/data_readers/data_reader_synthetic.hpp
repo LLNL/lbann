@@ -30,18 +30,19 @@
 
 #include "data_reader.hpp"
 
-
-
 namespace lbann {
 class data_reader_synthetic : public generic_data_reader {
  public:
   //@todo: add what data distribution to use
   data_reader_synthetic(int batchSize, int num_samples, int num_features, bool shuffle = true);
-  data_reader_synthetic(const data_reader_synthetic& source); //copy constructor
-  data_reader_synthetic& operator=(const data_reader_synthetic& source); //assignment operator
-  ~data_reader_synthetic();
+  data_reader_synthetic(const data_reader_synthetic&) = default;
+  data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
+  ~data_reader_synthetic() {}
+  data_reader_synthetic* copy() const {
+    return new data_reader_synthetic(*this);
+  }
 
-  int fetch_data(Mat& X);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 
   void load();
 
@@ -65,6 +66,6 @@ class data_reader_synthetic : public generic_data_reader {
   int  m_num_features; //cols
 };
 
-}
+}  // namespace lbann
 
-#endif // LBANN_DATA_READER_SYNTHETIC_HPP
+#endif  // LBANN_DATA_READER_SYNTHETIC_HPP
