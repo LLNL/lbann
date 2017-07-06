@@ -79,7 +79,6 @@ model {
     parent: 2
     data_layout: "data_parallel"
     relu {
-      num_neurons: 369024
     }
   }
 
@@ -91,8 +90,6 @@ model {
     parent: 3
     data_layout: "data_parallel"
     local_response_normalization {
-      num_dims: 2
-      num_channels: 96
       dims: "62 62"
       window_width: 5
       lrn_alpha: 0.0001
@@ -147,7 +144,6 @@ model {
     parent: 6
     data_layout: "data_parallel"
     relu {
-      num_neurons: 230400
     }
   }
 
@@ -159,8 +155,6 @@ model {
     parent: 7
     data_layout: "data_parallel"
     local_response_normalization {
-      num_dims: 2
-      num_channels: 256
       dims: "30 30"
       window_width: 5
       lrn_alpha: 0.0001
@@ -216,7 +210,6 @@ model {
     parent: 10
     data_layout: "data_parallel"
     relu {
-      num_neurons: 75264
     }
   }
 
@@ -248,7 +241,6 @@ model {
     parent: 12
     data_layout: "data_parallel"
     relu {
-      num_neurons: 75264
     }
   }
 
@@ -280,7 +272,6 @@ model {
     parent: 14
     data_layout: "data_parallel"
     relu {
-      num_neurons: 50176
     }
   }
 
@@ -326,7 +317,6 @@ model {
     parent: 17
     data_layout: "data_parallel"
     relu {
-      num_neurons: 4096
     }
   }
 
@@ -338,7 +328,6 @@ model {
     parent: 18
     data_layout: "data_parallel"
     dropout {
-      num_neurons: 4096
       keep_prob: 0.5
     }
   }
@@ -366,7 +355,6 @@ model {
     parent: 20
     data_layout: "data_parallel"
     relu {
-      num_neurons: 4096
     }
   }
 
@@ -378,7 +366,6 @@ model {
     parent: 21
     data_layout: "data_parallel"
     dropout {
-      num_neurons: 4096
       keep_prob: 0.5
     }
   }
