@@ -42,6 +42,7 @@ class data_reader_nci : public generic_data_reader {
   data_reader_nci(const data_reader_nci& source) = default;
   data_reader_nci& operator=(const data_reader_nci& source) = default;
   ~data_reader_nci() {}
+  data_reader_nci* copy() const { return new data_reader_nci(*this); }
 
   void preprocess_data_source(int tid);
   void postprocess_data_source(int tid);

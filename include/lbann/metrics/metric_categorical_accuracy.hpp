@@ -58,6 +58,8 @@ class categorical_accuracy : public metric {
   /// Destructor
   ~categorical_accuracy() {}
 
+  categorical_accuracy* copy() const { return new categorical_accuracy(*this); }
+
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
     // Clear the contents of the intermediate matrices

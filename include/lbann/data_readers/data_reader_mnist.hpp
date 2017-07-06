@@ -41,6 +41,7 @@ class mnist_reader : public generic_data_reader {
   mnist_reader(const mnist_reader&) = default;
   mnist_reader& operator=(const mnist_reader&) = default;
   ~mnist_reader() {}
+  mnist_reader* copy() const { return new mnist_reader(*this); }
 
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);

@@ -104,6 +104,97 @@ Layer::Layer(const int index, lbann_comm *comm, int mbsize)
   reset_counters();
 }
 
+Layer::Layer(const Layer& other) :
+  m_index(other.m_index),
+  m_comm(other.m_comm),
+  m_num_neurons(other.m_num_neurons),
+  m_neuron_dims(other.m_neuron_dims),
+  m_num_prev_neurons(other.m_num_prev_neurons),
+  m_prev_neuron_dims(other.m_prev_neuron_dims),
+  m_execution_mode(other.m_execution_mode),
+  m_neural_network_model(other.m_neural_network_model),
+  m_prev_layer(other.m_prev_layer),
+  m_next_layer(other.m_next_layer),
+  m_using_gpus(other.m_using_gpus),
+  m_cudnn(other.m_cudnn),
+  m_mini_batch_size(other.m_mini_batch_size),
+  m_effective_mbsize(other.m_effective_mbsize),
+  fp_time(other.fp_time),
+  fp_compute_time(other.fp_compute_time),
+  bp_time(other.bp_time),
+  bp_compute_time(other.bp_compute_time),
+  update_time(other.update_time) {
+  // No cuDNN support yet.
+#ifdef __LIB_CUDNN
+  throw lbann_exception("cannot copy layers with cuDNN enabled");
+#endif
+  // Free allocated memory.
+  if (m_prev_error_signal) {
+    delete m_prev_error_signal;
+    delete m_error_signal;
+    delete m_activations;
+    delete m_prev_activations;
+    delete m_prev_error_signal_v;
+    delete m_error_signal_v;
+    delete m_activations_v;
+    delete m_prev_activations_v;
+  }
+  m_prev_error_signal = other.m_prev_error_signal->Copy();
+  m_error_signal = other.m_error_signal->Copy();
+  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
+  m_error_signal_v = other.m_error_signal_v->Copy();
+  m_activations = other.m_activations->Copy();
+  m_prev_activations = other.m_prev_activations->Copy();
+  m_activations_v = other.m_activations_v->Copy();
+  m_prev_activations_v = other.m_prev_activations_v->Copy();
+}
+
+Layer& Layer::operator=(const Layer& other) {
+  // No cuDNN support yet.
+#ifdef __LIB_CUDNN
+  throw lbann_exception("cannot copy layers with cuDNN enabled");
+#endif
+  m_index = other.m_index;
+  m_comm = other.m_comm;
+  m_num_neurons = other.m_num_neurons;
+  m_neuron_dims = other.m_neuron_dims;
+  m_num_prev_neurons = other.m_num_prev_neurons;
+  m_prev_neuron_dims = other.m_prev_neuron_dims;
+  m_execution_mode = other.m_execution_mode;
+  m_neural_network_model = other.m_neural_network_model;
+  m_prev_layer = other.m_prev_layer;
+  m_next_layer = other.m_next_layer;
+  m_using_gpus = other.m_using_gpus;
+  m_cudnn = other.m_cudnn;
+  m_mini_batch_size = other.m_mini_batch_size;
+  m_effective_mbsize = other.m_effective_mbsize;
+  fp_time = other.fp_time;
+  fp_compute_time = other.fp_compute_time;
+  bp_time = other.bp_time;
+  bp_compute_time = other.bp_compute_time;
+  update_time = other.update_time;
+  // Free allocated memory.
+  if (m_prev_error_signal) {
+    delete m_prev_error_signal;
+    delete m_error_signal;
+    delete m_activations;
+    delete m_prev_activations;
+    delete m_prev_error_signal_v;
+    delete m_error_signal_v;
+    delete m_activations_v;
+    delete m_prev_activations_v;
+  }
+  m_prev_error_signal = other.m_prev_error_signal->Copy();
+  m_error_signal = other.m_error_signal->Copy();
+  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
+  m_error_signal_v = other.m_error_signal_v->Copy();
+  m_activations = other.m_activations->Copy();
+  m_prev_activations = other.m_prev_activations->Copy();
+  m_activations_v = other.m_activations_v->Copy();
+  m_prev_activations_v = other.m_prev_activations_v->Copy();
+  return *this;
+}
+
 Layer::~Layer() {
 #ifdef __LIB_CUDNN
   if(m_prev_neurons_cudnn_desc) {

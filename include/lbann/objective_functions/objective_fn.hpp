@@ -67,6 +67,7 @@ class objective_fn {
   objective_fn(const objective_fn& other) = default;
   objective_fn& operator=(const objective_fn& other) = default;
   virtual ~objective_fn() {}
+  virtual objective_fn* copy() const = 0;
   virtual void setup(int num_neurons, int mini_batch_size) {}
   virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
   /// Compute the object function -- Note that it is averaged across a mini-batch

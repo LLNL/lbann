@@ -48,6 +48,11 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
     initialize_distributed_matrices();
   }
 
+  target_layer_partitioned_minibatch_parallel_io* copy() const {
+    throw lbann_exception("target_layer_partitioned_minibatch_parallel_io can't be copied");
+    return nullptr;
+  }
+
   std::string get_name() const { return "target layer partitioned minibatch parallel io"; }
 
   virtual inline void initialize_distributed_matrices() {

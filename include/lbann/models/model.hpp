@@ -38,9 +38,6 @@
 #include "lbann/objective_functions/objective_fn.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include <vector>
 #include <string>
 
@@ -57,6 +54,9 @@ class model {
   model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
         optimizer_factory *optimizer_fac);
   virtual ~model() {}
+
+  /** Return the model's name. */
+  virtual std::string name() const = 0;
 
   /** Initialize the model. */
   virtual void setup() {}
@@ -203,10 +203,6 @@ class model {
   int m_current_phase;
   /** Communicator for the model. */
   lbann_comm *m_comm;
-  /** Global rank of process in MPI_COMM_WORLD */
-  int m_rank;
-  /** Size of MPI_COMM_WORLD */
-  int m_ranks;
   /** Current callbacks to process. */
   std::vector<lbann_callback *> m_callbacks;
 

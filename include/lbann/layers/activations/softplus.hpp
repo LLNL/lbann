@@ -46,6 +46,8 @@ public :
     initialize_distributed_matrices(); 
   }
 
+  softplus_layer* copy() const { return new softplus_layer(*this); }
+
   std::string get_name() const { return "softplus"; }
 
   virtual inline void initialize_distributed_matrices() {

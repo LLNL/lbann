@@ -70,7 +70,70 @@ class batch_normalization : public regularizer_layer {
       m_decay(decay) {
     // Setup the data distribution
     initialize_distributed_matrices();
-   }
+  }
+
+  batch_normalization(const batch_normalization& other) :
+    regularizer_layer(other),
+    m_gamma_init(other.m_gamma_init),
+    m_beta_init(other.m_beta_init),
+    m_decay(other.m_decay) {
+    if (m_gamma) {
+      delete m_gamma;
+      delete m_beta;
+      delete m_dgamma;
+      delete m_dbeta;
+      delete m_mean;
+      delete m_stdev;
+      delete m_running_mean;
+      delete m_running_stdev;
+    }
+    m_gamma = other.m_gamma->Copy();
+    m_beta = other.m_beta->Copy();
+    m_dgamma = other.m_dgamma->Copy();
+    m_dbeta = other.m_dbeta->Copy();
+    m_mean = other.m_mean->Copy();
+    m_stdev = other.m_stdev->Copy();
+    m_running_mean = other.m_running_mean->Copy();
+    m_running_stdev = other.m_running_stdev->Copy();
+    if (m_gamma_optimizer) {
+      delete m_gamma_optimizer;
+      delete m_beta_optimizer;
+    }
+    m_gamma_optimizer = other.m_gamma_optimizer->copy();
+    m_beta_optimizer = other.m_beta_optimizer->copy();
+  }
+
+  batch_normalization& operator=(const batch_normalization& other) {
+    regularizer_layer::operator=(other);
+    m_gamma_init = other.m_gamma_init;
+    m_beta_init = other.m_beta_init;
+    m_decay = other.m_decay;
+    if (m_gamma) {
+      delete m_gamma;
+      delete m_beta;
+      delete m_dgamma;
+      delete m_dbeta;
+      delete m_mean;
+      delete m_stdev;
+      delete m_running_mean;
+      delete m_running_stdev;
+    }
+    m_gamma = other.m_gamma->Copy();
+    m_beta = other.m_beta->Copy();
+    m_dgamma = other.m_dgamma->Copy();
+    m_dbeta = other.m_dbeta->Copy();
+    m_mean = other.m_mean->Copy();
+    m_stdev = other.m_stdev->Copy();
+    m_running_mean = other.m_running_mean->Copy();
+    m_running_stdev = other.m_running_stdev->Copy();
+    if (m_gamma_optimizer) {
+      delete m_gamma_optimizer;
+      delete m_beta_optimizer;
+    }
+    m_gamma_optimizer = other.m_gamma_optimizer->copy();
+    m_beta_optimizer = other.m_beta_optimizer->copy();
+    return *this;
+  }
 
   ~batch_normalization() {
     delete m_gamma;
@@ -82,6 +145,8 @@ class batch_normalization : public regularizer_layer {
     delete m_running_mean;
     delete m_running_stdev;
   }
+
+  batch_normalization* copy() const { return new batch_normalization(*this); }
 
   std::string get_name() const { return "batch normalization"; }
 

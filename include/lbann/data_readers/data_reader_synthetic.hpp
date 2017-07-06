@@ -38,6 +38,9 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() {}
+  data_reader_synthetic* copy() const {
+    return new data_reader_synthetic(*this);
+  }
 
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 

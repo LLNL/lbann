@@ -56,6 +56,7 @@ class hypergradient_adam : public optimizer {
   hypergradient_adam& operator=(const hypergradient_adam& other);
   /// Destructor
   ~hypergradient_adam();
+  hypergradient_adam* copy() const { return new hypergradient_adam(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

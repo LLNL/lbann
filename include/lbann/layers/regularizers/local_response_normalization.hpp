@@ -85,6 +85,11 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
+  local_response_normalization_layer(
+    const local_response_normalization_layer&) = default;
+  local_response_normalization_layer& operator=(
+    const local_response_normalization_layer&) = default;
+
   ~local_response_normalization_layer() {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
@@ -92,6 +97,10 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_desc));
     }
   #endif // __LIB_CUDNN
+  }
+
+  local_response_normalization_layer* copy() const {
+    return new local_response_normalization_layer(*this);
   }
 
   std::string get_name() const { return "local response normalization"; }

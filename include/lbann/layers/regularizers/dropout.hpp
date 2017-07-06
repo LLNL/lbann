@@ -58,9 +58,38 @@ class dropout : public regularizer_layer {
     initialize_distributed_matrices();
   }
 
+  dropout(const dropout& other) :
+    regularizer_layer(other),
+    m_keep_prob(other.m_keep_prob) {
+    if (m_cur_mask) {
+      delete m_cur_mask;
+    }
+#ifdef LBANN_PROCDET_DROPOUT
+    m_cur_mask = other.m_cur_mask->Copy();
+#else
+    m_cur_mask = new Mat(*other.m_cur_mask);
+#endif
+  }
+
+  dropout& operator=(const dropout& other) {
+    regularizer_layer::operator=(other);
+    m_keep_prob = other.m_keep_prob;
+    if (m_cur_mask) {
+      delete m_cur_mask;
+    }
+#ifdef LBANN_PROCDET_DROPOUT
+    m_cur_mask = other.m_cur_mask->Copy();
+#else
+    m_cur_mask = new Mat(*other.m_cur_mask);
+#endif
+    return *this;
+  }
+
   ~dropout() {
     delete m_cur_mask;
   }
+
+  dropout* copy() const { return new dropout(*this); }
 
   std::string get_name() const { return "dropout"; }
 

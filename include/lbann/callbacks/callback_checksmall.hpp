@@ -47,6 +47,9 @@ class lbann_callback_checksmall : public lbann_callback {
   lbann_callback_checksmall(const lbann_callback_checksmall&) = default;
   lbann_callback_checksmall& operator=(
     const lbann_callback_checksmall&) = default;
+  lbann_callback_checksmall* copy() const {
+    return new lbann_callback_checksmall(*this);
+  }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l);
   /** Check that gradients are good. */

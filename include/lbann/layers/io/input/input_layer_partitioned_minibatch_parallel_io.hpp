@@ -48,6 +48,10 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
     // Setup the data distribution
     initialize_distributed_matrices();
   }
+  input_layer_partitioned_minibatch_parallel_io* copy() const {
+    throw lbann_exception("Cannot copy input_layer_partitioned_minibatch_parallel_io");
+    return nullptr;
+  }
 
   std::string get_name() const { return "input layer partitioned minibatch parallel io"; }
 

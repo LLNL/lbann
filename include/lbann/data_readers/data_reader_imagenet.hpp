@@ -40,6 +40,8 @@ class imagenet_reader : public generic_data_reader {
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() {}
 
+  imagenet_reader* copy() const { return new imagenet_reader(*this); }
+
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 

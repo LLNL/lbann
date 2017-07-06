@@ -41,6 +41,7 @@ class lbann_callback_print : public lbann_callback {
   lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {}
   lbann_callback_print(const lbann_callback_print&) = default;
   lbann_callback_print& operator=(const lbann_callback_print&) = default;
+  lbann_callback_print* copy() const { return new lbann_callback_print(*this); }
   void setup(model *m);
   void on_epoch_begin(model *m);
   void on_epoch_end(model *m);

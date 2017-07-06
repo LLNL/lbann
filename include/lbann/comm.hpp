@@ -116,6 +116,10 @@ class lbann_comm {
   inline int get_procs_per_node() const {
     return procs_per_node;
   }
+  /** Return the total number of ranks. */
+  inline int get_procs_in_world() const {
+    return El::mpi::Size(El::mpi::COMM_WORLD);
+  }
   /** Return the rank of this process within its compute node. */
   inline int get_rank_in_node() const {
     return rank_in_node;

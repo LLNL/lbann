@@ -41,6 +41,8 @@ class cnpy_reader : public generic_data_reader {
 
   cnpy_reader& operator=(const cnpy_reader& source);
 
+  cnpy_reader* copy() const { return new cnpy_reader(*this); }
+
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   void load();
 

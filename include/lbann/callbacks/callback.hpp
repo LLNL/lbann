@@ -56,7 +56,10 @@ class lbann_callback {
   lbann_callback(int batch_interval = 1,
                  lbann_summary *summarizer = nullptr) :
     m_batch_interval(batch_interval), m_summarizer(summarizer) {}
+  lbann_callback(const lbann_callback&) = default;
+  lbann_callback& operator=(const lbann_callback&) = default;
   virtual ~lbann_callback() {}
+  virtual lbann_callback* copy() const = 0;
   void set_summarizer(lbann_summary *summarizer) {
     m_summarizer = summarizer;
   }

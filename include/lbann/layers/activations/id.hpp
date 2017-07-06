@@ -42,6 +42,7 @@ class id_layer : public entrywise_activation_layer {
     entrywise_activation_layer(index, comm, mini_batch_size) { 
      initialize_distributed_matrices(); 
   }
+  id_layer* copy() const { return new id_layer(*this); }
 
   std::string get_name() const { return "id"; }
 

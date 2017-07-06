@@ -35,6 +35,7 @@
 #include <string>
 
 namespace lbann {
+
 class greedy_layerwise_autoencoder : public sequential_model {
  public:
   /// Constructor
@@ -45,6 +46,8 @@ class greedy_layerwise_autoencoder : public sequential_model {
 
   /// Destructor
   ~greedy_layerwise_autoencoder();
+
+  std::string name() const { return "greedy layerwise autoencoder"; }
 
   /// Save model to shared checkpoint
   bool save_to_checkpoint_shared(persist& p);
@@ -76,14 +79,9 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Evaluation step on one mini-batch
   bool evaluate_mini_batch();
 
-  const std::string& name() {
-    return m_name;
-  }
   void reset_phase();
 
  protected:
-  /// Model's name
-  std::string m_name;
   /// index of last layer in a phase
   size_t m_phase_end;
   /// containers for  mirror layers
@@ -98,7 +96,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Removes mirror for specified layer index
   void remove_mirror(uint32_t layer_index);
 };
-}
 
+}  // namespace lbann
 
-#endif // LBANN_MODEL_DNN_HPP
+#endif  // LBANN_MODEL_DNN_HPP

@@ -43,6 +43,8 @@ class regularizer_layer : public Layer {
     Layer(index, comm, mini_batch_size) {
     
   }
+  regularizer_layer(const regularizer_layer&) = default;
+  regularizer_layer& operator=(const regularizer_layer&) = default;
   virtual ~regularizer_layer() {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {

@@ -29,26 +29,23 @@
 #include "lbann/layers/io/target/reconstruction.hpp"
 #include "lbann/data_readers/image_utils.hpp"
 
-using namespace std;
-using namespace El;
+namespace lbann {
 
-
-
-lbann::greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
-                                                                  lbann_comm *comm,
-                                                                  objective_functions::objective_fn *obj_fn,
-                                                                  optimizer_factory *_optimizer_fac)
+greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
+                                                           lbann_comm *comm,
+                                                           objective_functions::objective_fn *obj_fn,
+                                                           optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_phase_end(2), m_have_mirror(0) {}
 
-lbann::greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
+greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 
 struct lbann_model_greedy_layerwise_autoencoder_header {
   uint32_t phase_index; //should be m_current_phase??
   uint32_t have_mirror;
 };
 
-void lbann::greedy_layerwise_autoencoder::reset_phase() {
+void greedy_layerwise_autoencoder::reset_phase() {
   m_current_phase = 0;
   m_current_epoch = 0;
   m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
@@ -56,7 +53,7 @@ void lbann::greedy_layerwise_autoencoder::reset_phase() {
   m_reconstruction_layers.clear();
 }
 
-bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persist& p) {
+bool greedy_layerwise_autoencoder::save_to_checkpoint_shared(persist& p) {
   // have rank 0 write record whether we have a mirror layer inserted
   // we do this first, because we need to insert it again when reading back
   if (p.get_rank() == 0) {
@@ -70,7 +67,7 @@ bool lbann::greedy_layerwise_autoencoder::save_to_checkpoint_shared(lbann::persi
   return true;
 }
 
-bool lbann::greedy_layerwise_autoencoder::load_from_checkpoint_shared(lbann::persist& p) {
+bool greedy_layerwise_autoencoder::load_from_checkpoint_shared(persist& p) {
   // have rank 0 read whether we have a mirror layer inserted
   struct lbann_model_greedy_layerwise_autoencoder_header header;
   if (p.get_rank() == 0) {
@@ -99,20 +96,20 @@ bool lbann::greedy_layerwise_autoencoder::load_from_checkpoint_shared(lbann::per
   return true;
 }
 
-void lbann::greedy_layerwise_autoencoder::summarize_stats(lbann_summary& summarizer) {
+void greedy_layerwise_autoencoder::summarize_stats(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
     m_layers[l]->summarize_stats(summarizer, get_cur_step());
   }
 }
 
-void lbann::greedy_layerwise_autoencoder::summarize_matrices(lbann_summary& summarizer) {
+void greedy_layerwise_autoencoder::summarize_matrices(lbann_summary& summarizer) {
   for (size_t l = 1; l < m_layers.size(); ++l) {
     m_layers[l]->summarize_matrices(summarizer, get_cur_step());
   }
 }
 
 // inserts a mirror layer for specified layer index
-void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
+void greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   // compute layer index for mirrror
   size_t mirror_index = layer_index + 2;
 
@@ -143,7 +140,7 @@ void lbann::greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
 }
 
 // removes a mirror layer for specified layer index
-void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
+void greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
   if (m_have_mirror) {
     // compute layer index for mirrror
     size_t mirror_index = layer_index + 2;
@@ -165,7 +162,7 @@ void lbann::greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
   }
 }
 
-void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency) {
+void greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency) {
   int num_phases = m_layers.size()-1;
   // get to training, layer by layer
   while(m_current_phase < num_phases) {
@@ -215,7 +212,7 @@ void lbann::greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_f
 }
 
 
-void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_frequency) {
+void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_frequency) {
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -304,7 +301,7 @@ void lbann::greedy_layerwise_autoencoder::train_phase(int num_epochs, int evalua
   m_current_epoch = 0; //reset epoch counter
 }
 
-bool lbann::greedy_layerwise_autoencoder::train_mini_batch() {
+bool greedy_layerwise_autoencoder::train_mini_batch() {
   do_batch_begin_cbs();
 
   // Forward propagation
@@ -340,7 +337,7 @@ bool lbann::greedy_layerwise_autoencoder::train_mini_batch() {
   return data_set_processed;
 }
 
-void lbann::greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
+void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
   // Set the execution mode
   m_execution_mode = mode;
   for (size_t l = 0; l < m_layers.size(); ++l) {
@@ -365,7 +362,7 @@ void lbann::greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
   return;
 }
 
-bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch() {
+bool greedy_layerwise_autoencoder::evaluate_mini_batch() {
   // forward propagation (mini-batch)
   for (size_t l = 0; l < m_layers.size(); l++) {
     m_layers[l]->forwardProp();
@@ -382,7 +379,7 @@ bool lbann::greedy_layerwise_autoencoder::evaluate_mini_batch() {
 }
 
 
-void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
+void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   //concatenate original layers with mirror layers
   m_layers.insert(std::end(m_layers), std::begin(m_reconstruction_layers)+1,std::end(m_reconstruction_layers));
 
@@ -413,3 +410,5 @@ void lbann::greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
 
   return;
 }
+
+}  // namespace lbann

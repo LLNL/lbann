@@ -67,6 +67,8 @@ class relu_layer : public entrywise_activation_layer {
   #endif // #ifdef __LIB_CUDNN
 
   }
+  relu_layer(const relu_layer&) = default;
+  relu_layer& operator=(const relu_layer&) = default;
 
   virtual ~relu_layer() {
 
@@ -78,6 +80,8 @@ class relu_layer : public entrywise_activation_layer {
   #endif
 
   }
+
+  relu_layer* copy() const { return new relu_layer(*this); }
 
   std::string get_name() const { return "relu"; }
 

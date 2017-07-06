@@ -61,15 +61,15 @@ lbann_comm::lbann_comm(int ppm) :
 
   // Initialize node communicators
   setup_node_comm();
-  procs_per_node = mpi::Size(node_comm);
-  rank_in_node = mpi::Rank(node_comm);
+  procs_per_node = El::mpi::Size(node_comm);
+  rank_in_node = El::mpi::Rank(node_comm);
 }
 
 lbann_comm::~lbann_comm() {
   delete grid;
-  mpi::Free(model_comm);
-  mpi::Free(intermodel_comm);
-  mpi::Free(node_comm);
+  El::mpi::Free(model_comm);
+  El::mpi::Free(intermodel_comm);
+  El::mpi::Free(node_comm);
   for (auto&& buf_vec : collective_bufs) {
     for (auto&& buf : buf_vec.second) {
       delete[] buf;
@@ -78,7 +78,7 @@ lbann_comm::~lbann_comm() {
 }
 
 void lbann_comm::split_models(int ppm) {
-  int world_size = mpi::Size(mpi::COMM_WORLD);
+  int world_size = El::mpi::Size(El::mpi::COMM_WORLD);
   procs_per_model = ppm;
   if (ppm == 0) {
     procs_per_model = world_size;
@@ -100,12 +100,13 @@ void lbann_comm::split_models(int ppm) {
   }
 
   num_models = world_size / procs_per_model;
-  model_rank = mpi::Rank(mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = mpi::Rank(mpi::COMM_WORLD) % procs_per_model;
+  model_rank = El::mpi::Rank(El::mpi::COMM_WORLD) / procs_per_model;
+  rank_in_model = El::mpi::Rank(El::mpi::COMM_WORLD) % procs_per_model;
 
   // Initialize model and intermodel communicators
-  mpi::Split(mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
-  mpi::Split(mpi::COMM_WORLD, rank_in_model, model_rank, intermodel_comm);
+  El::mpi::Split(El::mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
+  El::mpi::Split(El::mpi::COMM_WORLD, rank_in_model, model_rank,
+                 intermodel_comm);
 
   // Initialize Elemental grid
   if (grid != nullptr) {
@@ -116,13 +117,13 @@ void lbann_comm::split_models(int ppm) {
 
 void lbann_comm::intermodel_sum_matrix(Mat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
-  AllReduce(mat, intermodel_comm, mpi::SUM);
+  AllReduce(mat, intermodel_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
 }
 
 void lbann_comm::intermodel_sum_matrix(DistMat& mat) {
   bytes_sent += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
-  AllReduce(mat, intermodel_comm, mpi::SUM);
+  AllReduce(mat, intermodel_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
 }
 
@@ -136,17 +137,17 @@ void lbann_comm::intermodel_broadcast_matrix(DistMat& mat, int root) {
 
 void lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
-  mpi::Barrier(intermodel_comm);
+  El::mpi::Barrier(intermodel_comm);
 }
 
 void lbann_comm::model_barrier() {
   ++num_model_barriers;
-  mpi::Barrier(model_comm);
+  El::mpi::Barrier(model_comm);
 }
 
 void lbann_comm::global_barrier() {
   ++num_global_barriers;
-  mpi::Barrier(mpi::COMM_WORLD);
+  El::mpi::Barrier(El::mpi::COMM_WORLD);
 }
 
 void lbann_comm::send(const Mat& mat, int model, int rank) {
@@ -158,12 +159,12 @@ void lbann_comm::send(const DistMat& mat, int model, int rank) {
 }
 
 void lbann_comm::nb_send(const Mat& mat, int model, int rank,
-                                mpi::Request<DataType>& req) {
+                         El::mpi::Request<DataType>& req) {
   nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank, req);
 }
 
 void lbann_comm::nb_send(const DistMat& mat, int model, int rank,
-                                mpi::Request<DataType>& req) {
+                         El::mpi::Request<DataType>& req) {
   nb_send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model,
           rank, req);
 }
@@ -185,20 +186,20 @@ void lbann_comm::recv(DistMat& mat) {
 }
 
 void lbann_comm::nb_recv(Mat& mat, int model, int rank,
-                                mpi::Request<DataType>& req) {
+                         El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), model, rank, req);
 }
 
 void lbann_comm::nb_recv(DistMat& mat, int model, int rank,
-                                mpi::Request<DataType>& req) {
+                         El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank, req);
 }
 
-void lbann_comm::nb_recv(Mat& mat, mpi::Request<DataType>& req) {
+void lbann_comm::nb_recv(Mat& mat, El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), req);
 }
 
-void lbann_comm::nb_recv(DistMat& mat, mpi::Request<DataType>& req) {
+void lbann_comm::nb_recv(DistMat& mat, El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), req);
 }
 
@@ -254,13 +255,13 @@ void lbann_comm::intermodel_allreduce(
 }
 
 void lbann_comm::recursive_doubling_allreduce_pow2(
-  mpi::Comm comm, Mat& mat, int max_recv_count,
+  El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
-  const int rank = mpi::Rank(comm);
-  const unsigned int nprocs = mpi::Size(comm);
+  const int rank = El::mpi::Rank(comm);
+  const unsigned int nprocs = El::mpi::Size(comm);
   if (nprocs == 1) {
     return;  // Nothing to do.
   }
@@ -294,8 +295,8 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, partner,
-                  recv_buf, recv_size, partner, comm);
+    El::mpi::SendRecv(send_buf, send_size, partner,
+                      recv_buf, recv_size, partner, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -311,14 +312,14 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
 }
 
 void lbann_comm::pe_ring_allreduce(
-  mpi::Comm comm, Mat& mat, int max_recv_count,
+  El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
-  const int rank = mpi::Rank(comm);
-  const int nprocs = mpi::Size(comm);
+  const int rank = El::mpi::Rank(comm);
+  const int nprocs = El::mpi::Size(comm);
   if (nprocs == 1) {
     return;  // Nothing to do.
   }
@@ -348,8 +349,8 @@ void lbann_comm::pe_ring_allreduce(
        outer_step += opts.max_reduces) {
     const int reduces_this_step = std::min(opts.max_reduces,
                                            nprocs - outer_step);
-    std::vector<mpi::Request<uint8_t>> send_reqs(reduces_this_step);
-    std::vector<mpi::Request<uint8_t>> recv_reqs(reduces_this_step);
+    std::vector<El::mpi::Request<uint8_t>> send_reqs(reduces_this_step);
+    std::vector<El::mpi::Request<uint8_t>> recv_reqs(reduces_this_step);
     std::vector<uint8_t *> recv_buffers(max_recv_buffers);
     int num_local_recvs = 0;
     std::vector<bool> local_recvs(reduces_this_step, false);
@@ -372,8 +373,8 @@ void lbann_comm::pe_ring_allreduce(
         ++num_local_recvs;
         local_recvs[reduce_idx] = is_recv_local;
       }
-      mpi::IRecv(recv_buffers[reduce_idx], recv_size, src, comm,
-                 recv_reqs[reduce_idx]);
+      El::mpi::IRecv(recv_buffers[reduce_idx], recv_size, src, comm,
+                     recv_reqs[reduce_idx]);
       double recv_tot = get_time() - recv_start;
       ar_recv_time += recv_tot;
       ar_rs_recv_time += recv_tot;
@@ -398,7 +399,7 @@ void lbann_comm::pe_ring_allreduce(
       ar_rs_bytes_sent += send_size;
       // Post the send.
       double send_start = get_time();
-      mpi::ISend(send_buf, send_size, dst, comm, send_reqs[reduce_idx]);
+      El::mpi::ISend(send_buf, send_size, dst, comm, send_reqs[reduce_idx]);
       double send_tot = get_time() - send_start;
       ar_send_time += send_tot;
       ar_rs_send_time += send_tot;
@@ -428,7 +429,7 @@ void lbann_comm::pe_ring_allreduce(
     }
     // Complete all the sends.
     double send_start = get_time();
-    mpi::WaitAll(reduces_this_step, send_reqs.data(), MPI_STATUSES_IGNORE);
+    El::mpi::WaitAll(reduces_this_step, send_reqs.data(), MPI_STATUSES_IGNORE);
     double send_tot = get_time() - send_start;
     ar_send_time += send_tot;
     ar_rs_send_time += send_tot;
@@ -463,8 +464,8 @@ void lbann_comm::pe_ring_allreduce(
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, dst,
-                  recv_buf, max_recv_count, src, comm);
+    El::mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -504,8 +505,8 @@ void lbann_comm::pe_ring_allreduce(
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(recv_buf, send_size, dst,
-                  recv_buf2, max_recv_count, src, comm);
+    El::mpi::SendRecv(recv_buf, send_size, dst,
+                      recv_buf2, max_recv_count, src, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -531,14 +532,14 @@ void lbann_comm::pe_ring_allreduce(
 }
 
 void lbann_comm::ring_allreduce(
-  mpi::Comm comm, Mat& mat, int max_recv_count,
+  El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
-  const int rank = mpi::Rank(comm);
-  const int nprocs = mpi::Size(comm);
+  const int rank = El::mpi::Rank(comm);
+  const int nprocs = El::mpi::Size(comm);
   if (nprocs == 1) {
     return;  // Nothing to do.
   }
@@ -602,8 +603,8 @@ void lbann_comm::ring_allreduce(
     ar_bytes_sent += send_size;
     ar_rs_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, dst,
-                  recv_buf, recv_size, src, comm);
+    El::mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, recv_size, src, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -641,8 +642,8 @@ void lbann_comm::ring_allreduce(
       max_recv_count = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     }
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, dst,
-                  recv_buf, max_recv_count, src, comm);
+    El::mpi::SendRecv(send_buf, send_size, dst,
+                      recv_buf, max_recv_count, src, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -678,8 +679,8 @@ void lbann_comm::ring_allreduce(
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(recv_buf, send_size, dst,
-                  recv_buf2, max_recv_count, src, comm);
+    El::mpi::SendRecv(recv_buf, send_size, dst,
+                      recv_buf2, max_recv_count, src, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -705,14 +706,14 @@ void lbann_comm::ring_allreduce(
 }
 
 void lbann_comm::rabenseifner_allreduce(
-  mpi::Comm comm, Mat& mat, int max_recv_count,
+  El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
-  const int rank = mpi::Rank(comm);
-  const unsigned int nprocs = mpi::Size(comm);
+  const int rank = El::mpi::Rank(comm);
+  const unsigned int nprocs = El::mpi::Size(comm);
   if (nprocs == 1) {
     return;  // Nothing to do.
   }
@@ -781,8 +782,8 @@ void lbann_comm::rabenseifner_allreduce(
     ar_bytes_sent += send_size;
     ar_rs_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, partner,
-                  recv_buf, recv_size, partner, comm);
+    El::mpi::SendRecv(send_buf, send_size, partner,
+                      recv_buf, recv_size, partner, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -855,8 +856,8 @@ void lbann_comm::rabenseifner_allreduce(
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
-    mpi::SendRecv(send_buf, send_size, partner,
-                  recv_buf, recv_size, partner, comm);
+    El::mpi::SendRecv(send_buf, send_size, partner,
+                      recv_buf, recv_size, partner, comm);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -894,16 +895,17 @@ void lbann_comm::setup_node_comm() {
   // Hash node names and split MPI processes
   int hash = std::hash<std::string>()(node_string);
   hash = hash >= 0 ? hash : -hash;  // Make sure hash is non-negative
-  mpi::Comm hash_comm;
-  mpi::Split(mpi::COMM_WORLD, hash, mpi::Rank(mpi::COMM_WORLD), hash_comm);
-  const int hash_comm_size = mpi::Size(hash_comm);
+  El::mpi::Comm hash_comm;
+  El::mpi::Split(El::mpi::COMM_WORLD, hash,
+                 El::mpi::Rank(El::mpi::COMM_WORLD), hash_comm);
+  const int hash_comm_size = El::mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
   char *node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
   checkMPI(MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          node_name_list, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          hash_comm.comm));
-  int node_num = mpi::Rank(hash_comm);
+  int node_num = El::mpi::Rank(hash_comm);
   for(int i=0; i<hash_comm_size; ++i) {
     const std::string other_node_string(node_name_list + i*MPI_MAX_PROCESSOR_NAME);
     if(node_string == other_node_string) {
@@ -912,14 +914,15 @@ void lbann_comm::setup_node_comm() {
     }
   }
   delete[] node_name_list;
-  mpi::Split(hash_comm, node_num, mpi::Rank(mpi::COMM_WORLD), node_comm);
-  mpi::Free(hash_comm);
+  El::mpi::Split(hash_comm, node_num, El::mpi::Rank(El::mpi::COMM_WORLD),
+                 node_comm);
+  El::mpi::Free(hash_comm);
 
   // Set up list of ranks that are local.
-  int node_comm_size = mpi::Size(node_comm);
+  int node_comm_size = El::mpi::Size(node_comm);
   for (int i = 0; i < node_comm_size; ++i) {
     world_ranks_on_node.push_back(
-      mpi::Translate(node_comm, i, mpi::COMM_WORLD));
+      El::mpi::Translate(node_comm, i, El::mpi::COMM_WORLD));
   }
 }
 

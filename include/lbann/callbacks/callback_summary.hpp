@@ -43,6 +43,9 @@ class lbann_callback_summary : public lbann_callback {
     int mat_interval = 25);
   lbann_callback_summary(const lbann_callback_summary&) = default;
   lbann_callback_summary& operator=(const lbann_callback_summary&) = default;
+  lbann_callback_summary* copy() const {
+    return new lbann_callback_summary(*this);
+  }
   void on_train_begin(model *m);
   void on_batch_end(model *m);
   void on_epoch_end(model *m);

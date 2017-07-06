@@ -44,11 +44,15 @@ class optimizer {
   optimizer(lbann_comm *comm,
             DataType learning_rate = DataType(0));
   optimizer(const optimizer&) = default;
-  // const members mean no copy assignment.
   optimizer& operator=(const optimizer&) = default;
 
   /// Destructor
   virtual ~optimizer();
+
+  /**
+   * Virtual copy operator. Returns a copy of the true class.
+   */
+  virtual optimizer* copy() const = 0;
 
   /// Set parameters to optimize and initialize optimizer
   virtual void setup(AbsDistMat *parameters);
