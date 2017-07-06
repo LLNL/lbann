@@ -73,7 +73,6 @@ model {
     parent: 2
     data_layout: "model_parallel"
     relu {
-      num_neurons: 100
     }
   }
 
@@ -85,7 +84,6 @@ model {
     parent: 3
     data_layout: "model_parallel"
     dropout {
-      num_neurons: 100
       keep_prob: -1.0
     }
   }
@@ -112,7 +110,6 @@ model {
     parent: 5
     data_layout: "model_parallel"
     relu {
-      num_neurons: 30
     }
   }
 
@@ -124,7 +121,6 @@ model {
     parent: 6
     data_layout: "model_parallel"
     dropout {
-      num_neurons: 30
       keep_prob: -1.0
     }
   }
