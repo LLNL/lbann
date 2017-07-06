@@ -105,14 +105,6 @@ class fully_connected_layer : public learning {
     learning(other),
     m_weight_initialization(other.m_weight_initialization),
     m_bias_scaling_factor(other.m_bias_scaling_factor) {
-    if (m_activation_weights_v) {
-      delete m_bias_weights_repl;
-      delete m_bias_weights_gradient_repl;
-      delete m_activation_weights_v;
-      delete m_activation_weights_gradient_v;
-      delete m_bias_weights_v;
-      delete m_bias_weights_gradient_v;
-    }
     m_bias_weights_repl = other.m_bias_weights_repl->Copy();
     m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
     m_activation_weights_v = other.m_activation_weights_v->Copy();
@@ -125,7 +117,7 @@ class fully_connected_layer : public learning {
     learning::operator=(other);
     m_weight_initialization = other.m_weight_initialization;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
-    if (m_activation_weights_v) {
+    if (m_bias_weights_repl) {
       delete m_bias_weights_repl;
       delete m_bias_weights_gradient_repl;
       delete m_activation_weights_v;

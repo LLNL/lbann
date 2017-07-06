@@ -65,10 +65,6 @@ class softmax_layer : public activation_layer {
 
   softmax_layer(const softmax_layer& other) :
     activation_layer(other) {
-    if (m_workspace) {
-      delete m_workspace;
-      delete m_workspace_v;
-    }
     m_workspace = other.m_workspace->Copy();
     m_workspace_v = other.m_workspace_v->Copy();
   }

@@ -44,6 +44,9 @@ adagrad::adagrad(const adagrad& other) : optimizer(other), m_eps(other.m_eps),
 adagrad& adagrad::operator=(const adagrad& other) {
   optimizer::operator=(other);
   m_eps = other.m_eps;
+  if (m_cache) {
+    delete m_cache;
+  }
   if (other.m_cache) {
     m_cache = other.m_cache->Copy();
   } else {

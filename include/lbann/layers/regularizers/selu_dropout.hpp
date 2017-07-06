@@ -70,9 +70,6 @@ class selu_dropout : public regularizer_layer {
     m_a(other.m_a),
     m_b(other.m_b),
     m_keep_prob(other.m_keep_prob) {
-    if (m_cur_mask) {
-      delete m_cur_mask;
-    }
     m_cur_mask = new Mat(*other.m_cur_mask);
   }
 

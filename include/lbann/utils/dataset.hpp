@@ -38,9 +38,6 @@ class dataset {
     num_samples_processed(other.num_samples_processed),
     total_samples(other.total_samples),
     num_iterations_per_epoch(other.num_iterations_per_epoch) {
-    if (data_reader) {
-      delete data_reader;
-    }
     data_reader = other.data_reader->copy();
   }
   dataset& operator=(const dataset& other) {

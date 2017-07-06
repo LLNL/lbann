@@ -61,9 +61,6 @@ class dropout : public regularizer_layer {
   dropout(const dropout& other) :
     regularizer_layer(other),
     m_keep_prob(other.m_keep_prob) {
-    if (m_cur_mask) {
-      delete m_cur_mask;
-    }
 #ifdef LBANN_PROCDET_DROPOUT
     m_cur_mask = other.m_cur_mask->Copy();
 #else

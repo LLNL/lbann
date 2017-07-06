@@ -128,17 +128,6 @@ Layer::Layer(const Layer& other) :
 #ifdef __LIB_CUDNN
   throw lbann_exception("cannot copy layers with cuDNN enabled");
 #endif
-  // Free allocated memory.
-  if (m_prev_error_signal) {
-    delete m_prev_error_signal;
-    delete m_error_signal;
-    delete m_activations;
-    delete m_prev_activations;
-    delete m_prev_error_signal_v;
-    delete m_error_signal_v;
-    delete m_activations_v;
-    delete m_prev_activations_v;
-  }
   m_prev_error_signal = other.m_prev_error_signal->Copy();
   m_error_signal = other.m_error_signal->Copy();
   m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();

@@ -62,6 +62,10 @@ adam& adam::operator=(const adam& other) {
   m_eps = other.m_eps;
   m_current_beta1 = other.m_current_beta1;
   m_current_beta2 = other.m_current_beta2;
+  if (m_moment1) {
+    delete m_moment1;
+    delete m_moment2;
+  }
   if (other.m_moment1) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();

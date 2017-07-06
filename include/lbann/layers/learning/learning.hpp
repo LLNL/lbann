@@ -63,6 +63,14 @@ class learning : public Layer {
   learning(const learning& other) :
     Layer(other),
     m_l2_regularization_factor(other.m_l2_regularization_factor) {
+    m_weights = other.m_weights->Copy();
+    m_weights_gradient = other.m_weights_gradient->Copy();
+    m_optimizer = other.m_optimizer->copy();
+  }
+
+  learning& operator=(const learning& other) {
+    Layer::operator=(other);
+    m_l2_regularization_factor = other.m_l2_regularization_factor;
     if (m_weights) {
       delete m_weights;
       delete m_weights_gradient;
@@ -72,7 +80,10 @@ class learning : public Layer {
     if (m_optimizer) {
       delete m_optimizer;
     }
-    m_optimizer = other.m_optimizer->copy();
+    if (other.m_optimizer) {
+      m_optimizer = other.m_optimizer->copy();
+    }
+    return *this;
   }
 
   virtual ~learning() {

@@ -49,6 +49,9 @@ rmsprop& rmsprop::operator=(const rmsprop& other) {
   optimizer::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
+  if (m_cache) {
+    delete m_cache;
+  }
   if (other.m_cache) {
     m_cache = other.m_cache->Copy();
   } else {

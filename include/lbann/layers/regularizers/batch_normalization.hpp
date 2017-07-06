@@ -77,16 +77,6 @@ class batch_normalization : public regularizer_layer {
     m_gamma_init(other.m_gamma_init),
     m_beta_init(other.m_beta_init),
     m_decay(other.m_decay) {
-    if (m_gamma) {
-      delete m_gamma;
-      delete m_beta;
-      delete m_dgamma;
-      delete m_dbeta;
-      delete m_mean;
-      delete m_stdev;
-      delete m_running_mean;
-      delete m_running_stdev;
-    }
     m_gamma = other.m_gamma->Copy();
     m_beta = other.m_beta->Copy();
     m_dgamma = other.m_dgamma->Copy();
@@ -95,10 +85,6 @@ class batch_normalization : public regularizer_layer {
     m_stdev = other.m_stdev->Copy();
     m_running_mean = other.m_running_mean->Copy();
     m_running_stdev = other.m_running_stdev->Copy();
-    if (m_gamma_optimizer) {
-      delete m_gamma_optimizer;
-      delete m_beta_optimizer;
-    }
     m_gamma_optimizer = other.m_gamma_optimizer->copy();
     m_beta_optimizer = other.m_beta_optimizer->copy();
   }
@@ -130,8 +116,10 @@ class batch_normalization : public regularizer_layer {
       delete m_gamma_optimizer;
       delete m_beta_optimizer;
     }
-    m_gamma_optimizer = other.m_gamma_optimizer->copy();
-    m_beta_optimizer = other.m_beta_optimizer->copy();
+    if (other.m_gamma_optimizer) {
+      m_gamma_optimizer = other.m_gamma_optimizer->copy();
+      m_beta_optimizer = other.m_beta_optimizer->copy();
+    }
     return *this;
   }
 

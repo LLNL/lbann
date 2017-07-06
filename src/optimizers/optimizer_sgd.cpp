@@ -53,6 +53,9 @@ sgd& sgd::operator=(const sgd& other) {
   m_momentum = other.m_momentum;
   m_decay = other.m_decay;
   m_nesterov = other.m_nesterov;
+  if (m_velocity) {
+    delete m_velocity;
+  }
   if (other.m_velocity) {
     m_velocity = other.m_velocity->Copy();
   } else {

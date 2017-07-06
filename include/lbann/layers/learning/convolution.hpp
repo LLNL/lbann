@@ -159,12 +159,6 @@ class convolution_layer : public learning {
     m_conv_size(other.m_conv_size),
     m_conv_pads(other.m_conv_pads),
     m_conv_strides(other.m_conv_strides) {
-    if (m_filter_weights_v) {
-      delete m_filter_weights_v;
-      delete m_filter_weights_gradient_v;
-      delete m_bias_weights_v;
-      delete m_bias_weights_gradient_v;
-    }
     m_filter_weights_v = other.m_filter_weights_v->Copy();
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
