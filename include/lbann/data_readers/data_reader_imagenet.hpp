@@ -40,6 +40,8 @@ class imagenet_reader : public generic_data_reader {
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() {}
 
+  imagenet_reader* copy() const { return new imagenet_reader(*this); }
+
   virtual int fetch_data(Mat& X);
   virtual int fetch_label(Mat& Y);
 

@@ -42,6 +42,9 @@ class lbann_callback_check_init : public lbann_callback {
   lbann_callback_check_init(const lbann_callback_check_init&) = default;
   lbann_callback_check_init& operator=(
     const lbann_callback_check_init&) = default;
+  lbann_callback_check_init* copy() const {
+    return new lbann_callback_check_init(*this);
+  }
   /** Check initializations. */
   void on_train_begin(model *m);
   std::string name() const { return "check init"; }

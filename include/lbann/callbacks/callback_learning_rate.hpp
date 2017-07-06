@@ -87,6 +87,9 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
     const lbann_callback_step_learning_rate&) = default;
   lbann_callback_step_learning_rate& operator=(
     const lbann_callback_step_learning_rate&) = default;
+  lbann_callback_step_learning_rate* copy() const {
+    return new lbann_callback_step_learning_rate(*this);
+  }
   std::string name() const { return "step learning rate"; }
  protected:
   float schedule(model *m, Layer *l);
@@ -114,6 +117,9 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
     const lbann_callback_adaptive_learning_rate&) = default;
   lbann_callback_adaptive_learning_rate& operator=(
     const lbann_callback_adaptive_learning_rate&) = default;
+  lbann_callback_adaptive_learning_rate* copy() const {
+    return new lbann_callback_adaptive_learning_rate(*this);
+  }
   std::string name() const { return "adaptive learning rate"; }
  protected:
   float schedule(model *m, Layer *l);
@@ -146,6 +152,9 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
     const lbann_callback_custom_learning_rate&) = default;
   lbann_callback_custom_learning_rate& operator=(
     const lbann_callback_custom_learning_rate&) = default;
+  lbann_callback_custom_learning_rate* copy() const {
+    return new lbann_callback_custom_learning_rate(*this);
+  }
   std::string name() const { return "custom learning rate"; }
  protected:
   float schedule(model *m, Layer *l);

@@ -49,6 +49,7 @@ class adam : public optimizer {
   adam& operator=(const adam& other);
   /// Destructor
   ~adam();
+  adam* copy() const { return new adam(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

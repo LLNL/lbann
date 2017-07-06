@@ -43,6 +43,8 @@ class cifar10_reader : public generic_data_reader {
   /// destructor
   ~cifar10_reader();
 
+  cifar10_reader* copy() const { return new cifar10_reader(*this); }
+
   int fetch_data(Mat& X);
   int fetch_label(Mat& Y);
   void load();

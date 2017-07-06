@@ -53,6 +53,10 @@ class top_k_categorical_accuracy : public metric {
 
   ~top_k_categorical_accuracy() {}
 
+  top_k_categorical_accuracy* copy() const {
+    return new top_k_categorical_accuracy(*this);
+  }
+
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
   }

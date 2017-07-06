@@ -50,6 +50,9 @@ class lbann_callback_dump_weights : public lbann_callback {
   lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
   lbann_callback_dump_weights& operator=(
     const lbann_callback_dump_weights&) = default;
+  lbann_callback_dump_weights* copy() const {
+    return new lbann_callback_dump_weights(*this);
+  }
   void on_epoch_end(model *m);
   std::string name() const { return "dump weights"; }
  private:

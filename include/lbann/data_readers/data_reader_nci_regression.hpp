@@ -49,6 +49,9 @@ class data_reader_nci_regression : public generic_data_reader {
   data_reader_nci_regression& operator=(
     const data_reader_nci_regression&) = default;
   ~data_reader_nci_regression() {}
+  data_reader_nci_regression* copy() const {
+    return new data_reader_nci_regression(*this);
+  }
 
   int fetch_data(Mat& X);
   int fetch_response(Mat& Y);

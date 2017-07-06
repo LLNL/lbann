@@ -43,6 +43,7 @@ class lbann_callback_io : public lbann_callback {
   lbann_callback_io();
   lbann_callback_io(const lbann_callback_io&) = default;
   lbann_callback_io& operator=(const lbann_callback_io&) = default;
+  lbann_callback_io* copy() const { return new lbann_callback_io(*this); }
   /** Only apply to specific layers. */
   lbann_callback_io(std::unordered_set<uint> layers);
   /** Report how much I/O has occured per data reader */

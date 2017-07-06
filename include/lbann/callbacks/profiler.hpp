@@ -40,6 +40,9 @@ class lbann_callback_profiler : public lbann_callback {
   lbann_callback_profiler() : lbann_callback() {}
   lbann_callback_profiler(const lbann_callback_profiler&) = default;
   lbann_callback_profiler& operator=(const lbann_callback_profiler&) = default;
+  lbann_callback_profiler* copy() const {
+    return new lbann_callback_profiler(*this);
+  }
   void on_epoch_begin(model *m);
   void on_epoch_end(model *m);
   void on_batch_begin(model *m);

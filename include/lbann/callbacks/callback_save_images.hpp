@@ -51,6 +51,9 @@ class lbann_callback_save_images : public lbann_callback {
   lbann_callback_save_images(const lbann_callback_save_images&) = default;
   lbann_callback_save_images& operator=(
     const lbann_callback_save_images&) = default;
+  lbann_callback_save_images* copy() const {
+    return new lbann_callback_save_images(*this);
+  }
   void on_epoch_end(model *m);
   void on_phase_end(model *m);
   std::string name() const { return "save images"; }

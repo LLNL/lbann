@@ -46,6 +46,9 @@ class lbann_callback_timer : public lbann_callback {
     lbann_callback(1, summarizer) {}
   lbann_callback_timer(const lbann_callback_timer&) = default;
   lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
+  lbann_callback_timer* copy() const {
+    return new lbann_callback_timer(*this);
+  }
   /** Start recording time for the epoch. */
   void on_epoch_begin(model *m);
   /** Report epoch and mean minibatch times. */

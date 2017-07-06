@@ -40,6 +40,9 @@ class categorical_cross_entropy : public objective_fn {
   categorical_cross_entropy& operator=(
     const categorical_cross_entropy& other) = default;
   ~categorical_cross_entropy();
+  categorical_cross_entropy* copy() const {
+    return new categorical_cross_entropy(*this);
+  }
 
   void setup(int num_neurons, int mini_batch_size);
   void fp_set_std_matrix_view(int cur_mini_batch_size);

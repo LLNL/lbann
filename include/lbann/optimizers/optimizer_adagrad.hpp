@@ -45,6 +45,7 @@ class adagrad : public optimizer {
   adagrad& operator=(const adagrad& other);
   /// Destructor
   ~adagrad();
+  adagrad* copy() const { return new adagrad(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

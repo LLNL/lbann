@@ -47,6 +47,7 @@ class rmsprop : public optimizer {
   rmsprop& operator=(const rmsprop& other);
   /// Destructor
   ~rmsprop();
+  rmsprop* copy() const { return new rmsprop(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

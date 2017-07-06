@@ -71,6 +71,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
   virtual ~generic_data_reader() {}
+  virtual generic_data_reader* copy() const = 0;
 
   /** @name Methods related to construction and loading
    *  These methods are used in drivers (front ends) to construct data readers,

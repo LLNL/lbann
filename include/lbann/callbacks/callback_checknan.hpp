@@ -43,6 +43,9 @@ class lbann_callback_checknan : public lbann_callback {
   lbann_callback_checknan(const lbann_callback_checknan&) = default;
   lbann_callback_checknan& operator=(
     const lbann_callback_checknan&) = default;
+  lbann_callback_checknan* copy() const {
+    return new lbann_callback_checknan(*this);
+  }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l);
   /** Check that gradients are good. */
