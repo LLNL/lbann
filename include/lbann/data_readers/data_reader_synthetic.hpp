@@ -42,7 +42,7 @@ class data_reader_synthetic : public generic_data_reader {
     return new data_reader_synthetic(*this);
   }
 
-  int fetch_data(Mat& X);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 
   void load();
 

@@ -39,6 +39,7 @@ data_reader_nci::data_reader_nci(int batchSize, bool shuffle)
   m_num_features = 0;
   m_num_labels = 2; //@todo fix
   scale(false);
+  m_ifs.resize(omp_get_max_threads());
 }
 
 data_reader_nci::data_reader_nci(int batchSize)
@@ -58,83 +59,62 @@ inline int data_reader_nci::map_label_2int(const std::string label) {
   }
 }
 
-
-int data_reader_nci::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    return 0;
-  }
-
-  int current_batch_size = getm_batch_size();
-  ifstream ifs(m_infile.c_str());
+void lbann::data_reader_nci::preprocess_data_source(int tid) {
+  ifstream *ifs = new ifstream(m_infile.c_str());
   if (!ifs) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: data_reader_nci:: fetch_data(): can't open file: " + m_infile);
   }
-
-  std::string line;
-  int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
-
-    int k = n - m_current_pos;
-    int index = m_shuffled_indices[n];
-
-    if(index == 0) {
-      continue;  //skip header
-    } else {
-      std::getline(ifs.seekg(m_index_map[index-1]+index),line);
-    }
-    std::istringstream lstream(line);
-    std::string field;
-    int col = 0, f=0;
-
-    while(getline(lstream, field, ' ')) {
-      col++;
-      //if(col == 4) m_labels[index] = this->map_label_2int(field);
-      if(col == 4) {
-        m_labels[index] = this->map_label_2int(field);
-      }
-      if (col > 5) {
-        if(field.empty()) {
-          field = "0";  //set empty feature field (unit) to zero
-        }
-        X.Set(f,k,stof(field));
-        f++;
-      }//end if col > 5
-    }// end while loop
-    auto data_col = X(El::ALL, IR(k, k+1));
-    normalize(data_col, 1);
-  } // end for loop (batch)
-  ifs.close();
-  return (n - m_current_pos);
+  m_ifs[tid] = ifs;
 }
 
-int data_reader_nci::fetch_label(Mat& Y) {
-  if(!generic_data_reader::position_valid()) {
-    return 0;
-  }
-  int current_batch_size = getm_batch_size();
-  int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; ++n) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
+void lbann::data_reader_nci::postprocess_data_source(int tid) {
+  m_ifs[tid]->close();
+  delete m_ifs[tid];
+}
 
-    int k = n - m_current_pos;
-    int index = m_shuffled_indices[n];
-    int sample_label = 0;
-    if(index == 0) {
-      continue;  //skip header
-    } else {
-      sample_label = m_labels[index];
-    }
+bool data_reader_nci::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  string line;
+  std::getline(m_ifs[tid]->seekg(m_index_map[data_id]),line);
+  std::istringstream lstream(line);
+  std::string field;
+  int col = 0, f=0;
 
-    Y.Set(sample_label, k, 1);
-  }
-  return (n - m_current_pos);
+  while(getline(lstream, field, ' ')) {
+    col++;
+    //if(col == 4) m_labels[data_id] = this->map_label_2int(field);
+    if (col == 3) {
+      if (field.empty()) {
+        break;
+      } else {
+        m_responses[data_id] = static_cast<DataType>(stof(field));
+      }
+    }else if(col == 4) {
+      m_labels[data_id] = this->map_label_2int(field);
+    }else if (col > 5) {
+      if(field.empty()) {
+        field = "0";  //set empty feature field (unit) to zero
+      }
+      X.Set(f,mb_idx,stof(field));
+      f++;
+    }//end if col > 5
+  }// end while loop
+  auto data_col = X(El::ALL, IR(mb_idx, mb_idx+1));
+  normalize(data_col, 1);
+  return true;
+}
+
+bool data_reader_nci::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  int sample_label = m_labels[data_id];
+  Y.Set(sample_label, mb_idx, 1);
+  return true;
+}
+
+bool data_reader_nci::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  DataType sample_response = m_responses[data_id];
+  Y.Set(0, mb_idx, sample_response);
+  return true;
 }
 
 /*Space separated columns are as follows (in order):
@@ -147,33 +127,53 @@ int data_reader_nci::fetch_label(Mat& Y) {
 
 void data_reader_nci::load() {
   std::string infile = get_data_filename();
-  ifstream ifs(infile.c_str());
+  std::ifstream ifs(infile.c_str());
   if (!ifs) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: data_reader_nci::load(): can't open file: " + infile);
+      " :: data_reader_nci_regression::load(): can't open file: " + infile);
   }
   m_infile = infile;
   std::string line;
   int i;
-  double offset =0;
+
+  m_index_map.push_back(ifs.tellg());
+#ifdef NCI_HAS_HEADER
+  // Skip the first line of the file, which is a header
+  std::getline (ifs, line); // to skip the header
+  m_index_map.pop_back();
+  m_index_map.push_back(ifs.tellg());
+#endif
+
   while(std::getline (ifs, line) ) {
+#if 0 // enable to skip empty or comment lines
+    static const std::string whitespaces(" \t\f\v\n\r");
+    std::size_t pos = line.find_first_not_of(whitespaces);
+    if ((pos == std::string::npos) || (line[pos] == '#')) {
+      m_index_map.pop_back();
+      m_index_map.push_back(ifs.tellg());
+      continue;
+    }
+#endif
+
+    m_index_map.push_back(ifs.tellg()); // The beginning of the next data to read
+    m_num_samples++;
+
     std::string field;
-    offset = offset + line.length();
     std::istringstream lstream(line);
     i=0;
     m_num_features = 0;
-    while(getline(lstream, field, ' ')) {
+    while(std::getline(lstream, field, ' ')) {
       i++;
       if (i > 5) {
         m_num_features++;
       }
     }
-    m_index_map[m_num_samples] = offset;
-    m_num_samples++;
   }
   ifs.close();
-  m_labels.resize(m_num_samples);
+  m_index_map.pop_back();
+  m_index_map.shrink_to_fit();
+  m_responses.resize(m_num_samples);
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);

@@ -83,52 +83,21 @@ void cifar10_reader::load() {
   select_subset_of_data();
 }
 
-
-int lbann::cifar10_reader::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: lbann::imagenet_reader::fetch_data() - " +
-      "!generic_data_reader::position_valid()");
+bool cifar10_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  for (size_t p = 1; p<m_data[data_id].size(); p++) {
+    X.Set(p-1, mb_idx, m_data[data_id][p]);
   }
 
-  int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
-                               m_shuffled_indices.size());
-  for (int n = m_current_pos; n < end_pos; ++n) {
-    int k = n - m_current_pos;
-    int idx = m_shuffled_indices[n];
-    for (size_t p = 1; p<m_data[idx].size(); p++) {
-      X.Set(p-1, k, m_data[idx][p]);
-    }
-
-    auto pixel_col = X(IR(0, X.Height()), IR(k, k + 1));
-    augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
-    normalize(pixel_col, m_image_num_channels);
-  }
-
-  return end_pos - m_current_pos;
+  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
+  normalize(pixel_col, m_image_num_channels);
+  return true;
 }
 
-int lbann::cifar10_reader::fetch_label(Mat& Y) {
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Imagenet data reader error: !position_valid");
-  }
-
-  int current_batch_size = getm_batch_size();
-  int n = 0;
-  for (n = m_current_pos; n < m_current_pos + current_batch_size; n++) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
-    int k = n - m_current_pos;
-    int index = m_shuffled_indices[n];
-    int label = (int)m_data[index][0];
-    Y.Set(label, k, 1);
-  }
-  return (n - m_current_pos);
+bool cifar10_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  int label = (int)m_data[data_id][0];
+  Y.Set(label, mb_idx, 1);
+  return true;
 }
 
 }  // namespace lbann

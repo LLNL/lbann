@@ -45,71 +45,25 @@ mnist_reader::mnist_reader(int batchSize, bool shuffle)
 mnist_reader::mnist_reader(int batchSize)
   : mnist_reader(batchSize, true) {}
 
-int mnist_reader::fetch_data(Mat& X) {
-  if(!generic_data_reader::position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: MNIST data reader load error: !position_valid");
-  }
-
+bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;
-  int current_batch_size = getm_batch_size();
+  vector<unsigned char>& tmp = m_image_data[data_id];
 
-  int n = 0, s = 0;
-  std::vector<float> pixels(pixelcount);
-  El::Zeros(m_indices_fetched_per_mb, X.Width(), 1); /// The width of the local matrix X dictates how many samples this rank will get
-  for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < X.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
-    //    std::cout << " Input Fetching " << n << " with batch size " << current_batch_size << " position " << m_current_pos << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) <<  " and there are only samples = " << getNumData() << std::endl;
-
-    // if(n >= m_current_pos + current_batch_size) {
-    //   std::cout << "WARNING: Input Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << " which is sample index " << m_shuffled_indices[n] << " and the guard is " << (n < (m_current_pos + current_batch_size)) << " and the limit is " << (m_current_pos + current_batch_size) << std::endl;
-
-    // }
-
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
-
-    int index = m_shuffled_indices[n];
-    vector<unsigned char>& tmp = m_image_data[index];
-
-    m_indices_fetched_per_mb.Set(s, 0, index);
-
-    for (int p = 0; p < pixelcount; p++) {
-      X.Set(p, s, tmp[p+1]);
-    }
-
-    auto pixel_col = X(IR(0, X.Height()), IR(s, s + 1));
-    augment(pixel_col, m_image_height, m_image_width, 1);
-    normalize(pixel_col, 1);
+  for (int p = 0; p < pixelcount; p++) {
+    X.Set(p, mb_idx, tmp[p+1]);
   }
 
-  return s;
+  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  augment(pixel_col, m_image_height, m_image_width, 1);
+  normalize(pixel_col, 1);
+
+  return true;
 }
 
-int mnist_reader::fetch_label(Mat& Y) {
-  if(!generic_data_reader::position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: MNIST data reader load error: !position_valid");
-  }
-
-  int current_batch_size = getm_batch_size();
-  int n = 0, s = 0;
-  for (n = m_current_pos, s = 0; n < m_current_pos + current_batch_size && s < Y.Width() && n < m_shuffled_indices.size(); n+=m_sample_stride, s++) {
-    if (n >= (int)m_shuffled_indices.size()) {
-      break;
-    }
-
-    //std::cout << " Target Fetching " << n << " with batch size " << current_batch_size << " and stride " << m_sample_stride << " and offset " << s << std::endl;
-
-    int index = m_shuffled_indices[n];
-    unsigned char label = m_image_data[index][0];
-
-    Y.Set(label, s, 1);
-  }
-
-  return s;
+bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  unsigned char label = m_image_data[data_id][0];
+  Y.Set(label, mb_idx, 1);
+  return true;
 }
 
 //===================================================

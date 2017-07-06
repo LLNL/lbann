@@ -31,6 +31,8 @@
 
 #include "data_reader.hpp"
 
+#define NCI_HAS_HEADER
+
 namespace lbann {
 
 class data_reader_nci : public generic_data_reader {
@@ -42,9 +44,15 @@ class data_reader_nci : public generic_data_reader {
   ~data_reader_nci() {}
   data_reader_nci* copy() const { return new data_reader_nci(*this); }
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  void preprocess_data_source(int tid);
+  void postprocess_data_source(int tid);
+
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
+
   int get_num_labels() const {
+    // m_num_responses should be equivalent
     return m_num_labels;  //@todo; check if used
   }
 
@@ -62,7 +70,7 @@ class data_reader_nci : public generic_data_reader {
     return m_num_features;
   }
   int get_linearized_label_size() const {
-    return m_num_labels;
+    return m_num_labels;  // m_num_responses should be equivalent
   }
   const std::vector<int> get_data_dims() const {
     return {static_cast<int>(m_num_features)};
@@ -71,11 +79,14 @@ class data_reader_nci : public generic_data_reader {
  private:
   //@todo add response mode {binary, ternary, continuous}
   int m_num_labels;  //2 for binary response mode
+  int m_num_responses;
   size_t m_num_samples; //rows
   size_t m_num_features; //cols
   std::vector<int> m_labels;
-  std::map<int,double> m_index_map;
+  std::vector<DataType> m_responses;
+  std::vector<std::streampos> m_index_map; // byte offset of each line in the input file
   std::string m_infile; //input file name
+  std::vector<ifstream*> m_ifs;
 };
 
 }  // namespace lbann
