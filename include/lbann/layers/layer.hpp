@@ -52,6 +52,8 @@ class model;
 class Layer {
  public:
   Layer(const int index, lbann_comm *comm, int mbsize);
+  Layer(const Layer& other);
+  Layer& operator=(const Layer& other);
 
   virtual ~Layer();
 

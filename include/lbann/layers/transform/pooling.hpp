@@ -40,7 +40,6 @@ namespace lbann {
 
 /// Pooling layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-//class pooling_layer : public transform<T_layout> {
 class pooling_layer : public transform {
  private:
 
@@ -99,6 +98,9 @@ class pooling_layer : public transform {
   #endif // __LIB_CUDNN
 
   }
+
+  pooling_layer(const pooling_layer&) = default;
+  pooling_layer& operator=(const pooling_layer&) = default;
 
   /// Destructor
   ~pooling_layer() {
