@@ -43,9 +43,17 @@ class greedy_layerwise_autoencoder : public sequential_model {
                                lbann_comm *comm,
                                objective_functions::objective_fn *obj_fn,
                                optimizer_factory *_optimizer_fac);
+  // Not yet supported.
+  greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&) = delete;
+  greedy_layerwise_autoencoder& operator=(
+    const greedy_layerwise_autoencoder&) = delete;
 
   /// Destructor
   ~greedy_layerwise_autoencoder();
+
+  greedy_layerwise_autoencoder* copy() const {
+    throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
+  }
 
   std::string name() const { return "greedy layerwise autoencoder"; }
 

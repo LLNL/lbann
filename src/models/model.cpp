@@ -49,6 +49,50 @@ model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
   m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
   m_optimizer_fac(optimizer_fac) {}
 
+model::model(const model& other) :
+  m_execution_mode(other.m_execution_mode),
+  m_terminate_training(other.m_terminate_training),
+  m_current_epoch(other.m_current_epoch),
+  m_current_step(other.m_current_step),
+  m_current_validation_step(other.m_current_validation_step),
+  m_current_testing_step(other.m_current_testing_step),
+  m_current_mini_batch_size(other.m_current_mini_batch_size),
+  m_current_phase(other.m_current_phase),
+  m_comm(other.m_comm),
+  m_checkpoint_dir(other.m_checkpoint_dir),
+  m_checkpoint_epochs(other.m_checkpoint_epochs),
+  m_checkpoint_steps(other.m_checkpoint_steps),
+  m_checkpoint_secs(other.m_checkpoint_secs),
+  m_checkpoint_last(other.m_checkpoint_last),
+// Don't need to deep-copy the factory.
+  m_optimizer_fac(other.m_optimizer_fac) {
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.push_back(cb->copy());
+  }
+}
+
+model& model::operator=(const model& other) {
+  m_execution_mode = other.m_execution_mode;
+  m_terminate_training = other.m_terminate_training;
+  m_current_epoch = other.m_current_epoch;
+  m_current_step = other.m_current_step;
+  m_current_validation_step = other.m_current_validation_step;
+  m_current_testing_step = other.m_current_testing_step;
+  m_current_mini_batch_size = other.m_current_mini_batch_size;
+  m_current_phase = other.m_current_phase;
+  m_comm = other.m_comm;
+  m_checkpoint_dir = other.m_checkpoint_dir;
+  m_checkpoint_epochs = other.m_checkpoint_epochs;
+  m_checkpoint_steps = other.m_checkpoint_steps;
+  m_checkpoint_secs = other.m_checkpoint_secs;
+  m_checkpoint_last = other.m_checkpoint_last;
+  m_optimizer_fac = other.m_optimizer_fac;
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.push_back(cb->copy());
+  }
+  return *this;
+}
+
 void model::add_callback(lbann_callback *cb) {
   m_callbacks.push_back(cb);
 }

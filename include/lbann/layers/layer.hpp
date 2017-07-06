@@ -88,6 +88,11 @@ class Layer {
    * setup_data methods.
    */
   virtual void setup(const Layer *prev_layer, const Layer *next_layer);
+  /**
+   * This is called by setup to actually set up prev/next layer pointers.
+   * This is public because models also use this to adjust pointers as needed.
+   */
+  virtual void setup_pointers(const Layer *prev_layer, const Layer *next_layer);
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 

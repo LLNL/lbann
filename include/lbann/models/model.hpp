@@ -53,7 +53,11 @@ class model {
  public:
   model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
         optimizer_factory *optimizer_fac);
+  model(const model& other);
+  model& operator=(const model& other);
   virtual ~model() {}
+
+  virtual model* copy() const = 0;
 
   /** Return the model's name. */
   virtual std::string name() const = 0;

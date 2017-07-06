@@ -45,8 +45,41 @@ sequential_model::sequential_model(int mini_batch_size,
                                    objective_functions::objective_fn *obj_fn,
                                    optimizer_factory *optimizer_fac)
   : model(comm, obj_fn, optimizer_fac),
-    m_mini_batch_size(mini_batch_size)
-    {}
+    m_mini_batch_size(mini_batch_size) {}
+
+sequential_model::sequential_model(const sequential_model& other) :
+  model(other),
+  m_mini_batch_size(other.m_mini_batch_size) {
+  // First copy over the layers.
+  for (const auto& l : other.m_layers) {
+    m_layers.push_back(l->copy());
+  }
+  // Update pointers for each layer.
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    m_layers[l]->set_neural_network_model(this);
+    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
+    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
+    m_layers[l]->setup_pointers(prev_layer, next_layer);
+  }
+}
+
+sequential_model& sequential_model::operator=(const sequential_model& other) {
+  model::operator=(other);
+  m_mini_batch_size = other.m_mini_batch_size;
+  m_layers.clear();
+  // First copy over the layers.
+  for (const auto& l : other.m_layers) {
+    m_layers.push_back(l->copy());
+  }
+  // Update pointers for each layer.
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    m_layers[l]->set_neural_network_model(this);
+    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
+    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
+    m_layers[l]->setup_pointers(prev_layer, next_layer);
+  }
+  return *this;
+}
 
 sequential_model::~sequential_model() {
   // Free layers
@@ -270,8 +303,8 @@ void sequential_model::setup(int start_index, int end_index) {
   // Setup each layer
   for (int l=start_index; l<end_index; ++l) {
     m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : NULL;
-    Layer* next_layer = l < end_index-1 ? m_layers[l+1] : NULL;
+    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
+    Layer* next_layer = l < end_index-1 ? m_layers[l+1] : nullptr;
     m_layers[l]->setup(prev_layer, next_layer);
     m_layers[l]->check_setup();
     m_layers[l]->set_index(l);

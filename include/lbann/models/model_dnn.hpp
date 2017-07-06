@@ -43,6 +43,10 @@ class deep_neural_network : public sequential_model {
                       lbann_comm *comm,
                       objective_functions::objective_fn *obj_fn,
                       optimizer_factory *_optimizer_fac);
+  deep_neural_network(const deep_neural_network&) = default;
+  deep_neural_network& operator=(const deep_neural_network&) = default;
+
+  deep_neural_network* copy() const { return new deep_neural_network(*this); }
 
   /// Destructor
   ~deep_neural_network();

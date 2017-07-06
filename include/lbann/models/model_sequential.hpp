@@ -38,6 +38,7 @@
 #include <string>
 
 namespace lbann {
+
 class sequential_model : public model {
  public:
 
@@ -46,6 +47,8 @@ class sequential_model : public model {
                    lbann_comm *comm,
                    objective_functions::objective_fn *obj_fn,
                    optimizer_factory *optimizer_fac);
+  sequential_model(const sequential_model& other);
+  sequential_model& operator=(const sequential_model& other);
 
   /// Destructor
   ~sequential_model();
@@ -128,10 +131,12 @@ class sequential_model : public model {
 
  protected:
   /// Mini-batch size (no ckpt, so user can override on restart)
-  const int m_mini_batch_size;
+  int m_mini_batch_size;
   /// List of layers
   std::vector<Layer *> m_layers;
 
 };
-}
-#endif  //  LBANN_MODEL_SEQUENTIAL_HPP
+
+}  // namespace lbann
+
+#endif  // LBANN_MODEL_SEQUENTIAL_HPP

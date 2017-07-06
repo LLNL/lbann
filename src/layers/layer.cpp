@@ -368,16 +368,19 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 }
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
-  // Set adjacent layers
-  m_prev_layer = prev_layer;
-  m_next_layer = next_layer;
+  setup_pointers(prev_layer, next_layer);
 
   setup_dims();
   setup_data();
   if (m_using_gpus) {
     setup_gpu();
   }
+}
 
+void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
+  // Set adjacent layers
+  m_prev_layer = prev_layer;
+  m_next_layer = next_layer;
 }
 
 void Layer::setup_dims() {
