@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
       cout << "\nParameter settings:" << endl;
       cout << "\tMini-batch size: " << pb_model->mini_batch_size() << endl;
       const lbann_data::Optimizer optimizer = pb_optimizer.optimizer();
-      cout << "\tLearning rate: " <<  optimizer.learn_rate() << endl;
+//      cout << "\tLearning rate: " <<  optimizer.learn_rate() << endl;
       cout << "\tEpoch count: " << pb_model->num_epochs() << endl << endl;
     }
 

@@ -1080,27 +1080,32 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   }
 
   //add the metrics
+  data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__);
   int size = m.metric_size();
+
   for (int j=0; j<size; j++) {
-    string metric = m.metric(j);
-    data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__);
-    if (metric == "categorical_accuracy") {
+    const lbann_data::Metric &metric = m.metric(j); 
+    if (metric.has_categorical_accuracy()) {
       if (dl == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
       }
-    } else if (metric == "mean_squared_error") {
+    }
+    else if (metric.has_mean_squared_error()) {
       if (dl == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
       }
-    } else {
-      err << __FILE__ << " " << __LINE__
-          << " :: init_model() - unknown metric name: " << metric << endl
-          << "; should be one of: categorical_accuracy, mean_squared_error";
-      throw lbann_exception(err.str());
+    }
+    else if (metric.has_top_k_categorical_accuracy()) {
+      const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
+      if (dl == data_layout::MODEL_PARALLEL) {
+        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
+      } else {
+        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
+      }
     }
   }
 
@@ -1115,38 +1120,36 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 
 optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p)
 {
-  const lbann_data::Optimizer& optimizer = p.optimizer();
-
-  const string name = optimizer.name();
-  double learn_rate = optimizer.learn_rate();
-  double momentum = optimizer.momentum();
-  double decay_rate = optimizer.decay();
-  double beta1 = optimizer.beta1();
-  double beta2 = optimizer.beta2();
-  double eps = optimizer.eps();
-  bool nesterov = optimizer.nesterov();
-
-  //note: learn_rate, momentum, decay are DataType in LBANN, which is
-  //      probably float. They'll be properly cast in the following
-
+  bool master = comm->am_world_master();
   optimizer_factory *factory;
-
-  if (name == "adagrad") {
-    factory = new adagrad_factory(comm, learn_rate, eps);
-  } else if (name == "rmsprop") {
-    factory = new rmsprop_factory(comm, learn_rate, decay_rate, eps);
-  } else if (name == "adam") {
-    factory = new adam_factory(comm, learn_rate, beta1, beta2, eps);
-  } else if (name == "hypergradient_adam") {
-    factory = new hypergradient_adam_factory(comm, learn_rate, beta1, beta2, eps);
-  } else if (name == "sgd") {
-    factory = new sgd_factory(comm, learn_rate, momentum, decay_rate, nesterov);
-  } else {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: unknown name for optimizer; should be one of: adagrad, rmsprop, adam, sgd\n"
-        << "instead we found: " << name;
-    throw lbann_exception(err.str());
+  const lbann_data::Optimizer &opt = p.optimizer();
+  if (opt.has_adagrad()) {
+    const lbann_data::Adagrad &a = opt.adagrad();
+    factory = new adagrad_factory(comm, a.learn_rate(), a.eps());
+  } 
+  else if (opt.has_rmsprop()) {
+    const lbann_data::Rmsprop &a = opt.rmsprop();
+    factory = new rmsprop_factory(comm, a.learn_rate(), a.decay_rate(), a.eps());
+  } 
+  else if (opt.has_adam()) {
+    const lbann_data::Adam &a = opt.adam();
+    factory = new adam_factory(comm, a.learn_rate(), a.beta1(), a.beta2(), a.eps());
+  } 
+  else if (opt.has_hypergradient_adam()) {
+    const lbann_data::HypergradientAdam &a = opt.hypergradient_adam();
+    factory = new hypergradient_adam_factory(comm, a.init_learning_rate(), a.hyper_learning_rate(), a.beta1(), a.beta2(), a.eps());
+  } 
+  else if (opt.has_sgd()) {
+    const lbann_data::Sgd &a = opt.sgd();
+    factory = new sgd_factory(comm, a.learn_rate(), a.momentum(), a.decay_rate(), a.nesterov());
+  } 
+  else {
+    if (master) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " :: init_optimizer_factory: prototext does not appear to contain an optimizer!";
+      throw lbann_exception(err.str());
+    }
   }
 
   return factory;

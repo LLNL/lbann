@@ -9,7 +9,7 @@ message LbannPB {
 }
 
 //========================================================================
-// start of DataReaders
+// DataReaders
 //========================================================================
 message DataReader {
   int64 max_par_io_size = 1;
@@ -48,13 +48,13 @@ message ImagePreprocessor {
 }
 
 //========================================================================
-// end of DataReaders
+// Model
 //========================================================================
 
 message Model {
   string name = 1; //dnn, greedy_layerwise_autoencoder
   string objective_function = 2; //categorical_cross_entropy, mean_squared_error
-  repeated string metric = 5; //categorical_accuracy, mean_squared_error
+  repeated Metric metric = 5; 
   string data_layout = 6;
 
   int64 mini_batch_size = 12;
@@ -67,7 +67,6 @@ message Model {
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
-
 
   repeated Layer layer = 10;
 
@@ -82,18 +81,77 @@ message Model {
   double checkpoint_secs = 33;
 }
 
-message Optimizer {
-  //adagrad, rmsprop, adam, hypergradient_adam, sgd
-  string name = 1;
-  double learn_rate = 2;
-  double momentum = 3; //sgd
-  double decay = 4;    //rmsprop, sgd
-  bool nesterov = 5;   //sgd
-  double beta1 = 6;    //adam, hypergradient_adam
-  double beta2 = 7;    //adam, hypergradient_adam
-  double eps = 8;      //adagrad, adam, hypergradient_adam
+//========================================================================
+// Metrics
+//========================================================================
+
+message Metric {
+  // a Metric should contain exactly one of the following
+  CategoricalAccuracy categorical_accuracy = 1;
+  MeanSquaredError mean_squared_error = 2;
+  TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
 }
 
+message CategoricalAccuracy {
+}
+
+message MeanSquaredError {
+}
+
+message TopKCategoricalAccuracy {
+  int64 top_k = 2; //only applicable for top_k_categorical_accuracy
+}
+  
+//========================================================================
+// Optimizers
+//========================================================================
+message Optimizer {
+  // An Optimizer should contain exactly one of the following
+  // (this may or may not be properly checked for in proto_common.cpp)
+  Adagrad adagrad = 1;
+  Rmsprop rmsprop = 2;
+  Adam adam = 3;
+  HypergradientAdam hypergradient_adam = 4;
+  Sgd sgd = 5;
+}
+
+message Adagrad {
+  double learn_rate = 1;
+  double eps = 2;  //default: 1e-8 
+}
+
+message Adam {
+  double learn_rate = 1;
+  double beta1 = 6;    //default: 0.9
+  double beta2 = 7;    //default: 0.99
+  double eps = 8;      //default: 1e-8
+}
+
+message HypergradientAdam {
+  double init_learning_rate = 1;
+  double hyper_learning_rate = 2; //default: 1e-7
+  double beta1 = 6;    //default: 0.9
+  double beta2 = 7;    //default: 0.99
+  double eps = 8;      //default: 1e-8
+}
+
+message Rmsprop {
+  double learn_rate = 1;
+  double decay_rate = 2;
+  double eps = 3; //default: 1e-8
+}
+
+message Sgd {
+  double learn_rate = 1;
+  double momentum = 2;     //default: 0
+  double decay_rate = 3;   //default: 0
+  bool nesterov = 4;       //default: false
+}
+
+
+//========================================================================
+// Callbacks
+//========================================================================
 message Callback {
    // a Callback should contain exactly one of the following
    CallbackPrint print = 1;
@@ -169,7 +227,7 @@ message CallbackDebug {
 }
 
 //========================================================================
-// start of Layer types
+// Layers
 //========================================================================
 //
 // weight initialization should be one of: 
@@ -184,7 +242,7 @@ message Layer {
    bool num_neurons_from_data_reader = 53;
 
    // a Layer should contain exactly one of the following
-   // (this may or may not be properly checked for in lbann_proto_common.cpp)
+   // (this may or may not be properly checked for in proto_common.cpp)
 
    // input Layers
    InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 2;
@@ -351,6 +409,3 @@ message TargetReconstruction {
   int64 original_layer = 1;
 }
 
-//========================================================================
-// end of Layer types
-//========================================================================
