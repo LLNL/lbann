@@ -108,8 +108,10 @@ Layer::Layer(const Layer& other) :
   m_index(other.m_index),
   m_comm(other.m_comm),
   m_num_neurons(other.m_num_neurons),
+  m_num_neuron_dims(other.m_num_neuron_dims),
   m_neuron_dims(other.m_neuron_dims),
   m_num_prev_neurons(other.m_num_prev_neurons),
+  m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
   m_prev_neuron_dims(other.m_prev_neuron_dims),
   m_execution_mode(other.m_execution_mode),
   m_neural_network_model(other.m_neural_network_model),
@@ -146,8 +148,10 @@ Layer& Layer::operator=(const Layer& other) {
   m_index = other.m_index;
   m_comm = other.m_comm;
   m_num_neurons = other.m_num_neurons;
+  m_num_neuron_dims = other.m_num_neuron_dims;
   m_neuron_dims = other.m_neuron_dims;
   m_num_prev_neurons = other.m_num_prev_neurons;
+  m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
   m_prev_neuron_dims = other.m_prev_neuron_dims;
   m_execution_mode = other.m_execution_mode;
   m_neural_network_model = other.m_neural_network_model;
