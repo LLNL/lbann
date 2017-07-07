@@ -149,7 +149,9 @@ class Layer {
   /** Reset layer stat counters. */
   virtual void reset_counters() {
     fp_time = 0.0;
+    fp_compute_time = 0.0;
     bp_time = 0.0;
+    bp_compute_time = 0.0;
     update_time = 0.0;
   }
 
