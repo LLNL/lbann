@@ -265,6 +265,9 @@ if(LBANN_HAS_LBANN_PROTO)
   target_link_libraries(lbann LbannProto)
 endif()
 
+# LBANN also requires HWLOC. This seems sufficient for now.
+target_link_libraries(lbann hwloc)
+
 ################################################################
 # Install LBANN
 ################################################################
