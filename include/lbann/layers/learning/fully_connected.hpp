@@ -111,6 +111,7 @@ class fully_connected_layer : public learning {
     m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
@@ -135,6 +136,7 @@ class fully_connected_layer : public learning {
     m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
@@ -173,23 +175,28 @@ class fully_connected_layer : public learning {
     El::Zeros(*this->m_weights, this->m_num_neurons, this->m_num_prev_neurons+1);
     this->m_weights_gradient->Resize(this->m_num_neurons, this->m_num_prev_neurons + 1);
 
-    /// Setup independent views of the weight matrix for the activations
+    // Initialize the activations part of the weight matrix -- leave the bias term weights zero
     El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
-
-    /// Setup independent views of the weights gradient matrix for the activations
-    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, this->m_num_prev_neurons));
-
-    /// Setup independent views of the weights and gradient matrix for the bias terms
-    El::View(*m_bias_weights_v, *this->m_weights, ALL, IR(this->m_num_prev_neurons));
-    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(this->m_num_prev_neurons));
-
-    /// Initialize the activations part of the weight matrix -- leave the bias term weights zero
     initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, this->m_num_prev_neurons, this->m_num_neurons);
 
     // Initialize optimizer
     if (this->m_optimizer != NULL) {
       this->m_optimizer->setup(this->m_weights);
     }
+  }
+
+  void setup_views() {
+    learning::setup_views();
+    // Setup independent views of the weight matrix for the activations
+    // Note this is duplicated in setup_data for convenience.
+    El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
+
+    // Setup independent views of the weights gradient matrix for the activations
+    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, this->m_num_prev_neurons));
+
+    // Setup independent views of the weights and gradient matrix for the bias terms
+    El::View(*m_bias_weights_v, *this->m_weights, ALL, IR(this->m_num_prev_neurons));
+    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(this->m_num_prev_neurons));
   }
 
   void fp_compute() {

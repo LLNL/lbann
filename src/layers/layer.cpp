@@ -365,6 +365,7 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
 
   setup_dims();
   setup_data();
+  setup_views();
   if (m_using_gpus) {
     setup_gpu();
   }

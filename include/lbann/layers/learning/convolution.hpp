@@ -163,6 +163,7 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
@@ -186,6 +187,7 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
@@ -284,16 +286,6 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
 
-    // Set up views into weights and weights gradient
-    El::View(*m_filter_weights_v, *this->m_weights,
-             IR(0,this->m_weights->Height()-1), ALL);
-    El::View(*m_filter_weights_gradient_v, *this->m_weights_gradient,
-             IR(0,this->m_weights_gradient->Height()-1), ALL);
-    El::View(*m_bias_weights_v, *this->m_weights,
-             IR(this->m_weights->Height()-1), ALL);
-    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
-             IR(this->m_weights_gradient->Height()-1), ALL);
-
     // Initialize filters
     const int fan_in = m_conv_size / this->m_neuron_dims[0];
     const int fan_out = m_conv_size / this->m_prev_neuron_dims[0];
@@ -304,6 +296,19 @@ class convolution_layer : public learning {
       this->m_optimizer->setup(this->m_weights);
     }
 
+  }
+
+  void setup_views() {
+    learning::setup_views();
+    // Set up views into weights and weights gradient
+    El::View(*m_filter_weights_v, *this->m_weights,
+             IR(0,this->m_weights->Height()-1), ALL);
+    El::View(*m_filter_weights_gradient_v, *this->m_weights_gradient,
+             IR(0,this->m_weights_gradient->Height()-1), ALL);
+    El::View(*m_bias_weights_v, *this->m_weights,
+             IR(this->m_weights->Height()-1), ALL);
+    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
+             IR(this->m_weights_gradient->Height()-1), ALL);
   }
 
   /// Initialize GPU objects

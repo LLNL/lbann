@@ -84,8 +84,8 @@ class Layer {
 
   /**
    * This is called on every layer to set up its prev/next layer pointers,
-   * dimensions, and allocate data. By default, it calls the setup_dims and
-   * setup_data methods.
+   * dimensions, and allocate data. By default, it calls the setup_dims,
+   * setup_data, setup_views, and setup_gpu (if needed) methods.
    */
   virtual void setup(const Layer *prev_layer, const Layer *next_layer);
   /**
@@ -256,6 +256,11 @@ class Layer {
    * error signal matrices. This is always called after setup_data.
    */
   virtual void setup_gpu();
+  /**
+   * Called by setup(), each layer should override to call its parent and set
+   * up any views of the layer's data. This is always called after setup_data.
+   */
+  virtual void setup_views() {}
   /** Perform the layers work / main function for forward propagation */
   virtual void fp_compute() {}
   /** Perform the layers work / main function for backward propagation */
