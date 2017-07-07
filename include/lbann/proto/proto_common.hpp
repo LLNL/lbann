@@ -6,17 +6,26 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 
 
-/** returns mini_batch_size;
- *  instantiates one or more generic_data_readers and inserts them in &data_readers
- */
+/// instantiates one or more generic_data_readers and inserts them in &data_readers
 void init_data_readers(
   bool master,
   const lbann_data::LbannPB& p,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   int mini_batch_size);
 
-/** returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
- */
+/// adjusts the number of parallel data readers 
+void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
+
+/// adjusts the values in p by querying the options db
+void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p); 
+
+/// print various params (learn_rate, etc) to cout
+void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
+
+/// prints usage information
+void print_help(lbann::lbann_comm *comm); 
+
+///returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
 lbann::sequential_model *init_model(
   lbann::lbann_comm *comm,
   lbann::optimizer_factory *optimizer_fac,
