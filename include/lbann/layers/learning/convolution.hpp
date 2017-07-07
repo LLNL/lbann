@@ -163,6 +163,10 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    // Update optimizer parameters if needed.
+    if (this->m_optimizer->get_parameters()) {
+      this->m_optimizer->set_parameters(this->m_weights);
+    }
   }
 
   convolution_layer& operator=(const convolution_layer& other) {
@@ -182,6 +186,10 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    // Update optimizer parameters if needed.
+    if (this->m_optimizer->get_parameters()) {
+      this->m_optimizer->set_parameters(this->m_weights);
+    }
     return *this;
   }
 

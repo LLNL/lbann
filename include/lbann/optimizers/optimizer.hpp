@@ -71,8 +71,17 @@ class optimizer {
   };
 
   /// Get parameters
-  AbsDistMat *get_parameters() {
+  AbsDistMat *get_parameters() const {
     return m_parameters;
+  }
+
+  /**
+   * Set parameters to optimize.
+   * Undefined if parameters is different dimensions or distribution than what
+   * was originally set!
+   */
+  void set_parameters(AbsDistMat *parameters) {
+    m_parameters = parameters;
   }
 
   /// Get optimizer name

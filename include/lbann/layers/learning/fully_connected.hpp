@@ -111,6 +111,10 @@ class fully_connected_layer : public learning {
     m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    // Update optimizer parameters if needed.
+    if (this->m_optimizer->get_parameters()) {
+      this->m_optimizer->set_parameters(this->m_weights);
+    }
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
@@ -131,6 +135,10 @@ class fully_connected_layer : public learning {
     m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    // Update optimizer parameters if needed.
+    if (this->m_optimizer->get_parameters()) {
+      this->m_optimizer->set_parameters(this->m_weights);
+    }
     return *this;
   }
 

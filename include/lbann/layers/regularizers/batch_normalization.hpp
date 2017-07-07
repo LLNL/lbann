@@ -87,6 +87,10 @@ class batch_normalization : public regularizer_layer {
     m_running_stdev = other.m_running_stdev->Copy();
     m_gamma_optimizer = other.m_gamma_optimizer->copy();
     m_beta_optimizer = other.m_beta_optimizer->copy();
+    if (m_gamma_optimizer->get_parameters()) {
+      m_gamma_optimizer->set_parameters(m_gamma);
+      m_beta_optimizer->set_parameters(m_beta);
+    }
   }
 
   batch_normalization& operator=(const batch_normalization& other) {
@@ -119,6 +123,8 @@ class batch_normalization : public regularizer_layer {
     if (other.m_gamma_optimizer) {
       m_gamma_optimizer = other.m_gamma_optimizer->copy();
       m_beta_optimizer = other.m_beta_optimizer->copy();
+      m_gamma_optimizer->set_parameters(m_gamma);
+      m_beta_optimizer->set_parameters(m_beta);
     }
     return *this;
   }
