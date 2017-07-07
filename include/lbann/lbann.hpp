@@ -55,6 +55,7 @@
 
 /// Transform Layers
 #include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/branch.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
