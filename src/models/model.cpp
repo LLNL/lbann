@@ -67,7 +67,9 @@ model::model(const model& other) :
 // Don't need to deep-copy the factory.
   m_optimizer_fac(other.m_optimizer_fac) {
   for (const auto& metric : other.m_metrics) {
-    m_metrics.push_back(metric->copy());
+    metrics::metric* m_copy = metric->copy();
+    m_copy->m_neural_network_model = this;
+    m_metrics.push_back(m_copy);
   }
   m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
@@ -92,7 +94,9 @@ model& model::operator=(const model& other) {
   m_checkpoint_last = other.m_checkpoint_last;
   m_optimizer_fac = other.m_optimizer_fac;
   for (const auto& metric : other.m_metrics) {
-    m_metrics.push_back(metric->copy());
+    metrics::metric* m_copy = metric->copy();
+    m_copy->m_neural_network_model = this;
+    m_metrics.push_back(m_copy);
   }
   m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
