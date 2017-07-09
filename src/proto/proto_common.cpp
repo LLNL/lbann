@@ -12,7 +12,8 @@
 
 using namespace lbann;
 
-lbann_callback_imcomm::comm_type get_comm_type(const string &s) {
+lbann_callback_imcomm::comm_type get_comm_type(const string &s)
+{
   if (s == "none") {
     return lbann_callback_imcomm::comm_type::NONE;
   } else if (s == "normal") {
@@ -177,7 +178,7 @@ void add_layers(
           model->create_optimizer(),
           mb_size,
           all_layers[original_layer]
-        );  
+        );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -185,7 +186,7 @@ void add_layers(
           model->create_optimizer(),
           mb_size,
           all_layers[original_layer]
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -487,7 +488,7 @@ void add_layers(
           ell.keep_prob(),
           ell.alpha(),
           ell.scale()
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -558,13 +559,13 @@ void add_layers(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -581,13 +582,13 @@ void add_layers(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -604,13 +605,13 @@ void add_layers(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -652,13 +653,13 @@ void add_layers(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           mb_size
-        );  
+        );
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -666,7 +667,7 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: elu 
+    // LAYER: elu
     //////////////////////////////////////////////////////////////////
     if (layer.has_elu()) {
       const lbann_data::ELU& ell = layer.elu();
@@ -868,7 +869,7 @@ void init_callbacks(
       }
       if (!summarizer) {
         throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+          std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
           "summary callback requires a valid summarizer directory");
       }
       lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.interval());
@@ -1083,22 +1084,20 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   int size = m.metric_size();
 
   for (int j=0; j<size; j++) {
-    const lbann_data::Metric &metric = m.metric(j); 
+    const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
       if (dl == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
       }
-    }
-    else if (metric.has_mean_squared_error()) {
+    } else if (metric.has_mean_squared_error()) {
       if (dl == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
       }
-    }
-    else if (metric.has_top_k_categorical_accuracy()) {
+    } else if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
       if (dl == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
@@ -1125,24 +1124,19 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
   if (opt.has_adagrad()) {
     const lbann_data::Adagrad &a = opt.adagrad();
     factory = new adagrad_factory(comm, a.learn_rate(), a.eps());
-  } 
-  else if (opt.has_rmsprop()) {
+  } else if (opt.has_rmsprop()) {
     const lbann_data::Rmsprop &a = opt.rmsprop();
     factory = new rmsprop_factory(comm, a.learn_rate(), a.decay_rate(), a.eps());
-  } 
-  else if (opt.has_adam()) {
+  } else if (opt.has_adam()) {
     const lbann_data::Adam &a = opt.adam();
     factory = new adam_factory(comm, a.learn_rate(), a.beta1(), a.beta2(), a.eps());
-  } 
-  else if (opt.has_hypergradient_adam()) {
+  } else if (opt.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &a = opt.hypergradient_adam();
     factory = new hypergradient_adam_factory(comm, a.init_learning_rate(), a.hyper_learning_rate(), a.beta1(), a.beta2(), a.eps());
-  } 
-  else if (opt.has_sgd()) {
+  } else if (opt.has_sgd()) {
     const lbann_data::Sgd &a = opt.sgd();
     factory = new sgd_factory(comm, a.learn_rate(), a.momentum(), a.decay_rate(), a.nesterov());
-  } 
-  else {
+  } else {
     if (master) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__
@@ -1193,7 +1187,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new cnpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
-      } else if (name == "synthetic") {
+    } else if (name == "synthetic") {
       reader = new data_reader_synthetic(mini_batch_size, readme.num_samples(), readme.num_features(), shuffle);
     } else {
       err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1335,27 +1329,32 @@ bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
+void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
   bool master = comm->am_world_master();
+  if (not master) {
+    return;
+  }
 
   lbann_data::Model *model = p.mutable_model();
 
-    int parallel_io = model->num_parallel_readers();
-    if (parallel_io == 0) {
-      if (master) {
-        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-             " (Limited to # Processes)" << endl;
-      }
-      parallel_io = comm->get_procs_per_model();
-      model->set_num_parallel_readers(parallel_io); //adjust the prototext
-    } else {
-      if (comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
-      }
+  int parallel_io = model->num_parallel_readers();
+  if (parallel_io == 0) {
+    if (master) {
+      cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+           " (Limited to # Processes)" << endl;
     }
+    parallel_io = comm->get_procs_per_model();
+    model->set_num_parallel_readers(parallel_io); //adjust the prototext
+  } else {
+      cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+  }
 }
 
-void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
+void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
+  bool master = comm->am_world_master();
+
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
 
@@ -1380,9 +1379,86 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
   if (opts->has_bool("use_cudnn")) {
     model->set_use_cudnn(opts->get_int("use_cudnn"));
   }
+
+
+  if (opts->has_string("optimizer")) {
+    //defaults
+    double learn_rate = opts->has_float("learn_rate") ? opts->get_float("learn_rate") : 0.01;
+    double eps = opts->has_float("eps") ? opts->get_float("eps") : 1e-8;
+    double beta1 = opts->has_float("beta1") ? opts->get_float("beta1") : 0.9;
+    double beta2 = opts->has_float("beta2") ? opts->get_float("beta2") : 0.99;
+    double init_learning_rate = opts->has_float("init_learning_rate") ? opts->get_float("init_learning_rate") : 0.01;
+    double hyper_learning_rate = opts->has_float("hyper_learning_rate") ? opts->get_float("hyper_learning_rate") : 1e-7;
+    double momentum = opts->has_float("momentum") ? opts->get_float("momentum") : 0.9;
+    double decay_rate = opts->has_float("decay_rate") ? opts->get_float("decay_rate") : 0.5;
+    bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
+
+    lbann_data::Optimizer *opt = p.mutable_optimizer();
+
+    //clear the existing optimizer
+    if (opt->has_adagrad()) {
+      opt->clear_adagrad();
+    }
+    if (opt->has_rmsprop()) {
+      opt->clear_rmsprop();
+    }
+    if (opt->has_adam()) {
+      opt->clear_adam();
+    }
+    if (opt->has_hypergradient_adam()) {
+      opt->clear_hypergradient_adam();
+    }
+    if (opt->has_sgd()) {
+      opt->clear_sgd();
+    }
+
+    //construct the new optimizer
+    std::string opt_string = opts->get_string("optimizer");
+    if (opt_string == "adagrad") {
+      lbann_data::Adagrad *a = new lbann_data::Adagrad;
+      a->set_learn_rate(learn_rate);
+      a->set_eps(eps);
+      opt->set_allocated_adagrad(a);
+    } else if (opt_string == "adam") {
+      lbann_data::Adam *a = new lbann_data::Adam;
+      a->set_learn_rate(learn_rate);
+      a->set_eps(eps);
+      a->set_beta1(beta1);
+      a->set_beta2(beta2);
+      opt->set_allocated_adam(a);
+    } else if (opt_string == "hypergradient_adam") {
+      lbann_data::HypergradientAdam *a = new lbann_data::HypergradientAdam;
+      a->set_init_learning_rate(init_learning_rate);
+      a->set_hyper_learning_rate(hyper_learning_rate);
+      a->set_beta1(beta1);
+      a->set_beta2(beta2);
+      a->set_eps(eps);
+      opt->set_allocated_hypergradient_adam(a);
+    } else if (opt_string == "rmsprop") {
+      lbann_data::Rmsprop *a = new lbann_data::Rmsprop;
+      a->set_learn_rate(learn_rate);
+      a->set_decay_rate(decay_rate);
+      a->set_eps(eps);
+    } else if (opt_string == "sgd") {
+      lbann_data::Sgd *a = new lbann_data::Sgd;
+      a->set_learn_rate(learn_rate);
+      a->set_momentum(momentum);
+      a->set_decay_rate(decay_rate);
+      a->set_nesterov(nesterov);
+    } else {
+      if (master) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__
+            << " :: unknown string for --optimizer: " << opt_string
+            << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
+        throw lbann_exception(err.str());
+      }
+    }
+  }
 }
 
-void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
+void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
   if (not comm->am_world_master()) {
     return;
   }
@@ -1390,20 +1466,20 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
   const lbann_data::Model &m = p.model();
 
   cout << endl
-    << "Running with these parameters:\n"
-    << " General:\n"
-    << "  mini_batch_size:      " << m.mini_batch_size() << endl
-    << "  num_epochs:           " << m.num_epochs()  << endl
-    << "  block_size:           " << m.block_size()  << endl
-    << "  procs_per_model:      " << m.procs_per_model()  << endl
-    << "  num_gpus:             " << m.num_gpus()  << endl
-    << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
-    << "  use_cudnn:            " << m.use_cudnn()  << endl
-    << "  objective_function:   " << m.objective_function()  << endl
-    << "  data_layout:          " << m.data_layout()  << endl
-    << "     (only used for metrics)\n"
-    << "\n"
-    << " Optimizer:  ";
+       << "Running with these parameters:\n"
+       << " General:\n"
+       << "  mini_batch_size:      " << m.mini_batch_size() << endl
+       << "  num_epochs:           " << m.num_epochs()  << endl
+       << "  block_size:           " << m.block_size()  << endl
+       << "  procs_per_model:      " << m.procs_per_model()  << endl
+       << "  num_gpus:             " << m.num_gpus()  << endl
+       << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
+       << "  use_cudnn:            " << m.use_cudnn()  << endl
+       << "  objective_function:   " << m.objective_function()  << endl
+       << "  data_layout:          " << m.data_layout()  << endl
+       << "     (only used for metrics)\n"
+       << "\n"
+       << " Optimizer:  ";
 
   const lbann_data::Optimizer &o = p.optimizer();
   if (o.has_adagrad()) {
@@ -1411,23 +1487,20 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
     cout << "  Adagrad\n"
          << "  learn_rate: " << a.learn_rate()  << endl
          << "  eps:        " << a.eps()  << endl;
-  } 
-  else if (o.has_rmsprop()) {
+  } else if (o.has_rmsprop()) {
     const lbann_data::Rmsprop &a = o.rmsprop();
     cout <<  "  Rmsprop\n"
-    << "  learn_rate: " << a.learn_rate()  << endl
-    << "  decay_rate: " << a.decay_rate()  << endl
-    << "  eps:        " << a.eps()  << endl;
-  } 
-  else if (o.has_adam()) {
+         << "  learn_rate: " << a.learn_rate()  << endl
+         << "  decay_rate: " << a.decay_rate()  << endl
+         << "  eps:        " << a.eps()  << endl;
+  } else if (o.has_adam()) {
     const lbann_data::Adam &a = o.adam();
     cout << "  Adam\n"
-    << "  learn_rate: " << a.learn_rate()  << endl
-    << "  beta1:      " << a.beta1()  << endl
-    << "  beta2:      " << a.beta2()  << endl
-    << "  eps:        " << a.eps()  << endl;
-  } 
-  else if (o.has_hypergradient_adam()) {
+         << "  learn_rate: " << a.learn_rate()  << endl
+         << "  beta1:      " << a.beta1()  << endl
+         << "  beta2:      " << a.beta2()  << endl
+         << "  eps:        " << a.eps()  << endl;
+  } else if (o.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &a = o.hypergradient_adam();
     cout << "  HypergradientAdam\n"
          << "  init_learning_rate:  " << a.init_learning_rate()  << endl
@@ -1435,8 +1508,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
          << "  beta1:               " << a.beta1()  << endl
          << "  beta2:               " << a.beta2()  << endl
          << "  eps:                 " << a.eps()  << endl;
-  } 
-  else if (o.has_sgd()) {
+  } else if (o.has_sgd()) {
     const lbann_data::Sgd &a = o.sgd();
     cout << "  Sgd\n"
          << "  learn_rate: " << a.learn_rate()  << endl
@@ -1446,60 +1518,61 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p) {
   }
 }
 
-void print_help(lbann::lbann_comm *comm) {
+void print_help(lbann::lbann_comm *comm)
+{
   if (not comm->am_world_master()) {
     return;
   }
 
-  cerr << 
-    "General usage: you need to specify three prototext files, e.g:\n"
-    "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\n"
-    "\n"
-    "  However, if you are re-running an experiment from a previously saved\n"
-    "  file, you only need to specify --model=<string>\n"
-    "  When proto is run, an output file containing the concatenated prototext\n"
-    "  files, along with other data is written. The default name for this file\n"
-    "  is 'data.prototext'  You can specify an alternative name via the option:\n"
-    "  --saveme=<string>  You can suppress writing the file via the option:\n"
-    "  --saveme=0\n"
-    "\n"
-    "Some prototext values can be over-riden on the command line;\n"
-    "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
-    "        e.g: --use_cudnn, then a value of '1' is assigned)\n"
-    "\n"
-    "General:\n"
-    "  --mini_batch_size=<int>\n"
-    "  --num_epochs=<int>\n"
-    "  --block_size=<int>\n"
-    "  --procs_per_model=<int>\n"
-    "  --num_gpus=<int>\n"
-    "  --use_cudnn=<bool>\n"
-    "     has no effect unless lbann was compiled with: __LIB_CUDNN\n"
-    "  --objective_function<string>\n"
-    "      <string> must be: categorical_cross_entropy or mean_squared_error\n"
-    "  --data_layout<string>\n"
-    "      <string> must be: data_parallel or model_parallel\n"
-    "      note: this will be applied to all layers, metrics (and others)\n"
-    "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
-    "\n"
-    "Optimizers; all values except for nesterov are floats;\n"
-    "            the values shown in <...> are the default values, that will be\n"
-    "            used if the option is not specified on the cmd line.\n"
-    "            If you specify an option that is not applicable to your choice\n"
-    "            of optimizer, the option is ignored\n"
-    "\n"
-    "  --optimizer=<string>\n"
-    "     <string> must be one of:\n"
-    "         adagrad, adam, hypergradient_adam, rmsprop, sgd\n"
-    "\n"
-    "  --learn_rate=< 0.01 >          (all except hypergradient_adam)\n"
-    "  --eps=< 1e-8 >                 (all except sgd)\n"
-    "  --beta1=< 0.9 >                (adam, hypergradient_adam)\n"
-    "  --beta2=< 0.99 >               (adam, hypergradient_adam)\n"
-    "  --init_learning_rate=< 0.01 >  (hypergradient_adam)\n"
-    "  --hyper_learning_rate=< 1e-7 > (hypergradient_adam)\n"
-    "  --momentum=< 0.9 >             (sgd)\n"
-    "  --decay_rate=< 0.5 >           (sgd, rmsprop)\n"
-    "  --nesterov=< false >           (sgd)\n";
+  cerr <<
+       "General usage: you need to specify three prototext files, e.g:\n"
+       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\n"
+       "\n"
+       "  However, if you are re-running an experiment from a previously saved\n"
+       "  file, you only need to specify --model=<string>\n"
+       "  When proto is run, an output file containing the concatenated prototext\n"
+       "  files, along with other data is written. The default name for this file\n"
+       "  is 'data.prototext'  You can specify an alternative name via the option:\n"
+       "  --saveme=<string>  You can suppress writing the file via the option:\n"
+       "  --saveme=0\n"
+       "\n"
+       "Some prototext values can be over-riden on the command line;\n"
+       "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
+       "        e.g: --use_cudnn, then a value of '1' is assigned)\n"
+       "\n"
+       "General:\n"
+       "  --mini_batch_size=<int>\n"
+       "  --num_epochs=<int>\n"
+       "  --block_size=<int>\n"
+       "  --procs_per_model=<int>\n"
+       "  --num_gpus=<int>\n"
+       "  --use_cudnn=<bool>\n"
+       "     has no effect unless lbann was compiled with: __LIB_CUDNN\n"
+       "  --objective_function<string>\n"
+       "      <string> must be: categorical_cross_entropy or mean_squared_error\n"
+       "  --data_layout<string>\n"
+       "      <string> must be: data_parallel or model_parallel\n"
+       "      note: this will be applied to all layers, metrics (and others)\n"
+       "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "\n"
+       "Optimizers; all values except for nesterov are floats;\n"
+       "            the values shown in <...> are the default values, that will be\n"
+       "            used if the option is not specified on the cmd line.\n"
+       "            If you specify an option that is not applicable to your choice\n"
+       "            of optimizer, the option is ignored\n"
+       "\n"
+       "  --optimizer=<string>\n"
+       "     <string> must be one of:\n"
+       "         adagrad, adam, hypergradient_adam, rmsprop, sgd\n"
+       "\n"
+       "  --learn_rate=< 0.01 >          (all except hypergradient_adam)\n"
+       "  --eps=< 1e-8 >                 (all except sgd)\n"
+       "  --beta1=< 0.9 >                (adam, hypergradient_adam)\n"
+       "  --beta2=< 0.99 >               (adam, hypergradient_adam)\n"
+       "  --init_learning_rate=< 0.01 >  (hypergradient_adam)\n"
+       "  --hyper_learning_rate=< 1e-7 > (hypergradient_adam)\n"
+       "  --momentum=< 0.9 >             (sgd)\n"
+       "  --decay_rate=< 0.5 >           (sgd, rmsprop)\n"
+       "  --nesterov=< false >           (sgd)\n";
 }
 
