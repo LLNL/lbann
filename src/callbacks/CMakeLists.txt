@@ -16,5 +16,5 @@ add_sources(
   callback_checksmall.cpp
   callback_check_init.cpp
   profiler.cpp
-#  callback_ltfb.cpp
+  callback_ltfb.cpp
 )
