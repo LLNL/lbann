@@ -2,7 +2,10 @@
 model {
   name: "dnn"
   objective_function: "categorical_cross_entropy"
-  metric: "categorical_accuracy"
+  metric {
+    categorical_accuracy {
+    }
+  }
   data_layout: "model_parallel"
   mini_batch_size: 10
   block_size: 256

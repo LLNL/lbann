@@ -1,8 +1,9 @@
 optimizer {
-  name: "hypergradient_adam"
-  init_learning_rate: 0.01
-  hyper_learning_rate: 1e-7
-  beta1: 0.9
-  beta2: 0.99
-  eps: 1e-8
+  hypergradient_adam {
+    init_learning_rate: 0.01
+    hyper_learning_rate: 1e-7
+    beta1: 0.9
+    beta2: 0.99
+    eps: 1e-8
+  }  
 }
