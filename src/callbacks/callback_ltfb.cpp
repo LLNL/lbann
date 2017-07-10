@@ -27,14 +27,36 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_ltfb.hpp"
-#include "lbann/models/model_dnn.hpp"
+#include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include <typeinfo>
+#include <typeindex>
 
 namespace lbann {
 
 lbann_callback_ltfb::lbann_callback_ltfb(
-  uint round_size, model *remote_model, lbann_summary *summarizer) :
-  lbann_callback(1, summarizer), m_round_size(round_size),
-  m_remote_model(remote_model) {
+  uint round_size, lbann_summary *summarizer) :
+  lbann_callback(1, summarizer), m_round_size(round_size) {}
+
+lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
+  lbann_callback(other),
+  m_comm(other.m_comm),
+  m_round_size(other.m_round_size) {
+  if (other.m_remote_model) {
+    m_remote_model = other.m_remote_model->copy();
+  }
+}
+
+lbann_callback_ltfb& lbann_callback_ltfb::operator=(
+  const lbann_callback_ltfb& other) {
+  m_comm = other.m_comm;
+  m_round_size = other.m_round_size;
+  if (m_remote_model) {
+    delete m_remote_model;
+  }
+  if (other.m_remote_model) {
+    m_remote_model = other.m_remote_model->copy();
+  }
+  return *this;
 }
 
 lbann_callback_ltfb::~lbann_callback_ltfb() {
@@ -43,8 +65,9 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 
 void lbann_callback_ltfb::setup(model *m) {
   m_comm = m->get_comm();
-  // Validate that the round size divides the number of minibatches.
-  // Duplicate model.
+  // TODO: Validate that the round size divides the number of minibatches.
+  // Duplicate the model so we have a replica for storing the remote model in.
+  m_remote_model = m->copy();
 }
 
 void lbann_callback_ltfb::on_batch_end(model *m) {
@@ -61,29 +84,11 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  deep_neural_network *dnn = static_cast<deep_neural_network *>(m);
+  deep_neural_network *dnn = dynamic_cast<deep_neural_network *>(m);
   deep_neural_network *remote_dnn =
-    static_cast<deep_neural_network *>(m_remote_model);
-  dnn->evaluate(execution_mode::validation);
-  remote_dnn->evaluate(execution_mode::validation);
-  // Reset the execution mode.
-  m->set_execution_mode(execution_mode::training);
-  m_remote_model->set_execution_mode(execution_mode::training);
-  // Assume there is a categorical accuracy metric.
-  double local_acc = 0;
-  double remote_acc = 0;
-  for (auto&& metric : m->m_metrics) {
-    if (metric->type == metrics::metric_type::categorical_accuracy) {
-      local_acc = metric->report_metric(execution_mode::validation);
-      break;
-    }
-  }
-  for (auto&& metric : m_remote_model->m_metrics) {
-    if (metric->type == metrics::metric_type::categorical_accuracy) {
-      remote_acc = metric->report_metric(execution_mode::validation);
-      break;
-    }
-  }
+    dynamic_cast<deep_neural_network *>(m_remote_model);
+  double local_acc = evaluate(dnn);
+  double remote_acc = evaluate(remote_dnn);
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
     if (m_comm->am_model_master()) {
@@ -130,34 +135,60 @@ int lbann_callback_ltfb::select_partner() {
 void lbann_callback_ltfb::exchange(model *m, int partner) {
   std::vector<Layer *>& layers = m->get_layers();
   std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  // Skip input/target layers.
-  for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer *layer = layers[i];
-    Layer *remote_layer = remote_layers[i];
-    // TODO: Support sending optimizer state.
-    ElMat& weights = layer->get_weights_biases();
-    ElMat& remote_weights = remote_layer->get_weights_biases();
-    if (weights.Height() > 0) {
-      m_comm->sendrecv(weights.LockedBuffer(),
-                       weights.LocalHeight()*weights.LocalWidth(),
-                       partner,
-                       remote_weights.Buffer(),
-                       weights.LocalHeight()*weights.LocalWidth(),
-                       partner);
+  const std::type_info& learning_type = typeid(learning);
+  for (size_t i = 0; i < layers.size(); ++i) {
+    // Only exchange learning layers.
+    if (std::type_index(learning_type) ==
+        std::type_index(typeid(*layers[i]))) {
+      learning *layer = dynamic_cast<learning*>(layers[i]);
+      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
+      // TODO: Support sending optimizer state.
+      ElMat& weights = layer->get_weights();
+      ElMat& remote_weights = remote_layer->get_weights();
+      if (weights.Height() > 0) {
+        m_comm->sendrecv(weights.LockedBuffer(),
+                         weights.LocalHeight()*weights.LocalWidth(),
+                         partner,
+                         remote_weights.Buffer(),
+                         weights.LocalHeight()*weights.LocalWidth(),
+                         partner);
+      }
     }
   }
+}
+
+double lbann_callback_ltfb::evaluate(deep_neural_network *m) {
+  m->evaluate(execution_mode::validation);
+  m->set_execution_mode(execution_mode::training);  // Reset execution mode.
+  double acc = 0;
+  const std::type_info& ca_model_type = typeid(
+    metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>);
+  const std::type_info& ca_data_type = typeid(
+    metrics::categorical_accuracy<data_layout::DATA_PARALLEL>);
+  for (auto&& metric : m->get_metrics()) {
+    const std::type_info& m_type = typeid(*metric);
+    if (std::type_index(ca_model_type) == std::type_index(m_type) ||
+        std::type_index(ca_data_type) == std::type_index(m_type)) {
+      acc = metric->report_metric(execution_mode::validation);
+      break;
+    }
+  }
+  return acc;
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {
   std::vector<Layer *>& layers = m->get_layers();
   std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  // Skip input/target layers.
-  for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer *layer = layers[i];
-    Layer *remote_layer = remote_layers[i];
-    // TODO: Update optimizers.
-    layer->get_weights_biases().Matrix() =
-      remote_layer->get_weights_biases().Matrix();
+  const std::type_info& learning_type = typeid(learning);
+  for (size_t i = 0; i < layers.size(); ++i) {
+    if (std::type_index(learning_type) ==
+        std::type_index(typeid(*layers[i]))) {
+      learning *layer = dynamic_cast<learning*>(layers[i]);
+      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
+      // TODO: Update optimizers.
+      layer->get_weights().Matrix() =
+        remote_layer->get_weights().Matrix();
+    }
   }
 }
 

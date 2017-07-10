@@ -71,6 +71,11 @@ class model {
   /** Register a new metric for the model. */
   virtual void add_metric(metrics::metric *m);
 
+  /** Return the model's metrics. */
+  virtual std::vector<metrics::metric *>& get_metrics() {
+    return m_metrics;
+  }
+
   /** Return the model's layers. */
   virtual std::vector<Layer *>& get_layers() = 0;
 
@@ -183,12 +188,6 @@ class model {
    * adaptive learning rates.
    */
   objective_functions::objective_fn *m_obj_fn;
-  /**
-   * A metric is a function that is used to judge the performance of your model.
-   * A metric function is similar to an objective function, except that the
-   * results from evaluating a metric are not used when training the model.
-   */
-  std::vector<metrics::metric *> m_metrics;
 
  protected:
   /** The model's current execution mode. */
@@ -223,6 +222,13 @@ class model {
 
   /** Factory to create optimizers. */
   optimizer_factory *m_optimizer_fac;
+
+  /**
+   * A metric is a function that is used to judge the performance of your model.
+   * A metric function is similar to an objective function, except that the
+   * results from evaluating a metric are not used when training the model.
+   */
+  std::vector<metrics::metric *> m_metrics;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();
