@@ -25,6 +25,9 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 /// prints usage information
 void print_help(lbann::lbann_comm *comm); 
 
+/// prints prototext file, cmd line, etc to file
+void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p);
+
 ///returns a sequential model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
 lbann::sequential_model *init_model(
   lbann::lbann_comm *comm,

@@ -86,7 +86,7 @@ weight_initialization get_weight_initialization(const string& s)
   }
 }
 
-const data_layout get_data_layout(const string& s, const char *file, int line)
+data_layout get_data_layout(const string& s, const char *file, int line)
 {
   if (s == "model_parallel") {
     return data_layout::MODEL_PARALLEL;
@@ -110,7 +110,7 @@ void add_layers(
 {
   std::stringstream err;
   lbann_comm *comm = model->get_comm();
-  bool master = comm->am_world_master();
+  //bool master = comm->am_world_master();
 
   std::unordered_map<int, Layer*> all_layers;
 
@@ -147,7 +147,7 @@ void add_layers(
     // LAYER: sigmoid
     //////////////////////////////////////////////////////////////////
     if (layer.has_sigmoid()) {
-      const lbann_data::Sigmoid &ell = layer.sigmoid();
+      //const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size);
       } else {
@@ -198,9 +198,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     if (layer.has_input_distributed_minibatch_parallel_io()) {
       //const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
-      //please do not delete this! it's here to remind me that something needs
-      //fixing. Thanks, Dave H.
-      if (master) cout << "XX numreaders: " << m.num_parallel_readers() << endl;
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
           comm,
@@ -380,7 +377,7 @@ void add_layers(
       }
 
       int num_dims = ell.num_dims();
-      int num_input_channels = ell.num_input_channels();
+      //int num_input_channels = ell.num_input_channels();
       int num_output_channels = ell.num_output_channels();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new convolution_layer<data_layout::MODEL_PARALLEL>(
@@ -1119,7 +1116,7 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
-  optimizer_factory *factory;
+  optimizer_factory *factory = 0;
   const lbann_data::Optimizer &opt = p.optimizer();
   if (opt.has_adagrad()) {
     const lbann_data::Adagrad &a = opt.adagrad();
@@ -1347,7 +1344,7 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     parallel_io = comm->get_procs_per_model();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   } else {
-      cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+    cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
   }
 }
 
@@ -1381,7 +1378,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 
 
-  if (opts->has_string("optimizer")) {
+  if (opts->has_string("opt")) {
     //defaults
     double learn_rate = opts->has_float("learn_rate") ? opts->get_float("learn_rate") : 0.01;
     double eps = opts->has_float("eps") ? opts->get_float("eps") : 1e-8;
@@ -1413,7 +1410,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     }
 
     //construct the new optimizer
-    std::string opt_string = opts->get_string("optimizer");
+    std::string opt_string = opts->get_string("opt");
     if (opt_string == "adagrad") {
       lbann_data::Adagrad *a = new lbann_data::Adagrad;
       a->set_learn_rate(learn_rate);
@@ -1440,6 +1437,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_decay_rate(decay_rate);
       a->set_eps(eps);
     } else if (opt_string == "sgd") {
+      if (master) std::cerr << "\n\nsetting: sgd\n\n";
       lbann_data::Sgd *a = new lbann_data::Sgd;
       a->set_learn_rate(learn_rate);
       a->set_momentum(momentum);
@@ -1561,7 +1559,7 @@ void print_help(lbann::lbann_comm *comm)
        "            If you specify an option that is not applicable to your choice\n"
        "            of optimizer, the option is ignored\n"
        "\n"
-       "  --optimizer=<string>\n"
+       "  --opt=<string>\n"
        "     <string> must be one of:\n"
        "         adagrad, adam, hypergradient_adam, rmsprop, sgd\n"
        "\n"
@@ -1576,3 +1574,110 @@ void print_help(lbann::lbann_comm *comm)
        "  --nesterov=< false >           (sgd)\n";
 }
 
+void copy_file(std::string fn, std::ofstream &out)
+{
+  std::ifstream in(fn.c_str());
+  if (not in.is_open()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: failed to open file for reading: " << fn;
+    throw std::runtime_error(err.str());
+  }
+  std::stringstream s;
+  s << in.rdbuf();
+  out << s.str();
+}
+
+void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
+{
+  if (not comm->am_world_master()) {
+    return;
+  }
+
+  options *opts = options::get();
+
+  //do not write output file for a repeated experiment;
+  //may want to revisit this decision later ...
+  if (opts->has_string("loadme")) {
+    return;
+  }
+
+  //get output filename
+  std::string base = ".";
+  if (not opts->has_string("saveme")) {
+    std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
+    return;
+  }
+  std::string name = opts->get_string("saveme");
+  if (name == "0") {
+    std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
+    return;
+  }
+
+  //check if "name" exists; if yes, append "_1"
+  bool exists = false;
+  ifstream in(name.c_str());
+  if (in) {
+    exists = true;
+    in.close();
+  }
+  if (exists) {
+    name += "_1";
+    //opts["saveme"] = name;
+  }
+
+  //open output file
+  std::ofstream out(name.c_str());
+  if (not out.is_open()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: failed to open file for writing: " << name;
+    throw std::runtime_error(err.str());
+  }
+  std::cout << std::endl << "writing options and prototext to file: " << name << "\n\n";
+
+  //output all data
+  out << "# cmd line for original experiment:\n#  $ ";
+  for (int h=0; h<argc; h++) {
+    out << argv[h] << " ";
+  }
+  std::string lbann_version("unknown: LBANN_VERSION is not defined");
+
+#ifdef LBANN_VERSION
+  lbann_version = LBANN_VERSION;
+#endif
+
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  std::time_t r = std::time(nullptr);
+  char *tm = std::ctime(&r);
+  size_t fixme = strlen(tm);
+  tm[fixme-1] = 0;
+  out << "\n#\n# Experiment conducted at: "
+      <<  tm
+      << "\n#\n#\n# Experiment was run with lbann version: "
+      << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
+      << "#  $ srun -n" << size << " " << argv[0]
+      << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
+
+  /*
+  out << "# Selected SLURM Environment Variables:\n";
+  std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
+  for (size_t i=0; i<v.size(); i++) {
+    char *c = std::getenv(v[i].c_str());
+    if (c != 0) {
+      cout << "# " << v[i] << "=" << c << std::endl;
+    }
+  }
+  */
+
+  if (opts->has_string("model")) {
+    copy_file(opts->get_string("model"), out);
+  }
+  if (opts->has_string("reader")) {
+    copy_file(opts->get_string("reader"), out);
+  }
+  if (opts->has_string("optimizer")) {
+    copy_file(opts->get_string("optimizer"), out);
+  }
+}
