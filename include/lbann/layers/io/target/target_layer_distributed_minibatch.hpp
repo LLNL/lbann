@@ -97,7 +97,7 @@ class target_layer_distributed_minibatch : public target_layer {
     this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
 
     int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_neural_network_model->m_metrics) {
+    for (auto&& m : this->m_neural_network_model->get_metrics()) {
       double cur_num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(cur_num_errors, curr_mini_batch_size);
     }
