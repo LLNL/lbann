@@ -309,8 +309,8 @@ message Tanh {
 }
 
 message Selu {
-  double alpha = 2;
-  double scale = 3;
+  double alpha = 2; //default: 1.6732632423543772848170429916717
+  double scale = 3; //default: 1.0507009873554804934193349852946
 }
 
 message Softmax {
@@ -320,21 +320,18 @@ message Softmax {
 // Regularization Layers //
 ///////////////////////////
 message BatchNormalization {
-  int64 num_neurons = 1;
   double decay = 2; //default: 0.9
   double gamma = 3; //default: 1.0
   double beta = 4;  //default: 0.0
 }
 
 message SeluDropout {
-  int64 num_neurons = 1;
   double keep_prob = 2; //default: 0.95
   double alpha = 3;     //default: 1.6732632423543772848170429916717
   double scale = 4;     //default: 1.0507009873554804934193349852946
 }
 
 message LocalResponseNormalization {
-  string dims = 3;  //e.g, "2 2 2"
   int64 window_width = 4;
   double lrn_alpha = 5;
   double lrn_beta = 6;
@@ -359,7 +356,6 @@ message InputPartitionedMiniBatchParallelIO {
 //////////////////////
 message Pooling {
   int64 num_dims = 1;
-  int64 num_channels = 2;
   string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
   string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
   string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
@@ -377,14 +373,13 @@ message FullyConnected {
   int64 num_neurons = 2;
   string weight_initialization = 5;
   bool has_bias = 6;
-  double l2_regularization_factor = 10;
+  double l2_regularization_factor = 7;
 }
+
 message Convolution {
   int64 num_dims = 1;
-  int64 num_input_channels = 2;
-  string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
   int64 num_output_channels = 4;
-  string filter_dims = 5; //should be space-separated list, e.g, "2 2 3"
+  string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
   string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
   int64 mini_batch_size = 8;
@@ -397,12 +392,12 @@ message Convolution {
 ///////////////////
 message TargetDistributedMinibatchParallelIO {
   bool shared_data_reader = 2;
-  bool for_regression = 3;
+  bool for_regression = 3; //default: false
 }
 
 message TargetPartitionedMinibatchParallelIO {
   bool shared_data_reader = 2;
-  bool for_regression = 3;
+  bool for_regression = 3; //default: false
 }
 
 message TargetReconstruction {

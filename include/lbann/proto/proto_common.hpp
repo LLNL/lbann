@@ -54,12 +54,12 @@ void init_callbacks(
   const std::unordered_map<uint, uint> &layer_mapping);
 
 ///
-void readPrototextFile(
+void read_prototext_file(
   string fn,
   lbann_data::LbannPB& pb);
 
 ///
-void writePrototextFile(
+void write_prototext_file(
   string fn,
   lbann_data::LbannPB& pb);
 

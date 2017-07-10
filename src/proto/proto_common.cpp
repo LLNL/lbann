@@ -348,18 +348,12 @@ void add_layers(
     if (layer.has_convolution()) {
       const lbann_data::Convolution& ell = layer.convolution();
 
-      vector<int> input_dims;
-      std::stringstream ss(ell.input_dims());
+      vector<int> conv_dims;
+      std::stringstream ss;
       int i;
+      ss.str(ell.conv_dims());
       while (ss >> i) {
-        input_dims.push_back(i);
-      }
-
-      vector<int> filter_dims;
-      ss.clear();
-      ss.str(ell.filter_dims());
-      while (ss >> i) {
-        filter_dims.push_back(i);
+        conv_dims.push_back(i);
       }
 
       vector<int> conv_pads;
@@ -386,7 +380,7 @@ void add_layers(
           mb_size,
           num_dims,
           num_output_channels,
-          &filter_dims[0],
+          &conv_dims[0],
           &conv_pads[0],
           &conv_strides[0],
           get_weight_initialization(ell.weight_initialization()),
@@ -400,7 +394,7 @@ void add_layers(
           mb_size,
           num_dims,
           num_output_channels,
-          &filter_dims[0],
+          &conv_dims[0],
           &conv_pads[0],
           &conv_strides[0],
           get_weight_initialization(ell.weight_initialization()),
@@ -424,15 +418,6 @@ void add_layers(
     if (layer.has_local_response_normalization()) {
       const lbann_data::LocalResponseNormalization& ell = layer.local_response_normalization();
 
-      vector<int> dims;
-      std::stringstream ss(ell.dims());
-      int i;
-      while (ss >> i) {
-        dims.push_back(i);
-      }
-
-      //int num_dims = ell.num_dims();
-      //int num_channels = ell.num_channels();
       DataType lrn_alpha = ell.lrn_alpha();
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
@@ -1293,7 +1278,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
   }
 }
 
-void readPrototextFile(string fn, lbann_data::LbannPB& pb)
+void read_prototext_file(string fn, lbann_data::LbannPB& pb)
 {
   std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
@@ -1309,9 +1294,9 @@ void readPrototextFile(string fn, lbann_data::LbannPB& pb)
   }
 }
 
-bool writePrototextFile(const char *fn, lbann_data::LbannPB& pb)
+bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
 {
-  int fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  int fd = open(fn, O_APPEND | O_CREAT | O_TRUNC, 0644);
   if (fd == -1) {
     return false;
   }
@@ -1390,9 +1375,11 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     double decay_rate = opts->has_float("decay_rate") ? opts->get_float("decay_rate") : 0.5;
     bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
 
-    lbann_data::Optimizer *opt = p.mutable_optimizer();
+    lbann_data::Optimizer *opt = new lbann_data::Optimizer;
+    //lbann_data::Optimizer *opt = p.mutable_optimizer();
 
     //clear the existing optimizer
+    /*
     if (opt->has_adagrad()) {
       opt->clear_adagrad();
     }
@@ -1408,6 +1395,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     if (opt->has_sgd()) {
       opt->clear_sgd();
     }
+    */
 
     //construct the new optimizer
     std::string opt_string = opts->get_string("opt");
@@ -1436,6 +1424,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_learn_rate(learn_rate);
       a->set_decay_rate(decay_rate);
       a->set_eps(eps);
+      opt->set_allocated_rmsprop(a);
     } else if (opt_string == "sgd") {
       if (master) std::cerr << "\n\nsetting: sgd\n\n";
       lbann_data::Sgd *a = new lbann_data::Sgd;
@@ -1443,6 +1432,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_momentum(momentum);
       a->set_decay_rate(decay_rate);
       a->set_nesterov(nesterov);
+      opt->set_allocated_sgd(a);
     } else {
       if (master) {
         std::stringstream err;
@@ -1452,6 +1442,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
         throw lbann_exception(err.str());
       }
     }
+    p.set_allocated_optimizer(opt);
   }
 }
 
@@ -1660,24 +1651,18 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "#  $ srun -n" << size << " " << argv[0]
       << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
 
-  /*
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
   for (size_t i=0; i<v.size(); i++) {
     char *c = std::getenv(v[i].c_str());
     if (c != 0) {
-      cout << "# " << v[i] << "=" << c << std::endl;
+      out << "# " << v[i] << "=" << c << std::endl;
     }
   }
-  */
+  out << "\n#\n#\n";
 
-  if (opts->has_string("model")) {
-    copy_file(opts->get_string("model"), out);
-  }
-  if (opts->has_string("reader")) {
-    copy_file(opts->get_string("reader"), out);
-  }
-  if (opts->has_string("optimizer")) {
-    copy_file(opts->get_string("optimizer"), out);
-  }
+  std::string s;
+  google::protobuf::TextFormat::PrintToString(p, &s);
+  out << s;
+  out.close();
 }
