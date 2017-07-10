@@ -53,7 +53,7 @@ LUSTRE_FILEPATH="/p/lscratche/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=12
 else
-LUSTRE_FILEPATH="/p/lscratche/brainusr"
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 ENABLE_HT=
 CORES_PER_NODE=12
 fi
@@ -265,6 +265,6 @@ fi
 fi
 
 echo ${CORES_PER_NODE}
-CMD="${RUN} -N${NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${BINDIR}/lbann_alexnet --hostname ${CLUSTER} --num-nodes ${NNODES} --num-cores $((${NNODES}*${CORES_PER_NODE})) --tasks-per-node ${TASKS_PER_NODE} --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --checkpoint ${CKPT} --lr-decay-rate ${LR_DECAY} --random-training-samples ${SHUFFLE_TRAINING}"
+CMD="${RUN} -N${NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache ${BINDIR}/alexnet --hostname ${CLUSTER} --num-nodes ${NNODES} --num-cores $((${NNODES}*${CORES_PER_NODE})) --tasks-per-node ${TASKS_PER_NODE} --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --checkpoint ${CKPT} --lr-decay-rate ${LR_DECAY} --random-training-samples ${SHUFFLE_TRAINING}"
 echo ${CMD}
 ${CMD}

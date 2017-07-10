@@ -184,6 +184,6 @@ fi
 LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 
 
-CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_greedy_layerwise_autoencoder_synthetic_data  --network ${NETWORK} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --num-epochs ${EPOCHS} --training-samples ${TRAINING_SAMPLES} --testing-samples ${TESTING_SAMPLES} --lambda 0.1 --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
+CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/greedy_layerwise_autoencoder_synthetic_data  --network ${NETWORK} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --num-epochs ${EPOCHS} --training-samples ${TRAINING_SAMPLES} --testing-samples ${TESTING_SAMPLES} --lambda 0.1 --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
 echo ${CMD}
 ${CMD}
