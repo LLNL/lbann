@@ -123,7 +123,9 @@ if(WITH_CUDA)
 endif()
 
 if(ELEMENTAL_USE_CUBLAS)
-   set(EL_CUBLAS_FLAGS "-DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS}")
+  # Is variable EL_CUBLAS_FLAGS used?
+  set(EL_CUBLAS_FLAGS "-DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS}")
+  add_definitions(-DEL_USE_CUBLAS)
 endif()
 
 if(CUDA_FOUND)
