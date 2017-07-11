@@ -65,7 +65,7 @@ void generic_data_reader::setup() {
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
-  int nthreads = omp_get_num_threads();
+  int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -74,7 +74,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
 
   /// Allow each thread to perform any preprocessing necessary on the
   /// data source prior to fetching data
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(static, 1)
   for (int t = 0; t < nthreads; t++) {
     preprocess_data_source(omp_get_thread_num());
   }
@@ -102,7 +102,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
 
   /// Allow each thread to perform any postprocessing necessary on the
   /// data source prior to fetching data
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(static, 1)
   for (int t = 0; t < nthreads; t++) {
     postprocess_data_source(omp_get_thread_num());
   }

@@ -174,6 +174,7 @@ void data_reader_nci::load() {
   m_index_map.pop_back();
   m_index_map.shrink_to_fit();
   m_responses.resize(m_num_samples);
+  m_labels.resize(m_num_samples);
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
