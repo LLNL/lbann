@@ -378,7 +378,7 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
   Zero(cpu_data);
   synchronize();
   for(int i=0; i<m_num_gpus; ++i) {
-    cpu_data += temp(ALL, IR(i*width, (i+1)*width));
+    cpu_data += temp(El::ALL, El::IR(i*width, (i+1)*width));
   }
 
 }

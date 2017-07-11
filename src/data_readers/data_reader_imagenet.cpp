@@ -66,7 +66,7 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
     X.Set(p, mb_idx, pixels[p]);
   }
 
-  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
   normalize(pixel_col, m_image_num_channels);
 

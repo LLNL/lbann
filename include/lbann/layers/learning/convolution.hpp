@@ -302,13 +302,13 @@ class convolution_layer : public learning {
     learning::setup_views();
     // Set up views into weights and weights gradient
     El::View(*m_filter_weights_v, *this->m_weights,
-             IR(0,this->m_weights->Height()-1), ALL);
+             El::IR(0,this->m_weights->Height()-1), El::ALL);
     El::View(*m_filter_weights_gradient_v, *this->m_weights_gradient,
-             IR(0,this->m_weights_gradient->Height()-1), ALL);
+             El::IR(0,this->m_weights_gradient->Height()-1), El::ALL);
     El::View(*m_bias_weights_v, *this->m_weights,
-             IR(this->m_weights->Height()-1), ALL);
+             El::IR(this->m_weights->Height()-1), El::ALL);
     El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
-             IR(this->m_weights_gradient->Height()-1), ALL);
+             El::IR(this->m_weights_gradient->Height()-1), El::ALL);
   }
 
   /// Initialize GPU objects
@@ -565,9 +565,9 @@ class convolution_layer : public learning {
 
     // Transfer outputs from GPUs to CPU and reduce
     Mat filter_weights_gradient_per_gpu
-      = m_weights_gradient_per_gpu.Matrix()(IR(0, m_weights_gradient_per_gpu.Height()-1), ALL);
+      = m_weights_gradient_per_gpu.Matrix()(El::IR(0, m_weights_gradient_per_gpu.Height()-1), El::ALL);
     Mat bias_weights_gradient_per_gpu
-      = m_weights_gradient_per_gpu.Matrix()(IR(m_weights_gradient_per_gpu.Height()-1), ALL);
+      = m_weights_gradient_per_gpu.Matrix()(El::IR(m_weights_gradient_per_gpu.Height()-1), El::ALL);
     this->m_cudnn->gather_from_gpus(filter_weights_gradient_per_gpu,
                                     m_filter_weights_gradient_d,
                                     m_filter_weights_gradient_v->Width());
@@ -580,7 +580,7 @@ class convolution_layer : public learning {
       const El::Int col_start = i * this->m_weights_gradient->Width();
       const El::Int col_end = (i+1) * this->m_weights_gradient->Width();
       *this->m_weights_gradient
-        += m_weights_gradient_per_gpu(ALL, IR(col_start, col_end));
+        += m_weights_gradient_per_gpu(El::ALL, El::IR(col_start, col_end));
     }
     El::AllReduce(*this->m_weights_gradient,
                   this->m_weights_gradient->RedundantComm());
@@ -607,9 +607,9 @@ class convolution_layer : public learning {
     // Apply bias
     for(int i=0; i<num_output_channels; ++i) {
       Mat activations_channel
-        = View(activations_local,
-               IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
-               ALL);
+        = El::View(activations_local,
+                   El::IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
+                   El::ALL);
       Fill(activations_channel, bias_weights_local.Get(0,i));
     }
 
@@ -620,7 +620,7 @@ class convolution_layer : public learning {
     for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Construct im2col matrix from input
-      const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+      const Mat input_mat = El::LockedView(prev_activations_local, El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_input_channels,
@@ -633,7 +633,7 @@ class convolution_layer : public learning {
       // Apply convolution to current data sample
       Mat output_mat(num_per_output_channel, num_output_channels,
                      activations_local.Buffer(0,sample), num_per_output_channel);
-      Gemm(TRANSPOSE, NORMAL,
+      El::Gemm(TRANSPOSE, NORMAL,
            DataType(1), im2col_mat, filter_weights_local,
            DataType(1), output_mat);
 
@@ -695,7 +695,7 @@ class convolution_layer : public learning {
            DataType(0), im2col_mat);
 
       // Compute error signal (i.e. gradient w.r.t. input)
-      Mat output_mat = View(error_signal_local, ALL, IR(sample));
+      Mat output_mat = El::View(error_signal_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
              num_input_channels,
@@ -706,8 +706,8 @@ class convolution_layer : public learning {
              m_conv_strides.data());
 
       // Construct im2col matrix from input
-      const Mat input_mat = LockedView(prev_activations_local,
-                                       ALL, IR(sample));
+      const Mat input_mat = El::LockedView(prev_activations_local,
+                                           El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_input_channels,

@@ -85,7 +85,7 @@ class reconstruction_layer : public target_layer {
 
     //view of original layer
     ElMat& orig_acts = m_original_layer->get_activations();
-    View(original_layer_act_v, orig_acts, El::ALL, IR(0, cur_mini_batch_size));
+    El::View(original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
 

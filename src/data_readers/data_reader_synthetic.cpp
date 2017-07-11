@@ -41,7 +41,7 @@ data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, in
 /// Generate one datum of the mini-batch
 bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   Mat X_v;
-  View(X_v, X, ALL, IR(mb_idx, mb_idx + 1));
+  El::View(X_v, X, El::ALL, El::IR(mb_idx, mb_idx + 1));
   //@todo: generalize to take different data distribution/generator
   El::Gaussian(X_v, m_num_features, 1, DataType(0), DataType(1));
 

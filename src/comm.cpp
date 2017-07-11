@@ -288,7 +288,7 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
       recv_size = send_size;
       recv_buf = get_collective_buffer(recv_size);
     } else {
-      send_buf = send_transform(mat, ALL, ALL, send_size, false, 0);
+      send_buf = send_transform(mat, El::ALL, El::ALL, send_size, false, 0);
       recv_buf = max_recv_buf;
     }
     ar_send_transform_time += get_time() - send_trans_start;
@@ -340,7 +340,7 @@ void lbann_comm::pe_ring_allreduce(
     max_recv_buffers[i] = get_collective_buffer(max_recv_count, i);
   }
   // Local slice of our accumulated data.
-  auto accum_view = mat(ALL, El::IR(slice_ends[rank] - slice_lengths[rank],
+  auto accum_view = mat(El::ALL, El::IR(slice_ends[rank] - slice_lengths[rank],
                                     slice_ends[rank]));
   // Do a pairwise-exchange reduce-scatter.
   double rs_start = get_time();
@@ -384,13 +384,13 @@ void lbann_comm::pe_ring_allreduce(
       int send_size;
       uint8_t *send_buf = nullptr;
       if (is_send_local) {
-        auto send_view = mat(
-                           ALL, El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
+        auto send_view = mat(El::ALL,
+                             El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
         send_buf = (uint8_t *) send_view.Buffer();
         send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       } else {
         send_buf = send_transform(
-                     mat, ALL, El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]),
+                     mat, El::ALL, El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]),
                      send_size, true, reduce_idx);
       }
       ar_send_transform_time += get_time() - send_trans_start;
@@ -448,14 +448,14 @@ void lbann_comm::pe_ring_allreduce(
   {
     double send_trans_start = get_time();
     uint8_t *send_buf = send_transform(
-                          mat, ALL, El::IR(slice_ends[rank] - slice_lengths[rank], slice_ends[rank]),
+                          mat, El::ALL, El::IR(slice_ends[rank] - slice_lengths[rank], slice_ends[rank]),
                           send_size, false, 0);
     ar_send_transform_time += get_time() - send_trans_start;
     const int data_src = (rank - 1 + nprocs) % nprocs;
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
-    auto recv_view = mat(ALL,
+    auto recv_view = mat(El::ALL,
                          El::IR(slice_ends[data_src] - slice_lengths[data_src],
                                 slice_ends[data_src]));
     // If we can, receive directly into the destination matrix.
@@ -494,7 +494,7 @@ void lbann_comm::pe_ring_allreduce(
   for (int step = 1; step < nprocs - 1; ++step) {
     // Compute where the data we get is coming from.
     const int data_src = (rank - step - 1 + nprocs) % nprocs;
-    auto recv_view = mat(ALL,
+    auto recv_view = mat(El::ALL,
                          El::IR(slice_ends[data_src] - slice_lengths[data_src],
                                 slice_ends[data_src]));
     if (opts.id_recv) {
@@ -580,18 +580,17 @@ void lbann_comm::ring_allreduce(
     int recv_size = max_recv_count;
     uint8_t *send_buf = nullptr;
     if (is_send_local) {
-      auto send_view = mat(
-                         ALL, El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
+      auto send_view = mat(El::ALL,
+                           El::IR(slice_ends[dst] - slice_lengths[dst], slice_ends[dst]));
       send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
     } else {
-      send_buf = send_transform(
-                   mat, ALL, El::IR(slice_ends[send_slice] - slice_lengths[send_slice],
-                                    slice_ends[send_slice]), send_size, false, 0);
+      send_buf = send_transform(mat, El::ALL,
+                                     El::IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                                            slice_ends[send_slice]), send_size, false, 0);
     }
-    auto recv_view = mat(
-                       ALL, El::IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
-                                   slice_ends[recv_slice]));
+    auto recv_view = mat(El::ALL,
+                         El::IR(slice_ends[recv_slice] - slice_lengths[recv_slice], slice_ends[recv_slice]));
     if (is_recv_local) {
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
       recv_buf = get_collective_buffer(recv_size);
@@ -627,13 +626,13 @@ void lbann_comm::ring_allreduce(
     const int recv_slice = rank;
     double send_trans_start = get_time();
     uint8_t *send_buf = send_transform(
-                          mat, ALL, El::IR(slice_ends[send_slice] - slice_lengths[send_slice],
+                          mat, El::ALL, El::IR(slice_ends[send_slice] - slice_lengths[send_slice],
                                            slice_ends[send_slice]), send_size, false, 0);
     ar_send_transform_time += get_time() - send_trans_start;
     bytes_sent += send_size;
     ar_bytes_sent += send_size;
     ar_ag_bytes_sent += send_size;
-    auto recv_view = mat(ALL,
+    auto recv_view = mat(El::ALL,
                          El::IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                                 slice_ends[recv_slice]));
     // If we can, receive directly into the destination matrix.
@@ -668,7 +667,7 @@ void lbann_comm::ring_allreduce(
   }
   for (int step = 1; step < nprocs - 1; ++step) {
     const int recv_slice = (rank - step + nprocs) % nprocs;
-    auto recv_view = mat(ALL,
+    auto recv_view = mat(El::ALL,
                          El::IR(slice_ends[recv_slice] - slice_lengths[recv_slice],
                                 slice_ends[recv_slice]));
     if (opts.id_recv) {
@@ -763,19 +762,19 @@ void lbann_comm::rabenseifner_allreduce(
       recv_range = El::IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
                           slice_ends[last_idx-1]);
     }
-    auto recv_view = mat(ALL, recv_range);
+    auto recv_view = mat(El::ALL, recv_range);
     // Transform the data to send.
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
     uint8_t *send_buf = nullptr;
     if (is_local) {
-      auto send_view = mat(ALL, send_range);
+      auto send_view = mat(El::ALL, send_range);
       send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
-      send_buf = send_transform(mat, ALL, send_range, send_size, false, 0);
+      send_buf = send_transform(mat, El::ALL, send_range, send_size, false, 0);
     }
     ar_send_transform_time += get_time() - send_trans_start;
     bytes_sent += send_size;
@@ -833,19 +832,19 @@ void lbann_comm::rabenseifner_allreduce(
       recv_range = El::IR(slice_ends[recv_idx] - slice_lengths[recv_idx],
                           slice_ends[send_idx-1]);
     }
-    auto recv_view = mat(ALL, recv_range);
+    auto recv_view = mat(El::ALL, recv_range);
     // Transform the data to send.
     double send_trans_start = get_time();
     int send_size;
     int recv_size = max_recv_count;
     uint8_t *send_buf = nullptr;
     if (is_local) {
-      auto send_view = mat(ALL, send_range);
+      auto send_view = mat(El::ALL, send_range);
       send_buf = (uint8_t *) send_view.Buffer();
       send_size = sizeof(DataType) * send_view.Height() * send_view.Width();
       recv_size = sizeof(DataType) * recv_view.Height() * recv_view.Width();
     } else {
-      send_buf = send_transform(mat, ALL, send_range, send_size, false, 0);
+      send_buf = send_transform(mat, El::ALL, send_range, send_size, false, 0);
     }
     ar_send_transform_time += get_time() - send_trans_start;
     if (opts.id_recv || is_local) {

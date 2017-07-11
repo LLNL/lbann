@@ -44,7 +44,7 @@ void mean_squared_error::setup(int num_neurons, int mini_batch_size) {
 
 void mean_squared_error::fp_set_std_matrix_view(int cur_mini_batch_size) {
   // Set the view based on the size of the current mini-batch
-  El::View(m_errors_v, m_errors, ALL, IR(0, cur_mini_batch_size));
+  El::View(m_errors_v, m_errors, El::ALL, El::IR(0, cur_mini_batch_size));
 }
 
 /// Compute mean squared error

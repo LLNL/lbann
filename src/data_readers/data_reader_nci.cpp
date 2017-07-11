@@ -100,7 +100,7 @@ bool data_reader_nci::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
       f++;
     }//end if col > 5
   }// end while loop
-  auto data_col = X(El::ALL, IR(mb_idx, mb_idx+1));
+  auto data_col = X(El::ALL, El::IR(mb_idx, mb_idx+1));
   normalize(data_col, 1);
   return true;
 }

@@ -234,9 +234,9 @@ void Layer::forwardProp() {
     const DistData& curr_dist = m_prev_activations->DistData();
     if(prev_dist.colDist == curr_dist.colDist
        && prev_dist.rowDist == curr_dist.rowDist) {
-      View(*m_prev_activations, *m_prev_layer->m_activations);
+      El::View(*m_prev_activations, *m_prev_layer->m_activations);
     } else {
-      Copy(*m_prev_layer->m_activations, *m_prev_activations);
+      El::Copy(*m_prev_layer->m_activations, *m_prev_activations);
     }
   }
 
@@ -285,9 +285,9 @@ void Layer::backProp() {
     const DistData& curr_dist = m_prev_error_signal->DistData();
     if(prev_dist.colDist == curr_dist.colDist
        && prev_dist.rowDist == curr_dist.rowDist) {
-      View(*m_prev_error_signal, *m_next_layer->m_error_signal);
+      El::View(*m_prev_error_signal, *m_next_layer->m_error_signal);
     } else {
-      Copy(*m_next_layer->m_error_signal, *m_prev_error_signal);
+      El::Copy(*m_next_layer->m_error_signal, *m_prev_error_signal);
     }
   }
 
@@ -513,8 +513,8 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 
 void Layer::fp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
+  El::View(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
   /// @todo BVE FIXME This will cause a bug when you are on the last
@@ -533,13 +533,13 @@ void Layer::fp_set_std_matrix_view() {
 
 void Layer::bp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  View(*m_prev_activations_v, *m_prev_activations, ALL, IR(0, cur_mini_batch_size));
-  View(*m_activations_v, *m_activations, ALL, IR(0, cur_mini_batch_size));
+  El::View(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   if(m_prev_error_signal->Height() > 0) {
-    View(*m_prev_error_signal_v, *m_prev_error_signal, ALL,
-         IR(0, cur_mini_batch_size));
+    El::View(*m_prev_error_signal_v, *m_prev_error_signal, El::ALL,
+             El::IR(0, cur_mini_batch_size));
   }
-  View(*m_error_signal_v, *m_error_signal, ALL, IR(0, cur_mini_batch_size));
+  El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, cur_mini_batch_size));
 }
 
 #ifdef __LIB_CUDNN
