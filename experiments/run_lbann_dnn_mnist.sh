@@ -38,7 +38,7 @@ USE_LUSTRE_DIRECT=0
 
 TASKS_PER_NODE=12
 
-if [ "${CLUSTER}" = "catalyst" ]; then
+if [ "${CLUSTER}" = "catalyst" -o  "${CLUSTER}" = "surface" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 DATASET_DIR="datasets/MNIST"
 TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
