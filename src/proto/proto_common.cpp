@@ -704,15 +704,15 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          mb_size,
           comm,
+          mb_size,
           model->create_optimizer()
         );
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          mb_size,
           comm,
+          mb_size,
           model->create_optimizer()
         );
       }

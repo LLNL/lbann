@@ -54,8 +54,8 @@ class softmax_layer : public activation_layer {
 
  public:
   softmax_layer(int index,
-                int mini_batch_size,
                 lbann_comm *comm,
+                int mini_batch_size,
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size) {
     // Setup the data distribution

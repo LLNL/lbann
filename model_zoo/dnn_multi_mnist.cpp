@@ -289,8 +289,8 @@ int main(int argc, char *argv[]) {
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *softmax = new softmax_layer<DATA_LAYOUT>(
        layer_id,
-       trainParams.MBSize,
        comm,
+       trainParams.MBSize,
        dnn.create_optimizer());
     dnn.add(softmax);
 

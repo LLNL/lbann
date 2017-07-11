@@ -579,8 +579,8 @@ int main(int argc, char *argv[]) {
       Layer *softmax =
         new softmax_layer<data_layout::MODEL_PARALLEL>(
           23,
-          trainParams.MBSize,
           comm,
+          trainParams.MBSize,
           dnn->create_optimizer());
       dnn->add(softmax);
     }
