@@ -1,7 +1,10 @@
 model {
   name: "dnn"
   objective_function: "categorical_cross_entropy"
-  metric: "categorical_accuracy"
+  metric {
+     categorical_accuracy {
+     }
+  }
   data_layout: "data_parallel"
   mini_batch_size: 32
   block_size: 256
@@ -26,7 +29,7 @@ model {
   }
   callback {
     summary {
-      dir: "none"
+      dir: "."
       interval: 1
     }
   }
@@ -60,10 +63,8 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_input_channels: 3
-      input_dims: "256 256"
       num_output_channels: 96
-      filter_dims: "11 11"
+      conv_dims: "11 11"
       conv_pads: "0 0"
       conv_strides: "4 4"
       weight_initialization: "he_normal"
@@ -90,7 +91,6 @@ model {
     parent: 3
     data_layout: "data_parallel"
     local_response_normalization {
-      dims: "62 62"
       window_width: 5
       lrn_alpha: 0.0001
       lrn_beta: 0.75
@@ -107,8 +107,6 @@ model {
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
-      num_channels: 96
-      input_dims: "62 62"
       pool_dims: "3 3"
       pool_pads: "0 0"
       pool_strides: "2 2"
@@ -125,10 +123,8 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_input_channels: 96
-      input_dims: "30 30"
       num_output_channels:  256
-      filter_dims: "5 5"
+      conv_dims: "5 5"
       conv_pads: "2 2"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
@@ -155,7 +151,6 @@ model {
     parent: 7
     data_layout: "data_parallel"
     local_response_normalization {
-      dims: "30 30"
       window_width: 5
       lrn_alpha: 0.0001
       lrn_beta: 0.75
@@ -173,8 +168,6 @@ model {
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
-      num_channels: 256
-      input_dims: "30 30"
       pool_dims: "3 3"
       pool_pads: "0 0"
       pool_strides: "2 2"
@@ -191,10 +184,8 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_input_channels: 256
-      input_dims: "14 14"
       num_output_channels:  384
-      filter_dims: "3 3"
+      conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
@@ -222,10 +213,8 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_input_channels: 384
-      input_dims: "14 14"
       num_output_channels:  384
-      filter_dims: "3 3"
+      conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
@@ -253,10 +242,8 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_input_channels: 384
-      input_dims: "14 14"
       num_output_channels:  256
-      filter_dims: "3 3"
+      conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
       weight_initialization: "he_normal"
@@ -284,8 +271,6 @@ model {
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
-      num_channels: 256
-      input_dims: "14 14"
       pool_dims: "3 3"
       pool_pads: "0 0"
       pool_strides: "2 2"
