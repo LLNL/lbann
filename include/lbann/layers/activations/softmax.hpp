@@ -104,7 +104,7 @@ class softmax_layer : public activation_layer {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
-    Mat& prev_activations_local = this->m_prev_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
     const Int local_height = activations_local.Height();
     const Int local_width = activations_local.Width();
@@ -212,9 +212,9 @@ void softmax_layer<T_layout>::bp_compute() {
 
   // Get local matrices and parameters
   const Mat& activations_local = this->m_activations_v->LockedMatrix();
-  Mat& workspace_local = m_workspace_v->Matrix();
-  Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
+  const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
   Mat& error_signal_local = this->m_error_signal_v->Matrix();
+  Mat& workspace_local = m_workspace_v->Matrix();
   const Int local_width = activations_local.Width();
 
   // Compute dot products

@@ -236,13 +236,15 @@ class Layer {
   virtual void pin_data();
 #endif
   /** Get forward propagation input, as seen by previous layer. */
-  virtual const AbsDistMat& fp_input(const Layer* prev_layer) const;
+  virtual const AbsDistMat& fp_input(const Layer* prev_layer = NULL) const;
   /** Get forward propagation output, as seen by next layer. */
-  virtual const AbsDistMat& fp_output(const Layer* next_layer) const;
+  virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
   /** Get backward propagation input, as seen by next layer. */
-  virtual const AbsDistMat& bp_input(const Layer* next_layer) const;
+  virtual const AbsDistMat& bp_input(const Layer* next_layer = NULL) const;
   /** Get backward propagation output, as seen by previous layer. */
-  virtual const AbsDistMat& bp_output(const Layer* prev_layer) const;
+  virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output dimensions, as seen by next layer. */
+  virtual vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
   /**
    * Called by setup(), each layer should override this to call its parent and

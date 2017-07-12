@@ -245,7 +245,6 @@ class convolution_layer : public learning {
 
   void setup_dims() {
     // Store neuron tensor dimensions
-    const int num_neuron_dims = this->m_num_neuron_dims;
     const std::vector<int> neuron_dims = this->m_neuron_dims;
 
     // Initialize previous neuron tensor dimensions
@@ -253,7 +252,7 @@ class convolution_layer : public learning {
 
     // Check if previous neuron tensor dimensions are valid
   #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != num_neuron_dims) {
+    if(this->m_num_neuron_dims != (int) neuron_dims.size()) {
       throw lbann_exception("convolution_layer: neuron tensor dimensions are unexpected");
     }
   #endif

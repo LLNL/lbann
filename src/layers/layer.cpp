@@ -99,7 +99,7 @@ Layer::Layer(const int index, lbann_comm *comm, int mbsize)
 
   m_prev_neurons_cudnn_desc = NULL;  
   m_neurons_cudnn_desc = NULL;  
-#endif
+#endif // __LIB_CUDNN
 
   reset_counters();
 }
@@ -129,7 +129,7 @@ Layer::Layer(const Layer& other) :
   // No cuDNN support yet.
 #ifdef __LIB_CUDNN
   throw lbann_exception("cannot copy layers with cuDNN enabled");
-#endif
+#endif // __LIB_CUDNN
   m_prev_error_signal = other.m_prev_error_signal->Copy();
   m_error_signal = other.m_error_signal->Copy();
   m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
@@ -144,7 +144,7 @@ Layer& Layer::operator=(const Layer& other) {
   // No cuDNN support yet.
 #ifdef __LIB_CUDNN
   throw lbann_exception("cannot copy layers with cuDNN enabled");
-#endif
+#endif // __LIB_CUDNN
   m_index = other.m_index;
   m_comm = other.m_comm;
   m_num_neurons = other.m_num_neurons;
@@ -214,7 +214,7 @@ Layer::~Layer() {
       m_cudnn->unpin_matrix(*m_error_signal);
     }
   }
-#endif
+#endif // __LIB_CUDNN
   delete m_prev_error_signal;
   delete m_error_signal;
   delete m_activations;
@@ -254,7 +254,7 @@ void Layer::forward_prop() {
       m_prev_activations_d = m_prev_layer->m_activations_d;
     }
   }
-#endif
+#endif // __LIB_CUDNN
 
   // Apply layer's compute function
   double fp_compute_start = get_time();
@@ -271,7 +271,7 @@ void Layer::forward_prop() {
       m_cudnn->synchronize();
     }
   }
-#endif
+#endif // __LIB_CUDNN
 
   fp_time += get_time() - fp_start;
 }
@@ -306,7 +306,7 @@ void Layer::back_prop() {
       m_prev_error_signal_d = m_next_layer->m_error_signal_d;
     }
   }
-#endif
+#endif // __LIB_CUDNN
 
   // Backprop the compute function.
   double bp_compute_start = get_time();
@@ -323,7 +323,7 @@ void Layer::back_prop() {
       m_cudnn->synchronize();
     }
   }
-#endif
+#endif // __LIB_CUDNN
 
   bp_time += get_time() - bp_start;
 }
@@ -379,14 +379,15 @@ void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
 void Layer::setup_dims() {
   // Get dimensions of previous neuron tensor
   if(m_prev_layer != NULL) {
-    m_num_prev_neurons = m_prev_layer->get_num_neurons();
-    m_num_prev_neuron_dims = m_prev_layer->get_num_neuron_dims();
-    m_prev_neuron_dims = m_prev_layer->get_neuron_dims();
+    m_prev_neuron_dims = m_prev_layer->fp_output_dims(this);
   } else {
-    m_num_prev_neurons = 0;
-    m_num_prev_neuron_dims = 0;
     m_prev_neuron_dims.assign(1, 0);
   }
+  m_num_prev_neuron_dims = m_prev_neuron_dims.size();
+  m_num_prev_neurons = std::accumulate(m_prev_neuron_dims.begin(),
+                                       m_prev_neuron_dims.end(),
+                                       1,
+                                       std::multiplies<int>());
   
   // Set neuron tensor dimensions equal to previous neuron tensor
   m_num_neurons = m_num_prev_neurons;
@@ -415,7 +416,7 @@ void Layer::setup_data() {
 #ifdef __LIB_CUDNN
   // Pin host memory if needed for GPU memory transfers
   pin_data();
-#endif
+#endif // __LIB_CUDNN
 
 }
 
@@ -486,7 +487,7 @@ void Layer::setup_gpu() {
                               m_mini_batch_size_per_gpu);
   }
 
-#endif
+#endif // __LIB_CUDNN
 }
 
 void Layer::check_setup() {}
@@ -696,42 +697,26 @@ void Layer::pin_data() {
 
 }
 
+#endif // __LIB_CUDNN
+
 const AbsDistMat& Layer::fp_input(const Layer* prev_layer) const {
-#ifdef LBANN_DEBUG
-  if(prev_layer != m_prev_layer) {
-    throw lbann_exception("Layer: unexpected previous layer");
-  }
-#endif  
   return *m_prev_activations;
 }
 
 const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
-#ifdef LBANN_DEBUG
-  if(next_layer != m_next_layer) {
-    throw lbann_exception("Layer: unexpected next layer");
-  }
-#endif  
   return *m_activations;
 }
 
 const AbsDistMat& Layer::bp_input(const Layer* next_layer) const {
-#ifdef LBANN_DEBUG
-  if(next_layer != m_next_layer) {
-    throw lbann_exception("Layer: unexpected next layer");
-  }
-#endif  
   return *m_prev_error_signal;
 }
 
 const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
-#ifdef LBANN_DEBUG
-  if(prev_layer != m_prev_layer) {
-    throw lbann_exception("Layer: unexpected previous layer");
-  }
-#endif  
   return *m_error_signal;
 }
 
-#endif
+vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
+  return m_neuron_dims;
+}
 
 }  // namespace lbann
