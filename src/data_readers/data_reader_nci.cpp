@@ -131,7 +131,7 @@ void data_reader_nci::load() {
   if (!ifs) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: data_reader_nci_regression::load(): can't open file: " + infile);
+      " :: data_reader_nci::load(): can't open file: " + infile);
   }
   m_infile = infile;
   std::string line;

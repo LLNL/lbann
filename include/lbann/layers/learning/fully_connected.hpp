@@ -224,7 +224,7 @@ class fully_connected_layer : public learning {
       El::RowSum(*this->m_prev_error_signal_v,
                  *m_bias_weights_gradient_repl);
       El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
-                *m_bias_weights_gradient_v);
+                *m_bias_weights_gradient_repl);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
   }
