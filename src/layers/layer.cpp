@@ -230,13 +230,13 @@ void Layer::forward_prop() {
 
   // Get incoming activations and convert matrix distribution if necessary
   if(m_prev_layer != NULL) {
-    const DistData& prev_dist = m_prev_layer->m_activations->DistData();
+    const DistData& prev_dist = m_prev_layer->fp_output(this).DistData();
     const DistData& curr_dist = m_prev_activations->DistData();
     if(prev_dist.colDist == curr_dist.colDist
        && prev_dist.rowDist == curr_dist.rowDist) {
-      El::View(*m_prev_activations, *m_prev_layer->m_activations);
+      El::LockedView(*m_prev_activations, m_prev_layer->fp_output(this));
     } else {
-      El::Copy(*m_prev_layer->m_activations, *m_prev_activations);
+      El::Copy(m_prev_layer->fp_output(this), *m_prev_activations);
     }
   }
 
@@ -246,7 +246,7 @@ void Layer::forward_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_prev_layer == NULL || !m_prev_layer->m_using_gpus) {
+    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -264,7 +264,7 @@ void Layer::forward_prop() {
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
   if(m_using_gpus) {
-    if(m_next_layer == NULL || !m_next_layer->m_using_gpus) {
+    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
       m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
                                 m_activations_d,
                                 m_mini_batch_size_per_gpu);
@@ -281,13 +281,13 @@ void Layer::back_prop() {
 
   // Get incoming error signal and convert matrix distribution if necessary
   if(m_next_layer != NULL) {
-    const DistData& prev_dist = m_next_layer->m_error_signal->DistData();
+    const DistData& prev_dist = m_next_layer->bp_output(this).DistData();
     const DistData& curr_dist = m_prev_error_signal->DistData();
     if(prev_dist.colDist == curr_dist.colDist
        && prev_dist.rowDist == curr_dist.rowDist) {
-      El::View(*m_prev_error_signal, *m_next_layer->m_error_signal);
+      El::LockedView(*m_prev_error_signal, m_next_layer->bp_output(this));
     } else {
-      El::Copy(*m_next_layer->m_error_signal, *m_prev_error_signal);
+      El::Copy(m_next_layer->bp_output(this), *m_prev_error_signal);
     }
   }
 
@@ -298,7 +298,7 @@ void Layer::back_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_next_layer == NULL || !m_next_layer->m_using_gpus) {
+    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -316,7 +316,7 @@ void Layer::back_prop() {
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
   if(m_using_gpus) {
-    if(m_prev_layer == NULL || !m_prev_layer->m_using_gpus) {
+    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
       m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
                                 m_error_signal_d,
                                 m_mini_batch_size_per_gpu);
@@ -380,9 +380,9 @@ void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
 void Layer::setup_dims() {
   // Get dimensions of previous neuron tensor
   if(m_prev_layer != NULL) {
-    m_num_prev_neurons = m_prev_layer->m_num_neurons;
-    m_num_prev_neuron_dims = m_prev_layer->m_num_neuron_dims;
-    m_prev_neuron_dims = m_prev_layer->m_neuron_dims;
+    m_num_prev_neurons = m_prev_layer->get_num_neurons();
+    m_num_prev_neuron_dims = m_prev_layer->get_num_neuron_dims();
+    m_prev_neuron_dims = m_prev_layer->get_neuron_dims();
   } else {
     m_num_prev_neurons = 0;
     m_num_prev_neuron_dims = 0;
@@ -513,7 +513,7 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 
 void Layer::fp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::View(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+  El::LockedView(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
 
   // Update the layer's effective mini-batch size so it averages properly.
@@ -533,11 +533,11 @@ void Layer::fp_set_std_matrix_view() {
 
 void Layer::bp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::View(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+  El::LockedView(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   if(m_prev_error_signal->Height() > 0) {
-    El::View(*m_prev_error_signal_v, *m_prev_error_signal, El::ALL,
-             El::IR(0, cur_mini_batch_size));
+    El::LockedView(*m_prev_error_signal_v, *m_prev_error_signal, El::ALL,
+                   El::IR(0, cur_mini_batch_size));
   }
   El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, cur_mini_batch_size));
 }
@@ -558,9 +558,9 @@ void Layer::pin_data() {
     // Pin fp input if input layer does not use GPUs, this layer uses
     // GPUs, and input layer has different distribution
     if(m_prev_layer != NULL
-       && !m_prev_layer->m_using_gpus
+       && !m_prev_layer->using_gpus()
        && m_using_gpus) {
-      const El::DistData& prev_dist = m_prev_layer->m_activations->DistData();
+      const El::DistData& prev_dist = m_prev_layer->fp_output(this).DistData();
       const El::DistData& curr_dist = m_prev_activations->DistData();
       if(!(prev_dist.colDist == curr_dist.colDist
            && prev_dist.rowDist == curr_dist.rowDist)) {
@@ -585,8 +585,8 @@ void Layer::pin_data() {
     // GPUs, and output layer has same distribution
     if(!m_using_gpus
        && m_next_layer != NULL
-       && m_next_layer->m_using_gpus) {
-      const El::DistData& next_dist = m_next_layer->m_prev_activations->DistData();
+       && m_next_layer->using_gpus()) {
+      const El::DistData& next_dist = m_next_layer->fp_input(this).DistData();
       const El::DistData& curr_dist = m_activations->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -598,7 +598,7 @@ void Layer::pin_data() {
     // use GPUs
     if(m_using_gpus
        && m_next_layer != NULL
-       && !m_next_layer->m_using_gpus) {
+       && !m_next_layer->using_gpus()) {
       pin_fp_output = true;
     }
 
@@ -630,9 +630,9 @@ void Layer::pin_data() {
     // Pin bp input if input layer does not use GPUs, this layer uses
     // GPUs, and input layer has different distribution
     if(m_next_layer != NULL
-       && !m_next_layer->m_using_gpus
+       && !m_next_layer->using_gpus()
        && m_using_gpus) {
-      const El::DistData& prev_dist = m_next_layer->m_error_signal->DistData();
+      const El::DistData& prev_dist = m_next_layer->bp_output(this).DistData();
       const El::DistData& curr_dist = m_prev_error_signal->DistData();
       if(!(prev_dist.colDist == curr_dist.colDist
            && prev_dist.rowDist == curr_dist.rowDist)) {
@@ -657,8 +657,8 @@ void Layer::pin_data() {
     // GPUs, and output layer has same distribution
     if(!m_using_gpus
        && m_prev_layer != NULL
-       && m_prev_layer->m_using_gpus) {
-      const El::DistData& next_dist = m_prev_layer->m_prev_error_signal->DistData();
+       && m_prev_layer->using_gpus()) {
+      const El::DistData& next_dist = m_prev_layer->bp_input(this).DistData();
       const El::DistData& curr_dist = m_error_signal->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -670,7 +670,7 @@ void Layer::pin_data() {
     // use GPUs
     if(m_using_gpus
        && m_prev_layer != NULL
-       && !m_prev_layer->m_using_gpus) {
+       && !m_prev_layer->using_gpus()) {
       pin_bp_output = true;
     }
 
@@ -689,6 +689,42 @@ void Layer::pin_data() {
 
   }
 
+}
+
+const AbsDistMat& Layer::fp_input(const Layer* prev_layer) const {
+#ifdef LBANN_DEBUG
+  if(prev_layer != m_prev_layer) {
+    throw lbann_exception("Layer: unexpected previous layer");
+  }
+#endif  
+  return *m_prev_activations;
+}
+
+const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
+#ifdef LBANN_DEBUG
+  if(next_layer != m_next_layer) {
+    throw lbann_exception("Layer: unexpected next layer");
+  }
+#endif  
+  return *m_activations;
+}
+
+const AbsDistMat& Layer::bp_input(const Layer* next_layer) const {
+#ifdef LBANN_DEBUG
+  if(next_layer != m_next_layer) {
+    throw lbann_exception("Layer: unexpected next layer");
+  }
+#endif  
+  return *m_prev_error_signal;
+}
+
+const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
+#ifdef LBANN_DEBUG
+  if(prev_layer != m_prev_layer) {
+    throw lbann_exception("Layer: unexpected previous layer");
+  }
+#endif  
+  return *m_error_signal;
 }
 
 #endif
