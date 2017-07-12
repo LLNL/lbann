@@ -122,11 +122,11 @@ class pooling_layer : public transform {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup_dims() {
+
+    // Initialize previous neuron tensor dimensions
     transform::setup_dims();
+
     // Initialize neuron tensor dimensions
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims.resize(this->m_num_neuron_dims);
-    this->m_neuron_dims[0] = this->m_prev_neuron_dims[0];
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
       const int effective_dim = (this->m_prev_neuron_dims[i+1]
                                  + 2*m_pool_pads[i] - m_pool_dims[i] + 1);
@@ -137,6 +137,7 @@ class pooling_layer : public transform {
                                           this->m_neuron_dims.end(),
                                           1,
                                           std::multiplies<int>());
+
   }
 
   /// Initialize GPU objects

@@ -143,14 +143,6 @@ class sum_layer : public transform {
 
   }
 
-  void setup_dims() {
-    transform::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
   protected:
 
   void fp_compute() {

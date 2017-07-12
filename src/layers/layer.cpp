@@ -362,7 +362,6 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
   setup_pointers(prev_layer, next_layer);
-
   setup_dims();
   setup_data();
   setup_views();
@@ -388,6 +387,12 @@ void Layer::setup_dims() {
     m_num_prev_neuron_dims = 0;
     m_prev_neuron_dims.assign(1, 0);
   }
+  
+  // Set neuron tensor dimensions equal to previous neuron tensor
+  m_num_neurons = m_num_prev_neurons;
+  m_num_neuron_dims = m_num_prev_neuron_dims;
+  m_neuron_dims = m_prev_neuron_dims;
+  
 }
 
 void Layer::setup_data() {

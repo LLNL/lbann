@@ -58,9 +58,7 @@ class softmax_layer : public activation_layer {
                 int mini_batch_size,
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size) {
-    // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
   }
 
   softmax_layer(const softmax_layer& other) :
@@ -90,14 +88,6 @@ class softmax_layer : public activation_layer {
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
-
-  void setup_dims() {
-    activation_layer::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
 
   void setup_data() {
     activation_layer::setup_data();
