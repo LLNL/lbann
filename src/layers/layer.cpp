@@ -225,7 +225,7 @@ Layer::~Layer() {
   delete m_prev_activations_v;
 }
 
-void Layer::forwardProp() {
+void Layer::forward_prop() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
@@ -276,7 +276,7 @@ void Layer::forwardProp() {
   fp_time += get_time() - fp_start;
 }
 
-void Layer::backProp() {
+void Layer::back_prop() {
   double bp_start = get_time();
 
   // Get incoming error signal and convert matrix distribution if necessary
