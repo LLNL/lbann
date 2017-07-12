@@ -98,6 +98,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic data reader load error: datum not valid");
     }
+    m_indices_fetched_per_mb.Set(s, 0, index);
   }
 
   /// Allow each thread to perform any postprocessing necessary on the
