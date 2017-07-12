@@ -225,7 +225,7 @@ message CallbackDumpMBIndices {
 }
 
 message CallbackDispIOStats {
-  int64 interval = 1;
+  string layers = 1; //e.g: "2 4 5"; use "10000" to apply to all layers
 }
 
 message CallbackImComm {
