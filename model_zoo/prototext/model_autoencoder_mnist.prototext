@@ -1,14 +1,17 @@
 model {
   name: "dnn"
   objective_function: "mean_squared_error"
-  metric: "categorical_accuracy"
+  metric { 
+    categorical_accuracy {
+    }
+  }
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
   num_epochs: 10
   num_parallel_readers: 1
-  procs_per_model: 0
-  use_cudnn: true
+  procs_per_model: 12
+  use_cudnn: false
   num_gpus: -1
 
   ###################################################
@@ -25,22 +28,11 @@ model {
     }
   }
   callback {
-    summary {
-      dir: "none"
-      interval: 1
-    }
-  }
-  callback {
     save_images {
-      image_dir: "."
-      extension: "jpg"
+      image_dir: "images_"
+      extension: "pgm"
     }
   }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -229,8 +221,9 @@ model {
     index: 17
     parent: 16
     data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
     fully_connected {
-      num_neurons: 784
+      #num_neurons: 784
       weight_initialization: "glorot_uniform"
       has_bias: true
     }

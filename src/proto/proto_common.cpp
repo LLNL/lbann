@@ -1340,6 +1340,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
 
+  if (opts->has_string("image_dir")) {
+    int sz = model->callback_size();
+    for (int j=0; j<sz; j++) {
+      lbann_data::Callback *c = model->mutable_callback(j);
+      if (c->has_save_images()) {
+        lbann_data::CallbackSaveImages *i = c->mutable_save_images();
+        i->set_image_dir(opts->get_string("image_dir"));
+      }
+    }
+  }
+
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
@@ -1543,6 +1554,11 @@ void print_help(lbann::lbann_comm *comm)
        "      <string> must be: data_parallel or model_parallel\n"
        "      note: this will be applied to all layers, metrics (and others)\n"
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "\n"
+       "Callbacks:\n"
+       "  --image_dir=<string>\n"
+       "      if the model has callback_save_images, this determines where the\n"
+       "      images are saved\n"
        "\n"
        "Optimizers; all values except for nesterov are floats;\n"
        "            the values shown in <...> are the default values, that will be\n"

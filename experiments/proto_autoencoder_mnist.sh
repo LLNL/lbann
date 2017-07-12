@@ -35,10 +35,10 @@ LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 
 CMD="${RUN} -n${LBANN_TASKS}  \
   --ntasks-per-node=${TASKS_PER_NODE} \
-  ${BINDIR}/lbann \
-  --model=../model_zoo/prototext/model_proto_autoencoder_mnist \
+  ${BINDIR}/proto \
+  --model=../model_zoo/prototext/model_autoencoder_mnist.prototext \
   --reader=../model_zoo/prototext/data_reader_mnist.prototext \
-  --optimizer=../model_zoo/prototext/opt_adam \
+  --optimizer=../model_zoo/prototext/opt_adam.prototext \
   $OPTS"
 
 echo ${CMD}
