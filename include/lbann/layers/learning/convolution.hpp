@@ -289,6 +289,8 @@ class convolution_layer : public learning {
     // Initialize filters
     const int fan_in = m_conv_size / this->m_neuron_dims[0];
     const int fan_out = m_conv_size / this->m_prev_neuron_dims[0];
+    El::View(*m_filter_weights_v, *this->m_weights,
+             El::IR(0,this->m_weights->Height()-1), El::ALL);
     initialize_matrix(*m_filter_weights_v, this->m_weight_initialization, fan_in, fan_out);
 
     // Initialize optimizer
