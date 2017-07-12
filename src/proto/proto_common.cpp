@@ -898,6 +898,32 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: dump_mb_indices
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_dump_mb_indices()) {
+      const lbann_data::CallbackDumpMBIndices& c = callback.dump_mb_indices();
+      if (master) {
+        cout << "adding dump I/O callback with basename: " << c.basename()
+             << " and interval: " << c.interval() << endl;
+      }
+      lbann_callback_dump_minibatch_sample_indices *mb_indices_cb = new lbann_callback_dump_minibatch_sample_indices(c.basename(), c.interval());
+      model->add_callback(mb_indices_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: disp_io_stats
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_disp_io_stats()) {
+      const lbann_data::CallbackDispIOStats& c = callback.disp_io_stats();
+      if (master) {
+        cout << "adding display I/O stats callback with: "  
+             << " and interval: " << c.interval() << endl;
+      }
+      lbann_callback_io *io_cb = new lbann_callback_io({0});
+      model->add_callback(io_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: imcomm
     //////////////////////////////////////////////////////////////////
     if (callback.has_imcomm()) {
