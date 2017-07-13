@@ -34,11 +34,11 @@ model {
       interval: 1
     }
   }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
   callback {
     adaptive_learning_rate {
       patience: 4
@@ -52,6 +52,17 @@ model {
       layers: "2 5 8 11"
     }
   }
+  # callback {
+  #   dump_mb_indices {
+  #     basename: "debug_alexnet/"
+  #     interval: 1
+  #   }
+  # }
+  # callback {
+  #   disp_io_stats {
+  #     layers: "1"
+  #   }
+  # }
 
   ###################################################
   # start of layers
