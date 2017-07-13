@@ -42,7 +42,6 @@ class imagenet_reader : public generic_data_reader {
 
   imagenet_reader* copy() const { return new imagenet_reader(*this); }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
   int get_num_labels() const {
@@ -75,6 +74,9 @@ class imagenet_reader : public generic_data_reader {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }
+
+ protected:
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 
  protected:
   std::string m_image_dir; // where images are stored
