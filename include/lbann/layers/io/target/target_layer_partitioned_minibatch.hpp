@@ -24,11 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/io/distributed_minibatch_parallel_io.hpp"
+#include "lbann/data_distributions/partitioned_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -37,29 +37,23 @@
 #include <unistd.h>
 
 namespace lbann {
-template <data_layout T_layout>
-class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch_parallel_io {
- protected:
-  Mat Y_local;
-  CircMat Ys;
 
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
+class target_layer_partitioned_minibatch : public target_layer, public partitioned_minibatch {
  public:
-  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_partitioned_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
-      distributed_minibatch_parallel_io(comm, num_parallel_readers, mini_batch_size, data_readers),
-      Ys(comm->get_model_grid()) {
+      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  target_layer_distributed_minibatch_parallel_io(
-    const target_layer_distributed_minibatch_parallel_io&) = default;
-  target_layer_distributed_minibatch_parallel_io& operator=(
-    const target_layer_distributed_minibatch_parallel_io&) = default;
-  target_layer_distributed_minibatch_parallel_io* copy() const {
-    return new target_layer_distributed_minibatch_parallel_io(*this);
+
+  target_layer_partitioned_minibatch* copy() const {
+    throw lbann_exception("target_layer_partitioned_minibatch can't be copied");
+    return nullptr;
   }
 
-  std::string get_name() const { return "target layer distributed minibatch parallel io"; }
+  std::string get_name() const { return "target layer partitioned minibatch parallel io"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
@@ -71,27 +65,28 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
 
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(io_layer::m_data_sets_span_models) {
-        int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
-        int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
+        int base_offset = Layer::m_comm->get_rank_in_model();
+        int batch_stride = Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
         int model_offset = Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size;
-        //cout << "Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << endl;
+        cout << "Setting up target layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << batch_stride << endl;
         io_layer::setup_data_readers_for_training(base_offset,
-                                                            stride,
+                                                            batch_stride,
+                                                            m_num_parallel_readers_training,
                                                             model_offset);
-        distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
         /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                              m_num_parallel_readers_training * Layer::m_mini_batch_size);
+        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
+                                                              Layer::m_mini_batch_size,
+                                                              m_num_parallel_readers_testing);
       } else {
-        io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                            m_num_parallel_readers_training * Layer::m_mini_batch_size);
-        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                              m_num_parallel_readers_training * Layer::m_mini_batch_size);
+        io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
+                                                            Layer::m_mini_batch_size,
+                                                            m_num_parallel_readers_training);
+        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
+                                                              Layer::m_mini_batch_size,
+                                                              m_num_parallel_readers_testing);
       }
     }
-
-    Y_local.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
-    Ys.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
 
     m_local_data_valid = false;
     m_local_reader_done = false;
@@ -99,19 +94,11 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
   }
 
   void fp_compute() {
-    int num_samples_in_batch = fetch_to_local_matrix(Y_local);
-    if(is_current_root()) {
-      /// Only update the number of samples processed by this parallel reader, when it is the current root
-      target_layer::update_num_samples_processed(num_samples_in_batch);
-    }
+    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations->Matrix());
+
+    target_layer::update_num_samples_processed(num_samples_in_batch);
 
     int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
-      throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
-    }
-    /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-    distribute_from_local_matrix(Y_local, Ys);
-    Copy(Ys, *this->m_activations);
 
     /// Compute and record the objective function score
     DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, *this->m_activations_v);
@@ -133,7 +120,6 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
                                                                       *this->m_prev_activations_v,
                                                                       *this->m_activations_v,
                                                                       *this->m_error_signal_v);
-
   }
 
   /**
@@ -176,4 +162,4 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED

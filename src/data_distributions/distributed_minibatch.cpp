@@ -22,20 +22,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_distributed_minibatch_parallel_io .hpp .cpp - parallel I/O routines for distriubted minibatches
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/io/distributed_minibatch_parallel_io.hpp"
+#include "lbann/data_distributions/distributed_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 
 using namespace std;
 
-lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size) {
-  m_root = 0;
-  m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
+lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  : generic_data_distribution(comm, num_parallel_readers, mini_batch_size, data_readers) { 
 
   int training_data_set_size = 0;
   int validation_data_set_size = 0;
@@ -72,7 +67,7 @@ lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lban
   m_num_parallel_readers_testing = compute_max_num_parallel_readers(testing_data_set_size, mini_batch_size, m_num_parallel_readers_testing);
 }
 
-int lbann::distributed_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local) {
+int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local) {
   int num_parallel_readers = get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
@@ -96,7 +91,7 @@ int lbann::distributed_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local
   return m_num_samples_in_batch;
 }
 
-void lbann::distributed_minibatch_parallel_io::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
+void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
   int num_parallel_readers = m_num_valid_readers;
   Ms.SetRoot(m_root);
 
@@ -106,7 +101,7 @@ void lbann::distributed_minibatch_parallel_io::distribute_from_local_matrix(Mat&
     if(!m_local_data_valid) {
       stringstream err;
       err << __FILE__ << " " << __LINE__
-          << " :: lbann_distributed_minibatch_parallel_io: No valid data for this step -- local data was invalid";
+          << " :: lbann_distributed_minibatch: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
     CopyFromRoot(M_local, Ms);
@@ -122,7 +117,7 @@ void lbann::distributed_minibatch_parallel_io::distribute_from_local_matrix(Mat&
   return;
 }
 
-bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
+bool lbann::distributed_minibatch::is_data_set_processed() {
   int num_readers_done = 0;
   int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
   // not just the ones in the last round.  This will ensure that all readers, that had data
@@ -134,7 +129,7 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
       if(m_local_data_valid) { /// Make sure that all local data has been processed
         stringstream err;
         err << __FILE__ << " "<<  __LINE__
-            << " :: lbann_input_layer_distributed_minibatch_parallel_io: all valid data was not processed.";
+            << " :: lbann_input_layer_distributed_minibatch: all valid data was not processed.";
         throw lbann_exception(err.str());
       }
       m_local_reader_done = !update_data_reader();
@@ -160,28 +155,7 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
   }
 }
 
-int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
-  int num_parallel_readers = 0;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    num_parallel_readers = m_num_parallel_readers_training;
-    break;
-  case execution_mode::validation:
-    num_parallel_readers = m_num_parallel_readers_validating;
-    break;
-  case execution_mode::testing:
-    num_parallel_readers = m_num_parallel_readers_testing;
-    break;
-  default:
-    stringstream err;
-    err << __FILE__ << " "<<  __LINE__
-        << " :: lbann_distributed_minibatch_parallel_io: invalid execution phase";
-    throw lbann_exception(err.str());
-  }
-  return num_parallel_readers;
-}
-
-int lbann::distributed_minibatch_parallel_io::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {
+int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {
   /// Check to make sure that there is enough data for all of the parallel readers
   if(data_set_size != 0) {
     int max_num_parallel_readers = num_parallel_readers;
@@ -200,7 +174,7 @@ int lbann::distributed_minibatch_parallel_io::compute_max_num_parallel_readers(l
   }
 }
 
-void lbann::distributed_minibatch_parallel_io::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
+void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
   int max_mini_batch_size = data_reader->getm_batch_max();
   int num_parallel_readers_per_model = max(1, (data_reader->get_batch_stride() / m_comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride

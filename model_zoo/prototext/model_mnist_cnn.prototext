@@ -53,7 +53,7 @@ model {
     index: 1
     parent: 1
     data_layout: "data_parallel"
-    input_distributed_minibatch_parallel_io {
+    input_distributed_minibatch {
     }
   }
 
@@ -212,7 +212,7 @@ model {
     index: 12
     parent: 11
     data_layout: "data_parallel"
-    target_distributed_minibatch_parallel_io {
+    target_distributed_minibatch {
       shared_data_reader: true
     }
   }

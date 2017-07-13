@@ -33,11 +33,22 @@ model {
       interval: 1
     }
   }
-   callback {
-     debug {
-       phase: "train"
-     }
-   }
+  # callback {
+  #   dump_mb_indices {
+  #     basename: "debug_alexnet/"
+  #     interval: 1
+  #   }
+  # }
+  # callback {
+  #   disp_io_stats {
+  #     layers: "1"
+  #   }
+  # }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
 
   ###################################################
   # start of layers
@@ -50,7 +61,7 @@ model {
     index: 1
     parent: 1
     data_layout: "data_parallel"
-    input_distributed_minibatch_parallel_io {
+    input_partitioned_minibatch {
     }
   }
 
@@ -388,7 +399,7 @@ model {
     index: 25
     parent: 24
     data_layout: "data_parallel"
-    target_distributed_minibatch_parallel_io {
+    target_partitioned_minibatch {
       shared_data_reader: true
     }
   }

@@ -22,22 +22,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_partitioned_minibatch_parallel_io .hpp .cpp - parallel I/O routines for distriubted minibatches
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/io/partitioned_minibatch_parallel_io.hpp"
+#include "lbann/data_distributions/partitioned_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 
 using namespace std;
 
-lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size), m_data_readers(data_readers) {
-  m_root = 0;
-  m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
-
-  m_cur_step_in_epoch = 0;
+lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
+  : generic_data_distribution(comm, num_parallel_readers, mini_batch_size, data_readers) { 
 
   if(m_comm->get_model_grid().Size() != num_parallel_readers) {
     cout << "Warning the requested number of parallel readers "
@@ -63,7 +56,7 @@ lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lban
   }
 }
 
-int lbann::partitioned_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local) {
+int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
   int num_parallel_readers = get_num_parallel_readers();
 
   m_num_samples_in_batch = 0;
@@ -88,13 +81,13 @@ int lbann::partitioned_minibatch_parallel_io::fetch_to_local_matrix(Mat& M_local
   return m_num_samples_in_batch;
 }
 
-void lbann::partitioned_minibatch_parallel_io::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
+void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
 
   /// Nothing to do here, it is already done
   return;
 }
 
-bool lbann::partitioned_minibatch_parallel_io::is_data_set_processed() {
+bool lbann::partitioned_minibatch::is_data_set_processed() {
   int num_readers_done = 0;
   //int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
   // not just the ones in the last round.  This will ensure that all readers, that had data
@@ -125,43 +118,7 @@ bool lbann::partitioned_minibatch_parallel_io::is_data_set_processed() {
   }
 }
 
-int lbann::partitioned_minibatch_parallel_io::get_num_parallel_readers() {
-  int num_parallel_readers = 0;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    num_parallel_readers = m_num_parallel_readers_training;
-    break;
-  case execution_mode::validation:
-    num_parallel_readers = m_num_parallel_readers_validating;
-    break;
-  case execution_mode::testing:
-    num_parallel_readers = m_num_parallel_readers_testing;
-    break;
-  default:
-    throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
-  }
-  return num_parallel_readers;
-}
-
-int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
-  generic_data_reader *data_reader;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    data_reader = m_data_readers[execution_mode::training];
-    break;
-  case execution_mode::validation:
-    data_reader = m_data_readers[execution_mode::validation];
-    break;
-  case execution_mode::testing:
-    data_reader = m_data_readers[execution_mode::testing];
-    break;
-  default:
-    throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
-  }
-  return data_reader->get_num_iterations_per_epoch();
-}
-
-void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
+void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
   int max_mini_batch_size = data_reader->getm_batch_max();
   int num_parallel_readers_per_model = max(1, (data_reader->get_batch_stride() / m_comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride

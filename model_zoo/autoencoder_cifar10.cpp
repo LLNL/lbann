@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                                                           };
 
 
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(

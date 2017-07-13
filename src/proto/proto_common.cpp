@@ -194,18 +194,18 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: input_distributed_minibatch_parallel_io
+    // LAYER: input_distributed_minibatch
     //////////////////////////////////////////////////////////////////
-    if (layer.has_input_distributed_minibatch_parallel_io()) {
-      //const lbann_data::InputDistributedMiniBatchParallelIO& ell = layer.input_distributed_minibatch_parallel_io();
+    if (layer.has_input_distributed_minibatch()) {
+      //const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
           data_readers);
       } else {
-        d = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+        d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
@@ -217,18 +217,18 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: input_partitioned_minibatch_parallel_io
+    // LAYER: input_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
-    if (layer.has_input_partitioned_minibatch_parallel_io()) {
-      //const lbann_data::InputPartitionedMiniBatchParallelIO& ell = layer.input_partitioned_minibatch_parallel_io();
+    if (layer.has_input_partitioned_minibatch()) {
+      //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new input_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        d = new input_layer_partitioned_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
           data_readers);
       } else {
-        d = new input_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+        d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
@@ -722,12 +722,12 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: target_partitioned_minibatch_parallel_io
+    // LAYER: target_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
-    if (layer.has_target_partitioned_minibatch_parallel_io()) {
-      const lbann_data::TargetPartitionedMinibatchParallelIO& ell = layer.target_partitioned_minibatch_parallel_io();
+    if (layer.has_target_partitioned_minibatch()) {
+      const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        d = new  target_layer_partitioned_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
@@ -735,7 +735,7 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
-        d = new  target_layer_partitioned_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+        d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
@@ -749,12 +749,12 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: target_distributed_minibatch_parallel_io
+    // LAYER: target_distributed_minibatch
     //////////////////////////////////////////////////////////////////
-    if (layer.has_target_distributed_minibatch_parallel_io()) {
-      const lbann_data::TargetDistributedMinibatchParallelIO& ell = layer.target_distributed_minibatch_parallel_io();
+    if (layer.has_target_distributed_minibatch()) {
+      const lbann_data::TargetDistributedMinibatch& ell = layer.target_distributed_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+        d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),
@@ -762,7 +762,7 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
-        d = new  target_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+        d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           mb_size,
           m.num_parallel_readers(),

@@ -1,3 +1,4 @@
+add_subdirectory(data_distributions)
 add_subdirectory(data_readers)
 add_subdirectory(layers)
 add_subdirectory(models)
