@@ -11,7 +11,7 @@ model {
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: false
+  use_cudnn: true
   num_gpus: -1
 
   ###################################################
