@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/io/partitioned_minibatch_parallel_io.hpp"
+#include "lbann/data_distributions/partitioned_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -39,11 +39,11 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch_parallel_io {
+class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch {
  public:
   target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
-      partitioned_minibatch_parallel_io(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
+      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
@@ -73,7 +73,7 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
                                                             batch_stride,
                                                             m_num_parallel_readers_training,
                                                             model_offset);
-        partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
         /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
         io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
                                                               Layer::m_mini_batch_size,
