@@ -32,10 +32,7 @@
 using namespace std;
 
 lbann::distributed_minibatch_parallel_io::distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size) {
-  m_root = 0;
-  m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
+  : generic_data_distribution(comm, num_parallel_readers, mini_batch_size, data_readers) { 
 
   int training_data_set_size = 0;
   int validation_data_set_size = 0;
@@ -158,27 +155,6 @@ bool lbann::distributed_minibatch_parallel_io::is_data_set_processed() {
   } else {
     return false;
   }
-}
-
-int lbann::distributed_minibatch_parallel_io::get_num_parallel_readers() {
-  int num_parallel_readers = 0;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    num_parallel_readers = m_num_parallel_readers_training;
-    break;
-  case execution_mode::validation:
-    num_parallel_readers = m_num_parallel_readers_validating;
-    break;
-  case execution_mode::testing:
-    num_parallel_readers = m_num_parallel_readers_testing;
-    break;
-  default:
-    stringstream err;
-    err << __FILE__ << " "<<  __LINE__
-        << " :: lbann_distributed_minibatch_parallel_io: invalid execution phase";
-    throw lbann_exception(err.str());
-  }
-  return num_parallel_readers;
 }
 
 int lbann::distributed_minibatch_parallel_io::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {

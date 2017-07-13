@@ -32,10 +32,11 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_distributions/data_distribution.hpp"
 
 namespace lbann {
 
-class distributed_minibatch_parallel_io {
+class distributed_minibatch_parallel_io : public generic_data_distribution {
  public:
   distributed_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
   distributed_minibatch_parallel_io(
@@ -47,47 +48,9 @@ class distributed_minibatch_parallel_io {
   int fetch_to_local_matrix(Mat& M_local);
   void distribute_from_local_matrix(Mat& M_local, CircMat& Ms);
   bool is_data_set_processed();
-  int get_num_parallel_readers();
 
   void calculate_num_iterations_per_epoch(generic_data_reader *data_reader);
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
-
-  virtual int fetch_from_data_reader(Mat& M_local) {
-    return 0;
-  }
-  virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
-  virtual bool update_data_reader() {
-    return false;
-  }
-  virtual execution_mode get_execution_mode() {
-    return execution_mode::invalid;
-  }
-
-  /// Is this rank the current root node for the Elemental Distribution
-  bool is_current_root() {
-    return (m_comm->get_rank_in_model() == m_root);
-  }
-
- protected:
-  lbann_comm *m_comm;
-  /** Which rank is the root of the CircMat */
-  int m_root; 
-  /** Number of parallel readers (I/O streams) for training data */
-  int m_num_parallel_readers_training; 
-  /** Number of parallel readers (I/O streams) for validation data  */
-  int m_num_parallel_readers_validating;
-  /** Number of parallel readers (I/O streams) for testing data  */
-  int m_num_parallel_readers_testing; 
-  int m_local_reader_done;
-  /** Maximum size of the mini-batch */
-  int m_max_mini_batch_size;
-  /** Number of samples in the current mini-batch */
-  int m_num_samples_in_batch; 
-  /** Has the layer copied valid data into the local matrix */
-  bool m_local_data_valid; 
-
-  int m_num_data_per_epoch;
-  int m_num_valid_readers;
 };
 
 }  // namespace lbann

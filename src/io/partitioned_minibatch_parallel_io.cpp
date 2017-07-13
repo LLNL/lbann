@@ -32,12 +32,7 @@
 using namespace std;
 
 lbann::partitioned_minibatch_parallel_io::partitioned_minibatch_parallel_io(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size), m_data_readers(data_readers) {
-  m_root = 0;
-  m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
-
-  m_cur_step_in_epoch = 0;
+  : generic_data_distribution(comm, num_parallel_readers, mini_batch_size, data_readers) { 
 
   if(m_comm->get_model_grid().Size() != num_parallel_readers) {
     cout << "Warning the requested number of parallel readers "
@@ -123,42 +118,6 @@ bool lbann::partitioned_minibatch_parallel_io::is_data_set_processed() {
     m_cur_step_in_epoch++;
     return false;
   }
-}
-
-int lbann::partitioned_minibatch_parallel_io::get_num_parallel_readers() {
-  int num_parallel_readers = 0;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    num_parallel_readers = m_num_parallel_readers_training;
-    break;
-  case execution_mode::validation:
-    num_parallel_readers = m_num_parallel_readers_validating;
-    break;
-  case execution_mode::testing:
-    num_parallel_readers = m_num_parallel_readers_testing;
-    break;
-  default:
-    throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
-  }
-  return num_parallel_readers;
-}
-
-int lbann::partitioned_minibatch_parallel_io::get_num_iterations_per_epoch() {
-  generic_data_reader *data_reader;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    data_reader = m_data_readers[execution_mode::training];
-    break;
-  case execution_mode::validation:
-    data_reader = m_data_readers[execution_mode::validation];
-    break;
-  case execution_mode::testing:
-    data_reader = m_data_readers[execution_mode::testing];
-    break;
-  default:
-    throw lbann_exception("lbann_partitioned_minibatch_parallel_io: invalid execution phase");
-  }
-  return data_reader->get_num_iterations_per_epoch();
 }
 
 void lbann::partitioned_minibatch_parallel_io::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
