@@ -42,7 +42,7 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
   /// The amount of space needed will vary based on input layer type,
   /// but the batch size is the maximum space necessary
-  Zeros(m_indices_fetched_per_mb, m_batch_size, 1);
+  El::Zeros(m_indices_fetched_per_mb, m_batch_size, 1);
 
   if(comm != NULL) {
     m_use_alt_last_mini_batch_size = true;
@@ -230,7 +230,7 @@ bool generic_data_reader::update() {
   }
 
   /// Maintain the current width of the matrix
-  Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
+  El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
   if (m_current_pos < (int)m_shuffled_indices.size()) {
     m_current_mini_batch_idx++;

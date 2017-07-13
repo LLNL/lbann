@@ -94,7 +94,7 @@ void sgd::setup(AbsDistMat *parameters) {
     default:
       throw lbann_exception("lbann_optimizer_sgd: invalid data layout");
     }
-    Zeros(*m_velocity, m_height, m_width);
+    El::Zeros(*m_velocity, m_height, m_width);
   }
 }
 

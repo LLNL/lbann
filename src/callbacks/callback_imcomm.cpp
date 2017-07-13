@@ -98,9 +98,9 @@ void lbann_callback_imcomm::setup(model *m) {
       if (ct_does_quantization(params.ct)) {
         const ElMat& gradients = learning_layer->get_weights_gradient();
         if (params.reshape_height > 0) {
-          Zeros(params.error, params.reshape_height, params.reshape_width);
+          El::Zeros(params.error, params.reshape_height, params.reshape_width);
         } else {
-          Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
+          El::Zeros(params.error, gradients.LocalHeight(), gradients.LocalWidth());
         }
       }
     }
