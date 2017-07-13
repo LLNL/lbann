@@ -10,12 +10,15 @@ execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_
 if(GIT_REPO)
   # Get the git version so that we can embed it into the executable
   execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
+  #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${GIT_VERSION}\\\"" )
+  add_definitions(-DLBANN_VERSION=\"${GIT_VERSION}\")
 else()
   if(LBANN_VER)
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${LBANN_VER}\\\"" )
+    #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"${LBANN_VER}\\\"" )
+    add_definitions(-DLBANN_VERSION=\"${LBANN_VER}\")
   else()
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"v0.UKWN\\\"" )
+    #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_VERSION=\\\"v0.UKWN\\\"" )
+    add_definitions(-DLBANN_VERSION=\"v0.UKWN\")
   endif()
 endif()
 
@@ -50,11 +53,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -g -Wall -Wextra -Wno-unused-param
 set(CMAKE_CXX_STANDARD 11)
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLBANN_DEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  add_definitions(-DLBANN_DEBUG)
+endif()
 
 # Enable parallel random matrix generation
 if(NOT SEQ_INIT)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLBANN_PARALLEL_RANDOM_MATRICES")
+  add_definitions(-DLBANN_PARALLEL_RANDOM_MATRICES)
 endif()
 
 # Special handling if we're compiling with Clang's address sanitizer

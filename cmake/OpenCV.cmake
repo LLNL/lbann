@@ -387,7 +387,7 @@ endif()
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Add preprocessor flag for OpenCV
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_OPENCV")
+add_definitions(-D__LIB_OPENCV)
 
 # LBANN has access to OpenCV
 set(LBANN_HAS_OPENCV TRUE)
