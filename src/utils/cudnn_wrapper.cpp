@@ -371,11 +371,11 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
 
   // Copy data from GPUs to CPU
   Mat temp;
-  Zeros(temp, height, m_num_gpus*width);
+  El::Zeros(temp, height, m_num_gpus*width);
   gather_from_gpus(temp, gpu_data, width);
 
   // Reduce data from different GPUs
-  Zero(cpu_data);
+  El::Zero(cpu_data);
   synchronize();
   for(int i=0; i<m_num_gpus; ++i) {
     cpu_data += temp(El::ALL, El::IR(i*width, (i+1)*width));

@@ -26,23 +26,25 @@
 // lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
-#define LBANN_DATA_READER_IMAGENET_CV_HPP
+#ifndef LBANN_DATA_READER_IMAGENET_HPP
+#define LBANN_DATA_READER_IMAGENET_HPP
 
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
 
 namespace lbann {
-class imagenet_reader_cv : public generic_data_reader {
+class imagenet_reader : public generic_data_reader {
  public:
-  imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv& source);
-  ~imagenet_reader_cv();
+  imagenet_reader(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader(const imagenet_reader&) = default;
+  imagenet_reader& operator=(const imagenet_reader&) = default;
+  ~imagenet_reader() {}
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  imagenet_reader* copy() const { return new imagenet_reader(*this); }
+
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  virtual int fetch_data(std::vector<Mat>& X); ///< feed multiple layer stacks per sample
+  int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
 
   int get_num_labels() const {
     return m_num_labels;
@@ -50,7 +52,6 @@ class imagenet_reader_cv : public generic_data_reader {
 
   // ImageNet specific functions
   virtual void load();
-  void free();
 
   int get_image_width() const {
     return m_image_width;
@@ -71,12 +72,14 @@ class imagenet_reader_cv : public generic_data_reader {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  imagenet_reader_cv& operator=(const imagenet_reader_cv& source);
-
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }
+
+ protected:
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
 
  protected:
   std::string m_image_dir; // where images are stored
@@ -85,10 +88,9 @@ class imagenet_reader_cv : public generic_data_reader {
   int m_image_height; // image height
   int m_image_num_channels; // number of image channels
   int m_num_labels; // number of labels
-  //unsigned char* m_pixels;
   std::shared_ptr<cv_process> m_pp;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP
+#endif  // LBANN_DATA_READER_IMAGENET_HPP

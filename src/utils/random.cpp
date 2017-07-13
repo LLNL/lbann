@@ -157,7 +157,7 @@ void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
 
 void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
                            DataType stddev) {
-  Zeros(mat, m, n);
+  El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(n * m);
     auto& gen = get_generator();
@@ -172,7 +172,7 @@ void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
 }
 
 void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
-  Zeros(mat, m, n);
+  El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(m * n);
     auto& gen = get_generator();
@@ -188,7 +188,7 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
 
 void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
                           DataType radius) {
-  Zeros(mat, m, n);
+  El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(n * m);
     auto& gen = get_generator();
