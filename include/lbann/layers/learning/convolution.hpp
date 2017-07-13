@@ -244,9 +244,22 @@ class convolution_layer : public learning {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup_dims() {
+    // Store neuron tensor dimensions
+    const std::vector<int> neuron_dims = this->m_neuron_dims;
+
+    // Initialize previous neuron tensor dimensions
     learning::setup_dims();
+
+    // Check if previous neuron tensor dimensions are valid
+  #ifdef LBANN_DEBUG
+    if(this->m_num_neuron_dims != (int) neuron_dims.size()) {
+      throw lbann_exception("convolution_layer: neuron tensor dimensions are unexpected");
+    }
+  #endif
+    
     // Initialize neuron tensor dimensions
-    for(int i=0; i<m_num_neuron_dims-1; ++i) {
+    this->m_neuron_dims = neuron_dims;
+    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
       const int effective_dim = (this->m_prev_neuron_dims[i+1]
                                  + 2*m_conv_pads[i] - m_conv_dims[i] + 1);
       this->m_neuron_dims[i+1] = ((effective_dim + m_conv_strides[i] - 1)
@@ -292,6 +305,11 @@ class convolution_layer : public learning {
     El::View(*m_filter_weights_v, *this->m_weights,
              El::IR(0,this->m_weights->Height()-1), El::ALL);
     initialize_matrix(*m_filter_weights_v, this->m_weight_initialization, fan_in, fan_out);
+
+    // Initialize bias
+    El::View(*m_bias_weights_v, *this->m_weights,
+             El::IR(this->m_weights->Height()-1), El::ALL);
+    El::Zero(*m_bias_weights_v);
 
     // Initialize optimizer
     if(this->m_optimizer != NULL) {

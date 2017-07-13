@@ -62,8 +62,8 @@ class Layer {
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
-  virtual void forwardProp();
-  virtual void backProp();
+  virtual void forward_prop();
+  virtual void back_prop();
   virtual bool update();
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
@@ -235,6 +235,16 @@ class Layer {
   /** Pin host memory if needed for GPU memory transfers. */
   virtual void pin_data();
 #endif
+  /** Get forward propagation input, as seen by previous layer. */
+  virtual const AbsDistMat& fp_input(const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output, as seen by next layer. */
+  virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
+  /** Get backward propagation input, as seen by next layer. */
+  virtual const AbsDistMat& bp_input(const Layer* next_layer = NULL) const;
+  /** Get backward propagation output, as seen by previous layer. */
+  virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output dimensions, as seen by next layer. */
+  virtual vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
   /**
    * Called by setup(), each layer should override this to call its parent and

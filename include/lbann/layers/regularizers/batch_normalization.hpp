@@ -147,14 +147,6 @@ class batch_normalization : public regularizer_layer {
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup_dims() {
-    regularizer_layer::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
   void setup_data() {
     regularizer_layer::setup_data();
     // Initialize parameters

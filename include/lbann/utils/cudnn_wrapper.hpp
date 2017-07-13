@@ -62,7 +62,7 @@
     }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call)
+#define CHECK_CUDA(cuda_call)   FORCE_CHECK_CUDA(cuda_call)
 #define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call)
 #else
 #define CHECK_CUDA(cuda_call)   cuda_call

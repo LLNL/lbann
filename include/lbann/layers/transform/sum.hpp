@@ -143,14 +143,6 @@ class sum_layer : public transform {
 
   }
 
-  void setup_dims() {
-    transform::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
   protected:
 
   void fp_compute() {
@@ -169,6 +161,28 @@ class sum_layer : public transform {
 
   void bp_compute() {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
+  }
+
+  const AbsDistMat& fp_input(const Layer* prev_layer) const {
+  #ifdef LBANN_DEBUG
+    if(prev_layer != NULL
+       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
+           == m_parents.end())) {
+      throw lbann_exception("sum_layer: unexpected previous layer");
+    }
+  #endif // LBANN_DEBUG
+    return *m_prev_activations;
+  }
+
+  const AbsDistMat& bp_output(const Layer* prev_layer) const {
+  #ifdef LBANN_DEBUG
+    if(prev_layer != NULL
+       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
+           == m_parents.end())) {
+      throw lbann_exception("sum_layer: unexpected previous layer");
+    }
+  #endif // LBANN_DEBUG
+    return *m_error_signal;
   }
 
 };
