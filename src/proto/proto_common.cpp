@@ -898,6 +898,49 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: dump_mb_indices
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_dump_mb_indices()) {
+      const lbann_data::CallbackDumpMBIndices& c = callback.dump_mb_indices();
+      if (master) {
+        cout << "adding dump I/O callback with basename: " << c.basename()
+             << " and interval: " << c.interval() << endl;
+      }
+      lbann_callback_dump_minibatch_sample_indices *mb_indices_cb = new lbann_callback_dump_minibatch_sample_indices(c.basename(), c.interval());
+      model->add_callback(mb_indices_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: disp_io_stats
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_disp_io_stats()) {
+      const lbann_data::CallbackDispIOStats& c = callback.disp_io_stats();
+      std::stringstream s(c.layers());
+      std::unordered_set<uint> which;
+      uint a;
+      bool all_layers = false;
+      while (s >> a) {
+        if (a == 10000) {
+          all_layers = true;
+        } else {
+          if (layer_mapping.find(a) == layer_mapping.end()) {
+            err << __FILE__ << " " << __LINE__
+                << " :: callback disp_io_stats: you specified the layer index " << a
+                << " wrt the prototext file, but we don't have a layer with that"
+                << " index; please check your prototext file";
+            throw lbann_exception(err.str());
+          }
+          which.insert(layer_mapping.find(a)->second);
+          if (master) {
+            cout << "adding display I/O stats callback: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << endl;
+          }
+        }
+      }
+      lbann_callback_io *io_cb = new lbann_callback_io(which);
+      model->add_callback(io_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: imcomm
     //////////////////////////////////////////////////////////////////
     if (callback.has_imcomm()) {

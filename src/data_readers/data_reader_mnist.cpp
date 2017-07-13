@@ -79,8 +79,8 @@ void mnist_reader::load() {
   std::string LabelFile = get_label_filename();
 
   // set filepath
-  std::string imagepath = FileDir + __DIR_DELIMITER + ImageFile;
-  std::string labelpath = FileDir + __DIR_DELIMITER + LabelFile;
+  std::string imagepath = FileDir + "/" + ImageFile;
+  std::string labelpath = FileDir + "/" + LabelFile;
 
   // read labels
   FILE *fplbl = fopen(labelpath.c_str(), "rb");

@@ -29,7 +29,6 @@
 #ifndef LBANN_BASE_HPP
 #define LBANN_BASE_HPP
 
-#include "datatype.hpp"
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 

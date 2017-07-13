@@ -160,12 +160,14 @@ message Callback {
    CallbackDumpWeights dump_weights = 4;
    CallbackDumpActivations dump_activations = 5;
    CallbackDumpGradients dump_gradients = 6;
-   CallbackImComm imcomm = 7;
-   CallbackSaveImages save_images = 8;
-   CallbackDebug debug = 9;
-   CallbackAdaptiveLearningRate adaptive_learning_rate = 10;
-   CallbackStepLearningRate step_learning_rate = 11;
-   CallbackCustomLearningRate custom_learning_rate = 12;
+   CallbackDumpMBIndices dump_mb_indices = 7;
+   CallbackDispIOStats disp_io_stats = 8;
+   CallbackImComm imcomm = 9;
+   CallbackSaveImages save_images = 10;
+   CallbackDebug debug = 11;
+   CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
+   CallbackStepLearningRate step_learning_rate = 13;
+   CallbackCustomLearningRate custom_learning_rate = 14;
 }
 
 message CallbackStepLearningRate {
@@ -215,6 +217,15 @@ message CallbackDumpActivations {
 message CallbackDumpGradients {
   string basename = 1;
   int64 interval = 2;
+}
+
+message CallbackDumpMBIndices {
+  string basename = 1;
+  int64 interval = 2;
+}
+
+message CallbackDispIOStats {
+  string layers = 1; //e.g: "2 4 5"; use "10000" to apply to all layers
 }
 
 message CallbackImComm {
