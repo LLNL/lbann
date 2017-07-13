@@ -69,14 +69,6 @@ class entrywise_activation_layer : public activation_layer {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  void setup_dims() {
-    activation_layer::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
  protected:
   
   virtual DataType activation_function(DataType x) = 0;

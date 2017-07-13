@@ -309,7 +309,7 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
   //@todo; optimize this? change start index from 0 to phase_index
   for (size_t l = 0; l <= m_phase_end; ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->forwardProp();
+    m_layers[l]->forward_prop();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_forward_prop_end_cbs();
@@ -321,7 +321,7 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
   //@todo; optimize to backprop up to phase_index and not 0
   for (size_t l = m_phase_end+1; l-- > 0;) {
     do_layer_backward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->backProp();
+    m_layers[l]->back_prop();
     do_layer_backward_prop_end_cbs(m_layers[l]);
   }
   do_model_backward_prop_end_cbs();
@@ -365,7 +365,7 @@ void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
 bool greedy_layerwise_autoencoder::evaluate_mini_batch() {
   // forward propagation (mini-batch)
   for (size_t l = 0; l < m_layers.size(); l++) {
-    m_layers[l]->forwardProp();
+    m_layers[l]->forward_prop();
   }
 
   // Update layers

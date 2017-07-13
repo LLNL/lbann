@@ -63,7 +63,7 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   }
 
   for (int p = 0; p < num_channel_values; p++) {
-    X(p, mb_idx) = pixels[0];
+    X(p, mb_idx) = pixels[p];
   }
 
   auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));

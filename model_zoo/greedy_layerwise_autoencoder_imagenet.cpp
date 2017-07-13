@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::validation, &imagenet_validation_set),
                                                            std::make_pair(execution_mode::testing, &imagenet_testset)
                                                           };
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
+    input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, parallel_io,
                                                                                  trainParams.MBSize, data_readers);
     gla->add(input_layer);
 

@@ -35,8 +35,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
 #include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
@@ -58,9 +57,7 @@ class softmax_layer : public activation_layer {
                 int mini_batch_size,
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size) {
-    // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
   }
 
   softmax_layer(const softmax_layer& other) :
@@ -91,14 +88,6 @@ class softmax_layer : public activation_layer {
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void setup_dims() {
-    activation_layer::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
   void setup_data() {
     activation_layer::setup_data();
     m_workspace->Resize(1, this->m_mini_batch_size);
@@ -114,7 +103,7 @@ class softmax_layer : public activation_layer {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
-    Mat& prev_activations_local = this->m_prev_activations_v->Matrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
     const Int local_height = activations_local.Height();
     const Int local_width = activations_local.Width();
@@ -211,9 +200,7 @@ void softmax_layer<T_layout>::bp_compute() {
       && (std::type_index(next_layer_type) ==
           std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
           || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
-          || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
+          std::type_index(typeid(target_layer_partitioned_minibatch<T_layout>)))) {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
     El::View(*this->m_error_signal_v, *this->m_error_signal,
          El::ALL, El::IR(0,this->m_error_signal->Width()));
@@ -222,9 +209,9 @@ void softmax_layer<T_layout>::bp_compute() {
 
   // Get local matrices and parameters
   const Mat& activations_local = this->m_activations_v->LockedMatrix();
-  Mat& workspace_local = m_workspace_v->Matrix();
-  Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
+  const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
   Mat& error_signal_local = this->m_error_signal_v->Matrix();
+  Mat& workspace_local = m_workspace_v->Matrix();
   const Int local_width = activations_local.Width();
 
   // Compute dot products

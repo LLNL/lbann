@@ -139,7 +139,7 @@ bool deep_neural_network::train_mini_batch() {
   //DataType L2NormSum = 0;
   for (size_t l = 0u; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->forwardProp();
+    m_layers[l]->forward_prop();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_forward_prop_end_cbs();
@@ -148,7 +148,7 @@ bool deep_neural_network::train_mini_batch() {
   do_model_backward_prop_begin_cbs();
   for (size_t l = m_layers.size(); l-- > 0u;) {
     do_layer_backward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->backProp();
+    m_layers[l]->back_prop();
     do_layer_backward_prop_end_cbs(m_layers[l]);
   }
   do_model_backward_prop_end_cbs();
@@ -217,7 +217,7 @@ bool deep_neural_network::evaluate_mini_batch() {
   do_model_evaluate_forward_prop_begin_cbs();
   for (size_t l = 0u; l < m_layers.size(); l++) {
     do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
-    m_layers[l]->forwardProp();
+    m_layers[l]->forward_prop();
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_evaluate_forward_prop_end_cbs();
