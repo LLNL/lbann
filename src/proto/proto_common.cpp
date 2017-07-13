@@ -175,7 +175,6 @@ void add_layers(
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          model->create_optimizer(),
           mb_size,
           all_layers[original_layer]
         );
@@ -183,7 +182,6 @@ void add_layers(
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          model->create_optimizer(),
           mb_size,
           all_layers[original_layer]
         );

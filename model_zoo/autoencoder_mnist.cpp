@@ -259,10 +259,6 @@ int main(int argc, char *argv[]) {
                                                trainParams.MBSize);
     dnn.add(relu4);
 
-    /*Layer *dropout4 = new dropout<data_layout::MODEL_PARALLEL>(13,
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout4);*/
 
    
     Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(10, comm, trainParams.MBSize,
@@ -275,10 +271,6 @@ int main(int argc, char *argv[]) {
                                                trainParams.MBSize);
     dnn.add(relu5);
 
-    /*Layer *dropout5 = new dropout<data_layout::MODEL_PARALLEL>(16,
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout5);*/
 
     Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(12, comm, trainParams.MBSize,
                                                         1000, 
@@ -290,10 +282,6 @@ int main(int argc, char *argv[]) {
                                                trainParams.MBSize);
     dnn.add(relu6);
 
-    /*Layer *dropout6 = new dropout<data_layout::MODEL_PARALLEL>(14,
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout6);*/
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(14, comm, trainParams.MBSize,
                                                         784, 
@@ -305,21 +293,14 @@ int main(int argc, char *argv[]) {
                                                trainParams.MBSize);
     dnn.add(sigmoid1);
 
-    /*Layer *dropout7 = new dropout<data_layout::MODEL_PARALLEL>(22,
-                                               comm, trainParams.MBSize,
-                                               trainParams.DropOut);
-    dnn.add(dropout7);*/
 
     Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(16, comm, 
-                                                          optimizer_fac->create_optimizer(), 
                                                           trainParams.MBSize, input_layer);
     dnn.add(rcl);
 
     
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
-    lbann_callback_save_images save_images_cb(&mnist_trainset,"/p/lscratchf/jacobs32/lbann/mnist_images/", "pgm");
-    dnn.add_callback(&save_images_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
     lbann_callback_dump_gradients *dump_gradients_cb = nullptr;

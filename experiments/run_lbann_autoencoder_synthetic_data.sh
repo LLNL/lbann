@@ -8,9 +8,9 @@ SCRIPT=`basename ${0}`
 CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 
 #Initialize variables to default values.
-TRAINING_SAMPLES=12000
-TESTING_SAMPLES=3200
-EPOCHS=10
+TRAINING_SAMPLES=240000
+TESTING_SAMPLES=32000
+EPOCHS=40
 
 #first number is #features (input layer size)
 NETWORK="1000","500"

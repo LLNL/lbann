@@ -47,7 +47,6 @@ class reconstruction_layer : public target_layer {
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
   reconstruction_layer(int index,
                        lbann_comm *comm,
-                       optimizer *opt,/*needed?*/
                        int minim_batch_size,
                        Layer *original_layer)
     :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
@@ -90,6 +89,8 @@ class reconstruction_layer : public target_layer {
 
 
   void fp_compute() {
+     //Copy prev (decoder) activations for greedy layer wise training
+    El::Copy(*this->m_prev_activations_v,*this->m_activations);
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
     DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);

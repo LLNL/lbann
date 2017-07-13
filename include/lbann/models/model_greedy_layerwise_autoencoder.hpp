@@ -33,7 +33,6 @@
 #include "lbann/layers/layer.hpp"
 #include <vector>
 #include <string>
-
 namespace lbann {
 
 class greedy_layerwise_autoencoder : public sequential_model {
@@ -88,13 +87,18 @@ class greedy_layerwise_autoencoder : public sequential_model {
   bool evaluate_mini_batch();
 
   void reset_phase();
+  /// Set end index of layer wise training (typically at reconstruction layer)
+  void set_end_index(); 
 
  protected:
   /// index of last layer in a phase
   size_t m_phase_end;
   /// containers for  mirror layers
   std::vector<Layer *> m_reconstruction_layers;
-
+  /// index of first layer in a phase
+  size_t m_start_index;
+  /// index of last layer in a phase
+  size_t m_end_index;
   /// Flag recording whether we have a mirror layer inserted in model for training
   uint32_t m_have_mirror;
 
