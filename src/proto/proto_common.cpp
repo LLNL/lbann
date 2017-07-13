@@ -1393,6 +1393,15 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
+  if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
+    int sz = model->callback_size();
+    for (int j=0; j<sz; j++) {
+      lbann_data::Callback *c = model->mutable_callback(j);
+      if (c->has_imcomm()) {
+        c->clear_imcomm();
+      }
+    }
+  }
 
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
@@ -1602,6 +1611,9 @@ void print_help(lbann::lbann_comm *comm)
        "  --image_dir=<string>\n"
        "      if the model has callback_save_images, this determines where the\n"
        "      images are saved\n"
+       "  --no_im_comm=<bool>\n"
+       "      removes ImComm callback, if present; this is intended for\n"
+       "      running alexnet with a single model, but may be useful elsewhere\n"
        "\n"
        "Optimizers; all values except for nesterov are floats;\n"
        "            the values shown in <...> are the default values, that will be\n"

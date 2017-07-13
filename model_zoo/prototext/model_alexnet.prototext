@@ -18,6 +18,13 @@ model {
   # Callbacks 
   ###################################################
   callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      layers: "2 6 10 12 14 17 20 23"
+      summary_dir: "."
+    }  
+  }
+  callback {
     print {
       interval: 1
     }
@@ -296,7 +303,7 @@ model {
   layer {
     index: 17
     parent: 16
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
       weight_initialization: "he_normal"
@@ -311,7 +318,7 @@ model {
   layer {
     index: 18
     parent: 17
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     relu {
     }
   }
@@ -322,7 +329,7 @@ model {
   layer {
     index: 19
     parent: 18
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
     }
@@ -334,7 +341,7 @@ model {
   layer {
     index: 20
     parent: 19
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
       weight_initialization: "he_normal"
@@ -349,7 +356,7 @@ model {
   layer {
     index: 21
     parent: 20
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     relu {
     }
   }
@@ -360,7 +367,7 @@ model {
   layer {
     index: 22
     parent: 21
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
     }
@@ -372,7 +379,7 @@ model {
   layer {
     index: 23
     parent: 22
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
       weight_initialization: "he_normal"
@@ -387,7 +394,7 @@ model {
   layer {
     index: 24
     parent: 23
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     softmax {
     }
   }
