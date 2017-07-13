@@ -534,6 +534,9 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
   Mat& mat_local = mat.Matrix();
   Mat new_mat_local(mat_local);
 
+  // Deallocate pinned memory
+  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
+
   // Reconfigure matrix around unpinned memory
   mat.Attach(mat.Height(),
              mat.Width(),
@@ -542,9 +545,6 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
              mat.RowAlign(),
              new_mat_local,
              mat.Root());
-
-  // Deallocate pinned memory
-  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
 
 }
 

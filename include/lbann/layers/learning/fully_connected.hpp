@@ -96,9 +96,14 @@ class fully_connected_layer : public learning {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    this->m_index = index;
-    this->m_num_neurons = num_neurons;  // Set here since it's passed in.
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = num_neurons;
+    this->m_num_neuron_dims = 1;
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
+
+    // Activate or disable bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
+
   }
 
   fully_connected_layer(const fully_connected_layer& other) :
@@ -163,9 +168,19 @@ class fully_connected_layer : public learning {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void setup_dims() {
+    // Store neuron tensor dimensions
+    const int num_neurons = this->m_num_neurons;
+    const int num_neuron_dims = this->m_num_neuron_dims;
+    const std::vector<int> neuron_dims = this->m_neuron_dims;
+
+    // Initialize previous neuron tensor dimensions
     learning::setup_dims();
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
+
+    // Initialize neuron tensor dimensions
+    this->m_num_neurons = num_neurons;
+    this->m_num_neuron_dims = num_neuron_dims;
+    this->m_neuron_dims = neuron_dims;
+
   }
 
   void setup_data() {

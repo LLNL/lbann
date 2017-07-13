@@ -143,14 +143,6 @@ class branch_layer : public transform {
 
   }
 
-  void setup_dims() {
-    transform::setup_dims();
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = this->m_num_prev_neurons;
-    this->m_num_neuron_dims = this->m_num_prev_neuron_dims;
-    this->m_neuron_dims = this->m_prev_neuron_dims;
-  }
-
   protected:
 
   void fp_compute() {
@@ -169,6 +161,28 @@ class branch_layer : public transform {
                  *this->m_error_signal);
       }
     }
+  }
+
+  const AbsDistMat& fp_output(const Layer* next_layer) const {
+  #ifdef LBANN_DEBUG
+    if(next_layer != NULL
+       && (std::find(m_children.begin(), m_children.end(), next_layer)
+           == m_children.end())) {
+      throw lbann_exception("branch_layer: unexpected next layer");
+    }
+  #endif // LBANN_DEBUG
+    return *m_activations;
+  }
+
+  const AbsDistMat& bp_input(const Layer* next_layer) const {
+  #ifdef LBANN_DEBUG
+    if(next_layer != NULL
+       && (std::find(m_children.begin(), m_children.end(), next_layer)
+           == m_children.end())) {
+      throw lbann_exception("branch_layer: unexpected next layer");
+    }
+  #endif // LBANN_DEBUG
+    return *m_prev_error_signal;
   }
 
 };
