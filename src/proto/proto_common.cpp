@@ -1327,9 +1327,6 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
 void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
-  if (not master) {
-    return;
-  }
 
   lbann_data::Model *model = p.mutable_model();
 
@@ -1342,7 +1339,9 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     parallel_io = comm->get_procs_per_model();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   } else {
-    cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+    if (master) {
+      cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+    }
   }
 }
 
