@@ -1,13 +1,16 @@
 model {
   name: "dnn"
-  objective_function: "categorical_cross_entropy"
-  metric: "categorical_accuracy"
+  objective_function: "mean_squared_error"
+  metric { 
+    categorical_accuracy {
+    }
+  }
   data_layout: "model_parallel"
-  mini_batch_size: 192
+  mini_batch_size: 128
   block_size: 256
   num_epochs: 10
-  num_parallel_readers: 1
-  procs_per_model: 0
+  num_parallel_readers: 0 
+  procs_per_model: 12
   use_cudnn: false
   num_gpus: -1
 
@@ -25,16 +28,11 @@ model {
     }
   }
   callback {
-    summary {
-      dir: "none"
-      interval: 1
+    save_images {
+      image_dir: "images_"
+      extension: "pgm"
     }
   }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -52,21 +50,20 @@ model {
   }
 
   #################
-  # FULLY_CONNECTED
+  # FULLY_CONNECTED encode1
   #################
   layer {
     index: 2
     parent: 1
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons: 100
+      num_neurons: 1000
       weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
 
-  ######
-  # RELU
+  # RELU 
   ######
   layer {
     index: 3
@@ -76,34 +73,34 @@ model {
     }
   }
 
-  #########
-  # DROPOUT
+  # DROPOUT 
   #########
   layer {
     index: 4
     parent: 3
     data_layout: "model_parallel"
     dropout {
-      keep_prob: -1.0
+      keep_prob: 0.8
     }
   }
 
+
   #################
-  # FULLY_CONNECTED
+  # FULLY_CONNECTED decode1
   #################
   layer {
     index: 5
     parent: 4
     data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
     fully_connected {
-      num_neurons: 30
       weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
 
   #######
-  # RELU
+  # RELU 4
   #######
   layer {
     index: 6
@@ -113,52 +110,26 @@ model {
     }
   }
 
-  ##########
-  # DROPOUT
-  ##########
+  # DROPOUT 
+  #########
   layer {
     index: 7
     parent: 6
     data_layout: "model_parallel"
     dropout {
-      keep_prob: -1.0
+      keep_prob: 0.8
     }
   }
 
   #################
-  # FULLY_CONNECTED
+  # RECONSTRUCTION
   #################
   layer {
     index: 8
     parent: 7
     data_layout: "model_parallel"
-    fully_connected {
-      num_neurons: 10
-      weight_initialization: "glorot_uniform"
-      has_bias: false
-    }
-  }
-
-  #########
-  # SOFTMAX
-  #########
-  layer {
-    index: 9
-    parent: 8
-    data_layout: "model_parallel"
-    softmax {
-    }
-  }
-
-  #########
-  # TARGET
-  #########
-  layer {
-    index: 10
-    parent: 9
-    data_layout: "model_parallel"
-    target_distributed_minibatch_parallel_io {
-      shared_data_reader: true
+    reconstruction {
+      original_layer: 1
     }
   }
 

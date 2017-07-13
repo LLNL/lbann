@@ -1,5 +1,6 @@
 optimizer {
-  name: "adagrad"
-  learn_rate: 0.01
-  eps: 1e-8 
+  adagrad {
+    learn_rate: 0.01
+    eps: 1e-8 
+  }
 }

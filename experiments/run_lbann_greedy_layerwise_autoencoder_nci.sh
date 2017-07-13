@@ -227,6 +227,6 @@ done
 
 fi
 
-CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/lbann_greedy_layerwise_autoencoder_nci  --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/ --train-file ${TRAIN_FILE} --test-file ${TEST_FILE} --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
+CMD="${RUN} -N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/greedy_layerwise_autoencoder_nci  --learning-rate ${LR} --activation-type ${ACT} --learning-rate-method ${LRM} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/ --train-file ${TRAIN_FILE} --test-file ${TEST_FILE} --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
 echo ${CMD}
 ${CMD}

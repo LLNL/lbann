@@ -278,7 +278,7 @@ class pooling_layer : public transform {
     for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
 
       // Construct im2col matrix from input
-      const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+      const Mat input_mat = El::LockedView(prev_activations_local, El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_channels,
@@ -355,7 +355,7 @@ class pooling_layer : public transform {
       if(m_pool_mode == pool_mode::max) {
 
         // Construct im2col matrix from input
-        const Mat input_mat = LockedView(prev_activations_local, ALL, IR(sample));
+        const Mat input_mat = El::LockedView(prev_activations_local, El::ALL, El::IR(sample));
         im2col(input_mat,
                im2col_mat,
                num_channels,
@@ -409,7 +409,7 @@ class pooling_layer : public transform {
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
-      Mat output_mat = View(error_signal_local, ALL, IR(sample));
+      Mat output_mat = El::View(error_signal_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
              num_channels,

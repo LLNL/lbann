@@ -75,14 +75,14 @@ class categorical_accuracy : public metric {
     // Note that these matrices are transposed (column max matrices) and thus
     // the mini-batch size effects the number of rows, not columns
     El::View(m_prediction_col_maxes_v, m_prediction_col_maxes,
-             IR(0, cur_mini_batch_size), IR(0, m_prediction_col_maxes.Width()));
+             El::IR(0, cur_mini_batch_size), El::IR(0, m_prediction_col_maxes.Width()));
     El::View(m_replicated_prediction_col_maxes_v, m_replicated_prediction_col_maxes,
-             IR(0, cur_mini_batch_size),
-             IR(0, m_replicated_prediction_col_maxes.Width()));
-    El::View(m_max_index_v, m_max_index, IR(0, cur_mini_batch_size),
-             IR(0, m_max_index.Width()));
+             El::IR(0, cur_mini_batch_size),
+             El::IR(0, m_replicated_prediction_col_maxes.Width()));
+    El::View(m_max_index_v, m_max_index, El::IR(0, cur_mini_batch_size),
+             El::IR(0, m_max_index.Width()));
     El::View(m_reduced_max_indices_v, m_reduced_max_indices,
-             IR(0, cur_mini_batch_size), IR(0, m_reduced_max_indices.Width()));
+             El::IR(0, cur_mini_batch_size), El::IR(0, m_reduced_max_indices.Width()));
   }
 
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {

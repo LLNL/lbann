@@ -55,8 +55,8 @@ void lbann_callback_save_images::on_phase_end(model *m) {
 
 void lbann_callback_save_images::save_image(model *m, ElMat *input, ElMat *output,uint index) {
   DistMat in_col,out_col;
-  View(in_col,*input, ALL, IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
-  View(out_col,*output, ALL, IR(0));
+  El::View(in_col,*input, El::ALL, El::IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
+  El::View(out_col,*output, El::ALL, El::IR(0));
   CircMat in_pixel = in_col;
   CircMat out_pixel = out_col;
   if (m->get_comm()->am_world_master()) {

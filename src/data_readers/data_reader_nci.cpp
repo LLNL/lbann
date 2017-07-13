@@ -100,7 +100,7 @@ bool data_reader_nci::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
       f++;
     }//end if col > 5
   }// end while loop
-  auto data_col = X(El::ALL, IR(mb_idx, mb_idx+1));
+  auto data_col = X(El::ALL, El::IR(mb_idx, mb_idx+1));
   normalize(data_col, 1);
   return true;
 }
@@ -131,7 +131,7 @@ void data_reader_nci::load() {
   if (!ifs) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: data_reader_nci_regression::load(): can't open file: " + infile);
+      " :: data_reader_nci::load(): can't open file: " + infile);
   }
   m_infile = infile;
   std::string line;
@@ -174,6 +174,7 @@ void data_reader_nci::load() {
   m_index_map.pop_back();
   m_index_map.shrink_to_fit();
   m_responses.resize(m_num_samples);
+  m_labels.resize(m_num_samples);
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);

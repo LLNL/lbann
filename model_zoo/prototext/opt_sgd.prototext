@@ -1,7 +1,8 @@
 optimizer {
-  name: "sgd"
-  learn_rate: 0.01
-  momentum: 0.9 
-  decay: 0.5 
-  nesterov: false
+  sgd {
+    learn_rate: 0.01
+    momentum: 0.9 
+    decay: 0.5 
+    nesterov: false
+  }  
 }

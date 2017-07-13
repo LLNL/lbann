@@ -176,7 +176,7 @@ class fully_connected_layer : public learning {
     this->m_weights_gradient->Resize(this->m_num_neurons, this->m_num_prev_neurons + 1);
 
     // Initialize the activations part of the weight matrix -- leave the bias term weights zero
-    El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
+    El::View(*this->m_activation_weights_v, *this->m_weights, El::ALL, El::IR(0, this->m_num_prev_neurons));
     initialize_matrix(*this->m_activation_weights_v, m_weight_initialization, this->m_num_prev_neurons, this->m_num_neurons);
 
     // Initialize optimizer
@@ -189,14 +189,14 @@ class fully_connected_layer : public learning {
     learning::setup_views();
     // Setup independent views of the weight matrix for the activations
     // Note this is duplicated in setup_data for convenience.
-    El::View(*this->m_activation_weights_v, *this->m_weights, ALL, IR(0, this->m_num_prev_neurons));
+    El::View(*this->m_activation_weights_v, *this->m_weights, El::ALL, El::IR(0, this->m_num_prev_neurons));
 
     // Setup independent views of the weights gradient matrix for the activations
-    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, ALL, IR(0, this->m_num_prev_neurons));
+    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient, El::ALL, El::IR(0, this->m_num_prev_neurons));
 
     // Setup independent views of the weights and gradient matrix for the bias terms
-    El::View(*m_bias_weights_v, *this->m_weights, ALL, IR(this->m_num_prev_neurons));
-    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, ALL, IR(this->m_num_prev_neurons));
+    El::View(*m_bias_weights_v, *this->m_weights, El::ALL, El::IR(this->m_num_prev_neurons));
+    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient, El::ALL, El::IR(this->m_num_prev_neurons));
   }
 
   void fp_compute() {
@@ -224,7 +224,7 @@ class fully_connected_layer : public learning {
       El::RowSum(*this->m_prev_error_signal_v,
                  *m_bias_weights_gradient_repl);
       El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
-                *m_bias_weights_gradient_v);
+                *m_bias_weights_gradient_repl);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
   }

@@ -54,8 +54,8 @@ class softmax_layer : public activation_layer {
 
  public:
   softmax_layer(int index,
-                int mini_batch_size,
                 lbann_comm *comm,
+                int mini_batch_size,
                 optimizer *opt)
      :  activation_layer(index, comm, mini_batch_size) {
     // Setup the data distribution
@@ -107,7 +107,7 @@ class softmax_layer : public activation_layer {
   void fp_set_std_matrix_view() {
     Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
-    View(*m_workspace_v, *m_workspace, ALL, IR(0, cur_mini_batch_size));
+    El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   void fp_compute() {
@@ -151,12 +151,12 @@ class softmax_layer : public activation_layer {
     // This truncates small values to 0 to avoid them becoming denormalized later
     // in the forward/backward stages. Denormalized values can significantly
     // impact floating point performance.
-    IndexDependentMap(activations_local,
-                      (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                      ([this,&workspace_local](El::Int r, El::Int c, const DataType& z)->DataType {
-                        const DataType v = z / workspace_local(Int(0), c);
-                        return Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
-                      }));
+    El::IndexDependentMap(activations_local,
+                          (std::function<DataType(El::Int,El::Int,const DataType&)>)
+                          ([this,&workspace_local](El::Int r, El::Int c, const DataType& z)->DataType {
+                            const DataType v = z / workspace_local(Int(0), c);
+                            return Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
+                          }));
   }
 
   // Defined below to avoid circular definitions.
@@ -214,9 +214,9 @@ void softmax_layer<T_layout>::bp_compute() {
           std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
           || std::type_index(next_layer_type) ==
           std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
-    View(*this->m_error_signal, *this->m_prev_error_signal);
-    View(*this->m_error_signal_v, *this->m_error_signal,
-         ALL, IR(0,this->m_error_signal->Width()));
+    El::View(*this->m_error_signal, *this->m_prev_error_signal);
+    El::View(*this->m_error_signal_v, *this->m_error_signal,
+         El::ALL, El::IR(0,this->m_error_signal->Width()));
     return;
   }
 
@@ -230,21 +230,21 @@ void softmax_layer<T_layout>::bp_compute() {
   // Compute dot products
   // Note: prev_error_signal^T activations
   for(El::Int c=0; c<local_width; ++c) {
-    workspace_local(El::Int(0), c) = Dot(prev_error_signal_local(ALL,IR(c)),
-                                         activations_local(ALL,IR(c)));
+    workspace_local(El::Int(0), c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
+                                             activations_local(El::ALL,El::IR(c)));
   }
   AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
   // Update error signal
   // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-  IndexDependentMap(error_signal_local,
-                    (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                    ([this,&activations_local,&workspace_local]
-                     (El::Int r, El::Int c, const DataType& z)->DataType {
-                      const DataType activations_entry = activations_local(r,c);
-                      const DataType dot_product_entry = workspace_local(Int(0),c);
-                      return activations_entry * (z - dot_product_entry);
-                    }));
+  El::IndexDependentMap(error_signal_local,
+                        (std::function<DataType(El::Int,El::Int,const DataType&)>)
+                        ([this,&activations_local,&workspace_local]
+                         (El::Int r, El::Int c, const DataType& z)->DataType {
+                          const DataType activations_entry = activations_local(r,c);
+                          const DataType dot_product_entry = workspace_local(Int(0),c);
+                          return activations_entry * (z - dot_product_entry);
+                        }));
 }
 
 }  // namespace lbann

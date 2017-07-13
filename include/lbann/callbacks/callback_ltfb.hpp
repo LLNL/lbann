@@ -30,6 +30,7 @@
 #define __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/models/model_dnn.hpp"
 
 namespace lbann {
 
@@ -54,15 +55,20 @@ class lbann_callback_ltfb : public lbann_callback {
    * @param round_size The number of minibatches in each round.
    * @param remote_model A duplicate of the model being trained (temp workaround).
    */
-  lbann_callback_ltfb(uint round_size, model *remote_model,
+  lbann_callback_ltfb(uint round_size,
                       lbann_summary *summarizer = nullptr);
+  lbann_callback_ltfb(const lbann_callback_ltfb& other);
+  lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   ~lbann_callback_ltfb();
+  lbann_callback_ltfb* copy() const { return new lbann_callback_ltfb(*this); }
   /** Set up LTFB. */
   void setup(model *m);
   /**
    * Potentially run an LTFB round.
    */
   void on_batch_end(model *m);
+
+  std::string name() const { return "ltfb"; }
  private:
   lbann_comm *m_comm;
   /** Number of minibatches in a round. */
@@ -81,6 +87,10 @@ class lbann_callback_ltfb : public lbann_callback {
    * Exchange local model data with partner's.
    */
   void exchange(model *m, int partner);
+  /**
+   * Evaluate a model on tournament data and return its accuracy.
+   */
+  double evaluate(deep_neural_network *m);
   /**
    * Replace the local model m with the remote model data.
    */

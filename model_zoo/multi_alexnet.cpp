@@ -47,6 +47,10 @@ const int g_ImageNet_Height = 256;
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
 
+#ifdef EL_USE_CUBLAS
+  El::GemmUseGPU(32,32,32);
+#endif
+
   try {
     ///////////////////////////////////////////////////////////////////
     // initalize grid, block
@@ -575,8 +579,8 @@ int main(int argc, char *argv[]) {
       Layer *softmax =
         new softmax_layer<data_layout::MODEL_PARALLEL>(
           23,
-          trainParams.MBSize,
           comm,
+          trainParams.MBSize,
           dnn->create_optimizer());
       dnn->add(softmax);
     }

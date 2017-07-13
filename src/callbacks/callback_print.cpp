@@ -53,7 +53,7 @@ void lbann_callback_print::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_model_master()) {
     /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->m_metrics) {
+    for (auto&& metric : m->get_metrics()) {
       double train_score = metric->report_metric(execution_mode::training);
       double validate_score = metric->report_metric(execution_mode::validation);
       if (comm->am_world_master()) {
@@ -87,7 +87,7 @@ void lbann_callback_print::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_model_master()) {
     /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->m_metrics) {
+    for (auto&& metric : m->get_metrics()) {
       double test_score = metric->report_metric(execution_mode::testing);
       if (comm->am_world_master()) {
         std::vector<double> test_scores(comm->get_num_models());

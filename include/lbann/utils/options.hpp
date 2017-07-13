@@ -75,12 +75,8 @@ private:
   bool get_string(std::string option, std::string &out);
 
   void parse_cmd_line(int arg, char **argv);
-  std::string m_lbann_version;
 
   std::vector<std::string> m_cmd_line;
-
-  void write();
-
 };
 
 #endif

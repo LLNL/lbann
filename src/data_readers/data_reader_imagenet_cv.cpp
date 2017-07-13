@@ -81,7 +81,7 @@ int lbann::imagenet_reader_cv::fetch_data(Mat& X) {
 
     int width=0, height=0, img_type=0;
     ::Mat X_v;
-    View(X_v, X, IR(0, X.Height()), IR(k, k + 1));
+    El::View(X_v, X, El::IR(0, X.Height()), El::IR(k, k + 1));
     cv_process pp(*m_pp);
     bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, pp, X_v);
     if(!ret) {
@@ -123,7 +123,7 @@ int lbann::imagenet_reader_cv::fetch_data(std::vector<Mat>& X) {
 
     std::vector<::Mat> X_v(X.size());
     for(unsigned int i=0u; i < X.size(); ++i) {
-      View(X_v[i], X[i], IR(0, X[i].Height()), IR(k, k + 1));
+      El::View(X_v[i], X[i], El::IR(0, X[i].Height()), El::IR(k, k + 1));
     }
 
     cv_process_patches pp(*pp_ptr);

@@ -63,13 +63,9 @@ void options::init(int argc, char **argv)
   //over-ride from cmd line
   parse_cmd_line(argc, argv);
 
-  //write output file, which contains all settings,
-  //along with the prototext files
-  write();
-
   if (!m_rank) {
     std::cout << std::endl
-              << "running with the following options (if any):\n";
+              << "running with the following options:\n";
     for (std::map<std::string, std::string>::const_iterator t = m_opts.begin(); t != m_opts.end(); t++) {
       std::cout << "  --" << t->first << "=" << t->second << std::endl;
     }
@@ -295,133 +291,5 @@ void options::parse_cmd_line(int argc, char **argv)
   }
 }
 
-void copy_file(std::string fn, std::ofstream &out) {
-  std::ifstream in(fn.c_str());
-  if (not in.is_open()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: failed to open file for reading: " << fn;
-    throw std::runtime_error(err.str());
-  }
-  std::stringstream s;
-  s << in.rdbuf();
-  out << s.str();
-}
 
 
-void options::write()
-{
-  if (m_rank) {
-    return;
-  }
-
-  //sanity: ensure we do not over-write a previously saved data file
-  std::string base = ".";
-  std::string name = get_string("saveme");
-  size_t i = name.find("/");
-  if (i != std::string::npos) {
-    base = name.substr(0, i);
-  }
-  base += "/";
-
-  DIR *dir;
-  struct dirent *ent;
-  while (true) {
-  if ((dir = opendir(base.c_str())) != NULL) {
-    bool name_exists = false;
-    while ((ent = readdir(dir))) {
-      std::string testme(ent->d_name);
-      if (testme == name) {
-        name_exists = true;
-      }
-    }
-    if (not name_exists) {
-      break;
-    } else {
-      //@todo perhaps this could be done better
-      name += "_1";
-    }
-  }
-  }
-  m_opts["saveme"] = name;
-
-
-    if (not has_string("do_not_save")) {
-      //open output file
-      char b2[1024];
-      sprintf(b2, "%s", get_string("saveme").c_str());
-      std::ofstream out(b2);
-      if (not out.is_open()) {
-        if (!m_rank) {
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__
-              << " :: failed to open file for writing: " << b2;
-          throw std::runtime_error(err.str());
-        }
-      }
-      std::cout << std::endl << "writing options and prototext to file: " << name << "\n\n";
-
-      //output all data
-      out << "# cmd line for original experiment:\n#  $ ";
-      for (size_t h=0; h<m_cmd_line.size(); h++) {
-        out << m_cmd_line[h] << " ";
-      }
-
-      int size;
-      MPI_Comm_size(MPI_COMM_WORLD, &size);
-      std::time_t r = std::time(nullptr);
-      char *tm = std::ctime(&r);
-      size_t fixme = strlen(tm);
-      tm[fixme-1] = 0;
-      out << "\n#\n# Experiment conducted at: " 
-          <<  tm
-          << "\n#\n#\n# Experiment was run with lbann version: "
-          << m_lbann_version << "\n#\n#\n# To rerun the experiment: \n"
-           "#  $ srun -n" << size << " " << m_cmd_line[0]
-          << " --loadme=" << get_string("saveme") << "\n#\n#\n"
-          << "# If you rerun the experiment, the following options will be parsed\n"
-          << "# from this file"
-          << " (you do not need to specify them on the cmd line).\n"
-          << "# Note, however, that lines that begin with \"### --\" will be ignored\n#\n"
-          << "\n#";
-      for (std::map<std::string, std::string>::iterator t = m_opts.begin(); t != m_opts.end(); t++) {
-        std::string k = t->first;
-        std::string v = t->second;
-        if (k == "proto" or k == "proto_reader" or k == "proto_optimizer"
-            or k == "saveme" or k == "loadme") {
-          out << "\n### --" << k << "=" << v;
-        } else {
-          out << "\n# --" << k << "=" << v;
-        }
-      }
-      out << "n#\n#\n#\n#\n";
-
-      if (has_opt("loadme")) {
-        std::ifstream in(get_string("loadme").c_str());
-        if (in.is_open()) {
-          std::string line;
-          bool do_output = false;
-          while (not in.eof()) {
-            getline(in, line);
-            if (line.find("model {") != std::string::npos) {
-              do_output = true;
-            }
-            if (do_output) {
-              out << line << std::endl;
-            }
-          }
-        }
-      } else {
-
-      if (has_opt("proto")) {
-        copy_file(get_string("proto"), out);
-      }
-      if (has_opt("proto_reader")) {
-        copy_file(get_string("opt_reader"), out);
-      }
-      if (has_opt("proto_optimizer")) {
-        copy_file(get_string("opt_optimizer"), out);
-      }
-      }
-    }
-}

@@ -318,8 +318,9 @@ int main(int argc, char *argv[]) {
     // Softmax layer
     Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
       9,
+      comm,
       trainParams.MBSize, 
-      comm, optimizer_fac->create_optimizer()
+      optimizer_fac->create_optimizer()
     );
     dnn.add(sl);
 

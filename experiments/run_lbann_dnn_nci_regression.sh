@@ -232,7 +232,7 @@ TASKS_PER_SOCKET=`echo ${TASKS_PER_NODE} / ${SOCKETS_PER_NODE} | bc`
 #srun_options="-N${SLURM_NNODES} -n${LBANN_TASKS} -m block --cpu_bind=rank --ntasks-per-socket=${TASKS_PER_SOCKET} --sockets-per-node=${SOCKETS_PER_NODE}"
 srun_options="-N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE}"
 
-CMD="${RUN} ${srun_options} ${BINDIR}/lbann_dnn_nci_regression \
+CMD="${RUN} ${srun_options} ${BINDIR}/dnn_nci_regression \
      --num-epochs ${EPOCHS} \
      --mb-size ${MB_SIZE} \
      --block-size ${BLOCK_SIZE} \

@@ -55,31 +55,36 @@ int main(int argc, char *argv[]) {
     //bool ltfb = opts->has_int("ltfb") and opts->get_int("ltfb");
 
     // Get input prototext filename(s)
-    if (not opts->has_string("loadme") or not(opts->has_string("model")
-        and opts->has_string("reader") and opts->has_string("optimizer")))
+    if (not (opts->has_string("loadme") or opts->has_string("model"))) {
       if (master) {  
-      err << __FILE__ << " " << __LINE__
-          << 
-          " :: you must either pass the option: --loadme=<string> (if the file\n"
-          "contains a specification for the model, readers, and optimizer\n"
-           "or --model=<string> --reader=<string> --optimizer=<string>\n";
+        err << __FILE__ << " " << __LINE__
+            << 
+            " :: you must either pass the option: --loadme=<string> (if the file\n"
+            "contains a specification for the model, readers, and optimizer\n"
+             "or --model=<string> --reader=<string> --optimizer=<string>\n";
       throw lbann_exception(err.str());
     }
+    }
    
-    string prototext_model_fn = opts->get_string("model");
     lbann_data::LbannPB pb;
-    readPrototextFile(prototext_model_fn.c_str(), pb);
+    string prototext_model_fn;
+    if (opts->has_string("model")) {
+      prototext_model_fn = opts->get_string("model");
+    } else if (opts->has_string("loadme")) {
+      prototext_model_fn = opts->get_string("loadme");
+    } 
+    read_prototext_file(prototext_model_fn.c_str(), pb);
 
     if (opts->has_string("reader")) {
       lbann_data::LbannPB pb_reader;
-      readPrototextFile(opts->get_string("reader").c_str(), pb_reader);
+      read_prototext_file(opts->get_string("reader").c_str(), pb_reader);
       pb.MergeFrom(pb_reader);
     }
 
     if (opts->has_string("optimizer")) {
       string prototext_opt_fn;
       lbann_data::LbannPB pb_optimizer;
-      readPrototextFile(opts->get_string("optimizer").c_str(), pb_optimizer);
+      read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer);
       pb.MergeFrom(pb_optimizer);
     }
 
@@ -88,6 +93,10 @@ int main(int argc, char *argv[]) {
 
     // Adjust the number of parallel readers
     set_num_parallel_readers(comm, pb);
+
+    // Save info to file; this includes the complete prototext (with any over-rides
+    // from the cmd line) and various other info
+    save_session(comm, argc, argv, pb);
 
     // Set algorithmic blocksize
     lbann_data::Model *pb_model = pb.mutable_model();
@@ -108,30 +117,20 @@ int main(int argc, char *argv[]) {
     }
 
 
-    ///////////////////////////////////////////////////////////////////
-    // initialize data readers
+    // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
-    ///////////////////////////////////////////////////////////////////
     std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(master, pb, data_readers, pb_model->mini_batch_size());
-    if (master) {
-      for (auto it : data_readers) {
-        cerr << "data reader; role: " << it.second->get_role()
-             << " num data: " << it.second->getNumData() << endl;
-      }
-    }
 
-
-    ///////////////////////////////////////////////////////////////////
-    // initalize model
-    // @todo: not all callbacks code is in place
-    ///////////////////////////////////////////////////////////////////
+    // Construct optimizer
     optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
+
+    // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {
-        cerr << "USING cudnn\n";
+        cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
       }
       cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus());
     } else {
@@ -148,6 +147,8 @@ int main(int argc, char *argv[]) {
     // User feedback
     print_parameters(comm, pb);
 
+    // Initalize model
+    // @todo: not all callbacks code is in place
     sequential_model *model = init_model(comm, optimizer_fac, pb);
     std::unordered_map<uint,uint> layer_mapping;
     add_layers(model, data_readers, cudnn, pb, layer_mapping);
@@ -155,9 +156,9 @@ int main(int argc, char *argv[]) {
     model->setup();
 
     // Optionally run ltfb
+    #if 0
     sequential_model *model_2;
     std::map<execution_mode, generic_data_reader *> data_readers_2;
-    #if 0
     //under development ...
     if (ltfb) {
       if (master) {

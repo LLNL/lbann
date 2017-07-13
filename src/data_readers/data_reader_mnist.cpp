@@ -53,7 +53,7 @@ bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
     X.Set(p, mb_idx, tmp[p+1]);
   }
 
-  auto pixel_col = X(IR(0, X.Height()), IR(mb_idx, mb_idx + 1));
+  auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   augment(pixel_col, m_image_height, m_image_width, 1);
   normalize(pixel_col, 1);
 
@@ -79,8 +79,8 @@ void mnist_reader::load() {
   std::string LabelFile = get_label_filename();
 
   // set filepath
-  std::string imagepath = FileDir + __DIR_DELIMITER + ImageFile;
-  std::string labelpath = FileDir + __DIR_DELIMITER + LabelFile;
+  std::string imagepath = FileDir + "/" + ImageFile;
+  std::string labelpath = FileDir + "/" + LabelFile;
 
   // read labels
   FILE *fplbl = fopen(labelpath.c_str(), "rb");

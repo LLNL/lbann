@@ -64,7 +64,7 @@ void lbann_callback_summary::on_batch_end(model *m) {
 }
 
 void lbann_callback_summary::on_epoch_end(model *m) {
-  for (auto&& metric : m->m_metrics) {
+  for (auto&& metric : m->get_metrics()) {
     double train_score = metric->report_metric(execution_mode::training);
     // Replace spaces with _ for consistency.
     std::string metric_name = metric->name();
@@ -79,7 +79,7 @@ void lbann_callback_summary::on_epoch_end(model *m) {
 
 void lbann_callback_summary::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
-  for (auto&& metric : m->m_metrics) {
+  for (auto&& metric : m->get_metrics()) {
     double test_score = metric->report_metric(execution_mode::testing);
     // Replace spaces with _ for consistency.
     std::string metric_name = metric->name();

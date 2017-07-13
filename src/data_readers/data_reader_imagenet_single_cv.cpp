@@ -176,7 +176,7 @@ int lbann::imagenet_readerSingle_cv::fetch_data(Mat& X) {
 
     int img_type=0;
     ::Mat X_v;
-    View(X_v, X, IR(0, X.Height()), IR(k, k + 1));
+    El::View(X_v, X, El::IR(0, X.Height()), El::IR(k, k + 1));
     bool ret = image_utils::import_image(m_work_buffer, width, height, img_type, *m_pp, X_v);
 
     if (_BUILTIN_FALSE(!ret)) {

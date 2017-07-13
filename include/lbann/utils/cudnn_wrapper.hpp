@@ -41,8 +41,8 @@
 
 // Error utility macros
 #ifdef __LIB_CUDNN
-#ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call) {                                         \
+#define FORCE_CHECK_CUDA(cuda_call)                                     \
+  do {                                                                  \
     const cudaError_t status = cuda_call;                               \
     if (status != cudaSuccess) {                                        \
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
@@ -50,8 +50,9 @@
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("CUDA error");                       \
     }                                                                   \
-  }
-#define CHECK_CUDNN(cudnn_call) {                                        \
+  } while (0)
+#define FORCE_CHECK_CUDNN(cudnn_call)                                   \
+  do {                                                                  \
     const cudnnStatus_t status = cudnn_call;                            \
     if (status != CUDNN_STATUS_SUCCESS) {                               \
       std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
@@ -59,7 +60,10 @@
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("cuDNN error");                      \
     }                                                                   \
-  }
+  } while (0)
+#ifdef LBANN_DEBUG
+#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call)
+#define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call)
 #else
 #define CHECK_CUDA(cuda_call)   cuda_call
 #define CHECK_CUDNN(cudnn_call) cudnn_call
