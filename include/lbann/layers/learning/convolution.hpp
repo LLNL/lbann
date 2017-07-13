@@ -115,6 +115,8 @@ class convolution_layer : public learning {
                     cudnn::cudnn_manager *cudnn = NULL)
     : learning(index, comm, mini_batch_size, opt),
       m_weight_initialization(init) {
+    static_assert(T_layout == data_layout::DATA_PARALLEL,
+                  "convolution only supports DATA_PARALLEL");
     // Setup the data distribution
     initialize_distributed_matrices();
 

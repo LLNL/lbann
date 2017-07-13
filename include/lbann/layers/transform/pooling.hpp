@@ -73,6 +73,8 @@ class pooling_layer : public transform {
                 cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm, mini_batch_size),
       m_pool_mode(_pool_mode) {
+    static_assert(T_layout == data_layout::DATA_PARALLEL,
+                  "pooling only supports DATA_PARALLEL");
     // Setup the data distribution
     initialize_distributed_matrices();
 

@@ -69,6 +69,8 @@ class local_response_normalization_layer : public regularizer_layer {
     : regularizer_layer(index, comm, mini_batch_size),
       m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
       m_lrn_k(lrn_k) {
+    static_assert(T_layout == data_layout::DATA_PARALLEL,
+                  "local_response_normalization only supports DATA_PARALLEL");
     // Setup the data distribution
     initialize_distributed_matrices();
 
