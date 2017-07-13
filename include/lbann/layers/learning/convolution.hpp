@@ -306,6 +306,11 @@ class convolution_layer : public learning {
              El::IR(0,this->m_weights->Height()-1), El::ALL);
     initialize_matrix(*m_filter_weights_v, this->m_weight_initialization, fan_in, fan_out);
 
+    // Initialize bias
+    El::View(*m_bias_weights_v, *this->m_weights,
+             El::IR(this->m_weights->Height()-1), El::ALL);
+    El::Zero(*m_bias_weights_v);
+
     // Initialize optimizer
     if(this->m_optimizer != NULL) {
       this->m_optimizer->setup(this->m_weights);
