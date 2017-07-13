@@ -34,8 +34,8 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/layers/io/target/target_layer_distributed_minibatch_parallel_io.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch_parallel_io.hpp"
+#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
+#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
 #include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
@@ -198,9 +198,9 @@ void softmax_layer<T_layout>::bp_compute() {
   if (std::type_index(obj_fn_type) ==
       std::type_index(typeid(objective_functions::categorical_cross_entropy))
       && (std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_distributed_minibatch_parallel_io<T_layout>))
+          std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
           || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_partitioned_minibatch_parallel_io<T_layout>)))) {
+          std::type_index(typeid(target_layer_partitioned_minibatch<T_layout>)))) {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
     El::View(*this->m_error_signal_v, *this->m_error_signal,
          El::ALL, El::IR(0,this->m_error_signal->Width()));

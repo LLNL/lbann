@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#define LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/data_distributions/partitioned_minibatch.hpp"
@@ -39,17 +39,17 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class input_layer_partitioned_minibatch_parallel_io : public input_layer, public partitioned_minibatch {
+class input_layer_partitioned_minibatch : public input_layer, public partitioned_minibatch {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_partitioned_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  input_layer_partitioned_minibatch_parallel_io* copy() const {
-    throw lbann_exception("Cannot copy input_layer_partitioned_minibatch_parallel_io");
+  input_layer_partitioned_minibatch* copy() const {
+    throw lbann_exception("Cannot copy input_layer_partitioned_minibatch");
     return nullptr;
   }
 
@@ -133,4 +133,4 @@ class input_layer_partitioned_minibatch_parallel_io : public input_layer, public
 
 }
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#endif  // LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED

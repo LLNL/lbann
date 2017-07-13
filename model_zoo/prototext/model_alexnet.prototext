@@ -61,7 +61,7 @@ model {
     index: 1
     parent: 1
     data_layout: "data_parallel"
-    input_partitioned_minibatch_parallel_io {
+    input_partitioned_minibatch {
     }
   }
 
@@ -399,7 +399,7 @@ model {
     index: 25
     parent: 24
     data_layout: "data_parallel"
-    target_partitioned_minibatch_parallel_io {
+    target_partitioned_minibatch {
       shared_data_reader: true
     }
   }

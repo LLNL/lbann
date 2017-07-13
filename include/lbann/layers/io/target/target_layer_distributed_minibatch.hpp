@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#define LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/data_distributions/distributed_minibatch.hpp"
@@ -38,25 +38,25 @@
 
 namespace lbann {
 template <data_layout T_layout>
-class target_layer_distributed_minibatch_parallel_io : public target_layer, public distributed_minibatch {
+class target_layer_distributed_minibatch : public target_layer, public distributed_minibatch {
  protected:
   Mat Y_local;
   CircMat Ys;
 
  public:
-  target_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  target_layer_distributed_minibatch_parallel_io(
-    const target_layer_distributed_minibatch_parallel_io&) = default;
-  target_layer_distributed_minibatch_parallel_io& operator=(
-    const target_layer_distributed_minibatch_parallel_io&) = default;
-  target_layer_distributed_minibatch_parallel_io* copy() const {
-    return new target_layer_distributed_minibatch_parallel_io(*this);
+  target_layer_distributed_minibatch(
+    const target_layer_distributed_minibatch&) = default;
+  target_layer_distributed_minibatch& operator=(
+    const target_layer_distributed_minibatch&) = default;
+  target_layer_distributed_minibatch* copy() const {
+    return new target_layer_distributed_minibatch(*this);
   }
 
   std::string get_name() const { return "target layer distributed minibatch parallel io"; }
@@ -107,7 +107,7 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
 
     int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
-      throw lbann_exception("lbann_target_layer_distributed_minibatch_parallel_io: number of labels does not match the current mini-batch size.");
+      throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels does not match the current mini-batch size.");
     }
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
     distribute_from_local_matrix(Y_local, Ys);
@@ -176,4 +176,4 @@ class target_layer_distributed_minibatch_parallel_io : public target_layer, publ
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED

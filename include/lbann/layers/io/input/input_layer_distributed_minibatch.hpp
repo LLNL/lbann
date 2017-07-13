@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/data_distributions/distributed_minibatch.hpp"
@@ -38,14 +38,14 @@
 
 namespace lbann {
 template <data_layout T_layout>
-class input_layer_distributed_minibatch_parallel_io : public input_layer, public distributed_minibatch {
+class input_layer_distributed_minibatch : public input_layer, public distributed_minibatch {
  public:
  protected:
   Mat X_local; /** Local matrix that holds data from data reader */
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
@@ -53,12 +53,12 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  input_layer_distributed_minibatch_parallel_io(
-    const input_layer_distributed_minibatch_parallel_io&) = default;
-  input_layer_distributed_minibatch_parallel_io& operator=(
-    const input_layer_distributed_minibatch_parallel_io&) = default;
-  input_layer_distributed_minibatch_parallel_io* copy() const {
-    return new input_layer_distributed_minibatch_parallel_io(*this);
+  input_layer_distributed_minibatch(
+    const input_layer_distributed_minibatch&) = default;
+  input_layer_distributed_minibatch& operator=(
+    const input_layer_distributed_minibatch&) = default;
+  input_layer_distributed_minibatch* copy() const {
+    return new input_layer_distributed_minibatch(*this);
   }
 
   std::string get_name() const { return "input layer distributed minibatch parallel io"; }
@@ -153,4 +153,4 @@ class input_layer_distributed_minibatch_parallel_io : public input_layer, public
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED

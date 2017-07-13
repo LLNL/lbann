@@ -256,8 +256,8 @@ message Layer {
    // (this may or may not be properly checked for in proto_common.cpp)
 
    // input Layers
-   InputDistributedMiniBatchParallelIO input_distributed_minibatch_parallel_io = 2;
-   InputPartitionedMiniBatchParallelIO input_partitioned_minibatch_parallel_io = 3;
+   InputDistributedMiniBatch input_distributed_minibatch = 2;
+   InputPartitionedMiniBatch input_partitioned_minibatch = 3;
 
    // transform Layers
    Pooling pooling = 12;
@@ -267,8 +267,8 @@ message Layer {
    Convolution convolution = 13;
 
    // target Layers
-   TargetDistributedMinibatchParallelIO target_distributed_minibatch_parallel_io = 18;
-   TargetPartitionedMinibatchParallelIO target_partitioned_minibatch_parallel_io = 180;
+   TargetDistributedMinibatch target_distributed_minibatch = 18;
+   TargetPartitionedMinibatch target_partitioned_minibatch = 180;
    TargetReconstruction reconstruction = 22;
 
    // regularization Layers
@@ -356,10 +356,10 @@ message Dropout {
 //////////////////
 // Input Layers //
 //////////////////
-message InputDistributedMiniBatchParallelIO {
+message InputDistributedMiniBatch {
 }
 
-message InputPartitionedMiniBatchParallelIO {
+message InputPartitionedMiniBatch {
 }
 
 //////////////////////
@@ -401,12 +401,12 @@ message Convolution {
 ///////////////////
 // Target Layers //
 ///////////////////
-message TargetDistributedMinibatchParallelIO {
+message TargetDistributedMinibatch {
   bool shared_data_reader = 2;
   bool for_regression = 3; //default: false
 }
 
-message TargetPartitionedMinibatchParallelIO {
+message TargetPartitionedMinibatch {
   bool shared_data_reader = 2;
   bool for_regression = 3; //default: false
 }

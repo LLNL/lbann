@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#ifndef LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/data_distributions/partitioned_minibatch.hpp"
@@ -39,17 +39,17 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class target_layer_partitioned_minibatch_parallel_io : public target_layer, public partitioned_minibatch {
+class target_layer_partitioned_minibatch : public target_layer, public partitioned_minibatch {
  public:
-  target_layer_partitioned_minibatch_parallel_io(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
+  target_layer_partitioned_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
 
-  target_layer_partitioned_minibatch_parallel_io* copy() const {
-    throw lbann_exception("target_layer_partitioned_minibatch_parallel_io can't be copied");
+  target_layer_partitioned_minibatch* copy() const {
+    throw lbann_exception("target_layer_partitioned_minibatch can't be copied");
     return nullptr;
   }
 
@@ -162,4 +162,4 @@ class target_layer_partitioned_minibatch_parallel_io : public target_layer, publ
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_PARALLEL_IO_HPP_INCLUDED
+#endif  // LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED

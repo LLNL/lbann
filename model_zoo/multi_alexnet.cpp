@@ -59,12 +59,12 @@ int main(int argc, char *argv[]) {
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
     trainParams.LearnRate = 1e-2;
     trainParams.DropOut = 0.5;
-    trainParams.ProcsPerModel = 4;
+    trainParams.ProcsPerModel = 1;
     trainParams.IntermodelCommMethod
       = static_cast<int>(lbann_callback_imcomm::NORMAL);
     trainParams.parse_params();
-    trainParams.PercentageTrainingSamples = 1.0;
-    trainParams.PercentageValidationSamples = 0.2;
+    trainParams.PercentageTrainingSamples = 0.01; //1.0;
+    trainParams.PercentageValidationSamples = 0.4;
 
     PerformanceParams perfParams;
     perfParams.parse_params();
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // Number of class labels
-    int num_classes = Input("--num-classes", "number of class labels in dataset", 1000);
+    int num_classes = Input("--num-classes", "number of class labels in dataset", 10/*00*/);
 
     ProcessInput();
     PrintInputReport();
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     dnn->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
 #ifdef PARTITIONED
     Layer *input_layer =
-      new input_layer_partitioned_minibatch_parallel_io<>(
+      new input_layer_partitioned_minibatch<>(
         comm,
         trainParams.MBSize,
         parallel_io,
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
     dnn->add(input_layer);
 #else
     Layer *input_layer =
-      new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(
+      new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
         comm,
         trainParams.MBSize,
         parallel_io,
@@ -587,7 +587,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef PARTITIONED
     Layer *target_layer =
-      new target_layer_partitioned_minibatch_parallel_io<>(
+      new target_layer_partitioned_minibatch<>(
         comm,
         trainParams.MBSize,
         parallel_io,
@@ -596,7 +596,7 @@ int main(int argc, char *argv[]) {
     dnn->add(target_layer);
 #else
     Layer *target_layer =
-      new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(
+      new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
         comm,
         trainParams.MBSize,
         parallel_io,

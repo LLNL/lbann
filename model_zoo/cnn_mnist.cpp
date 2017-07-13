@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::DATA_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     dnn.add(input_layer);
 
     // First convolution layer
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers, true);
     dnn.add(target_layer);
 
     lbann_callback_print print_cb;

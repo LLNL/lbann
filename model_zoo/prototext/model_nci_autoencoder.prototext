@@ -47,7 +47,7 @@ model {
     index: 1
     parent: 1
     data_layout: "model_parallel"
-    input_distributed_minibatch_parallel_io {
+    input_distributed_minibatch {
     }
   }
 
