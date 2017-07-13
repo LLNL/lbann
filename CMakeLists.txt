@@ -1,5 +1,6 @@
 project(LBANN)
-cmake_minimum_required(VERSION 2.8.12)
+# CMAKE_CXX_STANDARD available at version 3.1 or later
+cmake_minimum_required(VERSION 3.1) 
 #set(LBANN_MAJOR_VERSION 0)
 #set(LBANN_MINOR_VERSION 91)
 
@@ -44,7 +45,9 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Initialize C++ flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11 -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow")
+# CUDA module does not work with option -std in the FLAGS variable if its propagation option is enabled
+set(CMAKE_CXX_STANDARD 11)
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLBANN_DEBUG")
