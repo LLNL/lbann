@@ -27,6 +27,7 @@
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
+#include "lbann/callbacks/callback_summary.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -69,6 +70,9 @@ int main(int argc, char *argv[]) {
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/MNIST/";
     trainParams.EpochCount = 50;
     trainParams.MBSize = 192;
+    trainParams.DumpWeights=0;
+    trainParams.DumpActivations=0;
+    trainParams.DumpGradients=0;
     trainParams.LearnRate = 0.01;
     trainParams.DropOut = -1.0f;
     trainParams.ProcsPerModel = 0;
@@ -169,12 +173,88 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
 
-    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch_parallel_io<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
     gla.add(input_layer);
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
-                                                        mnist_trainset.get_linearized_data_size(), 32,trainParams.MBSize,
-                                                        weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
-    gla.add(fc1);
+
+    Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       1, comm, trainParams.MBSize,
+                       100, 
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    gla.add(encode1);
+    
+    Layer *relu1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(2, comm,
+                                               trainParams.MBSize);
+    gla.add(relu1);
+
+
+    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       3, comm, trainParams.MBSize,
+                       mnist_trainset.get_linearized_data_size(),
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    gla.add(decode1);
+    
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(4, comm,
+                                               trainParams.MBSize);
+    gla.add(relu2);
+
+
+    Layer* rcl1  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(5, comm, 
+                                                          optimizer_fac->create_optimizer(), 
+                                                          trainParams.MBSize, input_layer);
+    gla.add(rcl1);
+
+   // Laywerise2 
+    Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       6, comm, trainParams.MBSize,
+                       50, 
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    gla.add(encode2);
+    
+
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(7, comm,
+                                               trainParams.MBSize);
+    gla.add(relu3);
+
+
+    Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       8, comm, trainParams.MBSize,
+                       100,
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    gla.add(decode2);
+    
+    Layer *relu4 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(9, comm,
+                                               trainParams.MBSize);
+    gla.add(relu4);
+
+
+    Layer* rcl2  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(10, comm, 
+                                                          optimizer_fac->create_optimizer(), 
+                                                          trainParams.MBSize, relu1);
+
+    gla.add(rcl2);
+    
+    lbann_callback_dump_weights *dump_weights_cb = nullptr;
+    lbann_callback_dump_activations *dump_activations_cb = nullptr;
+    lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
+    if (trainParams.DumpWeights) {
+      dump_weights_cb = new lbann_callback_dump_weights(
+        trainParams.DumpDir,1000);
+      gla.add_callback(dump_weights_cb);
+    }
+    if (trainParams.DumpActivations) {
+      dump_activations_cb = new lbann_callback_dump_activations(
+        trainParams.DumpDir,1000);
+      gla.add_callback(dump_activations_cb);
+    }
+    if (trainParams.DumpGradients) {
+      dump_gradients_cb = new lbann_callback_dump_gradients(
+        trainParams.DumpDir,1000);
+      gla.add_callback(dump_gradients_cb);
+    }
 
     if (comm->am_world_master()) {
       cout << "Parameter settings:" << endl;
