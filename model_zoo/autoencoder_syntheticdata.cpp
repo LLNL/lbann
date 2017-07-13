@@ -184,7 +184,6 @@ int main(int argc, char *argv[]) {
                                                trainParams.DropOut);
 
     Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
-                                                          optimizer_fac->create_optimizer(), 
                                                           trainParams.MBSize, input_layer);
     dnn.add(rcl);
 

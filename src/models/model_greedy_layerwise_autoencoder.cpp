@@ -115,14 +115,13 @@ void greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
 
   // build mirror layer
   Layer *original_layer = m_layers[layer_index];
-  optimizer *opt = create_optimizer();
   Layer *mirror_layer = NULL;
   switch(original_layer->get_data_layout()){
   case data_layout::MODEL_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(mirror_index, m_comm, m_mini_batch_size, original_layer);
     break;
   case data_layout::DATA_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(mirror_index, m_comm, opt, m_mini_batch_size, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(mirror_index, m_comm, m_mini_batch_size, original_layer);
     break;
   default:
     break;

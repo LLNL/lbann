@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
 
 
     Layer* rcl1  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(5, comm, 
-                                                          optimizer_fac->create_optimizer(), 
                                                           trainParams.MBSize, input_layer);
     gla.add(rcl1);
 
@@ -232,7 +231,6 @@ int main(int argc, char *argv[]) {
 
 
     Layer* rcl2  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(10, comm, 
-                                                          optimizer_fac->create_optimizer(), 
                                                           trainParams.MBSize, relu1);
 
     gla.add(rcl2);
