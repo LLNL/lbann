@@ -222,11 +222,9 @@ void add_layers(
     if (layer.has_input_partitioned_minibatch()) {
       //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new input_layer_partitioned_minibatch<data_layout::MODEL_PARALLEL>(
-          comm,
-          mb_size,
-          m.num_parallel_readers(),
-          data_readers);
+        err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
@@ -312,17 +310,9 @@ void add_layers(
         pool_strides.push_back(i);
       }
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new pooling_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          mb_size,
-          ell.num_dims(),
-          &pool_dims[0],
-          &pool_pads[0],
-          &pool_strides[0],
-          get_pool_mode(ell.pool_mode()),
-          cudnn
-        );
+        err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new pooling_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -374,19 +364,9 @@ void add_layers(
       //int num_input_channels = ell.num_input_channels();
       int num_output_channels = ell.num_output_channels();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new convolution_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          mb_size,
-          num_dims,
-          num_output_channels,
-          &conv_dims[0],
-          &conv_pads[0],
-          &conv_strides[0],
-          get_weight_initialization(ell.weight_initialization()),
-          model->create_optimizer(),
-          cudnn
-        );
+        err << __FILE__ << " " << __LINE__ << " :: convolution "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -423,15 +403,9 @@ void add_layers(
       DataType lrn_k = ell.lrn_k();
       int window_width = ell.window_width();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new local_response_normalization_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          mb_size,
-          window_width,
-          lrn_alpha,
-          lrn_beta,
-          lrn_k,
-          cudnn);
+        err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -727,13 +701,9 @@ void add_layers(
     if (layer.has_target_partitioned_minibatch()) {
       const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new  target_layer_partitioned_minibatch<data_layout::MODEL_PARALLEL>(
-          comm,
-          mb_size,
-          m.num_parallel_readers(),
-          data_readers,
-          ell.shared_data_reader(),
-          ell.for_regression());
+        err << __FILE__ << " " << __LINE__ << " :: target_layer_partitioned_minibatch "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
@@ -1393,6 +1363,15 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
+  if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
+    int sz = model->callback_size();
+    for (int j=0; j<sz; j++) {
+      lbann_data::Callback *c = model->mutable_callback(j);
+      if (c->has_imcomm()) {
+        c->clear_imcomm();
+      }
+    }
+  }
 
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
@@ -1602,6 +1581,9 @@ void print_help(lbann::lbann_comm *comm)
        "  --image_dir=<string>\n"
        "      if the model has callback_save_images, this determines where the\n"
        "      images are saved\n"
+       "  --no_im_comm=<bool>\n"
+       "      removes ImComm callback, if present; this is intended for\n"
+       "      running alexnet with a single model, but may be useful elsewhere\n"
        "\n"
        "Optimizers; all values except for nesterov are floats;\n"
        "            the values shown in <...> are the default values, that will be\n"

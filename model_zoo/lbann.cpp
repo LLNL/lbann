@@ -88,10 +88,13 @@ int main(int argc, char *argv[]) {
       pb.MergeFrom(pb_optimizer);
     }
 
+    lbann_data::Model *pb_model = pb.mutable_model();
+
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
 
-    // Adjust the number of parallel readers
+    // Adjust the number of parallel readers; this may be adjusted
+    // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
     // Save info to file; this includes the complete prototext (with any over-rides
@@ -99,7 +102,6 @@ int main(int argc, char *argv[]) {
     save_session(comm, argc, argv, pb);
 
     // Set algorithmic blocksize
-    lbann_data::Model *pb_model = pb.mutable_model();
     if (pb_model->block_size() == 0 and master) {
       err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
       throw lbann_exception(err.str());
@@ -107,12 +109,20 @@ int main(int argc, char *argv[]) {
     SetBlocksize(pb_model->block_size());
 
     // Set up the communicator and get the grid.
-    comm->split_models(pb_model->procs_per_model());
-    if (master) cout << "procs_per_model: " << pb_model->procs_per_model() << endl;
+    int procs_per_model = pb_model->procs_per_model();
+    if (procs_per_model == 0) {
+      procs_per_model = comm->get_procs_in_world();
+    }
+    comm->split_models(procs_per_model);
+    if (master) cout << "  procs_per_model: " << procs_per_model << endl;
+    if (pb_model->num_parallel_readers() > procs_per_model) {
+      pb_model->set_num_parallel_readers(procs_per_model);
+    }
+
     Grid& grid = comm->get_model_grid();
     if (master) {
-      cout << "Number of models: " << comm->get_num_models() << endl;
-      cout << "Grid is " << grid.Height() << " x " << grid.Width() << endl;
+      cout << "  Number of models: " << comm->get_num_models() << endl;
+      cout << "  Grid is " << grid.Height() << " x " << grid.Width() << endl;
       cout << endl;
     }
 

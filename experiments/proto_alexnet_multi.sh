@@ -14,7 +14,6 @@ NORM=`tput sgr0`
 BOLD=`tput bold`
 REV=`tput smso`
 
-
 TASKS_PER_NODE=12
 export SLURM_NNODES=$SLURM_JOB_NUM_NODES
 
@@ -36,9 +35,9 @@ LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 CMD="${RUN} -n${LBANN_TASKS}  \
   --ntasks-per-node=${TASKS_PER_NODE} \
   ${BINDIR}/lbann \
-  --model=../model_zoo/prototext/proto_autoencoder_cifar10.prototext \
-  --reader=../model_zoo/prototext/data_reader_cifar10.prototext \
-  --optimizer=../model_zoo/prototext/opt_adam.prototext \
+  --model=../model_zoo/prototext/model_alexnet.prototext \
+  --reader=../model_zoo/prototext/data_reader_imagenet.prototext \
+  --optimizer=../model_zoo/prototext/opt_adagrad.prototext \
   $OPTS"
 
 echo ${CMD}

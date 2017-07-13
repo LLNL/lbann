@@ -45,6 +45,8 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   input_layer_partitioned_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
     : input_layer(comm, mini_batch_size, data_readers),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
+    static_assert(T_layout == data_layout::DATA_PARALLEL,
+                  "partitioned_minibatch only supports DATA_PARALLEL");
     // Setup the data distribution
     initialize_distributed_matrices();
   }
