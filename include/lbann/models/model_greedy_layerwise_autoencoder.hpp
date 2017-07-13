@@ -33,7 +33,6 @@
 #include "lbann/layers/layer.hpp"
 #include <vector>
 #include <string>
-#include <queue>
 namespace lbann {
 
 class greedy_layerwise_autoencoder : public sequential_model {
