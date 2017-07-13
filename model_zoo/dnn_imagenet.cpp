@@ -27,25 +27,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/data_readers/image_utils.hpp"
 
 #include <time.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <sys/time.h>
-#endif
 #include <iomanip>
 #include <string>
-
-//#include <algorithm>
-//#include <random>
 
 using namespace std;
 using namespace lbann;
 using namespace El;
 
+#define PARTITIONED
+#if defined(PARTITIONED)
+#define DATA_LAYOUT data_layout::DATA_PARALLEL
+#else
+#define DATA_LAYOUT data_layout::MODEL_PARALLEL
+#endif
 
 // train/test data info
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
@@ -53,23 +52,20 @@ const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
-const string g_ImageNet_TestDir = "resized_256x256/val/"; //test/";
+const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
+const int g_ImageNet_Width = 256;
+const int g_ImageNet_Height = 256;
+
 const string g_ImageNet_TrainLabelFile = "train_c0-9_01.txt";
 //const string g_ImageNet_TrainLabelFile = "train_c0-9.txt";
 const string g_ImageNet_ValLabelFile = "val.txt";
 //const string g_ImageNet_TestLabelFile = "val_c0-9.txt"; //"test.txt";
 const string g_ImageNet_TestLabelFile = "val_c0-9_01.txt"; //"test.txt";
-const int g_ImageNet_Width = 256;
-const int g_ImageNet_Height = 256;
 
 
 int main(int argc, char *argv[]) {
-  // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  init_random(42);  // Deterministic initialization across every model.
-  init_data_seq_random(42);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
     ///////////////////////////////////////////////////////////////////
@@ -77,6 +73,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     TrainingParams trainParams;
     trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
+    trainParams.LearnRate = 5e-3;
     trainParams.DropOut = 0.9;
     trainParams.ProcsPerModel = 0;
     trainParams.parse_params();
@@ -92,12 +89,12 @@ int main(int argc, char *argv[]) {
     sysParams.parse_params();
 
     // regular dense neural network or auto encoder
-    const bool g_AutoEncoder = Input("--mode", "DNN: false, AutoEncoder: true", false);
+    //const bool g_AutoEncoder = Input("--mode", "DNN: false, AutoEncoder: true", false);
 
     // training settings
     int decayIterations = 1;
 
-    bool scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
+    bool unit_scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
     bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
     bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
 
@@ -116,12 +113,12 @@ int main(int argc, char *argv[]) {
     Timer timer_io;
     Timer timer_lbann;
     Timer timer_val;
-    double sec_all_io = 0;
-    double sec_all_lbann = 0;
-    double sec_all_val = 0;
+    //double sec_all_io = 0;
+    //double sec_all_lbann = 0;
+    //double sec_all_val = 0;
 
     // Set up the communicator and get the grid.
-    comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -167,7 +164,7 @@ int main(int argc, char *argv[]) {
       imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
       imagenet_trainset->load();
 
-      imagenet_trainset->scale(scale);
+      imagenet_trainset->scale(unit_scale);
       imagenet_trainset->subtract_mean(subtract_mean);
       imagenet_trainset->unit_variance(unit_variance);
       imagenet_trainset->z_score(z_score);
@@ -205,7 +202,7 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
       }
 
-      imagenet_testset->scale(scale);
+      imagenet_testset->scale(unit_scale);
       imagenet_testset->subtract_mean(subtract_mean);
       imagenet_testset->unit_variance(unit_variance);
       imagenet_testset->z_score(z_score);
@@ -234,7 +231,7 @@ int main(int argc, char *argv[]) {
 
       imagenet_trainset->load();
 
-      imagenet_trainset->scale(scale);
+      imagenet_trainset->scale(unit_scale);
       imagenet_trainset->subtract_mean(subtract_mean);
       imagenet_trainset->unit_variance(unit_variance);
       imagenet_trainset->z_score(z_score);
@@ -275,7 +272,7 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
       }
 
-      imagenet_testset->scale(scale);
+      imagenet_testset->scale(unit_scale);
       imagenet_testset->subtract_mean(subtract_mean);
       imagenet_testset->unit_variance(unit_variance);
       imagenet_testset->z_score(z_score);
@@ -288,6 +285,8 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
     ///////////////////////////////////////////////////////////////////
+
+    // Initialize optimizer factory
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
@@ -299,34 +298,80 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    layer_factory *lfac = new layer_factory();
     deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), lfac, optimizer_fac);
-    metrics::categorical_accuracy acc(data_layout::MODEL_PARALLEL, comm);
-    dnn->add_metric(&acc);
-
-    input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers);
+    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
+    dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
+    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
+#ifdef PARTITIONED
+    input_layer *input_layer = new input_layer_partitioned_minibatch<>(comm, trainParams.MBSize, parallel_io, data_readers);
+#else
+    input_layer *input_layer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers);
+#endif
     dnn->add(input_layer);
-    int NumLayers = netParams.Network.size();
+
+    const int NumLayers = netParams.Network.size();
+    int lcnt = 1;
     // initalize neural network (layers)
-    for (int l = 0; l < NumLayers; l++) {
-      string networkType;
-      if(l < NumLayers-1) {
-        dnn->add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[l],
-                 trainParams.ActivationType,
-                 weight_initialization::glorot_uniform,
-        {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
-      } else {
-        // Add a softmax layer to the end
-        dnn->add("softmax", data_layout::MODEL_PARALLEL, netParams.Network[l],
-                 activation_type::ID,
-                 weight_initialization::glorot_uniform,
-                 {});
+    for (int l = 0; l < NumLayers-1; l++) {
+      fully_connected_layer<DATA_LAYOUT> *fc 
+        = new fully_connected_layer<DATA_LAYOUT>(
+          lcnt++,
+          comm,
+          trainParams.MBSize,
+          netParams.Network[l],
+          weight_initialization::glorot_uniform, 
+          dnn->create_optimizer());
+      dnn->add(fc);
+
+      Layer *act = NULL;
+      if (trainParams.ActivationType == 1) { // sigmoid
+        act = new sigmoid_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+      } else if (trainParams.ActivationType == 2) { // tanh
+        act = new tanh_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+      } else if (trainParams.ActivationType == 3) { // reLU
+        act = new relu_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+      } else { // ID
+        act = new id_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
       }
+      dnn->add(act);
+
+      Layer *reg = new dropout<DATA_LAYOUT>(lcnt++,
+                                                comm, trainParams.MBSize,
+                                                trainParams.DropOut);
+      dnn->add(reg);
     }
+
+    // softmax layer
+    {
+      // Fully-connected without bias before softmax.
+      fully_connected_layer<DATA_LAYOUT> *fc
+        = new fully_connected_layer<DATA_LAYOUT>(
+          lcnt++,
+          comm,
+          trainParams.MBSize,
+          netParams.Network[NumLayers-1],
+          weight_initialization::glorot_uniform, 
+          dnn->create_optimizer(),
+          false);
+      dnn->add(fc);
+      //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
+      Layer *softmax 
+        = new softmax_layer<DATA_LAYOUT>(
+          lcnt++,
+          comm,
+          trainParams.MBSize,
+          dnn->create_optimizer());
+      dnn->add(softmax);
+    }
+
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
-    target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io, trainParams.MBSize, data_readers, true);
+#ifdef PARTITIONED
+    Layer *target_layer = new target_layer_partitioned_minibatch<>(comm, trainParams.MBSize, parallel_io, data_readers, true);
+#else
+    Layer *target_layer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
+#endif
     dnn->add(target_layer);
+
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
@@ -348,21 +393,14 @@ int main(int argc, char *argv[]) {
     if (grid.Rank() == 0) {
       cout << "Layer initialized:" << endl;
       for (uint n = 0; n < dnn->get_layers().size(); n++) {
-        cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->NumNeurons << endl;
+        cout << "\tLayer[" << n << "]: " << dnn->get_layers()[n]->get_num_neurons() << endl;
       }
       cout << endl;
-    }
 
-    if (grid.Rank() == 0) {
       cout << "Parameter settings:" << endl;
       cout << "\tBlock size: " << perfParams.BlockSize << endl;
       cout << "\tEpochs: " << trainParams.EpochCount << endl;
       cout << "\tMini-batch size: " << trainParams.MBSize << endl;
-      // if(trainParams.MaxMBCount == 0) {
-      //   cout << "\tMini-batch count (max): " << "unlimited" << endl;
-      // }else {
-      //   cout << "\tMini-batch count (max): " << trainParams.MaxMBCount << endl;
-      // }
       cout << "\tLearning rate: " << trainParams.LearnRate << endl;
       cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
       if(perfParams.MaxParIOSize == 0) {
@@ -380,6 +418,7 @@ int main(int argc, char *argv[]) {
 
     mpi::Barrier(grid.Comm());
 
+
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
@@ -391,7 +430,7 @@ int main(int argc, char *argv[]) {
     // read training state from checkpoint file if we have one
     //************************************************************************
     int epochStart = 0; // epoch number we should start at
-    int trainStart; // index into indices we should start at
+    //int trainStart; // index into indices we should start at
 
     //************************************************************************
     // mainloop for train/validate
@@ -416,7 +455,7 @@ int main(int argc, char *argv[]) {
   }
 
   // free all resources by El and MPI
-  Finalize();
+  finalize(comm);
 
   return 0;
 }
