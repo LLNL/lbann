@@ -90,8 +90,12 @@ class reconstruction_layer : public target_layer {
 
 
   void fp_compute() {
+     //Copy prev (decoder) activations for greedy layer wise training
+    El::Copy(*this->m_prev_activations_v,*this->m_activations);
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
+    //Print(*this->m_prev_activations_v);
+    //Print(original_layer_act_v); 
     DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);
     aggregate_cost += avg_error;
     num_forwardprop_steps++;
