@@ -39,7 +39,7 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-#define PARTITIONED
+//#define PARTITIONED
 #if defined(PARTITIONED)
 #define DATA_LAYOUT data_layout::DATA_PARALLEL
 #else

@@ -121,7 +121,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
     set_normalization_type(ntype, _z_score);
   }
 
-  double unit_scale = 1.0;
+  double u_scale = 1.0;
   double largest = 1.0;
 
   //if (!m_z_score && m_unit_scale) {
@@ -147,7 +147,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
       // Currently, do nothing for non-integral types. However, a set of scaling
       // paramters can be added to the argument list of this function.
     }
-    unit_scale = 1.0/largest;
+    u_scale = 1.0/largest;
   }
 
   std::vector<double> mean;
@@ -166,13 +166,13 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
   switch (code_wo_uscale) {
   case _none: // Note that mean.size() is zero in this case
     for (size_t ch=0u; ch < NCh; ++ch) {
-      m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+      m_trans[ch] = channel_trans_t(u_scale, 0.0);
     }
     break;
   case _mean_sub:
     for (size_t ch=0u; ch < NCh; ++ch) {
-      m_trans[ch] = channel_trans_t(unit_scale,
-                                    - unit_scale * mean[ch]);
+      m_trans[ch] = channel_trans_t(u_scale,
+                                    - u_scale * mean[ch]);
     }
     break;
   case _unit_var:
@@ -180,9 +180,9 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
       if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
         m_trans[ch] =
           channel_trans_t(1.0/stddev[ch],
-                          unit_scale * mean[ch] - mean[ch]/stddev[ch]);
+                          u_scale * mean[ch] - mean[ch]/stddev[ch]);
       } else {
-        m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+        m_trans[ch] = channel_trans_t(u_scale, 0.0);
       }
     }
     break;

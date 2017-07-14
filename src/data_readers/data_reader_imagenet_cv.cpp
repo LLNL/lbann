@@ -26,14 +26,14 @@
 // lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/data_reader_imagenet_cv.hpp"
 #include "lbann/data_readers/image_utils.hpp"
 
 #include <fstream>
 
 namespace lbann {
 
-imagenet_reader::imagenet_reader(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
+imagenet_reader_cv::imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(batchSize, shuffle), m_pp(pp) {
   m_image_width = 256;
   m_image_height = 256;
@@ -47,7 +47,7 @@ imagenet_reader::imagenet_reader(int batchSize, std::shared_ptr<cv_process>& pp,
   }
 }
 
-bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + image_list[data_id].first;
 
@@ -55,11 +55,6 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   ::Mat X_v;
 
   El::View(X_v, X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
-
-  // TODO: move this to an outer scope if possible to reduce overhead
-  if (!m_pp) {
-    throw lbann_exception("ImageNet: image_utils::invalid patch processor");
-  }
 
   // Construct a thread private object out of a shared pointer
   cv_process pp(*m_pp);
@@ -76,7 +71,7 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool imagenet_reader::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_cv::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + image_list[data_id].first;
 
@@ -112,7 +107,7 @@ bool imagenet_reader::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx
 }
 
 
-int imagenet_reader::fetch_data(std::vector<::Mat>& X) {
+int imagenet_reader_cv::fetch_data(std::vector<::Mat>& X) {
   const int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -124,8 +119,8 @@ int imagenet_reader::fetch_data(std::vector<::Mat>& X) {
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: imagenet data reader fetch error: X.size()==0");
   }
-  const int x_height = X[0].height();
-  const int x_width = X[0].Width();
+  const El::Int x_height = X[0].Height();
+  const El::Int x_width = X[0].Width();
   for (auto & x : X) {
     El::Zeros(x, x_height, x_width);
   }
@@ -168,13 +163,13 @@ int imagenet_reader::fetch_data(std::vector<::Mat>& X) {
   return mb_size;
 }
 
-bool imagenet_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   int label = image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
-void imagenet_reader::load() {
+void imagenet_reader_cv::load() {
   std::string imageDir = get_file_dir();
   std::string imageListFile = get_data_filename();
 
