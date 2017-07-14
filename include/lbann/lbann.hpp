@@ -57,6 +57,7 @@
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/branch.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/slice.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
