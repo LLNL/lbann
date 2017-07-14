@@ -15,6 +15,9 @@ if(CUDA_FOUND)
   # Add preprocessor flag for CUDA
   add_definitions(-D__LIB_CUDA)
 
+  # set the minimum architecture
+  set(CUDA_NVCC_FLAGS -arch;sm_30;-std=c++11)
+
   # LBANN has access to CUDA
   set(LBANN_HAS_CUDA TRUE)
 
