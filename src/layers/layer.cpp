@@ -444,6 +444,10 @@ void Layer::setup_gpu() {
   // Set input tensor descriptor
   std::vector<int> input_dims = m_prev_neuron_dims;
   input_dims.insert(input_dims.begin(), m_mini_batch_size_per_gpu);
+  // Tensor descriptor must have at least 4 dimensions
+  while (input_dims.size() < 4) {
+    input_dims.insert(input_dims.begin(), 1);
+  }
   std::vector<int> input_strides(input_dims.size());
   input_strides[input_strides.size()-1]  = 1;
   for(int i=input_strides.size()-2; i>=0; --i) {
@@ -458,6 +462,10 @@ void Layer::setup_gpu() {
   // Set output tensor descriptor
   std::vector<int> output_dims = m_neuron_dims;
   output_dims.insert(output_dims.begin(), m_mini_batch_size_per_gpu);
+  // Tensor descriptor must have at least 4 dimensions
+  while (output_dims.size() < 4) {
+    output_dims.insert(output_dims.begin(), 1);
+  }
   std::vector<int> output_strides(output_dims.size());
   output_strides[output_strides.size()-1]  = 1;
   for(int i=output_strides.size()-2; i>=0; --i) {
