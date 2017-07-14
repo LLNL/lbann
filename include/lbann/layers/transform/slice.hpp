@@ -184,7 +184,7 @@ class slice_layer : public transform {
   protected:
 
   void fp_compute() {
-    El::View(*this->m_activations, *this->m_prev_activations);
+    El::LockedView(*this->m_activations, *this->m_prev_activations);
   }
 
   void bp_compute() {

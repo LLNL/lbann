@@ -96,7 +96,7 @@ class sum_layer : public transform {
     else {
     #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not add parent layer since it is already in list of parents" << "\n";
+        std::cerr << "sum_layer: could not add parent layer since it is already in list of parents" << "\n";
       }
     #endif
     }

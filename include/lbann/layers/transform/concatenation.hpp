@@ -43,9 +43,9 @@ class concatenation_layer : public transform {
 
   /// List of parent layers
   std::vector<const Layer*> m_parents;
-  /// Tensor dimension to slice
+  /// Tensor dimension to concatenate
   int m_concatenation_axis;
-  /// Slice points for each child layer
+  /// Concatenation points for each parent layer
   std::vector<int> m_concatenation_points;
 
  public:
