@@ -98,8 +98,6 @@ int main(int argc, char *argv[]) {
     set_num_parallel_readers(comm, pb);
 
     // Save info to file; this includes the complete prototext (with any over-rides
-    // from the cmd line) and various other info
-    save_session(comm, argc, argv, pb);
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
@@ -126,6 +124,8 @@ int main(int argc, char *argv[]) {
       cout << endl;
     }
 
+    // from the cmd line) and various other info
+    save_session(comm, argc, argv, pb);
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

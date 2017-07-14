@@ -194,13 +194,14 @@ void softmax_layer<T_layout>::bp_compute() {
   // Note: error signal is already computed in objective function object
   const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
   const std::type_info& next_layer_type = typeid(*m_next_layer);
-  // Note: Assumes next layer uses same data distribution.
   if (std::type_index(obj_fn_type) ==
       std::type_index(typeid(objective_functions::categorical_cross_entropy))
       && (std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_distributed_minibatch<T_layout>))
+          std::type_index(typeid(target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>))
           || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_partitioned_minibatch<T_layout>)))) {
+          std::type_index(typeid(target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>))
+          || std::type_index(next_layer_type) ==
+          std::type_index(typeid(target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>)))) {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
     El::View(*this->m_error_signal_v, *this->m_error_signal,
          El::ALL, El::IR(0,this->m_error_signal->Width()));
