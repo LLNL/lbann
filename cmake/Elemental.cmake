@@ -60,7 +60,8 @@ else()
   set(ELEMENTAL_BINARY_DIR ${PROJECT_BINARY_DIR}/download/elemental/build)
 
   if(ELEMENTAL_USE_CUBLAS)
-    set(EL_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEL_USE_CUBLAS -I${CUDA_INCLUDE_DIRS} -I${CUB_SOURCE_DIR}")
+    add_definitions(-DEL_USE_CUBLAS)
+    set(EL_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${CUDA_INCLUDE_DIRS} -I${CUB_SOURCE_DIR}")
     set(EL_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS}    -L${CUDA_TOOLKIT_ROOT_DIR}/lib64 -lcublas -lcudart")
     set(EL_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L${CUDA_TOOLKIT_ROOT_DIR}/lib64 -lcublas -lcudart")
   else()
@@ -147,7 +148,7 @@ else()
 endif()
 
 # Add preprocessor flag for Elemental
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_ELEMENTAL")
+add_definitions(-D__LIB_ELEMENTAL)
 
 # LBANN has access to Elemental
 set(LBANN_HAS_ELEMENTAL TRUE)

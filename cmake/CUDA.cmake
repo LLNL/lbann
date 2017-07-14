@@ -13,7 +13,7 @@ if(CUDA_FOUND)
   set(NVTX_LIBRARIES ${CUDA_TOOLKIT_ROOT_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}nvToolsExt${CMAKE_SHARED_LIBRARY_SUFFIX})  
 
   # Add preprocessor flag for CUDA
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDA")
+  add_definitions(-D__LIB_CUDA)
 
   # LBANN has access to CUDA
   set(LBANN_HAS_CUDA TRUE)
