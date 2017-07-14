@@ -37,6 +37,7 @@
 #ifdef __LIB_CUDNN
 #include <cuda.h>
 #include <cudnn.h>
+#include <cublas_v2.h>
 #endif // #ifdef __LIB_CUDNN
 
 // Error utility macros
@@ -61,12 +62,24 @@
       throw lbann::lbann_exception("cuDNN error");                      \
     }                                                                   \
   } while (0)
+#define FORCE_CHECK_CUBLAS(cublas_call)                                 \
+  do {                                                                  \
+    const cublasStatus_t status = cublas_call;                          \
+    if (status != CUBLAS_STATUS_SUCCESS) {                              \
+      std::cerr << "CUBLAS error";                                      \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
+      cudaDeviceReset();                                                \
+      throw lbann::lbann_exception("CUBLAS error");                     \
+    }                                                                   \
+  } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUDA(cuda_call)   FORCE_CHECK_CUDA(cuda_call)
 #define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call)
+#define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS(cublas_call)
 #else
 #define CHECK_CUDA(cuda_call)   cuda_call
 #define CHECK_CUDNN(cudnn_call) cudnn_call
+#define CHECK_CUBLAS(cublas_call) cublas_call
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef __LIB_CUDNN
 
@@ -118,6 +131,14 @@ class cudnn_manager {
   cudnnHandle_t& get_handle(int i=0);
   /** Get ith cuDNN handle (const). */
   const cudnnHandle_t& get_handle(int i=0) const;
+  /** Get CUBLAS handles. */
+  std::vector<cublasHandle_t>& get_cublas_handles();
+  /** Get CUBLAS handles (const). */
+  const std::vector<cublasHandle_t>& get_cublas_handles() const;
+  /** Get ith CUBLAS handle. */
+  cublasHandle_t& get_cublas_handle(int i=0);
+  /** Get ith CUBLAS handle (const). */
+  const cublasHandle_t& get_cublas_handle(int i=0) const;
   /** Get GPU work spaces. */
   std::vector<void *> get_work_spaces();
   /** Get ith GPU work space. */
@@ -207,6 +228,8 @@ class cudnn_manager {
   std::vector<cudaStream_t> m_streams;
   /** List of cuDNN handles. */
   std::vector<cudnnHandle_t> m_handles;
+  /** List of cuDNN handles. */
+  std::vector<cublasHandle_t> m_cublas_handles;
 
   /** List of GPU work spaces. */
   std::vector<void *> m_work_spaces;
