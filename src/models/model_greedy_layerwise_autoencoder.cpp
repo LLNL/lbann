@@ -36,7 +36,7 @@ greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
                                                            objective_functions::objective_fn *obj_fn,
                                                            optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
-    m_phase_end(2), m_have_mirror(0), m_start_index(0), m_end_index(0) {}
+    m_phase_end(2), m_start_index(0), m_end_index(0), m_have_mirror(0) {}
 
 greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
 
@@ -48,6 +48,8 @@ struct lbann_model_greedy_layerwise_autoencoder_header {
 void greedy_layerwise_autoencoder::reset_phase() {
   m_current_phase = 0;
   m_current_epoch = 0;
+  m_start_index = 0;
+  m_end_index = 0;
   m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
   //clear m_reconstruction layers
   m_reconstruction_layers.clear();
@@ -179,8 +181,13 @@ void greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequenc
     set_end_index();
     train_phase(num_epochs, evaluation_frequency);
     m_start_index = m_end_index; 
+    m_reconstruction_layers.insert(m_reconstruction_layers.begin(),m_layers[m_end_index]);
+    // move on to the next (layerwise) phase
     ++m_current_phase;
   }
+  //evaluate and save all layers for i.e., (1) global cost (2) image reconstruction
+  evaluate(execution_mode::testing);
+  reset_phase();
 }
 
 //@todo: rename to train layer wise
@@ -245,7 +252,7 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_fr
       layer->epoch_reset();
     } // train epoch end, this reset cost
 
-   /* evaluate_phase(execution_mode::validation);
+    evaluate_phase(execution_mode::validation);
 
     //print validation reconstruction cost
     if (m_comm->am_world_master()) {
@@ -256,13 +263,13 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_fr
     //Reset cost again
     for (Layer *layer : m_layers) {
       layer->epoch_reset();
-    } // train epoch
+    } // validation epoch
 
     // Reset execution mode back to training
     m_execution_mode = execution_mode::training;
     for (Layer *layer : m_layers) {
       layer->set_execution_mode(execution_mode::training);
-    }*/
+    }
 
     // save checkpoint after epoch
     if (need_checkpoint()) {
@@ -303,7 +310,7 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
 
   /// Update (active) layers
   ///Freeze inactive layers
-  for (int l = m_end_index; l > m_start_index; --l) {
+  for (size_t l = m_end_index; l > m_start_index; --l) {
     m_layers[l]->update();
   }
   const bool data_set_processed = m_layers[0]->update();
@@ -316,7 +323,7 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
 void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
   // Set the execution mode
   m_execution_mode = mode;
-  for (size_t l = 0; l < m_layers.size(); ++l) {
+  for (size_t l = 0; l <= m_end_index; ++l) {
     m_layers[l]->set_execution_mode(mode);
   }
 
@@ -343,20 +350,16 @@ bool greedy_layerwise_autoencoder::evaluate_mini_batch() {
   for (size_t l = 0; l < m_layers.size(); l++) {
     m_layers[l]->forward_prop();
   }
-
-  // Update layers
-  // Note: should only affect the input and target
-  // @todo: delete after check with input layer
-  for (int l = m_phase_end; l > m_current_phase; --l) {
-    m_layers[l]->update();
-  }
+  
+  //done processing a minibatch?  
   const bool data_set_processed = m_layers[0]->update();
   return data_set_processed;
 }
 
 
 void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
-  //concatenate original layers with mirror layers
+  //concatenate original layers with reconstruction layers
+  //@todo add state (in(active)) to reconstruction layer
   m_layers.insert(std::end(m_layers), std::begin(m_reconstruction_layers)+1,std::end(m_reconstruction_layers));
 
   //Set appropriate layer indices and fp_input
@@ -367,13 +370,13 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   }
 
   //@todo loop for epochs??
-  m_phase_end = mls-1;
+  m_end_index = mls-1;
   evaluate_phase(mode);
 
   if (m_comm->am_world_master()) {
     std::cout << "Global (rel. to all (in + hidden) layers) testing ";
   }
-  m_layers[m_phase_end]->epoch_print();
+  m_layers[m_end_index]->epoch_print();
 
   for (Layer *layer : m_layers) {
     layer->epoch_reset();
