@@ -212,6 +212,8 @@ class cudnn_manager {
    */
   void unpin_matrix(ElMat& mat);
 
+  void check_error();
+
  private:
 
   /** LBANN communicator. */
