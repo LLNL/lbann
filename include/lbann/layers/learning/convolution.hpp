@@ -606,7 +606,8 @@ class convolution_layer : public learning {
     }
     El::AllReduce(*this->m_weights_gradient,
                   this->m_weights_gradient->RedundantComm());
-    *this->m_weights_gradient *= DataType(1) / this->get_effective_minibatch_size();
+    *this->m_weights_gradient *= DataType(1) /
+      this->m_neural_network_model->get_effective_mini_batch_size();
 
   #endif // #ifndef __LIB_CUDNN
   }
@@ -747,7 +748,8 @@ class convolution_layer : public learning {
     }
 
     // Scale and accumulate gradients
-    *this->m_weights_gradient *= DataType(1) / this->get_effective_minibatch_size();
+    *this->m_weights_gradient *= DataType(1) /
+      this->m_neural_network_model->get_effective_mini_batch_size();
     AllReduce(*this->m_weights_gradient, this->m_weights_gradient->RedundantComm());
 
   }

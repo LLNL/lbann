@@ -44,12 +44,10 @@ sequential_model::sequential_model(int mini_batch_size,
                                    lbann_comm *comm,
                                    objective_functions::objective_fn *obj_fn,
                                    optimizer_factory *optimizer_fac)
-  : model(comm, obj_fn, optimizer_fac),
-    m_mini_batch_size(mini_batch_size) {}
+  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
 
 sequential_model::sequential_model(const sequential_model& other) :
-  model(other),
-  m_mini_batch_size(other.m_mini_batch_size) {
+  model(other) {
   // First copy over the layers.
   for (const auto& l : other.m_layers) {
     m_layers.push_back(l->copy());
@@ -65,7 +63,6 @@ sequential_model::sequential_model(const sequential_model& other) :
 
 sequential_model& sequential_model::operator=(const sequential_model& other) {
   model::operator=(other);
-  m_mini_batch_size = other.m_mini_batch_size;
   m_layers.clear();
   // First copy over the layers.
   for (const auto& l : other.m_layers) {

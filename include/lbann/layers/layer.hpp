@@ -155,24 +155,6 @@ class Layer {
     update_time = 0.0;
   }
 
-  /** Return the size of mini-batch this layer uses. */
-  virtual int get_minibatch_size() const {
-    return m_mini_batch_size;
-  }
-  /**
-   * Get the "effective" size of a mini-batch.
-   * This is for backward propagation, etc. when there are more updates being
-   * contributed than the local mini-batch size implies (e.g. when doing
-   * inter-model updates).
-   */
-  virtual int get_effective_minibatch_size() const {
-    return m_effective_mbsize;
-  }
-  /** Set the effective size of a mini-batch to size. */
-  virtual void set_effective_minibatch_size(int size) {
-    m_effective_mbsize = size;
-  }
-
   bool using_gpus() const {
     return m_using_gpus;
   }
@@ -313,11 +295,6 @@ class Layer {
   cudnnTensorDescriptor_t m_neurons_cudnn_desc;
 
 #endif
-
-  /** Size of the local mini-batch. */
-  int m_mini_batch_size;
-  /** "Effective" mini-batch size for backward propagation, etc.. */
-  int m_effective_mbsize;
 
   /** Time spent in forward propagation. */
   double fp_time;

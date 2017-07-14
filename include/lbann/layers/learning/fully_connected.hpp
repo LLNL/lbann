@@ -238,7 +238,8 @@ class fully_connected_layer : public learning {
     if(m_bias_scaling_factor != DataType(0)) {
       El::RowSum(*this->m_prev_error_signal_v,
                  *m_bias_weights_gradient_repl);
-      El::Scale(m_bias_scaling_factor / this->get_effective_minibatch_size(),
+      El::Scale(m_bias_scaling_factor /
+                this->m_neural_network_model->get_effective_mini_batch_size(),
                 *m_bias_weights_gradient_repl);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
@@ -323,7 +324,8 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
            *this->m_error_signal_v);
 
   // Compute update for activation weights
-  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
+           this->m_neural_network_model->get_effective_mini_batch_size(),
            *this->m_prev_error_signal_v,
            *this->m_prev_activations_v,
            DataType(0),
@@ -339,7 +341,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights() {
            this->m_error_signal_v->Matrix());
 
   // Compute update for activation weights
-  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/this->get_effective_minibatch_size(),
+  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
+           this->m_neural_network_model->get_effective_mini_batch_size(),
            this->m_prev_error_signal_v->LockedMatrix(),
            this->m_prev_activations_v->LockedMatrix(),
            DataType(0),

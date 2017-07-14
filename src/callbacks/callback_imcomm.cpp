@@ -89,8 +89,8 @@ void lbann_callback_imcomm::setup(model *m) {
                               + " without gradients");
       }
       // Update the effective mini-batch size so averaging is done properly.
-      layers[layer]->set_effective_minibatch_size(
-        layers[layer]->get_minibatch_size() * m->get_comm()->get_num_models());
+      m->set_effective_mini_batch_size(
+        m->get_current_mini_batch_size() * m->get_comm()->get_num_models());
       if (ct_needs_reshape(params.ct)) {
         // Currently, no layers need reshaping.
         //const std::type_info& layer_type = typeid(*(layers[layer]));
