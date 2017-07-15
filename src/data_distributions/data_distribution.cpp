@@ -56,9 +56,9 @@ int lbann::generic_data_distribution::get_num_parallel_readers() {
   return num_parallel_readers;
 }
 
-int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
+int lbann::generic_data_distribution::get_num_iterations_per_epoch(execution_mode mode) {
   generic_data_reader *data_reader;
-  switch(get_execution_mode()) {
+  switch(mode) {
   case execution_mode::training:
     data_reader = m_data_readers[execution_mode::training];
     break;
@@ -74,5 +74,9 @@ int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
       " :: generic data distribution: invalid execution phase");
   }
   return data_reader->get_num_iterations_per_epoch();
+}
+
+int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
+  return get_num_iterations_per_epoch(get_execution_mode());
 }
 

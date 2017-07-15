@@ -46,7 +46,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
  public:
   input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, mini_batch_size, data_readers),
+    : input_layer(comm, mini_batch_size, num_parallel_readers, data_readers),
       distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
 
@@ -71,7 +71,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   void setup_data() {
     input_layer::setup_data();
     if(io_layer::m_data_sets_span_models) {
-      int stride = Layer::m_comm->get_num_models() * m_num_parallel_readers_training * Layer::m_mini_batch_size;
+      int stride = Layer::m_comm->get_num_models() * distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size;
       int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
       int model_offset = Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size;
       //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
@@ -81,36 +81,36 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
       distributed_minibatch::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                            m_num_parallel_readers_training * Layer::m_mini_batch_size);
+                                                            distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
     } else {
       io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                          m_num_parallel_readers_training * Layer::m_mini_batch_size);
+                                                          distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                            m_num_parallel_readers_training * Layer::m_mini_batch_size);
+                                                            distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
     }
 
     X_local.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
 
-    m_local_data_valid = false;
-    m_local_reader_done = false;
-    m_num_data_per_epoch = 0;
+    distributed_minibatch::m_local_data_valid = false;
+    distributed_minibatch::m_local_reader_done = false;
+    distributed_minibatch::m_num_data_per_epoch = 0;
   }
 
  protected:
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() {
 
-    int num_samples_in_batch = fetch_to_local_matrix(X_local);
-    if(is_current_root()) {
+    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local);
+    if(distributed_minibatch::is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
     /// Let each rank know this size of the current mini-batch
     /// Note that this field has to be updated before distributing the data
-    this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(m_root, num_samples_in_batch));
+    this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::m_root, num_samples_in_batch));
 
-    distribute_from_local_matrix(X_local, Xs);
+    distributed_minibatch::distribute_from_local_matrix(X_local, Xs);
 
     Copy(Xs, *this->m_activations);
   }
@@ -120,7 +120,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return is_data_set_processed();
+    return distributed_minibatch::is_data_set_processed();
   }
 
 

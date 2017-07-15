@@ -28,12 +28,15 @@
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/data_distributions/data_distribution.hpp"
 
 namespace lbann {
-class input_layer : public io_layer {
+  //class input_layer : public io_layer {
+class input_layer : public io_layer, public generic_data_distribution {
  public:
-  input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer(comm, mini_batch_size, data_readers) {}
+  input_layer(lbann_comm *comm, int mini_batch_size, int num_parallel_readers,  std::map<execution_mode, generic_data_reader *> data_readers)
+    : io_layer(comm, mini_batch_size, data_readers),
+    generic_data_distribution(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {}
 
   void setup_dims() {
     io_layer::setup_dims();

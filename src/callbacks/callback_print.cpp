@@ -43,8 +43,18 @@ void lbann_callback_print::setup(model *m) {
 void lbann_callback_print::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
+    std::vector<Layer *>layers = m->get_layers();
+    input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
     std::cout << "-----------------------------------------------------------" << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch" << std::endl;
+    std::cout << "[" << m->get_cur_epoch() << "] Epoch : iterations / epoch [tr/v/te]"
+              << " ["
+              << layer->get_num_iterations_per_epoch(execution_mode::training)
+              << "/"
+              << layer->get_num_iterations_per_epoch(execution_mode::validation)
+              << "/"
+              << layer->get_num_iterations_per_epoch(execution_mode::testing)
+              << "]"
+              << std::endl;
     std::cout << "-----------------------------------------------------------" << std::endl;
   }
 }
