@@ -48,6 +48,11 @@ class concatenation_layer : public transform {
   /// Concatenation points for each parent layer
   std::vector<int> m_concatenation_points;
 
+  /// View of forward prop input from parent layers
+  AbsDistMat* m_fp_input_v;
+  /// View of back prop output, as seen by parent layers
+  AbsDistMat* m_bp_output_v;
+
  public:
   /// Constructor
   concatenation_layer(int index,
@@ -69,17 +74,34 @@ class concatenation_layer : public transform {
 
   }
 
-  concatenation_layer(const concatenation_layer&) = default;
-  concatenation_layer& operator=(const concatenation_layer&) = default;
-  ~concatenation_layer() = default;
+  concatenation_layer(const concatenation_layer& other) :
+    transform(other) {
+    m_fp_input_v = other.m_fp_input_v->Copy();
+    m_bp_output_v = other.m_bp_output_v->Copy();
+  }
+
+  concatenation_layer& operator=(const concatenation_layer& other) {
+    transform::operator=(other);
+    if(m_fp_input_v) {
+      delete m_fp_input_v;
+    }
+    if(m_bp_output_v) {
+      delete m_bp_output_v;
+    }
+    m_fp_input_v = other.m_fp_input_v->Copy;
+    m_bp_output_v = other.m_bp_output_v->Copy;
+  }
+
+  ~concatenation_layer() {
+    delete m_fp_input_v;
+    delete m_bp_output_v;
+  }
 
   concatenation_layer* copy() const { return new concatenation_layer(*this); }
 
   std::string get_name() const { return "concatenation"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
-  }
+  virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void push_back_parent(const Layer *parent) {
@@ -126,7 +148,7 @@ class concatenation_layer : public transform {
     }
 
     // Make the first parent layer the "previous" layer
-    this->m_parent_layer = m_parents.front();
+    this->m_prev_layer = m_parents.front();
 
   }
 
@@ -187,12 +209,12 @@ class concatenation_layer : public transform {
     if(m_concatenation_axis == 0) {
       const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
       for(size_t i=0; i<m_parents.size(); ++i) {
-        auto activation_slice
-          = El::View(*this->m_activations,
-                     El::IR(slice_size * m_concatenation_points[i],
-                            slice_size * m_concatenation_points[i+1]),
-                     El::ALL);
-        El::Copy(m_parents[i]->fp_output(this), activation_slice);
+        El::View(*m_fp_input_v,
+                 *this->m_activations,
+                 El::IR(slice_size * m_concatenation_points[i],
+                        slice_size * m_concatenation_points[i+1]),
+                 El::ALL);
+        El::Copy(m_parents[i]->fp_output(this), *m_fp_input_v);
       }
     }
     else {
@@ -222,16 +244,18 @@ class concatenation_layer : public transform {
                                        m_parents.end(),
                                        prev_layer)
                              - m_parents.begin());
-    if(parent_index >= m_parents.size()) {
+    if(parent_index >= (int) m_parents.size()) {
       throw lbann_exception("concatenation_layer: unexpected previous layer");
     }
     
     if(m_concatenation_axis == 0) {
-      const int concatenation_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
-      return El::LockedView(*this->m_error_signal,
-                            El::IR(concatenation_size * m_concatenation_points[parent_index],
-                                   concatenation_size * m_concatenation_points[parent_index+1]),
-                            El::ALL);
+      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
+      El::LockedView(*m_bp_output_v,
+                     *this->m_error_signal,
+                     El::IR(slice_size * m_concatenation_points[parent_index],
+                            slice_size * m_concatenation_points[parent_index+1]),
+                     El::ALL);
+      return *m_bp_output_v;
     }
     else {
       // TODO: implement general concatenation layer
@@ -241,6 +265,20 @@ class concatenation_layer : public transform {
   }
 
 };
+
+/// Matrices should be in MC,MR distributions
+template<> inline void concatenation_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
+  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  m_fp_input_v = new DistMat(this->m_comm->get_model_grid());
+  m_bp_output_v = new DistMat(this->m_comm->get_model_grid());
+}
+
+/// Matrices should be in Star,VC distributions
+template<> inline void concatenation_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
+  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  m_fp_input_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_bp_output_v = new StarVCMat(this->m_comm->get_model_grid());
+}
 
 }  // namespace lbann
 

@@ -151,13 +151,13 @@ class split_layer : public transform {
 
   void bp_compute() {
     if(m_children.size() == 1) {
-      El::View(*this->error_signal, *this->m_prev_error_signal);
+      El::View(*this->m_error_signal, *this->m_prev_error_signal);
     }
     else {
       El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
       for(size_t i=1; i<m_children.size(); ++i) {
         El::Axpy(DataType(1),
-                 *m_children[i]->m_error_signal,
+                 m_children[i]->bp_output(this),
                  *this->m_error_signal);
       }
     }

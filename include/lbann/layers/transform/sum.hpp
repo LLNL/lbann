@@ -139,7 +139,7 @@ class sum_layer : public transform {
     }
 
     // Make the first parent layer the "previous" layer
-    this->m_parent_layer = m_parents.front();
+    this->m_prev_layer = m_parents.front();
 
   }
 
@@ -153,7 +153,7 @@ class sum_layer : public transform {
       El::Copy(*this->m_prev_activations, *this->m_activations);
       for(size_t i=1; i<m_parents.size(); ++i) {
         El::Axpy(DataType(1),
-                 *m_parents[i]->m_activations,
+                 m_parents[i]->fp_output(this),
                  *this->m_activations);
       }
     }

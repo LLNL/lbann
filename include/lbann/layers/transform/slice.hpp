@@ -48,6 +48,11 @@ class slice_layer : public transform {
   /// Slice points for each child layer
   std::vector<int> m_slice_points;
 
+  /// View of forward prop output, as seen by child layers
+  AbsDistMat* m_fp_output_v;
+  /// View of back prop input from child layers
+  AbsDistMat* m_bp_input_v;
+
  public:
   /// Constructor
   slice_layer(int index,
@@ -78,17 +83,34 @@ class slice_layer : public transform {
 
   }
 
-  slice_layer(const slice_layer&) = default;
-  slice_layer& operator=(const slice_layer&) = default;
-  ~slice_layer() = default;
+  slice_layer(const slice_layer& other) :
+    transform(other) {
+    m_fp_output_v = other.m_fp_output_v->Copy();
+    m_bp_input_v = other.m_bp_input_v->Copy();
+  }
+
+  slice_layer& operator=(const slice_layer& other) {
+    transform::operator=(other);
+    if(m_fp_output_v) {
+      delete m_fp_output_v;
+    }
+    if(m_bp_input_v) {
+      delete m_bp_input_v;
+    }
+    m_fp_output_v = other.m_fp_output_v->Copy;
+    m_bp_input_v = other.m_bp_input_v->Copy;
+  }
+
+  ~slice_layer() {
+    delete m_fp_output_v;
+    delete m_bp_input_v;
+  }
 
   slice_layer* copy() const { return new slice_layer(*this); }
 
   std::string get_name() const { return "slice"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
-  }
+  virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void push_back_child(const Layer *child, int slice_point) {
@@ -192,12 +214,12 @@ class slice_layer : public transform {
     if(m_slice_axis == 0) {
       const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
       for(size_t i=0; i<m_children.size(); ++i) {
-        auto error_signal_slice
-          = El::View(*this->m_error_signal,
-                     El::IR(slice_size * m_slice_points[i],
-                            slice_size * m_slice_points[i+1]),
-                     El::ALL);
-        El::Copy(m_children[i]->bp_output(this), error_signal_slice);
+        El::View(*m_bp_input_v,
+                 *this->m_error_signal,
+                 El::IR(slice_size * m_slice_points[i],
+                        slice_size * m_slice_points[i+1]),
+                 El::ALL);
+        El::Copy(m_children[i]->bp_output(this), *m_bp_input_v);
       }
     }
     else {
@@ -225,10 +247,12 @@ class slice_layer : public transform {
     
     if(m_slice_axis == 0) {
       const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
-      return El::LockedView(*this->m_activations,
-                            El::IR(slice_size * m_slice_points[child_index],
-                                   slice_size * m_slice_points[child_index+1]),
-                            El::ALL);
+      El::LockedView(*m_fp_output_v,
+                     *this->m_activations,
+                     El::IR(slice_size * m_slice_points[child_index],
+                            slice_size * m_slice_points[child_index+1]),
+                     El::ALL);
+      return *m_fp_output_v;
     }
     else {
       // TODO: implement general slice layer
@@ -255,10 +279,12 @@ class slice_layer : public transform {
     
     if(m_slice_axis == 0) {
       const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
-      return El::LockedView(*this->m_prev_error_signal,
-                            El::IR(slice_size * m_slice_points[child_index],
-                                   slice_size * m_slice_points[child_index+1]),
-                            El::ALL);
+      El::LockedView(*m_bp_input_v,
+                     *this->m_prev_error_signal,
+                     El::IR(slice_size * m_slice_points[child_index],
+                            slice_size * m_slice_points[child_index+1]),
+                     El::ALL);
+      return *m_bp_input_v;
     }
     else {
       // TODO: implement general slice layer
@@ -268,6 +294,20 @@ class slice_layer : public transform {
   }  
 
 };
+
+/// Matrices should be in MC,MR distributions
+template<> inline void slice_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
+  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  m_fp_output_v = new DistMat(this->m_comm->get_model_grid());
+  m_bp_input_v = new DistMat(this->m_comm->get_model_grid());
+}
+
+/// Matrices should be in Star,VC distributions
+template<> inline void slice_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
+  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  m_fp_output_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_bp_input_v = new StarVCMat(this->m_comm->get_model_grid());
+}
 
 }  // namespace lbann
 
