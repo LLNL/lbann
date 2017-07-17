@@ -35,6 +35,33 @@ class input_layer : public io_layer {
   input_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers)
     : io_layer(comm, data_readers) {}
 
+  // Input layers copy their datareaders.
+  input_layer(const input_layer& other) : io_layer(other) {
+    if (m_training_dataset.data_reader) {
+      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    }
+    if (m_validation_dataset.data_reader) {
+      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    }
+    if (m_testing_dataset.data_reader) {
+      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    }
+  }
+
+  input_layer& operator=(const input_layer& other) {
+    io_layer::operator=(other);
+    if (m_training_dataset.data_reader) {
+      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    }
+    if (m_validation_dataset.data_reader) {
+      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    }
+    if (m_testing_dataset.data_reader) {
+      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    }
+    return *this;
+  }
+
   void setup_dims() {
     io_layer::setup_dims();
     this->m_neuron_dims = io_layer::get_data_dims();

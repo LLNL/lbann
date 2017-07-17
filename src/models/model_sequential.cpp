@@ -59,6 +59,12 @@ sequential_model::sequential_model(const sequential_model& other) :
     Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
     m_layers[l]->setup_pointers(prev_layer, next_layer);
   }
+  // Update target layer data readers.
+  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
+  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  if (input && target) {
+    target->set_data_readers_from_layer(input);
+  }
 }
 
 sequential_model& sequential_model::operator=(const sequential_model& other) {
@@ -74,6 +80,12 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
     Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
     Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
     m_layers[l]->setup_pointers(prev_layer, next_layer);
+  }
+  // Update target layer data readers.
+  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
+  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  if (input && target) {
+    target->set_data_readers_from_layer(input);
   }
   return *this;
 }
