@@ -108,11 +108,9 @@ class concatenation_layer : public transform {
 
     // Check if parent layer is null pointer
     if(parent == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "concatenation_layer: could not add parent layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -122,19 +120,15 @@ class concatenation_layer : public transform {
       m_parents.push_back(parent);
     }
     else {
-      if(m_comm->am_world_master()) {
-        std::cerr << "concatenation_layer: could not add parent layer since it is already in list of parents" << "\n";
-      }
+      throw lbann_exception("concatenation_layer: could not add parent layer since it is already in list of parents");
     }
 
   }
 
   void pop_back_parent() {
-  #ifdef LBANN_DEBUG
     if(m_parents.empty()) {
-      std::cerr << "concatenation_layer: could not remove parent since this layer has no parents" << "\n";
+      throw lbann_exception("concatenation_layer: could not remove parent since this layer has no parents");
     }
-  #endif // LBANN_DEBUG
     m_parents.pop_back();
     m_concatenation_points.pop_back();
   }
@@ -157,13 +151,11 @@ class concatenation_layer : public transform {
     // Initialize previous layer dimensions with first parent layer
     transform::setup_dims();
 
-  #ifdef LBANN_DEBUG
     // Check if concatenation axis is valid
     if(m_concatenation_axis < 0
        || m_concatenation_axis >= this->m_num_neuron_dims) {
       throw lbann_exception("concatenation_layer: invalid concatenation axis");
     }
-  #endif // LBANN_DEBUG
 
     // Get concatenation axis indices corresponding to each parent layer
     m_concatenation_points.empty();
@@ -174,7 +166,6 @@ class concatenation_layer : public transform {
       // Get parent layer dimensions
       std::vector<int> parent_dims = m_parents[i]->fp_output_dims(this);
 
-    #ifdef LBANN_DEBUG
       // Check if parent layer has valid dimensions
       if(parent_dims.size() != this->m_num_neuron_dims) {
         throw lbann_exception("concatenation_layer: parent layer has invalid number of dimensions");
@@ -185,7 +176,6 @@ class concatenation_layer : public transform {
           throw lbann_exception("concatenation_layer: parent layer has invalid dimensions");
         }
       }
-    #endif // LBANN_DEBUG
 
       // Get concatentation axis upper bound for parent layer
       m_concatenation_points.push_back(m_concatenation_points.back()

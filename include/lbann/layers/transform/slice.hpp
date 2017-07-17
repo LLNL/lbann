@@ -68,12 +68,12 @@ class slice_layer : public transform {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    // Initialize list of children
-  #if LBANN_DEBUG
+    // Check that number of slice points is valid
     if(!children.empty() && children.size()-1 != slice_points.size()) {
       throw lbann_exception("slice_layer: number of slice points should be one less than number of children");
     }
-  #endif
+
+    // Initialize list of children
     if(!children.empty()) {
       push_back_child(children.front(), 0);
     }
@@ -117,28 +117,25 @@ class slice_layer : public transform {
 
     // Check if child layer is null pointer
     if(child == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "slice_layer: could not add child layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
     // Add first child
     if(m_children.empty()) {
-    #ifdef LBANN_DEBUG
-      if(slice_point > 0) {
-        std::cerr << "slice_layer: first child should have a slice point of zero" << "\n";
+      if(m_comm->am_world_master()) {
+        if(slice_point > 0) {
+          std::cerr << "slice_layer: first child should have a slice point of zero" << "\n";
+        }
       }
-    #endif // LBANN_DEBUG
       m_children.push_back(child);
       m_slice_points.push_back(0);
     }
 
     // Add subsequent children
     else {
-    #ifdef LBANN_DEBUG
       auto child_pos = std::find(m_children.begin(), m_children.end(), child);
       if(child_pos != m_children.end()) {
         throw lbann_exception("slice_layer: child is already in list of children");
@@ -146,7 +143,6 @@ class slice_layer : public transform {
       if(slice_point <= m_slice_points.back()) {
         throw lbann_exception("slice_layer: invalid slice point");
       }
-    #endif // LBANN_DEBUG
       m_children.push_back(child);
       m_slice_points.push_back(slice_point);
     }
@@ -154,11 +150,9 @@ class slice_layer : public transform {
   }
 
   void pop_back_child() {
-  #ifdef LBANN_DEBUG
     if(m_children.empty()) {
-      std::cerr << "slice_layer: could not remove child since this layer has no children" << "\n";
+      throw lbann_exception("slice_layer: could not remove child since this layer has no children");
     }
-  #endif // LBANN_DEBUG
     m_children.pop_back();
     m_slice_points.pop_back();
   }
@@ -166,7 +160,6 @@ class slice_layer : public transform {
   void setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
     transform::setup_pointers(prev_layer, next_layer);
 
-  #ifdef LBANN_DEBUG
     // Error if "next" layer isn't already in list of children
     if(next_layer != NULL
        && (std::find(m_children.begin(), m_children.end(), this->m_next_layer)
@@ -176,7 +169,6 @@ class slice_layer : public transform {
     if(m_children.empty()) {
       throw lbann_exception("slice_layer: can not setup layer since it has no children");
     }
-  #endif // LBANN_DEBUG
 
     // Make the first child layer the "next" layer
     this->m_next_layer = m_children.front();
@@ -188,7 +180,6 @@ class slice_layer : public transform {
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
 
-  #ifdef LBANN_DEBUG
     // Check if slice axis and slice points are valid
     if(m_slice_axis < 0 || m_slice_axis >= this->m_num_neuron_dims) {
       throw lbann_exception("slice_layer: invalid slice axis");
@@ -196,7 +187,6 @@ class slice_layer : public transform {
     if(m_slice_points.back() >= this->m_neuron_dims[m_slice_axis] - 1) {
       throw lbann_exception("slice_layer: slice points are greater than slice axis dimensions");
     }
-  #endif
 
     // Add slice axis dimension to slice point list
     m_slice_points.push_back(this->m_neuron_dims[m_slice_axis]);

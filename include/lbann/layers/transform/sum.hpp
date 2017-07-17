@@ -80,11 +80,9 @@ class sum_layer : public transform {
 
     // Check if parent layer is null pointer
     if(parent == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "sum_layer: could not add parent layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -94,11 +92,7 @@ class sum_layer : public transform {
       m_parents.push_back(parent);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "sum_layer: could not add parent layer since it is already in list of parents" << "\n";
-      }
-    #endif
+      throw lbann_exception("sum_layer: could not add parent layer since it is already in list of parents");
     }
 
   }
@@ -107,11 +101,9 @@ class sum_layer : public transform {
     
     // Check if parent layer is null pointer
     if(parent == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "sum_layer: could not remove parent layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -121,11 +113,7 @@ class sum_layer : public transform {
       m_parents.erase(parent_pos);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "sum_layer: could not remove parent layer since it isn't in list of parents" << "\n";
-      }
-    #endif
+      throw lbann_exception("sum_layer: could not remove parent layer since it isn't in list of parents");
     }
 
   }

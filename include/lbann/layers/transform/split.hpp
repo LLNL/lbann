@@ -80,11 +80,9 @@ class split_layer : public transform {
 
     // Check if child layer is null pointer
     if(child == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "split_layer: could not add child layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -94,11 +92,9 @@ class split_layer : public transform {
       m_children.push_back(child);
     }
     else {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "split_layer: could not add child layer since it is already in list of children" << "\n";
       }
-    #endif
     }
 
   }
@@ -107,11 +103,9 @@ class split_layer : public transform {
     
     // Check if child layer is null pointer
     if(child == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "split_layer: could not remove child layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -121,11 +115,7 @@ class split_layer : public transform {
       m_children.erase(child_pos);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "split_layer: could not remove child layer since it isn't in list of children" << "\n";
-      }
-    #endif
+      throw lbann_exception("split_layer: could not remove child layer since it isn't in list of children");
     }
 
   }
