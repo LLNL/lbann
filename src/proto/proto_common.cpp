@@ -1343,12 +1343,52 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
+void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p) {
+  options *opts = options::get();
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    if (r->role() == which) {
+      std::stringstream s;
+      s << "data_filedir_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_data_filedir(opts->get_string(s.str().c_str()));
+      }
+      s.clear();
+      s.str("");
+      s << "data_filename_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_data_filename(opts->get_string(s.str().c_str()));
+      }
+      s.clear();
+      s.str("");
+      s << "label_filename_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_label_filename(opts->get_string(s.str().c_str()));
+      }
+    }
+  }
+}
+
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
+  if (not master) {
+    return;
+  }
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+
+  if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
+      or opts->has_string("label_filename_train")) {
+    set_data_readers_filenames("train", p);
+  }
+  if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
+      or opts->has_string("label_filename_test")) {
+    set_data_readers_filenames("test", p);
+  }
 
   if (opts->has_string("image_dir")) {
     int sz = model->callback_size();
@@ -1406,26 +1446,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
 
     lbann_data::Optimizer *opt = new lbann_data::Optimizer;
-    //lbann_data::Optimizer *opt = p.mutable_optimizer();
-
-    //clear the existing optimizer
-    /*
-    if (opt->has_adagrad()) {
-      opt->clear_adagrad();
-    }
-    if (opt->has_rmsprop()) {
-      opt->clear_rmsprop();
-    }
-    if (opt->has_adam()) {
-      opt->clear_adam();
-    }
-    if (opt->has_hypergradient_adam()) {
-      opt->clear_hypergradient_adam();
-    }
-    if (opt->has_sgd()) {
-      opt->clear_sgd();
-    }
-    */
 
     //construct the new optimizer
     std::string opt_string = opts->get_string("opt");
@@ -1464,13 +1484,11 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_nesterov(nesterov);
       opt->set_allocated_sgd(a);
     } else {
-      if (master) {
         std::stringstream err;
         err << __FILE__ << " " << __LINE__
             << " :: unknown string for --optimizer: " << opt_string
             << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
         throw lbann_exception(err.str());
-      }
     }
     p.set_allocated_optimizer(opt);
   }
@@ -1573,6 +1591,11 @@ void print_help(lbann::lbann_comm *comm)
        "      <string> must be: data_parallel or model_parallel\n"
        "      note: this will be applied to all layers, metrics (and others)\n"
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "\n"
+       "DataReaders:\n"
+       "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
+       "  --data_filename_train=<string>  --data_filename_test=<string>\n"
+       "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"
