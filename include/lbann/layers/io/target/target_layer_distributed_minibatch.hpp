@@ -45,7 +45,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
 
  public:
   target_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : target_layer(comm, mini_batch_size, data_readers, shared_data_reader, for_regression),
+    : target_layer(comm, data_readers, shared_data_reader, for_regression),
       distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
       Ys(comm->get_model_grid()) {
     // Setup the data distribution

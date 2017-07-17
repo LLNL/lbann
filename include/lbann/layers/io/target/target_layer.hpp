@@ -41,8 +41,8 @@ class target_layer : public io_layer {
   bool m_shared_data_reader;
 
  public:
-  target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
+  target_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : io_layer(comm, data_readers, true, for_regression) {
     m_shared_data_reader = shared_data_reader;
   }
 

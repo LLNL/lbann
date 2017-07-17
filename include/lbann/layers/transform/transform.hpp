@@ -42,9 +42,8 @@ class transform : public Layer {
   transform(int index, 
             // int numPrevNeurons,
             // int numNeurons,
-           lbann_comm *comm,
-           int mini_batch_size)
-    : Layer(index, comm, mini_batch_size) {
+           lbann_comm *comm)
+    : Layer(index, comm) {
 
   }
 

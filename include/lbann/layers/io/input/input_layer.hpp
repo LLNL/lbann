@@ -32,8 +32,8 @@
 namespace lbann {
 class input_layer : public io_layer {
  public:
-  input_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer(comm, mini_batch_size, data_readers) {}
+  input_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers)
+    : io_layer(comm, data_readers) {}
 
   void setup_dims() {
     io_layer::setup_dims();

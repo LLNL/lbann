@@ -104,7 +104,6 @@ class convolution_layer : public learning {
 
   convolution_layer(int index,
                     lbann_comm *comm,
-                    int mini_batch_size,
                     int num_data_dims,
                     int num_output_channels,
                     const int *conv_dims,
@@ -113,7 +112,7 @@ class convolution_layer : public learning {
                     weight_initialization init,
                     optimizer *opt,
                     cudnn::cudnn_manager *cudnn = NULL)
-    : learning(index, comm, mini_batch_size, opt),
+    : learning(index, comm, opt),
       m_weight_initialization(init) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");

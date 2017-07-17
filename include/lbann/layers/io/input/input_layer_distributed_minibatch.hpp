@@ -46,7 +46,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
  public:
   input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, mini_batch_size, data_readers),
+    : input_layer(comm, data_readers),
       distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
       Xs(comm->get_model_grid()) {
 

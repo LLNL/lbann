@@ -48,10 +48,9 @@ class branch_layer : public transform {
   /// Constructor
   branch_layer(int index,
                lbann_comm *comm,
-               int mini_batch_size,
                std::vector<const Layer*> children,
                cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size) {
+    : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();

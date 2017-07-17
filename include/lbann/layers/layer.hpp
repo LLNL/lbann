@@ -51,7 +51,7 @@ class model;
 
 class Layer {
  public:
-  Layer(const int index, lbann_comm *comm, int mbsize);
+  Layer(const int index, lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
 

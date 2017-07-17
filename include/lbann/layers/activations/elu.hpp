@@ -52,9 +52,8 @@ class elu_layer : public entrywise_activation_layer {
    */
   elu_layer(int index,
             lbann_comm *comm,
-            int mini_batch_size,
             DataType alpha = DataType(1.0)) :
-    entrywise_activation_layer(index, comm, mini_batch_size),
+    entrywise_activation_layer(index, comm),
     m_alpha(alpha) { 
     initialize_distributed_matrices(); 
   }
