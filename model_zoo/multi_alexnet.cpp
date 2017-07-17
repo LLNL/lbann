@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -343,6 +344,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -415,6 +417,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -447,6 +450,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -479,6 +483,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);

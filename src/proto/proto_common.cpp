@@ -361,6 +361,7 @@ void add_layers(
       int num_dims = ell.num_dims();
       //int num_input_channels = ell.num_input_channels();
       int num_output_channels = ell.num_output_channels();
+      bool has_bias = ell.has_bias();
       if (dl == data_layout::MODEL_PARALLEL) {
         err << __FILE__ << " " << __LINE__ << " :: convolution "
             << "does not support MODEL_PARALLEL layouts";
@@ -377,6 +378,7 @@ void add_layers(
           &conv_strides[0],
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
+          has_bias,
           cudnn
         );
       }

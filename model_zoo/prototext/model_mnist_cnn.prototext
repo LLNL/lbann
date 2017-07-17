@@ -74,6 +74,7 @@ model {
       conv_strides: "1 1"
       activation_type: "relu"
       weight_initialization: "glorot_uniform"
+      has_bias: true
     }
   }
 
@@ -105,6 +106,7 @@ model {
       conv_pads: "0 0"
       conv_strides: "1 1"
       weight_initialization: "glorot_uniform"
+      has_bias: true
     }
   }
 
