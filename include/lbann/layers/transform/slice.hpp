@@ -232,7 +232,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - m_children.begin());
     if(child_index >= m_children.size()) {
-      throw lbann_exception("slice_layer: unexpected next layer");
+      return *m_activations;
     }
     
     if(m_slice_axis == 0) {
@@ -264,7 +264,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - m_children.begin());
     if(child_index >= m_children.size()) {
-      throw lbann_exception("slice_layer: unexpected next layer");
+      return *m_prev_error_signal;
     }
     
     if(m_slice_axis == 0) {

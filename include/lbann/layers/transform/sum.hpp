@@ -151,28 +151,6 @@ class sum_layer : public transform {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
   }
 
-  const AbsDistMat& fp_input(const Layer* prev_layer) const {
-  #ifdef LBANN_DEBUG
-    if(prev_layer != NULL
-       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
-           == m_parents.end())) {
-      throw lbann_exception("sum_layer: unexpected previous layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_prev_activations;
-  }
-
-  const AbsDistMat& bp_output(const Layer* prev_layer) const {
-  #ifdef LBANN_DEBUG
-    if(prev_layer != NULL
-       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
-           == m_parents.end())) {
-      throw lbann_exception("sum_layer: unexpected previous layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_error_signal;
-  }
-
 };
 
 }  // namespace lbann

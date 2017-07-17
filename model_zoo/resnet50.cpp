@@ -865,7 +865,7 @@ int main(int argc, char *argv[]) {
         const int output_channels = 512;
         const int filter_dims[] = {1, 1};
         const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
+        const int conv_strides[] = {2, 2};
         convolution_layer<> *res3a_branch2c
           = new convolution_layer<>(
             index++,
@@ -1458,7 +1458,7 @@ int main(int argc, char *argv[]) {
         const int output_channels = 1024;
         const int filter_dims[] = {1, 1};
         const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
+        const int conv_strides[] = {2, 2};
         convolution_layer<> *res4a_branch2c
           = new convolution_layer<>(
             index++,
@@ -2347,7 +2347,7 @@ int main(int argc, char *argv[]) {
         const int output_channels = 2048;
         const int filter_dims[] = {1, 1};
         const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
+        const int conv_strides[] = {2, 2};
         convolution_layer<> *res5a_branch2c
           = new convolution_layer<>(
             index++,
@@ -2679,7 +2679,7 @@ int main(int argc, char *argv[]) {
 
     }
 
-    const int pool_dims[] = {7, 7};
+    const int pool_dims[] = {8, 8};
     const int pool_pads[] = {0, 0};
     const int pool_strides[] = {1, 1};
     pooling_layer<> *pool5
@@ -2750,7 +2750,8 @@ int main(int argc, char *argv[]) {
     lbann_callback_imcomm imcomm_cb
       = lbann_callback_imcomm(static_cast<lbann_callback_imcomm::comm_type>
                               (trainParams.IntermodelCommMethod),
-                              {1, 5, 9, 11, 13, 16, 19, 22}, &summarizer);
+                              {1, 6, 9, 13, 17, 20, 23, 28, 31, 34, 39, 42, 46, 50, 53, 56, 61, 64, 67, 72, 75, 78, 83, 86, 90, 94, 97, 100, 105, 108, 111, 116, 119, 122, 127, 130, 133, 138, 141, 144, 149, 152, 156, 160, 163, 166, 171, 174, 177, 182},
+                              &summarizer);
     dnn->add_callback(&imcomm_cb);
 
     lbann_callback_profiler profiler_cb;

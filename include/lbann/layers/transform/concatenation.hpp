@@ -167,11 +167,11 @@ class concatenation_layer : public transform {
       std::vector<int> parent_dims = m_parents[i]->fp_output_dims(this);
 
       // Check if parent layer has valid dimensions
-      if(parent_dims.size() != this->m_num_neuron_dims) {
+      if((int) parent_dims.size() != this->m_num_neuron_dims) {
         throw lbann_exception("concatenation_layer: parent layer has invalid number of dimensions");
       }
       for(size_t d=0; d<parent_dims.size(); ++d) {
-        if(d != m_concatenation_axis
+        if((int) d != m_concatenation_axis
            && this->m_neuron_dims[d] != parent_dims[d]) {
           throw lbann_exception("concatenation_layer: parent layer has invalid dimensions");
         }
@@ -235,7 +235,7 @@ class concatenation_layer : public transform {
                                        prev_layer)
                              - m_parents.begin());
     if(parent_index >= (int) m_parents.size()) {
-      throw lbann_exception("concatenation_layer: unexpected previous layer");
+      return *m_error_signal;
     }
     
     if(m_concatenation_axis == 0) {

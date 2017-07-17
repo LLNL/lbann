@@ -153,28 +153,6 @@ class split_layer : public transform {
     }
   }
 
-  const AbsDistMat& fp_output(const Layer* next_layer) const {
-  #ifdef LBANN_DEBUG
-    if(next_layer != NULL
-       && (std::find(m_children.begin(), m_children.end(), next_layer)
-           == m_children.end())) {
-      throw lbann_exception("split_layer: unexpected next layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_activations;
-  }
-
-  const AbsDistMat& bp_input(const Layer* next_layer) const {
-  #ifdef LBANN_DEBUG
-    if(next_layer != NULL
-       && (std::find(m_children.begin(), m_children.end(), next_layer)
-           == m_children.end())) {
-      throw lbann_exception("split_layer: unexpected next layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_prev_error_signal;
-  }
-
 };
 
 }  // namespace lbann
