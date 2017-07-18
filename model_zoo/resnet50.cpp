@@ -39,7 +39,7 @@ const string g_ImageNet_LabelDir = "labels/";
 const int g_ImageNet_Width = 256;
 const int g_ImageNet_Height = 256;
 
-// #define PARTITIONED
+#define PARTITIONED
 
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
