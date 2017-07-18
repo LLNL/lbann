@@ -37,7 +37,6 @@ namespace lbann {
 
 class learning : public Layer {
  protected:
-  //  data_layout m_data_layout;
   optimizer  *m_optimizer;
 
   ElMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
