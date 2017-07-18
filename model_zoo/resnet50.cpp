@@ -39,7 +39,7 @@ const string g_ImageNet_LabelDir = "labels/";
 const int g_ImageNet_Width = 256;
 const int g_ImageNet_Height = 256;
 
-// #define PARTITIONED
+#define PARTITIONED
 
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
@@ -270,6 +270,7 @@ int main(int argc, char *argv[]) {
           conv_strides,
           weight_initialization::he_normal,
           conv_optimizer,
+          false,
           cudnn);
       conv1->set_l2_regularization_factor(1e-4);
       dnn->add(conv1);
@@ -339,6 +340,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2a_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res2a_branch2a);
@@ -380,6 +382,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2a_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res2a_branch2b);
@@ -433,6 +436,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2a_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res2a_branch2c);
@@ -488,6 +492,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2b_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res2b_branch2a);
@@ -529,6 +534,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2b_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res2b_branch2b);
@@ -570,6 +576,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2b_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res2b_branch2c);
@@ -636,6 +643,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2c_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res2c_branch2a);
@@ -677,6 +685,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2c_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res2c_branch2b);
@@ -718,6 +727,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res2c_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res2c_branch2c);
@@ -784,6 +794,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3a_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res3a_branch2a);
@@ -825,6 +836,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3a_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res3a_branch2b);
@@ -878,6 +890,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3a_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res3a_branch2c);
@@ -933,6 +946,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3b_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res3b_branch2a);
@@ -974,6 +988,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3b_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res3b_branch2b);
@@ -1015,6 +1030,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3b_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res3b_branch2c);
@@ -1081,6 +1097,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3c_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res3c_branch2a);
@@ -1122,6 +1139,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3c_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res3c_branch2b);
@@ -1163,6 +1181,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3c_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res3c_branch2c);
@@ -1229,6 +1248,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3d_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res3d_branch2a);
@@ -1270,6 +1290,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3d_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res3d_branch2b);
@@ -1311,6 +1332,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res3d_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res3d_branch2c);
@@ -1377,6 +1399,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4a_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4a_branch2a);
@@ -1418,6 +1441,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4a_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4a_branch2b);
@@ -1471,6 +1495,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4a_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4a_branch2c);
@@ -1526,6 +1551,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4b_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4b_branch2a);
@@ -1567,6 +1593,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4b_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4b_branch2b);
@@ -1608,6 +1635,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4b_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4b_branch2c);
@@ -1674,6 +1702,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4c_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4c_branch2a);
@@ -1715,6 +1744,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4c_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4c_branch2b);
@@ -1756,6 +1786,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4c_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4c_branch2c);
@@ -1822,6 +1853,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4d_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4d_branch2a);
@@ -1863,6 +1895,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4d_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4d_branch2b);
@@ -1904,6 +1937,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4d_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4d_branch2c);
@@ -1970,6 +2004,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4e_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4e_branch2a);
@@ -2011,6 +2046,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4e_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4e_branch2b);
@@ -2052,6 +2088,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4e_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4e_branch2c);
@@ -2118,6 +2155,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4f_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res4f_branch2a);
@@ -2159,6 +2197,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4f_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res4f_branch2b);
@@ -2200,6 +2239,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res4f_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res4f_branch2c);
@@ -2266,6 +2306,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5a_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res5a_branch2a);
@@ -2307,6 +2348,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5a_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res5a_branch2b);
@@ -2360,6 +2402,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5a_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res5a_branch2c);
@@ -2415,6 +2458,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5b_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res5b_branch2a);
@@ -2456,6 +2500,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5b_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res5b_branch2b);
@@ -2497,6 +2542,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5b_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res5b_branch2c);
@@ -2563,6 +2609,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5c_branch2a->set_l2_regularization_factor(1e-4);
         dnn->add(res5c_branch2a);
@@ -2604,6 +2651,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5c_branch2b->set_l2_regularization_factor(1e-4);
         dnn->add(res5c_branch2b);
@@ -2645,6 +2693,7 @@ int main(int argc, char *argv[]) {
             conv_strides,
             weight_initialization::he_normal,
             conv_optimizer,
+            false,
             cudnn);
         res5c_branch2c->set_l2_regularization_factor(1e-4);
         dnn->add(res5c_branch2c);

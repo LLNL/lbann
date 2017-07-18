@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
                                   convStrides,
                                   weight_initialization::glorot_uniform,
                                   convolution_layer_optimizer,
+                                  true,
                                   cudnn);
       dnn.add(layer);
 
@@ -252,6 +253,7 @@ int main(int argc, char *argv[]) {
                                   convStrides,
                                   weight_initialization::glorot_uniform,
                                   convolution_layer_optimizer,
+                                  true,
                                   cudnn);
       dnn.add(layer);
 

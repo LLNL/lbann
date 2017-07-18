@@ -396,7 +396,8 @@ message Convolution {
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
   int64 mini_batch_size = 8;
   string weight_initialization = 9;
-  double l2_regularization_factor = 10;
+  bool has_bias = 10;
+  double l2_regularization_factor = 11;
 }
 
 ///////////////////

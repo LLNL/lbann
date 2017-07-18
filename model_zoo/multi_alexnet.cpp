@@ -42,7 +42,7 @@ const int g_ImageNet_Height = 256;
 
 
 
-// #define PARTITIONED
+#define PARTITIONED
 
 int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
@@ -63,8 +63,8 @@ int main(int argc, char *argv[]) {
     trainParams.IntermodelCommMethod
       = static_cast<int>(lbann_callback_imcomm::NORMAL);
     trainParams.parse_params();
-    trainParams.PercentageTrainingSamples = 0.01; //1.0;
-    trainParams.PercentageValidationSamples = 0.4;
+    trainParams.PercentageTrainingSamples = 1.0;
+    trainParams.PercentageValidationSamples = 0.2;
 
     PerformanceParams perfParams;
     perfParams.parse_params();
@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -343,6 +344,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -415,6 +417,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -447,6 +450,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
@@ -479,6 +483,7 @@ int main(int argc, char *argv[]) {
           convStrides,
           weight_initialization::he_normal,
           convolution_layer_optimizer,
+          true,
           cudnn);
       layer->set_l2_regularization_factor(0.0005);
       dnn->add(layer);
