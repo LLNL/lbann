@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_batch_normalization .cpp .hpp - Batch normalization implementation
+// batch_normalization.hpp - Batch normalization layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
@@ -98,12 +98,15 @@ class batch_normalization : public regularizer_layer {
    * Set up batch normalization.
    * @param decay Controls the momentum of the running mean/standard
    * deviation averages.
-   * @param scale The initial value for scaling parameter
+   * @param scale_init The initial value for scaling parameter
    * \f$\gamma$\f$. The paper recommends 1.0 as a starting point, but
    * other papers have had better results with a smaller value
    * (e.g. 0.1).
-   * @param bias The initial value for bias parameter
+   * @param bias_init The initial value for bias parameter
    * \f$\beta\f$. This should almost always stay at zero.
+   * @param epsilon A small number to avoid division by zero.
+   * @param use_global_stats Whether to use running statistics when
+   * training.
    */
   batch_normalization(int index,
                       lbann_comm *comm,
@@ -420,8 +423,6 @@ class batch_normalization : public regularizer_layer {
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Get channel parameters
-      const DataType scale = scale_local(channel, 0);
-      const DataType bias = bias_local(channel, 0);
       DataType mean, stdev;
       if(this->get_execution_mode() == execution_mode::training
          && !m_use_global_stats) { 
@@ -431,6 +432,8 @@ class batch_normalization : public regularizer_layer {
         mean = running_mean_local(channel, 0);
         stdev = running_stdev_local(channel, 0);
       }
+      const DataType scale = scale_local(channel, 0);
+      const DataType bias = bias_local(channel, 0);
 
       // Apply batch normalization to inputs in channel
       const El::Int row_start = channel * channel_size;
@@ -475,7 +478,6 @@ class batch_normalization : public regularizer_layer {
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
-      const DataType scale = scale_local(channel, 0);
       DataType mean, stdev;
       if(this->get_execution_mode() == execution_mode::training
          && !m_use_global_stats) { 
@@ -485,10 +487,11 @@ class batch_normalization : public regularizer_layer {
         mean = running_mean_local(channel, 0);
         stdev = running_stdev_local(channel, 0);
       }
-      DataType dscale = 0;
-      DataType dbias = 0;
+      const DataType scale = scale_local(channel, 0);
       DataType dmean = 0;
       DataType dstdev = 0;
+      DataType dscale = 0;
+      DataType dbias = 0;
 
       // Compute gradient contributions from local entries
       const El::Int row_start = channel * channel_size;
@@ -505,10 +508,10 @@ class batch_normalization : public regularizer_layer {
           dstdev += - dxhat * (x - mean) / std::pow(stdev + m_epsilon, 2);
         }
       }
-      scale_gradient_local(channel, 0) = dscale;
-      bias_gradient_local(channel, 0) = dbias;
       mean_gradient_local(channel, 0) = dmean;
       stdev_gradient_local(channel, 0) = dstdev;
+      scale_gradient_local(channel, 0) = dscale;
+      bias_gradient_local(channel, 0) = dbias;
 
     }
 
