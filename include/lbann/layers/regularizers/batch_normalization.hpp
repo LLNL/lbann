@@ -60,11 +60,10 @@ class batch_normalization : public regularizer_layer {
    */
   batch_normalization(int index,
                       lbann_comm *comm,
-                      int mini_batch_size,
                       DataType decay=0.9,
                       DataType gamma=1.0,
                       DataType beta=0.0)
-    : regularizer_layer(index, comm, mini_batch_size),
+    : regularizer_layer(index, comm),
       m_gamma_init(gamma),
       m_beta_init(beta),
       m_decay(decay) {

@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
     Layer *fc1 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        comm,
-       trainParams.MBSize,
        1024,
        weight_initialization::glorot_uniform,
        dnn.create_optimizer());
@@ -210,15 +209,13 @@ int main(int argc, char *argv[]) {
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *relu1 = new relu_layer<DATA_LAYOUT>(
       layer_id,
-      comm,
-      trainParams.MBSize);
+      comm);
     dnn.add(relu1);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *dropout1 = new dropout<DATA_LAYOUT>(
       layer_id,
       comm,
-      trainParams.MBSize,
       trainParams.DropOut);
     dnn.add(dropout1);
 
@@ -227,7 +224,6 @@ int main(int argc, char *argv[]) {
     Layer *fc2 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        comm,
-       trainParams.MBSize,
        1024,
        weight_initialization::glorot_uniform,
        dnn.create_optimizer());
@@ -236,15 +232,13 @@ int main(int argc, char *argv[]) {
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *relu2 = new relu_layer<DATA_LAYOUT>(
       layer_id,
-      comm,
-      trainParams.MBSize);
+      comm);
     dnn.add(relu2);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *dropout2 = new dropout<DATA_LAYOUT>(
       layer_id,
       comm,
-      trainParams.MBSize,
       trainParams.DropOut);
     dnn.add(dropout2);
 
@@ -253,7 +247,6 @@ int main(int argc, char *argv[]) {
     Layer *fc3 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        comm,
-       trainParams.MBSize,
        1024,
        weight_initialization::glorot_uniform,
        dnn.create_optimizer());
@@ -262,15 +255,13 @@ int main(int argc, char *argv[]) {
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *relu3 = new relu_layer<DATA_LAYOUT>(
       layer_id,
-      comm,
-      trainParams.MBSize);
+      comm);
     dnn.add(relu3);
 
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *dropout3 = new dropout<DATA_LAYOUT>(
       layer_id,
       comm,
-      trainParams.MBSize,
       trainParams.DropOut);
     dnn.add(dropout3);
 
@@ -279,7 +270,6 @@ int main(int argc, char *argv[]) {
     Layer *fc4 = new fully_connected_layer<DATA_LAYOUT>(
        layer_id,
        comm,
-       trainParams.MBSize,
        10,
        weight_initialization::glorot_uniform,
        dnn.create_optimizer(),
@@ -289,9 +279,7 @@ int main(int argc, char *argv[]) {
     get_prev_neurons_and_index(&dnn, prev_num_neurons, layer_id);
     Layer *softmax = new softmax_layer<DATA_LAYOUT>(
        layer_id,
-       comm,
-       trainParams.MBSize,
-       dnn.create_optimizer());
+       comm);
     dnn.add(softmax);
 
 #ifdef PARTITIONED

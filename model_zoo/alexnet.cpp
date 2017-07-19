@@ -361,7 +361,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           1,
           comm,
-          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
@@ -377,7 +376,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           2,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(relu);
     }
@@ -393,7 +391,6 @@ int main(int argc, char *argv[]) {
         = new local_response_normalization_layer<>(
           3,
           comm,
-          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
@@ -413,7 +410,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           4,
           comm,
-          trainParams.MBSize,
           numDims,
           poolWindowDims,
           poolPads,
@@ -435,7 +431,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           5,
           comm,
-          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
@@ -451,7 +446,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           6,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(relu);
     }
@@ -467,7 +461,6 @@ int main(int argc, char *argv[]) {
         = new local_response_normalization_layer<>(
           7,
           comm,
-          trainParams.MBSize,
           windowWidth,
           alpha,
           beta,
@@ -487,7 +480,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           8,
           comm,
-          trainParams.MBSize,
           numDims,
           poolWindowDims,
           poolPads,
@@ -509,7 +501,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           9,
           comm,
-          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
@@ -525,7 +516,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           10,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(relu);
     }
@@ -542,7 +532,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           11,
           comm,
-          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
@@ -558,10 +547,8 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           12,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(relu);
-      dnn->add(layer);
      }
 
     // Layer 9 (convolution)
@@ -576,7 +563,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           13,
           comm,
-          trainParams.MBSize,
           numDims,
           outputChannels,
           filterDims,
@@ -592,7 +578,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           14,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(relu);
     }
@@ -608,7 +593,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           15,
           comm,
-          trainParams.MBSize,
           numDims,
           poolWindowDims,
           poolPads,
@@ -627,7 +611,6 @@ int main(int argc, char *argv[]) {
         = new fully_connected_layer<DATA_LAYOUT>(
           16,
           comm,
-          trainParams.MBSize,
           4096,
           weight_initialization::he_normal,
           dnn->create_optimizer());
@@ -636,14 +619,12 @@ int main(int argc, char *argv[]) {
       Layer *relu
         = new relu_layer<DATA_LAYOUT>(
           17,
-          comm,
-          trainParams.MBSize);
+          comm);
       dnn->add(relu);
       Layer *dropout_layer
         = new dropout<DATA_LAYOUT>(
           18,
           comm,
-          trainParams.MBSize,
           0.5);
       dnn->add(dropout_layer);
     }
@@ -655,7 +636,6 @@ int main(int argc, char *argv[]) {
         = new fully_connected_layer<DATA_LAYOUT>(
           19,
           comm,
-          trainParams.MBSize,
           4096,
           weight_initialization::he_normal,
           dnn->create_optimizer(), 
@@ -665,14 +645,12 @@ int main(int argc, char *argv[]) {
       Layer *relu
         = new relu_layer<DATA_LAYOUT>(
           20,
-          comm,
-          trainParams.MBSize);
+          comm);
       dnn->add(relu);
       Layer *dropout_layer
         = new dropout<DATA_LAYOUT>(
           21,
           comm,
-          trainParams.MBSize,
           0.5);
       dnn->add(dropout_layer);
     }
@@ -684,7 +662,6 @@ int main(int argc, char *argv[]) {
         = new fully_connected_layer<DATA_LAYOUT>(
           22,
           comm,
-          trainParams.MBSize,
           1000,
           weight_initialization::he_normal,
           dnn->create_optimizer(),
@@ -695,9 +672,7 @@ int main(int argc, char *argv[]) {
       Layer *softmax 
         = new softmax_layer<DATA_LAYOUT>(
           23,
-          comm,
-          trainParams.MBSize,
-          dnn->create_optimizer());
+          comm);
       dnn->add(softmax);
     }
 

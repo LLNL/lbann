@@ -134,9 +134,9 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, cudnn);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, cudnn);
       } else {
-        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, cudnn);
+        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, cudnn);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -149,9 +149,9 @@ void add_layers(
     if (layer.has_sigmoid()) {
       //const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size);
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm);
       } else {
-        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size);
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -175,14 +175,12 @@ void add_layers(
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           all_layers[original_layer]
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           all_layers[original_layer]
         );
       }
@@ -250,7 +248,6 @@ void add_layers(
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
@@ -259,7 +256,6 @@ void add_layers(
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
@@ -315,7 +311,6 @@ void add_layers(
         d = new pooling_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.num_dims(),
           &pool_dims[0],
           &pool_pads[0],
@@ -370,7 +365,6 @@ void add_layers(
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_dims,
           num_output_channels,
           &conv_dims[0],
@@ -410,7 +404,6 @@ void add_layers(
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
@@ -431,7 +424,6 @@ void add_layers(
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob(),
           ell.alpha(),
           ell.scale()
@@ -440,7 +432,6 @@ void add_layers(
         d = new selu_dropout<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob(),
           ell.alpha(),
           ell.scale()
@@ -460,7 +451,6 @@ void add_layers(
         d = new batch_normalization<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.decay(),
           ell.gamma(),
           ell.beta());
@@ -468,7 +458,6 @@ void add_layers(
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.decay(),
           ell.gamma(),
           ell.beta());
@@ -487,7 +476,6 @@ void add_layers(
         d = new selu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha(),
           ell.scale()
         );
@@ -495,7 +483,6 @@ void add_layers(
         d = new selu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha(),
           ell.scale()
         );
@@ -513,14 +500,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -536,14 +521,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -559,14 +542,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -583,14 +564,12 @@ void add_layers(
         d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.leak()
         );
       } else {
         d = new leaky_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.leak()
         );
       }
@@ -607,14 +586,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new id_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -631,14 +608,12 @@ void add_layers(
         d = new elu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha()
         );
       } else {
         d = new elu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha()
         );
       }
@@ -656,13 +631,11 @@ void add_layers(
         d = new dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob());
       } else {
         d = new dropout<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob());
       }
       all_layers[layer.index()] = d;
@@ -678,16 +651,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size,
-          model->create_optimizer()
+          comm
         );
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size,
-          model->create_optimizer()
+          comm
         );
       }
       all_layers[layer.index()] = d;

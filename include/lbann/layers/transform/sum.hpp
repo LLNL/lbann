@@ -48,10 +48,9 @@ class sum_layer : public transform {
   /// Constructor
   sum_layer(int index,
             lbann_comm *comm,
-            int mini_batch_size,
             std::vector<const Layer*> parents,
             cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size) {
+    : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();

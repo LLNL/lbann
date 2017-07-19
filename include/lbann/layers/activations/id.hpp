@@ -37,9 +37,8 @@ class id_layer : public entrywise_activation_layer {
  public:
   // TODO: Optimize this to copy instead of applying elementwise.
   id_layer(int index,
-           lbann_comm *comm,
-           int mini_batch_size) :
-    entrywise_activation_layer(index, comm, mini_batch_size) { 
+           lbann_comm *comm) :
+    entrywise_activation_layer(index, comm) {
      initialize_distributed_matrices(); 
   }
   id_layer* copy() const { return new id_layer(*this); }

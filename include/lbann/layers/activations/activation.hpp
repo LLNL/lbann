@@ -36,9 +36,8 @@ class activation_layer : public Layer {
 
  public:
   activation_layer(int index,
-                   lbann_comm *comm,
-                   int mini_batch_size) :
-    Layer(index, comm, mini_batch_size) {
+                   lbann_comm *comm) :
+    Layer(index, comm) {
   }
   activation_layer(const activation_layer&) = default;
   activation_layer& operator=(const activation_layer&) = default;
@@ -55,9 +54,8 @@ class entrywise_activation_layer : public activation_layer {
 
  public:
   entrywise_activation_layer(int index,
-                             lbann_comm *comm,
-                             int mini_batch_size) :
-    activation_layer(index, comm, mini_batch_size) {
+                             lbann_comm *comm) :
+    activation_layer(index, comm) {
   }
   entrywise_activation_layer(const entrywise_activation_layer&) = default;
   entrywise_activation_layer& operator=(

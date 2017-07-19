@@ -70,13 +70,11 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
   m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
 
-Layer::Layer(const int index, lbann_comm *comm, int mbsize)
+Layer::Layer(const int index, lbann_comm *comm)
   : m_index(index),
     m_comm(comm),
     m_execution_mode(execution_mode::training),
-    m_cudnn(nullptr),
-    m_mini_batch_size(mbsize),
-    m_effective_mbsize(mbsize)
+    m_cudnn(nullptr)
 {
   // Initialize neuron tensor dimensions
   m_num_neurons = 0;
@@ -119,8 +117,6 @@ Layer::Layer(const Layer& other) :
   m_next_layer(other.m_next_layer),
   m_using_gpus(other.m_using_gpus),
   m_cudnn(other.m_cudnn),
-  m_mini_batch_size(other.m_mini_batch_size),
-  m_effective_mbsize(other.m_effective_mbsize),
   fp_time(other.fp_time),
   fp_compute_time(other.fp_compute_time),
   bp_time(other.bp_time),
@@ -159,8 +155,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_next_layer = other.m_next_layer;
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
-  m_mini_batch_size = other.m_mini_batch_size;
-  m_effective_mbsize = other.m_effective_mbsize;
   fp_time = other.fp_time;
   fp_compute_time = other.fp_compute_time;
   bp_time = other.bp_time;
@@ -402,15 +396,15 @@ void Layer::setup_data() {
     throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
                           " num_neurons is 0");
   }
-  if (m_mini_batch_size == 0) {
-    throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
-                          " mini_batch_size is 0");
+  if (m_neural_network_model->get_max_mini_batch_size() == 0) {
+    throw lbann_exception("model max mini-batch size is 0");
   }
+  int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
   if (m_num_prev_neurons > 0) {
-    m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
+    m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
   }
   if (m_num_neurons > 0) {
-    m_activations->Resize(m_num_neurons, m_mini_batch_size);
+    m_activations->Resize(m_num_neurons, max_mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
@@ -434,7 +428,9 @@ void Layer::setup_gpu() {
   // Split mini-batch amongst GPUs
   const int num_gpus = m_cudnn->get_num_gpus();
   const int num_processes = m_comm->get_procs_per_model();
-  const int local_mini_batch_size = (m_mini_batch_size + num_processes - 1) / num_processes;
+  const int local_mini_batch_size =
+    (m_neural_network_model->get_max_mini_batch_size() + num_processes - 1) /
+    num_processes;
   m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
   // Initialize descriptors
@@ -535,14 +531,9 @@ void Layer::fp_set_std_matrix_view() {
   /// iteration and the size of the current mini-batch equals the normal
   /// mini-batch size.  In this case one of the ranks gets out of sync
   /// To fix this, we need a flag for when we are on the last mini-batch
-  if(cur_mini_batch_size != m_mini_batch_size || 1) {
-    // When the current mini-batch is partial, check with the other
-    // models to figure out the entire size of the complete mini-batch
-    int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
-    set_effective_minibatch_size(total_mini_batch_size);
-  } else {
-    set_effective_minibatch_size(cur_mini_batch_size * m_comm->get_num_models());
-  }
+  int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
+  this->m_neural_network_model->set_effective_mini_batch_size(
+    total_mini_batch_size);
 }
 
 void Layer::bp_set_std_matrix_view() {

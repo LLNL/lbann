@@ -47,9 +47,8 @@ class reconstruction_layer : public target_layer {
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
   reconstruction_layer(int index,
                        lbann_comm *comm,
-                       int minim_batch_size,
                        Layer *original_layer)
-    :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
+    :  target_layer(comm, {}, false), m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_index = index;

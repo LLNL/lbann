@@ -64,14 +64,13 @@ class pooling_layer : public transform {
   /// Constructor
   pooling_layer(int index,
                 lbann_comm *comm,
-                int mini_batch_size,
                 int num_data_dims,
                 const int *pool_dims,
                 const int *pool_pads,
                 const int *pool_strides,
                 pool_mode _pool_mode,
                 cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size),
+    : transform(index, comm),
       m_pool_mode(_pool_mode) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");

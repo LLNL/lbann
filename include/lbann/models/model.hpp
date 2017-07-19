@@ -51,7 +51,8 @@ class lbann_callback;
  */
 class model {
  public:
-  model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
+  model(lbann_comm *comm, int mini_batch_size,
+        objective_functions::objective_fn *obj_fn,
         optimizer_factory *optimizer_fac);
   model(const model& other);
   model& operator=(const model& other);
@@ -112,12 +113,25 @@ class model {
       l->set_execution_mode(mode);
     }
   }
-  inline int set_current_mini_batch_size(int mini_batch_size) {
+  /** Set the model's current mini-batch size. */
+  inline void set_current_mini_batch_size(int mini_batch_size) {
     m_current_mini_batch_size = mini_batch_size;
+  }
+  /** Get the model's current mini-batch size. */
+  inline int get_current_mini_batch_size() const {
     return m_current_mini_batch_size;
   }
-  inline int get_current_mini_batch_size() {
-    return m_current_mini_batch_size;
+  /** Get the model's maximum mini-batch size. */
+  inline int get_max_mini_batch_size() const {
+    return m_max_mini_batch_size;
+  }
+  /** Get the model's effective mini-batch size. */
+  inline int get_effective_mini_batch_size() const {
+    return m_effective_mini_batch_size;
+  }
+  /** Set the model's effective mini-batch size. */
+  inline void set_effective_mini_batch_size(int mini_batch_size) {
+    m_effective_mini_batch_size = mini_batch_size;
   }
   /** Get the current phase (multiple epochs) in layer-wise model training. */
   inline int get_current_phase() {
@@ -200,8 +214,20 @@ class model {
   int m_current_step;
   int m_current_validation_step;
   int m_current_testing_step;
-  /** Size of the current mini-batch */
+  /**
+   * Maximum possible minibatch size supported by layers in this model.
+   * Note that this is local to the particular model, not across multiple
+   * models.
+   */
+  int m_max_mini_batch_size;
+  /** Size of the current mini-batch in the model. */
   int m_current_mini_batch_size;
+  /**
+   * The "effective" size of a minibatch.
+   * This is the size of the minibatch across all models and used for e.g.
+   * correctly averaging gradients from multiple models.
+   */
+  int m_effective_mini_batch_size;
   /** current phase (multiple of epoch counts) in training a model */
   int m_current_phase;
   /** Communicator for the model. */

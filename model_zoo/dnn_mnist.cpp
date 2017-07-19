@@ -201,18 +201,16 @@ int main(int argc, char *argv[]) {
     Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
                     1,
                     comm, 
-                    trainParams.MBSize,
                     100,
                     weight_initialization::glorot_uniform, 
                     optimizer_fac->create_optimizer());
     dnn.add(fc1);
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
     dnn.add(relu1);
 
     Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
@@ -220,38 +218,33 @@ int main(int argc, char *argv[]) {
     Layer *fc2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
                     4,
                     comm, 
-                    trainParams.MBSize,
                     30, 
                     weight_initialization::glorot_uniform, 
                     optimizer_fac->create_optimizer());
     dnn.add(fc2);
 
-    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(5, comm,
-                                               trainParams.MBSize);
+    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(5, comm);
     dnn.add(relu2);
 
     // trainParams.ActivationType,
     Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
     dnn.add(dropout2);
 
     Layer *fc3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
                     7,
                     comm, 
-                    trainParams.MBSize,
                     10, 
                     weight_initialization::glorot_uniform,
                     optimizer_fac->create_optimizer(),
-                                                        false);
+                    false);
     dnn.add(fc3);
     
     //fourth layer
     Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
       8,
-      comm,
-      trainParams.MBSize, 
-      optimizer_fac->create_optimizer()
+      comm
     );
     dnn.add(sl);
 

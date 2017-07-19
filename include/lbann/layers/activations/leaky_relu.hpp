@@ -43,9 +43,8 @@ class leaky_relu_layer : public entrywise_activation_layer {
  public:
   /** Leak is the amount of signal to permit for negative values. */
   leaky_relu_layer(int index, lbann_comm *comm,
-                   int mini_batch_size,
                    DataType leak = DataType(0.01)) :
-    entrywise_activation_layer(index, comm, mini_batch_size),
+    entrywise_activation_layer(index, comm),
     m_leak(leak) { 
     initialize_distributed_matrices(); 
   }
