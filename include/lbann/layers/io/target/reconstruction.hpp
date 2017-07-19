@@ -38,7 +38,7 @@ template <data_layout T_layout>
 class reconstruction_layer : public target_layer {
  private:
   Layer *m_original_layer;
-  DataType aggregate_cost;
+  double aggregate_cost;
   long num_forwardprop_steps;
   //  weight_initialization m_weight_initialization;
   DistMat original_layer_act_v;
@@ -93,7 +93,8 @@ class reconstruction_layer : public target_layer {
     El::Copy(*this->m_prev_activations_v,*this->m_activations);
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
-    DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);
+    double avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);
+    this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
     aggregate_cost += avg_error;
     num_forwardprop_steps++;
   }
@@ -108,6 +109,7 @@ class reconstruction_layer : public target_layer {
   }
 
  public:
+  //@todo: call base class
   execution_mode get_execution_mode() {
     return this->m_execution_mode;
   }
@@ -149,9 +151,10 @@ class reconstruction_layer : public target_layer {
   void reset_cost() {
     aggregate_cost = 0.0;
     num_forwardprop_steps = 0;
+    this->m_neural_network_model->m_obj_fn->reset_obj_fn();
   }
 
-  DataType average_cost() const {
+  double average_cost() const {
     return aggregate_cost / num_forwardprop_steps;
   }
 
