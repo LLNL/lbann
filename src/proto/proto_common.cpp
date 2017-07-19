@@ -448,19 +448,18 @@ void add_layers(
     if (layer.has_batch_normalization()) {
       const lbann_data::BatchNormalization& ell = layer.batch_normalization();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new batch_normalization<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          ell.decay(),
-          ell.gamma(),
-          ell.beta());
+        err << __FILE__ << " " << __LINE__ << " :: batch_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
           ell.decay(),
-          ell.gamma(),
-          ell.beta());
+          ell.scale_init(),
+          ell.bias_init(),
+          ell.epsilon(),
+          ell.use_global_stats());
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();

@@ -332,9 +332,11 @@ message Softmax {
 // Regularization Layers //
 ///////////////////////////
 message BatchNormalization {
-  double decay = 2; //default: 0.9
-  double gamma = 3; //default: 1.0
-  double beta = 4;  //default: 0.0
+  double decay = 1;          //default: 0.9
+  double scale_init = 2;     //default: 1.0
+  double bias_init = 3;      //default: 0.0
+  double epsilon = 4;        //default: 1e-5
+  bool use_global_stats = 5; //default: false
 }
 
 message SeluDropout {

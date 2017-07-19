@@ -550,6 +550,9 @@ void Layer::bp_set_std_matrix_view() {
 #ifdef __LIB_CUDNN
 void Layer::pin_data() {
 
+  // Get maximum mini-batch size
+  const int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
+
   // Pin fp input on host memory if needed for GPU memory transfers
   if(!m_fp_input_pinned) {
     bool pin_fp_input = false;
@@ -575,7 +578,7 @@ void Layer::pin_data() {
 
     // Pin fp input if needed
     if(pin_fp_input) {
-      m_prev_activations->Resize(m_num_prev_neurons, m_mini_batch_size);
+      m_prev_activations->Resize(m_num_prev_neurons, max_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_activations);
       m_fp_input_pinned = true;
     }
@@ -615,7 +618,7 @@ void Layer::pin_data() {
 
     // Pin output if needed
     if(pin_fp_output) {
-      m_activations->Resize(m_num_neurons, m_mini_batch_size);
+      m_activations->Resize(m_num_neurons, max_mini_batch_size);
       m_cudnn->pin_matrix(*m_activations);
       m_fp_output_pinned = true;
     }
@@ -647,7 +650,7 @@ void Layer::pin_data() {
 
     // Pin bp input if needed
     if(pin_bp_input) {
-      m_prev_error_signal->Resize(m_num_neurons, m_mini_batch_size);
+      m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
       m_cudnn->pin_matrix(*m_prev_error_signal);
       m_bp_input_pinned = true;
     }
@@ -687,7 +690,7 @@ void Layer::pin_data() {
 
     // Pin bp output if needed
     if(pin_bp_output) {
-      m_error_signal->Resize(m_num_prev_neurons, m_mini_batch_size);
+      m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
       m_cudnn->pin_matrix(*m_error_signal);
       m_bp_output_pinned = true;
     }
