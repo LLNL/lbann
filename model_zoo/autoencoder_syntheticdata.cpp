@@ -200,7 +200,10 @@ int main(int argc, char *argv[]) {
 
 
     dnn.setup();
-
+    
+    if(comm->am_world_master()) std::cout << "Auto Testing: "
+        << "Reconstruction error should gradually decrease to below 1 at around 8th epoch" 
+        <<  "for a successful testing"  << std::endl;
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
       dnn.train(1);
     }
