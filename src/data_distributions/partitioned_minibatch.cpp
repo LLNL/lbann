@@ -89,10 +89,6 @@ void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 
 bool lbann::partitioned_minibatch::is_data_set_processed() {
   int num_readers_done = 0;
-  //int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
-  // not just the ones in the last round.  This will ensure that all readers, that had data
-  // will have partitioned it.
-
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
   m_local_reader_done = !update_data_reader();
@@ -102,9 +98,7 @@ bool lbann::partitioned_minibatch::is_data_set_processed() {
     num_readers_done = 1;
   }
 
-  /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
-  num_readers_done = m_comm->model_allreduce(num_readers_done);
-  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1) /*num_readers_done >= max_active_parallel_readers*/) {
+  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish

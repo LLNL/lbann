@@ -212,6 +212,8 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(generic_da
     data_reader->set_last_mini_batch_size(per_model_partial_mini_batch_size);
   }
 
+  data_reader->set_num_iterations_per_epoch(data_reader->get_num_mini_batches_per_reader());
+
   if(data_reader->get_last_mini_batch_size() > max_mini_batch_size) {
     throw new lbann_exception("Error in calculating the partial mini-batch size, exceeds the max mini-batch size");
   }

@@ -48,6 +48,8 @@ public:
   virtual int get_num_parallel_readers();
   virtual int get_num_iterations_per_epoch(execution_mode mode);
   virtual int get_num_iterations_per_epoch();
+  virtual int get_last_mini_batch_size(execution_mode mode);
+  virtual int get_last_mini_batch_size();
 
   virtual void calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {}
   virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) { return 0; }

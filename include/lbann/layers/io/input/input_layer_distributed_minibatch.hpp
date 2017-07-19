@@ -82,6 +82,8 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                             distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
+      distributed_minibatch::calculate_num_iterations_per_epoch(this->m_validation_dataset.data_reader);
+      distributed_minibatch::calculate_num_iterations_per_epoch(this->m_testing_dataset.data_reader);
     } else {
       io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
                                                           distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);

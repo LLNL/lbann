@@ -78,6 +78,8 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
                                                   Layer::m_mini_batch_size,
                                                   partitioned_minibatch::m_num_parallel_readers_testing);
+      partitioned_minibatch::calculate_num_iterations_per_epoch(this->m_validation_dataset.data_reader);
+      partitioned_minibatch::calculate_num_iterations_per_epoch(this->m_testing_dataset.data_reader);
     } else {
       io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
                                                           Layer::m_mini_batch_size,

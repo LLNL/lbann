@@ -54,6 +54,14 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << "/"
               << layer->get_num_iterations_per_epoch(execution_mode::testing)
               << "]"
+              << " last mini-batch [tr/v/te]"
+              << " ["
+              << layer->get_last_mini_batch_size(execution_mode::training)
+              << "/"
+              << layer->get_last_mini_batch_size(execution_mode::validation)
+              << "/"
+              << layer->get_last_mini_batch_size(execution_mode::testing)
+              << "]"
               << std::endl;
     std::cout << "-----------------------------------------------------------" << std::endl;
   }

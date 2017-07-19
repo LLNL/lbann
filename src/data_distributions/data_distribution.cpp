@@ -80,3 +80,27 @@ int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
   return get_num_iterations_per_epoch(get_execution_mode());
 }
 
+int lbann::generic_data_distribution::get_last_mini_batch_size(execution_mode mode) {
+  generic_data_reader *data_reader;
+  switch(mode) {
+  case execution_mode::training:
+    data_reader = m_data_readers[execution_mode::training];
+    break;
+  case execution_mode::validation:
+    data_reader = m_data_readers[execution_mode::validation];
+    break;
+  case execution_mode::testing:
+    data_reader = m_data_readers[execution_mode::testing];
+    break;
+  default:
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic data distribution: invalid execution phase");
+  }
+  return data_reader->get_last_mini_batch_size();
+}
+
+int lbann::generic_data_distribution::get_last_mini_batch_size() {
+  return get_last_mini_batch_size(get_execution_mode());
+}
+
