@@ -53,10 +53,8 @@ class softmax_layer : public activation_layer {
 
  public:
   softmax_layer(int index,
-                lbann_comm *comm,
-                int mini_batch_size,
-                optimizer *opt)
-     :  activation_layer(index, comm, mini_batch_size) {
+                lbann_comm *comm)
+     :  activation_layer(index, comm) {
     initialize_distributed_matrices();
   }
 
@@ -90,7 +88,8 @@ class softmax_layer : public activation_layer {
 
   void setup_data() {
     activation_layer::setup_data();
-    m_workspace->Resize(1, this->m_mini_batch_size);
+    m_workspace->Resize(
+      1, this->m_neural_network_model->get_max_mini_batch_size());
   }
 
   void fp_set_std_matrix_view() {

@@ -57,11 +57,10 @@ class concatenation_layer : public transform {
   /// Constructor
   concatenation_layer(int index,
                       lbann_comm *comm,
-                      int mini_batch_size,
                       std::vector<const Layer*> parents,
                       int concatenation_axis,
                       cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size),
+    : transform(index, comm),
       m_concatenation_axis(concatenation_axis) {
 
     // Setup the data distribution

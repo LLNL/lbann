@@ -262,7 +262,6 @@ int main(int argc, char *argv[]) {
         = new convolution_layer<>(
           index++,
           comm,
-          trainParams.MBSize,
           num_dims,
           output_channels,
           filter_dims,
@@ -278,15 +277,13 @@ int main(int argc, char *argv[]) {
       batch_normalization<data_layout::DATA_PARALLEL> *bn_conv1
         = new batch_normalization<data_layout::DATA_PARALLEL>(
           index++,
-          comm,
-          trainParams.MBSize);
+          comm);
       dnn->add(bn_conv1);
 
       relu_layer<data_layout::DATA_PARALLEL> *conv1_relu
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(conv1_relu);
 
@@ -297,7 +294,6 @@ int main(int argc, char *argv[]) {
         = new pooling_layer<>(
           index++,
           comm,
-          trainParams.MBSize,
           num_dims,
           pool_dims,
           pool_pads,
@@ -315,7 +311,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res2a_split);
@@ -332,7 +327,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -348,15 +342,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2a_branch2a_relu);
         
@@ -374,7 +366,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -390,15 +381,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2a_branch2b_relu);
         
@@ -408,7 +397,6 @@ int main(int argc, char *argv[]) {
         = new concatenation_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           0,
           NULL);
@@ -428,7 +416,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -444,15 +431,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2c_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2a_branch2c_relu);
         
@@ -467,7 +452,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res2b_split);
@@ -484,7 +468,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -500,15 +483,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2b_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2b_branch2a_relu);
         
@@ -526,7 +507,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -542,15 +522,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2b_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2b_branch2b_relu);
         
@@ -568,7 +546,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -584,8 +561,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -594,7 +570,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res2b_sum);
@@ -605,7 +580,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res2b_relu);
 
@@ -618,7 +592,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res2c_split);
@@ -635,7 +608,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -651,15 +623,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2c_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2c_branch2a_relu);
         
@@ -677,7 +647,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -693,15 +662,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res2c_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res2c_branch2b_relu);
         
@@ -719,7 +686,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -735,8 +701,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -745,7 +710,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res2c_sum);
@@ -756,7 +720,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res2c_relu);
 
@@ -769,7 +732,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3a_split);
@@ -786,7 +748,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -802,15 +763,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3a_branch2a_relu);
         
@@ -828,7 +787,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -844,15 +802,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3a_branch2b_relu);
         
@@ -862,7 +818,6 @@ int main(int argc, char *argv[]) {
         = new concatenation_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           0,
           NULL);
@@ -882,7 +837,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -898,15 +852,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2c_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3a_branch2c_relu);
         
@@ -921,7 +873,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3b_split);
@@ -938,7 +889,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -954,15 +904,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3b_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3b_branch2a_relu);
         
@@ -980,7 +928,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -996,15 +943,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3b_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3b_branch2b_relu);
         
@@ -1022,7 +967,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1038,8 +982,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1048,7 +991,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3b_sum);
@@ -1059,7 +1001,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res3b_relu);
 
@@ -1072,7 +1013,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3c_split);
@@ -1089,7 +1029,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1105,15 +1044,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3c_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3c_branch2a_relu);
         
@@ -1131,7 +1068,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1147,15 +1083,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3c_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3c_branch2b_relu);
         
@@ -1173,7 +1107,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1189,8 +1122,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1199,7 +1131,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3c_sum);
@@ -1210,7 +1141,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res3c_relu);
 
@@ -1223,7 +1153,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3d_split);
@@ -1240,7 +1169,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1256,15 +1184,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3d_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3d_branch2a_relu);
         
@@ -1282,7 +1208,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1298,15 +1223,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res3d_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res3d_branch2b_relu);
         
@@ -1324,7 +1247,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1340,8 +1262,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1350,7 +1271,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res3d_sum);
@@ -1361,7 +1281,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res3d_relu);
 
@@ -1374,7 +1293,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4a_split);
@@ -1391,7 +1309,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1407,15 +1324,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4a_branch2a_relu);
         
@@ -1433,7 +1348,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1449,15 +1363,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4a_branch2b_relu);
         
@@ -1467,7 +1379,6 @@ int main(int argc, char *argv[]) {
         = new concatenation_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           0,
           NULL);
@@ -1487,7 +1398,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1503,15 +1413,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2c_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4a_branch2c_relu);
         
@@ -1526,7 +1434,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4b_split);
@@ -1543,7 +1450,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1559,15 +1465,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4b_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4b_branch2a_relu);
         
@@ -1585,7 +1489,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1601,15 +1504,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4b_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4b_branch2b_relu);
         
@@ -1627,7 +1528,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1643,8 +1543,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1653,7 +1552,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4b_sum);
@@ -1664,7 +1562,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res4b_relu);
 
@@ -1677,7 +1574,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4c_split);
@@ -1694,7 +1590,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1710,15 +1605,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4c_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4c_branch2a_relu);
         
@@ -1736,7 +1629,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1752,15 +1644,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4c_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4c_branch2b_relu);
         
@@ -1778,7 +1668,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1794,8 +1683,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1804,7 +1692,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4c_sum);
@@ -1815,7 +1702,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res4c_relu);
 
@@ -1828,7 +1714,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4d_split);
@@ -1845,7 +1730,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1861,15 +1745,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4d_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4d_branch2a_relu);
         
@@ -1887,7 +1769,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1903,15 +1784,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4d_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4d_branch2b_relu);
         
@@ -1929,7 +1808,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -1945,8 +1823,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -1955,7 +1832,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4d_sum);
@@ -1966,7 +1842,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res4d_relu);
 
@@ -1979,7 +1854,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4e_split);
@@ -1996,7 +1870,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2012,15 +1885,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4e_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4e_branch2a_relu);
         
@@ -2038,7 +1909,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2054,15 +1924,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4e_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4e_branch2b_relu);
         
@@ -2080,7 +1948,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2096,8 +1963,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -2106,7 +1972,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4e_sum);
@@ -2117,7 +1982,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res4e_relu);
 
@@ -2130,7 +1994,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4f_split);
@@ -2147,7 +2010,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2163,15 +2025,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4f_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4f_branch2a_relu);
         
@@ -2189,7 +2049,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2205,15 +2064,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res4f_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res4f_branch2b_relu);
         
@@ -2231,7 +2088,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2247,8 +2103,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -2257,7 +2112,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res4f_sum);
@@ -2268,7 +2122,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res4f_relu);
 
@@ -2281,7 +2134,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res5a_split);
@@ -2298,7 +2150,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2314,15 +2165,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5a_branch2a_relu);
         
@@ -2340,7 +2189,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2356,15 +2204,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5a_branch2b_relu);
         
@@ -2374,7 +2220,6 @@ int main(int argc, char *argv[]) {
         = new concatenation_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           0,
           NULL);
@@ -2394,7 +2239,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2410,15 +2254,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2c_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5a_branch2c_relu);
         
@@ -2433,7 +2275,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res5b_split);
@@ -2450,7 +2291,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2466,15 +2306,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5b_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5b_branch2a_relu);
         
@@ -2492,7 +2330,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2508,15 +2345,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5b_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5b_branch2b_relu);
         
@@ -2534,7 +2369,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2550,8 +2384,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -2560,7 +2393,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res5b_sum);
@@ -2571,7 +2403,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res5b_relu);
 
@@ -2584,7 +2415,6 @@ int main(int argc, char *argv[]) {
         = new split_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res5c_split);
@@ -2601,7 +2431,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2617,15 +2446,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2a);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5c_branch2a_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5c_branch2a_relu);
         
@@ -2643,7 +2470,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2659,15 +2485,13 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2b);
 
         relu_layer<data_layout::DATA_PARALLEL> *res5c_branch2b_relu
           = new relu_layer<data_layout::DATA_PARALLEL>(
             index++,
             comm,
-            trainParams.MBSize,
             cudnn);
         dnn->add(res5c_branch2b_relu);
         
@@ -2685,7 +2509,6 @@ int main(int argc, char *argv[]) {
           = new convolution_layer<>(
             index++,
             comm,
-            trainParams.MBSize,
             num_dims,
             output_channels,
             filter_dims,
@@ -2701,8 +2524,7 @@ int main(int argc, char *argv[]) {
         batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
           = new batch_normalization<data_layout::DATA_PARALLEL>(
             index++,
-            comm,
-            trainParams.MBSize);
+            comm);
         dnn->add(bn2a_branch2c);
         
       }      
@@ -2711,7 +2533,6 @@ int main(int argc, char *argv[]) {
         = new sum_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           {},
           NULL);
       dnn->add(res5c_sum);
@@ -2722,7 +2543,6 @@ int main(int argc, char *argv[]) {
         = new relu_layer<data_layout::DATA_PARALLEL>(
           index++,
           comm,
-          trainParams.MBSize,
           cudnn);
       dnn->add(res5c_relu);
 
@@ -2735,7 +2555,6 @@ int main(int argc, char *argv[]) {
       = new pooling_layer<>(
         index++,
         comm,
-        trainParams.MBSize,
         num_dims,
         pool_dims,
         pool_pads,
@@ -2748,7 +2567,6 @@ int main(int argc, char *argv[]) {
       = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
         index++,
         comm,
-        trainParams.MBSize,
         1000,
         weight_initialization::he_normal,
         dnn->create_optimizer(),
@@ -2759,9 +2577,7 @@ int main(int argc, char *argv[]) {
     softmax_layer<data_layout::MODEL_PARALLEL> *softmax
       = new softmax_layer<data_layout::MODEL_PARALLEL>(
         index++,
-        comm,
-        trainParams.MBSize,
-        dnn->create_optimizer());
+        comm);
       dnn->add(softmax);
 
 #ifdef PARTITIONED

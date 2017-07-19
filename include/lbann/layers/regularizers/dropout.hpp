@@ -50,9 +50,8 @@ class dropout : public regularizer_layer {
   /** Keep units with probabiliy keep_prob. */
   dropout(int index,
           lbann_comm *comm,
-          int mini_batch_size,
           float keep_prob=0.5f) :
-    regularizer_layer(index, comm, mini_batch_size),
+    regularizer_layer(index, comm),
     m_keep_prob(keep_prob) {
     // Setup the data distribution
     initialize_distributed_matrices();

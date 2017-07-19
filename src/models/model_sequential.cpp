@@ -44,12 +44,10 @@ sequential_model::sequential_model(int mini_batch_size,
                                    lbann_comm *comm,
                                    objective_functions::objective_fn *obj_fn,
                                    optimizer_factory *optimizer_fac)
-  : model(comm, obj_fn, optimizer_fac),
-    m_mini_batch_size(mini_batch_size) {}
+  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
 
 sequential_model::sequential_model(const sequential_model& other) :
-  model(other),
-  m_mini_batch_size(other.m_mini_batch_size) {
+  model(other) {
   // First copy over the layers.
   for (const auto& l : other.m_layers) {
     m_layers.push_back(l->copy());
@@ -61,11 +59,16 @@ sequential_model::sequential_model(const sequential_model& other) :
     Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
     m_layers[l]->setup_pointers(prev_layer, next_layer);
   }
+  // Update target layer data readers.
+  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
+  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  if (input && target) {
+    target->set_data_readers_from_layer(input);
+  }
 }
 
 sequential_model& sequential_model::operator=(const sequential_model& other) {
   model::operator=(other);
-  m_mini_batch_size = other.m_mini_batch_size;
   m_layers.clear();
   // First copy over the layers.
   for (const auto& l : other.m_layers) {
@@ -77,6 +80,12 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
     Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
     Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
     m_layers[l]->setup_pointers(prev_layer, next_layer);
+  }
+  // Update target layer data readers.
+  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
+  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  if (input && target) {
+    target->set_data_readers_from_layer(input);
   }
   return *this;
 }

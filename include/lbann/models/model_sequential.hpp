@@ -70,10 +70,6 @@ class sequential_model : public model {
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
 
-  /// Get mini-batch size
-  int get_mini_batch_size() const {
-    return m_mini_batch_size;
-  }
   /// Get list of layers
   virtual std::vector<Layer *>& get_layers() {
     return m_layers;
@@ -130,8 +126,6 @@ class sequential_model : public model {
   int num_previous_neurons();
 
  protected:
-  /// Mini-batch size (no ckpt, so user can override on restart)
-  int m_mini_batch_size;
   /// List of layers
   std::vector<Layer *> m_layers;
 

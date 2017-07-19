@@ -146,40 +146,38 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm, trainParams.MBSize,
+                       1, comm,
                        100, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(encode1);
     
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
     dnn.add(relu1);
 
     Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       4, comm, trainParams.MBSize,
+                       4, comm,
                        synthetic_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm,
-                                               trainParams.MBSize);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm);
     dnn.add(relu2);
 
     Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
 
     Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
-                                                          trainParams.MBSize, input_layer);
+                                                          input_layer);
     dnn.add(rcl);
 
     

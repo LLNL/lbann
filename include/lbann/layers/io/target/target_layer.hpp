@@ -41,8 +41,8 @@ class target_layer : public io_layer {
   bool m_shared_data_reader;
 
  public:
-  target_layer(lbann_comm *comm, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(comm, mini_batch_size, data_readers, true, for_regression) {
+  target_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+    : io_layer(comm, data_readers, true, for_regression) {
     m_shared_data_reader = shared_data_reader;
   }
 
@@ -81,9 +81,12 @@ class target_layer : public io_layer {
           << " :: lbann_target_layer: target layer has invalid objective function pointer";
       throw lbann_exception(err.str());
     }
-    this->m_neural_network_model->m_obj_fn->setup(this->m_num_neurons, this->m_mini_batch_size);
+    this->m_neural_network_model->m_obj_fn->setup(
+      this->m_num_neurons,
+      this->m_neural_network_model->get_max_mini_batch_size());
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      m->setup(this->m_num_neurons, this->m_mini_batch_size);
+      m->setup(this->m_num_neurons,
+               this->m_neural_network_model->get_max_mini_batch_size());
       m->m_neural_network_model = this->m_neural_network_model;
     }
   }
