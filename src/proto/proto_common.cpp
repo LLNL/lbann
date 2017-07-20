@@ -134,7 +134,7 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, cudnn);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, NULL);
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, cudnn);
       }
