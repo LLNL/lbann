@@ -1,10 +1,6 @@
 model {
   name: "dnn"
   objective_function: "mean_squared_error"
-  metric { 
-    categorical_accuracy {
-    }
-  }
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
