@@ -65,9 +65,9 @@ class top_k_categorical_accuracy : public metric {
     // Simple approach: Gather all predictions to the model master.
     // TODO: Better to gather only the top k predictions from each model.
     int num_errors = 0;
+    m_gathered_predictions = predictions_v;
+    m_gathered_ground_truth = ground_truth_v;
     if (this->m_comm->am_model_master()) {
-      m_gathered_predictions = predictions_v;
-      m_gathered_ground_truth = ground_truth_v;
       const El::Int mbsize = m_gathered_predictions.Width();
       const El::Int num_classes = m_gathered_predictions.Height();
       // Compute the top k predictions in each entry of the minibatch.
