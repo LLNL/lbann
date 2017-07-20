@@ -38,15 +38,11 @@
 using namespace cudnn;
 using namespace lbann;
 
-#define _ALLOC_DEVICE_MEM_ONCE_
-
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
   : comm(_comm) {
 
   // Determine number of available GPUs
-  int num_total_gpus;
-  CHECK_CUDA(cudaGetDeviceCount(&num_total_gpus));
-  m_num_total_gpus = num_total_gpus;
+  CHECK_CUDA(cudaGetDeviceCount(&m_num_total_gpus));
   if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
     m_num_total_gpus = max_num_gpus;
   }
@@ -60,39 +56,55 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
 
   // Case where compute node has more GPUs than MPI ranks
   if(m_num_total_gpus >= procs_per_node) {
-    int gpu = rank_in_node;
-    while(gpu < m_num_total_gpus) {
-      CHECK_CUDA(cudaSetDevice(gpu));
+    const int min_gpus_per_proc = m_num_total_gpus / procs_per_node;
+    const int num_gpus_remainder = m_num_total_gpus % procs_per_node;
+    int gpu_start = rank_in_node * min_gpus_per_proc;
+    int gpu_end = (rank_in_node + 1) * min_gpus_per_proc;
+    if(rank_in_node < num_gpus_remainder) {
+      gpu_start += rank_in_node;
+      gpu_end += rank_in_node + 1;
+    }
+    else {
+      gpu_start += num_gpus_remainder;
+      gpu_end += num_gpus_remainder;
+    }
+    for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
+      FORCE_CHECK_CUDA(cudaSetDevice(gpu));
       m_gpus.push_back(gpu);
       m_streams.push_back(NULL);
       m_handles.push_back(NULL);
       m_cublas_handles.push_back(NULL);
-      cudaStream_t& stream = m_streams.back();
-      cudnnHandle_t& handle = m_handles.back();
-      cublasHandle_t& cublas_handle = m_cublas_handles.back();      
-      CHECK_CUDA(cudaStreamCreate(&stream));
-      CHECK_CUDNN(cudnnCreate(&handle));
-      CHECK_CUDNN(cudnnSetStream(handle, stream));
-      FORCE_CHECK_CUBLAS(cublasCreate(&cublas_handle));
-      gpu += procs_per_node;
+      FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
+      FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
+      FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
+      FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
     }
   }
 
   // Case where compute node has fewers GPUs than MPI ranks
   else {
-    const int gpu = rank_in_node % m_num_total_gpus;
-    CHECK_CUDA(cudaSetDevice(gpu));
+    const int min_procs_per_gpu = procs_per_node / m_num_total_gpus;
+    const int procs_remainder = procs_per_node % m_num_total_gpus;
+    int gpu = -1;
+    int proc_end = 0;
+    do {
+      gpu++;
+      if(gpu < procs_remainder) {
+        proc_end += min_procs_per_gpu + 1;
+      }
+      else {
+        proc_end += min_procs_per_gpu;
+      }
+    } while(rank_in_node >= proc_end);
+    FORCE_CHECK_CUDA(cudaSetDevice(gpu));
     m_gpus.push_back(gpu);
     m_streams.push_back(NULL);
     m_handles.push_back(NULL);
     m_cublas_handles.push_back(NULL);    
-    cudaStream_t& stream = m_streams.back();
-    cudnnHandle_t& handle = m_handles.back();
-    cublasHandle_t& cublas_handle = m_cublas_handles.back();    
-    CHECK_CUDA(cudaStreamCreate(&stream));
-    CHECK_CUDNN(cudnnCreate(&handle));
-    CHECK_CUDNN(cudnnSetStream(handle, stream));
-    FORCE_CHECK_CUBLAS(cublasCreate(&cublas_handle));
+    FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
+    FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
+    FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
+    FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
   }
 
   // Get number of GPUs for current MPI rank
@@ -108,19 +120,19 @@ cudnn_manager::~cudnn_manager() {
   // Free work spaces
   for(size_t i=0u; i<m_gpus.size(); ++i) {
     if(m_work_space_sizes[i]) {
-      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      CHECK_CUDA(cudaFree(m_work_spaces[i]));
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      FORCE_CHECK_CUDA(cudaFree(m_work_spaces[i]));
     }
   }
 
   // Destroy cuDNN handles
   for(size_t i=0u; i<m_gpus.size(); ++i) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     if(m_streams[i]) {
-      CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
+      FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
     }
     if(m_handles[i]) {
-      CHECK_CUDNN(cudnnDestroy(m_handles[i]));
+      FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
     }
     if(m_cublas_handles[i]) {
       FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
@@ -151,9 +163,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   gpu_data.resize(m_num_gpus, NULL);
   for(int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
-      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      CHECK_CUDA(cudaMalloc((void **) &gpu_data[i],
-                            height*width_per_gpu*sizeof(DataType)));
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      FORCE_CHECK_CUDA(cudaMalloc((void **) &gpu_data[i],
+                                  height*width_per_gpu*sizeof(DataType)));
     }
 
   }
@@ -177,8 +189,8 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
   // Deallocate GPU memory
   for(int i=0; i<m_num_gpus; ++i) {
     if(gpu_data[i] != NULL) {
-      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      CHECK_CUDA(cudaFree(gpu_data[i]));
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      FORCE_CHECK_CUDA(cudaFree(gpu_data[i]));
     }
   }
 
@@ -534,7 +546,7 @@ void cudnn_manager::pin_matrix(ElMat& mat) {
   
   // Allocate pinned memory on host
   DataType* pinned_buffer;
-  CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
+  FORCE_CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
                             mat_local.Height()*mat_local.Width()*sizeof(DataType)));
   Mat pinned_mat(mat_local.Height(), mat_local.Width(),
                  pinned_buffer, mat_local.Height());
@@ -560,7 +572,7 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
   Mat new_mat_local(mat_local);
 
   // Deallocate pinned memory
-  CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
+  FORCE_CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
 
   // Reconfigure matrix around unpinned memory
   mat.Attach(mat.Height(),
