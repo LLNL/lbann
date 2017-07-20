@@ -66,11 +66,14 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
       m_gpus.push_back(gpu);
       m_streams.push_back(NULL);
       m_handles.push_back(NULL);
+      m_cublas_handles.push_back(NULL);
       cudaStream_t& stream = m_streams.back();
       cudnnHandle_t& handle = m_handles.back();
+      cublasHandle_t& cublas_handle = m_cublas_handles.back();      
       CHECK_CUDA(cudaStreamCreate(&stream));
       CHECK_CUDNN(cudnnCreate(&handle));
       CHECK_CUDNN(cudnnSetStream(handle, stream));
+      FORCE_CHECK_CUBLAS(cublasCreate(&cublas_handle));
       gpu += procs_per_node;
     }
   }
@@ -82,11 +85,14 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
     m_gpus.push_back(gpu);
     m_streams.push_back(NULL);
     m_handles.push_back(NULL);
+    m_cublas_handles.push_back(NULL);    
     cudaStream_t& stream = m_streams.back();
     cudnnHandle_t& handle = m_handles.back();
+    cublasHandle_t& cublas_handle = m_cublas_handles.back();    
     CHECK_CUDA(cudaStreamCreate(&stream));
     CHECK_CUDNN(cudnnCreate(&handle));
     CHECK_CUDNN(cudnnSetStream(handle, stream));
+    FORCE_CHECK_CUBLAS(cublasCreate(&cublas_handle));
   }
 
   // Get number of GPUs for current MPI rank
@@ -115,6 +121,9 @@ cudnn_manager::~cudnn_manager() {
     }
     if(m_handles[i]) {
       CHECK_CUDNN(cudnnDestroy(m_handles[i]));
+    }
+    if(m_cublas_handles[i]) {
+      FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
     }
   }
 }
@@ -461,6 +470,22 @@ const cudnnHandle_t& cudnn_manager::get_handle(int i) const {
   return m_handles[i];
 }
 
+std::vector<cublasHandle_t>& cudnn_manager::get_cublas_handles() {
+  return m_cublas_handles;
+}
+
+const std::vector<cublasHandle_t>& cudnn_manager::get_cublas_handles() const {
+  return m_cublas_handles;
+}
+
+cublasHandle_t& cudnn_manager::get_cublas_handle(int i) {
+  return m_cublas_handles[i];
+}
+
+const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
+  return m_cublas_handles[i];
+}
+
 std::vector<void *> cudnn_manager::get_work_spaces() {
   for(int i=0; i<m_num_gpus; ++i) {
     if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
@@ -546,6 +571,19 @@ void cudnn_manager::unpin_matrix(ElMat& mat) {
              new_mat_local,
              mat.Root());
 
+}
+
+void cudnn_manager::check_error() {
+  synchronize();
+  for(int i=0; i<m_num_gpus; ++i) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));    
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+      std::cerr << "CUDA error: " << cudaGetErrorString(err) << "\n";
+      cudaDeviceReset();
+      throw lbann::lbann_exception("CUDA error");
+    }
+  }
 }
 
 #endif // #ifdef __LIB_CUDNN

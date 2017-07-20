@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::testing, &imagenet_testset)
                                                           };
     input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::MODEL_PARALLEL, comm, parallel_io,
-                                                                                 trainParams.MBSize, data_readers);
+                                                                                 data_readers);
     gla->add(input_layer);
 
     gla->add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[0], trainParams.ActivationType,

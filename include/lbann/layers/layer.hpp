@@ -51,7 +51,7 @@ class model;
 
 class Layer {
  public:
-  Layer(const int index, lbann_comm *comm, int mbsize);
+  Layer(const int index, lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
 
@@ -155,24 +155,6 @@ class Layer {
     update_time = 0.0;
   }
 
-  /** Return the size of mini-batch this layer uses. */
-  virtual int get_minibatch_size() const {
-    return m_mini_batch_size;
-  }
-  /**
-   * Get the "effective" size of a mini-batch.
-   * This is for backward propagation, etc. when there are more updates being
-   * contributed than the local mini-batch size implies (e.g. when doing
-   * inter-model updates).
-   */
-  virtual int get_effective_minibatch_size() const {
-    return m_effective_mbsize;
-  }
-  /** Set the effective size of a mini-batch to size. */
-  virtual void set_effective_minibatch_size(int size) {
-    m_effective_mbsize = size;
-  }
-
   bool using_gpus() const {
     return m_using_gpus;
   }
@@ -195,6 +177,17 @@ class Layer {
 
   virtual bool saveToCheckpointShared(persist& p);
   virtual bool loadFromCheckpointShared(persist& p);
+
+  /** Get forward propagation input, as seen by previous layer. */
+  virtual const AbsDistMat& fp_input(const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output, as seen by next layer. */
+  virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
+  /** Get backward propagation input, as seen by next layer. */
+  virtual const AbsDistMat& bp_input(const Layer* next_layer = NULL) const;
+  /** Get backward propagation output, as seen by previous layer. */
+  virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output dimensions, as seen by next layer. */
+  virtual vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
  protected:
   int m_index;                 ///< Layer index (start with 0)
@@ -235,16 +228,6 @@ class Layer {
   /** Pin host memory if needed for GPU memory transfers. */
   virtual void pin_data();
 #endif
-  /** Get forward propagation input, as seen by previous layer. */
-  virtual const AbsDistMat& fp_input(const Layer* prev_layer = NULL) const;
-  /** Get forward propagation output, as seen by next layer. */
-  virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
-  /** Get backward propagation input, as seen by next layer. */
-  virtual const AbsDistMat& bp_input(const Layer* next_layer = NULL) const;
-  /** Get backward propagation output, as seen by previous layer. */
-  virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
-  /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
   /**
    * Called by setup(), each layer should override this to call its parent and
@@ -313,11 +296,6 @@ class Layer {
   cudnnTensorDescriptor_t m_neurons_cudnn_desc;
 
 #endif
-
-  /** Size of the local mini-batch. */
-  int m_mini_batch_size;
-  /** "Effective" mini-batch size for backward propagation, etc.. */
-  int m_effective_mbsize;
 
   /** Time spent in forward propagation. */
   double fp_time;

@@ -63,10 +63,17 @@ class convolution_layer : public learning {
   /// Convolution strides
   std::vector<int> m_conv_strides;
 
+  /// View into convolutional filter weights
   ElMat *m_filter_weights_v;
+  /// View into convolutional filter weights gradient
   ElMat *m_filter_weights_gradient_v;
+  /// View into bias weights
   ElMat *m_bias_weights_v;
+  /// View into bias weights gradient
   ElMat *m_bias_weights_gradient_v;
+
+  /// Scaling factor for bias term
+  DataType m_bias_scaling_factor;
 
 #ifdef __LIB_CUDNN
 
@@ -104,7 +111,6 @@ class convolution_layer : public learning {
 
   convolution_layer(int index,
                     lbann_comm *comm,
-                    int mini_batch_size,
                     int num_data_dims,
                     int num_output_channels,
                     const int *conv_dims,
@@ -112,8 +118,9 @@ class convolution_layer : public learning {
                     const int *conv_strides,
                     weight_initialization init,
                     optimizer *opt,
+                    bool has_bias = true,
                     cudnn::cudnn_manager *cudnn = NULL)
-    : learning(index, comm, mini_batch_size, opt),
+    : learning(index, comm, opt),
       m_weight_initialization(init) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
@@ -129,6 +136,9 @@ class convolution_layer : public learning {
     this->m_num_neuron_dims = num_data_dims + 1;
     this->m_neuron_dims.resize(this->m_num_neuron_dims);
     this->m_neuron_dims[0] = num_output_channels;
+
+    // Activate or disable bias
+    m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
   #ifdef __LIB_CUDNN
     m_weights_gradient_per_gpu = StarMat(this->m_comm->get_model_grid());
@@ -165,6 +175,7 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    m_bias_scaling_factor = other.m_bias_scaling_factor;
     setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
@@ -189,6 +200,7 @@ class convolution_layer : public learning {
     m_filter_weights_gradient_v = other.m_filter_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    m_bias_scaling_factor = other.m_bias_scaling_factor;
     setup_views();  // Update views.
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
@@ -493,8 +505,10 @@ class convolution_layer : public learning {
     // Transfer filters and bias from CPU to GPUs
     this->m_cudnn->broadcast_to_gpus(m_filter_weights_d,
                                      this->m_filter_weights_v->LockedMatrix());
-    this->m_cudnn->broadcast_to_gpus(m_bias_weights_d,
-                                     this->m_bias_weights_v->LockedMatrix());
+    if(m_bias_scaling_factor != DataType(0)) {
+      this->m_cudnn->broadcast_to_gpus(m_bias_weights_d,
+                                       this->m_bias_weights_v->LockedMatrix());
+    }
 
     // Perform convolution on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -516,7 +530,7 @@ class convolution_layer : public learning {
                                           this->m_neurons_cudnn_desc,
                                           this->m_activations_d[i]));
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
-                                 &one,
+                                 &m_bias_scaling_factor,
                                  m_bias_desc,
                                  m_bias_weights_d[i],
                                  &one,
@@ -550,7 +564,7 @@ class convolution_layer : public learning {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
-                                               &one,
+                                               &m_bias_scaling_factor,
                                                this->m_neurons_cudnn_desc,
                                                this->m_prev_error_signal_d[i],
                                                &zero,
@@ -593,9 +607,14 @@ class convolution_layer : public learning {
     this->m_cudnn->gather_from_gpus(filter_weights_gradient_per_gpu,
                                     m_filter_weights_gradient_d,
                                     m_filter_weights_gradient_v->Width());
-    this->m_cudnn->gather_from_gpus(bias_weights_gradient_per_gpu,
-                                    m_bias_weights_gradient_d,
-                                    m_bias_weights_gradient_v->Width());
+    if(m_bias_scaling_factor != DataType(0)) {
+      this->m_cudnn->gather_from_gpus(bias_weights_gradient_per_gpu,
+                                      m_bias_weights_gradient_d,
+                                      m_bias_weights_gradient_v->Width());
+    }
+    else {
+      El::Zero(bias_weights_gradient_per_gpu);
+    }
     El::Zero(*this->m_weights_gradient);
     this->m_cudnn->synchronize();
     for(int i=0; i<num_gpus; ++i) {
@@ -606,7 +625,8 @@ class convolution_layer : public learning {
     }
     El::AllReduce(*this->m_weights_gradient,
                   this->m_weights_gradient->RedundantComm());
-    *this->m_weights_gradient *= DataType(1) / this->get_effective_minibatch_size();
+    *this->m_weights_gradient *= DataType(1) /
+      this->m_neural_network_model->get_effective_mini_batch_size();
 
   #endif // #ifndef __LIB_CUDNN
   }
@@ -632,7 +652,8 @@ class convolution_layer : public learning {
         = El::View(activations_local,
                    El::IR(i*num_per_output_channel, (i+1)*num_per_output_channel),
                    El::ALL);
-      Fill(activations_channel, bias_weights_local.Get(0,i));
+      Fill(activations_channel,
+           m_bias_scaling_factor * bias_weights_local(0,i));
     }
 
     // Initialize im2col matrix
@@ -697,6 +718,7 @@ class convolution_layer : public learning {
           bias_weights_gradient_entry += prev_error_signal_local(row, col);
         }
       }
+      bias_weights_gradient_entry *= m_bias_scaling_factor;
     }
 
     // Initialize filter and im2col matrices
@@ -747,7 +769,8 @@ class convolution_layer : public learning {
     }
 
     // Scale and accumulate gradients
-    *this->m_weights_gradient *= DataType(1) / this->get_effective_minibatch_size();
+    *this->m_weights_gradient *= DataType(1) /
+      this->m_neural_network_model->get_effective_mini_batch_size();
     AllReduce(*this->m_weights_gradient, this->m_weights_gradient->RedundantComm());
 
   }

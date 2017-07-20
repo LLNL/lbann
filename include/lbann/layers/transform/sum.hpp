@@ -48,10 +48,9 @@ class sum_layer : public transform {
   /// Constructor
   sum_layer(int index,
             lbann_comm *comm,
-            int mini_batch_size,
             std::vector<const Layer*> parents,
             cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size) {
+    : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -80,11 +79,9 @@ class sum_layer : public transform {
 
     // Check if parent layer is null pointer
     if(parent == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "sum_layer: could not add parent layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -94,11 +91,7 @@ class sum_layer : public transform {
       m_parents.push_back(parent);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not add parent layer since it is already in list of parents" << "\n";
-      }
-    #endif
+      throw lbann_exception("sum_layer: could not add parent layer since it is already in list of parents");
     }
 
   }
@@ -107,11 +100,9 @@ class sum_layer : public transform {
     
     // Check if parent layer is null pointer
     if(parent == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
         std::cerr << "sum_layer: could not remove parent layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -121,11 +112,7 @@ class sum_layer : public transform {
       m_parents.erase(parent_pos);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "sum_layer: could not remove parent layer since it isn't in list of parents" << "\n";
-      }
-    #endif
+      throw lbann_exception("sum_layer: could not remove parent layer since it isn't in list of parents");
     }
 
   }
@@ -139,7 +126,7 @@ class sum_layer : public transform {
     }
 
     // Make the first parent layer the "previous" layer
-    this->m_parent_layer = m_parents.front();
+    this->m_prev_layer = m_parents.front();
 
   }
 
@@ -153,7 +140,7 @@ class sum_layer : public transform {
       El::Copy(*this->m_prev_activations, *this->m_activations);
       for(size_t i=1; i<m_parents.size(); ++i) {
         El::Axpy(DataType(1),
-                 *m_parents[i]->m_activations,
+                 m_parents[i]->fp_output(this),
                  *this->m_activations);
       }
     }
@@ -161,28 +148,6 @@ class sum_layer : public transform {
 
   void bp_compute() {
     El::View(*this->m_error_signal, *this->m_prev_error_signal);
-  }
-
-  const AbsDistMat& fp_input(const Layer* prev_layer) const {
-  #ifdef LBANN_DEBUG
-    if(prev_layer != NULL
-       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
-           == m_parents.end())) {
-      throw lbann_exception("sum_layer: unexpected previous layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_prev_activations;
-  }
-
-  const AbsDistMat& bp_output(const Layer* prev_layer) const {
-  #ifdef LBANN_DEBUG
-    if(prev_layer != NULL
-       && (std::find(m_parents.begin(), m_parents.end(), prev_layer)
-           == m_parents.end())) {
-      throw lbann_exception("sum_layer: unexpected previous layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_error_signal;
   }
 
 };

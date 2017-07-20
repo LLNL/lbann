@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// branch.hpp - Branch layer
+// split.hpp - Split layer
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_BRANCH_HPP_INCLUDED
-#define LBANN_LAYER_BRANCH_HPP_INCLUDED
+#ifndef LBANN_LAYER_SPLIT_HPP_INCLUDED
+#define LBANN_LAYER_SPLIT_HPP_INCLUDED
 
 #include <vector>
 #include "lbann/base.hpp"
@@ -36,9 +36,9 @@
 
 namespace lbann {
 
-/// Branch layer
+/// Split layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class branch_layer : public transform {
+class split_layer : public transform {
  private:
 
   /// List of child layers
@@ -46,12 +46,11 @@ class branch_layer : public transform {
 
  public:
   /// Constructor
-  branch_layer(int index,
-               lbann_comm *comm,
-               int mini_batch_size,
-               std::vector<const Layer*> children,
-               cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size) {
+  split_layer(int index,
+              lbann_comm *comm,
+              std::vector<const Layer*> children,
+              cudnn::cudnn_manager *cudnn = NULL)
+    : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -63,13 +62,13 @@ class branch_layer : public transform {
 
   }
 
-  branch_layer(const branch_layer&) = default;
-  branch_layer& operator=(const branch_layer&) = default;
-  ~branch_layer() = default;
+  split_layer(const split_layer&) = default;
+  split_layer& operator=(const split_layer&) = default;
+  ~split_layer() = default;
 
-  branch_layer* copy() const { return new branch_layer(*this); }
+  split_layer* copy() const { return new split_layer(*this); }
 
-  std::string get_name() const { return "branch"; }
+  std::string get_name() const { return "split"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
@@ -80,11 +79,9 @@ class branch_layer : public transform {
 
     // Check if child layer is null pointer
     if(child == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not add child layer since pointer is null" << "\n";
+        std::cerr << "split_layer: could not add child layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -94,11 +91,9 @@ class branch_layer : public transform {
       m_children.push_back(child);
     }
     else {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not add child layer since it is already in list of children" << "\n";
+        std::cerr << "split_layer: could not add child layer since it is already in list of children" << "\n";
       }
-    #endif
     }
 
   }
@@ -107,11 +102,9 @@ class branch_layer : public transform {
     
     // Check if child layer is null pointer
     if(child == NULL) {
-    #ifdef LBANN_DEBUG
       if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not remove child layer since pointer is null" << "\n";
+        std::cerr << "split_layer: could not remove child layer since pointer is null" << "\n";
       }
-    #endif
       return;
     }
 
@@ -121,11 +114,7 @@ class branch_layer : public transform {
       m_children.erase(child_pos);
     }
     else {
-    #ifdef LBANN_DEBUG
-      if(m_comm->am_world_master()) {
-        std::cerr << "branch_layer: could not remove child layer since it isn't in list of children" << "\n";
-      }
-    #endif
+      throw lbann_exception("split_layer: could not remove child layer since it isn't in list of children");
     }
 
   }
@@ -151,42 +140,20 @@ class branch_layer : public transform {
 
   void bp_compute() {
     if(m_children.size() == 1) {
-      El::View(*this->error_signal, *this->m_prev_error_signal);
+      El::View(*this->m_error_signal, *this->m_prev_error_signal);
     }
     else {
       El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
       for(size_t i=1; i<m_children.size(); ++i) {
         El::Axpy(DataType(1),
-                 *m_children[i]->m_error_signal,
+                 m_children[i]->bp_output(this),
                  *this->m_error_signal);
       }
     }
-  }
-
-  const AbsDistMat& fp_output(const Layer* next_layer) const {
-  #ifdef LBANN_DEBUG
-    if(next_layer != NULL
-       && (std::find(m_children.begin(), m_children.end(), next_layer)
-           == m_children.end())) {
-      throw lbann_exception("branch_layer: unexpected next layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_activations;
-  }
-
-  const AbsDistMat& bp_input(const Layer* next_layer) const {
-  #ifdef LBANN_DEBUG
-    if(next_layer != NULL
-       && (std::find(m_children.begin(), m_children.end(), next_layer)
-           == m_children.end())) {
-      throw lbann_exception("branch_layer: unexpected next layer");
-    }
-  #endif // LBANN_DEBUG
-    return *m_prev_error_signal;
   }
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_BRANCH_HPP_INCLUDED
+#endif  // LBANN_LAYER_SPLIT_HPP_INCLUDED

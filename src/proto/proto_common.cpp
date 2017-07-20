@@ -134,9 +134,9 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size, cudnn);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, cudnn);
       } else {
-        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size, cudnn);
+        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, cudnn);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -149,9 +149,9 @@ void add_layers(
     if (layer.has_sigmoid()) {
       //const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, mb_size);
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm);
       } else {
-        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm, mb_size);
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -175,14 +175,12 @@ void add_layers(
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           all_layers[original_layer]
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           all_layers[original_layer]
         );
       }
@@ -199,13 +197,11 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       }
@@ -226,7 +222,6 @@ void add_layers(
       } else {
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       }
@@ -250,7 +245,6 @@ void add_layers(
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
@@ -259,7 +253,6 @@ void add_layers(
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
@@ -315,7 +308,6 @@ void add_layers(
         d = new pooling_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.num_dims(),
           &pool_dims[0],
           &pool_pads[0],
@@ -361,6 +353,7 @@ void add_layers(
       int num_dims = ell.num_dims();
       //int num_input_channels = ell.num_input_channels();
       int num_output_channels = ell.num_output_channels();
+      bool has_bias = ell.has_bias();
       if (dl == data_layout::MODEL_PARALLEL) {
         err << __FILE__ << " " << __LINE__ << " :: convolution "
             << "does not support MODEL_PARALLEL layouts";
@@ -369,7 +362,6 @@ void add_layers(
         d = new convolution_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           num_dims,
           num_output_channels,
           &conv_dims[0],
@@ -377,6 +369,7 @@ void add_layers(
           &conv_strides[0],
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
+          has_bias,
           cudnn
         );
       }
@@ -408,7 +401,6 @@ void add_layers(
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           window_width,
           lrn_alpha,
           lrn_beta,
@@ -429,7 +421,6 @@ void add_layers(
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob(),
           ell.alpha(),
           ell.scale()
@@ -438,7 +429,6 @@ void add_layers(
         d = new selu_dropout<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob(),
           ell.alpha(),
           ell.scale()
@@ -455,21 +445,18 @@ void add_layers(
     if (layer.has_batch_normalization()) {
       const lbann_data::BatchNormalization& ell = layer.batch_normalization();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new batch_normalization<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          mb_size,
-          ell.decay(),
-          ell.gamma(),
-          ell.beta());
+        err << __FILE__ << " " << __LINE__ << " :: batch_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.decay(),
-          ell.gamma(),
-          ell.beta());
+          ell.scale_init(),
+          ell.bias_init(),
+          ell.epsilon(),
+          ell.use_global_stats());
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -485,7 +472,6 @@ void add_layers(
         d = new selu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha(),
           ell.scale()
         );
@@ -493,7 +479,6 @@ void add_layers(
         d = new selu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha(),
           ell.scale()
         );
@@ -511,14 +496,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -534,14 +517,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -557,14 +538,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -581,14 +560,12 @@ void add_layers(
         d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.leak()
         );
       } else {
         d = new leaky_relu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.leak()
         );
       }
@@ -605,14 +582,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new id_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -629,14 +604,12 @@ void add_layers(
         d = new elu_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha()
         );
       } else {
         d = new elu_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.alpha()
         );
       }
@@ -654,13 +627,11 @@ void add_layers(
         d = new dropout<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob());
       } else {
         d = new dropout<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          mb_size,
           ell.keep_prob());
       }
       all_layers[layer.index()] = d;
@@ -676,16 +647,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm,
-          mb_size,
-          model->create_optimizer()
+          comm
         );
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm,
-          mb_size,
-          model->create_optimizer()
+          comm
         );
       }
       all_layers[layer.index()] = d;
@@ -705,7 +672,6 @@ void add_layers(
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -724,7 +690,6 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -732,7 +697,6 @@ void add_layers(
       } else {
         d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -1343,12 +1307,52 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
+void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p) {
+  options *opts = options::get();
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    if (r->role() == which) {
+      std::stringstream s;
+      s << "data_filedir_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_data_filedir(opts->get_string(s.str().c_str()));
+      }
+      s.clear();
+      s.str("");
+      s << "data_filename_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_data_filename(opts->get_string(s.str().c_str()));
+      }
+      s.clear();
+      s.str("");
+      s << "label_filename_" << which;
+      if (opts->has_string(s.str().c_str())) {
+         r->set_label_filename(opts->get_string(s.str().c_str()));
+      }
+    }
+  }
+}
+
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
+  if (not master) {
+    return;
+  }
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+
+  if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
+      or opts->has_string("label_filename_train")) {
+    set_data_readers_filenames("train", p);
+  }
+  if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
+      or opts->has_string("label_filename_test")) {
+    set_data_readers_filenames("test", p);
+  }
 
   if (opts->has_string("image_dir")) {
     int sz = model->callback_size();
@@ -1406,26 +1410,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
 
     lbann_data::Optimizer *opt = new lbann_data::Optimizer;
-    //lbann_data::Optimizer *opt = p.mutable_optimizer();
-
-    //clear the existing optimizer
-    /*
-    if (opt->has_adagrad()) {
-      opt->clear_adagrad();
-    }
-    if (opt->has_rmsprop()) {
-      opt->clear_rmsprop();
-    }
-    if (opt->has_adam()) {
-      opt->clear_adam();
-    }
-    if (opt->has_hypergradient_adam()) {
-      opt->clear_hypergradient_adam();
-    }
-    if (opt->has_sgd()) {
-      opt->clear_sgd();
-    }
-    */
 
     //construct the new optimizer
     std::string opt_string = opts->get_string("opt");
@@ -1464,13 +1448,11 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_nesterov(nesterov);
       opt->set_allocated_sgd(a);
     } else {
-      if (master) {
         std::stringstream err;
         err << __FILE__ << " " << __LINE__
             << " :: unknown string for --optimizer: " << opt_string
             << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
         throw lbann_exception(err.str());
-      }
     }
     p.set_allocated_optimizer(opt);
   }
@@ -1573,6 +1555,11 @@ void print_help(lbann::lbann_comm *comm)
        "      <string> must be: data_parallel or model_parallel\n"
        "      note: this will be applied to all layers, metrics (and others)\n"
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "\n"
+       "DataReaders:\n"
+       "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
+       "  --data_filename_train=<string>  --data_filename_test=<string>\n"
+       "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"

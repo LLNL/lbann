@@ -36,14 +36,18 @@
 
 namespace lbann {
 
-model::model(lbann_comm *comm, objective_functions::objective_fn *obj_fn,
-                    optimizer_factory *optimizer_fac) :
+model::model(lbann_comm *comm, int mini_batch_size,
+             objective_functions::objective_fn *obj_fn,
+             optimizer_factory *optimizer_fac) :
   m_obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
   m_current_validation_step(0), m_current_testing_step(0),
-  m_current_mini_batch_size(0),m_current_phase(0),
+  m_max_mini_batch_size(mini_batch_size),
+  m_current_mini_batch_size(mini_batch_size),
+  m_effective_mini_batch_size(mini_batch_size),
+  m_current_phase(0),
   m_comm(comm),
   m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
   m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
@@ -56,7 +60,9 @@ model::model(const model& other) :
   m_current_step(other.m_current_step),
   m_current_validation_step(other.m_current_validation_step),
   m_current_testing_step(other.m_current_testing_step),
+  m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_current_mini_batch_size(other.m_current_mini_batch_size),
+  m_effective_mini_batch_size(other.m_effective_mini_batch_size),
   m_current_phase(other.m_current_phase),
   m_comm(other.m_comm),
   m_checkpoint_dir(other.m_checkpoint_dir),
@@ -84,7 +90,9 @@ model& model::operator=(const model& other) {
   m_current_step = other.m_current_step;
   m_current_validation_step = other.m_current_validation_step;
   m_current_testing_step = other.m_current_testing_step;
+  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_current_mini_batch_size = other.m_current_mini_batch_size;
+  m_effective_mini_batch_size = other.m_effective_mini_batch_size;
   m_current_phase = other.m_current_phase;
   m_comm = other.m_comm;
   m_checkpoint_dir = other.m_checkpoint_dir;

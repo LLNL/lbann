@@ -29,12 +29,12 @@
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 #define LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 
-#include "data_reader_imagenet.hpp"
+#include "data_reader_imagenet_cv.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
 
 namespace lbann {
-class imagenet_readerSingle_cv : public imagenet_reader {
+class imagenet_readerSingle_cv : public imagenet_reader_cv {
  public:
   imagenet_readerSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_readerSingle_cv(const imagenet_readerSingle_cv& source);
@@ -42,8 +42,8 @@ class imagenet_readerSingle_cv : public imagenet_reader {
 
   imagenet_readerSingle_cv& operator=(const imagenet_readerSingle_cv& source);
 
-  int fetch_data(Mat& X);
-  int fetch_label(Mat& Y);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
   void load();
 
  private:
@@ -51,12 +51,10 @@ class imagenet_readerSingle_cv : public imagenet_reader {
   size_t m_file_size;
   std::vector<unsigned char> m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
-  //std::vector<unsigned char> m_pixels;
-  std::shared_ptr<cv_process> m_pp;
 
   void open_data_stream();
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
+#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP

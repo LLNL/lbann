@@ -45,9 +45,9 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, mini_batch_size, num_parallel_readers, data_readers),
-      distributed_minibatch(comm, num_parallel_readers, mini_batch_size, data_readers),
+  input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer(comm, num_parallel_readers, data_readers),
+      distributed_minibatch(comm, num_parallel_readers, data_readers),
       Xs(comm->get_model_grid()) {
 
     // Setup the data distribution
@@ -70,28 +70,32 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
   void setup_data() {
     input_layer::setup_data();
+    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_sets_span_models) {
-      int stride = Layer::m_comm->get_num_models() * distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size;
-      int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * Layer::m_mini_batch_size;
-      int model_offset = Layer::m_comm->get_model_rank() * Layer::m_mini_batch_size;
+      int stride = Layer::m_comm->get_num_models() * distributed_minibatch::m_num_parallel_readers_training * max_mb_size;
+      int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * max_mb_size;
+      int model_offset = Layer::m_comm->get_model_rank() * max_mb_size;
       //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
       io_layer::setup_data_readers_for_training(base_offset,
                                                           stride, 1,
                                                           model_offset);
-      distributed_minibatch::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
+      distributed_minibatch::calculate_num_iterations_per_epoch(max_mb_size,
+                                                                this->m_training_dataset.data_reader);
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                            distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
-      distributed_minibatch::calculate_num_iterations_per_epoch(this->m_validation_dataset.data_reader);
-      distributed_minibatch::calculate_num_iterations_per_epoch(this->m_testing_dataset.data_reader);
+      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * max_mb_size,
+                                                            distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
+      distributed_minibatch::calculate_num_iterations_per_epoch(max_mb_size,
+                                                                this->m_validation_dataset.data_reader);
+      distributed_minibatch::calculate_num_iterations_per_epoch(max_mb_size,
+                                                                this->m_testing_dataset.data_reader);
     } else {
-      io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                          distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size,
-                                                            distributed_minibatch::m_num_parallel_readers_training * Layer::m_mini_batch_size);
+      io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * max_mb_size,
+                                                          distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
+      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * max_mb_size,
+                                                            distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
     }
 
-    X_local.Resize(this->m_num_neurons, Layer::m_mini_batch_size);
+    X_local.Resize(this->m_num_neurons, max_mb_size);
 
     distributed_minibatch::m_local_data_valid = false;
     distributed_minibatch::m_local_reader_done = false;

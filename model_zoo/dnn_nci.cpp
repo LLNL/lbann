@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
                                                           };
 
     input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
-                                                                                 trainParams.MBSize, data_readers);
+                                                                                 data_readers);
     dnn.add(input_layer);
 
     dnn.add("FullyConnected", data_layout::MODEL_PARALLEL, 500, trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
 
     target_layer *target_layer = new target_layer_distributed_minibatch_parallel_io(data_layout::MODEL_PARALLEL, comm, parallel_io,
-                                                                                    trainParams.MBSize, data_readers, true);
+                                                                                    data_readers, true);
     dnn.add(target_layer);
 
     //lbann_summary summarizer("/p/lscratchf/jacobs32", comm);

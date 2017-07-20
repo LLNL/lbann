@@ -34,9 +34,37 @@ namespace lbann {
   //class input_layer : public io_layer {
 class input_layer : public io_layer, public generic_data_distribution {
  public:
-  input_layer(lbann_comm *comm, int mini_batch_size, int num_parallel_readers,  std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer(comm, mini_batch_size, data_readers),
-    generic_data_distribution(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {}
+  input_layer(lbann_comm *comm, int num_parallel_readers,  std::map<execution_mode, generic_data_reader *> data_readers)
+    : io_layer(comm, data_readers),
+      generic_data_distribution(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {}
+
+  // Input layers copy their datareaders.
+  input_layer(const input_layer& other) : io_layer(other), generic_data_distribution(other) {
+    if (m_training_dataset.data_reader) {
+      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    }
+    if (m_validation_dataset.data_reader) {
+      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    }
+    if (m_testing_dataset.data_reader) {
+      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    }
+  }
+
+  input_layer& operator=(const input_layer& other) {
+    io_layer::operator=(other);
+    generic_data_distribution::operator=(other);
+    if (m_training_dataset.data_reader) {
+      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    }
+    if (m_validation_dataset.data_reader) {
+      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    }
+    if (m_testing_dataset.data_reader) {
+      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    }
+    return *this;
+  }
 
   void setup_dims() {
     io_layer::setup_dims();

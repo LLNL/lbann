@@ -173,65 +173,61 @@ int main(int argc, char *argv[]) {
                                                            std::make_pair(execution_mode::testing, &mnist_testset)
                                                           };
 
-    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, trainParams.MBSize, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers);
     gla.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm, trainParams.MBSize,
+                       1, comm,
                        100, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(encode1);
     
-    Layer *relu1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize);
+    Layer *relu1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(2, comm);
     gla.add(relu1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       3, comm, trainParams.MBSize,
+                       3, comm,
                        mnist_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(4, comm,
-                                               trainParams.MBSize);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(4, comm);
     gla.add(relu2);
 
 
     Layer* rcl1  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(5, comm, 
-                                                          trainParams.MBSize, input_layer);
+                                                          input_layer);
     gla.add(rcl1);
 
    // Laywerise2 
     Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       6, comm, trainParams.MBSize,
+                       6, comm,
                        50, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(encode2);
     
 
-    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(7, comm,
-                                               trainParams.MBSize);
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(7, comm);
     gla.add(relu3);
 
 
     Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       8, comm, trainParams.MBSize,
+                       8, comm,
                        100,
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(decode2);
     
-    Layer *relu4 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(9, comm,
-                                               trainParams.MBSize);
+    Layer *relu4 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(9, comm);
     gla.add(relu4);
 
 
     Layer* rcl2  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(10, comm, 
-                                                          trainParams.MBSize, relu1);
+                                                          relu1);
 
     gla.add(rcl2);
     

@@ -121,8 +121,8 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
     set_normalization_type(ntype, _z_score);
   }
 
-  double unit_scale = 1.0;
-  double largest = 1.0;
+  ComputeType u_scale = 1.0;
+  ComputeType largest = 1.0;
 
   //if (!m_z_score && m_unit_scale) {
   if (ntype < _z_score) { // !(m_z_score || (m_mean_subtraction && m_unit_variance))
@@ -147,11 +147,11 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
       // Currently, do nothing for non-integral types. However, a set of scaling
       // paramters can be added to the argument list of this function.
     }
-    unit_scale = 1.0/largest;
+    u_scale = static_cast<ComputeType>(1.0)/largest;
   }
 
-  std::vector<double> mean;
-  std::vector<double> stddev;
+  std::vector<ComputeType> mean;
+  std::vector<ComputeType> stddev;
   const normalization_type code_wo_uscale = mask_normalization_bits(ntype, _z_score);
   const size_t NCh = static_cast<size_t>(image.channels());
 
@@ -166,30 +166,30 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
   switch (code_wo_uscale) {
   case _none: // Note that mean.size() is zero in this case
     for (size_t ch=0u; ch < NCh; ++ch) {
-      m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+      m_trans[ch] = channel_trans_t(u_scale, 0.0);
     }
     break;
   case _mean_sub:
     for (size_t ch=0u; ch < NCh; ++ch) {
-      m_trans[ch] = channel_trans_t(unit_scale,
-                                    - unit_scale * mean[ch]);
+      m_trans[ch] = channel_trans_t(u_scale,
+                                    - u_scale * mean[ch]);
     }
     break;
   case _unit_var:
     for (size_t ch=0u; ch < NCh; ++ch) {
       if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
         m_trans[ch] =
-          channel_trans_t(1.0/stddev[ch],
-                          unit_scale * mean[ch] - mean[ch]/stddev[ch]);
+          channel_trans_t(static_cast<ComputeType>(1.0)/stddev[ch],
+                          u_scale * mean[ch] - mean[ch]/stddev[ch]);
       } else {
-        m_trans[ch] = channel_trans_t(unit_scale, 0.0);
+        m_trans[ch] = channel_trans_t(u_scale, 0.0);
       }
     }
     break;
   case _z_score:
     for (size_t ch=0u; ch < NCh; ++ch) {
       if (stddev[ch] > fabs(mean[ch])*(1e-7)) {
-        m_trans[ch] = channel_trans_t(1.0/stddev[ch],
+        m_trans[ch] = channel_trans_t(static_cast<ComputeType>(1.0)/stddev[ch],
                                       - mean[ch]/stddev[ch]);
       } else {
         m_trans[ch] = channel_trans_t(0.0, 0.0);
@@ -254,7 +254,7 @@ bool cv_normalizer::determine_inverse_transform() {
       return false;
     }
     trans_reverse[ch] =
-      channel_trans_t(1.0/m_trans[ch].first,
+      channel_trans_t(static_cast<ComputeType>(1.0)/m_trans[ch].first,
                       - m_trans[ch].second/m_trans[ch].first);
   }
   trans_reverse.swap(m_trans);
@@ -289,7 +289,7 @@ bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& tr
 
 
 bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
-                                        std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask) {
+                                        std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask) {
   if (image.empty()) {
     return false;
   }
@@ -308,7 +308,7 @@ std::ostream& cv_normalizer::print(std::ostream& os) const {
   os << "m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
      << "m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
      << "m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
-     << "m_z_score" << (m_z_score? "true" : "false") << std::endl;
+     << "m_z_score: " << (m_z_score? "true" : "false") << std::endl;
   os << "transform:";
   for (const channel_trans_t& tr: m_trans) {
     os << ' ' << tr.first << ' ' << tr.second;

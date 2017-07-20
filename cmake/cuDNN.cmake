@@ -9,7 +9,7 @@ if(cuDNN_DIR)
   set(cuDNN_LIBRARIES ${cuDNN_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}cudnn${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   # Add preprocessor flag for cuDNN  
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__LIB_CUDNN")
+  add_definitions(-D__LIB_CUDNN)
 
   # LBANN has access to cuDNN
   set(LBANN_HAS_CUDNN TRUE)

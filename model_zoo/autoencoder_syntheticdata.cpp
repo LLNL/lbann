@@ -36,11 +36,7 @@ using namespace El;
 //@todo use param options
 
 int main(int argc, char *argv[]) {
-  // El initialization (similar to MPI_Init)
-  Initialize(argc, argv);
-  init_random(42);
-  init_data_seq_random(42);
-  lbann_comm *comm = NULL;
+  lbann_comm *comm = initialize(argc, argv, 42);
 
   try {
 
@@ -73,7 +69,7 @@ int main(int argc, char *argv[]) {
 
 
     // Set up the communicator and get the grid.
-    lbann_comm *comm = new lbann_comm(trainParams.ProcsPerModel);
+    comm->split_models(trainParams.ProcsPerModel);
     Grid& grid = comm->get_model_grid();
     if (comm->am_world_master()) {
       cout << "Number of models: " << comm->get_num_models() << endl;
@@ -126,71 +122,69 @@ int main(int argc, char *argv[]) {
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
-      cout << "XX adagrad\n";
+      if(comm->am_world_master()) cout << "XX adagrad\n";
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
-      cout << "XX rmsprop\n";
+      if(comm->am_world_master()) cout << "XX rmsprop\n";
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
-      cout << "XX adam\n";
+      if(comm->am_world_master()) cout << "XX adam\n";
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
-      cout << "XX sgd\n";
+      if(comm->am_world_master()) cout << "XX sgd\n";
     }
 
     // Initialize network
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
-    dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
                                                            std::make_pair(execution_mode::validation, &synthetic_validation_set),
                                                            std::make_pair(execution_mode::testing, &synthetic_testset)
                                                           };
 
 
-    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, trainParams.MBSize, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers);
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm, trainParams.MBSize,
+                       1, comm,
                        100, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(encode1);
     
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm,
-                                               trainParams.MBSize);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
     dnn.add(relu1);
 
     Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       4, comm, trainParams.MBSize,
+                       4, comm,
                        synthetic_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm,
-                                               trainParams.MBSize);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm);
     dnn.add(relu2);
 
     Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
-                                               comm, trainParams.MBSize,
+                                               comm,
                                                trainParams.DropOut);
 
     Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
-                                                          trainParams.MBSize, input_layer);
+                                                          input_layer);
     dnn.add(rcl);
 
     
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
-
+    lbann_callback_check_reconstruction_error cre;
+    dnn.add_callback(&cre);
     if (comm->am_world_master()) {
       cout << "Parameter settings:" << endl;
       cout << "\tTraining sample size: " << trainParams.TrainingSamples << endl;
@@ -204,14 +198,16 @@ int main(int argc, char *argv[]) {
 
 
     dnn.setup();
-
-    // train/test
+    
+    if(comm->am_world_master()) std::cout << "Auto Testing: "
+        << "Reconstruction error should gradually decrease to below 1 at around 8th epoch" 
+        <<  "for a successful testing"  << std::endl;
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, true);
-      // testing
-      dnn.evaluate(execution_mode::testing);
+      dnn.train(1);
     }
 
+    if(comm->am_world_master()) std::cout << "TEST FAILED " << std::endl;
+ 
     delete optimizer_fac;
     delete comm;
   } catch (exception& e) {

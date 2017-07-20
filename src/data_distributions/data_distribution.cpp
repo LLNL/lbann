@@ -27,8 +27,8 @@
 #include "lbann/data_distributions/data_distribution.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::generic_data_distribution::generic_data_distribution(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_max_mini_batch_size(mini_batch_size), m_data_readers(data_readers) {
+lbann::generic_data_distribution::generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_data_readers(data_readers) {
   m_root = 0;
   m_num_samples_in_batch = 0;
   m_num_valid_readers = 0;

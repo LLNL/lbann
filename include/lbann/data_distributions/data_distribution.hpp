@@ -35,7 +35,7 @@ namespace lbann
 {
 class generic_data_distribution {
 public:
-  generic_data_distribution(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   generic_data_distribution(
     const generic_data_distribution&) = default;
   generic_data_distribution& operator=(
@@ -51,7 +51,7 @@ public:
   virtual int get_last_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size();
 
-  virtual void calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {}
+  virtual void calculate_num_iterations_per_epoch(int max_mini_batch_size, generic_data_reader *data_reader) {}
   virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) { return 0; }
 
   /// @todo BVE replace this with a function pointer that is passed
@@ -85,7 +85,7 @@ public:
   int m_num_parallel_readers_testing;
   int m_local_reader_done;
   /** Maximum size of the mini-batch */
-  int m_max_mini_batch_size;
+  //  int m_max_mini_batch_size;
   /** Number of samples in the current mini-batch */
   int m_num_samples_in_batch;
   /** Has the layer copied valid data into the local matrix */

@@ -53,12 +53,17 @@ namespace lbann {
  */
 class cv_normalizer : public cv_transform {
  public:
+  /** This is the interim type of input values computed from image data
+   *  It does not have to be the same as the type of the values stored, i.e., DataType.
+   */
+  typedef DataType ComputeType;
+  //typedef double ComputeType;
   /**
    * Define the type of normalization methods available.
    * z-score method is essentially the combination of mean subtraction and unit variance
    */
   enum normalization_type {_none=0, _u_scale=1, _mean_sub=2, _unit_var=4, _z_score=6};
-  typedef std::pair<double, double> channel_trans_t;
+  typedef std::pair<ComputeType, ComputeType> channel_trans_t;
 
  protected:
   // --- Parameters for normalization ---
@@ -174,11 +179,11 @@ class cv_normalizer : public cv_transform {
 
   template<typename T>
   static bool compute_mean_stddev_with_known_type(const cv::Mat& image,
-      std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask);
+      std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask);
 
   /// Compute the per-channel and per-sample mean and standard deviation
   static bool compute_mean_stddev(const cv::Mat& image,
-                                  std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask=cv::Mat());
+                                  std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask=cv::Mat());
 
   virtual std::ostream& print(std::ostream& os) const;
 };
@@ -225,8 +230,8 @@ inline OutputIterator cv_normalizer::scale(
 
   // At this point NCh should not be zero because both alpha and beta are not trivial.
   if (NCh == 1) {
-    const double a = trans[0].first;
-    const double b = trans[0].second;
+    const ComputeType a = trans[0].first;
+    const ComputeType b = trans[0].second;
 
     while (first != last) {
       *result = cv::saturate_cast<T>(a * (*first) + b);
@@ -312,7 +317,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
  */
 template<typename T>
 inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& image,
-    std::vector<double>& mean, std::vector<double>& stddev, cv::Mat mask) {
+    std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask) {
   mean.clear();
   stddev.clear();
   if (image.empty()) {
@@ -321,15 +326,15 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
   const int NCh = image.channels();
   const int num_pixels = image.rows * image.cols;
-  double sum[NCh];
-  double sqsum[NCh];
-  double shift[NCh];
+  ComputeType sum[NCh];
+  ComputeType sqsum[NCh];
+  ComputeType shift[NCh];
 
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;
     sqsum[ch] = 0.0;
     const T *ptr = reinterpret_cast<const T *>(image.datastart);
-    shift[ch] = static_cast<double>(*(ptr+ch));
+    shift[ch] = static_cast<ComputeType>(*(ptr+ch));
   }
 
   mean.resize(NCh);
@@ -341,7 +346,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
     int ch = 0;
     do {
-      const double diff = (*ptr - shift[ch]);
+      const ComputeType diff = (*ptr - shift[ch]);
       sum[ch] += diff;
       sqsum[ch] += diff*diff;
       ++ch;
@@ -349,9 +354,9 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
     } while ((++ptr) != ptrend);
 
     for (int c = 0; c < NCh; ++c) {
-      const double shifted_mean = sum[c] / num_pixels;
+      const ComputeType shifted_mean = sum[c] / num_pixels;
       mean[c] = shifted_mean + shift[c];
-      stddev[c] = sqrt(sqsum[c]/num_pixels - shifted_mean * shifted_mean);
+      stddev[c] = sqrt(std::max(sqsum[c]/num_pixels - shifted_mean * shifted_mean, ComputeType(0)));
     }
   } else {
     const int stride = image.cols*NCh;
@@ -363,7 +368,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
       int ch = 0;
       do {
-        const double diff = (*ptr - shift[ch]);
+        const ComputeType diff = (*ptr - shift[ch]);
         sum[ch] += diff;
         sqsum[ch] += diff*diff;
         ++ch;
@@ -372,9 +377,9 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
     }
 
     for (int ch = 0; ch < NCh; ++ch) {
-      const double shifted_mean = sum[ch] / num_pixels;
+      const ComputeType shifted_mean = sum[ch] / num_pixels;
       mean[ch] = shifted_mean + shift[ch];
-      stddev[ch] = sqrt(sqsum[ch]/num_pixels - shifted_mean*shifted_mean);
+      stddev[ch] = sqrt(std::max(sqsum[ch]/num_pixels - shifted_mean*shifted_mean, ComputeType(0)));
     }
   }
 #if 0

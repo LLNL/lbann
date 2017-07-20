@@ -17,4 +17,5 @@ add_sources(
   callback_check_init.cpp
   profiler.cpp
   callback_ltfb.cpp
+  callback_check_reconstruction_error.cpp
 )

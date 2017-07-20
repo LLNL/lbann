@@ -29,8 +29,8 @@
 
 using namespace std;
 
-lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers)
-  : generic_data_distribution(comm, num_parallel_readers, mini_batch_size, data_readers) { 
+lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  : generic_data_distribution(comm, num_parallel_readers, data_readers) { 
 
   if(m_comm->get_model_grid().Size() != num_parallel_readers) {
     cout << "Warning the requested number of parallel readers "
@@ -42,17 +42,6 @@ lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_pa
     m_num_parallel_readers_validating = m_comm->get_model_grid().Size();
     m_num_parallel_readers_testing = m_comm->get_model_grid().Size();
     num_parallel_readers = m_comm->get_model_grid().Size();
-  }
-
-  if(mini_batch_size < num_parallel_readers) {
-    cout << "Warning the requested number of parallel readers "
-         << num_parallel_readers
-         << " is larger than the requested mini-batch size " << mini_batch_size
-         << " OVERRIDING requested number of parallel readers."
-         << endl;
-    m_num_parallel_readers_training = mini_batch_size;
-    m_num_parallel_readers_validating = mini_batch_size;
-    m_num_parallel_readers_testing = mini_batch_size;
   }
 }
 
@@ -112,8 +101,41 @@ bool lbann::partitioned_minibatch::is_data_set_processed() {
   }
 }
 
-void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {
-  int max_mini_batch_size = data_reader->getm_batch_max();
+int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) {
+  if(mini_batch_size < num_parallel_readers) {
+    cout << "Warning the requested number of parallel readers "
+         << num_parallel_readers
+         << " is larger than the requested mini-batch size " << mini_batch_size
+         << " OVERRIDING requested number of parallel readers."
+         << endl;
+    num_parallel_readers = mini_batch_size;
+  }
+  if(mini_batch_size > num_parallel_readers 
+     && num_parallel_readers < m_comm->get_model_grid().Size()) {
+    cout << "Warning the requested mini-batch size "
+         << mini_batch_size
+         << " is larger than the requested number of parallel readers " << num_parallel_readers
+         << " and the number of parallel readers is less than the grid size "
+         << m_comm->get_model_grid().Size()
+         << " OVERRIDING requested number of parallel readers."
+         << endl;
+    num_parallel_readers = m_comm->get_model_grid().Size();
+  }
+  return num_parallel_readers;
+}
+
+void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch(int max_mini_batch_size, generic_data_reader *data_reader) {
+  //  int max_mini_batch_size = data_reader->getm_batch_max();
+
+  { /// BVE Fix me -- this is inelegant
+    /// Check to make sure that there is enough data for all of the parallel readers
+    m_num_parallel_readers_training = compute_max_num_parallel_readers(0, max_mini_batch_size, m_num_parallel_readers_training);
+    
+    m_num_parallel_readers_validating = compute_max_num_parallel_readers(0, max_mini_batch_size, m_num_parallel_readers_validating);
+
+    m_num_parallel_readers_testing = compute_max_num_parallel_readers(0, max_mini_batch_size, m_num_parallel_readers_testing);
+  }
+
   int num_parallel_readers_per_model = max(1, (data_reader->get_batch_stride() / m_comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
 
