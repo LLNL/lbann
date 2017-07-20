@@ -312,8 +312,8 @@ class batch_normalization : public regularizer_layer {
     El::View(*m_statistics_v, *m_parameters, El::ALL, El::IR(0,2));
     El::View(*m_mean_v, *m_statistics_v, El::ALL, El::IR(0));
     El::View(*m_stdev_v, *m_statistics_v, El::ALL, El::IR(1));
-    El::View(*m_running_mean_v, *m_statistics_v, El::ALL, El::IR(2));
-    El::View(*m_running_stdev_v, *m_statistics_v, El::ALL, El::IR(3));
+    El::View(*m_running_mean_v, *m_parameters, El::ALL, El::IR(2));
+    El::View(*m_running_stdev_v, *m_parameters, El::ALL, El::IR(3));
     El::View(*m_scale_v, *m_parameters, El::ALL, El::IR(4));
     El::View(*m_bias_v, *m_parameters, El::ALL, El::IR(5));
 
@@ -373,7 +373,7 @@ class batch_normalization : public regularizer_layer {
     const El::Int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / this->m_neuron_dims[0];
+    const int channel_size = this->m_num_neurons / num_channels;
 
     // Compute statistics
     if(this->get_execution_mode() == execution_mode::training) {
@@ -395,7 +395,6 @@ class batch_normalization : public regularizer_layer {
         mean_local(channel, 0) = sum;
         stdev_local(channel, 0) = sqsum;
       }
-      
       El::AllReduce(*m_statistics_v,
                     m_statistics_v->RedundantComm(),
                     El::mpi::SUM);
@@ -470,7 +469,7 @@ class batch_normalization : public regularizer_layer {
     const El::Int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / this->m_neuron_dims[0];
+    const int channel_size = this->m_num_neurons / num_channels;
 
     // Compute local gradients
     #pragma omp parallel for
@@ -504,7 +503,7 @@ class batch_normalization : public regularizer_layer {
           dbias += dy;
           const DataType dxhat = dy * scale;
           dmean += - dxhat / (stdev + m_epsilon);
-          dstdev += - dxhat * (x - mean) / std::pow(stdev + m_epsilon, 2);
+          dstdev += - dxhat * (x - mean) * std::pow(stdev + m_epsilon, -2);
         }
       }
       mean_gradient_local(channel, 0) = dmean;

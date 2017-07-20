@@ -134,7 +134,7 @@ class sum_layer : public transform {
 
   void fp_compute() {
     if(m_parents.size() == 1) {
-      El::View(*this->m_activations, *this->m_prev_activations);
+      El::LockedView(*this->m_activations, *this->m_prev_activations);
     }
     else {
       El::Copy(*this->m_prev_activations, *this->m_activations);
@@ -147,7 +147,7 @@ class sum_layer : public transform {
   }
 
   void bp_compute() {
-    El::View(*this->m_error_signal, *this->m_prev_error_signal);
+    El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
   }
 
 };
