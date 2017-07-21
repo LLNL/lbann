@@ -721,7 +721,7 @@ const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
   return *m_error_signal;
 }
 
-vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
+const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
 }
 

@@ -196,12 +196,12 @@ class concatenation_layer : public transform {
   void fp_compute() {
 
     if(m_concatenation_axis == 0) {
-      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
+      const int channel_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
       for(size_t i=0; i<m_parents.size(); ++i) {
         El::View(*m_fp_input_v,
                  *this->m_activations,
-                 El::IR(slice_size * m_concatenation_points[i],
-                        slice_size * m_concatenation_points[i+1]),
+                 El::IR(channel_size * m_concatenation_points[i],
+                        channel_size * m_concatenation_points[i+1]),
                  El::ALL);
         El::Copy(m_parents[i]->fp_output(this), *m_fp_input_v);
       }
