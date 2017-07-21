@@ -3,6 +3,7 @@
 # Experiment parameters
 EXPERIMENT_NAME=lbann_alexnet
 LBANN_DIR=$(git rev-parse --show-toplevel)
+READER_ARGS="--reader=${LBANN_DIR}/model_zoo/prototext/data_reader_imagenet.prototext"
 MODEL_ARGS="--model=${LBANN_DIR}/model_zoo/prototext/model_alexnet.prototext --num_epochs=10"
 OPTIMIZER_ARGS="--optimizer=${LBANN_DIR}/model_zoo/prototext/opt_adam.prototext"
 DATASET_CLASSES=10 # default: 1000 (options: 10, 100, 300, 1000)
@@ -11,7 +12,7 @@ DATASET_CLASSES=10 # default: 1000 (options: 10, 100, 300, 1000)
 CLUSTER=
 PARTITION=
 BANK=
-NUM_NODES=4 # default: 1
+NUM_NODES= # default: 1
 PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 USE_GPU= # YES or NO
 OMP_NUM_THREADS= # default: (number of cores) / PROCS_PER_NODE
@@ -104,10 +105,11 @@ case ${CACHE_DATASET} in
         CACHE_DIR=${LUSTRE_DIR}
         ;;
 esac
+READER_ARGS="${READER_ARGS} --data_filedir_train=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/train/ --data_filename_train=${CACHE_DIR}/${DATASET_DIR}/labels/train${DATASET_SUFFIX}.txt --data_filedir_test=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/val/ --data_filename_test=${CACHE_DIR}/${DATASET_DIR}/labels/val${DATASET_SUFFIX}.txt"
 
 # Initialize experiment command
-READER_ARGS="--reader=${LBANN_DIR}/model_zoo/prototext/data_reader_imagenet.prototext --data_filedir_train=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/train/ --data_filename_train=${CACHE_DIR}/${DATASET_DIR}/labels/train${DATASET_SUFFIX}.txt --data_filedir_test=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/val/ --data_filename_test=${CACHE_DIR}/${DATASET_DIR}/labels/val${DATASET_SUFFIX}.txt"
-EXPERIMENT_COMMAND="${LBANN_DIR}/build/${CLUSTER}.llnl.gov/model_zoo/lbann ${MODEL_ARGS} ${OPTIMIZER_ARGS} ${READER_ARGS}"
+LBANN_EXE="${LBANN_DIR}/build/${CLUSTER}.llnl.gov/model_zoo/lbann"
+EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_ARGS} ${OPTIMIZER_ARGS} ${READER_ARGS}"
 
 # Make directories
 EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}_${CLUSTER}_N${NUM_NODES}
@@ -168,9 +170,9 @@ echo "# ======== Print node name ========"             >> ${MOAB_SCRIPT}
 echo "pdsh hostname"                                   >> ${MOAB_SCRIPT}
 echo ""                                                >> ${MOAB_SCRIPT}
 
+# Cache dataset in node-local memory
 case ${CACHE_DATASET} in
     YES|yes|TRUE|true|ON|on|1)
-        # Cache dataset in node-local memory
         echo "# ======== Cache dataset ========" >> ${MOAB_SCRIPT}
         echo "echo \"Caching dataset...\"" >> ${MOAB_SCRIPT}
         BCAST="/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast/file_bcast_par13 1MB"
