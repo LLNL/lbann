@@ -42,9 +42,7 @@ class top_k_categorical_accuracy : public metric {
  public:
   top_k_categorical_accuracy(int top_k,
                              lbann_comm *comm) :
-    metric(comm), m_top_k(top_k),
-    m_gathered_predictions(comm->get_model_grid()),
-    m_gathered_ground_truth(comm->get_model_grid()) {}
+    metric(comm), m_top_k(top_k) {}
 
   top_k_categorical_accuracy(
     const top_k_categorical_accuracy<T_layout>& other) = default;
@@ -62,40 +60,70 @@ class top_k_categorical_accuracy : public metric {
   }
   void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
   double compute_metric(ElMat& predictions_v, ElMat& ground_truth_v) {
-    // Simple approach: Gather all predictions to the model master.
-    // TODO: Better to gather only the top k predictions from each model.
-    int num_errors = 0;
-    m_gathered_predictions = predictions_v;
-    m_gathered_ground_truth = ground_truth_v;
-    if (this->m_comm->am_model_master()) {
-      const El::Int mbsize = m_gathered_predictions.Width();
-      const El::Int num_classes = m_gathered_predictions.Height();
-      // Compute the top k predictions in each entry of the minibatch.
-      Mat top_predictions(mbsize, m_top_k);
-      std::vector<El::Int> indices(num_classes);
-      std::iota(indices.begin(), indices.end(), 0);
-      for (El::Int mb_idx = 0; mb_idx < mbsize; ++mb_idx) {
-        // We want the indices of the top k predictions for this entry.
-        // This partially sorts an auxiliary array of indices based on the
-        // predictions.
-        std::partial_sort(indices.begin(), indices.begin() + m_top_k,
-                          indices.end(),
-                          [mb_idx, this] (El::Int a, El::Int b) -> bool {
-                            return m_gathered_predictions.GetLocal(a, mb_idx) >
-                              m_gathered_predictions.GetLocal(b, mb_idx); });
-        // Compute the index of the ground truth value.
-        El::Int ground_truth_idx = -1;
-        for (El::Int class_idx = 0; class_idx < num_classes; ++class_idx) {
-          if (m_gathered_ground_truth.GetLocal(class_idx, mb_idx) ==
-              DataType(1)) {
-            ground_truth_idx = class_idx;
-          }
-        }
-        // Now check if those top indices contain the true value.
+    // This first computes the top k predictions within each column locally,
+    // then each column master gathers these, computes the global top k, and
+    // determines if an error was made.
+    El::Int num_errors = 0;
+    // Note: assumes structure is packed.
+    struct top_k_ele {
+      DataType val;  // Predicted value.
+      DataType gt;  // Ground truth.
+    };
+    const El::Int local_width = predictions_v.LocalWidth();  // minibatch dim
+    const El::Int local_height = predictions_v.LocalHeight();  // class dim
+    // Pack the top k predictions for each local column together.
+    std::vector<top_k_ele> local_top_k(m_top_k * local_width);
+    // Compute the top k entries locally.
+    std::vector<El::Int> local_indices(local_height);
+    std::iota(local_indices.begin(), local_indices.end(), 0);
+    for (El::Int mb_idx = 0; mb_idx < local_width; ++mb_idx) {
+      // Determine the top k local entries in this column.
+      std::partial_sort(
+        local_indices.begin(), local_indices.begin() + m_top_k,
+        local_indices.end(),
+        [mb_idx, &predictions_v, this] (El::Int a, El::Int b) -> bool {
+          return predictions_v.GetLocal(a, mb_idx) >
+            predictions_v.GetLocal(b, mb_idx); });
+      for (El::Int i = 0; i < m_top_k; ++i) {
+        El::Int idx = mb_idx*m_top_k + i;
+        local_top_k[idx].val = predictions_v.GetLocal(local_indices[i], mb_idx);
+        local_top_k[idx].gt = ground_truth_v.GetLocal(local_indices[i], mb_idx);
+      }
+    }
+    // Gather the data for each column to rank 0 within that column.
+    El::mpi::Comm col_comm = predictions_v.ColComm();
+    int col_comm_size = El::mpi::Size(col_comm);
+    if (El::mpi::Rank(col_comm) == 0) {
+      // This vector ends up being the concatenation of each local_top_k, and
+      // therefore accessing data for a single mini-batch requires computing the
+      // appropriate strides.
+      std::vector<top_k_ele> global_top_k(
+        m_top_k * local_width * col_comm_size);
+      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
+                      (DataType*) global_top_k.data(), 2*local_top_k.size(),
+                      0, col_comm);
+      // Compute the global top k elements in each column.
+      std::vector<El::Int> global_indices(m_top_k * col_comm_size);
+      std::iota(global_indices.begin(), global_indices.end(), 0);
+      for (El::Int mb_idx = 0; mb_idx < local_width; ++mb_idx) {
+        std::partial_sort(
+          global_indices.begin(), global_indices.begin() + m_top_k,
+          global_indices.end(),
+          [mb_idx, col_comm_size, &global_top_k, this]
+          (El::Int a, El::Int b) -> bool {
+            El::Int mb_offset = mb_idx * m_top_k;
+            El::Int a_proc_offset = (a/m_top_k) * m_top_k * col_comm_size;
+            El::Int a_idx = a_proc_offset + mb_offset + (a%m_top_k);
+            El::Int b_proc_offset = (b/m_top_k) * m_top_k * col_comm_size;
+            El::Int b_idx = b_proc_offset + mb_offset + (b%m_top_k);
+            return global_top_k[a_idx].val > global_top_k[b_idx].val;
+          });
+        // Check if there is a 1 ground truth label in the top k.
         bool found = false;
-        for (auto pred = indices.begin(); pred != indices.begin() + m_top_k;
-             ++pred) {
-          if (*pred == ground_truth_idx) {
+        for (El::Int i = 0; i < m_top_k; ++i) {
+          El::Int idx = global_indices[i];
+          idx = mb_idx*m_top_k + (i/m_top_k)*m_top_k*col_comm_size + (i%m_top_k);
+          if (global_top_k[idx].gt == DataType(1)) {
             found = true;
             break;
           }
@@ -104,12 +132,11 @@ class top_k_categorical_accuracy : public metric {
           ++num_errors;
         }
       }
-      // Broadcast the number of errors to the rest of the models.
-      this->m_comm->model_broadcast(0, num_errors);
     } else {
-      num_errors = this->m_comm->template model_broadcast<int>(0);
+      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
+                      (DataType*) NULL, 0, 0, col_comm);
     }
-    return num_errors;
+    return this->m_comm->model_allreduce(num_errors);
   }
 
   double report_metric(execution_mode mode) {
@@ -144,10 +171,6 @@ class top_k_categorical_accuracy : public metric {
   int m_top_k;
   /** Maximum minibatch size this metric will be used with. */
   int64_t m_max_mini_batch_size;
-  /** A workspace for gathering all predictions to one node. */
-  CircMat m_gathered_predictions;
-  /** Likewise, for the ground truth. */
-  CircMat m_gathered_ground_truth;
 };
 
 }  // namespace metrics
