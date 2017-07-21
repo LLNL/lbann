@@ -193,8 +193,12 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+      m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    }
+    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
+      m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    }
     if(m_fp_input_pinned) {
       m_cudnn->unpin_matrix(*m_prev_activations);
     }
