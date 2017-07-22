@@ -57,12 +57,11 @@ class slice_layer : public transform {
   /// Constructor
   slice_layer(int index,
               lbann_comm *comm,
-              int mini_batch_size,
               std::vector<const Layer*> children,
               int slice_axis,
               std::vector<int> slice_points,
               cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm, mini_batch_size),
+    : transform(index, comm),
       m_slice_axis(slice_axis) {
 
     // Setup the data distribution
@@ -172,7 +171,6 @@ class slice_layer : public transform {
 
     // Make the first child layer the "next" layer
     this->m_next_layer = m_children.front();
-
   }
 
   void setup_dims() {
@@ -231,16 +229,16 @@ class slice_layer : public transform {
                                        m_children.end(),
                                        next_layer)
                              - m_children.begin());
-    if(child_index >= m_children.size()) {
+    if(child_index >= (int) m_children.size()) {
       return *m_activations;
     }
     
     if(m_slice_axis == 0) {
-      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
+      const int channel_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
       El::LockedView(*m_fp_output_v,
                      *this->m_activations,
-                     El::IR(slice_size * m_slice_points[child_index],
-                            slice_size * m_slice_points[child_index+1]),
+                     El::IR(channel_size * m_slice_points[child_index],
+                            channel_size * m_slice_points[child_index+1]),
                      El::ALL);
       return *m_fp_output_v;
     }
@@ -263,7 +261,7 @@ class slice_layer : public transform {
                                        m_children.end(),
                                        next_layer)
                              - m_children.begin());
-    if(child_index >= m_children.size()) {
+    if(child_index >= (int) m_children.size()) {
       return *m_prev_error_signal;
     }
     
@@ -282,6 +280,29 @@ class slice_layer : public transform {
     }
 
   }  
+
+  const std::vector<int> fp_output_dims(const Layer* next_layer) const {
+
+    // Return all neurons if input is null
+    if(next_layer == NULL) {
+      return m_neuron_dims;
+    }
+
+    // Check if input is in the list of child layers
+    const int child_index = (std::find(m_children.begin(),
+                                       m_children.end(),
+                                       next_layer)
+                             - m_children.begin());
+    if(child_index >= (int) m_children.size()) {
+      return m_neuron_dims;
+    }
+
+    // Return slice dimensions
+    std::vector<int> neuron_dims = m_neuron_dims;
+    neuron_dims[m_slice_axis] = m_slice_points[child_index+1] - m_slice_points[child_index];
+    return neuron_dims;
+
+  }
 
 };
 

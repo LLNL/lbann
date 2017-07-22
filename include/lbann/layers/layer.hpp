@@ -187,7 +187,7 @@ class Layer {
   /** Get backward propagation output, as seen by previous layer. */
   virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
   /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
+  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
  protected:
   int m_index;                 ///< Layer index (start with 0)

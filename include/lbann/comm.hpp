@@ -165,6 +165,18 @@ class lbann_comm {
     }
     return val;
   }
+  /** Within-model scalar-array gather (for non-root processes). */
+  template <typename T>
+  void model_gather(T* snd, int count, int root) {
+    bytes_sent += sizeof(T) * count;
+    El::mpi::Gather(snd, count, (T *) NULL, 0, root, model_comm);
+  }
+  /** Within-model scalar-array gather (for root processes). */
+  template <typename T>
+  void model_gather(T* snd, int count, T* rcv) {
+    El::mpi::Gather(snd, count, rcv, count, get_model_rank(), model_comm);
+    bytes_received += sizeof(T) * count * (get_procs_per_model() - 1);
+  }
   /** Inter-model gather (for non-root processes). */
   template <typename T>
   void intermodel_gather(T snd, int root) {

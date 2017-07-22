@@ -61,6 +61,24 @@ class pooling_layer : public transform {
 #endif // __LIB_CUDNN
 
  public:
+
+  pooling_layer(int index,
+                lbann_comm *comm,
+                int num_data_dims,
+                int pool_dim,
+                int pool_pad,
+                int pool_stride,
+                pool_mode _pool_mode,
+                cudnn::cudnn_manager *cudnn = NULL)
+    : pooling_layer(index,
+                    comm,
+                    num_data_dims,
+                    std::vector<int>(num_data_dims, pool_dim).data(),
+                    std::vector<int>(num_data_dims, pool_pad).data(),
+                    std::vector<int>(num_data_dims, pool_stride).data(),
+                    _pool_mode,
+                    cudnn) {}
+
   /// Constructor
   pooling_layer(int index,
                 lbann_comm *comm,

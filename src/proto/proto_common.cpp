@@ -134,7 +134,7 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, cudnn);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, NULL);
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, cudnn);
       }
@@ -1338,9 +1338,6 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p) {
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
-  if (not master) {
-    return;
-  }
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();

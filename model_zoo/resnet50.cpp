@@ -198,7 +198,8 @@ int main(int argc, char *argv[]) {
 
     // Initialize parameters
     int index = 0;
-    const int num_dims = 2;
+    std::unordered_set<uint> learning_layers;
+    const DataType l2_regularization_factor = 1e-4;
 
     // Initialize optimizer factory
     optimizer_factory *optimizer_fac;
@@ -251,2332 +252,280 @@ int main(int argc, char *argv[]) {
     // res1 module
     {
 
-      optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-      const int output_channels = 64;
-      const int filter_dims[] = {7, 7};
-      const int conv_pads[] = {3, 3};
-      const int conv_strides[] = {2, 2};
       convolution_layer<> *conv1
         = new convolution_layer<>(
-          index++,
+          index,
           comm,
-          num_dims,
-          output_channels,
-          filter_dims,
-          conv_pads,
-          conv_strides,
+          2,
+          64,
+          7,
+          3,
+          2,
           weight_initialization::he_normal,
-          conv_optimizer,
+          optimizer_fac->create_optimizer(),
           false,
           cudnn);
-      conv1->set_l2_regularization_factor(1e-4);
+      conv1->set_l2_regularization_factor(l2_regularization_factor);
       dnn->add(conv1);
+      learning_layers.insert(index);
+      index++;
 
       batch_normalization<data_layout::DATA_PARALLEL> *bn_conv1
-        = new batch_normalization<data_layout::DATA_PARALLEL>(
-          index++,
-          comm);
+        = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
       dnn->add(bn_conv1);
+      index++;
 
       relu_layer<data_layout::DATA_PARALLEL> *conv1_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
+        = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
       dnn->add(conv1_relu);
+      index++;
 
-      const int pool_dims[] = {3, 3};
-      const int pool_pads[] = {0, 0};
-      const int pool_strides[] = {2, 2};
       pooling_layer<> *pool1
-        = new pooling_layer<>(
-          index++,
-          comm,
-          num_dims,
-          pool_dims,
-          pool_pads,
-          pool_strides,
-          pool_mode::max,
-          cudnn);
+        = new pooling_layer<>(index, comm, 2, 3, 0, 2, pool_mode::max, cudnn);
       dnn->add(pool1);
+      index++;
 
     }
 
-    // res2a module
-    {
+    // Resnet module specificiations
+    std::vector<int> intra_module_channels = {64, 128, 256, 512};
+    std::vector<int> output_channels = {256, 512, 1024, 2048};
+    std::vector<int> num_submodules = {3, 4, 6, 3};
 
-      split_layer<data_layout::DATA_PARALLEL> *res2a_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res2a_split);
+    // Initialize resnet modules
+    for(uint module = 0; module < output_channels.size(); ++module){
 
-      // res2a_branch2a module
+      // First submodule
+      // Note: reduces spatial dimension (except in first module)
       {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2a_branch2a
+        
+        convolution_layer<> *conv1
           = new convolution_layer<>(
-            index++,
+            index,
             comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
+            2,
+            output_channels[module] + intra_module_channels[module],
+            1,
+            0,
+            module == 0 ? 1 : 2,
             weight_initialization::he_normal,
-            conv_optimizer,
+            optimizer_fac->create_optimizer(),
             false,
             cudnn);
-        res2a_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res2a_branch2a);
+        conv1->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv1);
+        learning_layers.insert(index);
+        index++;
 
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
+        batch_normalization<data_layout::DATA_PARALLEL> *bn1
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn1);
+        index++;
 
-        relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
+        slice_layer<> *slice = new slice_layer<>(index, comm, {}, 0, {}, cudnn);
+        dnn->add(slice);
+        index++;
+
+        relu_layer<data_layout::DATA_PARALLEL> *relu1
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu1);
+        index++;
+
+        convolution_layer<> *conv2
+          = new convolution_layer<>(
+            index,
             comm,
+            2,
+            intra_module_channels[module],
+            3,
+            1,
+            1,
+            weight_initialization::he_normal,
+            optimizer_fac->create_optimizer(),
+            false,
             cudnn);
-        dnn->add(res2a_branch2a_relu);
-        
+        conv2->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv2);
+        learning_layers.insert(index);
+        index++;
+
+        batch_normalization<data_layout::DATA_PARALLEL> *bn2
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn2);
+        index++;
+
+        relu_layer<data_layout::DATA_PARALLEL> *relu2
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu2);
+        index++;
+
+        convolution_layer<> *conv3
+          = new convolution_layer<>(
+            index,
+            comm,
+            2,
+            output_channels[module],
+            1,
+            0,
+            1,
+            weight_initialization::he_normal,
+            optimizer_fac->create_optimizer(),
+            false,
+            cudnn);
+        conv3->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv3);
+        learning_layers.insert(index);
+        index++;
+
+        batch_normalization<data_layout::DATA_PARALLEL> *bn3
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn3);
+        index++;
+
+        sum_layer<> *sum = new sum_layer<>(index, comm, {}, cudnn);
+        dnn->add(sum);
+        index++;
+
+        relu_layer<data_layout::DATA_PARALLEL> *relu3
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu3);
+        index++;
+
+        slice->push_back_child(sum, 0);
+        slice->push_back_child(relu1, output_channels[module]);
+        sum->add_parent(slice);
+        // sum->add_parent(bn3);
+
       }
 
-      // res2a_branch2b module
-      {
+      // Additional submodules
+      for(int submodule = 1; submodule < num_submodules[module]; ++submodule){
+        
+        split_layer<> *split = new split_layer<>(index, comm, {});
+        dnn->add(split);
+        index++;
 
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2a_branch2b
+        convolution_layer<> *conv1
           = new convolution_layer<>(
-            index++,
+            index,
             comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
+            2,
+            intra_module_channels[module],
+            1,
+            0,
+            1,
             weight_initialization::he_normal,
-            conv_optimizer,
+            optimizer_fac->create_optimizer(),
             false,
             cudnn);
-        res2a_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res2a_branch2b);
+        conv1->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv1);
+        learning_layers.insert(index);
+        index++;
 
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
+        batch_normalization<data_layout::DATA_PARALLEL> *bn1
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn1);
+        index++;
 
-        relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
+        relu_layer<data_layout::DATA_PARALLEL> *relu1
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu1);
+        index++;
+
+        convolution_layer<> *conv2
+          = new convolution_layer<>(
+            index,
             comm,
+            2,
+            intra_module_channels[module],
+            3,
+            1,
+            1,
+            weight_initialization::he_normal,
+            optimizer_fac->create_optimizer(),
+            false,
             cudnn);
-        dnn->add(res2a_branch2b_relu);
-        
+        conv2->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv2);
+        learning_layers.insert(index);
+        index++;
+
+        batch_normalization<data_layout::DATA_PARALLEL> *bn2
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn2);
+        index++;
+
+        relu_layer<data_layout::DATA_PARALLEL> *relu2
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu2);
+        index++;
+
+        convolution_layer<> *conv3
+          = new convolution_layer<>(
+            index,
+            comm,
+            2,
+            output_channels[module],
+            1,
+            0,
+            1,
+            weight_initialization::he_normal,
+            optimizer_fac->create_optimizer(),
+            false,
+            cudnn);
+        conv3->set_l2_regularization_factor(l2_regularization_factor);
+        dnn->add(conv3);
+        learning_layers.insert(index);
+        index++;
+
+        batch_normalization<data_layout::DATA_PARALLEL> *bn3
+          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        dnn->add(bn3);
+        index++;
+
+        sum_layer<> *sum = new sum_layer<>(index, comm, {}, cudnn);
+        dnn->add(sum);
+        index++;
+
+        relu_layer<data_layout::DATA_PARALLEL> *relu3
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        dnn->add(relu3);
+        index++;
+
+        split->add_child(sum);
+        // split->add_child(conv1);
+        sum->add_parent(split);
+        // sum->add_parent(bn3);
+
       }
-
-      concatenation_layer<data_layout::DATA_PARALLEL> *res2a_concat
-        = new concatenation_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          0,
-          NULL);
-      dnn->add(res2a_concat);
-      res2a_split->add_child(res2a_concat);
-      res2a_concat->push_back_parent(res2a_split);
-
-      // res2a_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2a_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2a_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res2a_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res2a_branch2c_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res2a_branch2c_relu);
-        
-      }      
 
     }
 
-    // res2b module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res2b_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res2b_split);
-
-      // res2b_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2b_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2b_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res2b_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res2b_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res2b_branch2a_relu);
-        
-      }
-
-      // res2b_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2b_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2b_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res2b_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res2b_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res2b_branch2b_relu);
-        
-      }
-
-      // res2b_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2b_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2b_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res2b_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res2b_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res2b_sum);
-      res2b_split->add_child(res2b_sum);
-      res2b_sum->add_parent(res2b_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res2b_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res2b_relu);
-
-    }
-
-    // res2c module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res2c_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res2c_split);
-
-      // res2c_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2c_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2c_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res2c_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res2c_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res2c_branch2a_relu);
-        
-      }
-
-      // res2c_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 64;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2c_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2c_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res2c_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res2c_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res2c_branch2b_relu);
-        
-      }
-
-      // res2c_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res2c_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res2c_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res2c_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res2c_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res2c_sum);
-      res2c_split->add_child(res2c_sum);
-      res2c_sum->add_parent(res2c_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res2c_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res2c_relu);
-
-    }
-
-    // res3a module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res3a_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3a_split);
-
-      // res3a_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3a_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3a_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res3a_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3a_branch2a_relu);
-        
-      }
-
-      // res3a_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3a_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3a_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res3a_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3a_branch2b_relu);
-        
-      }
-
-      concatenation_layer<data_layout::DATA_PARALLEL> *res3a_concat
-        = new concatenation_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          0,
-          NULL);
-      dnn->add(res3a_concat);
-      res3a_split->add_child(res3a_concat);
-      res3a_concat->push_back_parent(res3a_split);
-
-      // res3a_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {2, 2};
-        convolution_layer<> *res3a_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3a_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res3a_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3a_branch2c_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3a_branch2c_relu);
-        
-      }      
-
-    }    
-
-    // res3b module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res3b_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3b_split);
-
-      // res3b_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3b_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3b_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res3b_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3b_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3b_branch2a_relu);
-        
-      }
-
-      // res3b_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3b_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3b_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res3b_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3b_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3b_branch2b_relu);
-        
-      }
-
-      // res3b_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3b_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3b_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res3b_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res3b_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3b_sum);
-      res3b_split->add_child(res3b_sum);
-      res3b_sum->add_parent(res3b_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res3b_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res3b_relu);
-
-    }
-
-    // res3c module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res3c_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3c_split);
-
-      // res3c_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3c_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3c_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res3c_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3c_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3c_branch2a_relu);
-        
-      }
-
-      // res3c_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3c_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3c_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res3c_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3c_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3c_branch2b_relu);
-        
-      }
-
-      // res3c_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3c_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3c_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res3c_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res3c_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3c_sum);
-      res3c_split->add_child(res3c_sum);
-      res3c_sum->add_parent(res3c_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res3c_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res3c_relu);
-
-    }    
-
-    // res3d module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res3d_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3d_split);
-
-      // res3d_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3d_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3d_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res3d_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3d_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3d_branch2a_relu);
-        
-      }
-
-      // res3d_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 128;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3d_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3d_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res3d_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res3d_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res3d_branch2b_relu);
-        
-      }
-
-      // res3d_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res3d_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res3d_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res3d_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res3d_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res3d_sum);
-      res3d_split->add_child(res3d_sum);
-      res3d_sum->add_parent(res3d_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res3d_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res3d_relu);
-
-    }
-
-    // res4a module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4a_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4a_split);
-
-      // res4a_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4a_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4a_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4a_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4a_branch2a_relu);
-        
-      }
-
-      // res4a_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4a_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4a_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4a_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4a_branch2b_relu);
-        
-      }
-
-      concatenation_layer<data_layout::DATA_PARALLEL> *res4a_concat
-        = new concatenation_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          0,
-          NULL);
-      dnn->add(res4a_concat);
-      res4a_split->add_child(res4a_concat);
-      res4a_concat->push_back_parent(res4a_split);
-
-      // res4a_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {2, 2};
-        convolution_layer<> *res4a_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4a_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4a_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4a_branch2c_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4a_branch2c_relu);
-        
-      }      
-
-    }
-
-    // res4b module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4b_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4b_split);
-
-      // res4b_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4b_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4b_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4b_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4b_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4b_branch2a_relu);
-        
-      }
-
-      // res4b_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4b_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4b_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4b_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4b_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4b_branch2b_relu);
-        
-      }
-
-      // res4b_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4b_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4b_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4b_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res4b_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4b_sum);
-      res4b_split->add_child(res4b_sum);
-      res4b_sum->add_parent(res4b_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res4b_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res4b_relu);
-
-    }
-
-    // res4c module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4c_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4c_split);
-
-      // res4c_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4c_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4c_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4c_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4c_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4c_branch2a_relu);
-        
-      }
-
-      // res4c_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4c_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4c_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4c_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4c_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4c_branch2b_relu);
-        
-      }
-
-      // res4c_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4c_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4c_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4c_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res4c_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4c_sum);
-      res4c_split->add_child(res4c_sum);
-      res4c_sum->add_parent(res4c_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res4c_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res4c_relu);
-
-    }
-
-    // res4d module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4d_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4d_split);
-
-      // res4d_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4d_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4d_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4d_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4d_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4d_branch2a_relu);
-        
-      }
-
-      // res4d_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4d_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4d_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4d_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4d_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4d_branch2b_relu);
-        
-      }
-
-      // res4d_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4d_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4d_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4d_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res4d_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4d_sum);
-      res4d_split->add_child(res4d_sum);
-      res4d_sum->add_parent(res4d_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res4d_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res4d_relu);
-
-    }
-
-    // res4e module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4e_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4e_split);
-
-      // res4e_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4e_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4e_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4e_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4e_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4e_branch2a_relu);
-        
-      }
-
-      // res4e_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4e_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4e_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4e_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4e_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4e_branch2b_relu);
-        
-      }
-
-      // res4e_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4e_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4e_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4e_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res4e_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4e_sum);
-      res4e_split->add_child(res4e_sum);
-      res4e_sum->add_parent(res4e_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res4e_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res4e_relu);
-
-    }
-
-    // res4f module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res4f_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4f_split);
-
-      // res4f_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4f_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4f_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res4f_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4f_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4f_branch2a_relu);
-        
-      }
-
-      // res4f_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 256;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4f_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4f_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res4f_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res4f_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res4f_branch2b_relu);
-        
-      }
-
-      // res4f_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 1024;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res4f_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res4f_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res4f_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res4f_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res4f_sum);
-      res4f_split->add_child(res4f_sum);
-      res4f_sum->add_parent(res4f_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res4f_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res4f_relu);
-
-    }
-
-    // res5a module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res5a_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res5a_split);
-
-      // res5a_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5a_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5a_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res5a_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5a_branch2a_relu);
-        
-      }
-
-      // res5a_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5a_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5a_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res5a_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5a_branch2b_relu);
-        
-      }
-
-      concatenation_layer<data_layout::DATA_PARALLEL> *res5a_concat
-        = new concatenation_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          0,
-          NULL);
-      dnn->add(res5a_concat);
-      res5a_split->add_child(res5a_concat);
-      res5a_concat->push_back_parent(res5a_split);
-
-      // res5a_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 2048;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {2, 2};
-        convolution_layer<> *res5a_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5a_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res5a_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5a_branch2c_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5a_branch2c_relu);
-        
-      }      
-
-    }
-    
-    // res5b module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res5b_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res5b_split);
-
-      // res5b_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5b_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5b_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res5b_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5b_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5b_branch2a_relu);
-        
-      }
-
-      // res5b_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5b_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5b_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res5b_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5b_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5b_branch2b_relu);
-        
-      }
-
-      // res5b_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 2048;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5b_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5b_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res5b_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res5b_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res5b_sum);
-      res5b_split->add_child(res5b_sum);
-      res5b_sum->add_parent(res5b_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res5b_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res5b_relu);
-
-    }
-
-    // res5c module
-    {
-
-      split_layer<data_layout::DATA_PARALLEL> *res5c_split
-        = new split_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res5c_split);
-
-      // res5c_branch2a module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5c_branch2a
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5c_branch2a->set_l2_regularization_factor(1e-4);
-        dnn->add(res5c_branch2a);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2a
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2a);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5c_branch2a_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5c_branch2a_relu);
-        
-      }
-
-      // res5c_branch2b module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 512;
-        const int filter_dims[] = {3, 3};
-        const int conv_pads[] = {1, 1};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5c_branch2b
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5c_branch2b->set_l2_regularization_factor(1e-4);
-        dnn->add(res5c_branch2b);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2b
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2b);
-
-        relu_layer<data_layout::DATA_PARALLEL> *res5c_branch2b_relu
-          = new relu_layer<data_layout::DATA_PARALLEL>(
-            index++,
-            comm,
-            cudnn);
-        dnn->add(res5c_branch2b_relu);
-        
-      }
-
-      // res5c_branch2c module
-      {
-
-        optimizer *conv_optimizer = optimizer_fac->create_optimizer();
-        const int output_channels = 2048;
-        const int filter_dims[] = {1, 1};
-        const int conv_pads[] = {0, 0};
-        const int conv_strides[] = {1, 1};
-        convolution_layer<> *res5c_branch2c
-          = new convolution_layer<>(
-            index++,
-            comm,
-            num_dims,
-            output_channels,
-            filter_dims,
-            conv_pads,
-            conv_strides,
-            weight_initialization::he_normal,
-            conv_optimizer,
-            false,
-            cudnn);
-        res5c_branch2c->set_l2_regularization_factor(1e-4);
-        dnn->add(res5c_branch2c);
-
-        batch_normalization<data_layout::DATA_PARALLEL> *bn2a_branch2c
-          = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index++,
-            comm);
-        dnn->add(bn2a_branch2c);
-        
-      }      
-
-      sum_layer<data_layout::DATA_PARALLEL> *res5c_sum
-        = new sum_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          {},
-          NULL);
-      dnn->add(res5c_sum);
-      res5c_split->add_child(res5c_sum);
-      res5c_sum->add_parent(res5c_split);
-
-      relu_layer<data_layout::DATA_PARALLEL> *res5c_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(
-          index++,
-          comm,
-          cudnn);
-      dnn->add(res5c_relu);
-
-    }
-
-    const int pool_dims[] = {8, 8};
-    const int pool_pads[] = {0, 0};
-    const int pool_strides[] = {1, 1};
     pooling_layer<> *pool5
-      = new pooling_layer<>(
-        index++,
-        comm,
-        num_dims,
-        pool_dims,
-        pool_pads,
-        pool_strides,
-        pool_mode::average,
-        cudnn);
+      = new pooling_layer<>(index, comm, 2, 8, 0, 1, pool_mode::average, cudnn);
     dnn->add(pool5);
+    index++;
 
     fully_connected_layer<data_layout::MODEL_PARALLEL> *fc1000
       = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-        index++,
+        index,
         comm,
         1000,
         weight_initialization::he_normal,
         dnn->create_optimizer(),
         false);
-    fc1000->set_l2_regularization_factor(1e-4);
+    fc1000->set_l2_regularization_factor(l2_regularization_factor);
     dnn->add(fc1000);
+    learning_layers.insert(index);
+    index++;
 
     softmax_layer<data_layout::MODEL_PARALLEL> *softmax
       = new softmax_layer<data_layout::MODEL_PARALLEL>(
-        index++,
+        index,
         comm);
       dnn->add(softmax);
+      index++;
 
 #ifdef PARTITIONED
     Layer *target_layer =
@@ -2586,6 +535,7 @@ int main(int argc, char *argv[]) {
         data_readers,
         true);
     dnn->add(target_layer);
+    index++;
 #else
     Layer *target_layer =
       new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
@@ -2594,6 +544,7 @@ int main(int argc, char *argv[]) {
         data_readers,
         true);
     dnn->add(target_layer);
+    index++;
 #endif
     lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
@@ -2611,7 +562,7 @@ int main(int argc, char *argv[]) {
     lbann_callback_imcomm imcomm_cb
       = lbann_callback_imcomm(static_cast<lbann_callback_imcomm::comm_type>
                               (trainParams.IntermodelCommMethod),
-                              {1, 6, 9, 13, 17, 20, 23, 28, 31, 34, 39, 42, 46, 50, 53, 56, 61, 64, 67, 72, 75, 78, 83, 86, 90, 94, 97, 100, 105, 108, 111, 116, 119, 122, 127, 130, 133, 138, 141, 144, 149, 152, 156, 160, 163, 166, 171, 174, 177, 182},
+                              learning_layers,
                               &summarizer);
     dnn->add_callback(&imcomm_cb);
 

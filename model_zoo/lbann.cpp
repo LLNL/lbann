@@ -204,6 +204,8 @@ int main(int argc, char *argv[]) {
 
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory
+    delete model;
+
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   } catch (exception& e) {
