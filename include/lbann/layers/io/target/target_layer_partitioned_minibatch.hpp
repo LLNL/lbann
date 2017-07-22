@@ -76,16 +76,16 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
                                                   batch_stride,
                                                   m_num_parallel_readers_training,
                                                   model_offset);
-        partitioned_minibatch::calculate_num_iterations_per_epoch(max_mb_size,
-                                                                  this->m_training_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(max_mb_size,
+                                                                                  this->m_training_dataset.data_reader);
         /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
         io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
                                                     max_mb_size,
                                                     m_num_parallel_readers_testing);
-        partitioned_minibatch::calculate_num_iterations_per_epoch(max_mb_size,
-                                                                  this->m_validation_dataset.data_reader);
-        partitioned_minibatch::calculate_num_iterations_per_epoch(max_mb_size, 
-                                                                  this->m_testing_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
+                                                                               this->m_validation_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size, 
+                                                                               this->m_testing_dataset.data_reader);
       } else {
         io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
                                                   max_mb_size,

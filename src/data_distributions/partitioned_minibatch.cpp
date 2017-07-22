@@ -124,7 +124,7 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
   return num_parallel_readers;
 }
 
-void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch(int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   //  int max_mini_batch_size = data_reader->getm_batch_max();
 
   { /// BVE Fix me -- this is inelegant

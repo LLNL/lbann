@@ -104,3 +104,14 @@ int lbann::generic_data_distribution::get_last_mini_batch_size() {
   return get_last_mini_batch_size(get_execution_mode());
 }
 
+void lbann::generic_data_distribution::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
+
+  /// By default each data reader will plan to process the entire data set
+  int num_iterations_per_epoch = ceil((float) data_reader->getNumData() / (float) max_mini_batch_size);
+  int last_mini_batch_stride = data_reader->getNumData() % max_mini_batch_size;
+  data_reader->set_num_mini_batches_per_reader(num_iterations_per_epoch);
+  data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
+  data_reader->set_last_mini_batch_stride(last_mini_batch_stride);
+
+  return;
+}
