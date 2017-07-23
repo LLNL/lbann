@@ -61,37 +61,37 @@ void lbann_callback_print::on_epoch_begin(model *m) {
     std::cout << std::setfill(' ') << std::setw(23)
               << " global MB ="
               << " ["
-              << layer->get_global_mini_batch_size(execution_mode::training)
+              << std::setw(4) << layer->get_global_mini_batch_size(execution_mode::training)
               << "/"
-              << layer->get_global_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << layer->get_global_mini_batch_size(execution_mode::validation)
               << "/"
-              << layer->get_global_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << layer->get_global_mini_batch_size(execution_mode::testing)
               << "]"
               << " global last MB ="
               << " ["
-              << layer->get_global_last_mini_batch_size(execution_mode::training)
+              << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::training)
               << "/"
-              << layer->get_global_last_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::validation)
               << "/"
-              << layer->get_global_last_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::testing)
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
               << "  local MB ="
               << " ["
-              << layer->get_mini_batch_size(execution_mode::training)
+              << std::setw(4) << layer->get_mini_batch_size(execution_mode::training)
               << "/"
-              << layer->get_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << layer->get_mini_batch_size(execution_mode::validation)
               << "/"
-              << layer->get_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << layer->get_mini_batch_size(execution_mode::testing)
               << "]"
               << "  local last MB ="
               << " ["
-              << layer->get_last_mini_batch_size(execution_mode::training)
+              << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::training)
               << "/"
-              << layer->get_last_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::validation)
               << "/"
-              << layer->get_last_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::testing)
               << "]"
               << std::endl;
     std::cout << "--------------------------------------------------------------------------------"
