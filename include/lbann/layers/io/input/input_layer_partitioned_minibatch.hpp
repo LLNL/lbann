@@ -55,7 +55,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return nullptr;
   }
 
-  std::string get_name() const { return "input layer partitioned minibatch parallel io"; }
+  std::string get_name() const { return "input:partitioned"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();

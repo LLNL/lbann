@@ -59,7 +59,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     return new target_layer_distributed_minibatch(*this);
   }
 
-  std::string get_name() const { return "target layer distributed minibatch parallel io"; }
+  std::string get_name() const { return "target:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
