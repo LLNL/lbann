@@ -529,15 +529,6 @@ void Layer::fp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   El::LockedView(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
-
-  // Update the layer's effective mini-batch size so it averages properly.
-  /// @todo BVE FIXME This will cause a bug when you are on the last
-  /// iteration and the size of the current mini-batch equals the normal
-  /// mini-batch size.  In this case one of the ranks gets out of sync
-  /// To fix this, we need a flag for when we are on the last mini-batch
-  int total_mini_batch_size = m_comm->intermodel_allreduce((int) cur_mini_batch_size);
-  this->m_neural_network_model->set_effective_mini_batch_size(
-    total_mini_batch_size);
 }
 
 void Layer::bp_set_std_matrix_view() {

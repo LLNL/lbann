@@ -48,7 +48,10 @@ void lbann_callback_print::on_epoch_begin(model *m) {
     input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
     std::cout << "--------------------------------------------------------------------------------" 
               << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch : [tr/v/te] iter/epoch ="
+    std::cout << "[" << m->get_cur_epoch() << "] Epoch : statistics reported as" 
+              << " [training/validation/testing]" << std::endl;
+    std::cout << std::setfill(' ') << std::setw(24)
+              << " iter/epoch ="
               << " ["
               << layer->get_num_iterations_per_epoch(execution_mode::training)
               << "/"
@@ -73,7 +76,7 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << layer->get_global_last_mini_batch_size(execution_mode::testing)
               << "]"
               << std::endl;
-    std::cout << std::setfill(' ') << std::setw(58)
+    std::cout << std::setfill(' ') << std::setw(48)
               << "  local MB ="
               << " ["
               << layer->get_mini_batch_size(execution_mode::training)

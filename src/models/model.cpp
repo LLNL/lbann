@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include <string>
 #include <unistd.h>
 
@@ -303,6 +304,14 @@ void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     cb->on_evaluate_forward_prop_end(this, l);
   }
+}
+
+/** Set the model's effective mini-batch size. */
+void model::set_effective_mini_batch_size() {
+  std::vector<Layer *>layers = get_layers();
+  input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
+  int total_mini_batch_size = layer->get_current_global_mini_batch_size(get_execution_mode());
+  m_effective_mini_batch_size = total_mini_batch_size;
 }
 
 /** \brief Returns true if a checkpoint should be taken, false otherwise */

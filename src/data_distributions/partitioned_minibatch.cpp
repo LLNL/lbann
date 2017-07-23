@@ -148,7 +148,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int num_whole_mini_batches_per_reader = floor(num_whole_mini_batches_per_model / num_parallel_readers_per_model);
   //  int parallel_readers_with_extra_mini_batch = num_whole_mini_batches_per_model % num_parallel_readers_per_model;
   int global_partial_mini_batch_size = data_reader->getNumData() - (num_whole_mini_batches_per_model * min_stride_across_models);
-  int per_model_partial_mini_batch_size = global_partial_mini_batch_size/m_comm->get_num_models();
+  int per_model_partial_mini_batch_size = global_partial_mini_batch_size / m_comm->get_num_models();
   int world_master_remainder_data = 0;
 
   // Compute how many full "parallel" mini-batches are available

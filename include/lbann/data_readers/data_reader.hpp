@@ -313,7 +313,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
-    std::cout << "Setting the last mini batch size to " << s << std::endl;
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
