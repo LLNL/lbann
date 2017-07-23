@@ -65,7 +65,6 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
     }
     m_local_data_valid = data_valid;
   }
-  m_num_valid_readers = m_comm->model_allreduce((int) m_local_data_valid, mpi::SUM); /// BVE FIXME I don't think that we need this any more
   m_num_samples_in_batch = m_comm->model_allreduce((int) m_num_samples_in_batch, mpi::SUM); /// @todo compute this by dead reckoning to avoid allreduce
   return m_num_samples_in_batch;
 }
