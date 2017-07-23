@@ -139,12 +139,16 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int num_parallel_readers_per_model = max(1, (data_reader->get_batch_stride() / m_comm->get_num_models()) / max_mini_batch_size);
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
 
+  data_reader->set_global_mini_batch_size(min_stride_across_models); /// The global mini-batch is a full mini-batch per model
+
   data_reader->set_last_mini_batch_size(max_mini_batch_size); /// By default the last mini-batch is a full one
+  data_reader->set_global_last_mini_batch_size(min_stride_across_models); /// By default the last mini-batch is a full one per model
 
   int num_whole_mini_batches_per_model = floor(data_reader->getNumData() / min_stride_across_models);
   int num_whole_mini_batches_per_reader = floor(num_whole_mini_batches_per_model / num_parallel_readers_per_model);
   //  int parallel_readers_with_extra_mini_batch = num_whole_mini_batches_per_model % num_parallel_readers_per_model;
-  int per_model_partial_mini_batch_size = (data_reader->getNumData() - (num_whole_mini_batches_per_model * min_stride_across_models))/(m_comm->get_num_models());
+  int global_partial_mini_batch_size = data_reader->getNumData() - (num_whole_mini_batches_per_model * min_stride_across_models);
+  int per_model_partial_mini_batch_size = global_partial_mini_batch_size/m_comm->get_num_models();
   int world_master_remainder_data = 0;
 
   // Compute how many full "parallel" mini-batches are available
@@ -164,6 +168,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
     data_reader->set_num_mini_batches_per_reader(data_reader->get_num_mini_batches_per_reader()+1);
     data_reader->set_last_mini_batch_size(per_model_partial_mini_batch_size);
+    data_reader->set_global_last_mini_batch_size(global_partial_mini_batch_size);
   }
 
   data_reader->set_num_iterations_per_epoch(data_reader->get_num_mini_batches_per_reader());

@@ -45,11 +45,15 @@ public:
   virtual int fetch_to_local_matrix(Mat& M_local) { return 0; }
   virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {}
   virtual bool is_data_set_processed() { return false; }
+  virtual generic_data_reader *get_data_reader(execution_mode mode);
   virtual int get_num_parallel_readers();
   virtual int get_num_iterations_per_epoch(execution_mode mode);
   virtual int get_num_iterations_per_epoch();
+  virtual int get_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size();
+  virtual int get_global_mini_batch_size(execution_mode mode);
+  virtual int get_global_last_mini_batch_size(execution_mode mode);
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {}
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);

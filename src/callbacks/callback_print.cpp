@@ -28,6 +28,7 @@
 
 #include <vector>
 #include "lbann/callbacks/callback_print.hpp"
+#include <iomanip>
 
 namespace lbann {
 
@@ -45,8 +46,9 @@ void lbann_callback_print::on_epoch_begin(model *m) {
   if (comm->am_world_master()) {
     std::vector<Layer *>layers = m->get_layers();
     input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
-    std::cout << "-----------------------------------------------------------" << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch : iterations / epoch [tr/v/te]"
+    std::cout << "--------------------------------------------------------------------------------" 
+              << std::endl;
+    std::cout << "[" << m->get_cur_epoch() << "] Epoch : [tr/v/te] iter/epoch ="
               << " ["
               << layer->get_num_iterations_per_epoch(execution_mode::training)
               << "/"
@@ -54,7 +56,33 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << "/"
               << layer->get_num_iterations_per_epoch(execution_mode::testing)
               << "]"
-              << " last mini-batch [tr/v/te]"
+              << " global MB ="
+              << " ["
+              << layer->get_global_mini_batch_size(execution_mode::training)
+              << "/"
+              << layer->get_global_mini_batch_size(execution_mode::validation)
+              << "/"
+              << layer->get_global_mini_batch_size(execution_mode::testing)
+              << "]"
+              << " global last MB ="
+              << " ["
+              << layer->get_global_last_mini_batch_size(execution_mode::training)
+              << "/"
+              << layer->get_global_last_mini_batch_size(execution_mode::validation)
+              << "/"
+              << layer->get_global_last_mini_batch_size(execution_mode::testing)
+              << "]"
+              << std::endl;
+    std::cout << std::setfill(' ') << std::setw(58)
+              << "  local MB ="
+              << " ["
+              << layer->get_mini_batch_size(execution_mode::training)
+              << "/"
+              << layer->get_mini_batch_size(execution_mode::validation)
+              << "/"
+              << layer->get_mini_batch_size(execution_mode::testing)
+              << "]"
+              << "  local last MB ="
               << " ["
               << layer->get_last_mini_batch_size(execution_mode::training)
               << "/"
@@ -63,7 +91,8 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << layer->get_last_mini_batch_size(execution_mode::testing)
               << "]"
               << std::endl;
-    std::cout << "-----------------------------------------------------------" << std::endl;
+    std::cout << "--------------------------------------------------------------------------------"
+              << std::endl;
   }
 }
 
