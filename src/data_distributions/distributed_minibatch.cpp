@@ -123,6 +123,7 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
   int num_parallel_readers = m_num_valid_readers;
+  int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
   if(m_comm->get_rank_in_model() < num_parallel_readers) {
     if((m_comm->get_rank_in_model()+1)%num_parallel_readers == m_root) {
@@ -142,15 +143,16 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   }
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
-  num_readers_done = m_comm->model_allreduce(num_readers_done);
-  if(num_readers_done == max_active_parallel_readers) {
+  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish
     /// without all of the parallel readers participating in the last round.
     m_num_data_per_epoch = 0;
+    m_cur_step_in_epoch = 0;
     return true;
   } else {
+    m_cur_step_in_epoch++;
     return false;
   }
 }
@@ -225,7 +227,11 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
     data_reader->set_global_last_mini_batch_size(global_partial_mini_batch_size);
   }
 
-  data_reader->set_num_iterations_per_epoch(data_reader->get_num_mini_batches_per_reader());
+  if(global_partial_mini_batch_size != 0) {
+    data_reader->set_num_iterations_per_epoch(num_whole_mini_batches_per_model+1);
+  }else {
+    data_reader->set_num_iterations_per_epoch(num_whole_mini_batches_per_model);
+  }
 
   if(data_reader->get_last_mini_batch_size() > max_mini_batch_size) {
     throw new lbann_exception("Error in calculating the partial mini-batch size, exceeds the max mini-batch size");
