@@ -70,16 +70,16 @@ class TrainingParams {
   int MBSize;
 
   /// Learning rate
-  float LearnRate;
+  DataType LearnRate;
   /// Learning method
   /** 1 - Adagrad, 2 - RMSprop, 3 - Adam */
   int LearnRateMethod;
   /// How much does the learning rate decay
-  float LrDecayRate;
+  DataType LrDecayRate;
   /// How often does the learning rate decay
   int LrDecayCycles;
   /// LrMomentum for SGD learning rate method
-  float LrMomentum;
+  DataType LrMomentum;
   /// Activation function
   /** 1 - Sigmoid, 2 - Tanh, 3 - reLU */
   int ActivationType;
@@ -88,7 +88,7 @@ class TrainingParams {
       dropout_layer. Default is -1 (no dropout). */
   float DropOut;
   /// Lambda for L2 regularization
-  double Lambda;
+  DataType Lambda;
   /// Weight initialization method
   /** 0 - zero, 1 - uniform, 2 - normal, 3 - glorot_normal, 4 - glorot_uniform, 5 - he_normal, 6 - he_uniform */
   weight_initialization WeightInitType;
