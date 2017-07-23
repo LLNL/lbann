@@ -48,7 +48,7 @@ lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_pa
 int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
   int num_parallel_readers = get_num_parallel_readers();
 
-  m_num_samples_in_batch = 0;
+  int num_samples_fetched = 0;
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
@@ -57,16 +57,15 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    m_num_samples_in_batch = fetch_from_data_reader(M_local);
-    bool data_valid = (m_num_samples_in_batch > 0);
+    num_samples_fetched = fetch_from_data_reader(M_local);
+    bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
-      m_num_data_per_epoch+=m_num_samples_in_batch; /// BVE FIXME need to change how this is shared
-      preprocess_data_samples(M_local, m_num_samples_in_batch);
+      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
+      preprocess_data_samples(M_local, num_samples_fetched);
     }
     m_local_data_valid = data_valid;
   }
-  m_num_samples_in_batch = m_comm->model_allreduce((int) m_num_samples_in_batch, mpi::SUM); /// @todo compute this by dead reckoning to avoid allreduce
-  return m_num_samples_in_batch;
+  return num_samples_fetched;
 }
 
 void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {

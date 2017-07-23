@@ -52,6 +52,8 @@ public:
   virtual int get_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size();
+  virtual int get_current_mini_batch_size(execution_mode mode);
+  virtual int get_current_mini_batch_size();
   virtual int get_global_mini_batch_size(execution_mode mode);
   virtual int get_global_last_mini_batch_size(execution_mode mode);
   virtual int get_current_global_mini_batch_size(execution_mode mode);

@@ -103,7 +103,11 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     //int num_parallel_readers = get_num_parallel_readers();
 
     //  DISPLAY_MATRIX(m_activations);
-    int num_samples_in_batch = partitioned_minibatch::fetch_to_local_matrix(this->m_activations->Matrix());
+    int num_samples_fetched = partitioned_minibatch::fetch_to_local_matrix(this->m_activations->Matrix());
+
+    // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+    int num_samples_in_batch = partitioned_minibatch::get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
 
