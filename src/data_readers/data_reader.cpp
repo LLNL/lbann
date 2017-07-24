@@ -92,15 +92,22 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
   #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-    if (!valid) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader load error: datum not valid");
+    // Catch exceptions within the OpenMP thread.
+    try {
+      int n = m_current_pos + (s * m_sample_stride);
+      int index = m_shuffled_indices[n];
+      bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+      if (!valid) {
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+          " :: generic data reader load error: datum not valid");
+      }
+      m_indices_fetched_per_mb.Set(s, 0, index);
+    } catch (lbann_exception& e) {
+      lbann_report_exception(e);
+    } catch (exception& e) {
+      El::ReportException(e);
     }
-    m_indices_fetched_per_mb.Set(s, 0, index);
   }
 
   /// Allow each thread to perform any postprocessing necessary on the
@@ -113,54 +120,6 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-#if 0
-int lbann::generic_data_reader::fetch_data(std::vector<Mat>& X) {
-  int nthreads = omp_get_num_threads();
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data reader load error: !position_valid");
-  }
-
-  /// Allow each thread to perform any preprocessing necessary on the
-  /// data source prior to fetching data
-  #pragma omp parallel for
-  for (int t = 0; t < nthreads; t++) {
-    preprocess_data_source(omp_get_thread_num());
-  }
-
-  int current_batch_size = getm_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    X.Width());
-
-  //  El::Zeros(X, X.Height(), X.Width());
-  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
-  #pragma omp parallel for
-  for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-    if (!valid) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader load error: datum not valid");
-    }
-    m_indices_fetched_per_mb.Set(s, 0, index);
-  }
-
-  /// Allow each thread to perform any postprocessing necessary on the
-  /// data source prior to fetching data
-  #pragma omp parallel for
-  for (int t = 0; t < nthreads; t++) {
-    postprocess_data_source(omp_get_thread_num());
-  }
-
-  return mb_size;
-}
-#endif
 int lbann::generic_data_reader::fetch_labels(Mat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
@@ -178,14 +137,21 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
   El::Zeros(Y, Y.Height(), Y.Width());
   #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
+    // Catch exceptions within the OpenMP thread.
+    try {
+      int n = m_current_pos + (s * m_sample_stride);
+      int index = m_shuffled_indices[n];
 
-    bool valid = fetch_label(Y, index, s, omp_get_thread_num());
-    if (!valid) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader load error: label not valid");
+      bool valid = fetch_label(Y, index, s, omp_get_thread_num());
+      if (!valid) {
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+          " :: generic data reader load error: label not valid");
+      }
+    } catch (lbann_exception& e) {
+      lbann_report_exception(e);
+    } catch (exception& e) {
+      El::ReportException(e);
     }
   }
   return mb_size;
@@ -208,14 +174,21 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
   El::Zeros(Y, Y.Height(), Y.Width());
   #pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
+    // Catch exceptions within the OpenMP thread.
+    try {
+      int n = m_current_pos + (s * m_sample_stride);
+      int index = m_shuffled_indices[n];
 
-    bool valid = fetch_response(Y, index, s, omp_get_thread_num());
-    if (!valid) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader load error: response not valid");
+      bool valid = fetch_response(Y, index, s, omp_get_thread_num());
+      if (!valid) {
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+          " :: generic data reader load error: response not valid");
+      }
+    } catch (lbann_exception& e) {
+      lbann_report_exception(e);
+    } catch (exception& e) {
+      El::ReportException(e);
     }
   }
   return mb_size;
