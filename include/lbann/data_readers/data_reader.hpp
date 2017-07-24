@@ -420,6 +420,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
+  /// For partitioned data distributions, the current mini-batch index
+  /// will match the current step count
+  /// For distributed data distributions, the current mini-batch index
+  /// may be equal to the current step modulo the number of current
+  /// readers
+  /// The index of the current mini-batch that has been loaded
   int m_current_mini_batch_idx;
   int m_num_mini_batches_per_reader; /// How many mini-batches will this reader process
 

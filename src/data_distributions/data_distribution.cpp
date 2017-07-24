@@ -99,6 +99,20 @@ int lbann::generic_data_distribution::get_last_mini_batch_size() {
   return get_last_mini_batch_size(get_execution_mode());
 }
 
+int lbann::generic_data_distribution::get_current_mini_batch_size(execution_mode mode) {
+  generic_data_reader *data_reader = get_data_reader(mode);
+  int num_iterations_per_epoch = get_num_iterations_per_epoch();
+  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 2)) {
+    return data_reader->get_last_mini_batch_size();
+  }else {
+    return data_reader->getm_batch_size();
+  }
+}
+
+int lbann::generic_data_distribution::get_current_mini_batch_size() {
+  return get_current_mini_batch_size(get_execution_mode());
+}
+
 int lbann::generic_data_distribution::get_global_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
   return data_reader->get_global_mini_batch_size();
