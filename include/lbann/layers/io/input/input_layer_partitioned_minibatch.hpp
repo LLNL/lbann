@@ -42,9 +42,9 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch : public input_layer, public partitioned_minibatch {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch(lbann_comm *comm, int mini_batch_size, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, data_readers),
-      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), mini_batch_size, data_readers) {
+  input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+    : input_layer(comm, num_parallel_readers, data_readers),
+      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
     // Setup the data distribution
@@ -55,7 +55,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return nullptr;
   }
 
-  std::string get_name() const { return "input layer partitioned minibatch parallel io"; }
+  std::string get_name() const { return "input:partitioned"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
@@ -72,25 +72,30 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
       //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << max_mb_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * max_mb_size)*/ << endl;
       io_layer::setup_data_readers_for_training(base_offset,
                                                           batch_stride,
-                                                          m_num_parallel_readers_training,
+                                                          partitioned_minibatch::m_num_parallel_readers_training,
                                                           model_offset);
-      partitioned_minibatch::calculate_num_iterations_per_epoch(this->m_training_dataset.data_reader);
+      partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(max_mb_size,
+                                                                               this->m_training_dataset.data_reader);
       /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
                                                   max_mb_size,
-                                                  m_num_parallel_readers_testing);
+                                                  partitioned_minibatch::m_num_parallel_readers_testing);
+      partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
+                                                                             this->m_validation_dataset.data_reader);
+      partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size, 
+                                                                             this->m_testing_dataset.data_reader);
     } else {
       io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
                                                           max_mb_size,
-                                                          m_num_parallel_readers_training);
+                                                          partitioned_minibatch::m_num_parallel_readers_training);
       io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
                                                             max_mb_size,
-                                                            m_num_parallel_readers_testing);
+                                                            partitioned_minibatch::m_num_parallel_readers_testing);
     }
 
-    m_local_data_valid = false;
-    m_local_reader_done = false;
-    m_num_data_per_epoch = 0;
+    partitioned_minibatch::m_local_data_valid = false;
+    partitioned_minibatch::m_local_reader_done = false;
+    partitioned_minibatch::m_num_data_per_epoch = 0;
   }
 
   void fp_compute() {
@@ -98,7 +103,11 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     //int num_parallel_readers = get_num_parallel_readers();
 
     //  DISPLAY_MATRIX(m_activations);
-    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations->Matrix());
+    int num_samples_fetched = partitioned_minibatch::fetch_to_local_matrix(this->m_activations->Matrix());
+
+    // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+    int num_samples_in_batch = partitioned_minibatch::get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
 
@@ -111,7 +120,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return is_data_set_processed();
+    return partitioned_minibatch::is_data_set_processed();
   }
 
 

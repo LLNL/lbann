@@ -1,0 +1,100 @@
+model {
+  name: "dnn"
+  objective_function: "categorical_cross_entropy"
+  metric: "categorical_accuracy"
+  mini_batch_size: 64
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+      dir: "none"
+    }
+  }
+  callback {
+    summary {
+      dir: "none"
+      interval: 1
+    }
+  }
+
+  layer {
+    input_distributed_minibatch_parallel_io {
+      data_layout: "data_parallel"
+    }
+  }
+  layer {
+    convolution {
+      num_dims: 2
+      num_input_channels: 3
+      input_dims: "256 256"
+      num_output_channels: 96
+      filter_dims: "11 11"
+      conv_pads: "0 0"
+      conv_strides: "4 4"
+      activation_type: "relu"
+      weight_initialization: "glorot_uniform"
+    }
+  }
+  layer {
+    convolution {
+      num_dims: 2
+      num_input_channels: 96
+      input_dims: "62 62"
+      num_output_channels:  32
+      filter_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      activation_type: "relu"
+      weight_initialization: "glorot_uniform"
+    }
+  }
+  layer {
+    pooling {
+      num_dims: 2
+      num_channels: 32
+      input_dims: "24 24"
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+    }
+  }
+  layer {
+    fully_connected {
+      data_layout: "model_parallel"
+      num_neurons: 128
+      activation_type: "relu"
+      weight_initialization: "glorot_uniform"
+    }
+  }
+  layer {
+    softmax {
+      data_layout: "model_parallel"
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+    }
+  }
+  layer {
+    target_distributed_minibatch_parallel_io {
+      data_layout: "model_parallel"
+      shared_data_reader: true
+    }
+  }
+  optimizer {
+    name: "rmsprop"
+    learn_rate: 0.01
+    momentum: 0.9
+    decay: 0.5
+    nesterov: true
+  }
+}

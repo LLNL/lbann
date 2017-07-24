@@ -39,6 +39,8 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
   m_last_mini_batch_stride = batch_stride;
   m_current_mini_batch_idx = 0;
   m_num_iterations_per_epoch = 0;
+  m_global_mini_batch_size = 0;
+  m_global_last_mini_batch_size = 0;
 
   /// The amount of space needed will vary based on input layer type,
   /// but the batch size is the maximum space necessary

@@ -197,13 +197,11 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       }
@@ -224,7 +222,6 @@ void add_layers(
       } else {
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers);
       }
@@ -675,7 +672,6 @@ void add_layers(
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -694,7 +690,6 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -702,7 +697,6 @@ void add_layers(
       } else {
         d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          mb_size,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),

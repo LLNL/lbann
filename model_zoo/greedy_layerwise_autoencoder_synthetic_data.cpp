@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
                                                           };
 
     input_layer *input_layer = new input_layer_distributed_minibatch_parallel_io(data_layout::DATA_PARALLEL, comm, parallel_io,
-        (int) trainParams.MBSize, data_readers);
+        data_readers);
     gla.add(input_layer);
 
     gla.add("FullyConnected", data_layout::MODEL_PARALLEL, netParams.Network[1], trainParams.ActivationType, weight_initialization::glorot_uniform, {new dropout(data_layout::MODEL_PARALLEL, comm, trainParams.DropOut)});

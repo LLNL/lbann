@@ -62,6 +62,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_use_alt_last_mini_batch_size(false),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
     m_last_mini_batch_stride(batchSize),
+    m_current_mini_batch_idx(0), m_num_mini_batches_per_reader(0),
+    m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
+    m_global_last_mini_batch_size(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
     m_max_sample_count_was_set(false), m_use_percent(1.0),
@@ -272,6 +275,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   int getm_batch_max() const {
     return m_batch_size;
   }
+  /// Set the mini batch size across all models (global)
+  void set_global_mini_batch_size(const int s) {
+    m_global_mini_batch_size = s;
+  }
+  /// Return the mini_batch_size across all models (global)
+  int get_global_mini_batch_size() const {
+    return m_global_mini_batch_size;
+  }
   /// Return the mini batch stride.
   int get_batch_stride() const {
     return m_batch_stride;
@@ -299,6 +310,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Return the last mini batch size
   int get_last_mini_batch_size() const {
     return m_last_mini_batch_size;
+  }
+  /// Set the last mini batch size across all models (global)
+  void set_global_last_mini_batch_size(const int s) {
+    m_global_last_mini_batch_size = s;
+  }
+  /// Return the last mini batch size across all models (global)
+  int get_global_last_mini_batch_size() const {
+    return m_global_last_mini_batch_size;
   }
   /// Set the last mini batch stride
   void set_last_mini_batch_stride(const int s) {
@@ -401,11 +420,20 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
+  /// For partitioned data distributions, the current mini-batch index
+  /// will match the current step count
+  /// For distributed data distributions, the current mini-batch index
+  /// may be equal to the current step modulo the number of current
+  /// readers
+  /// The index of the current mini-batch that has been loaded
   int m_current_mini_batch_idx;
   int m_num_mini_batches_per_reader; /// How many mini-batches will this reader process
 
   /// @todo BVE FIXME merge this with alternate approach
   int m_num_iterations_per_epoch; /// How many iterations all readers will execute
+
+  int m_global_mini_batch_size;
+  int m_global_last_mini_batch_size;
 
  protected:
   int m_rank;

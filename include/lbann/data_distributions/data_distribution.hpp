@@ -35,7 +35,7 @@ namespace lbann
 {
 class generic_data_distribution {
 public:
-  generic_data_distribution(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   generic_data_distribution(
     const generic_data_distribution&) = default;
   generic_data_distribution& operator=(
@@ -45,10 +45,21 @@ public:
   virtual int fetch_to_local_matrix(Mat& M_local) { return 0; }
   virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {}
   virtual bool is_data_set_processed() { return false; }
+  virtual generic_data_reader *get_data_reader(execution_mode mode);
   virtual int get_num_parallel_readers();
+  virtual int get_num_iterations_per_epoch(execution_mode mode);
   virtual int get_num_iterations_per_epoch();
+  virtual int get_mini_batch_size(execution_mode mode);
+  virtual int get_last_mini_batch_size(execution_mode mode);
+  virtual int get_last_mini_batch_size();
+  virtual int get_current_mini_batch_size(execution_mode mode);
+  virtual int get_current_mini_batch_size();
+  virtual int get_global_mini_batch_size(execution_mode mode);
+  virtual int get_global_last_mini_batch_size(execution_mode mode);
+  virtual int get_current_global_mini_batch_size(execution_mode mode);
 
-  virtual void calculate_num_iterations_per_epoch(generic_data_reader *data_reader) {}
+  virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {}
+  virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);
   virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) { return 0; }
 
   /// @todo BVE replace this with a function pointer that is passed
@@ -82,7 +93,7 @@ public:
   int m_num_parallel_readers_testing;
   int m_local_reader_done;
   /** Maximum size of the mini-batch */
-  int m_max_mini_batch_size;
+  //  int m_max_mini_batch_size;
   /** Number of samples in the current mini-batch */
   int m_num_samples_in_batch;
   /** Has the layer copied valid data into the local matrix */

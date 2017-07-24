@@ -36,7 +36,7 @@ namespace lbann {
  */
 class partitioned_minibatch : public generic_data_distribution {
  public:
-  partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, int mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   partitioned_minibatch(
     const partitioned_minibatch&) = default;
   partitioned_minibatch& operator=(
@@ -47,7 +47,8 @@ class partitioned_minibatch : public generic_data_distribution {
   void distribute_from_local_matrix(Mat& M_local, CircMat& Ms);
   bool is_data_set_processed();
 
-  void calculate_num_iterations_per_epoch(generic_data_reader *data_reader);
+  void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader);
+  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
 };
 }
 
