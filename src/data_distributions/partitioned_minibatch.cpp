@@ -157,7 +157,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int world_master_remainder_adjustment = data_reader->getNumData()
                                           - (num_whole_mini_batches_per_model * min_stride_across_models)
                                           - (per_model_partial_mini_batch_size * m_comm->get_num_models());
-  if(m_comm->am_world_master()) {
+  if(m_comm->get_model_rank() == 0) {
     world_master_remainder_data = world_master_remainder_adjustment;
     world_master_remainder_adjustment = 0;
   }
