@@ -44,7 +44,9 @@ int main(int argc, char *argv[]) {
   // El initialization (similar to MPI_Init)
   lbann_comm *comm = initialize(argc, argv, 42);
 
+#ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
+#endif
 
   try {
 
