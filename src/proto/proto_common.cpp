@@ -880,6 +880,9 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
+      if (c.summary_dir() != "none" && !summarizer) {
+        summarizer = new lbann_summary(c.summary_dir(), comm);
+      }
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;
@@ -904,9 +907,9 @@ void init_callbacks(
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method());
       lbann_callback_imcomm *im;
       if (all_layers) {
-        im = new lbann_callback_imcomm(c_type);
+        im = new lbann_callback_imcomm(c_type, summarizer);
       } else {
-        im = new lbann_callback_imcomm(c_type, which);
+        im = new lbann_callback_imcomm(c_type, which, summarizer);
       }
       model->add_callback(im);
     }

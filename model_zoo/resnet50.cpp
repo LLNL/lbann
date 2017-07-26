@@ -271,7 +271,14 @@ int main(int argc, char *argv[]) {
       index++;
 
       batch_normalization<data_layout::DATA_PARALLEL> *bn_conv1
-        = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+        = new batch_normalization<data_layout::DATA_PARALLEL>(
+          index,
+          comm,
+          0.9,
+          1.0,
+          0.0,
+          1e-5,
+          false);
       dnn->add(bn_conv1);
       index++;
 
@@ -318,7 +325,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn1
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn1);
         index++;
 
@@ -350,7 +364,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn2
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn2);
         index++;
 
@@ -378,7 +399,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn3
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn3);
         index++;
 
@@ -424,7 +452,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn1
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn1);
         index++;
 
@@ -452,7 +487,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn2
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn2);
         index++;
 
@@ -480,7 +522,14 @@ int main(int argc, char *argv[]) {
         index++;
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn3
-          = new batch_normalization<data_layout::DATA_PARALLEL>(index, comm);
+          = new batch_normalization<data_layout::DATA_PARALLEL>(
+            index,
+            comm,
+            0.9,
+            1.0,
+            0.0,
+            1e-5,
+            false);
         dnn->add(bn3);
         index++;
 

@@ -30,7 +30,6 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/statistics.hpp"
 
 namespace lbann {
 
@@ -61,15 +60,15 @@ class batch_normalization : public regularizer_layer {
   /** View into current minibatch means. */
   AbsDistMat *m_mean_v;
   /** View into current minibatch standard deviations. */
-  AbsDistMat *m_stdev_v;
+  AbsDistMat *m_var_v;
   /** View into running means. */
   AbsDistMat *m_running_mean_v;
-  /** View into running standard deviations. */
-  AbsDistMat *m_running_stdev_v;
+  /** View into running variance. */
+  AbsDistMat *m_running_var_v;
   /** View into gradient w.r.t. means. */
   AbsDistMat *m_mean_gradient_v;
   /** View into gradient w.r.t. standard deviations. */
-  AbsDistMat *m_stdev_gradient_v;
+  AbsDistMat *m_var_gradient_v;
 
   /** Initial value for scaling term. */
   DataType m_scale_init;
@@ -139,11 +138,11 @@ class batch_normalization : public regularizer_layer {
     m_parameters = other.m_parameters->Copy();
     m_parameters_gradient = other.m_parameters_gradient->Copy();
     m_mean_v = other.m_mean_v->Copy();
-    m_stdev_v = other.m_stdev_v->Copy();
+    m_var_v = other.m_var_v->Copy();
     m_running_mean_v = other.m_running_mean_v->Copy();
-    m_running_stdev_v = other.m_running_stdev_v->Copy();
+    m_running_var_v = other.m_running_var_v->Copy();
     m_mean_gradient_v = other.m_mean_gradient_v->Copy();
-    m_stdev_gradient_v = other.m_stdev_gradient_v->Copy();
+    m_var_gradient_v = other.m_var_gradient_v->Copy();
     m_scale_v = other.m_scale_v->Copy();
     m_bias_v = other.m_bias_v->Copy();
     m_scale_gradient_v = other.m_scale_gradient_v->Copy();
@@ -179,11 +178,11 @@ class batch_normalization : public regularizer_layer {
     if(m_parameters)          delete m_parameters;
     if(m_parameters_gradient) delete m_parameters_gradient;
     if(m_mean_v)              delete m_mean_v;
-    if(m_stdev_v)             delete m_stdev_v;
+    if(m_var_v)               delete m_var_v;
     if(m_running_mean_v)      delete m_running_mean_v;
-    if(m_running_stdev_v)     delete m_running_stdev_v;
+    if(m_running_var_v)       delete m_running_var_v;
     if(m_mean_gradient_v)     delete m_mean_gradient_v;
-    if(m_stdev_gradient_v)    delete m_stdev_gradient_v;
+    if(m_var_gradient_v)      delete m_var_gradient_v;
     if(m_scale_v)             delete m_scale_v;
     if(m_bias_v)              delete m_bias_v;
     if(m_scale_gradient_v)    delete m_scale_gradient_v;
@@ -202,11 +201,11 @@ class batch_normalization : public regularizer_layer {
     m_parameters = other.m_parameters->Copy();
     m_parameters_gradient = other.m_parameters_gradient->Copy();
     m_mean_v = other.m_mean_v->Copy();
-    m_stdev_v = other.m_stdev_v->Copy();
+    m_var_v = other.m_var_v->Copy();
     m_running_mean_v = other.m_running_mean_v->Copy();
-    m_running_stdev_v = other.m_running_stdev_v->Copy();
+    m_running_var_v = other.m_running_var_v->Copy();
     m_mean_gradient_v = other.m_mean_gradient_v->Copy();
-    m_stdev_gradient_v = other.m_stdev_gradient_v->Copy();
+    m_var_gradient_v = other.m_var_gradient_v->Copy();
     m_scale_v = other.m_scale_v->Copy();
     m_bias_v = other.m_bias_v->Copy();
     m_scale_gradient_v = other.m_scale_gradient_v->Copy();
@@ -242,11 +241,11 @@ class batch_normalization : public regularizer_layer {
     if(m_parameters)          delete m_parameters;
     if(m_parameters_gradient) delete m_parameters_gradient;
     if(m_mean_v)              delete m_mean_v;
-    if(m_stdev_v)             delete m_stdev_v;
+    if(m_var_v)               delete m_var_v;
     if(m_running_mean_v)      delete m_running_mean_v;
-    if(m_running_stdev_v)     delete m_running_stdev_v;
+    if(m_running_var_v)       delete m_running_var_v;
     if(m_mean_gradient_v)     delete m_mean_gradient_v;
-    if(m_stdev_gradient_v)    delete m_stdev_gradient_v;
+    if(m_var_gradient_v)      delete m_var_gradient_v;
     if(m_scale_v)             delete m_scale_v;
     if(m_bias_v)              delete m_bias_v;
     if(m_scale_gradient_v)    delete m_scale_gradient_v;
@@ -265,11 +264,11 @@ class batch_normalization : public regularizer_layer {
     m_parameters_gradient = new StarMat(this->m_comm->get_model_grid());
     m_statistics_v = new StarMat(this->m_comm->get_model_grid());
     m_mean_v = new StarMat(this->m_comm->get_model_grid());
-    m_stdev_v = new StarMat(this->m_comm->get_model_grid());
+    m_var_v = new StarMat(this->m_comm->get_model_grid());
     m_running_mean_v = new StarMat(this->m_comm->get_model_grid());
-    m_running_stdev_v = new StarMat(this->m_comm->get_model_grid());
+    m_running_var_v = new StarMat(this->m_comm->get_model_grid());
     m_mean_gradient_v = new StarMat(this->m_comm->get_model_grid());
-    m_stdev_gradient_v = new StarMat(this->m_comm->get_model_grid());
+    m_var_gradient_v = new StarMat(this->m_comm->get_model_grid());
     m_scale_v = new StarMat(this->m_comm->get_model_grid());
     m_bias_v = new StarMat(this->m_comm->get_model_grid());
     m_scale_gradient_v = new StarMat(this->m_comm->get_model_grid());
@@ -287,9 +286,9 @@ class batch_normalization : public regularizer_layer {
 
     // Initialize statistics
     El::View(*m_running_mean_v, *m_parameters, El::ALL, El::IR(2));
-    El::View(*m_running_mean_v, *m_parameters, El::ALL, El::IR(3));
+    El::View(*m_running_var_v, *m_parameters, El::ALL, El::IR(3));
     El::Zero(*m_running_mean_v);
-    El::Zero(*m_running_stdev_v);
+    El::Zero(*m_running_var_v);
 
     // Initialize scaling and bias terms
     El::View(*m_scale_v, *m_parameters, El::ALL, El::IR(4));
@@ -311,15 +310,15 @@ class batch_normalization : public regularizer_layer {
     // Initialize views into parameters
     El::View(*m_statistics_v, *m_parameters, El::ALL, El::IR(0,2));
     El::View(*m_mean_v, *m_statistics_v, El::ALL, El::IR(0));
-    El::View(*m_stdev_v, *m_statistics_v, El::ALL, El::IR(1));
+    El::View(*m_var_v, *m_statistics_v, El::ALL, El::IR(1));
     El::View(*m_running_mean_v, *m_parameters, El::ALL, El::IR(2));
-    El::View(*m_running_stdev_v, *m_parameters, El::ALL, El::IR(3));
+    El::View(*m_running_var_v, *m_parameters, El::ALL, El::IR(3));
     El::View(*m_scale_v, *m_parameters, El::ALL, El::IR(4));
     El::View(*m_bias_v, *m_parameters, El::ALL, El::IR(5));
 
     // Initialize views into parameter gradients
     El::View(*m_mean_gradient_v, *m_parameters_gradient, El::ALL, El::IR(0));
-    El::View(*m_stdev_gradient_v, *m_parameters_gradient, El::ALL, El::IR(1));
+    El::View(*m_var_gradient_v, *m_parameters_gradient, El::ALL, El::IR(1));
     El::View(*m_scale_gradient_v, *m_parameters_gradient, El::ALL, El::IR(2));
     El::View(*m_bias_gradient_v, *m_parameters_gradient, El::ALL, El::IR(3));
 
@@ -362,9 +361,9 @@ class batch_normalization : public regularizer_layer {
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& mean_local = m_mean_v->Matrix();
-    Mat& stdev_local = m_stdev_v->Matrix();
+    Mat& var_local = m_var_v->Matrix();
     Mat& running_mean_local = m_running_mean_v->Matrix();
-    Mat& running_stdev_local = m_running_stdev_v->Matrix();
+    Mat& running_var_local = m_running_var_v->Matrix();
     Mat& scale_local = m_scale_v->Matrix();
     Mat& bias_local = m_bias_v->Matrix();
     Mat& activations_local = this->m_activations_v->Matrix();
@@ -393,7 +392,7 @@ class batch_normalization : public regularizer_layer {
           }
         }
         mean_local(channel, 0) = sum;
-        stdev_local(channel, 0) = sqsum;
+        var_local(channel, 0) = sqsum;
       }
       El::AllReduce(*m_statistics_v,
                     m_statistics_v->RedundantComm(),
@@ -403,15 +402,14 @@ class batch_normalization : public regularizer_layer {
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
         const DataType mean = mean_local(channel, 0) / (width * channel_size);
-        const DataType sqmean = stdev_local(channel, 0) / (width * channel_size);
+        const DataType sqmean = var_local(channel, 0) / (width * channel_size);
         const DataType var = std::max(sqmean - mean * mean, DataType(0));
-        const DataType stdev = std::sqrt(var);
         mean_local(channel, 0) = mean;
-        stdev_local(channel, 0) = stdev;
+        var_local(channel, 0) = var;
         DataType& running_mean = running_mean_local(channel, 0);
-        DataType& running_stdev = running_stdev_local(channel, 0);
+        DataType& running_var = running_var_local(channel, 0);
         running_mean = m_decay * running_mean + (DataType(1) - m_decay) * mean;
-        running_stdev = m_decay * running_stdev + (DataType(1) - m_decay) * stdev;
+        running_var = m_decay * running_var + (DataType(1) - m_decay) * var;
       }
       
     }
@@ -421,15 +419,16 @@ class batch_normalization : public regularizer_layer {
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Get channel parameters
-      DataType mean, stdev;
+      DataType mean, var;
       if(this->get_execution_mode() == execution_mode::training
          && !m_use_global_stats) { 
         mean = mean_local(channel, 0);
-        stdev = stdev_local(channel, 0);
+        var = var_local(channel, 0);
       } else {
         mean = running_mean_local(channel, 0);
-        stdev = running_stdev_local(channel, 0);
+        var = running_var_local(channel, 0);
       }
+      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType scale = scale_local(channel, 0);
       const DataType bias = bias_local(channel, 0);
 
@@ -439,7 +438,7 @@ class batch_normalization : public regularizer_layer {
       for(El::Int col = 0; col < local_width; ++col) {
         for(El::Int row = row_start; row < row_end; ++row) {
           const DataType x = prev_activations_local(row, col);
-          const DataType xhat = (x - mean) / (stdev + m_epsilon);
+          const DataType xhat = (x - mean) * inv_stdev;
           const DataType y = scale * xhat + bias;
           activations_local(row, col) = y;
         }
@@ -456,12 +455,12 @@ class batch_normalization : public regularizer_layer {
     const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     const Mat& mean_local = m_mean_v->LockedMatrix();
-    const Mat& stdev_local = m_stdev_v->LockedMatrix();
+    const Mat& var_local = m_var_v->LockedMatrix();
     const Mat& running_mean_local = m_running_mean_v->LockedMatrix();
-    const Mat& running_stdev_local = m_running_stdev_v->LockedMatrix();
+    const Mat& running_var_local = m_running_var_v->LockedMatrix();
     const Mat& scale_local = m_scale_v->LockedMatrix();
     Mat& mean_gradient_local = m_mean_gradient_v->Matrix();
-    Mat& stdev_gradient_local = m_stdev_gradient_v->Matrix();
+    Mat& var_gradient_local = m_var_gradient_v->Matrix();
     Mat& scale_gradient_local = m_scale_gradient_v->Matrix();
     Mat& bias_gradient_local = m_bias_gradient_v->Matrix();
     
@@ -476,18 +475,19 @@ class batch_normalization : public regularizer_layer {
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
-      DataType mean, stdev;
+      DataType mean, var;
       if(this->get_execution_mode() == execution_mode::training
          && !m_use_global_stats) { 
         mean = mean_local(channel, 0);
-        stdev = stdev_local(channel, 0);
+        var = var_local(channel, 0);
       } else {
         mean = running_mean_local(channel, 0);
-        stdev = running_stdev_local(channel, 0);
+        var = running_var_local(channel, 0);
       }
+      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType scale = scale_local(channel, 0);
       DataType dmean = 0;
-      DataType dstdev = 0;
+      DataType dvar = 0;
       DataType dscale = 0;
       DataType dbias = 0;
 
@@ -497,17 +497,17 @@ class batch_normalization : public regularizer_layer {
       for(El::Int col = 0; col < local_width; ++col) {
         for(El::Int row = row_start; row < row_end; ++row) {
           const DataType x = prev_activations_local(row, col);
-          const DataType xhat = (x - mean) / (stdev + m_epsilon);
+          const DataType xhat = (x - mean) * inv_stdev;
           const DataType dy = prev_error_signal_local(row, col);
           dscale += dy * xhat;
           dbias += dy;
           const DataType dxhat = dy * scale;
-          dmean += - dxhat / (stdev + m_epsilon);
-          dstdev += - dxhat * (x - mean) * std::pow(stdev + m_epsilon, -2);
+          dmean += - dxhat * inv_stdev;
+          dvar += - dxhat * (x - mean) * std::pow(inv_stdev, 3) / 2;
         }
       }
       mean_gradient_local(channel, 0) = dmean;
-      stdev_gradient_local(channel, 0) = dstdev;
+      var_gradient_local(channel, 0) = dvar;
       scale_gradient_local(channel, 0) = dscale;
       bias_gradient_local(channel, 0) = dbias;
 
@@ -523,20 +523,21 @@ class batch_normalization : public regularizer_layer {
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
-      const DataType scale = scale_local(channel, 0);
-      DataType mean, stdev, dmean, dstdev;
+      DataType mean, var, dmean, dvar;
       if(this->get_execution_mode() == execution_mode::training
          && !m_use_global_stats) { 
         mean = mean_local(channel, 0);
-        stdev = stdev_local(channel, 0);
+        var = var_local(channel, 0);
         dmean = mean_gradient_local(channel, 0);
-        dstdev = stdev_gradient_local(channel, 0);
+        dvar = var_gradient_local(channel, 0);
       } else {
         mean = running_mean_local(channel, 0);
-        stdev = running_stdev_local(channel, 0);
+        var = running_var_local(channel, 0);
         dmean = mean_gradient_local(channel, 0) * (DataType(1) - m_decay);
-        dstdev = stdev_gradient_local(channel, 0) * (DataType(1) - m_decay);
+        dvar = var_gradient_local(channel, 0) * (DataType(1) - m_decay);
       }
+      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+      const DataType scale = scale_local(channel, 0);
 
       // Compute error signal for current channel
       const El::Int row_start = channel * channel_size;
@@ -546,11 +547,9 @@ class batch_normalization : public regularizer_layer {
           const DataType x = prev_activations_local(row, col);
           const DataType dy = prev_error_signal_local(row, col);
           const DataType dxhat = dy * scale;
-          DataType dx = dxhat / (stdev + m_epsilon);
+          DataType dx = dxhat * inv_stdev;
           dx += dmean / (width * channel_size);
-          if(stdev > 0) {
-            dx += dstdev * (x - mean) / (stdev * width * channel_size);
-          }
+          dx += dvar * 2 * (x - mean) / (width * channel_size);
           error_signal_local(row, col) = dx;
         }
       }
