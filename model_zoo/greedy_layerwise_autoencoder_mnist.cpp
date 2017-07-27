@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
     mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
     mnist_validation_set.use_unused_index_set();
     if (comm->am_world_master()) {
-      size_t num_train = mnist_trainset.getNumData();
-      size_t num_validate = mnist_trainset.getNumData();
+      size_t num_train = mnist_trainset.get_num_data();
+      size_t num_validate = mnist_trainset.get_num_data();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.getNumData() << " samples." << endl;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.get_num_data() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.get_num_data() << " samples." << endl;
     }
 
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
     mnist_testset.load();
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.getNumData() << " samples." << endl;
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.get_num_data() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////

@@ -102,12 +102,12 @@ int main(int argc, char *argv[]) {
 
 
     if (comm->am_world_master()) {
-      size_t num_train = synthetic_trainset.getNumData();
-      size_t num_validate = synthetic_trainset.getNumData();
+      size_t num_train = synthetic_trainset.get_num_data();
+      size_t num_validate = synthetic_trainset.get_num_data();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << synthetic_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << synthetic_validation_set.getNumData() << " samples." << endl;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << synthetic_trainset.get_num_data() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << synthetic_validation_set.get_num_data() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////

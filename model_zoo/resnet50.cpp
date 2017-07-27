@@ -162,12 +162,12 @@ int main(int argc, char *argv[]) {
     imagenet_validation_set.use_unused_index_set();
 
     if (comm->am_world_master()) {
-      size_t num_train = imagenet_trainset.getNumData();
-      size_t num_validate = imagenet_validation_set.getNumData();
+      size_t num_train = imagenet_trainset.get_num_data();
+      size_t num_validate = imagenet_validation_set.get_num_data();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
-      std::cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << std::endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << std::endl;
+      std::cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.get_num_data() << " samples." << std::endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.get_num_data() << " samples." << std::endl;
     }
 
     imagenet_validation_set.scale(scale);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     imagenet_testset.load();
 
     if (comm->am_world_master()) {
-      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.getNumData() << " samples." << std::endl;
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset.get_num_data() << " samples." << std::endl;
     }
     imagenet_testset.scale(scale);
     imagenet_testset.subtract_mean(subtract_mean);

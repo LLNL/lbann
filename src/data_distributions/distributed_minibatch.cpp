@@ -37,15 +37,15 @@ lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_pa
   int testing_data_set_size = 0;
 
   if(data_readers[execution_mode::training] != NULL) {
-    training_data_set_size = data_readers[execution_mode::training]->getNumData();
+    training_data_set_size = data_readers[execution_mode::training]->get_num_data();
   }
 
   if(data_readers[execution_mode::validation] != NULL) {
-    validation_data_set_size = data_readers[execution_mode::validation]->getNumData();
+    validation_data_set_size = data_readers[execution_mode::validation]->get_num_data();
   }
 
   if(data_readers[execution_mode::testing] != NULL) {
-    testing_data_set_size = data_readers[execution_mode::testing]->getNumData();
+    testing_data_set_size = data_readers[execution_mode::testing]->get_num_data();
   }
 
   if(m_comm->get_model_grid().Size() < num_parallel_readers) {
@@ -180,11 +180,11 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
   //  int max_mini_batch_size = data_reader->getm_batch_max();
   {
   /// Check to make sure that there is enough data for all of the parallel readers
-  m_num_parallel_readers_training = compute_max_num_parallel_readers(m_data_readers[execution_mode::training]->getNumData(), max_mini_batch_size, m_num_parallel_readers_training);
+  m_num_parallel_readers_training = compute_max_num_parallel_readers(m_data_readers[execution_mode::training]->get_num_data(), max_mini_batch_size, m_num_parallel_readers_training);
 
-  m_num_parallel_readers_validating = compute_max_num_parallel_readers(m_data_readers[execution_mode::validation]->getNumData(), max_mini_batch_size, m_num_parallel_readers_validating);
+  m_num_parallel_readers_validating = compute_max_num_parallel_readers(m_data_readers[execution_mode::validation]->get_num_data(), max_mini_batch_size, m_num_parallel_readers_validating);
 
-  m_num_parallel_readers_testing = compute_max_num_parallel_readers(m_data_readers[execution_mode::testing]->getNumData(), max_mini_batch_size, m_num_parallel_readers_testing);
+  m_num_parallel_readers_testing = compute_max_num_parallel_readers(m_data_readers[execution_mode::testing]->get_num_data(), max_mini_batch_size, m_num_parallel_readers_testing);
   }
 
   int num_parallel_readers_per_model = max(1, (data_reader->get_batch_stride() / m_comm->get_num_models()) / max_mini_batch_size);
@@ -194,10 +194,10 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
   data_reader->set_last_mini_batch_size(max_mini_batch_size); /// By default the last mini-batch is a full one
   data_reader->set_global_last_mini_batch_size(min_stride_across_models); /// By default the last mini-batch is a full one per model
 
-  int num_whole_mini_batches_per_model = floor(data_reader->getNumData() / min_stride_across_models);
+  int num_whole_mini_batches_per_model = floor(data_reader->get_num_data() / min_stride_across_models);
   int num_whole_mini_batches_per_reader = floor(num_whole_mini_batches_per_model / num_parallel_readers_per_model);
   int parallel_readers_with_extra_mini_batch = num_whole_mini_batches_per_model % num_parallel_readers_per_model;
-  int global_partial_mini_batch_size = data_reader->getNumData() - (num_whole_mini_batches_per_model * min_stride_across_models);
+  int global_partial_mini_batch_size = data_reader->get_num_data() - (num_whole_mini_batches_per_model * min_stride_across_models);
   int per_model_partial_mini_batch_size = global_partial_mini_batch_size / m_comm->get_num_models();
   int world_master_remainder_data = 0;
 
@@ -211,7 +211,7 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   data_reader->set_num_mini_batches_per_reader(num_whole_mini_batches_per_reader);
 
-  int world_master_remainder_adjustment = data_reader->getNumData()
+  int world_master_remainder_adjustment = data_reader->get_num_data()
                                           - (num_whole_mini_batches_per_model * min_stride_across_models)
                                           - (per_model_partial_mini_batch_size * m_comm->get_num_models());
   if(m_comm->am_world_master()) {

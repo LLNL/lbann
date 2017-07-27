@@ -135,13 +135,13 @@ int main(int argc, char *argv[]) {
 
     cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
     if (comm->am_world_master()) {
-      size_t num_train = cifar10_trainset.getNumData();
-      size_t num_validate = cifar10_trainset.getNumData();
+      size_t num_train = cifar10_trainset.get_num_data();
+      size_t num_validate = cifar10_trainset.get_num_data();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
       cout << "Num Neurons CIFAR10 " << cifar10_trainset.get_linearized_data_size() << endl;
-      cout << "Training using " << train_percent << "% of the training data set, which is " << cifar10_trainset.getNumData() << " samples." << endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << cifar10_validation_set.getNumData() << " samples." << endl;
+      cout << "Training using " << train_percent << "% of the training data set, which is " << cifar10_trainset.get_num_data() << " samples." << endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << cifar10_validation_set.get_num_data() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     cifar10_testset.load();
 
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.getNumData() << " samples." << endl;
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.get_num_data() << " samples." << endl;
     }
 
     cifar10_testset.scale(scale);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     cifar10_testset.unit_variance(unit_variance);
     cifar10_testset.z_score(z_score);
     if (comm->am_world_master()) {
-      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.getNumData() << " samples." << endl;
+      cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << cifar10_testset.get_num_data() << " samples." << endl;
     }
 
     ///////////////////////////////////////////////////////////////////

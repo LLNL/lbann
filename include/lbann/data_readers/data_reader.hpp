@@ -48,20 +48,27 @@
   s << "the method " << n << " has not been implemented"; \
   throw lbann_exception(s.str()); }
 
-/**
- * @todo - add support for save and restore
- */
 namespace lbann {
 
+/**
+ * A data reader manages reading in data in a particular format.
+ * This abstract base class manages common functionality. In particular, child
+ * classes should implement load and the appropriate subset of fetch_datum,
+ * fetch_label, and fetch_response.
+ */
 class generic_data_reader : public lbann_image_preprocessor {
  public:
-  generic_data_reader(int batchSize, bool shuffle = true) :
-    m_batch_size(batchSize), m_current_pos(0),
-    m_batch_stride(batchSize), m_base_offset(0), m_model_offset(0),
+  /**
+   * @param batch_size The initial mini-batch size to use.
+   * @param shuffle Whether to shuffle data (default true).
+   */
+  generic_data_reader(int batch_size, bool shuffle = true) :
+    m_batch_size(batch_size), m_current_pos(0),
+    m_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
-    m_last_mini_batch_threshold(0), m_last_mini_batch_size(batchSize),
-    m_last_mini_batch_stride(batchSize),
+    m_last_mini_batch_threshold(0), m_last_mini_batch_size(batch_size),
+    m_last_mini_batch_stride(batch_size),
     m_current_mini_batch_idx(0), m_num_mini_batches_per_reader(0),
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
@@ -76,11 +83,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
 
-  /** @name Methods related to construction and loading
-   *  These methods are used in drivers (front ends) to construct data readers,
-   *  tell them were to find data, how much to load, etc.
-   *  These are all non-virtual methods.
-   */
+  // These non-virtual methods are used to specify where data is, how much to
+  // load, etc.
 
   /**
    * Set base directory for your data. Optional: if given,
@@ -125,78 +129,88 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string get_label_filename() const;
 
   /**
-   * if set to true, indices (data samples) are not shuffled;
-   * default is 'false'
+   * If set to true, indices (data samples) are not shuffled;
+   * default is false.
    */
   void set_firstN(bool b);
 
-  /** if 'true' is returned, indices (data samples) are not shuffled
+  /**
+   * Returns true if data samples are not shuffled.
    */
   bool get_firstN() const;
 
-  /** sets the absolute number of data samples that will be used
-   *  for training or testing
+  /**
+   * Sets the absolute number of data samples that will be used for training or
+   * testing.
    */
   void set_max_sample_count(size_t s);
 
-  /** returns 'true' if set_max_sample_count() was called;
-   *  primarily for internal use; end users can ignore.
+  /**
+   * True if set_max_sample_count was called.
    */
   bool has_max_sample_count() const;
 
-  /** returns the absolute number of data samples that will be used
-   *  for training or testing
+  /**
+   * Return the absolute number of data samples that will be used for training
+   * or testing.
    */
   size_t get_max_sample_count() const;
 
-  /** set the percentage of the data set to use for training+validation;
-   *  or testing.  Exception is thrown if  1.0 < s < 0
+  /**
+   * Set the percentage of the data set to use for training and validation or
+   * testing.
+   * @param s The percentage used, in the range [0, 1].
    */
   void set_use_percent(double s);
 
-  /** returns true if set_use_percent() was called */
+  /**
+   * True if set_use_percent was called.
+   */
   bool has_use_percent() const;
 
-  /** returns the percent of the data set that is to be used
-   *  for training or testing. If training, this is the total
-   *  for training+validation. Throws an exception if
-   *  set_use_percent() was not previously called.
+  /**
+   * Returns the percent of the dataset to be used for training or testing.
+   * If training, this is the total for training and validation. Throws if
+   * set_use_percent was not called.
    */
   double get_use_percent() const;
 
-  /** sets the proportion of the data set that will be used for
-   *  validation;  0.0 <= s <= 1.0, else an exception is thrown
+  /**
+   * Sets the percentage of the dataset to be used for validation.
+   * @param s The percentage used, in the range [0, 1].
    */
   void set_validation_percent(double s);
 
-  /** returns true if set_validation_percent was called;
-   *  this method will likely be deprecated in the future
+  /**
+   * True if set_validation_percent was called.
    */
   bool has_validation_percent() const;
 
-  /** returns the percentage of the data set that is to be
-   *  used for validation
+  /**
+   * Return the percent of the dataset to be used for validation.
    */
   double get_validation_percent() const;
 
-  /** set the identifyer for the data set; should be
-   *  "train," "test," or validate. This is primarily for internal use:
-   *  end users can ignore.
+  /**
+   * Set an idenifier for the dataset.
+   * The role should be one of "train", "test", or "validate".
    */
   void set_role(std::string role) {
     m_role = role;
   }
 
-  /** returns the role ("train," "test," "validate," or "error"
-   *  This is primarily for internal use:
-   *  end users can ignore.
+  /**
+   * Get the role for this dataset.
    */
   std::string get_role() const {
     return m_role;
   }
 
   /**
-   * Pure abstract virtual function; all generic_data_readers *must* implement.
+   * Load the dataset.
+   * Each data reader implementation should implement this to initialize its
+   * internal data structures, determine the number of samples and their
+   * dimensionality (if needed), and set up and shuffle samples.
    */
   virtual void load() = 0;
 
@@ -209,31 +223,20 @@ class generic_data_reader : public lbann_image_preprocessor {
   void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
+  /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(Mat& X);
+  /// Fetch this mini-batch's labels into Y.
   virtual int fetch_labels(Mat& Y);
+  /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(Mat& Y);
 
- protected:
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-    NOT_IMPLEMENTED("fetch_dataum");
-    return false;
-  }
-
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-    NOT_IMPLEMENTED("fetch_label");
-    return false;
-  }
-
-  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-    NOT_IMPLEMENTED("fetch_response");
-    return false;
-  }
-
-  virtual void preprocess_data_source(int tid) {};
-  virtual void postprocess_data_source(int tid) {};
-
  public:
-  virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
+  /**
+   * Save pixels to an image. The implementing data reader is responsible for
+   * handling format detection, conversion, etc.
+   */
+  virtual void save_image(Mat& pixels, const std::string filename,
+                          bool do_scale = true) {
     NOT_IMPLEMENTED("save_image");
   }
 
@@ -244,32 +247,39 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual bool update();
 
+  /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
     return 0;
   }
-  virtual int getNumResponses() const {
+  /// Return the number of responses in this dataset.
+  virtual int get_num_responses() const {
     return 1;
   }
+  /// Get the linearized size (i.e. number of elements) in a sample.
   virtual int get_linearized_data_size() const {
     return 0;
   }
+  /// Get the linearized size (i.e. number of elements) in a label.
   virtual int get_linearized_label_size() const {
     return 0;
   }
+  /// Get the linearized size (i.e. number of elements) in a response.
   virtual int get_linearized_response_size() const {
     return 1;
   }
-
+  /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
-
+  /// True if the data reader's current position is valid.
   bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }
+  /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
     return (m_current_mini_batch_idx == 0);
   }
+  /// Get the current mini-batch size.
   int getm_batch_size() const;
   /// Return the full mini_batch_size.
   int getm_batch_max() const {
@@ -335,25 +345,37 @@ class generic_data_reader : public lbann_image_preprocessor {
   int get_num_mini_batches_per_reader() const {
     return m_num_mini_batches_per_reader;
   }
-  int getPosition() const {
+  /// Get the current position in the data reader.
+  int get_position() const {
     return m_current_pos;
   }
+  /// Get the next position in the data reader.
   int get_next_position() const;
-  int *getIndices() {
+  /// Get a pointer to the start of the shuffled indices.
+  int *get_indices() {
     return &m_shuffled_indices[0];
   }
-  int getNumData() const {
+  /// Get the number of samples in this dataset.
+  int get_num_data() const {
     return (int)m_shuffled_indices.size();
   }
+  /// Get the number of unused samples in this dataset.
   int get_num_unused_data() const {
     return (int)m_unused_indices.size();
   }
+  /// Get a pointer to the start of the unused sample indices.
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
+  /// Get a pointer to the fetched indices matrix.
+  El::Matrix<El::Int>* get_indices_fetched_per_mb() {
+    return &m_indices_fetched_per_mb;
+  }
+  /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
+  /// Get the number of iterations in each epoch.
   int get_num_iterations_per_epoch() const {
     return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
@@ -378,10 +400,14 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_rank;
   }
 
+  /**
+   * Select the appropriate subset of data based on settings.
+   */
   void select_subset_of_data();
 
-  /** \brief Replace the shuffled index set with the unused index set
-   *  The unused index set is emptied.
+  /**
+   * Replaced the shuffled index set with the unused index set, empying the
+   * unused set.
    */
   void use_unused_index_set();
 
@@ -391,11 +417,49 @@ class generic_data_reader : public lbann_image_preprocessor {
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
 
- public:
-  /// 1-D Matrix of which indices were fetched in this mini-batch
-  El::Matrix<El::Int> m_indices_fetched_per_mb;
-
  protected:
+  /**
+   * Fetch a single sample into a matrix.
+   * @param X The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   */
+  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+    NOT_IMPLEMENTED("fetch_dataum");
+    return false;
+  }
+
+  /**
+   * Fetch a single label into a matrix.
+   * @param Y The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   */
+  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+    NOT_IMPLEMENTED("fetch_label");
+    return false;
+  }
+
+  /**
+   * Fetch a single response into a matrix.
+   * @param Y The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   */
+  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+    NOT_IMPLEMENTED("fetch_response");
+    return false;
+  }
+
+  /**
+   * Called before fetch_datum/label/response to allow initialization.
+   */
+  virtual void preprocess_data_source(int tid) {};
+  /**
+   * Called after fetch_datum/label/response to allow initialization.
+   */
+  virtual void postprocess_data_source(int tid) {};
+
   int m_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
@@ -435,7 +499,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_global_mini_batch_size;
   int m_global_last_mini_batch_size;
 
- protected:
   int m_rank;
   std::string m_file_dir;
   std::string m_data_fn;
@@ -448,6 +511,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_role;
 
   bool m_master;
+
+  /// 1-D Matrix of which indices were fetched in this mini-batch
+  El::Matrix<El::Int> m_indices_fetched_per_mb;
 };
 
 }  // namespace lbann

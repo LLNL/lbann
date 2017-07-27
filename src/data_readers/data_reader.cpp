@@ -51,7 +51,7 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
     m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
   } else {
     /// By default each data reader will plan to process the entire data set
-    m_num_iterations_per_epoch = ceil((float) this->getNumData() / (float) m_batch_size);
+    m_num_iterations_per_epoch = ceil((float) this->get_num_data() / (float) m_batch_size);
   }
 
   m_current_pos = m_base_offset + m_model_offset;
@@ -251,21 +251,21 @@ void generic_data_reader::select_subset_of_data() {
 
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
-    if(count > getNumData()) {
+    if(count > get_num_data()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
-        std::to_string(count) + " is > getNumData=" +
-        std::to_string(getNumData()));
+        std::to_string(count) + " is > get_num_data=" +
+        std::to_string(get_num_data()));
     }
     m_shuffled_indices.resize(get_max_sample_count());
   } else if (has_use_percent()) {
-    m_shuffled_indices.resize(get_use_percent()*getNumData());
+    m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
 
   if (has_validation_percent()) {
-    long unused = get_validation_percent()*getNumData(); //getNumData() = m_shuffled_indices.size()
-    long use_me = getNumData() - unused;
+    long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
+    long use_me = get_num_data() - unused;
     if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
