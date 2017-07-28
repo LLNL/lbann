@@ -464,7 +464,7 @@ void Layer::setup_gpu() {
   output_dims.insert(output_dims.begin(), m_mini_batch_size_per_gpu);
   // Tensor descriptor must have at least 4 dimensions
   while (output_dims.size() < 4) {
-    output_dims.insert(output_dims.begin(), 1);
+    output_dims.push_back(1);
   }
   std::vector<int> output_strides(output_dims.size());
   output_strides[output_strides.size()-1]  = 1;
