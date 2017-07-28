@@ -156,7 +156,8 @@ echo "#SBATCH --account=${ACCOUNT}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --workdir=${EXPERIMENT_DIR}"              >> ${SLURM_SCRIPT}
 echo "#SBATCH --error=${LOG_FILE}"                      >> ${SLURM_SCRIPT}
 echo "#SBATCH --job-name=${EXPERIMENT_NAME}"            >> ${SLURM_SCRIPT}
-echo "#SBATCH --clusters=${CLUSTER}"                    >> ${SLURM_SCRIPT}
+# This sbatch line causes the sbatch command to hang on surface.
+#echo "#SBATCH --clusters=${CLUSTER}"                    >> ${SLURM_SCRIPT}
 echo "#SBATCH --nodes=${NUM_NODES}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --output=${LOG_FILE}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --partition=${PARTITION}"                 >> ${SLURM_SCRIPT}
