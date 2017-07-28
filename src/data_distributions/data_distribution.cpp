@@ -139,6 +139,10 @@ int lbann::generic_data_distribution::get_current_global_mini_batch_size() {
 
 void lbann::generic_data_distribution::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
 
+  if(max_mini_batch_size > data_reader->get_num_data()) {
+    max_mini_batch_size = data_reader->get_num_data();
+  }
+
   /// By default each data reader will plan to process the entire data set
   int num_iterations_per_epoch = ceil((float) data_reader->get_num_data() / (float) max_mini_batch_size);
   int last_mini_batch_size = data_reader->get_num_data() % max_mini_batch_size;

@@ -178,6 +178,11 @@ int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set
 
 void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   //  int max_mini_batch_size = data_reader->getm_batch_max();
+
+  if(max_mini_batch_size > data_reader->get_num_data()) {
+    max_mini_batch_size = data_reader->get_num_data();
+  }
+
   {
   /// Check to make sure that there is enough data for all of the parallel readers
   m_num_parallel_readers_training = compute_max_num_parallel_readers(m_data_readers[execution_mode::training]->get_num_data(), max_mini_batch_size, m_num_parallel_readers_training);
