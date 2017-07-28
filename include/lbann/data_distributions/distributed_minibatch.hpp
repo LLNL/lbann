@@ -34,7 +34,7 @@ namespace lbann {
 /**
  * Parallel I/O routines for managing distributed minibatches
  */
-class distributed_minibatch : public generic_data_distribution {
+class distributed_minibatch : public virtual generic_data_distribution {
  public:
   distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   distributed_minibatch(

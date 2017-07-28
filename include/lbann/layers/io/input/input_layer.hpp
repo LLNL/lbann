@@ -32,14 +32,14 @@
 #include "lbann/models/model.hpp"
 
 namespace lbann {
-class input_layer : public io_layer, public generic_data_distribution {
+class input_layer : public io_layer, public virtual generic_data_distribution {
  public:
   input_layer(lbann_comm *comm, int num_parallel_readers,  std::map<execution_mode, generic_data_reader *> data_readers)
-    : io_layer(comm, data_readers),
-      generic_data_distribution(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {}
+    : generic_data_distribution(comm, num_parallel_readers, data_readers),
+      io_layer(comm, data_readers) {}
 
   // Input layers copy their datareaders.
-  input_layer(const input_layer& other) : io_layer(other), generic_data_distribution(other) {
+  input_layer(const input_layer& other) : generic_data_distribution(other), io_layer(other) {
     if (m_training_dataset.data_reader) {
       m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
     }
@@ -52,8 +52,8 @@ class input_layer : public io_layer, public generic_data_distribution {
   }
 
   input_layer& operator=(const input_layer& other) {
-    io_layer::operator=(other);
     generic_data_distribution::operator=(other);
+    io_layer::operator=(other);
     if (m_training_dataset.data_reader) {
       m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
     }
@@ -80,12 +80,24 @@ class input_layer : public io_layer, public generic_data_distribution {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  /** Do not setup the standard view of the matrix -- it defines the standard view 
+  /** Define the standard view of the matrix -- and set it for the model
    * Setup the effective (global) mini-batch size so that gradients are properly
    * averaged across models. */
   virtual void fp_set_std_matrix_view() {
-    this->m_neural_network_model->set_effective_mini_batch_size();
+    // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+    El::Int cur_mini_batch_size = generic_data_distribution::get_current_mini_batch_size();
+    this->m_neural_network_model->set_current_mini_batch_size(cur_mini_batch_size);
+
+    // Use the precomputed size of the global mini-batch to set the
+    // current effective batch size across all models
+    int total_mini_batch_size = generic_data_distribution::get_current_global_mini_batch_size();
+    this->m_neural_network_model->set_effective_mini_batch_size(total_mini_batch_size);
+
+    // Once the current mini-batch size is defined, set the standard view for activations only
+    El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   }
+
   /** No setting the standard view of the matrix -- it defines the standard view */
   virtual void bp_set_std_matrix_view() {}
 

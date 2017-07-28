@@ -40,12 +40,14 @@ namespace lbann {
 template <data_layout T_layout>
 class target_layer_distributed_minibatch : public target_layer, public distributed_minibatch {
  protected:
-  Mat Y_local;
-  CircMat Ys;
+  Mat Y_local; /** Local matrix that holds data from data reader */
+  Mat Y_local_v; /** View of local matrix that holds data from data reader */
+  CircMat Ys; /** Distributed matrix used to stage local data to layer output */
 
  public:
   target_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : target_layer(comm, data_readers, shared_data_reader, for_regression),
+    : generic_data_distribution(comm, num_parallel_readers, data_readers),
+      target_layer(comm, data_readers, shared_data_reader, for_regression),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
       Ys(comm->get_model_grid()) {
     // Setup the data distribution
@@ -104,8 +106,14 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     m_num_data_per_epoch = 0;
   }
 
+  void fp_set_std_matrix_view() {
+    target_layer::fp_set_std_matrix_view();
+    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
+  }
+
   void fp_compute() {
-    int num_samples_in_batch = fetch_to_local_matrix(Y_local);
+    int num_samples_in_batch = fetch_to_local_matrix(Y_local_v);
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       target_layer::update_num_samples_processed(num_samples_in_batch);

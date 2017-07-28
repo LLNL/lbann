@@ -42,7 +42,8 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class target_layer_partitioned_minibatch : public target_layer, public partitioned_minibatch {
  public:
   target_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
-    : target_layer(comm, data_readers, shared_data_reader, for_regression),
+    : generic_data_distribution(comm, num_parallel_readers, data_readers),
+      target_layer(comm, data_readers, shared_data_reader, for_regression),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
@@ -102,7 +103,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   void fp_compute() {
-    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations->Matrix());
+    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 

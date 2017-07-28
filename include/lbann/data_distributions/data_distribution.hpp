@@ -57,6 +57,7 @@ public:
   virtual int get_global_mini_batch_size(execution_mode mode);
   virtual int get_global_last_mini_batch_size(execution_mode mode);
   virtual int get_current_global_mini_batch_size(execution_mode mode);
+  virtual int get_current_global_mini_batch_size();
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {}
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);

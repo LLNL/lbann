@@ -130,7 +130,9 @@ class model {
     return m_effective_mini_batch_size;
   }
   /** Set the model's effective mini-batch size. */
-  virtual void set_effective_mini_batch_size();
+  inline void set_effective_mini_batch_size(int mini_batch_size) {
+    m_effective_mini_batch_size = mini_batch_size;
+  }
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
   inline int get_current_phase() {
