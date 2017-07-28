@@ -11,7 +11,7 @@ TESTDIR=`dirname $0`
 DIRNAME=`dirname $TESTDIR`
 
 FULLSCRIPT=.
-SCRIPT=run_lbann_dnn_multi_mnist.sh
+SCRIPT=../build/catalyst.llnl.gov/model_zoo/lbann
 
 if [ -e "${DIRNAME}/${SCRIPT}" ] ; then
     FULLSCRIPT="${DIRNAME}/${SCRIPT}"
@@ -23,23 +23,16 @@ if [ ! -z "$SLURM_SUBMIT_DIR" ] ; then
   fi
 fi
 
-EPOCHS=5
-#NET="5000,4000,3000,1000"
-NET="25000,1000"
-
 echo "Executing script $0 -> ${SLURM_JOB_NAME}"
 echo "Clearing /l/ssd for batch execution"
-#srun -N${SLURM_NNODES} hostname
 srun -N${SLURM_NNODES} --clear-ssd hostname
 
-MAX_MB=300
-STD_OPTS="-u -e ${EPOCHS}"
-#STD_OPTS="-t ${TRAIN} -v ${VAL} -e ${EPOCHS} -n ${NET} -r 0.001"
+STD_OPTS="--model=../model_zoo/prototext/model_mnist_partitioned_io.prototext --reader=../model_zoo/prototext/data_reader_mnist.prototext --optimizer=../model_zoo/prototext/opt_adagrad.prototext"
 echo "################################################################################"
 for b in 300 150 100 75 60 50; do
   for k in 1 2 3 4 5 6; do
-    CMD="${FULLSCRIPT} ${STD_OPTS} -b ${b} -k ${k} -z $((${k}*${MAX_MB}/${b}))"
-    echo ${CMD}
+    CMD="srun -n$((${k}*${MAX_MB}/${b})) ${FULLSCRIPT} ${STD_OPTS} --mini_batch_size=${b} --num_epochs=5 --procs_per_model=${k}"
+    echo "${CMD}"
     ${CMD}
     echo "################################################################################"
   done
