@@ -19,4 +19,5 @@ add_sources(data_reader.cpp
             cv_utils.cpp
             data_reader_cnpy.cpp
             data_reader_synthetic.cpp
-            )
+            data_reader_csv.cpp
+)

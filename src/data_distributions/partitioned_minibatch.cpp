@@ -142,10 +142,10 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   data_reader->set_last_mini_batch_size(max_mini_batch_size); /// By default the last mini-batch is a full one
   data_reader->set_global_last_mini_batch_size(min_stride_across_models); /// By default the last mini-batch is a full one per model
 
-  int num_whole_mini_batches_per_model = floor(data_reader->getNumData() / min_stride_across_models);
+  int num_whole_mini_batches_per_model = floor(data_reader->get_num_data() / min_stride_across_models);
   int num_whole_mini_batches_per_reader = floor(num_whole_mini_batches_per_model / num_parallel_readers_per_model);
   //  int parallel_readers_with_extra_mini_batch = num_whole_mini_batches_per_model % num_parallel_readers_per_model;
-  int global_partial_mini_batch_size = data_reader->getNumData() - (num_whole_mini_batches_per_model * min_stride_across_models);
+  int global_partial_mini_batch_size = data_reader->get_num_data() - (num_whole_mini_batches_per_model * min_stride_across_models);
   int per_model_partial_mini_batch_size = global_partial_mini_batch_size / m_comm->get_num_models();
   int world_master_remainder_data = 0;
 
@@ -154,7 +154,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   data_reader->set_num_mini_batches_per_reader(num_whole_mini_batches_per_reader);
 
-  int world_master_remainder_adjustment = data_reader->getNumData()
+  int world_master_remainder_adjustment = data_reader->get_num_data()
                                           - (num_whole_mini_batches_per_model * min_stride_across_models)
                                           - (per_model_partial_mini_batch_size * m_comm->get_num_models());
   if(m_comm->get_model_rank() == 0) {

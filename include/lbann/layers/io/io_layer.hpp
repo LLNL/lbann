@@ -63,15 +63,15 @@ class io_layer : public Layer {
       m_data_sets_span_models(data_sets_span_models),
       m_for_regression(for_regression) {
     if(m_training_dataset.data_reader != nullptr) {
-      m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
+      m_training_dataset.total_samples = m_training_dataset.data_reader->get_num_data();
     }
 
     if(m_validation_dataset.data_reader != nullptr) {
-      m_validation_dataset.total_samples = m_validation_dataset.data_reader->getNumData();
+      m_validation_dataset.total_samples = m_validation_dataset.data_reader->get_num_data();
     }
 
     if(m_testing_dataset.data_reader != nullptr) {
-      m_testing_dataset.total_samples = m_testing_dataset.data_reader->getNumData();
+      m_testing_dataset.total_samples = m_testing_dataset.data_reader->get_num_data();
     }
   }
 
@@ -94,7 +94,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_training_dataset.data_reader;
     m_training_dataset.data_reader = data_reader;
     m_training_dataset.num_samples_processed = 0;
-    m_training_dataset.total_samples = data_reader->getNumData();
+    m_training_dataset.total_samples = data_reader->get_num_data();
     m_training_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
     return old_data_reader;
   }
@@ -105,7 +105,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_validation_dataset.data_reader;
     m_validation_dataset.data_reader = data_reader;
     m_validation_dataset.num_samples_processed = 0;
-    m_validation_dataset.total_samples = data_reader->getNumData();
+    m_validation_dataset.total_samples = data_reader->get_num_data();
     m_validation_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
     return old_data_reader;
   }
@@ -116,7 +116,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_testing_dataset.data_reader;
     m_testing_dataset.data_reader = data_reader;
     m_testing_dataset.num_samples_processed = 0;
-    m_testing_dataset.total_samples = data_reader->getNumData();
+    m_testing_dataset.total_samples = data_reader->get_num_data();
     m_testing_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
     return old_data_reader;
   }
@@ -183,7 +183,7 @@ class io_layer : public Layer {
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() {
     generic_data_reader *dr = select_data_reader();
-    return &(dr->m_indices_fetched_per_mb);
+    return dr->get_indices_fetched_per_mb();
   }
 
   /**

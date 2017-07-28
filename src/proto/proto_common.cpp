@@ -1221,6 +1221,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
+        (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
         /*
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
@@ -1243,12 +1244,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_validation->use_unused_index_set();
 
       if (master) {
-        size_t num_train = reader->getNumData();
-        size_t num_validate = reader_validation->getNumData();
+        size_t num_train = reader->get_num_data();
+        size_t num_validate = reader_validation->get_num_data();
         double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
-        cout << "Training using " << train_percent << "% of the training data set, which is " << reader->getNumData() << " samples." << endl
-             << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->getNumData() << " samples." << endl;
+        cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << endl
+             << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << endl;
       }
 
       data_readers[execution_mode::validation] = reader_validation;

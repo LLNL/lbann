@@ -177,7 +177,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
       /// or will be done on the next update of the input layer (which includes adding the stride).
       /// Note that target layers are always update before input layers, which is why the position
       /// is not up to date yet.
-      return (data_reader->get_next_position() < data_reader->getNumData());
+      return (data_reader->get_next_position() < data_reader->get_num_data());
     } else {
       return data_reader->update();
     }
