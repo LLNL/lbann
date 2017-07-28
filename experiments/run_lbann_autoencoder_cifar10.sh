@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#DIRNAME=`dirname $0`
-DIRNAME="/usr/workspace/wsa/jacobs32/lbann.develop/experiments" 
+DIRNAME=`dirname $0`
+#DIRNAME="/usr/workspace/wsa/jacobs32/lbann.develop/experiments" 
 #Set Script Name variable
 SCRIPT=`basename ${0}`
 

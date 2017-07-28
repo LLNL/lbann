@@ -1221,6 +1221,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
+        (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
         /*
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
