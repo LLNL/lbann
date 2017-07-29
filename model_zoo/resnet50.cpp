@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
           1.0,
           0.0,
           1e-5,
-          false);
+          cudnn);
       dnn->add(bn_conv1);
       index++;
 
@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn1);
         index++;
 
@@ -371,7 +371,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn2);
         index++;
 
@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn3);
         index++;
 
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
         dnn->add(relu3);
         index++;
 
@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn1);
         index++;
 
@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn2);
         index++;
 
@@ -529,7 +529,7 @@ int main(int argc, char *argv[]) {
             1.0,
             0.0,
             1e-5,
-            false);
+            cudnn);
         dnn->add(bn3);
         index++;
 
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
         dnn->add(relu3);
         index++;
 

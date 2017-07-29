@@ -456,7 +456,7 @@ void add_layers(
           ell.scale_init(),
           ell.bias_init(),
           ell.epsilon(),
-          ell.use_global_stats());
+          cudnn);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();

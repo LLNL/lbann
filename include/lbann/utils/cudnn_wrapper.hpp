@@ -73,12 +73,12 @@
     }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call)   FORCE_CHECK_CUDA(cuda_call)
-#define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call)
+#define CHECK_CUDA(cuda_call)     FORCE_CHECK_CUDA(cuda_call)
+#define CHECK_CUDNN(cudnn_call)   FORCE_CHECK_CUDNN(cudnn_call)
 #define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS(cublas_call)
 #else
-#define CHECK_CUDA(cuda_call)   cuda_call
-#define CHECK_CUDNN(cudnn_call) cudnn_call
+#define CHECK_CUDA(cuda_call)     cuda_call
+#define CHECK_CUDNN(cudnn_call)   cudnn_call
 #define CHECK_CUBLAS(cublas_call) cublas_call
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef __LIB_CUDNN
@@ -204,13 +204,13 @@ class cudnn_manager {
    *  degrade system performance. This function assumes that the
    *  matrix memory was previously allocated within Elemental.
    */
-  void pin_matrix(ElMat& mat);
+  void pin_matrix(AbsDistMat& mat);
 
   /** Unpin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
    *  degrade system performance.
    */
-  void unpin_matrix(ElMat& mat);
+  void unpin_matrix(AbsDistMat& mat);
 
   void check_error();
 

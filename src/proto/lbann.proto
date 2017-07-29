@@ -336,7 +336,6 @@ message BatchNormalization {
   double scale_init = 2;     //default: 1.0
   double bias_init = 3;      //default: 0.0
   double epsilon = 4;        //default: 1e-5
-  bool use_global_stats = 5; //default: false
 }
 
 message SeluDropout {

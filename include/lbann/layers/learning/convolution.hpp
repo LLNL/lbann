@@ -258,10 +258,12 @@ class convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
 
+    // Deallocate matrices
     delete m_filter_weights_v;
     delete m_filter_weights_gradient_v;
     delete m_bias_weights_v;
     delete m_bias_weights_gradient_v;
+
   }
 
   convolution_layer* copy() const { return new convolution_layer(*this); }
@@ -327,12 +329,6 @@ class convolution_layer : public learning {
       m_weights_gradient_per_gpu.Resize(this->m_weights_gradient->Height(),
                                         this->m_weights_gradient->Width()
                                         * this->m_cudnn->get_num_gpus());
-    }
-
-    // Pin host memory
-    if(this->m_using_gpus) {
-      this->m_cudnn->pin_matrix(*this->m_weights);
-      this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
     }
   #endif // #ifdef __LIB_CUDNN
 
@@ -491,6 +487,10 @@ class convolution_layer : public learning {
     this->m_cudnn->allocate_on_gpus(this->m_bias_weights_gradient_d,
                                     this->m_bias_weights_gradient_v->Height(),
                                     this->m_bias_weights_gradient_v->Width());
+    
+    // Pin host memory
+    this->m_cudnn->pin_matrix(*this->m_weights);
+    this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
 
   #endif // #ifdef __LIB_CUDNN
   }
