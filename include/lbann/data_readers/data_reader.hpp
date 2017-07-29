@@ -63,8 +63,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param shuffle Whether to shuffle data (default true).
    */
   generic_data_reader(int batch_size, bool shuffle = true) :
-    m_batch_size(batch_size), m_current_pos(0),
-    m_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
+    m_mini_batch_size(batch_size), m_current_pos(0),
+    m_mini_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1),
     m_use_alt_last_mini_batch_size(false),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batch_size),
@@ -279,11 +279,17 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool at_new_epoch() const {
     return (m_current_mini_batch_idx == 0);
   }
+#if 0
+  /// Set the mini batch size
+  void set_mini_batch_size(const int s) {
+    m_mini_batch_size = s;
+  }
+#endif
   /// Get the current mini-batch size.
-  int getm_batch_size() const;
+  int get_mini_batch_size() const;
   /// Return the full mini_batch_size.
-  int getm_batch_max() const {
-    return m_batch_size;
+  int get_mini_batch_max() const {
+    return m_mini_batch_size;
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
@@ -295,7 +301,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Return the mini batch stride.
   int get_batch_stride() const {
-    return m_batch_stride;
+    return m_mini_batch_stride;
   }
   /// Return the base offset.
   int get_base_offset() const {
@@ -460,10 +466,10 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void postprocess_data_source(int tid) {};
 
-  int m_batch_size;
+  int m_mini_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
-  int m_batch_stride;
+  int m_mini_batch_stride;
   /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;

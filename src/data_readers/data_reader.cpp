@@ -34,7 +34,7 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
                        lbann_comm *comm) {
   m_model_offset = model_offset;
   m_base_offset = base_offset;
-  m_batch_stride = batch_stride;
+  m_mini_batch_stride = batch_stride;
   m_sample_stride = sample_stride;
   m_last_mini_batch_stride = batch_stride;
   m_current_mini_batch_idx = 0;
@@ -44,14 +44,14 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
   /// The amount of space needed will vary based on input layer type,
   /// but the batch size is the maximum space necessary
-  El::Zeros(m_indices_fetched_per_mb, m_batch_size, 1);
+  El::Zeros(m_indices_fetched_per_mb, m_mini_batch_size, 1);
 
   if(comm != NULL) {
     m_use_alt_last_mini_batch_size = true;
     m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
   } else {
     /// By default each data reader will plan to process the entire data set
-    m_num_iterations_per_epoch = ceil((float) this->get_num_data() / (float) m_batch_size);
+    m_num_iterations_per_epoch = ceil((float) this->get_num_data() / (float) m_mini_batch_size);
   }
 
   m_current_pos = m_base_offset + m_model_offset;
@@ -63,7 +63,7 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 }
 
 void generic_data_reader::setup() {
-  generic_data_reader::setup(0, m_batch_size);
+  generic_data_reader::setup(0, m_mini_batch_size);
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
@@ -81,7 +81,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
     preprocess_data_source(omp_get_thread_num());
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -127,7 +127,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -164,7 +164,7 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -200,8 +200,8 @@ bool generic_data_reader::update() {
     //    std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
     m_current_pos += m_last_mini_batch_stride;
   } else {
-    //    std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
-    m_current_pos += m_batch_stride;
+    //    std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
+    m_current_pos += m_mini_batch_stride;
   }
 
   /// Maintain the current width of the matrix
@@ -221,12 +221,12 @@ bool generic_data_reader::update() {
   }
 }
 
-int generic_data_reader::getm_batch_size() const {
+int generic_data_reader::get_mini_batch_size() const {
   if (m_use_alt_last_mini_batch_size &&
       m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
     return m_last_mini_batch_size;
   } else {
-    return m_batch_size;
+    return m_mini_batch_size;
   }
 }
 
@@ -236,7 +236,7 @@ int generic_data_reader::get_next_position() const {
       ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
     return m_current_pos + m_last_mini_batch_stride;
   } else {
-    return m_current_pos + m_batch_stride;
+    return m_current_pos + m_mini_batch_stride;
   }
 }
 

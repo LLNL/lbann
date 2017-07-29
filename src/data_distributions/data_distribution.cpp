@@ -87,7 +87,7 @@ int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
 
 int lbann::generic_data_distribution::get_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
-  return data_reader->getm_batch_size();
+  return data_reader->get_mini_batch_size();
 }
 
 int lbann::generic_data_distribution::get_last_mini_batch_size(execution_mode mode) {
@@ -105,7 +105,7 @@ int lbann::generic_data_distribution::get_current_mini_batch_size(execution_mode
   if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
     return data_reader->get_last_mini_batch_size();
   }else {
-    return data_reader->getm_batch_size();
+    return data_reader->get_mini_batch_size();
   }
 }
 
