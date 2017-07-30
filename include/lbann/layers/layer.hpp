@@ -283,10 +283,14 @@ class Layer {
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType *> m_prev_activations_d;
+  /** Keep track of the owner of m_prev_activations_d. */
+  bool m_prev_activations_d_own;
   /** GPU memory for activations. */
   std::vector<DataType *> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
   std::vector<DataType *> m_prev_error_signal_d;
+  /** Keep track of the owner of m_prev_signal_d. */
+  bool m_prev_error_signal_d_own;
   /** GPU memory for error signal. */
   std::vector<DataType *> m_error_signal_d;
 
