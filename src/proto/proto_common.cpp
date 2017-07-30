@@ -248,7 +248,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -256,7 +257,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       }
       double l2_regularization_factor = ell.l2_regularization_factor();
       if(l2_regularization_factor != double(0.0)) {
