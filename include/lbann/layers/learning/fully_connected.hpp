@@ -32,11 +32,11 @@
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/utils/random.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/models/model.hpp"
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
+#include "lbann/utils/cublas_wrapper.hpp"
 #endif
 #include <string>
 #include <cassert>
