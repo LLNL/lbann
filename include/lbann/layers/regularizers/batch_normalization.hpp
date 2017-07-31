@@ -103,10 +103,8 @@ class batch_normalization : public regularizer_layer {
   std::vector<DataType *> m_mean_d;
   /** GPU memory for current minibatch variances. */
   std::vector<DataType *> m_var_d;
-  /** GPU memory for running means. */
-  std::vector<DataType *> m_running_mean_d;
-  /** GPU memory for running variances. */
-  std::vector<DataType *> m_running_var_d;
+  /** GPU memory for current minibatch inverse standard deviations. */
+  std::vector<DataType *> m_inv_stdev_d;
   /** GPU memory for scaling term. */
   std::vector<DataType *> m_scale_d;
   /** GPU memory for bias term. */
@@ -285,8 +283,7 @@ class batch_normalization : public regularizer_layer {
     // Deallocate GPU memory
     this->m_cudnn->deallocate_on_gpus(m_mean_d);
     this->m_cudnn->deallocate_on_gpus(m_var_d);
-    this->m_cudnn->deallocate_on_gpus(m_running_mean_d);
-    this->m_cudnn->deallocate_on_gpus(m_running_var_d);
+    this->m_cudnn->deallocate_on_gpus(m_inv_stdev_d);
     this->m_cudnn->deallocate_on_gpus(m_scale_d);
     this->m_cudnn->deallocate_on_gpus(m_bias_d);
     this->m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
@@ -409,12 +406,9 @@ class batch_normalization : public regularizer_layer {
     this->m_cudnn->allocate_on_gpus(m_var_d,
                                     m_var_v->Height(),
                                     m_var_v->Width());
-    this->m_cudnn->allocate_on_gpus(m_running_mean_d,
-                                    m_running_mean_v->Height(),
-                                    m_running_mean_v->Width());
-    this->m_cudnn->allocate_on_gpus(m_running_var_d,
-                                    m_running_var_v->Height(),
-                                    m_running_var_v->Width());
+    this->m_cudnn->allocate_on_gpus(m_inv_stdev_d,
+                                    m_var_v->Height(),
+                                    m_var_v->Width());
     this->m_cudnn->allocate_on_gpus(m_scale_d,
                                     m_scale_v->Height(),
                                     m_scale_v->Width());
@@ -464,179 +458,100 @@ class batch_normalization : public regularizer_layer {
     const DataType zero = 0;
 
     // Get local matrices
+    Mat& prev_activations_local = m_prev_activations_v->Matrix();
     Mat& mean_local = m_mean_v->Matrix();
     Mat& var_local = m_var_v->Matrix();
     Mat& running_mean_local = m_running_mean_v->Matrix();
     Mat& running_var_local = m_running_var_v->Matrix();
     const Mat& scale_local = m_scale_v->LockedMatrix();
     const Mat& bias_local = m_bias_v->LockedMatrix();
+    
+    // Matrix parameters
+    const El::Int width = this->m_prev_activations_v->Width();
+    const El::Int local_width = this->m_prev_activations_v->LocalWidth();
+    const int num_channels = this->m_neuron_dims[0];
+    const int channel_size = this->m_num_neurons / num_channels;
 
-    // Clear unused GPU data
-    this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_activations_d,
-                                                this->m_num_prev_neurons,
-                                                this->m_prev_activations_v->LocalWidth(),
-                                                this->m_mini_batch_size_per_gpu);
-
-    // Transfer parameters from CPU to GPUs
-    this->m_cudnn->broadcast_to_gpus(m_scale_d, scale_local);
-    this->m_cudnn->broadcast_to_gpus(m_bias_d, bias_local);
-    if(this->get_execution_mode() != execution_mode::training) {
-      this->m_cudnn->broadcast_to_gpus(m_running_mean_d, running_mean_local);
-      this->m_cudnn->broadcast_to_gpus(m_running_var_d, running_var_local);
-    }
-
-    // Initialize tensor descriptor
-    cudnnDataType_t cudnn_data_type;
-    int cudnn_num_dims;
-    std::vector<int> input_dims(std::max(this->m_num_prev_neuron_dims+1, 4));
-    std::vector<int> input_strides(std::max(this->m_num_prev_neuron_dims+1, 4));
-    std::vector<int> output_dims(std::max(this->m_num_neuron_dims+1, 4));
-    std::vector<int> output_strides(std::max(this->m_num_neuron_dims+1, 4));
-    CHECK_CUDNN(cudnnGetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                           input_dims.size(),
-                                           &cudnn_data_type,
-                                           &cudnn_num_dims,
-                                           input_dims.data(),
-                                           input_strides.data()));
-  #ifdef LBANN_DEBUG
-    if(cudnn_data_type != m_cudnn->get_cudnn_data_type()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected data type");
-    }
-    if(cudnn_num_dims != (int) input_dims.size()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected dimensions");
-    }
-  #endif // LBANN_DEBUG
-    CHECK_CUDNN(cudnnGetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                           output_dims.size(),
-                                           &cudnn_data_type,
-                                           &cudnn_num_dims,
-                                           output_dims.data(),
-                                           output_strides.data()));
-  #ifdef LBANN_DEBUG
-    if(cudnn_data_type != m_cudnn->get_cudnn_data_type()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected data type");
-    }
-    if(cudnn_num_dims != (int) output_dims.size()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for neuron tensor has unexpected dimensions");
-    }
-  #endif // LBANN_DEBUG
-    output_dims[0] = this->m_mini_batch_size_per_gpu;
-    input_dims[0] = this->m_mini_batch_size_per_gpu;
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                           cudnn_data_type,
-                                           input_dims.size(),
-                                           input_dims.data(),
-                                           input_strides.data()));
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                           cudnn_data_type,
-                                           output_dims.size(),
-                                           output_dims.data(),
-                                           output_strides.data()));
-
-    // Perform batch normalization with each GPU
-    const int effective_mini_batch_size = this->m_neural_network_model->get_effective_mini_batch_size();
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-
-      // Get number of columns assigned to current GPU
-      const int col_start = std::min(i * this->m_mini_batch_size_per_gpu,
-                                     effective_mini_batch_size);
-      const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu,
-                                   effective_mini_batch_size);
-      const int num_cols = col_end - col_start;
-      if(num_cols == 0) {
-        break;
-      }
-      if(num_cols < this->m_mini_batch_size_per_gpu) {
-        output_dims[0] = num_cols;
-        input_dims[0] = num_cols;
-        CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                               cudnn_data_type,
-                                               input_dims.size(),
-                                               input_dims.data(),
-                                               input_strides.data()));
-        CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                               cudnn_data_type,
-                                               output_dims.size(),
-                                               output_dims.data(),
-                                               output_strides.data()));
-      }
-
-      // Apply batch normalization
-      if(this->get_execution_mode() == execution_mode::training) {
-        CHECK_CUDNN(cudnnBatchNormalizationForwardTraining(this->m_cudnn->get_handle(i),
-                                                           CUDNN_BATCHNORM_SPATIAL,
-                                                           &one,
-                                                           &zero,
-                                                           this->m_prev_neurons_cudnn_desc,
-                                                           this->m_prev_activations_d[i],
-                                                           this->m_neurons_cudnn_desc,
-                                                           this->m_activations_d[i],
-                                                           m_channel_tensor_desc,
-                                                           m_scale_d[i],
-                                                           m_bias_d[i],
-                                                           0.0,
-                                                           NULL,
-                                                           NULL,
-                                                           m_epsilon,
-                                                           m_mean_d[i],
-                                                           m_var_d[i]));
-      } else {
-        CHECK_CUDNN(cudnnBatchNormalizationForwardInference(this->m_cudnn->get_handle(i),
-                                                            CUDNN_BATCHNORM_SPATIAL,
-                                                            &one,
-                                                            &zero,
-                                                            this->m_prev_neurons_cudnn_desc,
-                                                            this->m_prev_activations_d[i],
-                                                            this->m_neurons_cudnn_desc,
-                                                            this->m_activations_d[i],
-                                                            m_channel_tensor_desc,
-                                                            m_scale_d[i],
-                                                            m_bias_d[i],
-                                                            m_running_mean_d[i],
-                                                            m_running_var_d[i],
-                                                            m_epsilon));
-      }
-
-    }
-
-    // Estimate mini-batch statistics and running statistics
-    // Note: Compute weighted average of means and variances to
-    //   estimate statistics over entire mini-batch. The mean is
-    //   exact, but the variance is approximate.
+    // Compute statistics
+    // TODO: compute on GPUs
     if(this->get_execution_mode() == execution_mode::training) {
-      Mat mean_per_gpu(m_mean_v->Height(), num_gpus);
-      Mat var_per_gpu(m_var_v->Height(), num_gpus);
-      this->m_cudnn->gather_from_gpus(mean_per_gpu, m_mean_d, 1);
-      this->m_cudnn->gather_from_gpus(var_per_gpu, m_var_d, 1);
-      El::Zero(*this->m_statistics_v);
+
+      // Transfer previous activations from GPUs to CPU
+      this->m_cudnn->gather_from_gpus(prev_activations_local,
+                                      m_prev_activations_d,
+                                      this->m_mini_batch_size_per_gpu);
       this->m_cudnn->synchronize();
-      for(int i=0; i<num_gpus; ++i) {
-        const int col_start = std::min(i * this->m_mini_batch_size_per_gpu,
-                                       effective_mini_batch_size);
-        const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu,
-                                     effective_mini_batch_size);
-        const int num_cols = col_end - col_start;
-        El::Axpy(DataType(num_cols), mean_per_gpu(El::ALL, El::IR(i)), m_mean_v->Matrix());
-        El::Axpy(DataType(num_cols), var_per_gpu(El::ALL, El::IR(i)), m_var_v->Matrix());
+
+      // Compute sums and sums of squares
+      #pragma omp parallel for
+      for(int channel = 0; channel < num_channels; ++channel) {
+        DataType sum = 0;
+        DataType sqsum = 0;
+        const El::Int row_start = channel * channel_size;
+        const El::Int row_end = (channel+1) * channel_size;
+        for(El::Int col = 0; col < local_width; ++col) {
+          for(El::Int row = row_start; row < row_end; ++row) {
+            const DataType x = prev_activations_local(row, col);
+            sum += x;
+            sqsum += x * x;
+          }
+        }
+        mean_local(channel, 0) = sum;
+        var_local(channel, 0) = sqsum;
       }
-      *m_statistics_v *= DataType(1) / effective_mini_batch_size;
       El::AllReduce(*m_statistics_v,
                     m_statistics_v->RedundantComm(),
                     El::mpi::SUM);
+
+      // Compute minibatch statistics and running statistics
+      const DataType num_samples = width * channel_size;
       #pragma omp parallel for
-      for(int channel = 0; channel < this->m_neuron_dims[0]; ++channel) {
-        const DataType mean = mean_local(channel, 0);
-        const DataType var = var_local(channel, 0);
+      for(int channel = 0; channel < num_channels; ++channel) {
+        const DataType mean = mean_local(channel, 0) / num_samples;
+        const DataType sqmean = var_local(channel, 0) / num_samples;
+        const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
+        mean_local(channel, 0) = mean;
+        var_local(channel, 0) = var;
         DataType& running_mean = running_mean_local(channel, 0);
         DataType& running_var = running_var_local(channel, 0);
         running_mean = m_decay * running_mean + (DataType(1) - m_decay) * mean;
         running_var = m_decay * running_var + (DataType(1) - m_decay) * var;
       }
-    
+      
+    }
+
+    // Transfer parameters from CPU to GPUs
+    this->m_cudnn->broadcast_to_gpus(m_scale_d, scale_local);
+    this->m_cudnn->broadcast_to_gpus(m_bias_d, bias_local);
+    if(this->get_execution_mode() == execution_mode::training) {
+      this->m_cudnn->broadcast_to_gpus(m_mean_d, mean_local);
+      this->m_cudnn->broadcast_to_gpus(m_var_d, var_local);
+    } else {
+      this->m_cudnn->broadcast_to_gpus(m_mean_d, running_mean_local);
+      this->m_cudnn->broadcast_to_gpus(m_var_d, running_var_local);
+    }
+
+    // Perform batch normalization with each GPU
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                 this->m_cudnn->get_stream(i)));
+      CHECK_CUDNN(cudnnBatchNormalizationForwardInference(this->m_cudnn->get_handle(i),
+                                                          CUDNN_BATCHNORM_SPATIAL,
+                                                          &one,
+                                                          &zero,
+                                                          this->m_prev_neurons_cudnn_desc,
+                                                          this->m_prev_activations_d[i],
+                                                          this->m_neurons_cudnn_desc,
+                                                          this->m_activations_d[i],
+                                                          m_channel_tensor_desc,
+                                                          m_scale_d[i],
+                                                          m_bias_d[i],
+                                                          m_mean_d[i],
+                                                          m_var_d[i],
+                                                          m_epsilon));
+
     }
 
   #endif // __LIB_CUDNN
@@ -651,6 +566,15 @@ class batch_normalization : public regularizer_layer {
     const DataType one = 1;
     const DataType zero = 0;
 
+    // Compute inverse standard deviations
+    // TODO: compute on GPUs
+    Mat inv_stdev(m_var_v->LockedMatrix());
+    #pragma omp parallel for
+    for(int channel = 0; channel < this->m_neuron_dims[0]; ++channel) {
+      DataType& s = inv_stdev(channel, 0);
+      s = DataType(1) / std::sqrt(s + m_epsilon);
+    }
+
     // Clear unused GPU data
     this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_d,
                                                 this->m_num_neurons,
@@ -659,96 +583,15 @@ class batch_normalization : public regularizer_layer {
 
     // Transfer parameters from CPU to GPUs
     this->m_cudnn->broadcast_to_gpus(m_scale_d, m_scale_v->LockedMatrix());
-
-    // Initialize tensor descriptor
-    cudnnDataType_t cudnn_data_type;
-    int cudnn_num_dims;
-    std::vector<int> input_dims(std::max(this->m_num_prev_neuron_dims+1, 4));
-    std::vector<int> input_strides(std::max(this->m_num_prev_neuron_dims+1, 4));
-    std::vector<int> output_dims(std::max(this->m_num_neuron_dims+1, 4));
-    std::vector<int> output_strides(std::max(this->m_num_neuron_dims+1, 4));
-    CHECK_CUDNN(cudnnGetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                           input_dims.size(),
-                                           &cudnn_data_type,
-                                           &cudnn_num_dims,
-                                           input_dims.data(),
-                                           input_strides.data()));
-  #ifdef LBANN_DEBUG
-    if(cudnn_data_type != m_cudnn->get_cudnn_data_type()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected data type");
-    }
-    if(cudnn_num_dims != (int) input_dims.size()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected dimensions");
-    }
-  #endif // LBANN_DEBUG
-    CHECK_CUDNN(cudnnGetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                           output_dims.size(),
-                                           &cudnn_data_type,
-                                           &cudnn_num_dims,
-                                           output_dims.data(),
-                                           output_strides.data()));
-  #ifdef LBANN_DEBUG
-    if(cudnn_data_type != m_cudnn->get_cudnn_data_type()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for previous neuron tensor has unexpected data type");
-    }
-    if(cudnn_num_dims != (int) output_dims.size()) {
-      throw lbann_exception("batch_normalization_layer: cuDNN descriptor for neuron tensor has unexpected dimensions");
-    }
-  #endif // LBANN_DEBUG
-    output_dims[0] = this->m_mini_batch_size_per_gpu;
-    input_dims[0] = this->m_mini_batch_size_per_gpu;
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                           cudnn_data_type,
-                                           input_dims.size(),
-                                           input_dims.data(),
-                                           input_strides.data()));
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                           cudnn_data_type,
-                                           output_dims.size(),
-                                           output_dims.data(),
-                                           output_strides.data()));
+    this->m_cudnn->broadcast_to_gpus(m_mean_d, m_mean_v->LockedMatrix());
+    this->m_cudnn->broadcast_to_gpus(m_inv_stdev_d, inv_stdev);
 
     // Perform batch normalization backward propagation with each GPU
-    const int effective_mini_batch_size = this->m_neural_network_model->get_effective_mini_batch_size();
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
-
-      // Get number of columns assigned to current GPU
-      const int col_start = std::min(i * this->m_mini_batch_size_per_gpu,
-                                     effective_mini_batch_size);
-      const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu,
-                                   effective_mini_batch_size);
-      const int num_cols = col_end - col_start;
-      if(num_cols == 0) {
-        this->m_cudnn->clear_unused_columns_on_gpus(m_scale_gradient_d,
-                                                    m_scale_gradient_v->Height(),
-                                                    i,
-                                                    1);
-        this->m_cudnn->clear_unused_columns_on_gpus(m_bias_gradient_d,
-                                                    m_bias_gradient_v->Height(),
-                                                    i,
-                                                    1);
-        break;
-      }
-      if(num_cols < this->m_mini_batch_size_per_gpu) {
-        output_dims[0] = num_cols;
-        input_dims[0] = num_cols;
-        CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_prev_neurons_cudnn_desc,
-                                               cudnn_data_type,
-                                               input_dims.size(),
-                                               input_dims.data(),
-                                               input_strides.data()));
-        CHECK_CUDNN(cudnnSetTensorNdDescriptor(this->m_neurons_cudnn_desc,
-                                               cudnn_data_type,
-                                               output_dims.size(),
-                                               output_dims.data(),
-                                               output_strides.data()));
-      }
-
-      // Apply batch normalization backward propagation
       CHECK_CUDNN(cudnnBatchNormalizationBackward(this->m_cudnn->get_handle(i),
                                                   CUDNN_BATCHNORM_SPATIAL,
                                                   &one,
@@ -767,7 +610,7 @@ class batch_normalization : public regularizer_layer {
                                                   m_bias_gradient_d[i],
                                                   m_epsilon,
                                                   m_mean_d[i],
-                                                  m_var_d[i]));
+                                                  m_inv_stdev_d[i]));
 
     }
 
@@ -776,7 +619,8 @@ class batch_normalization : public regularizer_layer {
                                     m_scale_gradient_d);
     this->m_cudnn->reduce_from_gpus(m_bias_gradient_v->Matrix(),
                                     m_bias_gradient_d);
-    *m_parameters_gradient *= DataType(1) / effective_mini_batch_size;
+    *m_parameters_gradient
+      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     El::AllReduce(*m_parameters_gradient,
                   m_parameters_gradient->RedundantComm(),
                   El::mpi::SUM);
@@ -827,11 +671,12 @@ class batch_normalization : public regularizer_layer {
                     El::mpi::SUM);
 
       // Compute minibatch statistics and running statistics
+      const DataType num_samples = width * channel_size;
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
         const DataType mean = mean_local(channel, 0) / (width * channel_size);
         const DataType sqmean = var_local(channel, 0) / (width * channel_size);
-        const DataType var = std::max(sqmean - mean * mean, DataType(0));
+        const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
         mean_local(channel, 0) = mean;
         var_local(channel, 0) = var;
         DataType& running_mean = running_mean_local(channel, 0);
@@ -932,10 +777,10 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Get global gradients by accumulating local gradients
-    scale_gradient_local *= DataType(1) /
-      this->m_neural_network_model->get_effective_mini_batch_size();
-    bias_gradient_local *= DataType(1) /
-      this->m_neural_network_model->get_effective_mini_batch_size();
+    scale_gradient_local
+      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
+    bias_gradient_local
+      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     El::AllReduce(*m_parameters_gradient,
                   m_parameters_gradient->RedundantComm(),
                   El::mpi::SUM);
@@ -953,6 +798,7 @@ class batch_normalization : public regularizer_layer {
       const DataType scale = scale_local(channel, 0);
 
       // Compute error signal for current channel
+      const DataType num_samples = width * channel_size;
       const El::Int row_start = channel * channel_size;
       const El::Int row_end = (channel+1) * channel_size;
       for(El::Int col = 0; col < local_width; ++col) {
@@ -961,8 +807,8 @@ class batch_normalization : public regularizer_layer {
           const DataType dy = prev_error_signal_local(row, col);
           const DataType dxhat = dy * scale;
           DataType dx = dxhat * inv_stdev;
-          dx += dmean / (width * channel_size);
-          dx += dvar * 2 * (x - mean) / (width * channel_size);
+          dx += dmean / num_samples;
+          dx += dvar * num_samples / (num_samples - DataType(1)) * 2 * (x - mean) / num_samples;
           error_signal_local(row, col) = dx;
         }
       }
