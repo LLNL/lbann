@@ -17,7 +17,7 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet, synthetic
+  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
@@ -168,6 +168,8 @@ message Callback {
    CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
    CallbackStepLearningRate step_learning_rate = 13;
    CallbackCustomLearningRate custom_learning_rate = 14;
+   CallbackCheckSmall check_small = 15;
+   CallbackCheckNaN check_nan = 16;
 }
 
 message CallbackStepLearningRate {
@@ -236,6 +238,12 @@ message CallbackImComm {
 
 message CallbackDebug {
   string phase = 1;
+}
+
+message CallbackCheckSmall {
+}
+
+message CallbackCheckNaN {
 }
 
 //========================================================================

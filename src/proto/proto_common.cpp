@@ -248,7 +248,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -256,7 +257,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       }
       double l2_regularization_factor = ell.l2_regularization_factor();
       if(l2_regularization_factor != double(0.0)) {
@@ -998,6 +1000,28 @@ void init_callbacks(
       }
       model->add_callback(debug_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_small
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_small()) {
+      if (master) {
+        std::cout << "adding check_small callback" << std::endl;
+      }
+      lbann_callback_checksmall *checksmall_cb = new lbann_callback_checksmall();
+      model->add_callback(checksmall_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_nan
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_nan()) {
+      if (master) {
+        std::cout << "adding check_nan callback" << std::endl;
+      }
+      lbann_callback_checknan *checknan_cb = new lbann_callback_checknan();
+      model->add_callback(checknan_cb);
+    }
   }
 
 }
@@ -1143,8 +1167,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
-    } else if (name == "cnpy") {
-      reader = new cnpy_reader(mini_batch_size, shuffle);
+    } else if (name == "numpy") {
+      reader = new numpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
     } else if (name == "synthetic") {
@@ -1216,9 +1240,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
-      } else if (name == "cnpy") {
-        reader_validation = new cnpy_reader(mini_batch_size, shuffle);
-        (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
+      } else if (name == "numpy") {
+        reader_validation = new numpy_reader(mini_batch_size, shuffle);
+        (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);

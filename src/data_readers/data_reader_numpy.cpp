@@ -23,25 +23,25 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cnpy_reader .hpp .cpp
+// lbann_numpy_reader .hpp .cpp
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_cnpy.hpp"
+#include "lbann/data_readers/data_reader_numpy.hpp"
 #include <stdio.h>
 #include <string>
 #include <cnpy.h>
 
 namespace lbann {
 
-cnpy_reader::cnpy_reader(int batchSize, bool shuffle)
+numpy_reader::numpy_reader(int batchSize, bool shuffle)
   : generic_data_reader(batchSize, shuffle), m_num_features(0), m_num_samples(0) {
 }
 
-cnpy_reader::~cnpy_reader() {
+numpy_reader::~numpy_reader() {
   m_data.destruct();
 }
 
-bool cnpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   if (m_data.word_size == 4) {
     float *tmp = (float *)m_data.data;
     float *data = tmp + data_id;
@@ -64,13 +64,13 @@ bool cnpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-void cnpy_reader::load() {
+void numpy_reader::load() {
   std::string infile = get_data_filename();
   std::ifstream ifs(infile);
   if (!ifs) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " cnpy_reader::load() - can't open file : " + infile);
+      " numpy_reader::load() - can't open file : " + infile);
   }
   ifs.close();
 
@@ -88,7 +88,7 @@ void cnpy_reader::load() {
   select_subset_of_data();
 }
 
-cnpy_reader::cnpy_reader(const cnpy_reader& source) :
+numpy_reader::numpy_reader(const numpy_reader& source) :
   generic_data_reader((const generic_data_reader&) source), m_num_features(source.m_num_features),
   m_num_samples(source.m_num_samples), m_data(source.m_data) {
   int n = m_num_features * m_num_samples * m_data.word_size;
@@ -96,7 +96,7 @@ cnpy_reader::cnpy_reader(const cnpy_reader& source) :
   memcpy(m_data.data, source.m_data.data, n);
 }
 
-cnpy_reader& cnpy_reader::operator=(const cnpy_reader& source) {
+numpy_reader& numpy_reader::operator=(const numpy_reader& source) {
 
   // check for self-assignment
   if (this == &source) {

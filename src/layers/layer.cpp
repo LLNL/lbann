@@ -96,7 +96,10 @@ Layer::Layer(const int index, lbann_comm *comm)
   m_bp_output_pinned = false;
 
   m_prev_neurons_cudnn_desc = NULL;  
-  m_neurons_cudnn_desc = NULL;  
+  m_neurons_cudnn_desc = NULL;
+
+  m_prev_activations_d_own = false;
+  m_prev_error_signal_d_own = false;
 #endif // __LIB_CUDNN
 
   reset_counters();
@@ -193,10 +196,10 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+    if(m_prev_activations_d_own) {
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     }
-    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
+    if(m_prev_error_signal_d_own) {
       m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     }
     if(m_fp_input_pinned) {
@@ -248,8 +251,10 @@ void Layer::forward_prop() {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
+      m_prev_activations_d_own = true;
     } else {
       m_prev_activations_d = m_prev_layer->m_activations_d;
+      m_prev_activations_d_own = false;      
     }
   }
 #endif // __LIB_CUDNN
@@ -300,8 +305,10 @@ void Layer::back_prop() {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
+      m_prev_error_signal_d_own = true;
     } else {
       m_prev_error_signal_d = m_next_layer->m_error_signal_d;
+      m_prev_error_signal_d_own = false;      
     }
   }
 #endif // __LIB_CUDNN
