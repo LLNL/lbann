@@ -17,7 +17,7 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet, synthetic
+  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;

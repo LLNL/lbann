@@ -1145,8 +1145,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
-    } else if (name == "cnpy") {
-      reader = new cnpy_reader(mini_batch_size, shuffle);
+    } else if (name == "numpy") {
+      reader = new numpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
     } else if (name == "synthetic") {
@@ -1218,9 +1218,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
-      } else if (name == "cnpy") {
-        reader_validation = new cnpy_reader(mini_batch_size, shuffle);
-        (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
+      } else if (name == "numpy") {
+        reader_validation = new numpy_reader(mini_batch_size, shuffle);
+        (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);

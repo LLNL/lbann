@@ -23,25 +23,25 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cnpy .hpp .cpp - generic_data_reader class for numpy dataset
+// lbann_data_reader_numpy .hpp .cpp - generic_data_reader class for numpy dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_CNPY_HPP
-#define LBANN_DATA_READER_CNPY_HPP
+#ifndef LBANN_DATA_READER_NUMPY_HPP
+#define LBANN_DATA_READER_NUMPY_HPP
 
 #include "data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {
-class cnpy_reader : public generic_data_reader {
+class numpy_reader : public generic_data_reader {
  public:
-  cnpy_reader(int batchSize, bool shuffle = true);
-  cnpy_reader(const cnpy_reader& source);
-  ~cnpy_reader();
+  numpy_reader(int batchSize, bool shuffle = true);
+  numpy_reader(const numpy_reader& source);
+  ~numpy_reader();
 
-  cnpy_reader& operator=(const cnpy_reader& source);
+  numpy_reader& operator=(const numpy_reader& source);
 
-  cnpy_reader* copy() const { return new cnpy_reader(*this); }
+  numpy_reader* copy() const { return new numpy_reader(*this); }
 
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   void load();
@@ -58,4 +58,4 @@ class cnpy_reader : public generic_data_reader {
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_CNPY_HPP
+#endif  // LBANN_DATA_READER_NUMPY_HPP
