@@ -1000,6 +1000,28 @@ void init_callbacks(
       }
       model->add_callback(debug_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_small
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_small()) {
+      if (master) {
+        std::cout << "adding check_small callback" << std::endl;
+      }
+      lbann_callback_checksmall *checksmall_cb = new lbann_callback_checksmall();
+      model->add_callback(checksmall_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_nan
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_nan()) {
+      if (master) {
+        std::cout << "adding check_nan callback" << std::endl;
+      }
+      lbann_callback_checknan *checknan_cb = new lbann_callback_checknan();
+      model->add_callback(checknan_cb);
+    }
   }
 
 }
