@@ -31,7 +31,6 @@ lbann::generic_data_distribution::generic_data_distribution(lbann_comm *comm, in
   : m_comm(comm), m_requested_max_num_parallel_readers(num_parallel_readers), m_data_readers(data_readers) {
   m_root = 0;
   m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
 
   m_cur_step_in_epoch = 0;
 }

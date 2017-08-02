@@ -51,13 +51,12 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local) {
       }
       m_local_data_valid = data_valid;
     }
-    //    m_num_valid_readers = m_comm->model_allreduce((int) m_local_data_valid, mpi::SUM);
   }
   return m_num_samples_in_batch;
 }
 
 void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
-  int num_parallel_readers = get_num_parallel_readers(); //m_num_valid_readers;
+  int num_parallel_readers = get_num_parallel_readers();
   Ms.SetRoot(m_root);
 
   m_comm->model_barrier();
@@ -87,7 +86,7 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
-  int num_parallel_readers = get_num_parallel_readers(); //m_num_valid_readers;
+  int num_parallel_readers = get_num_parallel_readers();
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
   if(m_comm->get_rank_in_model() < num_parallel_readers) {

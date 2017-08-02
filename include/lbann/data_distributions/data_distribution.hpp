@@ -101,7 +101,6 @@ public:
   int m_cur_step_in_epoch;
 
   int m_num_data_per_epoch;
-  int m_num_valid_readers;
 };
 }
 
