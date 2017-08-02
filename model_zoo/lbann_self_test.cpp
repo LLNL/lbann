@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data
     ///////////////////////////////////////////////////////////////////
-    clock_t load_time = clock();
+    //clock_t load_time = clock();
     data_reader_synthetic synthetic_trainset(trainParams.MBSize, trainParams.TrainingSamples, netParams.Network[0]);
     synthetic_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
     synthetic_trainset.load();
@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
     Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
                                                comm,
                                                trainParams.DropOut);
+    dnn.add(dropout2);
 
     Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
                                                           input_layer);
