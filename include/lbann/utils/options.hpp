@@ -27,7 +27,7 @@ public :
    *  from all other options on cmd line. */
   void init(int argc, char **argv);
 
-  /// prints information on available options and defaults to cout
+  /// prints information on available options and the_defaults to cout
   void help();
 
   /// Returns true if the database contains the option
@@ -50,16 +50,33 @@ public :
 
   /// returns the value of the option; throws exception if option doesn't exist
   int get_int(const char *option);
+  /// returns the value of the option; if option isn't found, returns the the_default
+  int get_int(const char *option, int the_default);
+
   /// returns the value of the option; throws exception if option doesn't exist
   bool get_bool(const char *option);
+
   /// returns the value of the option; throws exception if option doesn't exist
   float get_float(const char *option) {
     return (float) get_double(option);
   }
+
+  /// returns the value of the option; if option isn't found, returns the the_default
+  float get_float(const char *option, float the_default) {
+    return (float) get_double(option);
+  }
+
   /// returns the value of the option; throws exception if option doesn't exist
   double get_double(const char *option);
+
+  /// returns the value of the option; if option isn't found, returns the the_default
+  double get_double(const char *option, double the_default);
+
   /// returns the value of the option; throws exception if option doesn't exist
   std::string get_string(const char *option);
+
+  /// returns the value of the option; if option isn't found, returns the the_default
+  std::string get_string(const char *option, std::string the_default);
 
 private:
   int m_rank;

@@ -40,7 +40,7 @@ void options::init(int argc, char **argv)
 {
   MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
 
-  //default fileBaseName for saving
+  //the_default fileBaseName for saving
   m_opts["saveme"] = "data.prototext";
 
   //save cmd line
@@ -119,6 +119,16 @@ bool options::get_bool(const char *option)
   return true;
 }
 
+int options::get_int(const char *option, int the_default)
+{
+  int result;
+  std::string opt(option);
+  if (not get_int(opt, result)) {
+    return the_default;
+  }
+  return result;
+}
+
 int options::get_int(const char *option)
 {
   int result;
@@ -129,6 +139,15 @@ int options::get_int(const char *option)
         << " :: options::get_int() - failed to find option: " << option
         << ", or to convert to int";
     throw std::runtime_error(err.str());
+  }
+  return result;
+}
+
+double options::get_double(const char *option, double the_default) {
+  std::string opt(option);
+  double result;
+  if (not get_double(opt, result)) {
+    return the_default;
   }
   return result;
 }
@@ -145,6 +164,16 @@ double options::get_double(const char *option)
     throw std::runtime_error(err.str());
   }
   return result;
+}
+
+std::string options::get_string(const char *option, std::string the_default)
+{
+  std::string opt(option);
+  std::string result;
+  if (not get_string(opt, result)) {
+    return the_default;
+  }  
+  return the_default;
 }
 
 std::string options::get_string(const char *option)
