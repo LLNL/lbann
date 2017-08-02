@@ -249,38 +249,6 @@ class slice_layer : public transform {
 
   }
 
-  const AbsDistMat& bp_input(const Layer* next_layer) const {
-
-    // Return all neurons if input is null
-    if(next_layer == NULL) {
-      return *m_prev_error_signal;
-    }
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(m_children.begin(),
-                                       m_children.end(),
-                                       next_layer)
-                             - m_children.begin());
-    if(child_index >= (int) m_children.size()) {
-      return *m_prev_error_signal;
-    }
-    
-    if(m_slice_axis == 0) {
-      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
-      El::LockedView(*m_bp_input_v,
-                     *this->m_prev_error_signal,
-                     El::IR(slice_size * m_slice_points[child_index],
-                            slice_size * m_slice_points[child_index+1]),
-                     El::ALL);
-      return *m_bp_input_v;
-    }
-    else {
-      // TODO: implement general slice layer
-      throw lbann_exception("slice_layer: currently only implemented with slice axis 0");
-    }
-
-  }  
-
   const std::vector<int> fp_output_dims(const Layer* next_layer) const {
 
     // Return all neurons if input is null
