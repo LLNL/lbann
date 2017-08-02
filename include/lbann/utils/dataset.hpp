@@ -43,7 +43,6 @@ class dataset {
   generic_data_reader *data_reader;
   long num_samples_processed;
   long total_samples;
-  long num_iterations_per_epoch;
 };
 
 }  // namespace lbann

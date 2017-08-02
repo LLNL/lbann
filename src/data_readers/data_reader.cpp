@@ -32,11 +32,10 @@ namespace lbann {
 
 void generic_data_reader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
                        lbann_comm *comm) {
-  m_model_offset = model_offset;
-  m_base_offset = base_offset;
-  m_mini_batch_stride = batch_stride;
-  m_sample_stride = sample_stride;
-  m_last_mini_batch_stride = batch_stride;
+  m_base_offset = 0;
+  m_sample_stride = 1;
+  m_mini_batch_stride = 0;
+  m_last_mini_batch_stride = 0;
   m_current_mini_batch_idx = 0;
   m_num_iterations_per_epoch = 0;
   m_global_mini_batch_size = 0;
@@ -46,15 +45,9 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
   /// but the batch size is the maximum space necessary
   El::Zeros(m_indices_fetched_per_mb, m_mini_batch_size, 1);
 
-  if(comm != NULL) {
-    m_use_alt_last_mini_batch_size = true;
-    m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
-  } else {
-    /// By default each data reader will plan to process the entire data set
-    m_num_iterations_per_epoch = ceil((float) this->get_num_data() / (float) m_mini_batch_size);
-  }
+  set_initial_position();
 
-  m_current_pos = m_base_offset + m_model_offset;
+  // Shuffle the data
   if (not m_first_n) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                  get_data_seq_generator());
@@ -196,11 +189,12 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
 
 bool generic_data_reader::update() {
   /// Is the mini-batch that is about to finish equal to the second to last mini-batch
-  if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
-    //    std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
+  //  if(/*m_use_alt_last_mini_batch_size && */((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
+  if(m_current_mini_batch_idx == (m_num_iterations_per_epoch/*m_num_mini_batches_per_reader*/-1)) {
+  //  std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << " and the index is " << m_current_mini_batch_idx << " and there are iterations per epoch " << m_num_iterations_per_epoch << std::endl;
     m_current_pos += m_last_mini_batch_stride;
   } else {
-    //    std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
+  //  std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << " and the index is " << m_current_mini_batch_idx << " and there are iterations per epoch " << m_num_iterations_per_epoch << " and the iteration stride is " << m_iteration_stride << std::endl;
     m_current_pos += m_mini_batch_stride;
   }
 
@@ -208,22 +202,21 @@ bool generic_data_reader::update() {
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
   if (m_current_pos < (int)m_shuffled_indices.size()) {
-    m_current_mini_batch_idx++;
+    m_current_mini_batch_idx += m_iteration_stride;
     return true;
   } else {
     if (not m_first_n) {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
-    m_current_mini_batch_idx = 0;
+    m_current_mini_batch_idx = m_reset_mini_batch_index;
     m_current_pos = m_base_offset + m_model_offset;
     return false;
   }
 }
 
 int generic_data_reader::get_mini_batch_size() const {
-  if (m_use_alt_last_mini_batch_size &&
-      m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_last_mini_batch_size;
   } else {
     return m_mini_batch_size;
@@ -231,9 +224,8 @@ int generic_data_reader::get_mini_batch_size() const {
 }
 
 int generic_data_reader::get_next_position() const {
-  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
-  if (m_use_alt_last_mini_batch_size &&
-      ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
+  /// Is the mini-batch that is about to finish the last mini-batch
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_current_pos + m_last_mini_batch_stride;
   } else {
     return m_current_pos + m_mini_batch_stride;

@@ -59,9 +59,11 @@ public:
   virtual int get_current_global_mini_batch_size(execution_mode mode);
   virtual int get_current_global_mini_batch_size();
 
-  virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {}
-  virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);
-  virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers) { return 0; }
+  virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
+  virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
+  virtual void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size);
+  virtual void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size);
+  virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) { return 0; }
 
   /// @todo BVE replace this with a function pointer that is passed
   /// into the fetch_to_local_matrix function to avoid the
@@ -86,15 +88,9 @@ public:
   lbann_comm *m_comm;
   /** Which rank is the root of the CircMat */
   int m_root;
-  /** Number of parallel readers (I/O streams) for training data */
-  int m_num_parallel_readers_training;
-  /** Number of parallel readers (I/O streams) for validation data  */
-  int m_num_parallel_readers_validating;
-  /** Number of parallel readers (I/O streams) for testing data  */
-  int m_num_parallel_readers_testing;
+  /** Requested maximum number of parallel readers (I/O streams) */
+  int m_requested_max_num_parallel_readers;
   int m_local_reader_done;
-  /** Maximum size of the mini-batch */
-  //  int m_max_mini_batch_size;
   /** Number of samples in the current mini-batch */
   int m_num_samples_in_batch;
   /** Has the layer copied valid data into the local matrix */

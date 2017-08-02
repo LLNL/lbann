@@ -65,11 +65,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   generic_data_reader(int batch_size, bool shuffle = true) :
     m_mini_batch_size(batch_size), m_current_pos(0),
     m_mini_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
-    m_sample_stride(1),
-    m_use_alt_last_mini_batch_size(false),
+    m_sample_stride(1), m_iteration_stride(1),
     m_last_mini_batch_threshold(0), m_last_mini_batch_size(batch_size),
     m_last_mini_batch_stride(batch_size),
-    m_current_mini_batch_idx(0), m_num_mini_batches_per_reader(0),
+    m_reset_mini_batch_index(0),
+    m_current_mini_batch_idx(0),
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
@@ -277,14 +277,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
-    return (m_current_mini_batch_idx == 0);
+    /// Note that data readers can start at a non-zero index if there
+    /// are parallel data readers in a model
+    return (m_current_mini_batch_idx == m_reset_mini_batch_index);
   }
-#if 0
+
   /// Set the mini batch size
   void set_mini_batch_size(const int s) {
     m_mini_batch_size = s;
   }
-#endif
   /// Get the current mini-batch size.
   int get_mini_batch_size() const;
   /// Return the full mini_batch_size.
@@ -299,13 +300,41 @@ class generic_data_reader : public lbann_image_preprocessor {
   int get_global_mini_batch_size() const {
     return m_global_mini_batch_size;
   }
+  /// Set the mini batch stride
+  void set_mini_batch_stride(const int s) {
+    m_mini_batch_stride = s;
+  }
   /// Return the mini batch stride.
   int get_batch_stride() const {
     return m_mini_batch_stride;
   }
+  /// Set the sample stride
+  void set_sample_stride(const int s) {
+    m_sample_stride = s;
+  }
+  /// Return the sample stride.
+  int get_sample_stride() const {
+    return m_sample_stride;
+  }
+  /// Set the iteration stride
+  void set_iteration_stride(const int s) {
+    m_iteration_stride = s;
+  }
+  /// Return the iteration stride.
+  int get_iteration_stride() const {
+    return m_iteration_stride;
+  }
+  /// Return the base offset.
+  void set_base_offset(const int s) {
+    m_base_offset = s;
+  }
   /// Return the base offset.
   int get_base_offset() const {
     return m_base_offset;
+  }
+  /// Set the model offset
+  void set_model_offset(const int s) {
+    m_model_offset = s;
   }
   /// Return the model offset.
   int get_model_offset() const {
@@ -343,13 +372,26 @@ class generic_data_reader : public lbann_image_preprocessor {
   int get_last_mini_batch_stride() const {
     return m_last_mini_batch_stride;
   }
-  /// Set the number of mini batches per reader
-  void set_num_mini_batches_per_reader(const int n) {
-    m_num_mini_batches_per_reader = n;
+  /// Set the number of parallel readers per model
+  void set_num_parallel_readers(const int s) {
+    m_num_parallel_readers = s;
   }
-  /// Return the number of mini batches per reader
-  int get_num_mini_batches_per_reader() const {
-    return m_num_mini_batches_per_reader;
+  /// Return the number of parallel readers per model
+  int get_num_parallel_readers() const {
+    return m_num_parallel_readers;
+  }
+  /// Set the starting mini-batch index for the epoch
+  void set_reset_mini_batch_index(const int s) {
+    m_reset_mini_batch_index = s;
+  }
+  /// Return the starting mini-batch index for the epoch
+  int get_reset_mini_batch_index() const {
+    return m_reset_mini_batch_index;
+  }
+  /// Set the current position based on the base and model offsets
+  void set_initial_position() {
+    m_current_pos = m_base_offset + m_model_offset;
+    m_current_mini_batch_idx = m_reset_mini_batch_index;
   }
   /// Get the current position in the data reader.
   int get_position() const {
@@ -480,8 +522,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Sample stride is used when a mini-batch is finely interleaved across a DATA_PARALELL
   /// distribution.
   int m_sample_stride;
-  /// These fields are used to calculate when to use the last mini-batch
-  int m_use_alt_last_mini_batch_size; // this can be a protected member
+  /// Stride used by parallel data readers within the model
+  int m_iteration_stride;
 
   std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
@@ -490,20 +532,16 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
-  /// For partitioned data distributions, the current mini-batch index
-  /// will match the current step count
-  /// For distributed data distributions, the current mini-batch index
-  /// may be equal to the current step modulo the number of current
-  /// readers
+  /// The index at which this data reader starts its epoch
+  int m_reset_mini_batch_index;
   /// The index of the current mini-batch that has been loaded
   int m_current_mini_batch_idx;
-  int m_num_mini_batches_per_reader; /// How many mini-batches will this reader process
-
-  /// @todo BVE FIXME merge this with alternate approach
   int m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
   int m_global_mini_batch_size;
   int m_global_last_mini_batch_size;
+
+  int m_num_parallel_readers; /// How many parallel readers are being used
 
   int m_rank;
   std::string m_file_dir;

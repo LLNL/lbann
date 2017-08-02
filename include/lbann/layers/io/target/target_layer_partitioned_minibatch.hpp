@@ -69,31 +69,9 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(io_layer::m_data_sets_span_models) {
-        int base_offset = Layer::m_comm->get_rank_in_model();
-        int batch_stride = Layer::m_comm->get_num_models() * max_mb_size;
-        int model_offset = Layer::m_comm->get_model_rank() * max_mb_size;
-        cout << "Setting up target layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << max_mb_size << " mb size, which gives a stride of " << batch_stride << endl;
-        io_layer::setup_data_readers_for_training(base_offset,
-                                                  batch_stride,
-                                                  m_num_parallel_readers_training,
-                                                  model_offset);
-        partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(max_mb_size,
-                                                                                  this->m_training_dataset.data_reader);
-        /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
-                                                    max_mb_size,
-                                                    m_num_parallel_readers_testing);
-        partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
-                                                                               this->m_validation_dataset.data_reader);
-        partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size, 
-                                                                               this->m_testing_dataset.data_reader);
+        partitioned_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
       } else {
-        io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
-                                                  max_mb_size,
-                                                  m_num_parallel_readers_training);
-        io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
-                                                    max_mb_size,
-                                                    m_num_parallel_readers_testing);
+        partitioned_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
       }
     }
 
