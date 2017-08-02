@@ -37,7 +37,11 @@ public :
   /// Returns true if the database contains the option
   bool has_string(const char *option);
   /// Returns true if the database contains the option
-  bool has_float(const char *option);
+  bool has_float(const char *option) {
+    return has_double(option);
+  }
+  /// Returns true if the database contains the option
+  bool has_double(const char *option);
 
   /// insert option in database; if option already exists it's value will changed
   void set_option(const char *name, const char *value) {
@@ -49,7 +53,11 @@ public :
   /// returns the value of the option; throws exception if option doesn't exist
   bool get_bool(const char *option);
   /// returns the value of the option; throws exception if option doesn't exist
-  double get_float(const char *option);
+  float get_float(const char *option) {
+    return (float) get_double(option);
+  }
+  /// returns the value of the option; throws exception if option doesn't exist
+  double get_double(const char *option);
   /// returns the value of the option; throws exception if option doesn't exist
   std::string get_string(const char *option);
 
