@@ -38,7 +38,6 @@ void m_parse_opt(std::string tmp, std::string &key, std::string &val)
 
 void options::init(int argc, char **argv)
 {
-std::cerr << "starting options::init\n";
   MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
   m_argc = argc;
   m_argv = argv;

@@ -57,11 +57,8 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, 42);
   bool master = comm->am_world_master();
 
-  std::cerr << "calling opt->init\n";
   options *opts = options::get();
   opts->init(argc, argv);
-  std::cerr << "DONE calling opt->init\n";
-
 
   try {
 
@@ -70,9 +67,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
 
     // set algorithmic blocksize
-    cerr << ">>> 1\n";
     SetBlocksize( opts->get_int("block_size", 256) );
-    cerr << ">>> 2\n";
 
     // Set up the communicator and get the grid.
     comm->split_models( opts->get_int("procs_per_model", 0) );
@@ -85,10 +80,14 @@ int main(int argc, char *argv[]) {
 
     int parallel_io = (opts->get_int("max_par_io_size", 0));
     if(parallel_io == 0) {
-      cout << "\tMax Parallel I/O Fetch: " << grid.Size() << " (Limited to # Processes)" << endl;
+      if (master) {
+        cout << "\tMax Parallel I/O Fetch: " << grid.Size() << " (Limited to # Processes)" << endl;
+      }  
       parallel_io = grid.Size();
     } else {
-      cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+      if (master) {
+        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+      }
     }
 
     ///////////////////////////////////////////////////////////////////
