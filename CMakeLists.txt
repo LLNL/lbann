@@ -61,8 +61,10 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 
 # Enable parallel random matrix generation
-if(NOT SEQ_INIT)
-  add_definitions(-DLBANN_SEQUENTIAL_CONSISTENCY -DLBANN_PARALLEL_RANDOM_MATRICES -DLBANN_PROCDET_DROPOUT)
+if(SEQ_INIT)
+  add_definitions(-DLBANN_SEQUENTIAL_CONSISTENCY -DLBANN_PROCDET_DROPOUT)
+else()
+  add_definitions(-DLBANN_PARALLEL_RANDOM_MATRICES)
 endif()
 
 # Special handling if we're compiling with Clang's address sanitizer
