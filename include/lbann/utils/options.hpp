@@ -79,7 +79,7 @@ private:
 
   bool has_opt(std::string option);
   bool get_int(std::string option, int &out);
-  bool get_float(std::string option, double &out);
+  bool get_double(std::string option, double &out);
   bool get_string(std::string option, std::string &out);
 
   void parse_cmd_line(int arg, char **argv);

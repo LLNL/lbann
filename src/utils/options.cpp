@@ -133,14 +133,14 @@ int options::get_int(const char *option)
   return result;
 }
 
-double options::get_float(const char *option)
+double options::get_double(const char *option)
 {
   std::string opt(option);
   double result;
-  if (not get_float(opt, result)) {
+  if (not get_double(opt, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
-        << " :: options::get_float() - failed to find option: " << option
+        << " :: options::get_double() - failed to find option: " << option
         << ", or to convert the value to double";
     throw std::runtime_error(err.str());
   }
@@ -186,7 +186,7 @@ bool options::get_int(std::string option, int &out)
   return true;
 }
 
-bool options::get_float(std::string option, double &out)
+bool options::get_double(std::string option, double &out)
 {
   if (not has_opt(option)) return false;
   std::string val(m_opts[option]);
@@ -235,11 +235,11 @@ bool options::has_string(const char *option)
   return false;
 }
 
-bool options::has_float(const char *option)
+bool options::has_double(const char *option)
 {
   std::string opt(option);
   double test;
-  if (get_float(opt, test)) return true;
+  if (get_double(opt, test)) return true;
   return false;
 }
 
