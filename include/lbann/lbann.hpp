@@ -83,7 +83,7 @@
 #include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/data_readers/data_reader_cnpy.hpp"
+#include "lbann/data_readers/data_reader_numpy.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

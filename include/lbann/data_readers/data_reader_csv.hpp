@@ -45,17 +45,24 @@ class csv_reader : public generic_data_reader {
  public:
   /**
    * @param label_col The column containing labels; -1 for the last column.
-   * @param separator The separator between columns, default ','.
-   * @param skip_cols The number of columns to skip (from the left), default 0.
-   * If columns are skipped, the label column is calculated after that occurs.
+   * The label column ignores skipped columns, and can be among columns that are
+   * skipped.
    */
-  csv_reader(int batch_size, int label_col = -1, char separator = ',',
-             int skip_cols = 0, bool shuffle = true);
+  csv_reader(int batch_size, int label_col = -1, bool shuffle = true);
   csv_reader(const csv_reader&) = default;
   csv_reader& operator=(const csv_reader&) = default;
   ~csv_reader();
 
   csv_reader* copy() const { return new csv_reader(*this); }
+
+  /// Set the column separator (default is ',').
+  void set_separator(char sep) { m_separator = sep; }
+  /// Set the number of columns (from the left) to skip; default 0.
+  void set_skip_cols(int cols) { m_skip_cols = cols; }
+  /// Set the number of rows (from the top) to skip; default 0.
+  void set_skip_rows(int rows) { m_skip_rows = rows; }
+  /// Set whether the CSV file has a header; default true.
+  void set_has_header(bool b) { m_has_header = b; }
 
   /**
    * Supply a custom transform to convert an input string to a numerical value.
@@ -83,7 +90,11 @@ class csv_reader : public generic_data_reader {
 
   int get_linearized_data_size() const {
     // Account for label and skipped columns.
-    return m_num_cols - 1 - m_skip_cols;
+    if (m_label_col < m_skip_cols) {
+      return m_num_cols - m_skip_cols;
+    } else {
+      return m_num_cols - 1 - m_skip_cols;
+    }
   }
   int get_linearized_label_size() const {
     return m_num_labels;
@@ -113,18 +124,25 @@ class csv_reader : public generic_data_reader {
    */
   std::pair<std::vector<DataType>, DataType> fetch_line_and_label(int data_id);
 
+  /// Skip rows in an ifstream.
+  void skip_rows(std::ifstream& s, int rows);
+
   /// String value that separates data.
-  char m_separator;
+  char m_separator = ',';
   /// Number of columns (from the left) to skip.
-  int m_skip_cols;
+  int m_skip_cols = 0;
+  /// Number of rows to skip.
+  int m_skip_rows = 0;
+  /// Whether the CSV file has a header.
+  bool m_has_header = true;
   /// Column containing label data.
-  int m_label_col;
-  /// Number of columns (including the label column).
-  int m_num_cols;
+  int m_label_col = 0;
+  /// Number of columns (including the label column and skipped columns).
+  int m_num_cols = 0;
   /// Number of samples.
-  int m_num_samples;
+  int m_num_samples = 0;
   /// Number of label classes.
-  int m_num_labels;
+  int m_num_labels = 0;
   /// Input file streams (per-thread).
   std::vector<std::ifstream*> m_ifstreams;
   /**

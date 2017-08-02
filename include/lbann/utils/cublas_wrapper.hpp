@@ -35,7 +35,6 @@
 #ifdef __LIB_CUDA
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-#endif // #ifdef __LIB_CUDA
 
 namespace lbann {
 namespace cublas {
@@ -83,4 +82,5 @@ cublasStatus_t Gemm<double>(const cublasHandle_t &handle,
 }
 }
 
+#endif // #ifdef __LIB_CUDA
 #endif // CUBLAS_WRAPPER_HPP_INCLUDED

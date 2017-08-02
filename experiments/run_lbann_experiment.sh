@@ -22,7 +22,7 @@ TIME_LIMIT= # default: 12:00:00
 HOME_DIR=${LBANN_DIR}/experiments
 EXPERIMENT_SCRIPT=$(readlink -f "$0")
 SUBMIT_JOB= # default: YES
-CACHE_DATASET= # default: YES
+CACHE_DATASET= # default: NO
 CACHE_DIR=
 LUSTRE_DIR=/p/lscratchf/brainusr
 DATASET_DIR=datasets/ILSVRC2012
@@ -50,7 +50,7 @@ fi
 REBOOT_NODES=${REBOOT_NODES:-NO}
 TIME_LIMIT=${TIME_LIMIT:-12:00:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
-CACHE_DATASET=${CACHE_DATASET:-YES}
+CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
 
 # Set cluster-specific defaults
@@ -156,8 +156,6 @@ echo "#SBATCH --account=${ACCOUNT}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --workdir=${EXPERIMENT_DIR}"              >> ${SLURM_SCRIPT}
 echo "#SBATCH --error=${LOG_FILE}"                      >> ${SLURM_SCRIPT}
 echo "#SBATCH --job-name=${EXPERIMENT_NAME}"            >> ${SLURM_SCRIPT}
-# This sbatch line causes the sbatch command to hang on surface.
-#echo "#SBATCH --clusters=${CLUSTER}"                    >> ${SLURM_SCRIPT}
 echo "#SBATCH --nodes=${NUM_NODES}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --output=${LOG_FILE}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --partition=${PARTITION}"                 >> ${SLURM_SCRIPT}
@@ -168,7 +166,8 @@ esac
 echo "#SBATCH --time=${TIME_LIMIT}"                     >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 echo "# ======== Print node name ========"              >> ${SLURM_SCRIPT}
-echo "pdsh hostname"                                    >> ${SLURM_SCRIPT}
+SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=1"
+echo "${SRUN_COMMAND} hostname"                         >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 
 # Cache dataset in node-local memory
@@ -177,9 +176,10 @@ case ${CACHE_DATASET} in
         echo "# ======== Cache dataset ========" >> ${SLURM_SCRIPT}
         echo "echo \"Caching dataset...\"" >> ${SLURM_SCRIPT}
         BCAST="/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast/file_bcast_par13 1MB"
+        SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=1"
         COPY_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=2 ${BCAST}"
-        echo "pdsh mkdir -p ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
-        echo "pdsh mkdir -p ${CACHE_DIR}/${DATASET_DIR}/labels" >> ${SLURM_SCRIPT}
+        echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
+        echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/labels" >> ${SLURM_SCRIPT}
         for TARBALL in resized_256x256/train.tar resized_256x256/val.tar
         do
             LUSTRE_FILE=${LUSTRE_DIR}/${DATASET_DIR}/${TARBALL}
@@ -188,7 +188,7 @@ case ${CACHE_DATASET} in
             echo "[ -e ${CACHE_FILE} ] || \\" >> ${SLURM_SCRIPT}
             echo "  ${COPY_COMMAND} ${LUSTRE_FILE} ${CACHE_FILE} > /dev/null" >> ${SLURM_SCRIPT}
             echo "[ -d ${OUTPUT_DIR} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  pdsh tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR}/resized_256x256 &" >> ${SLURM_SCRIPT}
+            echo "  ${SRUN_COMMAND} tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
         done
         for TARBALL in labels.tar
         do
@@ -198,7 +198,7 @@ case ${CACHE_DATASET} in
             echo "[ -e ${CACHE_FILE} ] || \\" >> ${SLURM_SCRIPT}
             echo "  ${COPY_COMMAND} ${LUSTRE_FILE} ${CACHE_FILE} > /dev/null" >> ${SLURM_SCRIPT}
             echo "[ -e ${OUTPUT_FILE} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  pdsh tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR} &" >> ${SLURM_SCRIPT}
+            echo "  ${SRUN_COMMAND} tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR}" >> ${SLURM_SCRIPT}
         done
         echo "wait" >> ${SLURM_SCRIPT}
         echo "echo \"Done caching dataset...\"" >> ${SLURM_SCRIPT}

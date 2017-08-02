@@ -31,8 +31,10 @@
 
 using namespace lbann;
 
+const int lbann_random_seed = 42;
+
 int main(int argc, char *argv[]) {
-  lbann_comm *comm = initialize(argc, argv, 42);
+  lbann_comm *comm = initialize(argc, argv, lbann_random_seed);
   bool master = comm->am_world_master();
 
 #ifdef EL_USE_CUBLAS
@@ -191,12 +193,12 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
-    if (pb_model->data_layout() == "model_parallel") {
-      if (master) {
-        cout << "MODEL_PARALLEL, so calling: init_random(comm->get_rank_in_world() + 1)\n";
-      }
-      init_random(comm->get_rank_in_world() + 1);
-    }
+#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    init_random(lbann_random_seed + comm->get_rank_in_world());
+#endif
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
       model->train(1, true);
       model->evaluate(execution_mode::testing);

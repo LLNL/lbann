@@ -7,19 +7,24 @@
 
 #SBATCH --time=1440
 
+DIRNAME=`dirname $0`
+#Set Script Name variable
+SCRIPT=`basename ${0}`
+
 TESTDIR=`dirname $0`
 DIRNAME=`dirname $TESTDIR`
 
 FULLSCRIPT=.
-SCRIPT=../build/catalyst.llnl.gov/model_zoo/lbann
+# Figure out which cluster we are on
+CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
+# Look for the binary in the cluster specific build directory
+SCRIPT="build/${CLUSTER}.llnl.gov/model_zoo/lbann"
 
 if [ -e "${DIRNAME}/${SCRIPT}" ] ; then
     FULLSCRIPT="${DIRNAME}/${SCRIPT}"
-fi
-
-if [ ! -z "$SLURM_SUBMIT_DIR" ] ; then
-  if [ -e "${SLURM_SUBMIT_DIR}/${SCRIPT}" ] ; then
-      FULLSCRIPT="${SLURM_SUBMIT_DIR}/${SCRIPT}"
+elif [ ! -z "$SLURM_SUBMIT_DIR" ] ; then
+  if [ -e "${SLURM_SUBMIT_DIR}/../${SCRIPT}" ] ; then
+      FULLSCRIPT="${SLURM_SUBMIT_DIR}/../${SCRIPT}"
   fi
 fi
 
@@ -27,6 +32,7 @@ echo "Executing script $0 -> ${SLURM_JOB_NAME}"
 echo "Clearing /l/ssd for batch execution"
 srun -N${SLURM_NNODES} --clear-ssd hostname
 
+MAX_MB=300
 STD_OPTS="--model=../model_zoo/prototext/model_mnist_partitioned_io.prototext --reader=../model_zoo/prototext/data_reader_mnist.prototext --optimizer=../model_zoo/prototext/opt_adagrad.prototext"
 echo "################################################################################"
 for b in 300 150 100 75 60 50; do
