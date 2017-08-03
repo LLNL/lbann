@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     // initalize neural network (layers)
     ///////////////////////////////////////////////////////////////////
     optimizer_factory *optimizer_fac;
-    string learn_method = opts->get_string("learn_method", "adagrad");
+    string learn_method = opts->get_string("learn_method", "rmsprop");
 
     //dah - hopefully these will be cast correctly ...
     DataType learn_rate = opts->get_double("learn_rate", 0.0001);
