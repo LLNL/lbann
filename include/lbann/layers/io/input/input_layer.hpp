@@ -76,6 +76,20 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
                                           std::multiplies<int>());
   }
 
+  void setup_data() {
+    io_layer::setup_data();
+
+    if(m_training_dataset.data_reader != nullptr) {
+      m_training_dataset.data_reader->setup();
+    }
+    if(m_validation_dataset.data_reader != nullptr) {
+      m_validation_dataset.data_reader->setup();
+    }
+    if(m_testing_dataset.data_reader != nullptr) {
+      m_testing_dataset.data_reader->setup();
+    }
+  }
+
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
   }

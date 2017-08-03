@@ -83,6 +83,7 @@ int lbann::generic_data_distribution::get_last_mini_batch_size() {
   return get_last_mini_batch_size(get_execution_mode());
 }
 
+/// BVE this is redundant with get_mini_batch_size
 int lbann::generic_data_distribution::get_current_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
   int num_iterations_per_epoch = get_num_iterations_per_epoch();

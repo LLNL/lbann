@@ -201,7 +201,7 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int world_master_remainder_data = 0;
 
   // Compute how many full "parallel" mini-batches are available
-  data_reader->set_last_mini_batch_threshold(num_whole_mini_batches_per_model * min_stride_across_models);
+  int last_mini_batch_threshold = num_whole_mini_batches_per_model * min_stride_across_models;
 
   if(m_comm->get_rank_in_model() < parallel_readers_with_extra_mini_batch) {
     num_whole_mini_batches_per_reader += 1;
@@ -243,7 +243,7 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(m_comm->get_rank_in_model() == parallel_readers_with_extra_mini_batch && per_model_partial_mini_batch_size > 0) {
-    data_reader->set_last_mini_batch_stride((data_reader->get_last_mini_batch_threshold() - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset)
+    data_reader->set_last_mini_batch_stride((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset)
                                             + m_comm->get_model_rank() * per_model_partial_mini_batch_size + world_master_remainder_adjustment); /// BVE 10/18/16
   }
 

@@ -70,6 +70,18 @@ class target_layer : public io_layer {
     io_layer::setup_data();
     std::stringstream err;
 
+    if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
+      if(m_training_dataset.data_reader != nullptr) {
+        m_training_dataset.data_reader->setup();
+      }
+      if(m_validation_dataset.data_reader != nullptr) {
+        m_validation_dataset.data_reader->setup();
+      }
+      if(m_testing_dataset.data_reader != nullptr) {
+        m_testing_dataset.data_reader->setup();
+      }
+    }
+
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       err << __FILE__ << " " << __LINE__ 
           << " :: " << get_name() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << endl;

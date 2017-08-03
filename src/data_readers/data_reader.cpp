@@ -30,8 +30,7 @@
 
 namespace lbann {
 
-void generic_data_reader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
-                       lbann_comm *comm) {
+void generic_data_reader::setup() {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_mini_batch_stride = 0;
@@ -53,10 +52,6 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
                  get_data_seq_generator());
   }
 
-}
-
-void generic_data_reader::setup() {
-  generic_data_reader::setup(0, m_mini_batch_size);
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
@@ -188,15 +183,7 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
 }
 
 bool generic_data_reader::update() {
-  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
-  //  if(/*m_use_alt_last_mini_batch_size && */((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
-  if(m_current_mini_batch_idx == (m_num_iterations_per_epoch/*m_num_mini_batches_per_reader*/-1)) {
-  //  std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << " and the index is " << m_current_mini_batch_idx << " and there are iterations per epoch " << m_num_iterations_per_epoch << std::endl;
-    m_current_pos += m_last_mini_batch_stride;
-  } else {
-  //  std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << " and the index is " << m_current_mini_batch_idx << " and there are iterations per epoch " << m_num_iterations_per_epoch << " and the iteration stride is " << m_iteration_stride << std::endl;
-    m_current_pos += m_mini_batch_stride;
-  }
+  m_current_pos = get_next_position();
 
   /// Maintain the current width of the matrix
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
@@ -209,12 +196,12 @@ bool generic_data_reader::update() {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
-    m_current_mini_batch_idx = m_reset_mini_batch_index;
-    m_current_pos = m_base_offset + m_model_offset;
+    set_initial_position();
     return false;
   }
 }
 
+/// BVE this is redundant with get_mini_batch_size - who should own this
 int generic_data_reader::get_mini_batch_size() const {
   if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_last_mini_batch_size;

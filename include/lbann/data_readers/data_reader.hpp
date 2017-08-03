@@ -66,7 +66,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_mini_batch_size(batch_size), m_current_pos(0),
     m_mini_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
-    m_last_mini_batch_threshold(0), m_last_mini_batch_size(batch_size),
+    m_last_mini_batch_size(batch_size),
     m_last_mini_batch_stride(batch_size),
     m_reset_mini_batch_index(0),
     m_current_mini_batch_idx(0),
@@ -220,7 +220,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  void setup(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0, lbann_comm *comm = NULL);
   void setup();
 
   /// Fetch this mini-batch's samples into X.
@@ -339,14 +338,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Return the model offset.
   int get_model_offset() const {
     return m_model_offset;
-  }
-  /// Set the last mini batch treshold
-  void set_last_mini_batch_threshold(const int t) {
-    m_last_mini_batch_threshold = t;
-  }
-  /// Return the last mini batch treshold
-  int get_last_mini_batch_threshold() const {
-    return m_last_mini_batch_threshold;
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
@@ -529,7 +520,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Record of the indicies that are not being used for training
   std::vector<int> m_unused_indices;
 
-  int m_last_mini_batch_threshold;
   int m_last_mini_batch_size;
   int m_last_mini_batch_stride;
   /// The index at which this data reader starts its epoch

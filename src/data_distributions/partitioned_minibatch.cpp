@@ -89,13 +89,13 @@ bool lbann::partitioned_minibatch::is_data_set_processed() {
 int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) {
   int num_parallel_readers = requested_num_parallel_readers;
 
-  if(m_comm->get_model_grid().Size() != num_parallel_readers) {
+  if(m_comm->get_procs_per_model() != num_parallel_readers) {
     cout << "Warning the requested number of parallel readers "
          << num_parallel_readers
-         << " does not match the grid size " << m_comm->get_model_grid().Size()
+         << " does not match the grid size " << m_comm->get_procs_per_model()
          << " OVERRIDING requested number of parallel readers."
          << endl;
-    num_parallel_readers = m_comm->get_model_grid().Size();
+    num_parallel_readers = m_comm->get_procs_per_model();
   }
 
   if(mini_batch_size < num_parallel_readers) {
@@ -106,17 +106,7 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
          << endl;
     num_parallel_readers = mini_batch_size;
   }
-  if(mini_batch_size > num_parallel_readers 
-     && num_parallel_readers < m_comm->get_model_grid().Size()) {
-    cout << "Warning the requested mini-batch size "
-         << mini_batch_size
-         << " is larger than the requested number of parallel readers " << num_parallel_readers
-         << " and the number of parallel readers is less than the grid size "
-         << m_comm->get_model_grid().Size()
-         << " OVERRIDING requested number of parallel readers."
-         << endl;
-    num_parallel_readers = m_comm->get_model_grid().Size();
-  }
+
   return num_parallel_readers;
 }
 
@@ -131,10 +121,12 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if(num_parallel_readers_per_model == 0) {
+  if(num_parallel_readers_per_model == 0 
+     || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: partitioned_minibatch: number of parallel readers is zero");
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+      + " :: partitioned_minibatch: number of parallel readers is " + std::to_string(num_parallel_readers_per_model)
+      + " and there are " + std::to_string(m_comm->get_procs_per_model()) + " processes in the model");
   }
 
   /// Set the basic parameters for stride and offset of the data reader
@@ -164,7 +156,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int world_master_remainder_data = 0;
 
   // Compute how many full "parallel" mini-batches are available
-  data_reader->set_last_mini_batch_threshold(num_whole_mini_batches_per_model * min_stride_across_models);
+  int last_mini_batch_threshold = num_whole_mini_batches_per_model * min_stride_across_models;
 
   int world_master_remainder_adjustment = data_reader->get_num_data()
                                           - (num_whole_mini_batches_per_model * min_stride_across_models)
@@ -200,7 +192,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
-    data_reader->set_last_mini_batch_stride((data_reader->get_last_mini_batch_threshold() - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_model_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_model());
+    data_reader->set_last_mini_batch_stride((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_model_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_model());
   }
 
   //cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_model_rank() << " model rank, "<< m_comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " num_whole_mini_batches_per_reader " << num_whole_mini_batches_per_reader << "(m_num_mini_batches_per_reader=" << data_reader->get_num_mini_batches_per_reader() << ") parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << data_reader->get_last_mini_batch_threshold() << " with a last stride of " << data_reader->get_last_mini_batch_stride() << " and stride of " << data_reader->get_batch_stride() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
@@ -217,7 +209,8 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_mod
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if(num_parallel_readers_per_model == 0) {
+  if(num_parallel_readers_per_model == 0
+     || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: generic_data_distribution: number of parallel readers is zero");
