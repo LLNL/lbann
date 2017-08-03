@@ -157,7 +157,6 @@ if (NOT Elemental_FOUND)
 
 else ()
   message(STATUS "Found Elemental: ${Elemental_DIR}")
-  message("\n\n\nELEMENTAL_INCLUDE_DIRS=${Elemental_INCLUDE_DIRS}\n\n\n")
 endif()
 
 # Include header files
