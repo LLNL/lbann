@@ -453,7 +453,7 @@ void Layer::setup_gpu() {
   input_dims.insert(input_dims.begin(), m_mini_batch_size_per_gpu);
   // Tensor descriptor must have at least 4 dimensions
   while (input_dims.size() < 4) {
-    input_dims.insert(input_dims.begin(), 1);
+    input_dims.push_back(1);
   }
   std::vector<int> input_strides(input_dims.size());
   input_strides[input_strides.size()-1]  = 1;
@@ -596,7 +596,7 @@ void Layer::pin_data() {
     if(!m_using_gpus
        && m_next_layer != NULL
        && m_next_layer->using_gpus()) {
-      const El::DistData& next_dist = m_next_layer->fp_input(this).DistData();
+      const El::DistData& next_dist = m_next_layer->bp_output(this).DistData();
       const El::DistData& curr_dist = m_activations->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -668,7 +668,7 @@ void Layer::pin_data() {
     if(!m_using_gpus
        && m_prev_layer != NULL
        && m_prev_layer->using_gpus()) {
-      const El::DistData& next_dist = m_prev_layer->bp_input(this).DistData();
+      const El::DistData& next_dist = m_prev_layer->fp_output(this).DistData();
       const El::DistData& curr_dist = m_error_signal->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -703,16 +703,8 @@ void Layer::pin_data() {
 
 #endif // __LIB_CUDNN
 
-const AbsDistMat& Layer::fp_input(const Layer* prev_layer) const {
-  return *m_prev_activations;
-}
-
 const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
   return *m_activations;
-}
-
-const AbsDistMat& Layer::bp_input(const Layer* next_layer) const {
-  return *m_prev_error_signal;
 }
 
 const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {

@@ -330,6 +330,12 @@ class convolution_layer : public learning {
                                         this->m_weights_gradient->Width()
                                         * this->m_cudnn->get_num_gpus());
     }
+
+    // Pin host memory
+    if(this->m_using_gpus) {
+      this->m_cudnn->pin_matrix(*this->m_weights);
+      this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
+    }
   #endif // #ifdef __LIB_CUDNN
 
     // Initialize filters
@@ -488,10 +494,6 @@ class convolution_layer : public learning {
                                     this->m_bias_weights_gradient_v->Height(),
                                     this->m_bias_weights_gradient_v->Width());
     
-    // Pin host memory
-    this->m_cudnn->pin_matrix(*this->m_weights);
-    this->m_cudnn->pin_matrix(m_weights_gradient_per_gpu);
-
   #endif // #ifdef __LIB_CUDNN
   }
 
