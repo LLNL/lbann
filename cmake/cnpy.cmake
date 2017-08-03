@@ -6,16 +6,23 @@ if(NOT CNPY_LIBRARY_TYPE)
   set(CNPY_LIBRARY_TYPE SHARED)
 endif()
 
-# Download and build cnpy if required
-if(NOT CNPY_DIR OR FORCE_CNPY_BUILD)
+# Try to use the find_package mechanism for CNPY
+if (CNPY_DIR AND NOT FORCE_CNPY_BUILD)
+  find_package(CNPY)
+endif ()
 
+# Download and build cnpy if required
+if (NOT CNPY_FOUND)
+
+  message(STATUS "No existing CNPY install found. Building from source.")
+  
   # Git repository URL and tag
-  if(NOT CNPY_URL)
+  if (NOT CNPY_URL)
     set(CNPY_URL https://github.com/rogersce/cnpy.git)
-  endif()
-  if(NOT CNPY_TAG)
+  endif ()
+  if (NOT CNPY_TAG)
     set(CNPY_TAG "1.0")
-  endif()
+  endif ()
   message(STATUS "Will pull CNPY (tag ${CNPY_TAG}) from ${CNPY_URL}")
 
   # Download and build location
@@ -23,11 +30,11 @@ if(NOT CNPY_DIR OR FORCE_CNPY_BUILD)
   set(CNPY_BINARY_DIR ${PROJECT_BINARY_DIR}/download/cnpy/build)
 
   # Build static library if required
-  if(CNPY_LIBRARY_TYPE STREQUAL STATIC)
+  if (CNPY_LIBRARY_TYPE STREQUAL STATIC)
     set(CNPY_ENABLE_STATIC ON)
-  else()
+  else ()
     set(CNPY_ENABLE_STATIC OFF)
-  endif()
+  endif ()
 
   # Get CNPY from Git repository
   ExternalProject_Add(project_CNPY
@@ -59,19 +66,23 @@ if(NOT CNPY_DIR OR FORCE_CNPY_BUILD)
 
   # LBANN has built CNPY
   set(LBANN_BUILT_CNPY TRUE)
+  
+  # Include header files
+  set(CNPY_INCLUDE_DIRS ${CNPY_DIR}/include)
 
-endif()
+  # Get library
+  if (CNPY_LIBRARY_TYPE STREQUAL STATIC)
+    set(CNPY_LIBRARIES ${CNPY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cnpy${CMAKE_STATIC_LIBRARY_SUFFIX})
+  else ()
+    set(CNPY_LIBRARIES ${CNPY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}cnpy${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif ()
 
-# Include header files
-set(CNPY_INCLUDE_DIRS ${CNPY_DIR}/include)
+endif ()
+
+# FIXME: This should not be done this way; rather,
+# target_include_directories() should be used. Or some sort of
+# interface target.
 include_directories(${CNPY_INCLUDE_DIRS})
-
-# Get library
-if(CNPY_LIBRARY_TYPE STREQUAL STATIC)
-  set(CNPY_LIBRARIES ${CNPY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cnpy${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-  set(CNPY_LIBRARIES ${CNPY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}cnpy${CMAKE_SHARED_LIBRARY_SUFFIX})
-endif()
 
 # LBANN has access to CNPY
 set(LBANN_HAS_CNPY TRUE)
