@@ -69,7 +69,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
     preprocess_data_source(omp_get_thread_num());
   }
 
-  int current_batch_size = get_mini_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -115,7 +115,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = get_mini_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -152,7 +152,7 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = get_mini_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -201,12 +201,19 @@ bool generic_data_reader::update() {
   }
 }
 
-/// BVE this is redundant with get_mini_batch_size - who should own this
-int generic_data_reader::get_mini_batch_size() const {
+int generic_data_reader::get_current_mini_batch_size() const {
   if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_last_mini_batch_size;
   } else {
     return m_mini_batch_size;
+  }
+}
+
+int generic_data_reader::get_current_global_mini_batch_size() const {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+    return m_global_last_mini_batch_size;
+  } else {
+    return m_global_mini_batch_size;
   }
 }
 

@@ -280,13 +280,18 @@ class generic_data_reader : public lbann_image_preprocessor {
     /// are parallel data readers in a model
     return (m_current_mini_batch_idx == m_reset_mini_batch_index);
   }
-
   /// Set the mini batch size
   void set_mini_batch_size(const int s) {
     m_mini_batch_size = s;
   }
+  /// Get the mini batch size
+  int get_mini_batch_size() const {
+    return m_mini_batch_size;
+  }
   /// Get the current mini-batch size.
-  int get_mini_batch_size() const;
+  int get_current_mini_batch_size() const;
+  /// Get the current global mini-batch size.
+  int get_current_global_mini_batch_size() const;
   /// Return the full mini_batch_size.
   int get_mini_batch_max() const {
     return m_mini_batch_size;
