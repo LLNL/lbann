@@ -1034,6 +1034,25 @@ void init_callbacks(
       lbann_callback_checknan *checknan_cb = new lbann_callback_checknan();
       model->add_callback(checknan_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: hang
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_hang()) {
+      const lbann_data::CallbackHang& c = callback.hang();
+      int rank_to_hang = c.rank();
+      if (master) {
+        if (rank_to_hang == -1) {
+          std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***" <<
+            std::endl;
+        } else {
+          std::cout << "*** HANGING RANK " << rank_to_hang <<
+            " IN HANG CALLBACK ***" << std::endl;
+        }
+      }
+      lbann_callback_hang *hang_cb = new lbann_callback_hang(rank_to_hang);
+      model->add_callback(hang_cb);
+    }
   }
 
 }

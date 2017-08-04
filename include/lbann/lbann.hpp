@@ -106,6 +106,7 @@
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
+#include "lbann/callbacks/callback_hang.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/optimizer_adagrad.hpp"

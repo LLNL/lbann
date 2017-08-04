@@ -171,6 +171,7 @@ message Callback {
    CallbackCheckSmall check_small = 15;
    CallbackCheckNaN check_nan = 16;
    CallbackCheckDataset check_dataset = 17;
+   CallbackHang hang = 18;
 }
 
 message CallbackStepLearningRate {
@@ -248,6 +249,10 @@ message CallbackCheckNaN {
 }
 
 message CallbackCheckDataset {
+}
+
+message CallbackHang {
+  int64 rank = 1;
 }
 
 //========================================================================
