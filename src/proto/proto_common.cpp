@@ -1525,6 +1525,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   cout << endl
        << "Running with these parameters:\n"
        << " General:\n"
+       << "  datatype size:        " << sizeof(DataType) << endl
        << "  mini_batch_size:      " << m.mini_batch_size() << endl
        << "  num_epochs:           " << m.num_epochs()  << endl
        << "  block_size:           " << m.block_size()  << endl

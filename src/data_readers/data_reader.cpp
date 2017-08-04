@@ -58,8 +58,10 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data reader load error: !position_valid");
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+      + " :: generic data reader load error: !position_valid"
+      + " -- current pos = " + std::to_string(m_current_pos)
+      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
   }
 
   /// Allow each thread to perform any preprocessing necessary on the
