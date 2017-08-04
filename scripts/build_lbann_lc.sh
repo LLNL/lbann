@@ -48,7 +48,7 @@ INSTALL_LBANN=0
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
-SEQ_INIT=OFF
+SEQ_INIT=ON
 WITH_FULLY_CONNECTED_CUDA=OFF
 
 # In case that autoconf fails during on-demand buid on surface, try the newer
