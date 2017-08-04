@@ -11,6 +11,7 @@ add_sources(
   callback_dump_activations.cpp
   callback_dump_gradients.cpp
   callback_dump_minibatch_sample_indices.cpp
+  callback_check_dataset.cpp
   callback_checknan.cpp
   callback_save_images.cpp
   callback_checksmall.cpp

@@ -170,6 +170,7 @@ message Callback {
    CallbackCustomLearningRate custom_learning_rate = 14;
    CallbackCheckSmall check_small = 15;
    CallbackCheckNaN check_nan = 16;
+   CallbackCheckDataset check_dataset = 17;
 }
 
 message CallbackStepLearningRate {
@@ -244,6 +245,9 @@ message CallbackCheckSmall {
 }
 
 message CallbackCheckNaN {
+}
+
+message CallbackCheckDataset {
 }
 
 //========================================================================

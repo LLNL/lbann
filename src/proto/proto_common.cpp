@@ -845,6 +845,18 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_dataset
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_dataset()) {
+      const lbann_data::CallbackCheckDataset& c = callback.check_dataset();
+      if (master) {
+        cout << "adding callback to check the dataset" << endl;
+      }
+      lbann_callback_check_dataset *check_dataset_cb = new lbann_callback_check_dataset();
+      model->add_callback(check_dataset_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: disp_io_stats
     //////////////////////////////////////////////////////////////////
     if (callback.has_disp_io_stats()) {

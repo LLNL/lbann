@@ -89,6 +89,7 @@
 #include "lbann/callbacks/callback_check_init.hpp"
 #include "lbann/callbacks/callback_checknan.hpp"
 #include "lbann/callbacks/callback_checksmall.hpp"
+#include "lbann/callbacks/callback_check_dataset.hpp"
 #include "lbann/callbacks/callback_print.hpp"
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/callbacks/callback_summary.hpp"
