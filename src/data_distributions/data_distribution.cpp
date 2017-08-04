@@ -55,9 +55,13 @@ lbann::generic_data_reader *lbann::generic_data_distribution::get_data_reader(ex
   return data_reader;
 }
 
-int lbann::generic_data_distribution::get_num_parallel_readers() {
-  generic_data_reader *data_reader = get_data_reader(get_execution_mode());
+int lbann::generic_data_distribution::get_num_parallel_readers(execution_mode mode) {
+  generic_data_reader *data_reader = get_data_reader(mode);
   return data_reader->get_num_parallel_readers();
+}
+
+int lbann::generic_data_distribution::get_num_parallel_readers() {
+  return get_num_parallel_readers(get_execution_mode());
 }
 
 int lbann::generic_data_distribution::get_num_iterations_per_epoch(execution_mode mode) {
