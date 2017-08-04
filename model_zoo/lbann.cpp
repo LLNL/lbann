@@ -198,6 +198,15 @@ int main(int argc, char *argv[]) {
     // that regularization techniques (e.g. dropout) generate unique patterns
     // on different ranks.
     init_random(lbann_random_seed + comm->get_rank_in_world());
+#else
+    if(comm->am_world_master()) {
+      std::cout << "--------------------------------------------------------------------------------"
+                << std::endl;
+      std::cout << "ALERT: executing in sequentially consistent mode -- performance will suffer"
+                << std::endl;
+      std::cout << "--------------------------------------------------------------------------------"
+                << std::endl;
+    }
 #endif
     while (model->get_cur_epoch() < pb_model->num_epochs()) {
       model->train(1, true);
