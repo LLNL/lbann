@@ -9,12 +9,17 @@ option(FORCE_ELEMENTAL_BUILD "Elemental: force build" OFF)
 # Check if Elemental has been provided
 if (Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
 
+  # Look for Elemental in the directory specified and not the system paths
   find_package(Elemental NO_MODULE
     HINTS ${Elemental_DIR} ${ELEMENTAL_DIR}
     $ENV{Elemental_DIR} $ENV{ELEMENTAL_DIR}
     PATH_SUFFIXES CMake/elemental
     NO_DEFAULT_PATH)
+  # Check for Elemental in the standard places
   find_package(Elemental NO_MODULE)
+
+  # Cleanup Elemental_DIR, which gets munged during the find process
+  get_filename_component(Elemental_DIR ${Elemental_DIR}/../.. ABSOLUTE)
 
   list(REMOVE_ITEM Elemental_INCLUDE_DIRS "QD_INCLUDES-NOTFOUND")
   list(REMOVE_DUPLICATES Elemental_INCLUDE_DIRS)
