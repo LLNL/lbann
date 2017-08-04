@@ -31,11 +31,6 @@
 namespace lbann {
 
 void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
-  const std::string prefix = m_basename + _to_string(m->get_execution_mode()) + "-model" +
-                             std::to_string(m->get_comm()->get_model_rank()) +
-                             "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-                             std::to_string(step) + "-layer";
   if (!dynamic_cast<io_layer*>(l) || l->get_index() != 0) {
     return;
   }
@@ -78,41 +73,46 @@ void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer 
 }
 
 void lbann_callback_check_dataset::on_epoch_end(model *m) {
-  std::cout << "Training [" << m->get_comm()->get_rank_in_model() << "] : I have processed " << training_set.size() << " elements" << std::endl;
+  lbann_comm* comm = m->get_comm();
+  std::cout << "Training [" << comm->get_rank_in_model() <<
+    "] : I have processed " << training_set.size() << " elements" << std::endl;
   
-  // Build a vector to hold all of the data from each rank in the model
-  //  std::vector<long> global_training_set(m_comm->get_num_models() * m_comm->get_max_mini_batch_size());
-  // Build a vector large enough to 
   std::vector<Layer *>& layers = m->get_layers();
   input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
-  
-  std::vector<long> local_data(input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size(), -1);
+  if (!input) {
+    throw lbann_exception(
+      "lbann_callback_check_dataset: could not get input layer");
+  }
+
+  // Build a vector large enough to hold all the data indices for this rank.
+  std::vector<int> local_data(
+    input->get_num_iterations_per_epoch(execution_mode::training) *
+    m->get_max_mini_batch_size(), -1);
   std::copy(training_set.begin(), training_set.end(), local_data.data());
 
-#if 0
   std::cout << "Training: my local vector has size " << local_data.size() << std::endl;
-  if (m->get_comm()->am_model_master()) {
-    std::vector<long> model_training_set(input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size() * m->get_comm()->get_procs_per_model(), 0);
+  if (comm->am_model_master()) {
+    // Build a vector large enough to hold all indices for the model.
+    std::vector<int> model_training_set(
+      input->get_num_iterations_per_epoch(execution_mode::training) *
+      m->get_max_mini_batch_size() * comm->get_procs_per_model(), 0);
     
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
-    m->get_comm()->model_gather(local_data.data(), local_data.size(),
-                                model_training_set.data());
+    comm->model_gather(local_data.data(), local_data.size(),
+                       model_training_set.data());
 
     std::cout << "Training: The entire model has processed " << model_training_set.size() << " elements" << std::endl;
-    //    model_training_set.clear();
-  }else {
-    m->get_comm()->model_gather(local_data.data(), local_data.size(),
-                                m->get_comm()->get_model_master());
+  } else {
+    comm->model_gather(local_data.data(), local_data.size(),
+                       m->get_comm()->get_model_master());
   }
-#endif
-#if 0
-  std::cout << "Training [" << m->get_comm()->get_rank_in_model() << "] ";
-  for(std::set<long>::iterator iter=training_set.begin(); iter!=training_set.end();++iter) {
-    std::cout << *iter << " ";
+
+  std::cout << "Training [" << comm->get_rank_in_model() << "] ";
+  for (const auto& idx : training_set) {
+    std::cout << idx << " ";
   }
   std::cout << std::endl;
-#endif
-  //  local_data.clear();
+
   training_set.clear();
 }
 
