@@ -337,7 +337,8 @@ class fully_connected_layer : public learning {
 
     // Apply bias if needed
     if(m_bias_scaling_factor != DataType(0)) {
-      const Mat& local_bias_weights = m_bias_weights_v->Matrix();
+      El::Copy(*m_bias_weights_v, *m_bias_weights_repl);
+      const Mat& local_bias_weights = m_bias_weights_repl->LockedMatrix();
       El::IndexDependentMap(this->m_activations_v->Matrix(),
                             (std::function<DataType(El::Int,El::Int,const DataType&)>)
                             ([this,&local_bias_weights](El::Int r, El::Int c,const DataType& z)->DataType {
