@@ -188,16 +188,23 @@ bool generic_data_reader::update() {
   /// Maintain the current width of the matrix
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
-  if (m_current_pos < (int)m_shuffled_indices.size()) {
-    m_current_mini_batch_idx += m_iteration_stride;
-    return true;
-  } else {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+    if (m_current_pos < (int)m_shuffled_indices.size()) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+        + " :: generic data reader update error: the epoch is complete,"
+        + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
+                        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
     if (not m_first_n) {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
     set_initial_position();
     return false;
+  }else {
+    m_current_mini_batch_idx += m_iteration_stride;
+    return true;
   }
 }
 
