@@ -265,7 +265,7 @@ void generic_data_reader::select_subset_of_data() {
     }
   }
 
-  if(!get_firstN()) {
+  if(get_firstN()) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
     std::sort(m_unused_indices.begin(), m_unused_indices.end());
   }

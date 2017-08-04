@@ -1,3 +1,5 @@
+add_subdirectory(regularizers)
+
 add_sources(
   layer.cpp
 )

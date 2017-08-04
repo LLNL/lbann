@@ -209,7 +209,7 @@ macro(add_sources)
   file (RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
   foreach (_src ${ARGN})
     get_filename_component(_ext ${_src} EXT)
-    message(STATUS "EXT: ${_ext} (${_src}")
+    message(STATUS "EXT: ${_ext} (${_src})")
     if (_relPath)
       set(_src "${_relPath}/${_src}")
     endif()
@@ -258,7 +258,7 @@ endif()
 
 # Build LBANN library
 # Use cuda_add_library when CUDA source files are included.
-if(CUDA_FOUND AND WITH_FULLY_CONNECTED_CUDA)
+if(CUDA_FOUND)
   cuda_add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src> ${CUDA_SRCS})
 else()
   add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)

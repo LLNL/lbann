@@ -217,10 +217,6 @@ class concatenation_layer : public transform {
     El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
   }
 
-  const AbsDistMat& fp_input(const Layer* prev_layer) const {
-      return *m_prev_activations;
-  }  
-
   const AbsDistMat& bp_output(const Layer* prev_layer) const {
 
     // Return entire error signal if input is null
