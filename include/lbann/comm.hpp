@@ -174,7 +174,7 @@ class lbann_comm {
   /** Within-model scalar-array gather (for root processes). */
   template <typename T>
   void model_gather(T* snd, int count, T* rcv) {
-    El::mpi::Gather(snd, count, rcv, count, get_model_rank(), model_comm);
+    El::mpi::Gather(snd, count, rcv, count, get_rank_in_model(), model_comm);
     bytes_received += sizeof(T) * count * (get_procs_per_model() - 1);
   }
   /** Inter-model gather (for non-root processes). */
