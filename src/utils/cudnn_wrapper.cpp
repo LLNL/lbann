@@ -538,47 +538,48 @@ void cudnn_manager::set_work_space_size(int i, size_t size) {
 }
 
 void cudnn_manager::pin_matrix(AbsDistMat& mat) {
-  // TODO: Who is responsible for deallocating the original buffer?
-  // It isn't deallocated in this function.
-  
+
   // Get local matrix
-  const Mat& mat_local = mat.LockedMatrix();
+  Mat& mat_local = mat.Matrix();
+  const El::Int local_height = mat.LocalHeight();
+  const El::Int local_width = mat.LocalWidth();
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::DistData dist_data(mat);
   
   // Allocate pinned memory on host
-  const size_t buffer_size = mat_local.Height() * mat_local.Width() * sizeof(DataType);
+  const size_t buffer_size = local_height * local_width * sizeof(DataType);
   DataType* pinned_buffer;
   FORCE_CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer, buffer_size));
-  Mat pinned_mat(mat_local.Height(),
-                 mat_local.Width(),
-                 pinned_buffer,
-                 mat_local.Height());
+  Mat pinned_mat(local_height, local_width, pinned_buffer, local_height);
 
   // Copy data to pinned memory
   Copy(mat_local, pinned_mat);
-  
+  mat.Empty();
+
   // Reconfigure matrix around pinned memory
   ElMat* elemental_mat = dynamic_cast<ElMat*>(&mat);
   BlockMat* block_mat = dynamic_cast<BlockMat*>(&mat);
   if(elemental_mat != nullptr) {
-    elemental_mat->Attach(mat.Height(),
-                          mat.Width(),
+    elemental_mat->Attach(height,
+                          width,
                           mat.Grid(),
-                          mat.ColAlign(),
-                          mat.RowAlign(),
+                          dist_data.colAlign,
+                          dist_data.rowAlign,
                           pinned_mat,
-                          mat.Root());
+                          dist_data.root);
   } else if(block_mat != nullptr) {
-    block_mat->Attach(mat.Height(),
-                      mat.Width(),
+    block_mat->Attach(height,
+                      width,
                       mat.Grid(),
-                      mat.BlockHeight(),
-                      mat.BlockWidth(),
-                      mat.ColAlign(),
-                      mat.RowAlign(),
-                      mat.ColCut(),
-                      mat.RowCut(),
+                      dist_data.blockHeight,
+                      dist_data.blockWidth,
+                      dist_data.colAlign,
+                      dist_data.rowAlign,
+                      dist_data.colCut,
+                      dist_data.rowCut,
                       pinned_mat,
-                      mat.Root());
+                      dist_data.root);
   } else {
     throw lbann::lbann_exception("cudnn_manager: could not cast AbsDistMat to ElMat or BlockMat");
   }
@@ -586,40 +587,26 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
 }
 
 void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
+
+  // Matrix parameters
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::DistData dist_data(mat);
   
   // Copy data to unpinned memory
-  Mat& mat_local = mat.Matrix();
-  Mat new_mat_local(mat_local);
+  const Mat mat_local_copy(mat.LockedMatrix());
 
   // Deallocate pinned memory
-  FORCE_CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
+  FORCE_CHECK_CUDA(cudaFreeHost(mat.Buffer()));
 
-  // Reconfigure matrix around pinned memory
-  ElMat* elemental_mat = dynamic_cast<ElMat*>(&mat);
-  BlockMat* block_mat = dynamic_cast<BlockMat*>(&mat);
-  if(elemental_mat != nullptr) {
-    elemental_mat->Attach(mat.Height(),
-                          mat.Width(),
-                          mat.Grid(),
-                          mat.ColAlign(),
-                          mat.RowAlign(),
-                          new_mat_local,
-                          mat.Root());
-  } else if(block_mat != nullptr) {
-    block_mat->Attach(mat.Height(),
-                      mat.Width(),
-                      mat.Grid(),
-                      mat.BlockHeight(),
-                      mat.BlockWidth(),
-                      mat.ColAlign(),
-                      mat.RowAlign(),
-                      mat.ColCut(),
-                      mat.RowCut(),
-                      new_mat_local,
-                      mat.Root());
-  } else {
-    throw lbann::lbann_exception("cudnn_manager: could not cast AbsDistMat to ElMat or BlockMat");
-  }
+  // Allocate new memory owned by matrix
+  mat.Empty();
+  mat.Resize(height, width);
+  mat.AlignWith(dist_data);
+
+  // Copy data to new memory
+  Mat& mat_local = mat.Matrix();
+  El::Copy(mat_local_copy, mat_local);
 
 }
 
