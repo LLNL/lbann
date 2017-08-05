@@ -265,13 +265,13 @@ class Layer {
 
 #ifdef __LIB_CUDNN
 
-  /** Forward propagation input uses pinned memory. */
+  /** Whether forward propagation input uses pinned memory. */
   bool m_fp_input_pinned;
-  /** Forward propagation output uses pinned memory. */
+  /** Whether forward propagation output uses pinned memory. */
   bool m_fp_output_pinned;
-  /** Backward propagation input uses pinned memory. */
+  /** Whether backward propagation input uses pinned memory. */
   bool m_bp_input_pinned;
-  /** Backward propagation output uses pinned memory. */
+  /** Whether backward propagation output uses pinned memory. */
   bool m_bp_output_pinned;
 
   /** Number of mini-batch samples per GPU. */
@@ -279,16 +279,16 @@ class Layer {
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType *> m_prev_activations_d;
-  /** Keep track of the owner of m_prev_activations_d. */
-  bool m_prev_activations_d_own;
   /** GPU memory for activations. */
   std::vector<DataType *> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
   std::vector<DataType *> m_prev_error_signal_d;
-  /** Keep track of the owner of m_prev_signal_d. */
-  bool m_prev_error_signal_d_own;
   /** GPU memory for error signal. */
   std::vector<DataType *> m_error_signal_d;
+  /** Whether this layer owns m_prev_activations_d. */
+  bool m_owns_gpu_fp_input;
+  /** Whether this layer owns m_prev_error_signal_d. */
+  bool m_owns_gpu_bp_input;
 
   /** cuDNN descriptor for neuron tensor from "previous" layer. */
   cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;
