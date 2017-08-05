@@ -192,22 +192,10 @@ class convolution_layer : public base_convolution_layer {
     El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
              El::IR(0,m_kernel_size / this->m_neuron_dims[0]), El::ALL);
     if(m_bias_scaling_factor != DataType(0)) {
-      m_bias_weights_v->Attach(1,
-                               this->m_neuron_dims[0],
-                               m_bias_weights_v->Grid(),
-                               m_bias_weights_v->ColAlign(),
-                               m_bias_weights_v->RowAlign(),
-                               m_weights->Buffer(0,this->m_prev_neuron_dims[0]),
-                               1,
-                               m_bias_weights_v->Root());
-      m_bias_weights_gradient_v->Attach(1,
-                                        this->m_neuron_dims[0],
-                                        m_bias_weights_gradient_v->Grid(),
-                                        m_bias_weights_gradient_v->ColAlign(),
-                                        m_bias_weights_gradient_v->RowAlign(),
-                                        m_weights_gradient->Buffer(0,this->m_prev_neuron_dims[0]),
-                                        1,
-                                        m_bias_weights_gradient_v->Root());
+      El::View(*m_bias_weights_v, *this->m_weights,
+               El::IR(m_kernel_size / this->m_neuron_dims[0]), El::ALL);
+      El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
+               El::IR(m_kernel_size / this->m_neuron_dims[0]), El::ALL);
     }
   }
 

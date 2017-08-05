@@ -592,12 +592,10 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::DistData dist_data(mat);
-  
+  DataType *buffer = mat.Buffer();
+
   // Copy data to unpinned memory
   const Mat mat_local_copy(mat.LockedMatrix());
-
-  // Deallocate pinned memory
-  FORCE_CHECK_CUDA(cudaFreeHost(mat.Buffer()));
 
   // Allocate new memory owned by matrix
   mat.Empty();
@@ -607,6 +605,9 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
   // Copy data to new memory
   Mat& mat_local = mat.Matrix();
   El::Copy(mat_local_copy, mat_local);
+
+  // Deallocate pinned memory
+  FORCE_CHECK_CUDA(cudaFreeHost(buffer));
 
 }
 

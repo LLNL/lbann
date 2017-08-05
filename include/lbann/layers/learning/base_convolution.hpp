@@ -204,8 +204,10 @@ class base_convolution_layer : public learning {
     // Deallocate GPU memory
     this->m_cudnn->deallocate_on_gpus(m_kernel_weights_d);
     this->m_cudnn->deallocate_on_gpus(m_kernel_weights_gradient_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_weights_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+    if(m_bias_scaling_factor != DataType(0)) {
+      this->m_cudnn->deallocate_on_gpus(m_bias_weights_d);
+      this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+    }
 
     // Unpin host memory
     if(this->m_using_gpus) {
