@@ -708,7 +708,7 @@ class batch_normalization : public regularizer_layer {
     Mat& activations_local = this->m_activations_v->Matrix();
     
     // Matrix parameters
-    const El::Int width = this->m_prev_activations_v->Width();
+    const int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
@@ -741,8 +741,8 @@ class batch_normalization : public regularizer_layer {
       const DataType num_samples = width * channel_size;
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
-        const DataType mean = mean_local(channel, 0) / (width * channel_size);
-        const DataType sqmean = var_local(channel, 0) / (width * channel_size);
+        const DataType mean = mean_local(channel, 0) / num_samples;
+        const DataType sqmean = var_local(channel, 0) / num_samples;
         const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
         mean_local(channel, 0) = mean;
         var_local(channel, 0) = var;
@@ -802,7 +802,7 @@ class batch_normalization : public regularizer_layer {
     Mat& bias_gradient_local = m_bias_gradient_v->Matrix();
     
     // Matrix parameters
-    const El::Int width = this->m_prev_activations_v->Width();
+    const int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
@@ -814,8 +814,9 @@ class batch_normalization : public regularizer_layer {
       // Initialize channel parameters and gradients
       const DataType mean = mean_local(channel, 0);
       const DataType var = var_local(channel, 0);
-      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType scale = scale_local(channel, 0);
+      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+      const DataType dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
       DataType dmean = 0;
       DataType dvar = 0;
       DataType dscale = 0;
@@ -833,7 +834,7 @@ class batch_normalization : public regularizer_layer {
           dbias += dy;
           const DataType dxhat = dy * scale;
           dmean += - dxhat * inv_stdev;
-          dvar += - dxhat * (x - mean) * std::pow(inv_stdev, 3) / 2;
+          dvar += - dxhat * (x - mean) * dvar_factor;
         }
       }
       mean_gradient_local(channel, 0) = dmean;
@@ -859,13 +860,17 @@ class batch_normalization : public regularizer_layer {
       // Initialize channel parameters and gradients
       const DataType mean = mean_local(channel, 0);
       const DataType var = var_local(channel, 0);
+      const DataType scale = scale_local(channel, 0);
       const DataType dmean = mean_gradient_local(channel, 0);
       const DataType dvar = var_gradient_local(channel, 0);
+
+      // Compute useful constants
+      const DataType num_samples = width * channel_size;
       const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
-      const DataType scale = scale_local(channel, 0);
+      const DataType dmean_term = dmean / num_samples;
+      const DataType dvar_term = dvar * 2 / (num_samples - DataType(1));
 
       // Compute error signal for current channel
-      const DataType num_samples = width * channel_size;
       const El::Int row_start = channel * channel_size;
       const El::Int row_end = (channel+1) * channel_size;
       for(El::Int col = 0; col < local_width; ++col) {
@@ -874,8 +879,8 @@ class batch_normalization : public regularizer_layer {
           const DataType dy = prev_error_signal_local(row, col);
           const DataType dxhat = dy * scale;
           DataType dx = dxhat * inv_stdev;
-          dx += dmean / num_samples;
-          dx += dvar * 2 * (x - mean) / (num_samples - DataType(1));
+          dx += dmean_term;
+          dx += dvar_term * (x - mean);
           error_signal_local(row, col) = dx;
         }
       }
