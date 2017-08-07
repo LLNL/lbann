@@ -65,7 +65,7 @@ class lbann_callback_learning_rate : public lbann_callback {
   bool is_last_layer(const Layer *l) const {
     return l->get_index() == (int) m_last_idx;
   }
- private:
+
   /** Indicies of layers to update. */
   std::unordered_set<uint> m_layer_indices;
   /** Record old learning rates to watch for changes. */
@@ -132,6 +132,76 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   double m_last_score = std::numeric_limits<double>::max();
   /** Current number of epochs without improvement. */
   int64_t m_wait = 0;
+};
+
+/**
+ * Decrease learning rate by a fixed amount at fixed times.
+ */
+class lbann_callback_drop_fixed_learning_rate :
+    public lbann_callback_learning_rate {
+ public:
+  /**
+   * Decrease the learning rate by amt when each epoch in drop_epochs is
+   * reached.
+   */
+  lbann_callback_drop_fixed_learning_rate(
+    std::vector<int64_t> drop_epochs, float amt);
+  lbann_callback_drop_fixed_learning_rate(
+    std::vector<int64_t> drop_epochs, float amt,
+    std::unordered_set<uint> layers);
+  lbann_callback_drop_fixed_learning_rate(
+    const lbann_callback_drop_fixed_learning_rate&) = default;
+  lbann_callback_drop_fixed_learning_rate& operator=(
+    const lbann_callback_drop_fixed_learning_rate&) = default;
+  lbann_callback_drop_fixed_learning_rate* copy() const {
+    return new lbann_callback_drop_fixed_learning_rate(*this);
+  }
+  std::string name() const { return "drop fixed learning rate"; }
+ protected:
+  float schedule(model *m, learning *l);
+ private:
+  /// Amount to decrease the learning rate by.
+  float m_amt;
+  /**
+   * Epochs to drop learning rate at. This is stored in reverse sorted order,
+   * so that the end can be examined and then popped in constant time.
+   */
+  std::vector<int64_t> m_drop_epochs;
+};
+
+/**
+ * Linearly increase the learning rate to reach a target value over a fixed
+ * number of epochs.
+ * @note This currently assumes every layer begins with the same learning rate.
+ */
+class lbann_callback_linear_growth_learning_rate :
+    public lbann_callback_learning_rate {
+ public:
+  /**
+   * Linearly increase the learning rate to reach target after num_epochs.
+   */
+  lbann_callback_linear_growth_learning_rate(
+    float target, int64_t num_epochs);
+  lbann_callback_linear_growth_learning_rate(
+    float target, int64_t num_epochs,
+    std::unordered_set<uint> layers);
+  lbann_callback_linear_growth_learning_rate(
+    const lbann_callback_linear_growth_learning_rate&) = default;
+  lbann_callback_linear_growth_learning_rate& operator=(
+    const lbann_callback_linear_growth_learning_rate&) = default;
+  lbann_callback_linear_growth_learning_rate* copy() const {
+    return new lbann_callback_linear_growth_learning_rate(*this); }
+  void setup(model *m);
+  std::string name() const { return "linear growth learning rate"; }
+ protected:
+  float schedule(model *m, learning *l);
+ private:
+  /// Target learning rate to reach.
+  float m_target;
+  /// Amount to increase each epoch.
+  float m_inc;
+  /// Number of epochs over which to scale the learning rate.
+  int64_t m_num_epochs;
 };
 
 /**

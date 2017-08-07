@@ -1053,6 +1053,48 @@ void init_callbacks(
       lbann_callback_hang *hang_cb = new lbann_callback_hang(rank_to_hang);
       model->add_callback(hang_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: drop_fixed_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_drop_fixed_learning_rate()) {
+      const lbann_data::CallbackDropFixedLearningRate& c =
+        callback.drop_fixed_learning_rate();
+      if (master) {
+        std::cout << "adding drop_fixed_learning_rate callback" << std::endl;
+      }
+      std::unordered_set<uint> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(c.layer(i));
+      }
+      std::vector<int64_t> drop_epochs;
+      for (int i = 0; i < c.drop_epoch_size(); ++i) {
+        drop_epochs.push_back(c.drop_epoch(i));
+      }
+      lbann_callback_drop_fixed_learning_rate *dflr = new
+        lbann_callback_drop_fixed_learning_rate(
+          drop_epochs, c.amt(), layers);
+      model->add_callback(dflr);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: linear_growth_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_linear_growth_learning_rate()) {
+      const lbann_data::CallbackLinearGrowthLearningRate& c =
+        callback.linear_growth_learning_rate();
+      if (master) {
+        std::cout << "adding linear_growth_learning_rate callback" << std::endl;
+      }
+      std::unordered_set<uint> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(c.layer(i));
+      }
+      lbann_callback_linear_growth_learning_rate *lglr = new
+        lbann_callback_linear_growth_learning_rate(
+          c.target(), c.num_epochs(), layers);
+      model->add_callback(lglr);
+    }
   }
 
 }

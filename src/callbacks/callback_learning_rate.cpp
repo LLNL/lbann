@@ -132,6 +132,57 @@ float lbann_callback_adaptive_learning_rate::schedule(model *m, learning *l) {
   return cur_lr;
 }
 
+lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
+  std::vector<int64_t> drop_epochs, float amt) :
+  lbann_callback_drop_fixed_learning_rate(drop_epochs, amt, {}) {}
+
+lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
+  std::vector<int64_t> drop_epochs, float amt, std::unordered_set<uint> layers) :
+  lbann_callback_learning_rate(layers), m_amt(amt), m_drop_epochs(drop_epochs) {
+  // Sort in reverse order.
+  std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
+}
+
+float lbann_callback_drop_fixed_learning_rate::schedule(model* m, learning *l) {
+  float cur_lr = l->get_optimizer()->get_learning_rate();
+  if (!m_drop_epochs.empty() && m->get_cur_epoch() == m_drop_epochs.back()) {
+    m_drop_epochs.pop_back();
+    return cur_lr * m_amt;
+  } else {
+    return cur_lr;
+  }
+}
+
+lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+  float target, int64_t num_epochs) :
+  lbann_callback_linear_growth_learning_rate(target, num_epochs, {}) {}
+
+lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+  float target, int64_t num_epochs, std::unordered_set<uint> layers) :
+  lbann_callback_learning_rate(layers), m_target(target), m_inc(0),
+  m_num_epochs(num_epochs) {}
+
+void lbann_callback_linear_growth_learning_rate::setup(model *m) {
+  lbann_callback_learning_rate::setup(m);
+  // Compute the learning rate increase.
+  if (!m_layer_indices.empty()) {
+    std::vector<Layer *>& layers = m->get_layers();
+    learning *l = dynamic_cast<learning *>(layers[*m_layer_indices.begin()]);
+    float base_lr = l->get_optimizer()->get_learning_rate();
+    m_inc = (m_target - base_lr) / m_num_epochs;
+  }
+}
+
+float lbann_callback_linear_growth_learning_rate::schedule(model *m,
+                                                           learning *l) {
+  float cur_lr = l->get_optimizer()->get_learning_rate();
+  if (m->get_cur_epoch() <= m_num_epochs) {
+    return cur_lr + m_inc;
+  } else {
+    return cur_lr;
+  }
+}
+
 lbann_callback_custom_learning_rate::lbann_callback_custom_learning_rate(
   std::function<float(model *, learning *)> custom_schedule) :
   lbann_callback_learning_rate(), m_custom_schedule(custom_schedule) {}
