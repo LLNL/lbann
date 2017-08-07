@@ -134,7 +134,8 @@ float lbann_callback_adaptive_learning_rate::schedule(model *m, learning *l) {
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt) :
-  lbann_callback_drop_fixed_learning_rate(drop_epochs, amt, {}) {}
+  lbann_callback_drop_fixed_learning_rate(drop_epochs, amt,
+                                          std::unordered_set<uint>()) {}
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt, std::unordered_set<uint> layers) :
@@ -155,7 +156,8 @@ float lbann_callback_drop_fixed_learning_rate::schedule(model* m, learning *l) {
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs) :
-  lbann_callback_linear_growth_learning_rate(target, num_epochs, {}) {}
+  lbann_callback_linear_growth_learning_rate(target, num_epochs,
+                                             std::unordered_set<uint>()) {}
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs, std::unordered_set<uint> layers) :
