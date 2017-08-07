@@ -52,6 +52,7 @@
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/learning/deconvolution.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/pooling.hpp"
