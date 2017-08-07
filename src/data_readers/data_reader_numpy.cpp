@@ -91,6 +91,11 @@ void numpy_reader::load() {
       "numpy_reader: word size " + std::to_string(m_data.word_size) +
       " not supported");
   }
+  // Fortran order not yet supported.
+  if (m_data.fortran_order) {
+    throw lbann_exception(
+      "numpy_reader: fortran order not supported");
+  }
 
   // Reset indices.
   m_shuffled_indices.clear();
