@@ -53,11 +53,14 @@ class lbann_callback_dump_weights : public lbann_callback {
   lbann_callback_dump_weights* copy() const {
     return new lbann_callback_dump_weights(*this);
   }
+  void on_train_begin(model *m);
   void on_epoch_end(model *m);
   std::string name() const { return "dump weights"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;
+  /// Dump weights from learning layers.
+  void dump_weights(model *m);
 };
 
 }  // namespace lbann

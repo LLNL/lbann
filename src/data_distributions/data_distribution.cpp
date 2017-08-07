@@ -28,10 +28,9 @@
 #include "lbann/utils/exception.hpp"
 
 lbann::generic_data_distribution::generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_num_parallel_readers_training(num_parallel_readers), m_num_parallel_readers_validating(num_parallel_readers), m_num_parallel_readers_testing(num_parallel_readers), m_data_readers(data_readers) {
+  : m_comm(comm), m_requested_max_num_parallel_readers(num_parallel_readers), m_data_readers(data_readers) {
   m_root = 0;
   m_num_samples_in_batch = 0;
-  m_num_valid_readers = 0;
 
   m_cur_step_in_epoch = 0;
 }
@@ -56,24 +55,13 @@ lbann::generic_data_reader *lbann::generic_data_distribution::get_data_reader(ex
   return data_reader;
 }
 
+int lbann::generic_data_distribution::get_num_parallel_readers(execution_mode mode) {
+  generic_data_reader *data_reader = get_data_reader(mode);
+  return data_reader->get_num_parallel_readers();
+}
+
 int lbann::generic_data_distribution::get_num_parallel_readers() {
-  int num_parallel_readers = 0;
-  switch(get_execution_mode()) {
-  case execution_mode::training:
-    num_parallel_readers = m_num_parallel_readers_training;
-    break;
-  case execution_mode::validation:
-    num_parallel_readers = m_num_parallel_readers_validating;
-    break;
-  case execution_mode::testing:
-    num_parallel_readers = m_num_parallel_readers_testing;
-    break;
-  default:
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data distribution: invalid execution phase");
-  }
-  return num_parallel_readers;
+  return get_num_parallel_readers(get_execution_mode());
 }
 
 int lbann::generic_data_distribution::get_num_iterations_per_epoch(execution_mode mode) {
@@ -87,7 +75,7 @@ int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
 
 int lbann::generic_data_distribution::get_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
-  return data_reader->getm_batch_size();
+  return data_reader->get_mini_batch_size();
 }
 
 int lbann::generic_data_distribution::get_last_mini_batch_size(execution_mode mode) {
@@ -101,12 +89,7 @@ int lbann::generic_data_distribution::get_last_mini_batch_size() {
 
 int lbann::generic_data_distribution::get_current_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
-  int num_iterations_per_epoch = get_num_iterations_per_epoch();
-  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 2)) {
-    return data_reader->get_last_mini_batch_size();
-  }else {
-    return data_reader->getm_batch_size();
-  }
+  return data_reader->get_current_mini_batch_size();
 }
 
 int lbann::generic_data_distribution::get_current_mini_batch_size() {
@@ -125,28 +108,41 @@ int lbann::generic_data_distribution::get_global_last_mini_batch_size(execution_
 
 int lbann::generic_data_distribution::get_current_global_mini_batch_size(execution_mode mode) {
   generic_data_reader *data_reader = get_data_reader(mode);
-  int num_iterations_per_epoch = get_num_iterations_per_epoch();
-  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 2)) {
-    return data_reader->get_global_last_mini_batch_size();
-  }else {
-    return data_reader->get_global_mini_batch_size();
-  }
+  return data_reader->get_current_global_mini_batch_size();
 }
 
-void lbann::generic_data_distribution::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
+int lbann::generic_data_distribution::get_current_global_mini_batch_size() {
+  return get_current_global_mini_batch_size(get_execution_mode());
+}
 
-  /// By default each data reader will plan to process the entire data set
-  int num_iterations_per_epoch = ceil((float) data_reader->getNumData() / (float) max_mini_batch_size);
-  int last_mini_batch_size = data_reader->getNumData() % max_mini_batch_size;
-  if(last_mini_batch_size == 0) {
-    last_mini_batch_size = max_mini_batch_size;
-  }
-  data_reader->set_num_mini_batches_per_reader(num_iterations_per_epoch);
-  data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
-  data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_last_mini_batch_stride(last_mini_batch_size);
+/** Calculate how many iterations are required for training, testing,
+ *  and validation given a specified mini-batch size and that the
+ *  training data set is spanning all of the models.
+ */
+void lbann::generic_data_distribution::calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
 
-  data_reader->set_global_mini_batch_size(max_mini_batch_size);
-  data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
-  return;
+  /// Setup the training data set so that it spans all models
+  calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
+                                                     m_data_readers[execution_mode::training]);
+
+  /// Each model uses the entire validation and testing data sets
+  calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                  m_data_readers[execution_mode::validation]);
+  calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+                                                  m_data_readers[execution_mode::testing]);
+
+}
+
+void lbann::generic_data_distribution::calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
+
+  /// Setup the training data set so that it spans all models
+  calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                   m_data_readers[execution_mode::training]);
+
+  /// Each model uses the entire validation and testing data sets
+  calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                  m_data_readers[execution_mode::validation]);
+  calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+                                                  m_data_readers[execution_mode::testing]);
+
 }

@@ -63,15 +63,15 @@ class io_layer : public Layer {
       m_data_sets_span_models(data_sets_span_models),
       m_for_regression(for_regression) {
     if(m_training_dataset.data_reader != nullptr) {
-      m_training_dataset.total_samples = m_training_dataset.data_reader->getNumData();
+      m_training_dataset.total_samples = m_training_dataset.data_reader->get_num_data();
     }
 
     if(m_validation_dataset.data_reader != nullptr) {
-      m_validation_dataset.total_samples = m_validation_dataset.data_reader->getNumData();
+      m_validation_dataset.total_samples = m_validation_dataset.data_reader->get_num_data();
     }
 
     if(m_testing_dataset.data_reader != nullptr) {
-      m_testing_dataset.total_samples = m_testing_dataset.data_reader->getNumData();
+      m_testing_dataset.total_samples = m_testing_dataset.data_reader->get_num_data();
     }
   }
 
@@ -94,8 +94,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_training_dataset.data_reader;
     m_training_dataset.data_reader = data_reader;
     m_training_dataset.num_samples_processed = 0;
-    m_training_dataset.total_samples = data_reader->getNumData();
-    m_training_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+    m_training_dataset.total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
@@ -105,8 +104,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_validation_dataset.data_reader;
     m_validation_dataset.data_reader = data_reader;
     m_validation_dataset.num_samples_processed = 0;
-    m_validation_dataset.total_samples = data_reader->getNumData();
-    m_validation_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+    m_validation_dataset.total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
@@ -116,8 +114,7 @@ class io_layer : public Layer {
     generic_data_reader *old_data_reader = m_testing_dataset.data_reader;
     m_testing_dataset.data_reader = data_reader;
     m_testing_dataset.num_samples_processed = 0;
-    m_testing_dataset.total_samples = data_reader->getNumData();
-    m_testing_dataset.num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+    m_testing_dataset.total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
@@ -183,7 +180,7 @@ class io_layer : public Layer {
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() {
     generic_data_reader *dr = select_data_reader();
-    return &(dr->m_indices_fetched_per_mb);
+    return dr->get_indices_fetched_per_mb();
   }
 
   /**
@@ -275,25 +272,6 @@ class io_layer : public Layer {
 
   bool at_new_epoch() {
     return m_training_dataset.data_reader->at_new_epoch();
-  }
-
-  void setup_data_readers_for_training(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0) {
-    if(m_training_dataset.data_reader != nullptr) {
-      m_training_dataset.data_reader->setup(base_offset, batch_stride, sample_stride, model_offset, m_comm);
-    }
-  }
-
-  /**
-   * Do not spread data readers that are used for evaluation across multiple models.
-   * Allow each model instance to use the full data set for evaluation so that each model is fairly compared.
-   */
-  void setup_data_readers_for_evaluation(int base_offset, int batch_stride, int sample_stride = 1, int model_offset = 0) {
-    if(m_validation_dataset.data_reader != nullptr) {
-      m_validation_dataset.data_reader->setup(base_offset, batch_stride, sample_stride, model_offset, nullptr/*m_comm*/);
-    }
-    if(m_testing_dataset.data_reader != nullptr) {
-      m_testing_dataset.data_reader->setup(base_offset, batch_stride, sample_stride, model_offset, nullptr/*m_comm*/);
-    }
   }
 
   bool saveToCheckpointShared(persist& p) {

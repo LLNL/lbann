@@ -9,11 +9,6 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 
 RUN="srun"
 
-#Set fonts for Help.
-NORM=`tput sgr0`
-BOLD=`tput bold`
-REV=`tput smso`
-
 
 TASKS_PER_NODE=12
 export SLURM_NNODES=$SLURM_JOB_NUM_NODES
@@ -27,6 +22,10 @@ for v in "$@"; do
   OPTS="$OPTS $v"
 done
 
+#over-ride optimizer, because learn_rate differs from that 
+#specified in the prototext file
+OPTS="$OPTS --opt=adam --learn_rate=.0001 --beta1=0.9 --beta2=0.999 --eps=1e-8"
+
 TASKS=$((${SLURM_JOB_NUM_NODES} * ${SLURM_CPUS_ON_NODE}))
 if [ ${TASKS} -gt 384 ]; then
 TASKS=384
@@ -36,7 +35,7 @@ LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 CMD="${RUN} -n${LBANN_TASKS}  \
   --ntasks-per-node=${TASKS_PER_NODE} \
   ${BINDIR}/lbann \
-  --model=../model_zoo/prototext/proto_autoencoder_cifar10.prototext \
+  --model=../model_zoo/prototext/model_autoencoder_cifar10.prototext \
   --reader=../model_zoo/prototext/data_reader_cifar10.prototext \
   --optimizer=../model_zoo/prototext/opt_adam.prototext \
   $OPTS"

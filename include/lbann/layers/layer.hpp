@@ -178,12 +178,8 @@ class Layer {
   virtual bool saveToCheckpointShared(persist& p);
   virtual bool loadFromCheckpointShared(persist& p);
 
-  /** Get forward propagation input, as seen by previous layer. */
-  virtual const AbsDistMat& fp_input(const Layer* prev_layer = NULL) const;
   /** Get forward propagation output, as seen by next layer. */
   virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
-  /** Get backward propagation input, as seen by next layer. */
-  virtual const AbsDistMat& bp_input(const Layer* next_layer = NULL) const;
   /** Get backward propagation output, as seen by previous layer. */
   virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
   /** Get forward propagation output dimensions, as seen by next layer. */
@@ -269,13 +265,13 @@ class Layer {
 
 #ifdef __LIB_CUDNN
 
-  /** Forward propagation input uses pinned memory. */
+  /** Whether forward propagation input uses pinned memory. */
   bool m_fp_input_pinned;
-  /** Forward propagation output uses pinned memory. */
+  /** Whether forward propagation output uses pinned memory. */
   bool m_fp_output_pinned;
-  /** Backward propagation input uses pinned memory. */
+  /** Whether backward propagation input uses pinned memory. */
   bool m_bp_input_pinned;
-  /** Backward propagation output uses pinned memory. */
+  /** Whether backward propagation output uses pinned memory. */
   bool m_bp_output_pinned;
 
   /** Number of mini-batch samples per GPU. */
@@ -289,6 +285,10 @@ class Layer {
   std::vector<DataType *> m_prev_error_signal_d;
   /** GPU memory for error signal. */
   std::vector<DataType *> m_error_signal_d;
+  /** Whether this layer owns m_prev_activations_d. */
+  bool m_owns_gpu_fp_input;
+  /** Whether this layer owns m_prev_error_signal_d. */
+  bool m_owns_gpu_bp_input;
 
   /** cuDNN descriptor for neuron tensor from "previous" layer. */
   cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;

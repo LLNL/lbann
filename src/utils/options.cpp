@@ -14,7 +14,7 @@ options * options::s_instance = new options;
 
 //============================================================================
 
-void parse_opt(std::string tmp, std::string &key, std::string &val)
+void m_parse_opt(std::string tmp, std::string &key, std::string &val)
 {
   key = "";
   val = "";
@@ -39,8 +39,10 @@ void parse_opt(std::string tmp, std::string &key, std::string &val)
 void options::init(int argc, char **argv)
 {
   MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+  m_argc = argc;
+  m_argv = argv;
 
-  //default fileBaseName for saving
+  //the_default fileBaseName for saving
   m_opts["saveme"] = "data.prototext";
 
   //save cmd line
@@ -49,7 +51,7 @@ void options::init(int argc, char **argv)
   std::string loadme;
   for (int j=0; j<argc; j++) {
     m_cmd_line.push_back(argv[j]);
-    parse_opt(argv[j], key, value);
+    m_parse_opt(argv[j], key, value);
     if (key == "loadme") {
       loadme = value;
     }
@@ -57,20 +59,11 @@ void options::init(int argc, char **argv)
 
   //optionally init from file
   if (loadme != "") {
-    parse_file(loadme.c_str());
+    m_parse_file(loadme.c_str());
   }
 
   //over-ride from cmd line
-  parse_cmd_line(argc, argv);
-
-  if (!m_rank) {
-    std::cout << std::endl
-              << "running with the following options:\n";
-    for (std::map<std::string, std::string>::const_iterator t = m_opts.begin(); t != m_opts.end(); t++) {
-      std::cout << "  --" << t->first << "=" << t->second << std::endl;
-    }
-    std::cout << std::endl;
-  }
+  m_parse_cmd_line(argc, argv);
 }
 
 //============================================================================
@@ -97,18 +90,28 @@ void lower(char *s)
 
 //============================================================================
 
-bool options::has_opt(std::string option)
+bool options::m_has_opt(std::string option)
 {
   if (m_opts.find(option) == m_opts.end()) {
     return false;
   }
   return true;
 }
-bool options::get_bool(const char *option)
+
+bool options::get_bool(std::string option, bool the_default)
 {
   int result;
-  std::string opt(option);
-  if (not get_int(opt, result)) {
+  if (not m_test_int(option, result)) {
+    set_option(option, the_default);
+    return the_default;
+  }
+  return result;
+}
+
+bool options::get_bool(std::string option) 
+{
+  int result;
+  if (not m_test_int(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " ::options::get_int() - failed to find option: " << option
@@ -119,11 +122,20 @@ bool options::get_bool(const char *option)
   return true;
 }
 
-int options::get_int(const char *option)
+int options::get_int(std::string option, int the_default)
 {
   int result;
-  std::string opt(option);
-  if (not get_int(opt, result)) {
+  if (not m_test_int(option, result)) {
+    set_option(option, the_default);
+    return the_default;
+  }
+  return result;
+}
+
+int options::get_int(std::string option)
+{
+  int result;
+  if (not m_test_int(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: options::get_int() - failed to find option: " << option
@@ -133,25 +145,41 @@ int options::get_int(const char *option)
   return result;
 }
 
-double options::get_float(const char *option)
-{
-  std::string opt(option);
+double options::get_double(std::string option, double the_default) {
   double result;
-  if (not get_float(opt, result)) {
+  if (not m_test_double(option, result)) {
+    set_option(option, the_default);
+    return the_default;
+  }
+  return result;
+}
+
+double options::get_double(std::string option)
+{
+  double result;
+  if (not m_test_double(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
-        << " :: options::get_float() - failed to find option: " << option
+        << " :: options::get_double() - failed to find option: " << option
         << ", or to convert the value to double";
     throw std::runtime_error(err.str());
   }
   return result;
 }
 
-std::string options::get_string(const char *option)
+std::string options::get_string(std::string option, std::string the_default)
 {
-  std::string opt(option);
   std::string result;
-  if (not get_string(opt, result)) {
+  if (not m_test_string(option, result)) {
+    return the_default;
+  }  
+  return the_default;
+}
+
+std::string options::get_string(std::string option)
+{
+  std::string result;
+  if (not m_test_string(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: options::get_string() - failed to find option: " << option;
@@ -162,9 +190,9 @@ std::string options::get_string(const char *option)
 
 //============================================================================
 
-bool options::get_int(std::string option, int &out)
+bool options::m_test_int(std::string option, int &out)
 {
-  if (not has_opt(option)) {
+  if (not m_has_opt(option)) {
     return false;
   }
   bool is_good = true;
@@ -186,9 +214,9 @@ bool options::get_int(std::string option, int &out)
   return true;
 }
 
-bool options::get_float(std::string option, double &out)
+bool options::m_test_double(std::string option, double &out)
 {
-  if (not has_opt(option)) return false;
+  if (not m_has_opt(option)) return false;
   std::string val(m_opts[option]);
   lower(val);
   for (size_t j=0; j<val.size(); j++) {
@@ -204,50 +232,66 @@ bool options::get_float(std::string option, double &out)
   return true;
 }
 
-bool options::get_string(std::string option, std::string &out)
+bool options::m_test_string(std::string option, std::string &out)
 {
-  if (not has_opt(option)) return false;
+  if (not m_has_opt(option)) return false;
   out = m_opts[option];
   return true;
 }
 
-bool options::has_int(const char *option)
+bool options::has_int(std::string option)
 {
-  std::string opt(option);
   int test;
-  if (get_int(opt, test)) return true;
+  if (m_test_int(option, test)) return true;
   return false;
 }
 
-bool options::has_bool(const char *option)
+bool options::has_bool(std::string option)
 {
-  std::string opt(option);
   int test;
-  if (get_int(opt, test)) return true;
+  if (m_test_int(option, test)) return true;
   return false;
 }
 
-bool options::has_string(const char *option)
-{
-  std::string opt(option);
+bool options::has_string(std::string option) {
   std::string test;
-  if (get_string(opt, test)) return true;
+  if (m_test_string(option, test)) return true;
   return false;
 }
 
-bool options::has_float(const char *option)
-{
-  std::string opt(option);
+bool options::has_double(std::string option) {
+
   double test;
-  if (get_float(opt, test)) return true;
+  if (m_test_double(option, test)) return true;
   return false;
 }
 
 //====================================================================
+void options::set_option(std::string name, int value) {
+  m_opts[name] = std::to_string(value);
+}
 
-void options::parse_file(const char *fn)
+void options::set_option(std::string name, bool value) {
+  m_opts[name] = std::to_string(value);
+}
+
+void options::set_option(std::string name, std::string value) {
+  m_opts[name] = value;
+}
+
+void options::set_option(std::string name, float value) {
+  m_opts[name] = std::to_string(value);
+}
+
+void options::set_option(std::string name, double value) {
+  m_opts[name] = std::to_string(value);
+}
+
+//====================================================================
+
+void options::m_parse_file(std::string fn) 
 {
-  std::ifstream in(fn);
+  std::ifstream in(fn.c_str());
   if (not in.is_open()) {
     if (!m_rank) {
       std::stringstream err;
@@ -271,7 +315,7 @@ void options::parse_file(const char *fn)
       }
     }
 
-    parse_opt(line, key, val);
+    m_parse_opt(line, key, val);
     if (key != "") {
       m_opts[key] = val;
     }
@@ -280,16 +324,22 @@ void options::parse_file(const char *fn)
 }
 
 
-void options::parse_cmd_line(int argc, char **argv)
+void options::m_parse_cmd_line(int argc, char **argv)
 {
   std::string key, val;
   for (int j=1; j<argc; j++) {
-    parse_opt(argv[j], key, val);
+    m_parse_opt(argv[j], key, val);
     if (key != "") {
       m_opts[key] = val;
     }
   }
 }
 
-
+void options::print(std::ostream &out) {
+  out << "# The following Options were used in the code\n";
+  for (auto t : m_opts) {
+    out << "--" << t.first << "=" << t.second << " ";
+  }
+  out << std::endl;
+}
 

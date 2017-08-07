@@ -29,6 +29,7 @@ option(WITH_CNPY  "Include cnpy"                           ON)
 option(WITH_TBINF "Include Tensorboard interface"          ON)
 option(WITH_VTUNE "Link the Intel VTune profiling library" OFF)
 option(WITH_NVPROF "Enable NVTX-based instrumentation for nvprof" OFF)
+option(WITH_FULLY_CONNECTED_CUDA "Enable CUDA-based fully connected layer" OFF)
 option(VERBOSE    "Verbose output"                         OFF)
 if(NOT MAKE_NUM_PROCESSES)
   set(MAKE_NUM_PROCESSES 1)
@@ -36,6 +37,10 @@ endif()
 if(NOT LIBRARY_TYPE)
   set(LIBRARY_TYPE SHARED)
 endif()
+if (WITH_FULLY_CONNECTED_CUDA)
+  add_definitions(-DLBANN_FULLY_CONNECTED_CUDA)
+endif()
+
 
 ################################################################
 # Initialize build
@@ -56,7 +61,9 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 
 # Enable parallel random matrix generation
-if(NOT SEQ_INIT)
+if(SEQ_INIT)
+  add_definitions(-DLBANN_SEQUENTIAL_CONSISTENCY -DLBANN_PROCDET_DROPOUT)
+else()
   add_definitions(-DLBANN_PARALLEL_RANDOM_MATRICES)
 endif()
 
@@ -193,20 +200,30 @@ endif()
 # Include LBANN header files
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+
 # Build nested source lists
+# CUDA sources need to be handled differently as they are not
+# supported by the add_library command (native CUDA support is
+# available starting from version 3.8, though). 
 macro(add_sources)
-    file (RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
-    foreach (_src ${ARGN})
-        if (_relPath)
-            list (APPEND SRCS "${_relPath}/${_src}")
-        else()
-            list (APPEND SRCS "${_src}")
-        endif()
-    endforeach()
+  file (RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+  foreach (_src ${ARGN})
+    get_filename_component(_ext ${_src} EXT)
+    message(STATUS "EXT: ${_ext} (${_src})")
     if (_relPath)
-        # propagate SRCS to parent directory
-        set (SRCS ${SRCS} PARENT_SCOPE)
+      set(_src "${_relPath}/${_src}")
     endif()
+    if (_ext STREQUAL ".cu")
+      list (APPEND CUDA_SRCS "${_src}")
+    else()
+      list (APPEND SRCS "${_src}")      
+    endif()
+  endforeach()
+  if (_relPath)
+    # propagate SRCS to parent directory
+    set (SRCS ${SRCS} PARENT_SCOPE)
+    set (CUDA_SRCS ${CUDA_SRCS} PARENT_SCOPE)
+  endif()
 endmacro()
 
 # Add LBANN source files
@@ -214,6 +231,9 @@ add_subdirectory(src)
 add_subdirectory(model_zoo)
 
 # Build LBANN source files
+# Note that CUDA sources are not included as they are not
+# supported. They are directly built and linked by the
+# cuda_add_library(lbann) command. 
 add_library(src OBJECT ${SRCS})
 
 # Add dependencies
@@ -237,7 +257,12 @@ if(LBANN_BUILT_LBANN_PROTO)
 endif()
 
 # Build LBANN library
-add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
+# Use cuda_add_library when CUDA source files are included.
+if(CUDA_FOUND)
+  cuda_add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src> ${CUDA_SRCS})
+else()
+  add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
+endif()
 
 # Link libraries
 target_link_libraries(lbann ${MPI_CXX_LIBRARIES})

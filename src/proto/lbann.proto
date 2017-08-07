@@ -17,7 +17,7 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, cnpy, imagenet, synthetic
+  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
@@ -168,6 +168,12 @@ message Callback {
    CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
    CallbackStepLearningRate step_learning_rate = 13;
    CallbackCustomLearningRate custom_learning_rate = 14;
+   CallbackCheckSmall check_small = 15;
+   CallbackCheckNaN check_nan = 16;
+   CallbackCheckDataset check_dataset = 17;
+   CallbackHang hang = 18;
+   CallbackDropFixedLearningRate drop_fixed_learning_rate = 19;
+   CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
 }
 
 message CallbackStepLearningRate {
@@ -236,6 +242,31 @@ message CallbackImComm {
 
 message CallbackDebug {
   string phase = 1;
+}
+
+message CallbackCheckSmall {
+}
+
+message CallbackCheckNaN {
+}
+
+message CallbackCheckDataset {
+}
+
+message CallbackHang {
+  int64 rank = 1;
+}
+
+message CallbackDropFixedLearningRate {
+  repeated int64 layer = 1;
+  repeated int64 drop_epoch = 2;
+  double amt = 3;
+}
+
+message CallbackLinearGrowthLearningRate {
+  repeated int64 layer = 1;
+  double target = 2;
+  int64 num_epochs = 3;
 }
 
 //========================================================================
@@ -336,7 +367,6 @@ message BatchNormalization {
   double scale_init = 2;     //default: 1.0
   double bias_init = 3;      //default: 0.0
   double epsilon = 4;        //default: 1e-5
-  bool use_global_stats = 5; //default: false
 }
 
 message SeluDropout {

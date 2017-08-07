@@ -32,8 +32,13 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 
-//typedef double DataType;
+#if LBANN_DATATYPE == 8
+typedef double DataType;
+#elif LBANN_DATATYPE == 4
 typedef float DataType;
+#else
+typedef float DataType; // Default to floats
+#endif
 
 typedef El::Grid EGrid;
 typedef El::Grid Grid;

@@ -306,14 +306,6 @@ void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
   }
 }
 
-/** Set the model's effective mini-batch size. */
-void model::set_effective_mini_batch_size() {
-  std::vector<Layer *>layers = get_layers();
-  input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
-  int total_mini_batch_size = layer->get_current_global_mini_batch_size(get_execution_mode());
-  m_effective_mini_batch_size = total_mini_batch_size;
-}
-
 /** \brief Returns true if a checkpoint should be taken, false otherwise */
 bool model::need_checkpoint() {
   /* TODO: since we're using clocks, this requires a bcast for each call,

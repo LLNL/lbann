@@ -84,12 +84,13 @@
 #include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/data_readers/data_reader_cnpy.hpp"
+#include "lbann/data_readers/data_reader_numpy.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
 #include "lbann/callbacks/callback_checknan.hpp"
 #include "lbann/callbacks/callback_checksmall.hpp"
+#include "lbann/callbacks/callback_check_dataset.hpp"
 #include "lbann/callbacks/callback_print.hpp"
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/callbacks/callback_summary.hpp"
@@ -106,6 +107,7 @@
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
+#include "lbann/callbacks/callback_hang.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/optimizer_adagrad.hpp"

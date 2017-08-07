@@ -43,7 +43,8 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
  public:
   /// @todo make the map and vector references
   input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, num_parallel_readers, data_readers),
+    : generic_data_distribution(comm, num_parallel_readers, data_readers),
+      input_layer(comm, num_parallel_readers, data_readers),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
@@ -66,31 +67,9 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_sets_span_models) {
-      int base_offset = Layer::m_comm->get_rank_in_model();
-      int batch_stride = Layer::m_comm->get_num_models() * max_mb_size;
-      int model_offset = Layer::m_comm->get_model_rank() * max_mb_size;
-      //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << max_mb_size << " mb size, which gives a stride of " << batch_stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * max_mb_size)*/ << endl;
-      io_layer::setup_data_readers_for_training(base_offset,
-                                                          batch_stride,
-                                                          partitioned_minibatch::m_num_parallel_readers_training,
-                                                          model_offset);
-      partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(max_mb_size,
-                                                                               this->m_training_dataset.data_reader);
-      /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
-                                                  max_mb_size,
-                                                  partitioned_minibatch::m_num_parallel_readers_testing);
-      partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
-                                                                             this->m_validation_dataset.data_reader);
-      partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size, 
-                                                                             this->m_testing_dataset.data_reader);
+      partitioned_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
-      io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model(),
-                                                          max_mb_size,
-                                                          partitioned_minibatch::m_num_parallel_readers_training);
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model(),
-                                                            max_mb_size,
-                                                            partitioned_minibatch::m_num_parallel_readers_testing);
+      partitioned_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
     partitioned_minibatch::m_local_data_valid = false;
@@ -103,17 +82,13 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     //int num_parallel_readers = get_num_parallel_readers();
 
     //  DISPLAY_MATRIX(m_activations);
-    int num_samples_fetched = partitioned_minibatch::fetch_to_local_matrix(this->m_activations->Matrix());
+    int num_samples_fetched = partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
     int num_samples_in_batch = partitioned_minibatch::get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
-
-    /// Let each rank know this size of the current mini-batch
-    /// Note that this field has to be updated before distributing the data
-    this->m_neural_network_model->set_current_mini_batch_size(num_samples_in_batch);
   }
 
   /**

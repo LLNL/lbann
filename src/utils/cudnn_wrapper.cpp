@@ -71,9 +71,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
     for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
       FORCE_CHECK_CUDA(cudaSetDevice(gpu));
       m_gpus.push_back(gpu);
-      m_streams.push_back(NULL);
-      m_handles.push_back(NULL);
-      m_cublas_handles.push_back(NULL);
+      m_streams.push_back(nullptr);
+      m_handles.push_back(nullptr);
+      m_cublas_handles.push_back(nullptr);
       FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
       FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
       FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
@@ -98,9 +98,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
     } while(rank_in_node >= proc_end);
     FORCE_CHECK_CUDA(cudaSetDevice(gpu));
     m_gpus.push_back(gpu);
-    m_streams.push_back(NULL);
-    m_handles.push_back(NULL);
-    m_cublas_handles.push_back(NULL);    
+    m_streams.push_back(nullptr);
+    m_handles.push_back(nullptr);
+    m_cublas_handles.push_back(nullptr);    
     FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
     FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
     FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
@@ -111,7 +111,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
   m_num_gpus = m_gpus.size();
 
   // Initialize work spaces
-  m_work_spaces = std::vector<void *>(m_num_gpus, NULL);
+  m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
   m_work_space_sizes = std::vector<size_t>(m_num_gpus, 0);
 
 }
@@ -152,7 +152,7 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
     }
     // Check that list of pointers only contains null pointers
     for(int i=0; i<m_num_gpus; ++i) {
-      if(gpu_data[i] != NULL) {
+      if(gpu_data[i] != nullptr) {
         throw lbann_exception("cudnn_wrapper: overwriting non-null pointer with newly allocated GPU memory");
       }
     }
@@ -160,7 +160,7 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 #endif // #ifdef LBANN_DEBUG
 
   // Allocate GPU memory
-  gpu_data.resize(m_num_gpus, NULL);
+  gpu_data.resize(m_num_gpus, nullptr);
   for(int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
       FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
@@ -188,7 +188,7 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
 
   // Deallocate GPU memory
   for(int i=0; i<m_num_gpus; ++i) {
-    if(gpu_data[i] != NULL) {
+    if(gpu_data[i] != nullptr) {
       FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       FORCE_CHECK_CUDA(cudaFree(gpu_data[i]));
     }
@@ -500,7 +500,7 @@ const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
   for(int i=0; i<m_num_gpus; ++i) {
-    if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
+    if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
       CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
                             m_work_space_sizes[i]));
@@ -510,7 +510,7 @@ std::vector<void *> cudnn_manager::get_work_spaces() {
 }
 
 void *cudnn_manager::get_work_space(int i) {
-  if(m_work_spaces[i] == NULL && m_work_space_sizes[i] > 0) {
+  if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
                           m_work_space_sizes[i]));
@@ -529,59 +529,85 @@ size_t cudnn_manager::get_work_space_size(int i) const {
 void cudnn_manager::set_work_space_size(int i, size_t size) {
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
-    if(m_work_spaces[i] != NULL) {
+    if(m_work_spaces[i] != nullptr) {
       CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       CHECK_CUDA(cudaFree(m_work_spaces[i]));
-      m_work_spaces[i] = NULL;
+      m_work_spaces[i] = nullptr;
     }
   }
 }
 
-void cudnn_manager::pin_matrix(ElMat& mat) {
-  // TODO: Who is responsible for deallocating the original buffer?
-  // It isn't deallocated in this function.
-  
+void cudnn_manager::pin_matrix(AbsDistMat& mat) {
+
   // Get local matrix
-  const Mat& mat_local = mat.LockedMatrix();
+  Mat& mat_local = mat.Matrix();
+  const El::Int local_height = mat.LocalHeight();
+  const El::Int local_width = mat.LocalWidth();
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::DistData dist_data(mat);
   
   // Allocate pinned memory on host
+  const size_t buffer_size = local_height * local_width * sizeof(DataType);
   DataType* pinned_buffer;
-  FORCE_CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer,
-                            mat_local.Height()*mat_local.Width()*sizeof(DataType)));
-  Mat pinned_mat(mat_local.Height(), mat_local.Width(),
-                 pinned_buffer, mat_local.Height());
+  FORCE_CHECK_CUDA(cudaMallocHost((void**) &pinned_buffer, buffer_size));
+  Mat pinned_mat(local_height, local_width, pinned_buffer, local_height);
 
   // Copy data to pinned memory
   Copy(mat_local, pinned_mat);
-  
+  mat.Empty();
+
   // Reconfigure matrix around pinned memory
-  mat.Attach(mat.Height(),
-             mat.Width(),
-             mat.Grid(),
-             mat.ColAlign(),
-             mat.RowAlign(),
-             pinned_mat,
-             mat.Root());
+  ElMat* elemental_mat = dynamic_cast<ElMat*>(&mat);
+  BlockMat* block_mat = dynamic_cast<BlockMat*>(&mat);
+  if(elemental_mat != nullptr) {
+    elemental_mat->Attach(height,
+                          width,
+                          mat.Grid(),
+                          dist_data.colAlign,
+                          dist_data.rowAlign,
+                          pinned_mat,
+                          dist_data.root);
+  } else if(block_mat != nullptr) {
+    block_mat->Attach(height,
+                      width,
+                      mat.Grid(),
+                      dist_data.blockHeight,
+                      dist_data.blockWidth,
+                      dist_data.colAlign,
+                      dist_data.rowAlign,
+                      dist_data.colCut,
+                      dist_data.rowCut,
+                      pinned_mat,
+                      dist_data.root);
+  } else {
+    throw lbann::lbann_exception("cudnn_manager: could not cast AbsDistMat to ElMat or BlockMat");
+  }
 
 }
 
-void cudnn_manager::unpin_matrix(ElMat& mat) {
-  
+void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
+
+  // Matrix parameters
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::DistData dist_data(mat);
+  DataType *buffer = mat.Buffer();
+
   // Copy data to unpinned memory
+  const Mat mat_local_copy(mat.LockedMatrix());
+
+  // Allocate new memory owned by matrix
+  mat.Empty();
+  mat.Resize(height, width);
+  mat.AlignWith(dist_data);
+
+  // Copy data to new memory
   Mat& mat_local = mat.Matrix();
-  Mat new_mat_local(mat_local);
+  El::Copy(mat_local_copy, mat_local);
 
   // Deallocate pinned memory
-  FORCE_CHECK_CUDA(cudaFreeHost(mat_local.Buffer()));
-
-  // Reconfigure matrix around unpinned memory
-  mat.Attach(mat.Height(),
-             mat.Width(),
-             mat.Grid(),
-             mat.ColAlign(),
-             mat.RowAlign(),
-             new_mat_local,
-             mat.Root());
+  FORCE_CHECK_CUDA(cudaFreeHost(buffer));
 
 }
 

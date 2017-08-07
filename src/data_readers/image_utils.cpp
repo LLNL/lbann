@@ -249,6 +249,7 @@ bool lbann::image_utils::savePNG(const char *Imagefile, int Width, int Height, b
 }
 
 bool lbann::image_utils::loadJPG(const char *Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {

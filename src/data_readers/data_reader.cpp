@@ -30,13 +30,11 @@
 
 namespace lbann {
 
-void generic_data_reader::setup(int base_offset, int batch_stride, int sample_stride, int model_offset,
-                       lbann_comm *comm) {
-  m_model_offset = model_offset;
-  m_base_offset = base_offset;
-  m_batch_stride = batch_stride;
-  m_sample_stride = sample_stride;
-  m_last_mini_batch_stride = batch_stride;
+void generic_data_reader::setup() {
+  m_base_offset = 0;
+  m_sample_stride = 1;
+  m_mini_batch_stride = 0;
+  m_last_mini_batch_stride = 0;
   m_current_mini_batch_idx = 0;
   m_num_iterations_per_epoch = 0;
   m_global_mini_batch_size = 0;
@@ -44,17 +42,11 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
   /// The amount of space needed will vary based on input layer type,
   /// but the batch size is the maximum space necessary
-  El::Zeros(m_indices_fetched_per_mb, m_batch_size, 1);
+  El::Zeros(m_indices_fetched_per_mb, m_mini_batch_size, 1);
 
-  if(comm != NULL) {
-    m_use_alt_last_mini_batch_size = true;
-    m_num_iterations_per_epoch = m_num_mini_batches_per_reader;
-  } else {
-    /// By default each data reader will plan to process the entire data set
-    m_num_iterations_per_epoch = ceil((float) this->getNumData() / (float) m_batch_size);
-  }
+  set_initial_position();
 
-  m_current_pos = m_base_offset + m_model_offset;
+  // Shuffle the data
   if (not m_first_n) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                  get_data_seq_generator());
@@ -62,16 +54,14 @@ void generic_data_reader::setup(int base_offset, int batch_stride, int sample_st
 
 }
 
-void generic_data_reader::setup() {
-  generic_data_reader::setup(0, m_batch_size);
-}
-
 int lbann::generic_data_reader::fetch_data(Mat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data reader load error: !position_valid");
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+      + " :: generic data reader load error: !position_valid"
+      + " -- current pos = " + std::to_string(m_current_pos)
+      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
   }
 
   /// Allow each thread to perform any preprocessing necessary on the
@@ -81,7 +71,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
     preprocess_data_source(omp_get_thread_num());
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -127,7 +117,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -164,7 +154,7 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = getm_batch_size();
+  int current_batch_size = get_current_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
@@ -195,48 +185,53 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
 }
 
 bool generic_data_reader::update() {
-  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
-  if(m_use_alt_last_mini_batch_size && ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
-    //    std::cout << "Data reader last update update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_last_mini_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
-    m_current_pos += m_last_mini_batch_stride;
-  } else {
-    //    std::cout << "Data reader update the current position is " << m_current_pos << " and the next postion is going to be " << (m_current_pos + m_batch_stride) << " and the number of samples total is " << m_shuffled_indices.size() << std::endl;
-    m_current_pos += m_batch_stride;
-  }
+  m_current_pos = get_next_position();
 
   /// Maintain the current width of the matrix
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
-  if (m_current_pos < (int)m_shuffled_indices.size()) {
-    m_current_mini_batch_idx++;
-    return true;
-  } else {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+    if (m_current_pos < (int)m_shuffled_indices.size()) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+        + " :: generic data reader update error: the epoch is complete,"
+        + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
+                        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
     if (not m_first_n) {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
-    m_current_mini_batch_idx = 0;
-    m_current_pos = m_base_offset + m_model_offset;
+    set_initial_position();
     return false;
+  }else {
+    m_current_mini_batch_idx += m_iteration_stride;
+    return true;
   }
 }
 
-int generic_data_reader::getm_batch_size() const {
-  if (m_use_alt_last_mini_batch_size &&
-      m_current_mini_batch_idx >= (m_num_mini_batches_per_reader-1)) {
+int generic_data_reader::get_current_mini_batch_size() const {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_last_mini_batch_size;
   } else {
-    return m_batch_size;
+    return m_mini_batch_size;
+  }
+}
+
+int generic_data_reader::get_current_global_mini_batch_size() const {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+    return m_global_last_mini_batch_size;
+  } else {
+    return m_global_mini_batch_size;
   }
 }
 
 int generic_data_reader::get_next_position() const {
-  /// Is the mini-batch that is about to finish equal to the second to last mini-batch
-  if (m_use_alt_last_mini_batch_size &&
-      ((m_current_mini_batch_idx+1) >= (m_num_mini_batches_per_reader-1))) {
+  /// Is the mini-batch that is about to finish the last mini-batch
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
     return m_current_pos + m_last_mini_batch_stride;
   } else {
-    return m_current_pos + m_batch_stride;
+    return m_current_pos + m_mini_batch_stride;
   }
 }
 
@@ -251,28 +246,28 @@ void generic_data_reader::select_subset_of_data() {
 
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
-    if(count > getNumData()) {
+    if(count > get_num_data()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
-        std::to_string(count) + " is > getNumData=" +
-        std::to_string(getNumData()));
+        std::to_string(count) + " is > get_num_data=" +
+        std::to_string(get_num_data()));
     }
     m_shuffled_indices.resize(get_max_sample_count());
   } else if (has_use_percent()) {
-    m_shuffled_indices.resize(get_use_percent()*getNumData());
+    m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
 
   if (has_validation_percent()) {
-    long unused = get_validation_percent()*getNumData(); //getNumData() = m_shuffled_indices.size()
-    long use_me = getNumData() - unused;
+    long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
+    long use_me = get_num_data() - unused;
     if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
     }
   }
 
-  if(!get_firstN()) {
+  if(get_firstN()) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
     std::sort(m_unused_indices.begin(), m_unused_indices.end());
   }

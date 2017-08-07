@@ -54,13 +54,13 @@ double categorical_cross_entropy::compute_categorical_cross_entropy(const AbsDis
   double total_error = 0;
   for(int c = 0; c < groundtruth_v.LocalWidth(); c++) {
     for(int r = 0; r < groundtruth_v.LocalHeight(); r++) {
-      const DataType true_val = groundtruth_v.GetLocal(r,c);
-      if(true_val != DataType(0)) {
-        double pred_val = predictions_v.GetLocal(r,c);
-        if(pred_val > DataType(0)) {
+      const double true_val = groundtruth_v.GetLocal(r,c);
+      if(true_val != double(0)) {
+        const double pred_val = predictions_v.GetLocal(r,c);
+        if(pred_val > double(0)) {
           total_error += - true_val * std::log(pred_val);
         } else {
-          total_error = DataType(INFINITY);
+          total_error = std::numeric_limits<double>::infinity();
         }
       }
     }

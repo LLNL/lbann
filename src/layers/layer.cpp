@@ -94,9 +94,10 @@ Layer::Layer(const int index, lbann_comm *comm)
   m_fp_output_pinned = false;
   m_bp_input_pinned = false;
   m_bp_output_pinned = false;
-
+  m_owns_gpu_fp_input = false;
+  m_owns_gpu_bp_input = false;
   m_prev_neurons_cudnn_desc = NULL;  
-  m_neurons_cudnn_desc = NULL;  
+  m_neurons_cudnn_desc = NULL;
 #endif // __LIB_CUDNN
 
   reset_counters();
@@ -193,10 +194,10 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+    if(m_owns_gpu_fp_input) {
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     }
-    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
+    if(m_owns_gpu_bp_input) {
       m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     }
     if(m_fp_input_pinned) {
@@ -244,7 +245,7 @@ void Layer::forward_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+    if(m_owns_gpu_fp_input) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -296,7 +297,7 @@ void Layer::back_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
+    if(m_owns_gpu_bp_input) {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -446,7 +447,7 @@ void Layer::setup_gpu() {
   input_dims.insert(input_dims.begin(), m_mini_batch_size_per_gpu);
   // Tensor descriptor must have at least 4 dimensions
   while (input_dims.size() < 4) {
-    input_dims.insert(input_dims.begin(), 1);
+    input_dims.push_back(1);
   }
   std::vector<int> input_strides(input_dims.size());
   input_strides[input_strides.size()-1]  = 1;
@@ -464,7 +465,7 @@ void Layer::setup_gpu() {
   output_dims.insert(output_dims.begin(), m_mini_batch_size_per_gpu);
   // Tensor descriptor must have at least 4 dimensions
   while (output_dims.size() < 4) {
-    output_dims.insert(output_dims.begin(), 1);
+    output_dims.push_back(1);
   }
   std::vector<int> output_strides(output_dims.size());
   output_strides[output_strides.size()-1]  = 1;
@@ -488,11 +489,13 @@ void Layer::setup_gpu() {
     m_cudnn->allocate_on_gpus(m_prev_activations_d,
                               m_num_prev_neurons,
                               m_mini_batch_size_per_gpu);
+    m_owns_gpu_fp_input = true;
   }
   if(m_prev_layer == NULL || !m_next_layer->using_gpus()) {
     m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
                               m_num_neurons,
                               m_mini_batch_size_per_gpu);
+    m_owns_gpu_bp_input = true;
   }
 
 #endif // __LIB_CUDNN
@@ -589,7 +592,7 @@ void Layer::pin_data() {
     if(!m_using_gpus
        && m_next_layer != NULL
        && m_next_layer->using_gpus()) {
-      const El::DistData& next_dist = m_next_layer->fp_input(this).DistData();
+      const El::DistData& next_dist = m_next_layer->bp_output(this).DistData();
       const El::DistData& curr_dist = m_activations->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -661,7 +664,7 @@ void Layer::pin_data() {
     if(!m_using_gpus
        && m_prev_layer != NULL
        && m_prev_layer->using_gpus()) {
-      const El::DistData& next_dist = m_prev_layer->bp_input(this).DistData();
+      const El::DistData& next_dist = m_prev_layer->fp_output(this).DistData();
       const El::DistData& curr_dist = m_error_signal->DistData();
       if(next_dist.colDist == curr_dist.colDist
          && next_dist.rowDist == curr_dist.rowDist) {
@@ -696,16 +699,8 @@ void Layer::pin_data() {
 
 #endif // __LIB_CUDNN
 
-const AbsDistMat& Layer::fp_input(const Layer* prev_layer) const {
-  return *m_prev_activations;
-}
-
 const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
   return *m_activations;
-}
-
-const AbsDistMat& Layer::bp_input(const Layer* next_layer) const {
-  return *m_prev_error_signal;
 }
 
 const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {

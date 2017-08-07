@@ -34,7 +34,7 @@ namespace lbann {
 /**
  * Parallel I/O routines for managing distributed minibatches
  */
-class distributed_minibatch : public generic_data_distribution {
+class distributed_minibatch : public virtual generic_data_distribution {
  public:
   distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   distributed_minibatch(
@@ -48,7 +48,8 @@ class distributed_minibatch : public generic_data_distribution {
   bool is_data_set_processed();
 
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader);
-  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers);
+  void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);
+  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers);
 };
 
 }  // namespace lbann

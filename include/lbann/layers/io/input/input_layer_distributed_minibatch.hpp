@@ -42,11 +42,13 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
  public:
  protected:
   Mat X_local; /** Local matrix that holds data from data reader */
+  Mat X_local_v; /** View of local matrix that holds data from data reader */
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
   input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-    : input_layer(comm, num_parallel_readers, data_readers),
+    : generic_data_distribution(comm, num_parallel_readers, data_readers),
+      input_layer(comm, num_parallel_readers, data_readers),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
       Xs(comm->get_model_grid()) {
 
@@ -72,27 +74,9 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_sets_span_models) {
-      int stride = Layer::m_comm->get_num_models() * distributed_minibatch::m_num_parallel_readers_training * max_mb_size;
-      int base_offset = Layer::m_comm->get_rank_in_model() * Layer::m_comm->get_num_models() * max_mb_size;
-      int model_offset = Layer::m_comm->get_model_rank() * max_mb_size;
-      //cout << "["<< Layer::m_comm->get_rank_in_world() << "] Setting up input layer, with " << Layer::m_comm->get_num_models() << " models and " << m_num_parallel_readers_training << " parallel readers and " << Layer::m_mini_batch_size << " mb size, which gives a stride of " << stride << " and my model offset is " << model_offset << " and my base offset is " << base_offset /*(Layer::m_comm->get_rank_in_model() * Layer::m_mini_batch_size)*/ << endl;
-      io_layer::setup_data_readers_for_training(base_offset,
-                                                          stride, 1,
-                                                          model_offset);
-      distributed_minibatch::calculate_num_iterations_per_epoch_spanning_models(max_mb_size,
-                                                                this->m_training_dataset.data_reader);
-      /// Note that the data readers for evaluation should not be partitioned over multiple models (otherwise each model will be scored on a different set of data)
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * max_mb_size,
-                                                            distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
-      distributed_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
-                                                                this->m_validation_dataset.data_reader);
-      distributed_minibatch::calculate_num_iterations_per_epoch_single_model(max_mb_size,
-                                                                this->m_testing_dataset.data_reader);
+      distributed_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
-      io_layer::setup_data_readers_for_training(Layer::m_comm->get_rank_in_model() * max_mb_size,
-                                                          distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
-      io_layer::setup_data_readers_for_evaluation(Layer::m_comm->get_rank_in_model() * max_mb_size,
-                                                            distributed_minibatch::m_num_parallel_readers_training * max_mb_size);
+      distributed_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
     X_local.Resize(this->m_num_neurons, max_mb_size);
@@ -103,10 +87,16 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   }
 
  protected:
+  void fp_set_std_matrix_view() {
+    input_layer::fp_set_std_matrix_view();
+    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
+  }
+
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() {
 
-    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local);
+    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local_v);
     if(distributed_minibatch::is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);

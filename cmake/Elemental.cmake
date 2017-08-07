@@ -7,12 +7,28 @@ endif()
 option(FORCE_ELEMENTAL_BUILD "Elemental: force build" OFF)
 
 # Check if Elemental has been provided
-if(Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
+if (Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
 
-  # Status message
-  message(STATUS "Found Elemental: ${Elemental_DIR}")
+  # Look for Elemental in the directory specified and not the system paths
+  find_package(Elemental NO_MODULE
+    HINTS ${Elemental_DIR} ${ELEMENTAL_DIR}
+    $ENV{Elemental_DIR} $ENV{ELEMENTAL_DIR}
+    PATH_SUFFIXES CMake/elemental
+    NO_DEFAULT_PATH)
+  # Check for Elemental in the standard places
+  find_package(Elemental NO_MODULE)
 
-else()
+  # Cleanup Elemental_DIR, which gets munged during the find process
+  get_filename_component(Elemental_DIR ${Elemental_DIR}/../.. ABSOLUTE)
+
+  list(REMOVE_ITEM Elemental_INCLUDE_DIRS "QD_INCLUDES-NOTFOUND")
+  list(REMOVE_DUPLICATES Elemental_INCLUDE_DIRS)
+endif ()
+
+# Fall back on building from source
+if (NOT Elemental_FOUND)
+  
+  message(STATUS "No existing Elemental install found. Building from source.")
 
   # Git repository URL and tag
   if(NOT ELEMENTAL_URL)
@@ -131,23 +147,35 @@ else()
   # Get install directory
   set(Elemental_DIR ${CMAKE_INSTALL_PREFIX})
 
+  # Set the include dirs
+  set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
+
+  # Get library
+  if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)
+    set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}El${CMAKE_STATIC_LIBRARY_SUFFIX})
+  else()
+    set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}El${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif()
+
   # LBANN has built Elemental
   set(LBANN_BUILT_ELEMENTAL TRUE)
 
+else ()
+  message(STATUS "Found Elemental: ${Elemental_DIR}")
 endif()
 
 # Include header files
-set(Elemental_INCLUDE_DIRS ${Elemental_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
+#
+# FIXME: This should not be done this way; rather,
+# target_include_directories() should be used. Or some sort of
+# interface target.
 include_directories(SYSTEM ${Elemental_INCLUDE_DIRS})
 
-# Get library
-if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)
-  set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}El${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-  set(Elemental_LIBRARIES ${Elemental_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}El${CMAKE_SHARED_LIBRARY_SUFFIX})
-endif()
-
 # Add preprocessor flag for Elemental
+#
+# FIXME: This should not be done this way; rather,
+# target_compile_definitions() should be used. Or some sort of
+# interface target.
 add_definitions(-D__LIB_ELEMENTAL)
 
 # LBANN has access to Elemental

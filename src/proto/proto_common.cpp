@@ -248,7 +248,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           layer_id,
@@ -256,7 +257,8 @@ void add_layers(
           num_neurons,
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
-          ell.has_bias());
+          ell.has_bias(),
+          cudnn);
       }
       double l2_regularization_factor = ell.l2_regularization_factor();
       if(l2_regularization_factor != double(0.0)) {
@@ -456,7 +458,7 @@ void add_layers(
           ell.scale_init(),
           ell.bias_init(),
           ell.epsilon(),
-          ell.use_global_stats());
+          cudnn);
       }
       all_layers[layer.index()] = d;
       layer_mapping[layer.index()] = model->get_layers().size();
@@ -843,6 +845,18 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_dataset
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_dataset()) {
+      const lbann_data::CallbackCheckDataset& c = callback.check_dataset();
+      if (master) {
+        cout << "adding callback to check the dataset" << endl;
+      }
+      lbann_callback_check_dataset *check_dataset_cb = new lbann_callback_check_dataset();
+      model->add_callback(check_dataset_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: disp_io_stats
     //////////////////////////////////////////////////////////////////
     if (callback.has_disp_io_stats()) {
@@ -998,6 +1012,89 @@ void init_callbacks(
       }
       model->add_callback(debug_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_small
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_small()) {
+      if (master) {
+        std::cout << "adding check_small callback" << std::endl;
+      }
+      lbann_callback_checksmall *checksmall_cb = new lbann_callback_checksmall();
+      model->add_callback(checksmall_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: check_nan
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_check_nan()) {
+      if (master) {
+        std::cout << "adding check_nan callback" << std::endl;
+      }
+      lbann_callback_checknan *checknan_cb = new lbann_callback_checknan();
+      model->add_callback(checknan_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: hang
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_hang()) {
+      const lbann_data::CallbackHang& c = callback.hang();
+      int rank_to_hang = c.rank();
+      if (master) {
+        if (rank_to_hang == -1) {
+          std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***" <<
+            std::endl;
+        } else {
+          std::cout << "*** HANGING RANK " << rank_to_hang <<
+            " IN HANG CALLBACK ***" << std::endl;
+        }
+      }
+      lbann_callback_hang *hang_cb = new lbann_callback_hang(rank_to_hang);
+      model->add_callback(hang_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: drop_fixed_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_drop_fixed_learning_rate()) {
+      const lbann_data::CallbackDropFixedLearningRate& c =
+        callback.drop_fixed_learning_rate();
+      if (master) {
+        std::cout << "adding drop_fixed_learning_rate callback" << std::endl;
+      }
+      std::unordered_set<uint> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(c.layer(i));
+      }
+      std::vector<int64_t> drop_epochs;
+      for (int i = 0; i < c.drop_epoch_size(); ++i) {
+        drop_epochs.push_back(c.drop_epoch(i));
+      }
+      lbann_callback_drop_fixed_learning_rate *dflr = new
+        lbann_callback_drop_fixed_learning_rate(
+          drop_epochs, c.amt(), layers);
+      model->add_callback(dflr);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: linear_growth_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_linear_growth_learning_rate()) {
+      const lbann_data::CallbackLinearGrowthLearningRate& c =
+        callback.linear_growth_learning_rate();
+      if (master) {
+        std::cout << "adding linear_growth_learning_rate callback" << std::endl;
+      }
+      std::unordered_set<uint> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(c.layer(i));
+      }
+      lbann_callback_linear_growth_learning_rate *lglr = new
+        lbann_callback_linear_growth_learning_rate(
+          c.target(), c.num_epochs(), layers);
+      model->add_callback(lglr);
+    }
   }
 
 }
@@ -1143,8 +1240,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
-    } else if (name == "cnpy") {
-      reader = new cnpy_reader(mini_batch_size, shuffle);
+    } else if (name == "numpy") {
+      reader = new numpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
     } else if (name == "synthetic") {
@@ -1216,11 +1313,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
-      } else if (name == "cnpy") {
-        reader_validation = new cnpy_reader(mini_batch_size, shuffle);
-        (*(cnpy_reader *)reader_validation) = (*(cnpy_reader *)reader);
+      } else if (name == "numpy") {
+        reader_validation = new numpy_reader(mini_batch_size, shuffle);
+        (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
+        (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
         /*
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
@@ -1243,12 +1341,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_validation->use_unused_index_set();
 
       if (master) {
-        size_t num_train = reader->getNumData();
-        size_t num_validate = reader_validation->getNumData();
+        size_t num_train = reader->get_num_data();
+        size_t num_validate = reader_validation->get_num_data();
         double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
-        cout << "Training using " << train_percent << "% of the training data set, which is " << reader->getNumData() << " samples." << endl
-             << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->getNumData() << " samples." << endl;
+        cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << endl
+             << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << endl;
       }
 
       data_readers[execution_mode::validation] = reader_validation;
@@ -1469,6 +1567,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   cout << endl
        << "Running with these parameters:\n"
        << " General:\n"
+       << "  datatype size:        " << sizeof(DataType) << endl
        << "  mini_batch_size:      " << m.mini_batch_size() << endl
        << "  num_epochs:           " << m.num_epochs()  << endl
        << "  block_size:           " << m.block_size()  << endl
