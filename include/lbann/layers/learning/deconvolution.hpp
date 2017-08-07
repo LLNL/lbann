@@ -168,12 +168,12 @@ class deconvolution_layer : public base_convolution_layer {
 
   void setup_data() {
     if(m_bias_scaling_factor == DataType(0)) {
-      El::Zeros(this->m_weights,
+      El::Zeros(*this->m_weights,
                 m_kernel_size / this->m_prev_neuron_dims[0],
                 this->m_prev_neuron_dims[0]);
     }
     else {
-      El::Zeros(this->m_weights,
+      El::Zeros(*this->m_weights,
                 m_kernel_size / this->m_prev_neuron_dims[0],
                 this->m_prev_neuron_dims[0] + 1);
     }
