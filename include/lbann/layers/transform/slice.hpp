@@ -41,17 +41,23 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class slice_layer : public transform {
  private:
 
-  /// List of child layers
+  /** List of child layers. */
   std::vector<const Layer*> m_children;
-  /// Tensor dimension to slice
+  /** Tensor dimension to slice. */
   int m_slice_axis;
-  /// Slice points for each child layer
+  /** Slice points for each child layer. */
   std::vector<int> m_slice_points;
 
-  /// View of forward prop output, as seen by child layers
-  AbsDistMat* m_fp_output_v;
-  /// View of back prop input from child layers
-  AbsDistMat* m_bp_input_v;
+  /** View of back prop output, as seen by child layers. */
+  AbsDistMat* m_fp_output;
+  /** View into an input tensor slice.
+   *  Used in forward and backward propagation.
+   */
+  AbsDistMat* m_input_slice_v;
+  /** View into an output tensor slice.
+   *  Used in forward and backward propagation.
+   */
+  AbsDistMat* m_output_slice_v;
 
  public:
   /// Constructor
@@ -84,25 +90,25 @@ class slice_layer : public transform {
 
   slice_layer(const slice_layer& other) :
     transform(other) {
-    m_fp_output_v = other.m_fp_output_v->Copy();
-    m_bp_input_v = other.m_bp_input_v->Copy();
+    m_fp_output = other.m_fp_output->Copy();
+    m_input_slice_v = other.m_input_slice_v->Copy();
+    m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   slice_layer& operator=(const slice_layer& other) {
     transform::operator=(other);
-    if(m_fp_output_v) {
-      delete m_fp_output_v;
-    }
-    if(m_bp_input_v) {
-      delete m_bp_input_v;
-    }
-    m_fp_output_v = other.m_fp_output_v->Copy;
-    m_bp_input_v = other.m_bp_input_v->Copy;
+    if(m_fp_output)      delete m_fp_output;
+    if(m_input_slice_v)  delete m_input_slice_v;
+    if(m_output_slice_v) delete m_output_slice_v;
+    m_fp_output = other.m_fp_output->Copy;
+    m_input_slice_v = other.m_input_slice_v->Copy();
+    m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   ~slice_layer() {
-    delete m_fp_output_v;
-    delete m_bp_input_v;
+    delete m_fp_output;
+    delete m_input_slice_v;
+    delete m_output_slice_v;
   }
 
   slice_layer* copy() const { return new slice_layer(*this); }
@@ -199,30 +205,51 @@ class slice_layer : public transform {
 
   void bp_compute() {
 
-    if(m_slice_axis == 0) {
-      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
-      for(size_t i=0; i<m_children.size(); ++i) {
-        El::View(*m_bp_input_v,
-                 *this->m_error_signal,
-                 El::IR(slice_size * m_slice_points[i],
-                        slice_size * m_slice_points[i+1]),
+    // Split the error signal tensor into slices of width 1 along the
+    // slice axis
+    const int num_slices
+      = std::accumulate(this->m_prev_neuron_dims.begin(),
+                        this->m_prev_neuron_dims.begin() + m_slice_axis,
+                        1,
+                        std::multiplies<int>());
+    const int slice_unit_size
+      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
+                        this->m_prev_neuron_dims.end(),
+                        1,
+                        std::multiplies<int>());
+    const int output_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
+    const int output_slice_size = output_slice_dim * slice_unit_size;
+
+    // Copy entries in each child to error signal tensor
+    for(size_t i = 0; i < m_children.size(); ++i) {
+
+      // Split previous error signal tensor into slices
+      const auto& input = m_children[i]->bp_output(this);
+      const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
+      const int input_slice_size = input_slice_dim * slice_unit_size;
+      const int slice_offset_start = m_slice_points[i] * slice_unit_size;
+      const int slice_offset_end = m_slice_points[i+1] * slice_unit_size;
+
+      // Copy slices from previous error signal tensor into error signal tensor
+      for(int slice = 0; slice < num_slices; ++slice) {
+        El::LockedView(*m_input_slice_v,
+                       input,
+                       El::IR(slice * input_slice_size,
+                              (slice+1) * input_slice_size),
+                       El::ALL);
+        El::View(*m_output_slice_v,
+                 *this->m_error_signal_v,
+                 El::IR(slice * output_slice_size + slice_offset_start,
+                        slice * output_slice_size + slice_offset_end),
                  El::ALL);
-        El::Copy(m_children[i]->bp_output(this), *m_bp_input_v);
+        El::Copy(*m_input_slice_v, *m_output_slice_v);
       }
-    }
-    else {
-      // TODO: implement general slice layer
-      throw lbann_exception("slice_layer: currently only implemented with slice axis 0");
+
     }
 
   }
 
   const AbsDistMat& fp_output(const Layer* next_layer) const {
-
-    // Return all neurons if input is null
-    if(next_layer == NULL) {
-      return *m_activations;
-    }
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(m_children.begin(),
@@ -232,19 +259,52 @@ class slice_layer : public transform {
     if(child_index >= (int) m_children.size()) {
       return *m_activations;
     }
+
+    // Split the error signal tensor into slices of width 1 along the
+    // slice axis
+    const int num_slices
+      = std::accumulate(this->m_prev_neuron_dims.begin(),
+                        this->m_prev_neuron_dims.begin() + m_slice_axis,
+                        1,
+                        std::multiplies<int>());
     
-    if(m_slice_axis == 0) {
-      const int channel_size = this->m_num_neurons / this->m_neuron_dims[m_slice_axis];
-      El::LockedView(*m_fp_output_v,
+    const int slice_unit_size
+      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
+                        this->m_prev_neuron_dims.end(),
+                        1,
+                        std::multiplies<int>());
+    const int input_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
+    const int output_slice_dim = m_slice_points[child_index+1] - m_slice_points[child_index];
+    const int input_slice_size = input_slice_dim * slice_unit_size;
+    const int output_slice_size = output_slice_dim * slice_unit_size;
+    const int slice_offset_start = m_slice_points[child_index] * slice_unit_size;
+    const int slice_offset_end = m_slice_points[child_index+1] * slice_unit_size;
+    
+    if(num_slices == 1) {
+      // Return view of error signal slice
+      El::LockedView(*m_output_slice_v,
                      *this->m_activations,
-                     El::IR(channel_size * m_slice_points[child_index],
-                            channel_size * m_slice_points[child_index+1]),
+                     El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
-      return *m_fp_output_v;
+      return *m_output_slice_v;
     }
     else {
-      // TODO: implement general slice layer
-      throw lbann_exception("slice_layer: currently only implemented with slice axis 0");
+      // Copy slices from error signal tensor into output
+      m_fp_output->Resize(output_slice_size, m_activations->Width());
+      for(int slice = 0; slice < num_slices; ++slice) {
+        El::LockedView(*m_input_slice_v,
+                       *this->m_activations,
+                       El::IR(slice * input_slice_size + slice_offset_start,
+                              slice * input_slice_size + slice_offset_end),
+                       El::ALL);
+        El::View(*m_output_slice_v,
+                 *m_fp_output,
+                 El::IR(slice * output_slice_size,
+                        (slice+1) * output_slice_size),
+                 El::ALL);
+        El::Copy(*m_input_slice_v, *m_output_slice_v);
+      }
+      return *m_fp_output;
     }
 
   }
@@ -277,17 +337,19 @@ class slice_layer : public transform {
 /// Matrices should be in MC,MR distributions
 template<> inline void slice_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_fp_output_v = new DistMat(this->m_comm->get_model_grid());
-  m_bp_input_v = new DistMat(this->m_comm->get_model_grid());
+  m_fp_output = new DistMat(this->m_comm->get_model_grid());
+  m_input_slice_v = new DistMat(this->m_comm->get_model_grid());
+  m_output_slice_v = new DistMat(this->m_comm->get_model_grid());
 }
 
 /// Matrices should be in Star,VC distributions
 template<> inline void slice_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_fp_output_v = new StarVCMat(this->m_comm->get_model_grid());
-  m_bp_input_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_fp_output = new StarVCMat(this->m_comm->get_model_grid());
+  m_input_slice_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_output_slice_v = new StarVCMat(this->m_comm->get_model_grid());
 }
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SLICE_HPP_INCLUDED
+#endif // LBANN_LAYER_SLICE_HPP_INCLUDED

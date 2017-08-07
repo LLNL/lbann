@@ -217,7 +217,7 @@ class concatenation_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
 
     // Copy entries in each parent to neuron tensor
-    for(int i = 0; i < m_parents.size(); ++i) {
+    for(size_t i = 0; i < m_parents.size(); ++i) {
 
       // Split previous neuron tensor into slices
       const auto& input = m_parents[i]->fp_output(this);
@@ -283,7 +283,7 @@ class concatenation_layer : public transform {
     if(num_slices == 1) {
       // Return view of error signal slice
       El::LockedView(*m_output_slice_v,
-                     this->m_error_signal,
+                     *this->m_error_signal,
                      El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
       return *m_output_slice_v;
@@ -293,7 +293,7 @@ class concatenation_layer : public transform {
       m_bp_output->Resize(output_slice_size, m_error_signal->Width());
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       this->m_error_signal,
+                       *this->m_error_signal,
                        El::IR(slice * input_slice_size + slice_offset_start,
                               slice * input_slice_size + slice_offset_end),
                        El::ALL);
