@@ -41,17 +41,23 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class concatenation_layer : public transform {
  private:
 
-  /// List of parent layers
+  /** List of parent layers. */
   std::vector<const Layer*> m_parents;
-  /// Tensor dimension to concatenate
+  /** Tensor dimension to concatenate. */
   int m_concatenation_axis;
-  /// Concatenation points for each parent layer
+  /** Concatenation points for each parent layer. */
   std::vector<int> m_concatenation_points;
 
-  /// View of forward prop input from parent layers
-  AbsDistMat* m_fp_input_v;
-  /// View of back prop output, as seen by parent layers
-  AbsDistMat* m_bp_output_v;
+  /** View of back prop output, as seen by parent layers. */
+  AbsDistMat* m_bp_output;
+  /** View into an input tensor slice.
+   *  Used in forward and backward propagation.
+   */
+  AbsDistMat* m_input_slice_v;
+  /** View into an output tensor slice.
+   *  Used in forward and backward propagation.
+   */
+  AbsDistMat* m_output_slice_v;
 
  public:
   /// Constructor
@@ -75,25 +81,25 @@ class concatenation_layer : public transform {
 
   concatenation_layer(const concatenation_layer& other) :
     transform(other) {
-    m_fp_input_v = other.m_fp_input_v->Copy();
-    m_bp_output_v = other.m_bp_output_v->Copy();
+    m_bp_output = other.m_bp_output->Copy();
+    m_input_slice_v = other.m_input_slice_v->Copy();
+    m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   concatenation_layer& operator=(const concatenation_layer& other) {
     transform::operator=(other);
-    if(m_fp_input_v) {
-      delete m_fp_input_v;
-    }
-    if(m_bp_output_v) {
-      delete m_bp_output_v;
-    }
-    m_fp_input_v = other.m_fp_input_v->Copy;
-    m_bp_output_v = other.m_bp_output_v->Copy;
+    if(m_bp_output)      delete m_bp_output;
+    if(m_input_slice_v)  delete m_input_slice_v;
+    if(m_output_slice_v) delete m_output_slice_v;
+    m_bp_output = other.m_bp_output->Copy();
+    m_input_slice_v = other.m_input_slice_v->Copy();
+    m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   ~concatenation_layer() {
-    delete m_fp_input_v;
-    delete m_bp_output_v;
+    delete m_bp_output;
+    delete m_input_slice_v;
+    delete m_output_slice_v;
   }
 
   concatenation_layer* copy() const { return new concatenation_layer(*this); }
@@ -195,20 +201,46 @@ class concatenation_layer : public transform {
 
   void fp_compute() {
 
-    if(m_concatenation_axis == 0) {
-      const int channel_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
-      for(size_t i=0; i<m_parents.size(); ++i) {
-        El::View(*m_fp_input_v,
-                 *this->m_activations,
-                 El::IR(channel_size * m_concatenation_points[i],
-                        channel_size * m_concatenation_points[i+1]),
+    // Split the neuron tensor into slices of width 1 along the
+    // concatenation axis
+    const int num_slices
+      = std::accumulate(this->m_neuron_dims.begin(),
+                        this->m_neuron_dims.begin() + m_concatenation_axis,
+                        1,
+                        std::multiplies<int>());
+    const int slice_unit_size
+      = std::accumulate(this->m_neuron_dims.begin() + m_concatenation_axis + 1,
+                        this->m_neuron_dims.end(),
+                        1,
+                        std::multiplies<int>());
+    const int output_slice_dim = this->m_neuron_dims[m_concatenation_axis];
+    const int output_slice_size = output_slice_dim * slice_unit_size;
+
+    // Copy entries in each parent to neuron tensor
+    for(int i = 0; i < m_parents.size(); ++i) {
+
+      // Split previous neuron tensor into slices
+      const auto& input = m_parents[i]->fp_output(this);
+      const int input_slice_dim = m_concatenation_points[i+1] - m_concatenation_points[i];
+      const int input_slice_size = input_slice_dim * slice_unit_size;
+      const int slice_offset_start = m_concatenation_points[i] * slice_unit_size;
+      const int slice_offset_end = m_concatenation_points[i+1] * slice_unit_size;
+
+      // Copy slices from previous neuron tensor into neuron tensor
+      for(int slice = 0; slice < num_slices; ++slice) {
+        El::LockedView(*m_input_slice_v,
+                       input,
+                       El::IR(slice * input_slice_size,
+                              (slice+1) * input_slice_size),
+                       El::ALL);
+        El::View(*m_output_slice_v,
+                 *this->m_activations_v,
+                 El::IR(slice * output_slice_size + slice_offset_start,
+                        slice * output_slice_size + slice_offset_end),
                  El::ALL);
-        El::Copy(m_parents[i]->fp_output(this), *m_fp_input_v);
+        El::Copy(*m_input_slice_v, *m_output_slice_v);
       }
-    }
-    else {
-      // TODO: implement general concatenation layer
-      throw lbann_exception("concatenation_layer: currently only implemented with concatenation axis 0");
+
     }
 
   }
@@ -219,11 +251,6 @@ class concatenation_layer : public transform {
 
   const AbsDistMat& bp_output(const Layer* prev_layer) const {
 
-    // Return entire error signal if input is null
-    if(prev_layer == NULL) {
-      return *m_error_signal;
-    }
-
     // Check if input is in the list of parent layers
     const int parent_index = (std::find(m_parents.begin(),
                                        m_parents.end(),
@@ -232,19 +259,52 @@ class concatenation_layer : public transform {
     if(parent_index >= (int) m_parents.size()) {
       return *m_error_signal;
     }
+
+    // Split the error signal tensor into slices of width 1 along the
+    // concatenation axis
+    const int num_slices
+      = std::accumulate(this->m_neuron_dims.begin(),
+                        this->m_neuron_dims.begin() + m_concatenation_axis,
+                        1,
+                        std::multiplies<int>());
     
-    if(m_concatenation_axis == 0) {
-      const int slice_size = this->m_num_neurons / this->m_neuron_dims[m_concatenation_axis];
-      El::LockedView(*m_bp_output_v,
-                     *this->m_error_signal,
-                     El::IR(slice_size * m_concatenation_points[parent_index],
-                            slice_size * m_concatenation_points[parent_index+1]),
+    const int slice_unit_size
+      = std::accumulate(this->m_neuron_dims.begin() + m_concatenation_axis + 1,
+                        this->m_neuron_dims.end(),
+                        1,
+                        std::multiplies<int>());
+    const int input_slice_dim = this->m_neuron_dims[m_concatenation_axis];
+    const int output_slice_dim = m_concatenation_points[parent_index+1] - m_concatenation_points[parent_index];
+    const int input_slice_size = input_slice_dim * slice_unit_size;
+    const int output_slice_size = output_slice_dim * slice_unit_size;
+    const int slice_offset_start = m_concatenation_points[parent_index] * slice_unit_size;
+    const int slice_offset_end = m_concatenation_points[parent_index+1] * slice_unit_size;
+    
+    if(num_slices == 1) {
+      // Return view of error signal slice
+      El::LockedView(*m_output_slice_v,
+                     this->m_error_signal,
+                     El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
-      return *m_bp_output_v;
+      return *m_output_slice_v;
     }
     else {
-      // TODO: implement general concatenation layer
-      throw lbann_exception("concatenation_layer: currently only implemented with concatenation axis 0");
+      // Copy slices from error signal tensor into output
+      m_bp_output->Resize(output_slice_size, m_error_signal->Width());
+      for(int slice = 0; slice < num_slices; ++slice) {
+        El::LockedView(*m_input_slice_v,
+                       this->m_error_signal,
+                       El::IR(slice * input_slice_size + slice_offset_start,
+                              slice * input_slice_size + slice_offset_end),
+                       El::ALL);
+        El::View(*m_output_slice_v,
+                 *m_bp_output,
+                 El::IR(slice * output_slice_size,
+                        (slice+1) * output_slice_size),
+                 El::ALL);
+        El::Copy(*m_input_slice_v, *m_output_slice_v);
+      }
+      return *m_bp_output;
     }
 
   }
@@ -254,17 +314,19 @@ class concatenation_layer : public transform {
 /// Matrices should be in MC,MR distributions
 template<> inline void concatenation_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_fp_input_v = new DistMat(this->m_comm->get_model_grid());
-  m_bp_output_v = new DistMat(this->m_comm->get_model_grid());
+  m_bp_output = new DistMat(this->m_comm->get_model_grid());
+  m_input_slice_v = new DistMat(this->m_comm->get_model_grid());
+  m_output_slice_v = new DistMat(this->m_comm->get_model_grid());
 }
 
 /// Matrices should be in Star,VC distributions
 template<> inline void concatenation_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_fp_input_v = new StarVCMat(this->m_comm->get_model_grid());
-  m_bp_output_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_bp_output = new StarVCMat(this->m_comm->get_model_grid());
+  m_input_slice_v = new StarVCMat(this->m_comm->get_model_grid());
+  m_output_slice_v = new StarVCMat(this->m_comm->get_model_grid());
 }
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_CONCATENATION_HPP_INCLUDED
+#endif // LBANN_LAYER_CONCATENATION_HPP_INCLUDED
