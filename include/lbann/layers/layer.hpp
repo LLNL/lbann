@@ -182,6 +182,12 @@ class Layer {
   virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
   /** Get backward propagation output, as seen by previous layer. */
   virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
+#ifdef __LIB_CUDNN
+  /** Get forward propagation output on GPUs, as seen by next layer. */
+  virtual const std::vector<DataType*>& gpu_fp_output(const Layer* next_layer = NULL) const;
+  /** Get backward propagation output on GPUs, as seen by previous layer. */
+  virtual const std::vector<DataType*>& gpu_bp_output(const Layer* prev_layer = NULL) const;
+#endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
@@ -223,7 +229,7 @@ class Layer {
 #ifdef __LIB_CUDNN
   /** Pin host memory if needed for GPU memory transfers. */
   virtual void pin_data();
-#endif
+#endif // __LIB_CUDNN
 
   /**
    * Called by setup(), each layer should override this to call its parent and
@@ -278,13 +284,13 @@ class Layer {
   int m_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
-  std::vector<DataType *> m_prev_activations_d;
+  std::vector<DataType*> m_prev_activations_d;
   /** GPU memory for activations. */
-  std::vector<DataType *> m_activations_d;
+  std::vector<DataType*> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
-  std::vector<DataType *> m_prev_error_signal_d;
+  std::vector<DataType*> m_prev_error_signal_d;
   /** GPU memory for error signal. */
-  std::vector<DataType *> m_error_signal_d;
+  std::vector<DataType*> m_error_signal_d;
   /** Whether this layer owns m_prev_activations_d. */
   bool m_owns_gpu_fp_input;
   /** Whether this layer owns m_prev_error_signal_d. */
@@ -295,7 +301,7 @@ class Layer {
   /** cuDNN descriptor for neuron tensor. */
   cudnnTensorDescriptor_t m_neurons_cudnn_desc;
 
-#endif
+#endif // __LIB_CUDNN
 
   /** Time spent in forward propagation. */
   double fp_time;

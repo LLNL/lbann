@@ -250,7 +250,7 @@ void Layer::forward_prop() {
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_activations_d = m_prev_layer->m_activations_d;
+      m_prev_activations_d = m_prev_layer->gpu_fp_output(this);
     }
   }
 #endif // __LIB_CUDNN
@@ -302,7 +302,7 @@ void Layer::back_prop() {
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_error_signal_d = m_next_layer->m_error_signal_d;
+      m_prev_error_signal_d = m_next_layer->gpu_bp_output(this);
     }
   }
 #endif // __LIB_CUDNN
@@ -706,6 +706,18 @@ const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
 const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
   return *m_error_signal;
 }
+
+#ifdef __LIB_CUDNN
+
+const std::vector<DataType*>& Layer::gpu_fp_output(const Layer* next_layer) const {
+  return m_activations_d;
+}
+
+const std::vector<DataType*>& Layer::gpu_bp_output(const Layer* prev_layer) const {
+  return m_error_signal_d;
+}
+
+#endif // __LIB_CUDNN
 
 const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
