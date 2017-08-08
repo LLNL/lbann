@@ -44,9 +44,9 @@
 #ifdef __LIB_CUDNN
 #define FORCE_CHECK_CUDA(cuda_call)                                     \
   do {                                                                  \
-    const cudaError_t status = cuda_call;                               \
-    if (status != cudaSuccess) {                                        \
-      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
+    const cudaError_t cuda_status = cuda_call;                          \
+    if (cuda_status != cudaSuccess) {                                   \
+      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("CUDA error");                       \
@@ -54,9 +54,9 @@
   } while (0)
 #define FORCE_CHECK_CUDNN(cudnn_call)                                   \
   do {                                                                  \
-    const cudnnStatus_t status = cudnn_call;                            \
-    if (status != CUDNN_STATUS_SUCCESS) {                               \
-      std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
+    const cudnnStatus_t cudnn_status = cudnn_call;                      \
+    if (cudnn_status != CUDNN_STATUS_SUCCESS) {                         \
+      std::cerr << "cuDNN error: " << cudnnGetErrorString(cudnn_status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("cuDNN error");                      \
@@ -64,8 +64,8 @@
   } while (0)
 #define FORCE_CHECK_CUBLAS(cublas_call)                                 \
   do {                                                                  \
-    const cublasStatus_t status = cublas_call;                          \
-    if (status != CUBLAS_STATUS_SUCCESS) {                              \
+    const cublasStatus_t cublas_status = cublas_call;                   \
+    if (cublas_status != CUBLAS_STATUS_SUCCESS) {                       \
       std::cerr << "CUBLAS error";                                      \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \

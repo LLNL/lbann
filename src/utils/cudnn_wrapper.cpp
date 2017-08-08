@@ -144,10 +144,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
                                                     int height,
                                                     int width_per_gpu) {
 
-#ifdef LBANN_DEBUG
-  if(gpu_data.size() != 0) {
+  if(!gpu_data.empty()) {
     // Check that list of pointers has valid number of entries
-    if(gpu_data.size() != m_num_gpus) {
+    if((int) gpu_data.size() != m_num_gpus) {
       throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
     }
     // Check that list of pointers only contains null pointers
@@ -157,7 +156,6 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
       }
     }
   }
-#endif // #ifdef LBANN_DEBUG
 
   // Allocate GPU memory
   gpu_data.resize(m_num_gpus, nullptr);
@@ -175,7 +173,7 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
 
   // Stop if list of pointers is empty
-  if(gpu_data.size() == 0) {
+  if(gpu_data.empty()) {
     return;
   }
 
@@ -537,7 +535,7 @@ void cudnn_manager::set_work_space_size(int i, size_t size) {
   }
 }
 
-void cudnn_manager::pin_matrix(AbsDistMat& mat) {
+void cudnn_manager::pin_matrix(AbsDistMat& mat) {  
 
   // Get local matrix
   Mat& mat_local = mat.Matrix();
@@ -546,6 +544,15 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::DistData dist_data(mat);
+  const DataType* buffer = mat.LockedBuffer();
+
+  // Check that data buffer is unpinned memory
+  cudaPointerAttributes buffer_attributes;
+  cudaError_t status = cudaPointerGetAttributes(&buffer_attributes, buffer);
+  if(status != cudaErrorInvalidValue) {
+    FORCE_CHECK_CUDA(status);
+    return;
+  }
   
   // Allocate pinned memory on host
   const size_t buffer_size = local_height * local_width * sizeof(DataType);
@@ -593,6 +600,19 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
   const El::Int width = mat.Width();
   const El::DistData dist_data(mat);
   DataType *buffer = mat.Buffer();
+
+  // Check that data buffer is pinned memory on host
+  cudaPointerAttributes buffer_attributes;
+  cudaError_t status = cudaPointerGetAttributes(&buffer_attributes, buffer);
+  if(status == cudaErrorInvalidValue) {
+    return;
+  }
+  if(status != cudaErrorInvalidDevice) {
+    FORCE_CHECK_CUDA(status);
+  }
+  if(buffer_attributes.memoryType != cudaMemoryTypeHost) {
+    throw lbann::lbann_exception("cudnn_wrapper: can only unpin host memory");
+  }
 
   // Copy data to unpinned memory
   const Mat mat_local_copy(mat.LockedMatrix());

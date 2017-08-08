@@ -271,15 +271,6 @@ class Layer {
 
 #ifdef __LIB_CUDNN
 
-  /** Whether forward propagation input uses pinned memory. */
-  bool m_fp_input_pinned;
-  /** Whether forward propagation output uses pinned memory. */
-  bool m_fp_output_pinned;
-  /** Whether backward propagation input uses pinned memory. */
-  bool m_bp_input_pinned;
-  /** Whether backward propagation output uses pinned memory. */
-  bool m_bp_output_pinned;
-
   /** Number of mini-batch samples per GPU. */
   int m_mini_batch_size_per_gpu;
 
