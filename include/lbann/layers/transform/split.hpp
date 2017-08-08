@@ -60,6 +60,14 @@ class split_layer : public transform {
       add_child(children[i]);
     }
 
+  #ifdef __LIB_CUDNN
+    // Initialize GPU if available
+    if(cudnn) {
+      // this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // __LIB_CUDNN
+
   }
 
   split_layer(const split_layer&) = default;
@@ -135,20 +143,72 @@ class split_layer : public transform {
   protected:
 
   void fp_compute() {
-    El::LockedView(*this->m_activations, *this->m_prev_activations);
+    if(this->m_using_gpus) {
+  #ifndef __LIB_CUDNN
+      throw lbann_exception("split_layer: cuDNN not detected");
+  #else
+      this->m_activations_d = this->m_prev_activations_d;
+  #endif // __LIB_CUDNN
+    }
+    else {
+      El::LockedView(*this->m_activations, *this->m_prev_activations);
+    }
   }
 
   void bp_compute() {
-    if(m_children.size() == 1) {
-      El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
+    if(this->m_using_gpus) {
+      bp_compute_cudnn();
+    } else {
+      bp_compute_cpu();
     }
-    else {
-      El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
-      for(size_t i=1; i<m_children.size(); ++i) {
-        El::Axpy(DataType(1),
-                 m_children[i]->bp_output(this),
-                 *this->m_error_signal);
+  }
+
+  void bp_compute_cudnn() {
+  #if 0
+  #ifndef __LIB_CUDNN
+    throw lbann_exception("split_layer: cuDNN not detected");
+  #else
+
+    // Useful constant
+    const DataType one = 1;
+
+    // Copy error signal from first child layer
+    this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
+                                this->m_prev_error_signal_d);
+
+    // Iterate through child layers
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(size_t child_index=1; child_index<m_children.size(); ++child_index) {
+
+      // Get error signal from current child layer
+      const std::vector<DataType*> input = m_children[child_index]->gpu_bp_output(this);
+
+      // Perform addition on each GPU
+      for(int i=0; i<num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                   this->m_cudnn->get_stream(i)));
+        CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
+                                   &one,
+                                   this->m_neurons_cudnn_desc,
+                                   input[i],
+                                   &one,
+                                   this->m_prev_neurons_cudnn_desc,
+                                   this->m_error_signal_d[i]));
+        
       }
+    }
+
+  #endif // #ifndef __LIB_CUDNN
+  #endif // 0
+  }
+
+  void bp_compute_cpu() {
+    El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
+    for(size_t i=1; i<m_children.size(); ++i) {
+      El::Axpy(DataType(1),
+               m_children[i]->bp_output(this),
+               *this->m_error_signal);
     }
   }
 
