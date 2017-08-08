@@ -88,6 +88,7 @@ class csv_reader : public generic_data_reader {
    */
   void load();
 
+  int get_num_labels() const { return m_num_labels; }
   int get_linearized_data_size() const {
     // Account for label and skipped columns.
     if (m_label_col < m_skip_cols) {
@@ -103,7 +104,7 @@ class csv_reader : public generic_data_reader {
     return {get_linearized_data_size()};
   }
 
-// protected:
+ protected:
   /**
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.

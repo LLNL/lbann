@@ -33,26 +33,45 @@
 #include <cnpy.h>
 
 namespace lbann {
+
+/**
+ * Data reader for data stored in numpy (.npy) files.
+ * This assumes that the zero'th axis is the sample axis and that all subsequent
+ * axes can be flattened to form a sample.
+ * This does not support fetching labels from the same file; labels must be
+ * provided by some other means and composed with this data reader.
+ */
 class numpy_reader : public generic_data_reader {
  public:
-  numpy_reader(int batchSize, bool shuffle = true);
+  numpy_reader(int batch_size, bool shuffle = true);
   numpy_reader(const numpy_reader& source);
-  ~numpy_reader();
-
   numpy_reader& operator=(const numpy_reader& source);
+  ~numpy_reader();
 
   numpy_reader* copy() const { return new numpy_reader(*this); }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   void load();
 
-  int get_linearized_data_size() const {
-    return m_num_features;
+  int get_num_labels() const {
+    throw lbann_exception("numpy_reader: labels not supported");
+  }
+  int get_linearized_data_size() const { return m_num_features; }
+  int get_linearized_label_size() const {
+    throw lbann_exception("numpy_reader: labels not supported");
+  }
+  const std::vector<int> get_data_dims() const {
+    return std::vector<int>(m_data.shape.begin() + 1,
+                            m_data.shape.end());
   }
 
- private:
-  int m_num_features;
+// protected:
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+
+  /// Number of samples.
   int m_num_samples;
+  /// Number of features in each sample.
+  int m_num_features;
+  /// Underlying numpy data.
   cnpy::NpyArray m_data;
 };
 
