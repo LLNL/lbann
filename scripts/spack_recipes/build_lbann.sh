@@ -117,7 +117,7 @@ echo $SPEC
 echo $SPEC > spack_build_lbann.sh
 $SPEC
 err=$?
-if [ $err ]; then
+if [ $err -eq 1 ]; then
   echo "Spack spec command returned error: $err"
   exit -1
 fi
@@ -127,7 +127,7 @@ echo $CMD >> spack_build_lbann.sh
 chmod +x spack_build_lbann.sh
 $CMD
 err=$?
-if [ $err ]; then
+if [ $err -eq 1 ]; then
   echo "Spack setup command returned error: $err"
   exit -1
 fi
