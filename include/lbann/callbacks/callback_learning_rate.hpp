@@ -66,7 +66,7 @@ class lbann_callback_learning_rate : public lbann_callback {
     return l->get_index() == (int) m_last_idx;
   }
 
-  /** Indicies of layers to update. */
+  /** Indicies of layers to update. If empty, update every layer. */
   std::unordered_set<uint> m_layer_indices;
   /** Record old learning rates to watch for changes. */
   std::unordered_map<uint, float> m_old_lrs;
