@@ -90,8 +90,10 @@ Layer::Layer(const int index, lbann_comm *comm)
   // Initialize GPU information
   m_using_gpus = false;
 #ifdef __LIB_CUDNN
-  m_owns_gpu_fp_input = false;
-  m_owns_gpu_bp_input = false;
+  m_copy_fp_input_to_gpus = false;
+  m_copy_fp_output_from_gpus = false;
+  m_copy_bp_input_to_gpus = false;
+  m_copy_bp_output_from_gpus = false;
   m_prev_neurons_cudnn_desc = NULL;  
   m_neurons_cudnn_desc = NULL;
 #endif // __LIB_CUDNN
@@ -190,10 +192,10 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(m_owns_gpu_fp_input) {
+    if(m_copy_fp_input_to_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_activations_d);
     }
-    if(m_owns_gpu_bp_input) {
+    if(m_copy_bp_input_to_gpus) {
       m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     }
     m_cudnn->unpin_matrix(*m_prev_activations);
@@ -233,7 +235,7 @@ void Layer::forward_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_owns_gpu_fp_input) {
+    if(m_copy_fp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -250,13 +252,11 @@ void Layer::forward_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus) {
-    if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
-      m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                                m_activations_d,
-                                m_mini_batch_size_per_gpu);
-      m_cudnn->synchronize();
-    }
+  if(m_using_gpus && m_copy_fp_output_from_gpus) {
+    m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
+                              m_activations_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
   }
 #endif // __LIB_CUDNN
 
@@ -285,7 +285,7 @@ void Layer::back_prop() {
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
-    if(m_owns_gpu_bp_input) {
+    if(m_copy_bp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal_v->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
@@ -302,13 +302,11 @@ void Layer::back_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus) {
-    if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
-      m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
-                                m_error_signal_d,
-                                m_mini_batch_size_per_gpu);
-      m_cudnn->synchronize();
-    }
+  if(m_using_gpus && m_copy_bp_output_from_gpus) {
+    m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
+                              m_error_signal_d,
+                              m_mini_batch_size_per_gpu);
+    m_cudnn->synchronize();
   }
 #endif // __LIB_CUDNN
 
@@ -364,6 +362,7 @@ void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
 }
 
 void Layer::setup_dims() {
+
   // Get dimensions of previous neuron tensor
   if(m_prev_layer != NULL) {
     m_prev_neuron_dims = m_prev_layer->fp_output_dims(this);
@@ -384,6 +383,7 @@ void Layer::setup_dims() {
 }
 
 void Layer::setup_data() {
+
   // Initialize matrices
   if (m_num_neurons == 0) {
     throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
@@ -416,6 +416,16 @@ void Layer::setup_gpu() {
   // TODO: Design a more general interface
   if(get_data_layout() != data_layout::DATA_PARALLEL) {
     throw lbann_exception("Layer: GPUs are currently only supported for data parallel layers");
+  }
+
+  // Determine whether to transfer data between CPU and GPUs
+  if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+    m_copy_fp_input_to_gpus = true;
+    m_copy_bp_output_from_gpus = true;
+  }
+  if(m_next_layer == NULL || !m_next_layer->using_gpus()) {
+    m_copy_fp_output_from_gpus = true;
+    m_copy_bp_input_to_gpus = true;
   }
   
   // Split mini-batch amongst GPUs
@@ -473,17 +483,15 @@ void Layer::setup_gpu() {
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
                             m_mini_batch_size_per_gpu);
-  if(m_prev_layer == NULL || !m_prev_layer->using_gpus()) {
+  if(m_copy_fp_input_to_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_activations_d,
                               m_num_prev_neurons,
                               m_mini_batch_size_per_gpu);
-    m_owns_gpu_fp_input = true;
   }
-  if(m_prev_layer == NULL || !m_next_layer->using_gpus()) {
+  if(m_copy_bp_input_to_gpus) {
     m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
                               m_num_neurons,
                               m_mini_batch_size_per_gpu);
-    m_owns_gpu_bp_input = true;
   }
 
 #endif // __LIB_CUDNN

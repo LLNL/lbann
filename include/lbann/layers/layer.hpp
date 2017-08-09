@@ -282,10 +282,15 @@ class Layer {
   std::vector<DataType*> m_prev_error_signal_d;
   /** GPU memory for error signal. */
   std::vector<DataType*> m_error_signal_d;
-  /** Whether this layer owns m_prev_activations_d. */
-  bool m_owns_gpu_fp_input;
-  /** Whether this layer owns m_prev_error_signal_d. */
-  bool m_owns_gpu_bp_input;
+
+  /** Whether to copy forward propagation input from CPU to GPUs. */
+  bool m_copy_fp_input_to_gpus;
+  /** Whether to copy forward propagation output from GPUs to CPU. */
+  bool m_copy_fp_output_from_gpus;
+  /** Whether to copy backward propagation input from CPU to GPUs. */
+  bool m_copy_bp_input_to_gpus;
+  /** Whether to copy backward propagation output from GPUs to CPU. */
+  bool m_copy_bp_output_from_gpus;
 
   /** cuDNN descriptor for neuron tensor from "previous" layer. */
   cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;

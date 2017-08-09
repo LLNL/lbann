@@ -525,6 +525,12 @@ size_t cudnn_manager::get_work_space_size(int i) const {
 }
 
 void cudnn_manager::set_work_space_size(int i, size_t size) {
+  if(m_work_spaces.empty()) {
+    m_work_spaces.assign(m_num_gpus, nullptr);
+  }
+  if(m_work_space_sizes.empty()) {
+    m_work_space_sizes.assign(m_num_gpus, 0);
+  }
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != nullptr) {

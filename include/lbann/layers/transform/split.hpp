@@ -63,7 +63,7 @@ class split_layer : public transform {
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
     if(cudnn) {
-      // this->m_using_gpus = true;
+      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // __LIB_CUDNN
@@ -140,6 +140,35 @@ class split_layer : public transform {
 
   }
 
+  void setup_gpu() {
+    transform::setup_gpu();
+  #ifndef __LIB_CUDNN
+    throw lbann_exception("split_layer: cuDNN not detected");
+  #else
+
+    // Copy forward propagation output from GPUs if a child layer is
+    // not using GPU implementation
+    for(size_t i=1; i<m_children.size(); ++i) {
+      if(!m_children[i]->using_gpus()) {
+        m_copy_fp_output_from_gpus = true;
+      }
+    }
+
+    // Allocate workspace if needed
+    if(m_copy_fp_output_from_gpus) {
+      size_t required_work_space = (this->m_num_neurons
+                                    * this->m_mini_batch_size_per_gpu
+                                    * sizeof(DataType));
+      for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
+        if(required_work_space > this->m_cudnn->get_work_space_size(i)) {
+          this->m_cudnn->set_work_space_size(i, required_work_space);
+        }
+      }
+    }
+
+  #endif // #ifndef __LIB_CUDNN
+  }
+
   protected:
 
   void fp_compute() {
@@ -152,6 +181,7 @@ class split_layer : public transform {
     }
     else {
       El::LockedView(*this->m_activations, *this->m_prev_activations);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
     }
   }
 
@@ -164,7 +194,6 @@ class split_layer : public transform {
   }
 
   void bp_compute_cudnn() {
-  #if 0
   #ifndef __LIB_CUDNN
     throw lbann_exception("split_layer: cuDNN not detected");
   #else
@@ -174,16 +203,32 @@ class split_layer : public transform {
 
     // Copy error signal from first child layer
     this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                this->m_prev_error_signal_d);
+                                this->m_prev_error_signal_d,
+                                this->m_num_neurons,
+                                this->m_mini_batch_size_per_gpu);
 
     // Iterate through child layers
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(size_t child_index=1; child_index<m_children.size(); ++child_index) {
+      const Layer* child = m_children[child_index];
 
-      // Get error signal from current child layer
-      const std::vector<DataType*> input = m_children[child_index]->gpu_bp_output(this);
+      // Get child error signal on GPUs
+      std::vector<DataType*> input;
+      if(child->using_gpus()) {
+        input = child->gpu_bp_output(this);
+      }
+      else {
+        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        input.resize(num_gpus);
+        for(int i=0; i<num_gpus; ++i) {
+          input[i] = (DataType*) work_spaces[i];
+        }
+        this->m_cudnn->scatter_to_gpus(input,
+                                       child->bp_output(this).LockedMatrix(),
+                                       this->m_mini_batch_size_per_gpu);
+      }
 
-      // Perform addition on each GPU
+      // Add child error signal to this layer's error signal
       for(int i=0; i<num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
@@ -195,12 +240,12 @@ class split_layer : public transform {
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
                                    this->m_error_signal_d[i]));
-        
       }
+
+
     }
 
   #endif // #ifndef __LIB_CUDNN
-  #endif // 0
   }
 
   void bp_compute_cpu() {
