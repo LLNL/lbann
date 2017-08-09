@@ -72,7 +72,10 @@ class split_layer : public transform {
 
   split_layer(const split_layer&) = default;
   split_layer& operator=(const split_layer&) = default;
-  ~split_layer() = default;
+  ~split_layer() {
+    // GPU memory for activations is a copy of previous layer's activations
+    this->m_activations_d.clear();
+  }
 
   split_layer* copy() const { return new split_layer(*this); }
 
@@ -166,6 +169,9 @@ class split_layer : public transform {
       }
     }
 
+    // Deallocate GPU memory for activations since it isn't needed
+    this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
+
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -241,7 +247,6 @@ class split_layer : public transform {
                                    this->m_prev_neurons_cudnn_desc,
                                    this->m_error_signal_d[i]));
       }
-
 
     }
 

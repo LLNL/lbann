@@ -60,11 +60,22 @@ class sum_layer : public transform {
       add_parent(parents[i]);
     }
 
+  #ifdef __LIB_CUDNN
+    // Initialize GPU if available
+    if(cudnn) {
+      this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // __LIB_CUDNN
+
   }
 
   sum_layer(const sum_layer&) = default;
   sum_layer& operator=(const sum_layer&) = default;
-  ~sum_layer() = default;
+  ~sum_layer() {
+    // GPU memory for activations is a copy of previous layer's activations
+    this->m_error_signal_d.clear();
+  }
 
   sum_layer* copy() const { return new sum_layer(*this); }
 
@@ -130,9 +141,117 @@ class sum_layer : public transform {
 
   }
 
+  void setup_gpu() {
+    transform::setup_gpu();
+  #ifndef __LIB_CUDNN
+    throw lbann_exception("sum_layer: cuDNN not detected");
+  #else
+
+    // Copy backward propagation output from GPUs if a parent layer is
+    // not using GPU implementation
+    for(size_t i=1; i<m_parents.size(); ++i) {
+      if(!m_parents[i]->using_gpus()) {
+        m_copy_bp_output_from_gpus = true;
+      }
+    }
+
+    // Allocate workspace if needed
+    if(m_copy_bp_output_from_gpus) {
+      size_t required_work_space = (this->m_num_prev_neurons
+                                    * this->m_mini_batch_size_per_gpu
+                                    * sizeof(DataType));
+      for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
+        if(required_work_space > this->m_cudnn->get_work_space_size(i)) {
+          this->m_cudnn->set_work_space_size(i, required_work_space);
+        }
+      }
+    }
+
+    // Deallocate GPU memory for error signal since it isn't needed
+    this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
+
+  #endif // #ifndef __LIB_CUDNN
+  }
+
   protected:
 
   void fp_compute() {
+    if(this->m_using_gpus) {
+      fp_compute_cudnn();
+    } else {
+      fp_compute_cpu();
+    }
+  }
+
+  void bp_compute() {
+    if(this->m_using_gpus) {
+  #ifndef __LIB_CUDNN
+      throw lbann_exception("sum_layer: cuDNN not detected");
+  #else
+      this->m_error_signal_d = this->m_prev_error_signal_d;
+  #endif // __LIB_CUDNN
+    }
+    else {
+      El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    }
+  }
+
+  void fp_compute_cudnn() {
+  #ifndef __LIB_CUDNN
+    throw lbann_exception("sum_layer: cuDNN not detected");
+  #else
+
+    // Useful constant
+    const DataType one = 1;
+
+    // Copy error signal from first child layer
+    this->m_cudnn->copy_on_gpus(this->m_activations_d,
+                                this->m_prev_activations_d,
+                                this->m_num_prev_neurons,
+                                this->m_mini_batch_size_per_gpu);
+
+    // Iterate through child layers
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(size_t parent_index=1; parent_index<m_parents.size(); ++parent_index) {
+      const Layer* parent = m_parents[parent_index];
+
+      // Get child error signal on GPUs
+      std::vector<DataType*> input;
+      if(parent->using_gpus()) {
+        input = parent->gpu_fp_output(this);
+      }
+      else {
+        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        input.resize(num_gpus);
+        for(int i=0; i<num_gpus; ++i) {
+          input[i] = (DataType*) work_spaces[i];
+        }
+        this->m_cudnn->scatter_to_gpus(input,
+                                       parent->fp_output(this).LockedMatrix(),
+                                       this->m_mini_batch_size_per_gpu);
+      }
+
+      // Add child error signal to this layer's error signal
+      for(int i=0; i<num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                   this->m_cudnn->get_stream(i)));
+        CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
+                                   &one,
+                                   this->m_prev_neurons_cudnn_desc,
+                                   input[i],
+                                   &one,
+                                   this->m_neurons_cudnn_desc,
+                                   this->m_activations_d[i]));
+      }
+
+    }
+
+  #endif // #ifndef __LIB_CUDNN
+  }
+
+  void fp_compute_cpu() {
     if(m_parents.size() == 1) {
       El::LockedView(*this->m_activations, *this->m_prev_activations);
     }
@@ -144,10 +263,6 @@ class sum_layer : public transform {
                  *this->m_activations);
       }
     }
-  }
-
-  void bp_compute() {
-    El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
   }
 
 };
