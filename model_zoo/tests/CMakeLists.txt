@@ -26,6 +26,7 @@ function(add_mpi_ctest TEST_NAME)
 endfunction()
 
 # Parallel Tests
+add_mpi_ctest( quantizer_bm )
 add_mpi_ctest( comm_test )
 add_mpi_ctest( quantizer_test )
 add_mpi_ctest( collective_test )

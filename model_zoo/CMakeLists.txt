@@ -26,7 +26,6 @@ function(add_mpi_ctest TEST_NAME)
 endfunction()
 
 # Parallel Tests
-add_mpi_ctest( quantizer_bm )
 add_mpi_ctest( cnn_mnist )
 add_mpi_ctest( resnet50 )
 add_mpi_ctest( greedy_layerwise_autoencoder_mnist)
