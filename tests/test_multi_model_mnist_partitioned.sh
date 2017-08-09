@@ -18,7 +18,8 @@ FULLSCRIPT=.
 # Figure out which cluster we are on
 CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 # Look for the binary in the cluster specific build directory
-SCRIPT="build/${CLUSTER}.llnl.gov/model_zoo/lbann"
+#SCRIPT="build/${CLUSTER}.llnl.gov/model_zoo/lbann"
+SCRIPT="spack-builds/gcc-7.1.0-double-seqinit/build/model_zoo/lbann"
 
 if [ -e "${DIRNAME}/${SCRIPT}" ] ; then
     FULLSCRIPT="${DIRNAME}/${SCRIPT}"

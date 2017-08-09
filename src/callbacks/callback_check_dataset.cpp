@@ -84,27 +84,50 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
       "lbann_callback_check_dataset: could not get input layer");
   }
 
+  int num_samples = training_set.size();
+  std::vector<int> vec_num_samples(comm->get_procs_per_model());  
+  if (comm->am_model_master()) {
+    comm->model_gather(num_samples, vec_num_samples.data());
+  }else {
+    comm->model_gather(num_samples, comm->get_model_master());
+  }
+  std::vector<int> sample_offsets(comm->get_procs_per_model());
+  std::partial_sum(vec_num_samples.begin(), vec_num_samples.end(), sample_offsets.begin());
+  std::cout << "Training [" << comm->get_rank_in_model() << "] offsets";
+  for (const auto& idx : sample_offsets) {
+    std::cout << idx << " ";
+  }
+  std::cout << std::endl;
+  std::cout << "Training [" << comm->get_rank_in_model() << "] counts";
+  for (const auto& idx : vec_num_samples) {
+    std::cout << idx << " ";
+  }
+  std::cout << std::endl;
+
+  // sample_offset[]
+  // for (int i = 0; i < vec_num_samples.size(); i++) {
+  //   //  for (const auto& idx : vec_num_samples) {
+    
+  // }
+
   // Build a vector large enough to hold all the data indices for this rank.
-  std::vector<int> local_data(
-    input->get_num_iterations_per_epoch(execution_mode::training) *
-    m->get_max_mini_batch_size(), -1);
+  std::vector<int> local_data(training_set.size());
   std::copy(training_set.begin(), training_set.end(), local_data.data());
 
   std::cout << "Training: my local vector has size " << local_data.size() << std::endl;
   if (comm->am_model_master()) {
     // Build a vector large enough to hold all indices for the model.
     std::vector<int> model_training_set(
-      input->get_num_iterations_per_epoch(execution_mode::training) *
-      m->get_max_mini_batch_size() * comm->get_procs_per_model(), 0);
+      input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size());
     
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
-    comm->model_gather(local_data.data(), local_data.size(),
-                       model_training_set.data());
+    // comm->model_gatherv(local_data.data(), local_data.size(),
+    //                     model_training_set.data(), vec_num_samples.data(), sample_offsets.data());
 
     std::cout << "Training: The entire model has processed " << model_training_set.size() << " elements" << std::endl;
   } else {
-    comm->model_gather(local_data.data(), local_data.size(),
-                       m->get_comm()->get_model_master());
+    // comm->model_gatherv(local_data.data(), local_data.size(),
+    //                     m->get_comm()->get_model_master());
   }
 
   std::cout << "Training [" << comm->get_rank_in_model() << "] ";
