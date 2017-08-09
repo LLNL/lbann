@@ -38,6 +38,7 @@ lbann_callback_learning_rate::lbann_callback_learning_rate(
 
 void lbann_callback_learning_rate::setup(model *m) {
   std::vector<Layer *>& layers = m->get_layers();
+  std::unordered_set<uint> to_update = m_layer_indices;
   for (size_t l = 0; l < layers.size(); ++l) {
     Layer *layer = layers[l];
     uint idx = layer->get_index();
@@ -46,14 +47,20 @@ void lbann_callback_learning_rate::setup(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    if (m_layer_indices.empty() ||
-        m_layer_indices.find(idx) != m_layer_indices.end()) {
-      if (learning_layer->get_optimizer() != NULL) {
-        m_old_lrs[idx] = learning_layer->get_optimizer()->get_learning_rate();
-        m_last_idx = idx;
+    bool has_optimizer = learning_layer->get_optimizer() != NULL;
+    if (m_layer_indices.empty() && has_optimizer) {
+      to_update.insert(idx);
+      m_last_idx = idx;
+    } else if (m_layer_indices.find(idx) != m_layer_indices.end()) {
+      if (!has_optimizer) {
+        throw lbann_exception(
+          "callback_learning_rate: requested layer " + std::to_string(idx) +
+          " which has NULL optimizer");
       }
+      m_last_idx = idx;
     }
   }
+  m_layer_indices = to_update;
 }
 
 void lbann_callback_learning_rate::on_epoch_end(model *m) {
@@ -66,10 +73,10 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    if (m_old_lrs.find(idx) != m_old_lrs.end()) {
+    if (m_layer_indices.find(idx) != m_layer_indices.end()) {
+      float old_lr = learning_layer->get_optimizer()->get_learning_rate();
       float new_lr = schedule(m, learning_layer);
-      if (new_lr != m_old_lrs[idx]) {
-        m_old_lrs[idx] = new_lr;
+      if (old_lr != new_lr) {
         learning_layer->get_optimizer()->set_learning_rate(new_lr);
         lbann_comm *comm = m->get_comm();
         if (comm->am_model_master()) {
@@ -167,10 +174,10 @@ lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learnin
 void lbann_callback_linear_growth_learning_rate::setup(model *m) {
   lbann_callback_learning_rate::setup(m);
   // Compute the learning rate increase.
-  if (!m_old_lrs.empty()) {
+  if (!m_layer_indices.empty()) {
     std::vector<Layer *>& layers = m->get_layers();
     // Assumes every layer has the same learning rate.
-    uint idx = m_old_lrs.begin()->first;
+    uint idx = *m_layer_indices.begin();
     learning *l = dynamic_cast<learning *>(layers[idx]);
     float base_lr = l->get_optimizer()->get_learning_rate();
     m_inc = (m_target - base_lr) / m_num_epochs;
