@@ -140,7 +140,7 @@ class cudnn_manager {
   /** Get ith CUBLAS handle (const). */
   const cublasHandle_t& get_cublas_handle(int i=0) const;
   /** Get GPU work spaces. */
-  std::vector<void *> get_work_spaces();
+  std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
   void *get_work_space(int i=0);
   /** Get GPU work space sizes (in bytes). */
@@ -153,48 +153,54 @@ class cudnn_manager {
   void set_work_space_size(int i, size_t size);
 
   /** Allocate memory on GPUs. */
-  void allocate_on_gpus(std::vector<DataType *>& gpu_data,
+  void allocate_on_gpus(std::vector<DataType*>& gpu_data,
                         int height,
                         int width_per_gpu);
   /** Deallocate memory on GPUs. */
-  void deallocate_on_gpus(std::vector<DataType *>& gpu_data);
+  void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
   /** Zero out memory on GPUs. */
-  void clear_on_gpus(std::vector<DataType *>& gpu_data,
+  void clear_on_gpus(std::vector<DataType*>& gpu_data,
                      int height,
                      int width_per_gpu);
   /** Zero out memory corresponding to unused columns on GPUs. */
-  void clear_unused_columns_on_gpus(std::vector<DataType *>& gpu_data,
+  void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
                                     int height,
                                     int width,
                                     int width_per_gpu);
 
   /** Copy data on GPUs. */
-  void copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
-                    const std::vector<DataType *>& gpu_src_data,
+  void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
+                    const std::vector<DataType*>& gpu_src_data,
                     int height,
-                    int width_per_gpu);
+                    int width_per_gpu,
+                    int src_leading_dim = 0,
+                    int dst_leading_dim = 0);
   /** Copy data from CPU to GPUs.
    *  Matrix columns are scattered amongst GPUs.
    */
-  void scatter_to_gpus(std::vector<DataType *>& gpu_data,
+  void scatter_to_gpus(std::vector<DataType*>& gpu_data,
                        const Mat& cpu_data,
-                       int width_per_gpu);
+                       int width_per_gpu,
+                       int gpu_data_leading_dim = 0);
   /** Copy data from GPUs to CPU.
    *  Matrix columns are gathered from GPUs.
    */
   void gather_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType *>& gpu_data,
-                        int width_per_gpu);
+                        const std::vector<DataType*>& gpu_data,
+                        int width_per_gpu,
+                        int gpu_data_leading_dim = 0);
   /** Copy data from CPU to GPUs.
    *  Data is duplicated across GPUs.
    */
-  void broadcast_to_gpus(std::vector<DataType *>& gpu_data,
-                         const Mat& cpu_data);
+  void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
+                         const Mat& cpu_data,
+                         int gpu_data_leading_dim = 0);
   /** Copy data from GPUs to CPU and reduce.
    */
   void reduce_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType *>& gpu_data);
+                        const std::vector<DataType*>& gpu_data,
+                        int gpu_data_leading_dim = 0);
 
   /** Synchronize GPUs. */
   void synchronize();

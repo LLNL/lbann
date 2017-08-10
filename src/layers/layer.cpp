@@ -677,11 +677,11 @@ const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
 
 #ifdef __LIB_CUDNN
 
-const std::vector<DataType*>& Layer::gpu_fp_output(const Layer* next_layer) const {
+const std::vector<DataType*> Layer::gpu_fp_output(const Layer* next_layer) const {
   return m_activations_d;
 }
 
-const std::vector<DataType*>& Layer::gpu_bp_output(const Layer* prev_layer) const {
+const std::vector<DataType*> Layer::gpu_bp_output(const Layer* prev_layer) const {
   return m_error_signal_d;
 }
 

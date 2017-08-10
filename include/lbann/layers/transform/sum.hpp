@@ -73,8 +73,10 @@ class sum_layer : public transform {
   sum_layer(const sum_layer&) = default;
   sum_layer& operator=(const sum_layer&) = default;
   ~sum_layer() {
+  #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
+  #endif // __LIB_CUDNN
   }
 
   sum_layer* copy() const { return new sum_layer(*this); }

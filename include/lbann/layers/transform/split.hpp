@@ -73,8 +73,10 @@ class split_layer : public transform {
   split_layer(const split_layer&) = default;
   split_layer& operator=(const split_layer&) = default;
   ~split_layer() {
+  #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_activations_d.clear();
+  #endif // __LIB_CUDNN
   }
 
   split_layer* copy() const { return new split_layer(*this); }
