@@ -1095,6 +1095,19 @@ void init_callbacks(
           c.target(), c.num_epochs(), layers);
       model->add_callback(lglr);
     }
+
+    //////////////////////////////////////////////////////////////////    
+    // CALLBACK: profiler
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_profiler()) {
+      const lbann_data::CallbackProfiler& c = callback.profiler();
+      if (master) {
+        cout << "adding profiler callback" << endl;
+      }
+      lbann_callback_profiler *profiler_cb = new lbann_callback_profiler();
+      model->add_callback(profiler_cb);
+    }
+
   }
 
 }
