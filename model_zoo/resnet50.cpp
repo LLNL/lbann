@@ -429,7 +429,7 @@ int main(int argc, char *argv[]) {
       // Additional submodules
       for(int submodule = 1; submodule < num_submodules[module]; ++submodule){
         
-        split_layer<> *split = new split_layer<>(index, comm, {});
+        split_layer<> *split = new split_layer<>(index, comm, {}, cudnn);
         dnn->add(split);
         index++;
 

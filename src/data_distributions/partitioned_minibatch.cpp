@@ -90,20 +90,26 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
   int num_parallel_readers = requested_num_parallel_readers;
 
   if(m_comm->get_procs_per_model() != num_parallel_readers) {
-    cout << "Warning the requested number of parallel readers "
-         << num_parallel_readers
-         << " does not match the grid size " << m_comm->get_procs_per_model()
-         << " OVERRIDING requested number of parallel readers."
-         << endl;
+    if (m_comm->am_model_master()) {
+      std::cout << "Warning the requested number of parallel readers "
+                << num_parallel_readers
+                << " does not match the grid size "
+                << m_comm->get_procs_per_model()
+                << " OVERRIDING requested number of parallel readers."
+                << std::endl;
+    }
     num_parallel_readers = m_comm->get_procs_per_model();
   }
 
   if(mini_batch_size < num_parallel_readers) {
-    cout << "Warning the requested number of parallel readers "
-         << num_parallel_readers
-         << " is larger than the requested mini-batch size " << mini_batch_size
-         << " OVERRIDING requested number of parallel readers."
-         << endl;
+    if (m_comm->am_model_master()) {
+      std::cout << "Warning the requested number of parallel readers "
+                << num_parallel_readers
+                << " is larger than the requested mini-batch size "
+                << mini_batch_size
+                << " OVERRIDING requested number of parallel readers."
+                << std::endl;
+    }
     num_parallel_readers = mini_batch_size;
   }
 

@@ -174,6 +174,7 @@ message Callback {
    CallbackHang hang = 18;
    CallbackDropFixedLearningRate drop_fixed_learning_rate = 19;
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
+   CallbackProfiler profiler = 21;
 }
 
 message CallbackStepLearningRate {
@@ -199,6 +200,9 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+}
+
+message CallbackProfiler {
 }
 
 message CallbackTimer {
