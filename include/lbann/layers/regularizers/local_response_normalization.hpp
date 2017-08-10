@@ -230,53 +230,66 @@ class local_response_normalization_layer : public regularizer_layer {
     // Note: The sum is over entries in the normalization window.
     ////////////////////////////////////////////////////////////////
 
-    // Iterate through data samples in mini-batch
+    // Iterate through blocks in channels of each data sample
+    const int block_size = 16;
     #pragma omp parallel for collapse(2)
     for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-      // Iterate through positions in sample
-      for(int pos = 0; pos < num_per_channel; ++pos) {
+      for(int block_start = 0;
+          block_start < num_per_channel;
+          block_start += block_size) {
+        const int current_block_size = std::min(block_size,
+                                                num_per_channel - block_start);
 
-        // Initialize normalization window
+        // Initialize sums in normalization window
         int window_start = - m_window_width / 2;
         int window_end = m_window_width / 2;
-        DataType window_sum = 0;
-        for(int c = std::max(window_start, 0);
-            c <= std::min(window_end, num_channels-1);
-            ++c) {
-          const DataType x
-            = prev_activations_local(pos + num_per_channel*c, sample);
-          window_sum += x * x;
+        DataType window_sums[block_size];
+        std::memset(window_sums, 0, block_size*sizeof(DataType));
+        for(int channel = std::max(window_start, 0);
+            channel <= std::min(window_end, num_channels-1);
+            ++channel) {
+          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType x = prev_activations_local(index, sample);
+            window_sums[block_pos] += x * x;
+          }
         }
 
-        // Iterate through channels at current position
+        // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
-          const int index = pos + num_per_channel * channel;
 
-          // Apply local response normalization to current entry
-          const DataType input_entry = prev_activations_local.Get(index, sample);
-          const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
-          const DataType output_entry = input_entry *
-            std::pow(scale_factor, -m_lrn_beta);
-          activations_local(index, sample) = output_entry;
+          // Iterate through block entries
+          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            DataType& window_sum = window_sums[block_pos];
 
-          // Shift normalization window by one entry
-          if(window_start >= 0) {
-            const int i = pos + num_per_channel*window_start;
-            const DataType x = prev_activations_local(i, sample);
-            window_sum -= x * x;
+            // Apply local response normalization to current entry
+            const DataType input_entry = prev_activations_local(index, sample);
+            const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+            const DataType output_entry = input_entry * std::pow(scale_factor, -m_lrn_beta);
+            activations_local(index, sample) = output_entry;
+
+            // Update sum for next normalization window
+            if(window_start >= 0) {
+              const int i = block_start + block_pos + window_start * num_per_channel;
+              const DataType x = prev_activations_local(i, sample);
+              window_sum -= x * x;
+            }
+            if(window_end + 1 < num_channels) {
+              const int i = block_start + block_pos + (window_end + 1) * num_per_channel;
+              const DataType x = prev_activations_local(i, sample);
+              window_sum += x * x;
+            }
+
           }
+
+          // Move to next normalization window
           ++window_start;
           ++window_end;
-          if(window_end < num_channels) {
-            const int i = pos + num_per_channel*window_end;
-            const DataType x = prev_activations_local(i, sample);
-            window_sum += x * x;
-          }
 
         }
-
+        
       }
-
     }
 
   }
@@ -308,69 +321,80 @@ class local_response_normalization_layer : public regularizer_layer {
     //   window.
     ////////////////////////////////////////////////////////////////
 
-    // Iterate through data samples in mini-batch
+    // Iterate through blocks in channels of each data sample
+    const int block_size = 16;
     #pragma omp parallel for collapse(2)
     for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
-      // Iterate through positions in sample
-      for(int pos = 0; pos < num_per_channel; ++pos) {
+      for(int block_start = 0;
+          block_start < num_per_channel;
+          block_start += block_size) {
+        const int current_block_size = std::min(block_size,
+                                                num_per_channel - block_start);
 
-        // Initialize normalization window
+        // Initialize sums in normalization window
         int window_start = - m_window_width / 2;
         int window_end = m_window_width / 2;
-        DataType window_sum = 0;
-        for(int c = std::max(window_start, 0);
-            c <= std::min(window_end, num_channels-1);
-            ++c) {
-          const DataType x
-            = prev_activations_local.Get(pos + num_per_channel*c, sample);
-          window_sum += x * x;
+        DataType window_sums[block_size];
+        std::memset(window_sums, 0, block_size*sizeof(DataType));
+        for(int channel = std::max(window_start, 0);
+            channel <= std::min(window_end, num_channels-1);
+            ++channel) {
+          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType x = prev_activations_local(index, sample);
+            window_sums[block_pos] += x * x;
+          }
         }
-
-        // Iterate through channels at current position
-        DataType error_signal_update;
+        
+        // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
-          const int index = pos + num_per_channel * channel;
 
-          // Get data for current entry
-          const DataType activations_entry = activations_local.Get(index, sample);
-          const DataType prev_error_signal_entry = prev_error_signal_local.Get(index, sample);
-          const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+          // Iterate through block entries
+          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            DataType& window_sum = window_sums[block_pos];
 
-          // Update current error signal entry
-          error_signal_update = prev_error_signal_entry *
-            std::pow(scale_factor, -m_lrn_beta);
-          error_signal_local.Update(index, sample, error_signal_update);
+            // Get data for current entry
+            const DataType activations_entry = activations_local(index, sample);
+            const DataType prev_error_signal_entry = prev_error_signal_local(index, sample);
+            const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
 
-          // Update error signal entries in normalization window
-          for(int c = std::max(window_start, 0);
-              c <= std::min(window_end, num_channels-1);
-              ++c) {
-            const int i = pos + num_per_channel * c;
-            const DataType prev_activations_entry = prev_activations_local.Get(i, sample);
-            error_signal_update
-              = (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
-                 * prev_error_signal_entry * activations_entry / scale_factor);
-            error_signal_local.Update(i, sample, error_signal_update);
+            // Update current error signal entry
+            error_signal_local(index, sample)
+              += prev_error_signal_entry * std::pow(scale_factor, -m_lrn_beta);
+            
+            // Update error signal entries in normalization window
+            for(int c = std::max(window_start, 0);
+                c <= std::min(window_end, num_channels-1);
+                ++c) {
+              const int i = block_start + block_pos + c * num_per_channel;
+              const DataType prev_activations_entry = prev_activations_local(i, sample);
+              error_signal_local(i, sample)
+                += (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
+                    * prev_error_signal_entry * activations_entry / scale_factor);
+            }
+
+            // Update sum for next normalization window
+            if(window_start >= 0) {
+              const int i = block_start + block_pos + window_start * num_per_channel;
+              const DataType x = prev_activations_local(i, sample);
+              window_sum -= x * x;
+            }
+            if(window_end + 1 < num_channels) {
+              const int i = block_start + block_pos + (window_end + 1) * num_per_channel;
+              const DataType x = prev_activations_local(i, sample);
+              window_sum += x * x;
+            }
+
           }
 
-          // Shift normalization window by one entry
-          if(window_start >= 0) {
-            const int i = pos + num_per_channel*window_start;
-            const DataType x = prev_activations_local.Get(i, sample);
-            window_sum -= x * x;
-          }
+          // Move to next normalization window
           ++window_start;
           ++window_end;
-          if(window_end < num_channels) {
-            const int i = pos + num_per_channel*window_end;
-            const DataType x = prev_activations_local.Get(i, sample);
-            window_sum += x * x;
-          }
 
         }
 
       }
-
     }
 
   }
