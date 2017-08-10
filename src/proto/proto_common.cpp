@@ -1092,7 +1092,7 @@ void init_callbacks(
       }
       lbann_callback_linear_growth_learning_rate *lglr = new
         lbann_callback_linear_growth_learning_rate(
-          c.target(), c.num_epochs(), layers);
+          c.target(), c.num_epochs(), c.delay(), layers);
       model->add_callback(lglr);
     }
   }

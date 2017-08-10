@@ -267,6 +267,7 @@ message CallbackLinearGrowthLearningRate {
   repeated int64 layer = 1;
   double target = 2;
   int64 num_epochs = 3;
+  int64 delay = 4;
 }
 
 //========================================================================
