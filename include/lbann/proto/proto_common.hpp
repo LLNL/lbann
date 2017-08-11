@@ -44,6 +44,7 @@ void add_layers(
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
 lbann::optimizer_factory *init_optimizer_factory(
   lbann::lbann_comm *comm,
+  cudnn::cudnn_manager *cudnn,  
   const lbann_data::LbannPB& p);
 
 void init_callbacks(

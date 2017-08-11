@@ -1186,7 +1186,8 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   return model;
 }
 
-optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::LbannPB& p)
+optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager *cudnn,
+                                          const lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
   optimizer_factory *factory = 0;
@@ -1199,7 +1200,7 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, const lbann_data::Lb
     factory = new rmsprop_factory(comm, a.learn_rate(), a.decay_rate(), a.eps());
   } else if (opt.has_adam()) {
     const lbann_data::Adam &a = opt.adam();
-    factory = new adam_factory(comm, a.learn_rate(), a.beta1(), a.beta2(), a.eps());
+    factory = new adam_factory(comm, a.learn_rate(), a.beta1(), a.beta2(), a.eps(), cudnn);
   } else if (opt.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &a = opt.hypergradient_adam();
     factory = new hypergradient_adam_factory(comm, a.init_learning_rate(), a.hyper_learning_rate(), a.beta1(), a.beta2(), a.eps());
