@@ -98,22 +98,34 @@ case ${BUILD_TYPE} in
     C_FLAGS="-O3"
     CXX_FLAGS="-O3"
     Fortran_FLAGS="-O3"
-    if [ "${CLUSTER}" == "catalyst" ]; then
-        C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
-        CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
-        Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-    elif [ "${CLUSTER}" == "quartz" ]; then
-        C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
-        CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
-        Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
-    elif [ "${CLUSTER}" == "surface" ]; then
-        C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
-        CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
-        Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
-    elif [ "${CLUSTER}" == "flash" ]; then
-        C_FLAGS="${C_FLAGS} -march=haswell -mtune=haswell"
-        CXX_FLAGS="${CXX_FLAGS} -march=haswell -mtune=haswell"
-        Fortran_FLAGS="${Fortran_FLAGS} -march=haswell -mtune=haswell"
+    if [[ ${COMPILER} == gcc@* ]]; then
+        if [ "${CLUSTER}" == "catalyst" ]; then
+            C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
+            CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+        elif [ "${CLUSTER}" == "quartz" ]; then
+            C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
+            CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
+        elif [ "${CLUSTER}" == "surface" ]; then
+            C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
+            CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+        elif [ "${CLUSTER}" == "flash" ]; then
+            C_FLAGS="${C_FLAGS} -march=haswell -mtune=haswell"
+            CXX_FLAGS="${CXX_FLAGS} -march=haswell -mtune=haswell"
+            Fortran_FLAGS="${Fortran_FLAGS} -march=haswell -mtune=haswell"
+        fi
+    elif [[ ${COMPILER} == clang@* ]]; then
+        if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
+            C_FLAGS="${C_FLAGS} -mavx"
+            CXX_FLAGS="${CXX_FLAGS} -mavx"
+            Fortran_FLAGS="${Fortran_FLAGS} -mavx"
+        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
+            C_FLAGS="${C_FLAGS} -mavx2"
+            CXX_FLAGS="${CXX_FLAGS} -mavx2"
+            Fortran_FLAGS="${Fortran_FLAGS} -mavx2"
+        fi
     fi
     ;;
   Debug)
