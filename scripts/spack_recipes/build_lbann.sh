@@ -87,26 +87,66 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
   EL_VER="${EL_VER}+cublas"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
-
-SPEC="spack spec ${SPACK_OPTIONS}"
-CMD="spack setup ${SPACK_OPTIONS}"
+C_FLAGS=
+CXX_FLAGS=
+Fortran_FLAGS=
 
 DIST=
 case ${BUILD_TYPE} in
   Release)
     DIST=rel
+    C_FLAGS="-O3"
+    CXX_FLAGS="-O3"
+    Fortran_FLAGS="-O3"
+    if [ "${CLUSTER}" == "catalyst" ]; then
+        C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
+        CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
+        Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+    elif [ "${CLUSTER}" == "quartz" ]; then
+        C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
+        CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
+        Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
+    elif [ "${CLUSTER}" == "surface" ]; then
+        C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
+        CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
+        Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+    elif [ "${CLUSTER}" == "flash" ]; then
+        C_FLAGS="${C_FLAGS} -march=haswell -mtune=haswell"
+        CXX_FLAGS="${CXX_FLAGS} -march=haswell -mtune=haswell"
+        Fortran_FLAGS="${Fortran_FLAGS} -march=haswell -mtune=haswell"
+    fi
     ;;
   Debug)
     DIST=debug
+    C_FLAGS="-g"
+    CXX_FLAGS="-g"
+    Fortran_FLAGS="-g"
     ;;
   :)
     DIST=unkwn
     ;;
 esac
 
+SPACK_CFLAGS=
+if [ ! -z "${C_FLAGS}" ]; then
+    SPACK_CFLAGS="cflags=\"${C_FLAGS}\""
+fi
+SPACK_CXXFLAGS=
+if [ ! -z "${CXX_FLAGS}" ]; then
+    SPACK_CXXFLAGS="cxxflags=\"${CXX_FLAGS}\""
+fi
+SPACK_FFLAGS=
+if [ ! -z "${Fortran_FLAGS}" ]; then
+    SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
+fi
+
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+
+SPEC="spack spec ${SPACK_OPTIONS}"
+CMD="spack setup ${SPACK_OPTIONS}"
+
 # Create a directory for the build
-DIR="${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
+DIR="${CLUSTER}_${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
 DIR=${DIR//@/-}
 
 echo "Creating directory ${DIR}"
@@ -115,7 +155,7 @@ cd ${DIR}
 
 echo $SPEC
 echo $SPEC > spack_build_lbann.sh
-$SPEC
+eval $SPEC
 err=$?
 if [ $err -eq 1 ]; then
   echo "Spack spec command returned error: $err"
@@ -125,7 +165,7 @@ fi
 echo $CMD
 echo $CMD >> spack_build_lbann.sh
 chmod +x spack_build_lbann.sh
-$CMD
+eval $CMD
 err=$?
 if [ $err -eq 1 ]; then
   echo "Spack setup command returned error: $err"
@@ -144,11 +184,11 @@ fi
 if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
   CMD="../spconfig.py ${PATH_TO_SRC}"
   echo $CMD
-  $CMD
+  eval $CMD
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
 FIX="spack uninstall -y lbann"
 echo $FIX
-$FIX
+eval $FIX
 
