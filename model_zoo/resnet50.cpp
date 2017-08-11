@@ -232,6 +232,7 @@ int main(int argc, char *argv[]) {
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     dnn->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
+    dnn->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(5, comm));
 #ifdef PARTITIONED
     Layer *input_layer =
       new input_layer_partitioned_minibatch<>(
