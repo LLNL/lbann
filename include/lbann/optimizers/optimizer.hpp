@@ -31,6 +31,8 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
 #include <string>
 
 namespace lbann {
@@ -42,7 +44,8 @@ class optimizer {
 
   /// Constructor
   optimizer(lbann_comm *comm,
-            DataType learning_rate = DataType(0));
+            DataType learning_rate = DataType(0),
+            cudnn::cudnn_manager *cudnn=nullptr);
   optimizer(const optimizer&) = default;
   optimizer& operator=(const optimizer&) = default;
 
@@ -56,9 +59,15 @@ class optimizer {
 
   /// Set parameters to optimize and initialize optimizer
   virtual void setup(AbsDistMat *parameters);
+  virtual void setup_gpu(AbsDistMat *parameters,
+                         const std::vector<DataType *> &parameters_d);
 
   /// Update parameters using objective function gradient
   virtual void update(const AbsDistMat *gradient) = 0;
+  
+  virtual void update_gpu(const std::vector<DataType *> &gradient_d) {
+    throw new lbann_exception("update_gpu not supported");
+  }
 
   /// Get learning rate
   virtual DataType get_learning_rate() const {
@@ -83,6 +92,12 @@ class optimizer {
   void set_parameters(AbsDistMat *parameters) {
     m_parameters = parameters;
   }
+  
+  void set_parameters_gpu(AbsDistMat *parameters,
+                          const std::vector<DataType *> &parameters_d) {
+    set_parameters(parameters);
+    m_parameters_d = parameters_d;
+  }
 
   /// Get optimizer name
   virtual std::string name() const = 0;
@@ -90,8 +105,13 @@ class optimizer {
  protected:
   /// LBANN communicator
   lbann_comm *m_comm;
+  /// cuDNN manager
+  cudnn::cudnn_manager *m_cudnn;
   /// Parameters to optimize
   AbsDistMat *m_parameters;
+  /// m_parameters on GPU memory
+  std::vector<DataType *> m_parameters_d;
+  
   /// Parameter matrix height
   int m_height;
   /// Parameter matrix width
