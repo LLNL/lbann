@@ -223,6 +223,10 @@ class local_response_normalization_layer : public regularizer_layer {
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
 
+    // Check if LRN is using default beta parameter
+    const bool default_beta = (std::fabs((m_lrn_beta - 0.75) / 0.75)
+                               < 2 * std::numeric_limits<DataType>::epsilon());
+
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
     // scale_factor(i)
@@ -266,7 +270,13 @@ class local_response_normalization_layer : public regularizer_layer {
             // Apply local response normalization to current entry
             const DataType input_entry = prev_activations_local(index, sample);
             const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
-            const DataType output_entry = input_entry * std::pow(scale_factor, -m_lrn_beta);
+            DataType output_entry;
+            if(default_beta) { // Special case when beta = 0.75
+              output_entry = input_entry / std::sqrt(scale_factor * std::sqrt(scale_factor));
+            }
+            else {
+              output_entry = input_entry * std::pow(scale_factor, -m_lrn_beta);
+            }
             activations_local(index, sample) = output_entry;
 
             // Update sum for next normalization window
@@ -309,6 +319,10 @@ class local_response_normalization_layer : public regularizer_layer {
     // Input and output entries are divided amongst channels
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
+
+    // Check if LRN is using default beta parameter
+    const bool default_beta = (std::fabs((m_lrn_beta - 0.75) / 0.75)
+                               < 2 * std::numeric_limits<DataType>::epsilon());
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)
@@ -360,8 +374,14 @@ class local_response_normalization_layer : public regularizer_layer {
             const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
 
             // Update current error signal entry
-            error_signal_local(index, sample)
-              += prev_error_signal_entry * std::pow(scale_factor, -m_lrn_beta);
+            DataType error_signal_update;
+            if(default_beta) { // Special case when beta = 0.75
+              error_signal_update = prev_error_signal_entry / std::sqrt(scale_factor * std::sqrt(scale_factor));
+            }
+            else {
+              error_signal_update = prev_error_signal_entry * std::pow(scale_factor, -m_lrn_beta);
+            }
+            error_signal_local(index, sample) += error_signal_update;
             
             // Update error signal entries in normalization window
             for(int c = std::max(window_start, 0);
