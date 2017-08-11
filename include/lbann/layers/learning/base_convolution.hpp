@@ -101,6 +101,11 @@ class base_convolution_layer : public learning {
   /** GPU memory for convolution bias gradient. */
   std::vector<DataType*> m_bias_weights_gradient_d;
 
+  /** Kernel weights gradients computed on each GPU. */
+  AbsDistMat *m_kernel_weights_gradient_per_gpu;
+  /** Bias weights gradients computed on each GPU. */
+  AbsDistMat *m_bias_weights_gradient_per_gpu;
+
 #endif // __LIB_CUDNN
 
   public:
@@ -209,6 +214,13 @@ class base_convolution_layer : public learning {
 
     // Unpin host memory
     this->m_cudnn->unpin_matrix(*this->m_weights);
+    this->m_cudnn->unpin_matrix(*m_kernel_weights_gradient_per_gpu);
+    this->m_cudnn->unpin_matrix(*m_bias_weights_gradient_per_gpu);
+
+    // Delete matrices
+    delete m_kernel_weights_gradient_per_gpu;
+    delete m_bias_weights_gradient_per_gpu;
+
   #endif // #ifdef __LIB_CUDNN
 
     // Delete matrix views
@@ -225,10 +237,14 @@ class base_convolution_layer : public learning {
 
     /// Instantiate these view objects but do not allocate data for them
     /// @todo model parallel implementation
-    m_kernel_weights_v           = new StarMat(this->m_comm->get_model_grid());
-    m_kernel_weights_gradient_v  = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_v             = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_gradient_v    = new StarMat(this->m_comm->get_model_grid());
+    m_kernel_weights_v                = new StarMat(this->m_comm->get_model_grid());
+    m_kernel_weights_gradient_v       = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_v                  = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_v         = new StarMat(this->m_comm->get_model_grid());
+  #ifdef __LIB_CUDNN
+    m_kernel_weights_gradient_per_gpu = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient_per_gpu   = new StarMat(this->m_comm->get_model_grid());
+  #endif // #ifdef __LIB_CUDNN
   }
 
   /** Setup layer data.
@@ -313,6 +329,18 @@ class base_convolution_layer : public learning {
       this->m_cudnn->allocate_on_gpus(this->m_bias_weights_gradient_d,
                                       this->m_bias_weights_gradient_v->Height(),
                                       this->m_bias_weights_gradient_v->Width());
+    }
+
+    // Initialize CPU memory for GPU reductions
+    m_kernel_weights_gradient_per_gpu->Resize(m_kernel_weights_gradient_v->Height(),
+                                              m_kernel_weights_gradient_v->Width()
+                                              * this->m_cudnn->get_num_gpus());
+    this->m_cudnn->pin_matrix(*m_kernel_weights_gradient_per_gpu);
+    if(m_bias_scaling_factor != DataType(0)) {
+      m_bias_weights_gradient_per_gpu->Resize(m_bias_weights_gradient_v->Height(),
+                                              m_bias_weights_gradient_v->Width()
+                                              * this->m_cudnn->get_num_gpus());
+      this->m_cudnn->pin_matrix(*m_bias_weights_gradient_per_gpu);
     }
 
   #endif // #ifdef __LIB_CUDNN
@@ -518,11 +546,42 @@ class base_convolution_layer : public learning {
     }
 
     // Transfer gradients from GPUs to CPU and reduce
-    this->m_cudnn->reduce_from_gpus(m_kernel_weights_gradient_v->Matrix(),
-                                    m_kernel_weights_gradient_d);
+    const int kernel_weights_width = m_kernel_weights_gradient_v->Width();
+    const int bias_weights_width = m_bias_weights_gradient_v->Width();
+    this->m_cudnn->gather_from_gpus(m_kernel_weights_gradient_per_gpu->Matrix(),
+                                    m_kernel_weights_gradient_d,
+                                    kernel_weights_width);
     if(m_bias_scaling_factor != DataType(0)) {
-      this->m_cudnn->reduce_from_gpus(m_bias_weights_gradient_v->Matrix(),
-                                      m_bias_weights_gradient_d);
+      this->m_cudnn->gather_from_gpus(m_bias_weights_gradient_per_gpu->Matrix(),
+                                      m_bias_weights_gradient_d,
+                                      bias_weights_width);
+    }
+    this->m_cudnn->synchronize();
+    for(int i=0; i<num_gpus; ++i) {
+      if(i == 0) {
+        El::Copy(m_kernel_weights_gradient_per_gpu->LockedMatrix()
+                 (El::ALL, El::IR(0, kernel_weights_width)),
+                 m_kernel_weights_gradient_v->Matrix());
+      }
+      else {
+        m_kernel_weights_gradient_v->Matrix()
+          += (m_kernel_weights_gradient_per_gpu->LockedMatrix()
+              (El::ALL, El::IR(i * kernel_weights_width, (i+1) * kernel_weights_width)));
+      }
+    }
+    if(m_bias_scaling_factor != DataType(0)) {
+      for(int i=0; i<num_gpus; ++i) {
+        if(i == 0) {
+          El::Copy(m_bias_weights_gradient_per_gpu->LockedMatrix()
+                   (El::ALL, El::IR(0, bias_weights_width)),
+                   m_bias_weights_gradient_v->Matrix());
+        }
+        else {
+          m_bias_weights_gradient_v->Matrix()
+            += (m_bias_weights_gradient_per_gpu->LockedMatrix()
+                (El::ALL, El::IR(i * bias_weights_width, (i+1) * bias_weights_width)));
+        }
+      }
     }
     *this->m_weights_gradient
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();

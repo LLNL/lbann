@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
         dnn->add(relu3);
         index++;
 
@@ -539,7 +539,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
         dnn->add(relu3);
         index++;
 
