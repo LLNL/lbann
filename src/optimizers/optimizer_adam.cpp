@@ -34,8 +34,8 @@
 namespace lbann {
 
 adam::adam(lbann_comm *comm, DataType learning_rate, DataType beta1,
-           DataType beta2, DataType eps)
-  : optimizer(comm, learning_rate),
+           DataType beta2, DataType eps, cudnn::cudnn_manager *cudnn)
+    : optimizer(comm, learning_rate, cudnn),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
@@ -52,6 +52,14 @@ adam::adam(const adam& other)
   if (other.m_moment1) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
+    if (other.m_moment1_d.size() > 0) {
+      int local_height = m_parameters->LocalHeight();
+      int local_width = m_parameters->LocalWidth();  
+      m_cudnn->allocate_on_gpus(m_moment1_d, local_height, local_width);
+      m_cudnn->copy_on_gpus(m_moment1_d, other.m_moment1_d, local_height, local_width);
+      m_cudnn->allocate_on_gpus(m_moment2_d, local_height, local_width);
+      m_cudnn->copy_on_gpus(m_moment2_d, other.m_moment2_d, local_height, local_width);
+    }
   }
 }
 
@@ -66,9 +74,23 @@ adam& adam::operator=(const adam& other) {
     delete m_moment1;
     delete m_moment2;
   }
+  if (m_moment1_d.size() > 0) {
+    m_cudnn->deallocate_on_gpus(m_moment1_d);
+    m_moment1_d.clear();
+    m_cudnn->deallocate_on_gpus(m_moment2_d);
+    m_moment2_d.clear();
+  }
   if (other.m_moment1) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
+    if (other.m_moment1_d.size() > 0) {
+      int local_height = m_parameters->LocalHeight();
+      int local_width = m_parameters->LocalWidth();  
+      m_cudnn->allocate_on_gpus(m_moment1_d, local_height, local_width);
+      m_cudnn->copy_on_gpus(m_moment1_d, other.m_moment1_d, local_height, local_width);
+      m_cudnn->allocate_on_gpus(m_moment2_d, local_height, local_width);
+      m_cudnn->copy_on_gpus(m_moment2_d, other.m_moment2_d, local_height, local_width);
+    }
   } else {
     m_moment1 = nullptr;
     m_moment2 = nullptr;
@@ -80,6 +102,8 @@ adam::~adam() {
   if(m_moment1) {
     delete m_moment1;
     delete m_moment2;
+    m_cudnn->deallocate_on_gpus(m_moment1_d);
+    m_cudnn->deallocate_on_gpus(m_moment2_d);    
   }
 }
 
@@ -109,6 +133,19 @@ void adam::setup(AbsDistMat *parameters) {
   }
   El::Zeros(*m_moment1, m_height, m_width);
   El::Zeros(*m_moment2, m_height, m_width);
+}
+
+void adam::setup_gpu(AbsDistMat *parameters,
+                     const std::vector<DataType *> &parameters_d) {
+#ifdef __LIB_CUDA
+  optimizer::setup_gpu(parameters, parameters_d);
+  int local_height = m_parameters->LocalHeight();
+  int local_width = m_parameters->LocalWidth();  
+  m_cudnn->allocate_on_gpus(m_moment1_d, local_height, local_width);
+  m_cudnn->clear_on_gpus(m_moment1_d, local_height, local_width);  
+  m_cudnn->allocate_on_gpus(m_moment2_d, local_height, local_width);
+  m_cudnn->clear_on_gpus(m_moment2_d, local_height, local_width);
+#endif  
 }
 
 void adam::update(const AbsDistMat *gradient) {
@@ -168,18 +205,21 @@ void adam::update(const AbsDistMat *gradient) {
   }
 }
 
+
 adam_factory::adam_factory(lbann_comm *comm, DataType learning_rate,
-                           DataType beta1, DataType beta2, DataType eps)
+                           DataType beta1, DataType beta2, DataType eps,
+                           cudnn::cudnn_manager *cudnn)
   : optimizer_factory(comm, "adam"),
     m_learning_rate(learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
-    m_eps(eps) {}
+    m_eps(eps),
+    m_cudnn(cudnn) {}
 
 adam_factory::~adam_factory() {}
 
 optimizer *adam_factory::create_optimizer() {
-  return new adam(m_comm, m_learning_rate, m_beta1, m_beta2, m_eps);
+  return new adam(m_comm, m_learning_rate, m_beta1, m_beta2, m_eps, m_cudnn);
 }
 
 }  // namespace lbann

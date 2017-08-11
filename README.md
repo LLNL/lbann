@@ -8,19 +8,25 @@
 
 ### Using spack setup
 
-    http://spack.readthedocs.io/en/latest/packaging_guide.html?highlight=spack%20diy#build-system-configuration-support
-
+    Here is an example of setting up the local build environment on x86_64 HPC system
+    ```
     cd lbann
-    spack setup lbann@local %intel@18.0.0 ^mvapich2
-    mkdir spack-build; cd spack-build
-    ../spconfig.py ..
-    make
-    make install
+    mkdir spack_builds; cd spack_builds
+    ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m mvapich2
+    cd gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
+    make -j all
+    ```
+    [Spack Setup](http://spack.readthedocs.io/en/latest/packaging_guide.html?highlight=spack%20diy#build-system-configuration-support)
 
-### Using spack diy
-   spack diy lbann@local %gcc@4.9.3
-   spack diy lbann@local %intel@17.0.0
- 
+    The build_lbann.sh script roughly does the following steps for this example:
+    ```
+    spack setup lbann@local build_type=Release dtype=4 %gcc@7.1.0 ^elemental@master blas=openblas ^mvapich2
+    spack setup lbann@local %intel@18.0.0 ^mvapich2
+    mkdir -p gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
+    cd gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
+    ../spconfig.py ../../..
+    ```
+
 ## Using LBANN on LLNL LC clusters
 
     cd examples

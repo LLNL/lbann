@@ -134,9 +134,6 @@ int main(int argc, char *argv[]) {
     std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(master, pb, data_readers, pb_model->mini_batch_size());
 
-    // Construct optimizer
-    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, pb);
-
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = NULL;
 #if __LIB_CUDNN
@@ -155,6 +152,11 @@ int main(int argc, char *argv[]) {
       cerr << "code was NOT compiled with __LIB_CUDNN\n";
     }
 #endif
+
+    // Construct optimizer
+    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, cudnn, pb);
+    
+
 
     // User feedback
     print_parameters(comm, pb);

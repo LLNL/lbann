@@ -44,7 +44,8 @@ class adam : public optimizer {
    DataType learning_rate,
    DataType beta1 = DataType(0.9),
    DataType beta2 = DataType(0.99),
-   DataType eps = DataType(1e-8));
+   DataType eps = DataType(1e-8),
+   cudnn::cudnn_manager *cudnn=nullptr);
   adam(const adam& other);
   adam& operator=(const adam& other);
   /// Destructor
@@ -52,8 +53,13 @@ class adam : public optimizer {
   adam* copy() const { return new adam(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
+  void setup_gpu(AbsDistMat *parameters,
+                 const std::vector<DataType *> &parameters_d);
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient);
+#ifdef __LIB_CUDA
+  void update_gpu(const std::vector<DataType *> &gradient_d);
+#endif  
   std::string name() const { return "adam"; }
  private:
   /// Update factor for first moment estimate
@@ -68,8 +74,12 @@ class adam : public optimizer {
   DataType m_current_beta2;
   /// First moment estimates
   AbsDistMat *m_moment1;
+  // GPU memory for m_moment1;
+  std::vector<DataType *> m_moment1_d;
   /// Second moment estimates
   AbsDistMat *m_moment2;
+  // GPU memory for m_moment2;
+  std::vector<DataType *> m_moment2_d;
 };
 
 /// Factory for Adam optimizer
@@ -81,7 +91,8 @@ class adam_factory : public optimizer_factory {
    DataType learning_rate,
    DataType beta1 = DataType(0.9),
    DataType beta2 = DataType(0.99),
-   DataType eps = DataType(1e-8));
+   DataType eps = DataType(1e-8),
+   cudnn::cudnn_manager *cudnn=nullptr);
   /// Destructor
   virtual ~adam_factory();
   /// Create Adam optimizer
@@ -95,6 +106,7 @@ class adam_factory : public optimizer_factory {
   DataType m_beta2;
   /// Small factor to avoid division by zero
   DataType m_eps;
+  cudnn::cudnn_manager *m_cudnn;
 };
 
 } // namespace lbann

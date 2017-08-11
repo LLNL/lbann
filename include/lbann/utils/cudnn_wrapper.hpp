@@ -44,9 +44,9 @@
 #ifdef __LIB_CUDNN
 #define FORCE_CHECK_CUDA(cuda_call)                                     \
   do {                                                                  \
-    const cudaError_t status = cuda_call;                               \
-    if (status != cudaSuccess) {                                        \
-      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
+    const cudaError_t cuda_status = cuda_call;                          \
+    if (cuda_status != cudaSuccess) {                                   \
+      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("CUDA error");                       \
@@ -54,9 +54,9 @@
   } while (0)
 #define FORCE_CHECK_CUDNN(cudnn_call)                                   \
   do {                                                                  \
-    const cudnnStatus_t status = cudnn_call;                            \
-    if (status != CUDNN_STATUS_SUCCESS) {                               \
-      std::cerr << "cuDNN error: " << cudnnGetErrorString(status) << "\n"; \
+    const cudnnStatus_t cudnn_status = cudnn_call;                      \
+    if (cudnn_status != CUDNN_STATUS_SUCCESS) {                         \
+      std::cerr << "cuDNN error: " << cudnnGetErrorString(cudnn_status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
       throw lbann::lbann_exception("cuDNN error");                      \
@@ -64,8 +64,8 @@
   } while (0)
 #define FORCE_CHECK_CUBLAS(cublas_call)                                 \
   do {                                                                  \
-    const cublasStatus_t status = cublas_call;                          \
-    if (status != CUBLAS_STATUS_SUCCESS) {                              \
+    const cublasStatus_t cublas_status = cublas_call;                   \
+    if (cublas_status != CUBLAS_STATUS_SUCCESS) {                       \
       std::cerr << "CUBLAS error";                                      \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
@@ -140,7 +140,7 @@ class cudnn_manager {
   /** Get ith CUBLAS handle (const). */
   const cublasHandle_t& get_cublas_handle(int i=0) const;
   /** Get GPU work spaces. */
-  std::vector<void *> get_work_spaces();
+  std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
   void *get_work_space(int i=0);
   /** Get GPU work space sizes (in bytes). */
@@ -153,48 +153,54 @@ class cudnn_manager {
   void set_work_space_size(int i, size_t size);
 
   /** Allocate memory on GPUs. */
-  void allocate_on_gpus(std::vector<DataType *>& gpu_data,
+  void allocate_on_gpus(std::vector<DataType*>& gpu_data,
                         int height,
                         int width_per_gpu);
   /** Deallocate memory on GPUs. */
-  void deallocate_on_gpus(std::vector<DataType *>& gpu_data);
+  void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
   /** Zero out memory on GPUs. */
-  void clear_on_gpus(std::vector<DataType *>& gpu_data,
+  void clear_on_gpus(std::vector<DataType*>& gpu_data,
                      int height,
                      int width_per_gpu);
   /** Zero out memory corresponding to unused columns on GPUs. */
-  void clear_unused_columns_on_gpus(std::vector<DataType *>& gpu_data,
+  void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
                                     int height,
                                     int width,
                                     int width_per_gpu);
 
   /** Copy data on GPUs. */
-  void copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
-                    const std::vector<DataType *>& gpu_src_data,
+  void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
+                    const std::vector<DataType*>& gpu_src_data,
                     int height,
-                    int width_per_gpu);
+                    int width_per_gpu,
+                    int src_leading_dim = 0,
+                    int dst_leading_dim = 0);
   /** Copy data from CPU to GPUs.
    *  Matrix columns are scattered amongst GPUs.
    */
-  void scatter_to_gpus(std::vector<DataType *>& gpu_data,
+  void scatter_to_gpus(std::vector<DataType*>& gpu_data,
                        const Mat& cpu_data,
-                       int width_per_gpu);
+                       int width_per_gpu,
+                       int gpu_data_leading_dim = 0);
   /** Copy data from GPUs to CPU.
    *  Matrix columns are gathered from GPUs.
    */
   void gather_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType *>& gpu_data,
-                        int width_per_gpu);
+                        const std::vector<DataType*>& gpu_data,
+                        int width_per_gpu,
+                        int gpu_data_leading_dim = 0);
   /** Copy data from CPU to GPUs.
    *  Data is duplicated across GPUs.
    */
-  void broadcast_to_gpus(std::vector<DataType *>& gpu_data,
-                         const Mat& cpu_data);
+  void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
+                         const Mat& cpu_data,
+                         int gpu_data_leading_dim = 0);
   /** Copy data from GPUs to CPU and reduce.
    */
   void reduce_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType *>& gpu_data);
+                        const std::vector<DataType*>& gpu_data,
+                        int gpu_data_leading_dim = 0);
 
   /** Synchronize GPUs. */
   void synchronize();
