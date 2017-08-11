@@ -180,6 +180,9 @@ class batch_normalization : public regularizer_layer {
   /** GPU memory for variance gradient. */
   std::vector<DataType *> m_var_gradient_d;
 
+  /** Workspace with pinned memory. */
+  AbsDistMat *m_pinned_workspace;
+
 #endif // __LIB_CUDNN
 
  public:
@@ -356,6 +359,10 @@ class batch_normalization : public regularizer_layer {
     this->m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
     this->m_cudnn->deallocate_on_gpus(m_var_gradient_d);
 
+    // Delete pinned memory workspace
+    this->m_cudnn->unpin_matrix(*m_pinned_workspace);
+    delete m_pinned_workspace;
+
   #endif // #ifdef __LIB_CUDNN
 
     // Deallocate matrices
@@ -397,6 +404,9 @@ class batch_normalization : public regularizer_layer {
     m_bias_v = new StarMat(this->m_comm->get_model_grid());
     m_scale_gradient_v = new StarMat(this->m_comm->get_model_grid());
     m_bias_gradient_v = new StarMat(this->m_comm->get_model_grid());
+  #ifdef __LIB_CUDNN
+    m_pinned_workspace = new StarMat(this->m_comm->get_model_grid());
+  #endif // #ifdef __LIB_CUDNN
   }
 
   virtual data_layout get_data_layout() const { return T_layout; }
@@ -492,6 +502,11 @@ class batch_normalization : public regularizer_layer {
                                     m_var_gradient_v->Height(),
                                     m_var_gradient_v->Width());
 
+    // Initialize pinned memory workspace
+    m_pinned_workspace->Resize(m_parameters->Height(),
+                               4 * this->m_cudnn->get_num_gpus());
+    this->m_cudnn->pin_matrix(*m_pinned_workspace);
+
   #endif // __LIB_CUDNN
 
   }
@@ -528,6 +543,11 @@ class batch_normalization : public regularizer_layer {
     const Mat& scale_local = m_scale_v->LockedMatrix();
     const Mat& bias_local = m_bias_v->LockedMatrix();
     
+    // Setup pinned workspace
+    Mat& pinned_workspace_local = m_pinned_workspace->Matrix();
+    Mat workspace1 = pinned_workspace_local(El::ALL, El::IR(0, num_gpus));
+    Mat workspace2 = pinned_workspace_local(El::ALL, El::IR(num_gpus, 2*num_gpus));
+    
     // Matrix parameters
     const int height = this->m_prev_activations_v->Height();
     const int width = this->m_prev_activations_v->Width();
@@ -538,7 +558,7 @@ class batch_normalization : public regularizer_layer {
     // Compute statistics
     if(this->get_execution_mode() == execution_mode::training) {
 
-      // Compute sums and sums of squares
+      // Compute sums and sums of squares on each GPU
       for(int i=0; i<num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
@@ -553,8 +573,21 @@ class batch_normalization : public regularizer_layer {
                                               m_var_d[i],
                                               this->m_cudnn->get_stream(i));
       }
-      this->m_cudnn->reduce_from_gpus(mean_local, m_mean_d);
-      this->m_cudnn->reduce_from_gpus(var_local, m_var_d);
+      
+      // Reduce sums and sums of squares across GPUs and nodes
+      this->m_cudnn->gather_from_gpus(workspace1, m_mean_d, 1);
+      this->m_cudnn->gather_from_gpus(workspace2, m_var_d, 1);
+      this->m_cudnn->synchronize();
+      for(int i=0; i<num_gpus; ++i) {
+        if(i == 0) {
+          El::Copy(workspace1(El::ALL, El::IR(0)), mean_local);
+          El::Copy(workspace2(El::ALL, El::IR(0)), var_local);
+        }
+        else {
+          mean_local += workspace1(El::ALL, El::IR(i));
+          var_local += workspace2(El::ALL, El::IR(i));
+        }
+      }
       El::AllReduce(*m_statistics_v,
                     m_statistics_v->RedundantComm(),
                     El::mpi::SUM);
@@ -624,6 +657,13 @@ class batch_normalization : public regularizer_layer {
     Mat& scale_gradient_local = m_scale_gradient_v->Matrix();
     Mat& bias_gradient_local = m_bias_gradient_v->Matrix();
 
+    // Setup pinned workspace
+    Mat& pinned_workspace_local = m_pinned_workspace->Matrix();
+    Mat workspace1 = pinned_workspace_local(El::ALL, El::IR(0, num_gpus));
+    Mat workspace2 = pinned_workspace_local(El::ALL, El::IR(num_gpus, 2*num_gpus));
+    Mat workspace3 = pinned_workspace_local(El::ALL, El::IR(2*num_gpus, 3*num_gpus));
+    Mat workspace4 = pinned_workspace_local(El::ALL, El::IR(3*num_gpus, 4*num_gpus));
+
     // Matrix parameters
     const int height = this->m_prev_activations_v->Height();
     const int width = this->m_prev_activations_v->Width();
@@ -653,12 +693,26 @@ class batch_normalization : public regularizer_layer {
                                                   this->m_cudnn->get_stream(i));
     }
 
-    // Compute gradients w.r.t. scale factor, bias term, mean, and
-    // variance
-    this->m_cudnn->reduce_from_gpus(scale_gradient_local, m_scale_gradient_d);
-    this->m_cudnn->reduce_from_gpus(bias_gradient_local, m_bias_gradient_d);
-    this->m_cudnn->reduce_from_gpus(mean_gradient_local, m_mean_gradient_d);
-    this->m_cudnn->reduce_from_gpus(var_gradient_local, m_var_gradient_d);
+    // Reduce sums and sums of squares across GPUs and nodes
+    this->m_cudnn->gather_from_gpus(workspace1, m_scale_gradient_d, 1);
+    this->m_cudnn->gather_from_gpus(workspace2, m_bias_gradient_d, 1);
+    this->m_cudnn->gather_from_gpus(workspace3, m_mean_gradient_d, 1);
+    this->m_cudnn->gather_from_gpus(workspace4, m_var_gradient_d, 1);
+    this->m_cudnn->synchronize();
+    for(int i=0; i<num_gpus; ++i) {
+      if(i == 0) {
+        El::Copy(workspace1(El::ALL, El::IR(i)), scale_gradient_local);
+        El::Copy(workspace2(El::ALL, El::IR(i)), bias_gradient_local);
+        El::Copy(workspace3(El::ALL, El::IR(i)), mean_gradient_local);
+        El::Copy(workspace4(El::ALL, El::IR(i)), var_gradient_local);
+      }
+      else {
+        scale_gradient_local += workspace1(El::ALL, El::IR(i));
+        bias_gradient_local += workspace2(El::ALL, El::IR(i));
+        mean_gradient_local += workspace3(El::ALL, El::IR(i));
+        var_gradient_local += workspace4(El::ALL, El::IR(i));
+      }
+    }
     scale_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     bias_gradient_local
