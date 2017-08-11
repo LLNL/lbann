@@ -686,7 +686,7 @@ class base_convolution_layer : public learning {
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& kernel_weights_gradient_local = m_kernel_weights_gradient_v->Matrix();
     Mat& bias_weights_gradient_local = m_bias_weights_gradient_v->Matrix();
