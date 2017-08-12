@@ -34,12 +34,21 @@
 namespace lbann {
 namespace fully_connected_cuda {
 
+/// reduction of rows with the result copied back to CPU 
 void row_sum(cudnn::cudnn_manager &cudnn,
              std::vector<DataType*> matrices,
              El::Int h, El::Int w,
              DataType factor,
              Mat &dest,
              const std::vector<DataType*> &work_column);
+
+/// reduction of rows solely on GPUs. 
+void row_sum(cudnn::cudnn_manager &cudnn,
+             std::vector<DataType*> matrices,
+             El::Int h, El::Int w,
+             DataType factor,
+             std::vector<DataType*> &dest);
+
 
 /// tensor <= tensor * beta + bias * factor
 void add_tensor(DataType factor,
