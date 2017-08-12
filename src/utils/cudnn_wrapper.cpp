@@ -550,6 +550,9 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
     FORCE_CHECK_CUDA(status);
     return;
   }
+
+  // clear the error status
+  cudaGetLastError();
   
   // Allocate pinned memory on host
   const size_t buffer_size = local_height * local_width * sizeof(DataType);
