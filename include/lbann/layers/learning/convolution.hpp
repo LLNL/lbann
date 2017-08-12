@@ -141,7 +141,7 @@ class convolution_layer : public base_convolution_layer {
 
     // Check if previous neuron tensor dimensions are valid
   #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != this->m_kernel_dims.size()) {
+    if(this->m_num_neuron_dims != this->m_kernel_dims.size() - 1) {
       throw lbann_exception("convolution_layer: neuron tensor dimensions are unexpected");
     }
   #endif

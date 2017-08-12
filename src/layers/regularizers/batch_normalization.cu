@@ -27,6 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "math.h"
+#include <iostream>
+#include "lbann/utils/exception.hpp"
 
 // Macros to check CUDA calls
 #define FORCE_CHECK_CUDA(cuda_call)                                     \
