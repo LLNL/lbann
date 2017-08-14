@@ -88,6 +88,25 @@ void row_sum(cudnn::cudnn_manager &cudnn,
 #endif
 }
 
+void row_sum(cudnn::cudnn_manager &cudnn,
+             std::vector<DataType*> matrices,
+             El::Int h, El::Int w,
+             DataType factor,
+             std::vector<DataType*> &dest) {
+  int num_gpus = cudnn.get_num_gpus();
+  int block_dim = 256;
+  int grid_dim = h / block_dim + ((h % block_dim) ? 1 : 0);
+  for (int i = 0; i < num_gpus; ++i) {
+    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
+    row_sum_kernel<<<grid_dim, block_dim>>>(h, w, matrices[i], factor, dest[i], false);
+  }
+#ifdef LBANN_DEBUG  
+  cudnn.synchronize();
+  cudnn.check_error();
+#endif
+  cudnn.allreduce(dest, h, 1);
+}
+
 __global__ void add_tensor_kernel(DataType factor,
                                   DataType *bias,
                                   El::Int bias_h, El::Int bias_w,

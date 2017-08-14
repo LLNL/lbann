@@ -333,16 +333,16 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
     "/activations/";
-  summarizer.reduce_mean(prefix + "mean", *m_activations, step);
-  summarizer.reduce_min(prefix + "min", *m_activations, step);
-  summarizer.reduce_max(prefix + "max", *m_activations, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_activations, step);
+  summarizer.reduce_mean(prefix + "mean", *m_activations_v, step);
+  summarizer.reduce_min(prefix + "min", *m_activations_v, step);
+  summarizer.reduce_max(prefix + "max", *m_activations_v, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_activations_v, step);
   prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
     "/error_signal/";
-  summarizer.reduce_mean(prefix + "mean", *m_error_signal, step);
-  summarizer.reduce_min(prefix + "min", *m_error_signal, step);
-  summarizer.reduce_max(prefix + "max", *m_error_signal, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal, step);
+  summarizer.reduce_mean(prefix + "mean", *m_error_signal_v, step);
+  summarizer.reduce_min(prefix + "min", *m_error_signal_v, step);
+  summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);
+  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
 }
 
 void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {

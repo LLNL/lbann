@@ -201,6 +201,11 @@ class cudnn_manager {
   void reduce_from_gpus(Mat& cpu_data,
                         const std::vector<DataType*>& gpu_data,
                         int gpu_data_leading_dim = 0);
+  /** Allreduce within local multiple GPUs
+   */
+  void allreduce(const std::vector<DataType*>& gpu_data,
+                 El::Int height,
+                 El::Int width);
 
   /** Synchronize GPUs. */
   void synchronize();
