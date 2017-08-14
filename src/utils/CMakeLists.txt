@@ -7,3 +7,9 @@ add_sources(
   cudnn_wrapper.cpp
   options.cpp
 )
+
+if(LBANN_HAS_CUDA)
+  add_sources(
+    cudnn_wrapper_cuda.cu
+    )
+endif()
