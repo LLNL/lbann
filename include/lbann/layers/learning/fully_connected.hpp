@@ -350,11 +350,17 @@ class fully_connected_layer : public learning {
 
 
   void fp_compute() {
+#ifdef __LBANN_DEBUG
+    this->m_cudnn->synchronize_all();
+#endif    
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
       fp_compute_cpu();
     }
+#ifdef __LBANN_DEBUG
+    this->m_cudnn->synchronize_all();
+#endif    
   }
 
   void fp_compute_cpu() {  

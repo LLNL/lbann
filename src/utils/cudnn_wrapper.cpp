@@ -400,6 +400,13 @@ void cudnn_manager::cudnn_manager::synchronize() {
   }
 }
 
+void cudnn_manager::cudnn_manager::synchronize_all() {
+  for(int i=0; i<m_num_gpus; ++i) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaDeviceSynchronize());
+  }
+}
+
 void cudnn_manager::print_version() const {
   std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
