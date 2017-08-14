@@ -144,7 +144,7 @@ class Layer {
   virtual data_layout get_data_layout() const = 0;
   /** Return (a view of) the activations matrix for this layer. */
   virtual ElMat& get_activations() {
-    return *m_activations;
+    return *m_activations_v;
   }
   /** Reset layer stat counters. */
   virtual void reset_counters() {
