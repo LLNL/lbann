@@ -1,0 +1,16 @@
+/** \page metrics Metrics
+\copydetails lbann::metrics::metric  Metric functions can be specified on prototext model files. LBANN supported metrics are found below.
+
+\section cate_accuracy Categorical Accuracy
+    Implementation details: lbann::metrics::categorical_accuracy
+
+\section mse Mean Squared Error
+    Implementation details: lbann::metrics::mean_squared_error
+
+\section top_k Top K Categorical Accuracy
+    \copydetails lbann::metrics::top_k_categorical_accuracy
+
+    Implementation details: lbann::metrics::top_k_categorical_accuracy 
+
+
+*/

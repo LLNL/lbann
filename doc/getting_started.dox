@@ -1,282 +1,63 @@
-/** \page getting_started Getting Started 
+/** \page getting_started Getting Started
 
 \section getting_started_download Download
 
-LBANN can be cloned from the <a
-href="https://github.com/LLNL/lbann">GitHub repository</a>:
+LBANN can be cloned from the 
+<a href="https://github.com/LLNL/lbann">GitHub repository</a>:
   
-\code{.sh}
-$ git clone https://github.com/LLNL/lbann.git
-\endcode
+  \code{.sh}
+  $ git clone https://github.com/LLNL/lbann.git
+  \endcode
 
-\section getting_started_dependencies Dependencies
-- \subpage cmake
-- \subpage mpi
-- \subpage elemental
-- \subpage opencv
-- CUDA (optional)
-- cuDNN (optional)
-- \subpage protobuf (optional)
-- \subpage doxygen (optional)
 
-LBANN also requires a C++ compiler with OpenMP support. The GCC 5.0
-and Intel 16.0 C++ compilers are recommended.
+  \section getting_started_building Building LBANN
+  The build process for LBANN differs on a machine to machine basis. This section describes the build process for \ref lc, \ref spack, and \ref osx. For users attempting to build on systems not listed above, refer to the LBANN \ref dependencies. 
 
-\section getting_started_compile Compilation
+  \subsection lc Livermore Computing Build 
+  Building on LC systems is supported via a build script. To run this script navigate to the LBANN directory and run \code{.sh}$ build_lbann_lc.sh \endcode located in scripts/. This will create a per system build located in the build directory in the main LBANN directory.
 
-\code{.sh}
-$ cd path/to/lbann
-$ mkdir -p build/my_build_dir
-$ cd build/my_build_dir
-$ cmake ../..
-$ make
-$ make install
-$ make doc
-\endcode
+  \subsection spack Spack Build
 
-It will typically be necessary to manually set CMake variables to
-control the build configuration. For instance, to set the variable
-SOME_CMAKE_VARIABLE to a value of "/some/file/path", simply put "-D
-SOME_CMAKE_VARIABLE=/some/file/path" as a command-line argument for
-cmake. Some useful variables are listed below:
+  \subsection osx OSX Build
 
-CMake Variable         | Description
------------------------|-------------------------
-CMAKE_BUILD_TYPE       | "Release" or "Debug"
-CMAKE_CXX_COMPILER     | C++ compiler
-CMAKE_C_COMPILER       | C compiler
-CMAKE_Fortran_COMPILER | Fortran compiler
-MPI_CXX_COMPILER       | MPI C++ compiler
-MPI_C_COMPILER         | MPI C compiler
-MPI_Fortran_COMPILER   | MPI Fortran compiler
-GFORTRAN_LIB           | Fortran library (needed when using gfortran in non-standard location)
-Elemental_DIR          | Elemental install directory
-OpenCV_DIR             | OpenCV install directory
-CUDA_TOOLKIT_ROOT_DIR  | CUDA install directory
-cuDNN_DIR              | cuDNN install directory
-WITH_CUDA              | Include CUDA in build
-WITH_CUDNN             | Include cuDNN in build
-WITH_TBINF             | Include Tensorboard interface in build
-FORCE_ELEMENTAL_BUILD  | Force local build of Elemental
-FORCE_OPENCV_BUILD     | Force local build of OpenCV
-FORCE_PROTOBUF_BUILD   | Force local build of Protocol Buffers (enabled by default)
-VERBOSE                | Verbose output
-CMAKE_INSTALL_MESSAGE  | Message mode when recompiling LBANN ("ALWAYS" or "LAZY")
-MAKE_NUM_PROCESSES     | Number of parallel processes when building dependencies
-LIBRARY_TYPE           | "SHARED" or "STATIC"
+  \subsection dependencies Dependency List
+  LBANN requires the following to build and operate. 
+  - CMake
+  - MPI
+  - Elemental
+  - OpenCV
+  - CuDA (optional)
+  - cuDNN (optional)
+  - Protocol Buffers (optional)
+  - Doxygen (optional)
 
-After successfully compiling, proceed to \ref basic_usage.
+  \section getting_started_basicusage Basic Usage
+  LBANN is run via the lbann executable with command line arguments consisting of prototext files. The lbann executable is located within the specific machine build directory's model_zoo directory. The prototext files are located within the main lbann directory's model_zoo directory. Lbann requires three prototext files as input: model, data reader, and optimizer. The model and reader must be paired based on the data required by the model (i.e MNIST model and MNIST reader). Therefore
+  an example execution from the main lbann directory on Catalyst would be:
+  \code{.sh}
+  $ build/catalyst.llnl.gov/model_zoo/lbann \
+  --model=model_zoo/prototext/model_mnist_multi.prototext \
+  --reader=model_zoo/prototext/data_reader_mnist.prototext \
+  --optimizer=model_zoo/prototext/opt_adagrad.prototext
+  \endcode
 
-\section getting_started_scripts Build Scripts
+  \subsection verification Verification
+  To verify functionality of LBANN users can run a test MNIST experiment. Using the command found in the \ref getting_started_basicusage section and 2 MPI ranks (srun -n2) should produce the following results on Catalyst:
+  \code{.sh}
+  --------------------------------------------------------------------------------
+  [20] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
+  global MB = [  20/  10/  10] global last MB = [  20/  10/  10]
+  local MB = [  10/  10/  10]  local last MB = [  10/  10/  10]
+  --------------------------------------------------------------------------------
+  Model 0 @54000 steps Training categorical accuracy: 99.9741% @12000 validation steps Validation categorical accuracy: 97.95%
+  Model 1 @54000 steps Training categorical accuracy: 99.9926% @12000 validation steps Validation categorical accuracy: 97.9833%
+  Model 0 average categorical cross entropy: 0.00176223
+  Model 1 average categorical cross entropy: 0.00126326
+  Model 0 Epoch time: 62.8982s; Mean minibatch time: 0.0218984s; Min: 0.0214709s; Max: 0.0306295s; Stdev: 0.000214515s
+  Model 1 Epoch time: 62.9628s; Mean minibatch time: 0.0219376s; Min: 0.0216846s; Max: 0.127405s; Stdev: 0.00204183s
+  Model 0 @20000 testing steps external validation categorical accuracy: 98.32%
+  Model 1 @20000 testing steps external validation categorical accuracy: 98.27%
+  \endcode
+  LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
 
-The shell script `build_lbann_lc.sh` is provided to automatically
-configure and build LBANN on LC systems at LLNL:
-
-\code{.sh}
-$ cd path/to/lbann
-$ scripts/build_lbann_lc.sh --help
-$ scripts/build_lbann_lc.sh
-\endcode
-
-The shell script `build_lbann_osx.sh` is provided to install
-dependencies with <a href="http://brew.sh">Homebrew</a>, configure
-LBANN, and build LBANN on OS X systems:
-
-\code{.sh}
-$ cd path/to/lbann
-$ scripts/build_lbann_osx.sh
-\endcode
-
-*/
-
-/** \page cmake CMake
-
-<a href="https://cmake.org">CMake</a> is a tool to manage the software
-build process. The LBANN build system, as well as the build system of
-many of its dependencies, is implemented with CMake. LBANN requires
-CMake version 2.8.11 or later.
-
-\section cmake_install_linux Installation on Linux
-
-Talk to your sysadmin.
-
-\section cmake_install_osx Installation on OS X
-
-Use <a href="http://brew.sh">Homebrew</a>:
-\code{.sh}
-$ brew install cmake
-\endcode
-*/
-
-/** \page mpi MPI
-
-MPI is a specification for message-passing. It manages distributed
-memory communication within Elemental and is also called directly by
-LBANN. Common implementations include <a
-href="https://www.mpich.org">MPICH</a>, <a
-href="https://www.open-mpi.org">Open MPI</a>, and <a
-href="http://mvapich.cse.ohio-state.edu">MVAPICH2</a>.  Elemental, and
-hence LBANN, requires implementations that meet the MPI-2
-specification.
-
-\section mpi_install_linux Installation on Linux
-
-Talk to your sysadmin.
-
-\section mpi_install_osx Installation on OS X
-
-Use <a href="http://brew.sh">Homebrew</a>:
-\code{.sh}
-$ brew install mpich2
-\endcode
-*/
-
-/** \page elemental Elemental
-
-<a href="http://www.libelemental.org">Elemental</a> is a package for
-distributed-memory linear algebra and optimization. It performs much
-of the distributed memory management and linear algebra in LBANN.
-LBANN requires a recent version of Elemental (as of 9/11/2016), so
-using the development version is recommended. If Elemental is not
-detected, it will be downloaded and built locally.
-
-\section elemental_download Download
-
-Download the source code from the <a
-href="https://github.com/elemental/Elemental">GitHub repository</a>:
-
-\code{.sh}
-$ git clone https://github.com/elemental/Elemental.git
-\endcode
-
-Using precompiled binaries is not recommended since the latest release
-(0.86) is not compatible with LBANN.
-
-\section elemental_install Installation
-
-\code{.sh}
-$ cd /path/to/elemental
-$ mkdir build
-$ mkdir install
-$ cd build
-$ cmake -D CMAKE_INSTALL_PREFIX=/path/to/elemental/install ..
-$ make
-$ make install
-\endcode
-
-Consult <a
-href="http://libelemental.org/documentation/dev/build.html">Elemental's
-documentation</a> for additional details and options.  LBANN may
-encounter linking problems with Elemental's dependencies, especially
-BLAS and LAPACK, so it may be necessary to modify LD_LIBRARY_PATH to
-include paths to the appropriate library directories:
-
-\code{.sh}
-$ export LD_LIBRARY_PATH="/first/library/dir:/second/library/dir:$LD_LIBRARY_PATH"
-\endcode
-
-\section elemental_issues Issues (as of 9/16/2016)
-
-- There is a <a
-  href="https://github.com/elemental/Elemental/issues/177">known
-  issue</a> where Elemental fails to compile under the Intel compiler.
-- Elemental experiences compilation errors with GCC 4.8 or
-  earlier. GCC 4.9 works, but the LBANN team has heard reports that it
-  does a poor job optimizing certain vectorized operations. For this
-  reason, we recommend compiling with GCC 5.
-
-*/
-
-/** \page opencv OpenCV
-
-OpenCV is a library with computer vision functions. LBANN uses version
-2.4 and may encounter problems with version 3.0 or later. If OpenCV is
-not detected, it will be downloaded and built locally.
-
-\section opencv_install_linux Installation on Linux
-
-Download OpenCV from the <a
-href="https://github.com/opencv/opencv">GitHub repository</a>:
-
-\code{.sh}
-$ git clone https://github.com/opencv/opencv.git
-$ cd opencv
-$ git checkout 2.4.13
-\endcode
-
-Build OpenCV:
-
-\code{.sh}
-$ cd /path/to/opencv
-$ mkdir build
-$ mkdir install
-$ cd build
-$ cmake -D CMAKE_INSTALL_PREFIX=/path/to/opencv/install ..
-$ make
-$ make install
-\endcode
-
-It may be necessary to set the following CMake variables to avoid
-build errors:
-
-CMake Variable       | Value
----------------------|------------------------
-OPENCV_WITH_CUDA     | OFF
-OPENCV_WITH_IPP      | OFF
-OPENCV_WITH_GPHOTO   | OFF
-
-\section opencv_installing_osx Installation on OS X
-
-Use <a href="http://brew.sh">Homebrew</a>:
-\code{.sh}
- $ brew install opencv
-\endcode
-*/
-
-/** \page protobuf Protocol Buffers
-
-The Tensorboard interface uses <a
-href="https://developers.google.com/protocol-buffers/">Protocol
-Buffers</a>. Version 3.0.2 or newer is required. If Protocol Buffers
-is not detected, it will be downloaded and built locally.
-
-\section protobuf_download Download
-
-Download the source code from the <a
-href="https://github.com/google/protobuf">GitHub repository</a>:
-
-\code{.sh}
-$ git clone https://github.com/google/protobuf.git
-$ cd protobuf
-$ git checkout v3.0.2
-\endcode
-
-\section protobuf_install Installation
-
-\code{.sh}
-$ cd /path/to/protobuf
-$ mkdir install
-$ ./autoget.sh
-$ ./configure --prefix=/path/to/protobuf/install
-$ make
-$ make install
-\endcode
-
-*/
-
-/** \page doxygen Doxygen
-
-Doxygen is a documentation generator.
-
-\section doxygen_install_linux Installation on Linux
-
-Talk to your sysadmin.
-
-\section doxygen_install_osx Installation on OS X
-
-Use <a href="http://brew.sh">Homebrew</a>:
-\code{.sh}
-$ brew install doxygen
-$ brew install graphviz
-\endcode
-*/
+  */
