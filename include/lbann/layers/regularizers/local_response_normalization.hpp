@@ -269,7 +269,7 @@ class local_response_normalization_layer : public regularizer_layer {
 
             // Apply local response normalization to current entry
             const DataType input_entry = prev_activations_local(index, sample);
-            const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+            const DataType scale_factor = m_lrn_k + m_lrn_alpha * window_sum;
             DataType output_entry;
             if(default_beta) { // Special case when beta = 0.75
               output_entry = input_entry / std::sqrt(scale_factor * std::sqrt(scale_factor));
@@ -371,7 +371,7 @@ class local_response_normalization_layer : public regularizer_layer {
             // Get data for current entry
             const DataType activations_entry = activations_local(index, sample);
             const DataType prev_error_signal_entry = prev_error_signal_local(index, sample);
-            const DataType scale_factor = m_lrn_k + m_lrn_alpha / m_window_width * window_sum;
+            const DataType scale_factor = m_lrn_k + m_lrn_alpha * window_sum;
 
             // Update current error signal entry
             DataType error_signal_update;
