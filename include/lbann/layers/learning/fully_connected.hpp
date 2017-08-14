@@ -652,21 +652,25 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
   this->m_cudnn->allreduce(m_activation_weights_gradient_d,
                            m_activation_weights_gradient_v->Height(),
                            m_activation_weights_gradient_v->Width());
-  std::vector<DataType*> t;
-  t.push_back(m_activation_weights_gradient_d[0]);
 
-  // Since we assume MPI allreduce only runs with CPU memory, the
-  // data must be first copied to host, and then be copied back to GPU
-  // after MPI.
-  // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
-  this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
-                                  t, m_activation_weights_gradient_v->Width());
+  // Skip the reduction if there is only one process for this model
+  if (this->m_comm->get_procs_per_model() > 1) {
+
+    std::vector<DataType*> t;
+    t.push_back(m_activation_weights_gradient_d[0]);
+    // Since we assume MPI allreduce only runs with CPU memory, the
+    // data must be first copied to host, and then be copied back to GPU
+    // after MPI.
+    // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
+    this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
+                                    t, m_activation_weights_gradient_v->Width());
   
-  El::AllReduce(*this->m_activation_weights_gradient_v,
-                this->m_activation_weights_gradient_v->RedundantComm());
-  this->m_cudnn->broadcast_to_gpus(
-      m_activation_weights_gradient_d,
-      m_activation_weights_gradient_v->LockedMatrix());
+    El::AllReduce(*this->m_activation_weights_gradient_v,
+                  this->m_activation_weights_gradient_v->RedundantComm());
+    this->m_cudnn->broadcast_to_gpus(
+        m_activation_weights_gradient_d,
+        m_activation_weights_gradient_v->LockedMatrix());
+  }
   
 }
 #endif // __LIB_CUDA
