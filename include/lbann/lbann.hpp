@@ -56,6 +56,7 @@
 
 /// Transform Layers
 #include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
