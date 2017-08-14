@@ -108,6 +108,7 @@
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
+#include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/optimizer_adagrad.hpp"

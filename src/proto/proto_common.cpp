@@ -1108,6 +1108,18 @@ void init_callbacks(
       model->add_callback(profiler_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: step_minibatch
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_step_minibatch()) {
+      const lbann_data::CallbackStepMinibatch& c = callback.step_minibatch();
+      if (master) {
+        std::cout << "adding step_minibatch callback" << std::endl;
+      }
+      lbann_callback_step_minibatch *step_mb_cb = new
+        lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
+      model->add_callback(step_mb_cb);
+    }
   }
 
 }

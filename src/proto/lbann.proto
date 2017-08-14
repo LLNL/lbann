@@ -175,6 +175,7 @@ message Callback {
    CallbackDropFixedLearningRate drop_fixed_learning_rate = 19;
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
    CallbackProfiler profiler = 21;
+   CallbackStepMinibatch step_minibatch = 22;
 }
 
 message CallbackStepLearningRate {
@@ -272,6 +273,11 @@ message CallbackLinearGrowthLearningRate {
   double target = 2;
   int64 num_epochs = 3;
   int64 delay = 4;
+}
+
+message CallbackStepMinibatch {
+  int64 starting_mbsize = 1;
+  int64 step = 2;
 }
 
 //========================================================================
