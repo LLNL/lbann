@@ -5,13 +5,13 @@
    1. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
    2. From anywhere in the lbann directory run the LC build script located in  
    `~/lbann/scripts/build_lbann_lc.sh`
-   This will build LBANN in a newly created build directory.
+   3. This will build LBANN in a newly created build directory.
 
 ### OS X
    1. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
    2. From anywhere in the lbann directory run the LC build script located in  
    `~/lbann/scripts/build_lbann_osx.sh`
-   This will build LBANN in a newly created build directory.
+   3. This will build LBANN in a newly created build directory.
 
 ### Spack (for Developers)
 
