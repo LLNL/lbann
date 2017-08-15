@@ -275,16 +275,9 @@ void add_layers(
     if (layer.has_pooling()) {
       const lbann_data::Pooling& ell = layer.pooling();
 
-      vector<int> input_dims;
       int i;
-      std::stringstream ss(ell.input_dims());
-      while (ss >> i) {
-        input_dims.push_back(i);
-      }
-
+      std::stringstream ss(ell.pool_dims());
       vector<int> pool_dims;
-      ss.clear();
-      ss.str(ell.pool_dims());
       while (ss >> i) {
         pool_dims.push_back(i);
       }

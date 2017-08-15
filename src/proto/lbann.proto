@@ -304,6 +304,11 @@ message Layer {
 
    // transform Layers
    Pooling pooling = 12;
+   Concatenation concatenation = 300;
+   Slice slice = 301;
+   Split split = 302;
+   Sum sum = 303;
+   Unpooling unpooling = 304;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -411,14 +416,60 @@ message InputPartitionedMiniBatch {
 //////////////////////
 message Pooling {
   int64 num_dims = 1;
-  string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
+
+  //these are for the constructor that takes "vector<int>"
   string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
   string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
   string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
 
+  //these are for the constructor that takes "int"
+  int64 pool_dims_i = 10;
+  int64 pool_pads_i = 11;
+  int64 pool_strides_i = 12;
+
   //pool_mode should be one of: max, average, average_no_pad
   //see: lbann/include/lbann/lbann_base.hpp
   string pool_mode = 7;
+}
+
+message Unpooling {
+  int64 num_dims = 1;
+
+  //these are for the constructor that takes "vector<int>"
+  string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
+  string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
+  string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
+
+  //these are for the constructor that takes "int"
+  int64 pool_dims_i = 10;
+  int64 pool_pads_i = 11;
+  int64 pool_strides_i = 12;
+
+  int64 pooling_layer = 13; //should be index of pooling layer
+
+  //pool_mode should be one of: max, average, average_no_pad
+  //see: lbann/include/lbann/lbann_base.hpp
+  string pool_mode = 7;
+}
+
+
+message Concatenation {
+  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
+  int64 concatenation_axis = 2;
+}
+
+message Slice {
+  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
+  int64 slice_axis = 2;
+  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+}
+
+message Split {
+  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
+}
+
+message Sum {
+  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 /////////////////////
