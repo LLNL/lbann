@@ -65,7 +65,7 @@
 --reader=model_zoo/prototext/data_reader_mnist.prototext \
 --optimizer=model_zoo/prototext/opt_adagrad.prototext
 ```
-  This should produce the following results on Catalyst:
+  This should produce the following final results on Catalyst:
   ```
   --------------------------------------------------------------------------------
   [20] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
@@ -84,7 +84,7 @@
   LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
 
 ## Running other models
-To run other experiments launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
+Launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
                    `srun -n2 lbann
                     --model=../model_zoo/prototext/model_mnist_multi.prototext
                     --reader=../model_zoo/prototext/data_reader_mnist.prototext
