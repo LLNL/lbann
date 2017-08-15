@@ -85,8 +85,10 @@
 
 ## Running other models
 Launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
-                   `srun -n2 lbann
-                    --model=../model_zoo/prototext/model_mnist_multi.prototext
-                    --reader=../model_zoo/prototext/data_reader_mnist.prototext
-                    --optimizer=../model_zoo/prototext/opt_adagrad.prototext`
+```
+srun -n2 lbann
+--model=../model_zoo/prototext/model_mnist_multi.prototext
+--reader=../model_zoo/prototext/data_reader_mnist.prototext
+--optimizer=../model_zoo/prototext/opt_adagrad.prototext
+```
 
