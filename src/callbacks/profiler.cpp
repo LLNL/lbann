@@ -33,39 +33,51 @@
 #include <scorep/SCOREP_User.h>
 #elif defined(LBANN_NVPROF)
 #include "nvToolsExt.h"
+#include "cuda_runtime.h"
 #endif
 
 namespace {
 #if defined(LBANN_SCOREP)
-  static void prof_region_begin(const char *s, int c) {
-    SCOREP_USER_REGION_BY_NAME_BEGIN(s, SCOREP_USER_REGION_TYPE_COMMON);
-    return;
-  }
-  static void prof_region_end(const char *s) {
-    SCOREP_USER_REGION_BY_NAME_END(s);
-    return;
-  }
+static void prof_region_begin(const char *s, int c) {
+  SCOREP_USER_REGION_BY_NAME_BEGIN(s, SCOREP_USER_REGION_TYPE_COMMON);
+  return;
+}
+static void prof_region_end(const char *s) {
+  SCOREP_USER_REGION_BY_NAME_END(s);
+  return;
+}
 #elif defined(LBANN_NVPROF)
-  static void prof_region_begin(const char *s, int c) {
-    nvtxEventAttributes_t ev = {0};
-    ev.version = NVTX_VERSION;   
-    ev.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    ev.colorType = NVTX_COLOR_ARGB;
-    ev.color = c;
-    ev.messageType = NVTX_MESSAGE_TYPE_ASCII;     
-    ev.message.ascii = s; 
-    nvtxRangePushEx(&ev);
+static void synchronize_all_devices() {
+  int count;
+  cudaGetDeviceCount(&count);
+  for (int i = 0; i < count; ++i) {
+    cudaSetDevice(i);
+    cudaDeviceSynchronize();
   }
-  static void prof_region_end(const char *s) {
-    nvtxRangePop();
-  }
+}
+
+static void prof_region_begin(const char *s, int c) {
+  synchronize_all_devices();
+  nvtxEventAttributes_t ev = {0};
+  ev.version = NVTX_VERSION;   
+  ev.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+  ev.colorType = NVTX_COLOR_ARGB;
+  ev.color = c;
+  ev.messageType = NVTX_MESSAGE_TYPE_ASCII;     
+  ev.message.ascii = s; 
+  nvtxRangePushEx(&ev);
+}
+static void prof_region_end(const char *s) {
+  synchronize_all_devices();    
+  nvtxRangePop();
+}
 #else
-  static void prof_region_begin(const char *s, int c) {
-    return;
-  }
-  static void prof_region_end(const char *s) {
-    return;
-  }
+static void prof_region_begin(const char *s, int c) {
+  return;
+}
+static void prof_region_end(const char *s) {
+  return;
+}
 #endif
 }
 
