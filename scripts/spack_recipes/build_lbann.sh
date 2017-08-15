@@ -118,13 +118,13 @@ case ${BUILD_TYPE} in
         fi
     elif [[ ${COMPILER} == clang@* ]]; then
         if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
-            C_FLAGS="${C_FLAGS} -mavx"
-            CXX_FLAGS="${CXX_FLAGS} -mavx"
-            Fortran_FLAGS="${Fortran_FLAGS} -mavx"
+            C_FLAGS="${C_FLAGS} -mavx -march=native"
+            CXX_FLAGS="${CXX_FLAGS} -mavx -march=native"
+            Fortran_FLAGS="${Fortran_FLAGS} -mavx -march=native"
         elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
-            C_FLAGS="${C_FLAGS} -mavx2"
-            CXX_FLAGS="${CXX_FLAGS} -mavx2"
-            Fortran_FLAGS="${Fortran_FLAGS} -mavx2"
+            C_FLAGS="${C_FLAGS} -mavx2 -march=native"
+            CXX_FLAGS="${CXX_FLAGS} -mavx2 -march=native"
+            Fortran_FLAGS="${Fortran_FLAGS} -mavx2 -march=native"
         fi
     fi
     ;;
