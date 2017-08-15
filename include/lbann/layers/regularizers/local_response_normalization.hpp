@@ -390,7 +390,7 @@ class local_response_normalization_layer : public regularizer_layer {
               const int i = block_start + block_pos + c * num_per_channel;
               const DataType prev_activations_entry = prev_activations_local(i, sample);
               error_signal_local(i, sample)
-                += (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
+                += (-2 * m_lrn_alpha * m_lrn_beta * prev_activations_entry
                     * prev_error_signal_entry * activations_entry / scale_factor);
             }
 
