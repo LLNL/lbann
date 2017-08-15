@@ -59,7 +59,7 @@ class pooling_layer : public transform {
   // Use in  backprop or unpooling layer
   ElMat *m_max_pool_masks;          
   /// View of max pool mask 
-  ElMat *m_max_pool_masks_v;        ///< View of active columns in activations matrix
+  ElMat *m_max_pool_masks_v;  
 
 #ifdef __LIB_CUDNN
   /// Pooling descriptor
@@ -152,7 +152,8 @@ class pooling_layer : public transform {
   void setup_data() {
     transform::setup_data();
     El::Zeros(*m_max_pool_masks, m_activations->Height(), m_activations->Width());
-    //Setup views?
+    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::View(*m_max_pool_masks_v, *m_max_pool_masks, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   void setup_dims() {
@@ -475,14 +476,14 @@ template<> inline void pooling_layer<data_layout::MODEL_PARALLEL>::initialize_di
   transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_max_pool_masks  = new DistMat(m_comm->get_model_grid());
   /// Instantiate these view objects but do not allocate data for them
-  //m_max_pool_masks_v  = new DistMat(m_comm->get_model_grid());
+  m_max_pool_masks_v  = new DistMat(m_comm->get_model_grid());
 }
 
 template<> inline void pooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_max_pool_masks  = new StarVCMat(m_comm->get_model_grid());
   /// Instantiate these view objects but do not allocate data for them
-  //m_max_pool_masks_v  = new StarVCMat(m_comm->get_model_grid());
+  m_max_pool_masks_v  = new StarVCMat(m_comm->get_model_grid());
 }
 
 }  // namespace lbann
