@@ -80,9 +80,9 @@
   Model 1 Epoch time: 62.9628s; Mean minibatch time: 0.0219376s; Min: 0.0216846s; Max: 0.127405s; Stdev: 0.00204183s
   Model 0 @20000 testing steps external validation categorical accuracy: 98.32%
   Model 1 @20000 testing steps external validation categorical accuracy: 98.27%
-  \endcode
+``` 
   LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
-```
+
 ## Running other models
 To run other experiments launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
                    `srun -n2 lbann
