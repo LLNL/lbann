@@ -55,10 +55,8 @@
 
 ## Verifying LBANN on LC
    1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
-   2. Run a test experiment using the following commands:
-      `cd /lbann/experiments`
-      `./proto_dnn_multi_mnist.sh`
-  To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
+   2. Run a test experiment from the main lbann directory using the following command:
+   To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
  ```
   srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \
 --model=model_zoo/prototext/model_mnist_multi.prototext \
