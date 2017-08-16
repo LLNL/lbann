@@ -219,8 +219,14 @@ class local_response_normalization_layer : public regularizer_layer {
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
-    // Get LRN parameters
+    // Get matrix buffers
     const int width_local = prev_activations_local.Width();
+    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    DataType* activations_buffer = activations_local.Buffer();
+    const int activations_ldim = activations_local.LDim();
+
+    // Get LRN parameters
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
 
@@ -244,39 +250,43 @@ class local_response_normalization_layer : public regularizer_layer {
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
-        DataType scale_factors[max_block_size];
+        DataType workspace[max_block_size];
 
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
           const int window_end = std::max(channel + m_window_width / 2, num_channels - 1);
 
-          // Compute scale factors
-          std::fill(scale_factors, scale_factors + block_size, DataType(0));
+          // Compute sum of squares in workspace
+          std::fill(workspace, workspace + block_size, DataType(0));
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry = prev_activations_local(index, sample);
-              scale_factors[block_pos] += prev_activations_entry * prev_activations_entry;
+              const DataType prev_activations_entry 
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
           }
+
+          // Compute 1 / (k + alpha * sum(x^2) ) in workspace
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
-            scale_factors[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * scale_factors[block_pos]);
+            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
           }
           
-          // Iterate through block entries
+          // Compute activations
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType scale_factor = scale_factors[block_pos];
-            const DataType prev_activations_entry = prev_activations_local(index, sample);
+            const DataType scale_factor = workspace[block_pos];
+              const DataType prev_activations_entry
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
             if(default_beta) { // Special case when beta = 0.75
-              activations_local(index, sample)
+              activations_buffer[index + sample * activations_ldim]
                 = (prev_activations_entry
                    * std::sqrt(scale_factor * std::sqrt(scale_factor)));
             }
             else {
-              activations_local(index, sample)
-                = (prev_activations_entry * std::pow(scale_factor, m_lrn_beta));
+              activations_buffer[index + sample * activations_ldim]
+                = prev_activations_entry * std::pow(scale_factor, m_lrn_beta);
             }
           }
           
@@ -296,11 +306,21 @@ class local_response_normalization_layer : public regularizer_layer {
     const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
+    // Get matrix buffers
+    const int width_local = prev_activations_local.Width();
+    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    const DataType* activations_buffer = activations_local.LockedBuffer();
+    const int activations_ldim = activations_local.LDim();
+    const DataType* prev_error_signal_buffer = prev_error_signal_local.LockedBuffer();
+    const int prev_error_signal_ldim = prev_error_signal_local.LDim();
+    DataType* error_signal_buffer = error_signal_local.Buffer();
+    const int error_signal_ldim = error_signal_local.LDim();
+
     // Initialize error signal to zero
     El::Zero(error_signal_local);
 
     // Get LRN parameters
-    const int width_local = prev_activations_local.Width();
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
 
@@ -328,56 +348,67 @@ class local_response_normalization_layer : public regularizer_layer {
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
-        DataType scale_factors[max_block_size];
+        DataType workspace[max_block_size];
         
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
           const int window_end = std::max(channel + m_window_width / 2, num_channels - 1);
 
-          // Compute scale factors
-          std::fill(scale_factors, scale_factors + block_size, DataType(0));
+          // Compute sum of squares in workspace
+          std::fill(workspace, workspace + block_size, DataType(0));
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry = prev_activations_local(index, sample);
-              scale_factors[block_pos] += prev_activations_entry * prev_activations_entry;
+              const DataType prev_activations_entry 
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
           }
+
+          // Compute 1 / (k + alpha * sum(x^2) ) in workspace
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
-            scale_factors[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * scale_factors[block_pos]);
+            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
           }
 
           // Compute error signal contribution for current entry
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType scale_factor = scale_factors[block_pos];
-            const DataType prev_error_signal_entry = prev_error_signal_local(index, sample);
+            const DataType scale_factor = workspace[block_pos];
+            const DataType prev_error_signal_entry
+              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
             if(default_beta) { // Special case when beta = 0.75
-              error_signal_local(index, sample)
+              error_signal_buffer[index + sample * error_signal_ldim]
                 += prev_error_signal_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
             }
             else {
-              error_signal_local(index, sample)
+              error_signal_buffer[index + sample * error_signal_ldim]
                 += prev_error_signal_entry * std::pow(scale_factor, m_lrn_beta);
             }
+          }
+
+          // Compute y * dy / (k + alpha * sum(x^2) ) in workspace
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType activations_entry
+              = activations_buffer[index + sample * activations_ldim];
+            const DataType prev_error_signal_entry
+              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
+            workspace[block_pos] = (-2 * m_lrn_alpha * m_lrn_beta * workspace[block_pos]
+                                    * activations_entry * prev_error_signal_entry);
           }
 
           // Compute error signal contribution for entries in window
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
-              const int index = block_start + block_pos + channel * num_per_channel;
-              const int index_window = block_start + block_pos + window_pos * num_per_channel;
-              const DataType scale_factor = scale_factors[block_pos];
-              const DataType prev_activations_entry = prev_activations_local(index_window, sample);
-              const DataType activations_entry = activations_local(index, sample);
-              const DataType prev_error_signal_entry = prev_error_signal_local(index, sample);
-              error_signal_local(index_window, sample)
-                += (-2 * m_lrn_alpha * m_lrn_beta * scale_factor
-                    * prev_activations_entry * prev_error_signal_entry * activations_entry);
+              const int index = block_start + block_pos + window_pos * num_per_channel;
+              const DataType prev_activations_entry
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              error_signal_buffer[index + sample * error_signal_ldim]
+                += workspace[block_pos] * prev_activations_entry;
             }
-
           }
+
         }
 
       }
