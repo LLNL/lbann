@@ -1,5 +1,5 @@
 #!/bin/bash
-source /usr/share/lmod/lmod/shells/Bash.lua 
+
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
