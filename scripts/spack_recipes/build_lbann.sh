@@ -87,7 +87,7 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
   EL_VER="${EL_VER}+cublas"
 fi
 
-SPACK_OPTIONS="lbann@local ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_OPTIONS}"
@@ -151,4 +151,3 @@ fi
 FIX="spack uninstall -y lbann"
 echo $FIX
 $FIX
-
