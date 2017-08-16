@@ -255,7 +255,7 @@ class local_response_normalization_layer : public regularizer_layer {
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
-          const int window_end = std::max(channel + m_window_width / 2, num_channels - 1);
+          const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
           std::fill(workspace, workspace + block_size, DataType(0));
@@ -353,7 +353,7 @@ class local_response_normalization_layer : public regularizer_layer {
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
-          const int window_end = std::max(channel + m_window_width / 2, num_channels - 1);
+          const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
           std::fill(workspace, workspace + block_size, DataType(0));
