@@ -16,7 +16,7 @@
 ### Spack (for Developers)
 
 #### Using spack setup
-
+    Ensure you have spack version 0.10.0 or later
     Here is an example of setting up the local build environment on x86_64 HPC system
     ```
     cd lbann
