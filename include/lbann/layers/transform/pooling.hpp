@@ -124,8 +124,32 @@ class pooling_layer : public transform {
 
   }
 
-  pooling_layer(const pooling_layer&) = default;
-  pooling_layer& operator=(const pooling_layer&) = default;
+  pooling_layer(const pooling_layer& other) :
+    transform(other),
+    m_pool_mode(other.m_pool_mode),
+    m_pool_dims(other.m_pool_dims),
+    m_pool_pads(other.m_pool_pads),
+    m_pool_strides(other.m_pool_strides),
+    m_pool_size(other.m_pool_size) {
+    m_max_pool_masks = other.m_max_pool_masks->Copy();
+    m_max_pool_masks_v = other.m_max_pool_masks_v->Copy();
+  }
+  pooling_layer& operator=(const pooling_layer& other){
+    transform::operator=(other);
+    m_pool_mode = other.m_pool_mode;
+    m_pool_dims = other.m_pool_dims;
+    m_pool_pads = other.m_pool_pads;
+    m_pool_strides = other.m_pool_strides;
+    m_pool_size = other.m_pool_size;
+    if(m_max_pool_masks) {
+      delete m_max_pool_masks;
+      delete m_max_pool_masks_v;
+    }
+    m_max_pool_masks = other.m_max_pool_masks->Copy();
+    m_max_pool_masks_v = other.m_max_pool_masks_v->Copy();
+    return *this;
+  }
+    
 
   /// Destructor
   ~pooling_layer() {
