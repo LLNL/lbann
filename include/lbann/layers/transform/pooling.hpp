@@ -130,6 +130,7 @@ class pooling_layer : public transform {
   /// Destructor
   ~pooling_layer() {
     delete m_max_pool_masks; 
+    delete m_max_pool_masks_v;
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_pooling_desc) {
