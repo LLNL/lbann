@@ -195,7 +195,7 @@ class sum_layer : public transform {
     }
     else {
       El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
     }
   }
 
@@ -229,8 +229,9 @@ class sum_layer : public transform {
         for(int i=0; i<num_gpus; ++i) {
           input[i] = (DataType*) work_spaces[i];
         }
+        parent->get_fp_output(*this->m_prev_activations, this);
         this->m_cudnn->scatter_to_gpus(input,
-                                       parent->fp_output(this).LockedMatrix(),
+                                       this->m_prev_activations->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
 
@@ -254,16 +255,12 @@ class sum_layer : public transform {
   }
 
   void fp_compute_cpu() {
-    if(m_parents.size() == 1) {
-      El::LockedView(*this->m_activations, *this->m_prev_activations);
-    }
-    else {
-      El::Copy(*this->m_prev_activations, *this->m_activations);
-      for(size_t i=1; i<m_parents.size(); ++i) {
-        El::Axpy(DataType(1),
-                 m_parents[i]->fp_output(this),
-                 *this->m_activations);
-      }
+    El::Copy(*this->m_prev_activations, *this->m_activations_v);
+    for(size_t i=1; i<m_parents.size(); ++i) {
+      m_parents[i]->get_fp_output(*this->m_prev_activations, this);
+      El::Axpy(DataType(1),
+               *this->m_prev_activations,
+               *this->m_activations_v);
     }
   }
 

@@ -318,9 +318,9 @@ class concatenation_layer : public transform {
           for(int i=0; i<num_gpus; ++i) {
             input[i] = (DataType*) work_spaces[i];
           }
-          const AbsDistMat& input_cpu = parent->fp_output(this);
+          parent->get_fp_output(*this->m_prev_activations, this);
           this->m_cudnn->scatter_to_gpus(input,
-                                         input_cpu.LockedMatrix(),
+                                         this->m_prev_activations->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
         }
       }
@@ -372,7 +372,7 @@ class concatenation_layer : public transform {
     for(size_t i = 0; i < m_parents.size(); ++i) {
 
       // Split previous neuron tensor into slices
-      const auto& input = m_parents[i]->fp_output(this);
+      m_parents[i]->get_fp_output(*this->m_prev_activations, this);
       const int input_slice_dim = m_concatenation_points[i+1] - m_concatenation_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_concatenation_points[i] * slice_unit_size;
@@ -381,7 +381,7 @@ class concatenation_layer : public transform {
       // Copy slices from previous neuron tensor into neuron tensor
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       input,
+                       *this->m_prev_activations,
                        El::IR(slice * input_slice_size,
                               (slice+1) * input_slice_size),
                        El::ALL);
@@ -397,15 +397,15 @@ class concatenation_layer : public transform {
 
   }
 
-  const AbsDistMat& bp_output(const Layer* prev_layer) const {
+  void get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
 
     // Check if input is in the list of parent layers
     const int parent_index = (std::find(m_parents.begin(),
-                                       m_parents.end(),
-                                       prev_layer)
-                             - m_parents.begin());
+                                        m_parents.end(),
+                                        prev_layer)
+                              - m_parents.begin());
     if(parent_index >= (int) m_parents.size()) {
-      return *m_error_signal;
+      transform::get_bp_output(bp_output, prev_layer);
     }
 
     // Split the error signal tensor into slices of width 1 along the
@@ -426,32 +426,35 @@ class concatenation_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
     const int slice_offset_start = m_concatenation_points[parent_index] * slice_unit_size;
     const int slice_offset_end = m_concatenation_points[parent_index+1] * slice_unit_size;
-    
-    if(num_slices == 1) {
+
+    if(num_slices == 1
+       && m_error_signal_v->DistData() == bp_output.DistData()) {
       // Return view of error signal slice
-      El::LockedView(*m_output_slice_v,
-                     *this->m_error_signal,
+      El::LockedView(bp_output,
+                     *this->m_error_signal_v,
                      El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
-      return *m_output_slice_v;
     }
     else {
       // Copy slices from error signal tensor into output
-      m_bp_output->Resize(output_slice_size, m_error_signal->Width());
+      bp_output.Empty(false);
+      bp_output.Resize(output_slice_size, m_error_signal_v->Width());
+      AbsDistMat* output_slice_v
+        = bp_output.Construct(bp_output.Grid(), bp_output.Root());
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       *this->m_error_signal,
+                       *this->m_error_signal_v,
                        El::IR(slice * input_slice_size + slice_offset_start,
                               slice * input_slice_size + slice_offset_end),
                        El::ALL);
-        El::View(*m_output_slice_v,
-                 *m_bp_output,
+        El::View(*output_slice_v,
+                 bp_output,
                  El::IR(slice * output_slice_size,
                         (slice+1) * output_slice_size),
                  El::ALL);
-        El::Copy(*m_input_slice_v, *m_output_slice_v);
+        El::Copy(*m_input_slice_v, *output_slice_v);
       }
-      return *m_bp_output;
+      delete output_slice_v;
     }
 
   }

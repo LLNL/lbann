@@ -266,7 +266,7 @@ class slice_layer : public transform {
     }
     else {
       El::LockedView(*this->m_activations, *this->m_prev_activations);
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }
 
@@ -318,9 +318,9 @@ class slice_layer : public transform {
           for(int i=0; i<num_gpus; ++i) {
             input[i] = (DataType*) work_spaces[i];
           }
-          const AbsDistMat& input_cpu = child->bp_output(this);
+          child->get_bp_output(*this->m_prev_error_signal, this);
           this->m_cudnn->scatter_to_gpus(input,
-                                         input_cpu.LockedMatrix(),
+                                         this->m_prev_error_signal->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
         }
       }
@@ -372,7 +372,7 @@ class slice_layer : public transform {
     for(size_t i = 0; i < m_children.size(); ++i) {
 
       // Split previous error signal tensor into slices
-      const auto& input = m_children[i]->bp_output(this);
+      m_children[i]->get_bp_output(*this->m_prev_error_signal, this);
       const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_slice_points[i] * slice_unit_size;
@@ -381,7 +381,7 @@ class slice_layer : public transform {
       // Copy slices from previous error signal tensor into error signal tensor
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       input,
+                       *this->m_prev_error_signal,
                        El::IR(slice * input_slice_size,
                               (slice+1) * input_slice_size),
                        El::ALL);
@@ -397,7 +397,7 @@ class slice_layer : public transform {
 
   }
 
-  const AbsDistMat& fp_output(const Layer* next_layer) const {
+  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(m_children.begin(),
@@ -405,7 +405,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - m_children.begin());
     if(child_index >= (int) m_children.size()) {
-      return *m_activations;
+      transform::get_fp_output(fp_output, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -427,31 +427,34 @@ class slice_layer : public transform {
     const int slice_offset_start = m_slice_points[child_index] * slice_unit_size;
     const int slice_offset_end = m_slice_points[child_index+1] * slice_unit_size;
     
-    if(num_slices == 1) {
+    if(num_slices == 1
+       && m_activations_v->DistData() == fp_output.DistData()) {
       // Return view of activations tensor slice
-      El::LockedView(*m_output_slice_v,
-                     *this->m_activations,
+      El::LockedView(fp_output,
+                     *this->m_activations_v,
                      El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
-      return *m_output_slice_v;
     }
     else {
       // Copy slices from activations tensor into output
-      m_fp_output->Resize(output_slice_size, m_activations->Width());
+      fp_output.Empty(false);
+      fp_output.Resize(output_slice_size, m_activations_v->Width());
+      AbsDistMat* output_slice_v
+        = fp_output.Construct(fp_output.Grid(), fp_output.Root());
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       *this->m_activations,
+                       *this->m_activations_v,
                        El::IR(slice * input_slice_size + slice_offset_start,
                               slice * input_slice_size + slice_offset_end),
                        El::ALL);
-        El::View(*m_output_slice_v,
-                 *m_fp_output,
+        El::View(*output_slice_v,
+                 fp_output,
                  El::IR(slice * output_slice_size,
                         (slice+1) * output_slice_size),
                  El::ALL);
-        El::Copy(*m_input_slice_v, *m_output_slice_v);
+        El::Copy(*m_input_slice_v, *output_slice_v);
       }
-      return *m_fp_output;
+      delete output_slice_v;
     }
 
   }

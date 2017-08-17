@@ -189,7 +189,7 @@ class split_layer : public transform {
     }
     else {
       El::LockedView(*this->m_activations, *this->m_prev_activations);
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }
 
@@ -231,8 +231,9 @@ class split_layer : public transform {
         for(int i=0; i<num_gpus; ++i) {
           input[i] = (DataType*) work_spaces[i];
         }
+        child->get_bp_output(*this->m_prev_error_signal, this);
         this->m_cudnn->scatter_to_gpus(input,
-                                       child->bp_output(this).LockedMatrix(),
+                                       this->m_prev_error_signal->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
 
@@ -256,11 +257,12 @@ class split_layer : public transform {
   }
 
   void bp_compute_cpu() {
-    El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
+    El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
     for(size_t i=1; i<m_children.size(); ++i) {
+      m_children[i]->get_bp_output(*this->m_prev_error_signal, this);
       El::Axpy(DataType(1),
-               m_children[i]->bp_output(this),
-               *this->m_error_signal);
+               *this->m_prev_error_signal,
+               *this->m_error_signal_v);
     }
   }
 

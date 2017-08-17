@@ -216,7 +216,7 @@ class local_response_normalization_layer : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get matrix buffers
@@ -301,9 +301,9 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get matrix buffers
