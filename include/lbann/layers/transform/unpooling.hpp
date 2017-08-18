@@ -232,7 +232,7 @@ class unpooling_layer : public transform {
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
-    Mat& max_pool_local = m_max_pool_mask->LockedMatrix();
+    const Mat& max_pool_local = m_max_pool_mask->LockedMatrix();
 
     // Output entries are divided amongst channels
     const int num_channels = this->m_prev_neuron_dims[0];
@@ -262,7 +262,7 @@ class unpooling_layer : public transform {
         // corresponding to max
         const DataType *prev_error_signal_buffer
           = prev_error_signal_local.LockedBuffer(0, sample);
-        DataType *mask_buffer = max_pool_local.LockedBuffer(0,sample);
+        const DataType *mask_buffer = max_pool_local.LockedBuffer(0,sample);
         #pragma omp parallel for collapse(2)
         for(int j = 0; j < num_per_output_channel; ++j) {
           for(int c = 0; c < num_channels; ++c) {
