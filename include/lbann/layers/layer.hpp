@@ -179,14 +179,14 @@ class Layer {
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
-  virtual const AbsDistMat& fp_output(const Layer* next_layer = NULL) const;
+  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = NULL) const;
   /** Get backward propagation output, as seen by previous layer. */
-  virtual const AbsDistMat& bp_output(const Layer* prev_layer = NULL) const;
+  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
 #ifdef __LIB_CUDNN
   /** Get forward propagation output on GPUs, as seen by next layer. */
-  virtual const std::vector<DataType*> gpu_fp_output(const Layer* next_layer = NULL) const;
+  virtual void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer = NULL) const;
   /** Get backward propagation output on GPUs, as seen by previous layer. */
-  virtual const std::vector<DataType*> gpu_bp_output(const Layer* prev_layer = NULL) const;
+  virtual void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
@@ -206,7 +206,6 @@ class Layer {
   execution_mode  m_execution_mode;
 
   ElMat *m_prev_error_signal;    ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
-  ElMat *m_prev_error_signal_v;  ///< View of active columns in previous error signal matrix
 
   ElMat *m_activations;          ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
   ElMat *m_activations_v;        ///< View of active columns in activations matrix
@@ -220,7 +219,6 @@ class Layer {
   ElMat *m_error_signal_v;      ///< View of active columns in error signal matrix
 
   ElMat *m_prev_activations;    ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
-  ElMat *m_prev_activations_v;  ///< View of active columns in previous activations matrix
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();
