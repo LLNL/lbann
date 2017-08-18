@@ -154,7 +154,9 @@ lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate
 float lbann_callback_drop_fixed_learning_rate::schedule(model* m, learning *l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
   if (!m_drop_epochs.empty() && m->get_cur_epoch() == m_drop_epochs.back()) {
-    m_drop_epochs.pop_back();
+    if (l->get_index() == m_last_idx) {
+      m_drop_epochs.pop_back();
+    }
     return cur_lr * m_amt;
   } else {
     return cur_lr;
