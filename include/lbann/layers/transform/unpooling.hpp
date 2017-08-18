@@ -176,7 +176,7 @@ class unpooling_layer : public transform {
     }
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
     Mat& max_pool_local = m_max_pool_mask->Matrix();
 
@@ -229,8 +229,8 @@ class unpooling_layer : public transform {
     }
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     Mat& max_pool_local = m_max_pool_mask->LockedMatrix();
 

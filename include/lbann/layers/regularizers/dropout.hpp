@@ -98,10 +98,10 @@ class dropout : public regularizer_layer {
     if (this->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Copy previous activations over.
-      El::Copy(*(this->m_prev_activations_v), *(this->m_activations_v));
+      El::Copy(*(this->m_prev_activations), *(this->m_activations_v));
       return;
     }
-    ElMat *input_acts = this->m_prev_activations_v;
+    ElMat *input_acts = this->m_prev_activations;
     const El::Int local_height = input_acts->LocalHeight();
     const El::Int local_width = input_acts->LocalWidth();
 
@@ -143,15 +143,15 @@ class dropout : public regularizer_layer {
     }
     if (m_keep_prob < 0.0f) {
       // Copy error signal through.
-      El::Copy(*(this->m_prev_error_signal_v), *(this->m_error_signal_v));
+      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal_v));
       return;
     }
 
 #ifdef LBANN_PROCDET_DROPOUT
-    El::Hadamard(*(this->m_prev_error_signal_v), *m_cur_mask, *(this->m_error_signal_v));
+    El::Hadamard(*(this->m_prev_error_signal), *m_cur_mask, *(this->m_error_signal_v));
 #else
     // Re-weight the incoming loss using dropout mask
-    Mat& local_prev_error_signal = this->m_prev_error_signal_v->Matrix();
+    Mat& local_prev_error_signal = this->m_prev_error_signal->Matrix();
     Mat& local_error_signal = this->m_error_signal_v->Matrix();
     El::Hadamard(local_prev_error_signal, *m_cur_mask, local_error_signal);
 #endif  // LBANN_PROCDET_DROPOUT

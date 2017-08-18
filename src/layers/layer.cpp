@@ -49,9 +49,7 @@ void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
   m_error_signal        = new DistMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_prev_activations_v  = new DistMat(m_comm->get_model_grid());
   m_activations_v       = new DistMat(m_comm->get_model_grid());
-  m_prev_error_signal_v = new DistMat(m_comm->get_model_grid());
   m_error_signal_v      = new DistMat(m_comm->get_model_grid());
 }
 
@@ -64,9 +62,7 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
   m_error_signal        = new StarVCMat(m_comm->get_model_grid());
 
   /// Instantiate these view objects but do not allocate data for them
-  m_prev_activations_v  = new StarVCMat(m_comm->get_model_grid());
   m_activations_v       = new StarVCMat(m_comm->get_model_grid());
-  m_prev_error_signal_v = new StarVCMat(m_comm->get_model_grid());
   m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
 }
 
@@ -127,12 +123,10 @@ Layer::Layer(const Layer& other) :
 #endif // __LIB_CUDNN
   m_prev_error_signal = other.m_prev_error_signal->Copy();
   m_error_signal = other.m_error_signal->Copy();
-  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
   m_error_signal_v = other.m_error_signal_v->Copy();
   m_activations = other.m_activations->Copy();
   m_prev_activations = other.m_prev_activations->Copy();
   m_activations_v = other.m_activations_v->Copy();
-  m_prev_activations_v = other.m_prev_activations_v->Copy();
 }
 
 Layer& Layer::operator=(const Layer& other) {
@@ -165,19 +159,15 @@ Layer& Layer::operator=(const Layer& other) {
     delete m_error_signal;
     delete m_activations;
     delete m_prev_activations;
-    delete m_prev_error_signal_v;
     delete m_error_signal_v;
     delete m_activations_v;
-    delete m_prev_activations_v;
   }
   m_prev_error_signal = other.m_prev_error_signal->Copy();
   m_error_signal = other.m_error_signal->Copy();
-  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
   m_error_signal_v = other.m_error_signal_v->Copy();
   m_activations = other.m_activations->Copy();
   m_prev_activations = other.m_prev_activations->Copy();
   m_activations_v = other.m_activations_v->Copy();
-  m_prev_activations_v = other.m_prev_activations_v->Copy();
   return *this;
 }
 
@@ -192,12 +182,8 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(m_copy_fp_input_to_gpus) {
-      m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    }
-    if(m_copy_bp_input_to_gpus) {
-      m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    }
+    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     m_cudnn->unpin_matrix(*m_prev_activations);
     m_cudnn->unpin_matrix(*m_activations);
     m_cudnn->unpin_matrix(*m_prev_error_signal);
@@ -208,25 +194,17 @@ Layer::~Layer() {
   delete m_error_signal;
   delete m_activations;
   delete m_prev_activations;
-  delete m_prev_error_signal_v;
   delete m_error_signal_v;
   delete m_activations_v;
-  delete m_prev_activations_v;
 }
 
 void Layer::forward_prop() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
+  /// @todo Only copy CPU memory when needed
   if(m_prev_layer != NULL) {
-    const DistData& prev_dist = m_prev_layer->fp_output(this).DistData();
-    const DistData& curr_dist = m_prev_activations->DistData();
-    if(prev_dist.colDist == curr_dist.colDist
-       && prev_dist.rowDist == curr_dist.rowDist) {
-      El::LockedView(*m_prev_activations, m_prev_layer->fp_output(this));
-    } else {
-      El::Copy(m_prev_layer->fp_output(this), *m_prev_activations);
-    }
+    m_prev_layer->get_fp_output(*m_prev_activations, this);
   }
 
   // Set matrix views based on current mini-batch size
@@ -237,10 +215,10 @@ void Layer::forward_prop() {
   if(m_using_gpus) {
     if(m_copy_fp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                               m_prev_activations_v->LockedMatrix(),
+                               m_prev_activations->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_activations_d = m_prev_layer->gpu_fp_output(this);
+      m_prev_layer->get_gpu_fp_output(m_prev_activations_d, this);
     }
   }
 #endif // __LIB_CUDNN
@@ -268,14 +246,7 @@ void Layer::back_prop() {
 
   // Get incoming error signal and convert matrix distribution if necessary
   if(m_next_layer != NULL) {
-    const DistData& prev_dist = m_next_layer->bp_output(this).DistData();
-    const DistData& curr_dist = m_prev_error_signal->DistData();
-    if(prev_dist.colDist == curr_dist.colDist
-       && prev_dist.rowDist == curr_dist.rowDist) {
-      El::LockedView(*m_prev_error_signal, m_next_layer->bp_output(this));
-    } else {
-      El::Copy(m_next_layer->bp_output(this), *m_prev_error_signal);
-    }
+    m_next_layer->get_bp_output(*m_prev_error_signal, this);
   }
 
   // Set the view for all of the standard matrices based on the
@@ -287,10 +258,10 @@ void Layer::back_prop() {
   if(m_using_gpus) {
     if(m_copy_bp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                               m_prev_error_signal_v->LockedMatrix(),
+                               m_prev_error_signal->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_error_signal_d = m_next_layer->gpu_bp_output(this);
+      m_next_layer->get_gpu_bp_output(m_prev_error_signal_d, this);
     }
   }
 #endif // __LIB_CUDNN
@@ -483,16 +454,12 @@ void Layer::setup_gpu() {
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
                             m_mini_batch_size_per_gpu);
-  if(m_copy_fp_input_to_gpus) {
-    m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                              m_num_prev_neurons,
-                              m_mini_batch_size_per_gpu);
-  }
-  if(m_copy_bp_input_to_gpus) {
-    m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                              m_num_neurons,
-                              m_mini_batch_size_per_gpu);
-  }
+  m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                            m_num_neurons,
+                            m_mini_batch_size_per_gpu);
 
 #endif // __LIB_CUDNN
 }
@@ -526,18 +493,12 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 
 void Layer::fp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::LockedView(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
 }
 
 void Layer::bp_set_std_matrix_view() {
   El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::LockedView(*m_prev_activations_v, *m_prev_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
-  if(m_prev_error_signal->Height() > 0) {
-    El::LockedView(*m_prev_error_signal_v, *m_prev_error_signal, El::ALL,
-                   El::IR(0, cur_mini_batch_size));
-  }
   El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, cur_mini_batch_size));
 }
 
@@ -564,10 +525,8 @@ void Layer::pin_data() {
   if(m_prev_layer != NULL
      && !m_prev_layer->using_gpus()
      && m_using_gpus) {
-    const El::DistData& prev_dist = m_prev_layer->fp_output(this).DistData();
-    const El::DistData& curr_dist = m_prev_activations->DistData();
-    if(!(prev_dist.colDist == curr_dist.colDist
-         && prev_dist.rowDist == curr_dist.rowDist)) {
+    if(m_prev_layer->m_activations->DistData()
+       != m_prev_activations->DistData()) {
       pin_fp_input = true;
     }
   }
@@ -577,10 +536,8 @@ void Layer::pin_data() {
   if(!m_using_gpus
      && m_next_layer != NULL
      && m_next_layer->using_gpus()) {
-    const El::DistData& next_dist = m_next_layer->bp_output(this).DistData();
-    const El::DistData& curr_dist = m_activations->DistData();
-    if(next_dist.colDist == curr_dist.colDist
-       && next_dist.rowDist == curr_dist.rowDist) {
+    if(m_next_layer->m_prev_activations->DistData()
+       != m_activations->DistData()) {
       pin_fp_output = true;
     }
   }
@@ -610,10 +567,8 @@ void Layer::pin_data() {
   if(m_next_layer != NULL
      && !m_next_layer->using_gpus()
      && m_using_gpus) {
-    const El::DistData& prev_dist = m_next_layer->bp_output(this).DistData();
-    const El::DistData& curr_dist = m_prev_error_signal->DistData();
-    if(!(prev_dist.colDist == curr_dist.colDist
-         && prev_dist.rowDist == curr_dist.rowDist)) {
+    if(m_next_layer->m_error_signal->DistData()
+       != m_prev_error_signal->DistData()) {
       pin_bp_input = true;
     }
   }
@@ -623,10 +578,8 @@ void Layer::pin_data() {
   if(!m_using_gpus
      && m_prev_layer != NULL
      && m_prev_layer->using_gpus()) {
-    const El::DistData& next_dist = m_prev_layer->fp_output(this).DistData();
-    const El::DistData& curr_dist = m_error_signal->DistData();
-    if(next_dist.colDist == curr_dist.colDist
-       && next_dist.rowDist == curr_dist.rowDist) {
+    if(m_prev_layer->m_prev_error_signal->DistData()
+       != m_error_signal->DistData()) {
       pin_bp_output = true;
     }
   }
@@ -647,16 +600,18 @@ void Layer::pin_data() {
 
   // Pin host memory if needed for GPU memory transfers
   if(pin_fp_input) {
-    m_prev_activations->Resize(m_num_prev_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_prev_activations);
+    /// @todo If m_prev_activations is resized, we might leak pinned memory
+    // m_prev_activations->Resize(m_num_prev_neurons, max_mini_batch_size);
+    // m_cudnn->pin_matrix(*m_prev_activations);
   }
   if(pin_fp_output) {
     m_activations->Resize(m_num_neurons, max_mini_batch_size);
     m_cudnn->pin_matrix(*m_activations);
   }
   if(pin_bp_input) {
-    m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_prev_error_signal);
+    /// @todo If m_prev_error_signal is resized, we might leak pinned memory
+    // m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
+    // m_cudnn->pin_matrix(*m_prev_error_signal);
   }
   if(pin_bp_output) {
     m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
@@ -667,22 +622,38 @@ void Layer::pin_data() {
 
 #endif // __LIB_CUDNN
 
-const AbsDistMat& Layer::fp_output(const Layer* next_layer) const {
-  return *m_activations;
+void Layer::get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
+  if(m_activations_v->DistData() == fp_output.DistData()) {
+    El::LockedView(fp_output, *m_activations_v);
+  }
+  else {
+    El::Copy(*m_activations_v, fp_output);
+  }
 }
 
-const AbsDistMat& Layer::bp_output(const Layer* prev_layer) const {
-  return *m_error_signal;
+void Layer::get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
+  if(m_error_signal_v->DistData() == bp_output.DistData()) {
+    El::LockedView(bp_output, *m_error_signal_v);
+  }
+  else {
+    El::Copy(*m_error_signal_v, bp_output);
+  }
 }
 
 #ifdef __LIB_CUDNN
 
-const std::vector<DataType*> Layer::gpu_fp_output(const Layer* next_layer) const {
-  return m_activations_d;
+void Layer::get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
+  this->m_cudnn->copy_on_gpus(fp_output,
+                              m_activations_d,
+                              this->m_num_neurons,
+                              m_mini_batch_size_per_gpu);
 }
 
-const std::vector<DataType*> Layer::gpu_bp_output(const Layer* prev_layer) const {
-  return m_error_signal_d;
+void Layer::get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
+  this->m_cudnn->copy_on_gpus(bp_output,
+                              m_error_signal_d,
+                              this->m_num_prev_neurons,
+                              m_mini_batch_size_per_gpu);
 }
 
 #endif // __LIB_CUDNN

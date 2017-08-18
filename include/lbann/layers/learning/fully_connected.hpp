@@ -452,7 +452,7 @@ class fully_connected_layer : public learning {
 
     // Compute bias update if needed
     if(m_bias_scaling_factor != DataType(0)) {
-      El::RowSum(*this->m_prev_error_signal_v,
+      El::RowSum(*this->m_prev_error_signal,
                  *m_bias_weights_gradient_repl);
       El::Scale(m_bias_scaling_factor /
                 this->m_neural_network_model->get_effective_mini_batch_size(),
@@ -543,7 +543,7 @@ template<> template<device Dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
   El::Gemm(NORMAL, NORMAL, DataType(1),
            *this->m_activation_weights_v,
-           *this->m_prev_activations_v,
+           *this->m_prev_activations,
            DataType(0),
            *this->m_activations_v);
 }
@@ -552,7 +552,7 @@ template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CPU>() {
   El::Gemm(NORMAL, NORMAL, DataType(1),
            this->m_activation_weights_v->LockedMatrix(),
-           this->m_prev_activations_v->LockedMatrix(),
+           this->m_prev_activations->LockedMatrix(),
            DataType(0),
            this->m_activations_v->Matrix());
 }
@@ -572,7 +572,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CU
                                         this->m_activation_weights_d[i],
                                         this->m_activation_weights_v->Height(),
                                         this->m_prev_activations_d[i],
-                                        this->m_prev_activations_v->Height(),
+                                        this->m_prev_activations->Height(),
                                         DataType(0),
                                         this->m_activations_d[i],
                                         this->m_activations_v->Height()));
@@ -585,15 +585,15 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
   // Compute the partial delta update for the next lower layer
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
            *this->m_activation_weights_v,
-           *this->m_prev_error_signal_v,
+           *this->m_prev_error_signal,
            DataType(0),
            *this->m_error_signal_v);
 
   // Compute update for activation weights
   El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
            this->m_neural_network_model->get_effective_mini_batch_size(),
-           *this->m_prev_error_signal_v,
-           *this->m_prev_activations_v,
+           *this->m_prev_error_signal,
+           *this->m_prev_activations,
            DataType(0),
            *this->m_activation_weights_gradient_v);
 }
@@ -602,15 +602,15 @@ template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CPU>() {
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
            this->m_activation_weights_v->LockedMatrix(),
-           this->m_prev_error_signal_v->LockedMatrix(),
+           this->m_prev_error_signal->LockedMatrix(),
            DataType(0),
            this->m_error_signal_v->Matrix());
 
   // Compute update for activation weights
   El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
            this->m_neural_network_model->get_effective_mini_batch_size(),
-           this->m_prev_error_signal_v->LockedMatrix(),
-           this->m_prev_activations_v->LockedMatrix(),
+           this->m_prev_error_signal->LockedMatrix(),
+           this->m_prev_activations->LockedMatrix(),
            DataType(0),
            this->m_activation_weights_gradient_v->Matrix());
   El::AllReduce(*this->m_activation_weights_gradient_v,
@@ -632,7 +632,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                         this->m_activation_weights_d[i],
                                         this->m_activation_weights_v->Height(),
                                         this->m_prev_error_signal_d[i],
-                                        this->m_prev_error_signal_v->Height(),
+                                        this->m_prev_error_signal->Height(),
                                         DataType(0),
                                         this->m_error_signal_d[i],
                                         this->m_error_signal_v->Height()));
@@ -640,15 +640,15 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     // Compute update for activation weights
     CHECK_CUBLAS(cublas::Gemm<DataType>(this->m_cudnn->get_cublas_handle(i),
                                         CUBLAS_OP_N, CUBLAS_OP_T,
-                                        this->m_prev_error_signal_v->Height(),
-                                        this->m_prev_activations_v->Height(),
+                                        this->m_prev_error_signal->Height(),
+                                        this->m_prev_activations->Height(),
                                         m_mini_batch_size_per_gpu,
                                         DataType(1)/
                                         this->m_neural_network_model->get_effective_mini_batch_size(),
                                         this->m_prev_error_signal_d[i],
-                                        this->m_prev_error_signal_v->Height(),
+                                        this->m_prev_error_signal->Height(),
                                         this->m_prev_activations_d[i],
-                                        this->m_prev_activations_v->Height(),
+                                        this->m_prev_activations->Height(),
                                         DataType(0),
                                         this->m_activation_weights_gradient_d[i],
                                         this->m_activation_weights_gradient_v->Height()));
