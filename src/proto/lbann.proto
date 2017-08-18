@@ -242,6 +242,7 @@ message CallbackDispIOStats {
 message CallbackImComm {
   string intermodel_comm_method = 1;
   string layers = 2; //e.g: "2 4 5"; use "10000" to apply to all layers
+  string summary_dir = 3;
 }
 
 message CallbackDebug {

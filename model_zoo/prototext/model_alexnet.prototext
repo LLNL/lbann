@@ -92,6 +92,7 @@ model {
       conv_strides: "4 4"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -153,6 +154,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -215,6 +217,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -245,6 +248,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -275,6 +279,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
