@@ -28,6 +28,7 @@
 
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
+#include <omp.h>
 
 namespace lbann {
 

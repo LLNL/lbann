@@ -30,6 +30,7 @@
 #include "lbann/data_readers/image_utils.hpp"
 
 #include <fstream>
+#include <omp.h>
 
 namespace lbann {
 

@@ -29,6 +29,7 @@
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include <stdio.h>
 #include <string>
+#include <omp.h>
 
 namespace lbann {
 
