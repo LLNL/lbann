@@ -240,7 +240,8 @@ class fully_connected_layer : public learning {
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
     El::Zeros(*this->m_weights, this->m_num_neurons, this->m_num_prev_neurons+1);
-    this->m_weights_gradient->Resize(this->m_num_neurons, this->m_num_prev_neurons + 1);
+    El::Zeros(*this->m_weights_gradient, this->m_num_neurons,
+              this->m_num_prev_neurons + 1);
 
     // Initialize the activations part of the weight matrix -- leave the bias term weights zero
     El::View(*this->m_activation_weights_v, *this->m_weights, El::ALL, El::IR(0, this->m_num_prev_neurons));

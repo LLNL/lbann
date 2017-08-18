@@ -365,10 +365,10 @@ void Layer::setup_data() {
   }
   int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
   if (m_num_prev_neurons > 0) {
-    m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
+    El::Zeros(*m_error_signal, m_num_prev_neurons, max_mini_batch_size);
   }
   if (m_num_neurons > 0) {
-    m_activations->Resize(m_num_neurons, max_mini_batch_size);
+    El::Zeros(*m_activations, m_num_neurons, max_mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
