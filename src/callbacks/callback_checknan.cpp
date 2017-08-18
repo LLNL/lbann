@@ -57,7 +57,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
   if (l->get_index() == 0 || l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
-  DistMat& grad = (DistMat&) learning_layer->get_weights_biases_gradient();
+  DistMat& grad = (DistMat&) learning_layer->get_weights_gradient();
   if (!is_good(grad)) {
     lbann_comm *comm = m->get_comm();
     dump_network(m);
@@ -78,7 +78,7 @@ void lbann_callback_checknan::on_batch_end(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    DistMat& weights = (DistMat&) learning_layer->get_weights_biases();
+    DistMat& weights = (DistMat&) learning_layer->get_weights();
     if (!is_good(weights)) {
       lbann_comm *comm = m->get_comm();
       dump_network(m);
@@ -126,10 +126,10 @@ void lbann_callback_checknan::dump_network(model *m) {
               El::ASCII);
     learning *learning_layer = dynamic_cast<learning*>(l);
     if (learning_layer != NULL) {
-      El::Write(learning_layer->get_weights_biases().Matrix(),
+      El::Write(learning_layer->get_weights().Matrix(),
                 prefix + std::to_string(l->get_index()) + "-WeightsBiases",
                 El::ASCII);
-      El::Write(learning_layer->get_weights_biases_gradient().Matrix(),
+      El::Write(learning_layer->get_weights_gradient().Matrix(),
                 prefix + std::to_string(l->get_index()) + "-Gradients",
                 El::ASCII);
     }
