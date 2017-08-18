@@ -242,7 +242,6 @@ message CallbackDispIOStats {
 message CallbackImComm {
   string intermodel_comm_method = 1;
   string layers = 2; //e.g: "2 4 5"; use "10000" to apply to all layers
-  string summary_dir = 3;
 }
 
 message CallbackDebug {
@@ -417,12 +416,14 @@ message InputPartitionedMiniBatch {
 message Pooling {
   int64 num_dims = 1;
 
-  //these are for the constructor that takes "vector<int>"
+  bool has_vectors = 2;
+
+  //these are used if has_vectors = true
   string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
   string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
   string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
 
-  //these are for the constructor that takes "int"
+  //these are used if has_vectors = false
   int64 pool_dims_i = 10;
   int64 pool_pads_i = 11;
   int64 pool_strides_i = 12;
@@ -435,12 +436,14 @@ message Pooling {
 message Unpooling {
   int64 num_dims = 1;
 
-  //these are for the constructor that takes "vector<int>"
+  bool has_vectors = 2;
+
+  //these are used if has_vectors = true
   string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
   string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
   string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
 
-  //these are for the constructor that takes "int"
+  //these are used if has_vectors = false
   int64 pool_dims_i = 10;
   int64 pool_pads_i = 11;
   int64 pool_strides_i = 12;
@@ -485,9 +488,20 @@ message FullyConnected {
 message Convolution {
   int64 num_dims = 1;
   int64 num_output_channels = 4;
+
+  bool has_vectors = 2;
+
+  // these are used if has_vector = true
   string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
   string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+
+  // these are used if has_vector = false
+  int64 conv_dims_i = 50; 
+  int64 conv_pads_i = 60; 
+  int64 conv_strides_i = 70; 
+
+
   string weight_initialization = 9;
   bool has_bias = 10;
   double l2_regularization_factor = 11;

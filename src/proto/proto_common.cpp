@@ -115,7 +115,7 @@ void add_layers(
   std::unordered_map<int, Layer*> all_layers;
 
   const lbann_data::Model& m = p.model();
-  int mb_size = m.mini_batch_size();
+  //int mb_size = m.mini_batch_size();
   int size = m.layer_size();
 
   Layer *d;
@@ -270,46 +270,128 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: slice
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_slice()) {
+      const lbann_data::Slice &ell = layer.slice();
+      int i;
+      std::stringstream s(ell.children());
+      vector<const Layer*> children;
+      while (s >> i) {
+        assert(all_layers.find(i) !- all_layers.end());
+        children.push_back(all_layers[i]);
+      }
+
+      s.clear();
+      s.str(ell.slice_points());
+      vector<int> slice_points;
+      while (s >> i) {
+        slice_points.push_back(i);
+      }
+      d = new slice_layer<>(layer_id, comm, children, ell.slice_axis(), slice_points, cudnn);
+      all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: sum
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_sum()) {
+      const lbann_data::Sum &ell = layer.sum();
+      int i;
+      std::stringstream s(ell.parents());
+      vector<const Layer*> parents;
+      while (s >> i) {
+        assert(all_layers.find(i) != all_layers.end());
+        parents.push_back(all_layers[i]);
+      }
+      d = new split_layer<>(layer_id, comm, parents, cudnn);
+      all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: split
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_split()) {
+      const lbann_data::Split &ell = layer.split();
+      int i;
+      std::stringstream s(ell.children());
+      vector<const Layer*> children;
+      while (s >> i) {
+        assert(all_layers.find(i) != all_layers.end());
+        children.push_back(all_layers[i]);
+      }
+      d = new split_layer<>(layer_id, comm, children, cudnn);
+      all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: pooling
     //////////////////////////////////////////////////////////////////
     if (layer.has_pooling()) {
       const lbann_data::Pooling& ell = layer.pooling();
+      bool has_vectors = ell.has_vectors();
 
-      int i;
-      std::stringstream ss(ell.pool_dims());
-      vector<int> pool_dims;
-      while (ss >> i) {
-        pool_dims.push_back(i);
-      }
+      if (has_vectors) {
 
-      vector<int> pool_pads;
-      ss.clear();
-      ss.str(ell.pool_pads());
-      while (ss >> i) {
-        pool_pads.push_back(i);
-      }
+        int i;
+        std::stringstream ss(ell.pool_dims());
+        vector<int> pool_dims;
+        while (ss >> i) {
+          pool_dims.push_back(i);
+        }
 
-      vector<int> pool_strides;
-      ss.clear();
-      ss.str(ell.pool_strides());
-      while (ss >> i) {
-        pool_strides.push_back(i);
-      }
-      if (dl == data_layout::MODEL_PARALLEL) {
-        err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
-            << "does not support MODEL_PARALLEL layouts";
-        throw lbann_exception(err.str());
+        vector<int> pool_pads;
+        ss.clear();
+        ss.str(ell.pool_pads());
+        while (ss >> i) {
+          pool_pads.push_back(i);
+        }
+
+        vector<int> pool_strides;
+        ss.clear();
+        ss.str(ell.pool_strides());
+        while (ss >> i) {
+          pool_strides.push_back(i);
+        }
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new pooling_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            &pool_dims[0],
+            &pool_pads[0],
+            &pool_strides[0],
+            get_pool_mode(ell.pool_mode()),
+            cudnn
+          );
+        }
       } else {
-        d = new pooling_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm,
-          ell.num_dims(),
-          &pool_dims[0],
-          &pool_pads[0],
-          &pool_strides[0],
-          get_pool_mode(ell.pool_mode()),
-          cudnn
-        );
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new pooling_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.pool_dims_i(),
+            ell.pool_pads_i(),
+            ell.pool_strides_i(),
+            get_pool_mode(ell.pool_mode()),
+            cudnn
+          );
+        }
       }
 
       all_layers[layer.index()] = d;
@@ -318,55 +400,152 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: unpooling
+    //////////////////////////////////////////////////////////////////
+#if 0    
+    if (layer.has_unpooling()) {
+      const lbann_data::Unpooling& ell = layer.unpooling();
+      bool has_vectors = ell.has_vectors();
+      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)all_layers[ell.pooling_layer()];
+
+      if (has_vectors) {
+
+        int i;
+        std::stringstream ss(ell.pool_dims());
+        vector<int> pool_dims;
+        while (ss >> i) {
+          pool_dims.push_back(i);
+        }
+
+        vector<int> pool_pads;
+        ss.clear();
+        ss.str(ell.pool_pads());
+        while (ss >> i) {
+          pool_pads.push_back(i);
+        }
+
+        vector<int> pool_strides;
+        ss.clear();
+        ss.str(ell.pool_strides());
+        while (ss >> i) {
+          pool_strides.push_back(i);
+        }
+        assert(all_layers.find(ell.pooling_layer()) != all_layers.end());
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            &pool_dims[0],
+            &pool_pads[0],
+            &pool_strides[0],
+            get_pool_mode(ell.pool_mode()),
+            pl,
+            cudnn
+          );
+        }
+      } else {
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.pool_dims_i(),
+            ell.pool_pads_i(),
+            ell.pool_strides_i(),
+            get_pool_mode(ell.pool_mode()),
+            pl,
+            cudnn
+          );
+        }
+      }
+
+      all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
+    }
+#endif
+
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: Convolution
     //////////////////////////////////////////////////////////////////
     if (layer.has_convolution()) {
       const lbann_data::Convolution& ell = layer.convolution();
+      bool has_vectors = ell.has_vectors();
 
-      vector<int> conv_dims;
-      std::stringstream ss;
-      int i;
-      ss.str(ell.conv_dims());
-      while (ss >> i) {
-        conv_dims.push_back(i);
+      if (has_vectors) {
+        vector<int> conv_dims;
+        std::stringstream ss;
+        int i;
+        ss.str(ell.conv_dims());
+        while (ss >> i) {
+          conv_dims.push_back(i);
+        }
+
+        vector<int> conv_pads;
+        ss.clear();
+        ss.str(ell.conv_pads());
+        while (ss >> i) {
+          conv_pads.push_back(i);
+        }
+
+        vector<int> conv_strides;
+        ss.clear();
+        ss.str(ell.conv_strides());
+        while (ss >> i) {
+          conv_strides.push_back(i);
+        }
+
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: convolution "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new convolution_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.num_output_channels(),
+            &conv_dims[0],
+            &conv_pads[0],
+            &conv_strides[0],
+            get_weight_initialization(ell.weight_initialization()),
+            model->create_optimizer(),
+            ell.has_bias(),
+            cudnn
+          );
+        }
       }
 
-      vector<int> conv_pads;
-      ss.clear();
-      ss.str(ell.conv_pads());
-      while (ss >> i) {
-        conv_pads.push_back(i);
-      }
-
-      vector<int> conv_strides;
-      ss.clear();
-      ss.str(ell.conv_strides());
-      while (ss >> i) {
-        conv_strides.push_back(i);
-      }
-
-      int num_dims = ell.num_dims();
-      //int num_input_channels = ell.num_input_channels();
-      int num_output_channels = ell.num_output_channels();
-      bool has_bias = ell.has_bias();
-      if (dl == data_layout::MODEL_PARALLEL) {
-        err << __FILE__ << " " << __LINE__ << " :: convolution "
-            << "does not support MODEL_PARALLEL layouts";
-        throw lbann_exception(err.str());
-      } else {
-        d = new convolution_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm,
-          num_dims,
-          num_output_channels,
-          &conv_dims[0],
-          &conv_pads[0],
-          &conv_strides[0],
-          get_weight_initialization(ell.weight_initialization()),
-          model->create_optimizer(),
-          has_bias,
-          cudnn
-        );
+      else {
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: convolution "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new convolution_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.num_output_channels(),
+            ell.conv_dims_i(),
+            ell.conv_pads_i(),
+            ell.conv_strides_i(),
+            get_weight_initialization(ell.weight_initialization()),
+            model->create_optimizer(),
+            ell.has_bias(),
+            cudnn
+          );
+        }
       }
 
       double l2_regularization_factor = ell.l2_regularization_factor();
@@ -841,7 +1020,7 @@ void init_callbacks(
     // CALLBACK: check_dataset
     //////////////////////////////////////////////////////////////////
     if (callback.has_check_dataset()) {
-      const lbann_data::CallbackCheckDataset& c = callback.check_dataset();
+      //const lbann_data::CallbackCheckDataset& c = callback.check_dataset();
       if (master) {
         cout << "adding callback to check the dataset" << endl;
       }
@@ -857,10 +1036,10 @@ void init_callbacks(
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;
-      bool all_layers = false;
+      //bool all_layers = false;
       while (s >> a) {
         if (a == 10000) {
-          all_layers = true;
+          //all_layers = true;
         } else {
           if (layer_mapping.find(a) == layer_mapping.end()) {
             err << __FILE__ << " " << __LINE__
@@ -887,9 +1066,11 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      if (c.summary_dir() != "none" && !summarizer) {
+      /*if (c.summary_dir() != "none" && !summarizer) {
         summarizer = new lbann_summary(c.summary_dir(), comm);
       }
+      */
+      summarizer = new lbann_summary(".", comm);
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;
@@ -1037,10 +1218,10 @@ void init_callbacks(
       if (master) {
         if (rank_to_hang == -1) {
           std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***" <<
-            std::endl;
+                    std::endl;
         } else {
           std::cout << "*** HANGING RANK " << rank_to_hang <<
-            " IN HANG CALLBACK ***" << std::endl;
+                    " IN HANG CALLBACK ***" << std::endl;
         }
       }
       lbann_callback_hang *hang_cb = new lbann_callback_hang(rank_to_hang);
@@ -1065,8 +1246,8 @@ void init_callbacks(
         drop_epochs.push_back(c.drop_epoch(i));
       }
       lbann_callback_drop_fixed_learning_rate *dflr = new
-        lbann_callback_drop_fixed_learning_rate(
-          drop_epochs, c.amt(), layers);
+      lbann_callback_drop_fixed_learning_rate(
+        drop_epochs, c.amt(), layers);
       model->add_callback(dflr);
     }
 
@@ -1084,16 +1265,16 @@ void init_callbacks(
         layers.insert(c.layer(i));
       }
       lbann_callback_linear_growth_learning_rate *lglr = new
-        lbann_callback_linear_growth_learning_rate(
-          c.target(), c.num_epochs(), c.delay(), layers);
+      lbann_callback_linear_growth_learning_rate(
+        c.target(), c.num_epochs(), c.delay(), layers);
       model->add_callback(lglr);
     }
 
-    //////////////////////////////////////////////////////////////////    
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: profiler
     //////////////////////////////////////////////////////////////////
     if (callback.has_profiler()) {
-      const lbann_data::CallbackProfiler& c = callback.profiler();
+      //const lbann_data::CallbackProfiler& c = callback.profiler();
       if (master) {
         cout << "adding profiler callback" << endl;
       }
@@ -1110,7 +1291,7 @@ void init_callbacks(
         std::cout << "adding step_minibatch callback" << std::endl;
       }
       lbann_callback_step_minibatch *step_mb_cb = new
-        lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
+      lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
       model->add_callback(step_mb_cb);
     }
   }
@@ -1192,7 +1373,7 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 }
 
 optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager *cudnn,
-                                          const lbann_data::LbannPB& p)
+    const lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
   optimizer_factory *factory = 0;
@@ -1427,7 +1608,8 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
-void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p) {
+void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
+{
   options *opts = options::get();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
@@ -1437,19 +1619,19 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p) {
       std::stringstream s;
       s << "data_filedir_" << which;
       if (opts->has_string(s.str().c_str())) {
-         r->set_data_filedir(opts->get_string(s.str().c_str()));
+        r->set_data_filedir(opts->get_string(s.str().c_str()));
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
       if (opts->has_string(s.str().c_str())) {
-         r->set_data_filename(opts->get_string(s.str().c_str()));
+        r->set_data_filename(opts->get_string(s.str().c_str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
       if (opts->has_string(s.str().c_str())) {
-         r->set_label_filename(opts->get_string(s.str().c_str()));
+        r->set_label_filename(opts->get_string(s.str().c_str()));
       }
     }
   }
@@ -1565,11 +1747,11 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_nesterov(nesterov);
       opt->set_allocated_sgd(a);
     } else {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__
-            << " :: unknown string for --optimizer: " << opt_string
-            << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
-        throw lbann_exception(err.str());
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " :: unknown string for --optimizer: " << opt_string
+          << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
+      throw lbann_exception(err.str());
     }
     p.set_allocated_optimizer(opt);
   }
