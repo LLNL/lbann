@@ -157,18 +157,6 @@ class sum_layer : public transform {
       }
     }
 
-    // Allocate workspace if needed
-    if(m_copy_bp_output_from_gpus) {
-      size_t required_work_space = (this->m_num_prev_neurons
-                                    * this->m_mini_batch_size_per_gpu
-                                    * sizeof(DataType));
-      for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
-        if(required_work_space > this->m_cudnn->get_work_space_size(i)) {
-          this->m_cudnn->set_work_space_size(i, required_work_space);
-        }
-      }
-    }
-
     // Deallocate GPU memory for error signal since it isn't needed
     this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
 
@@ -219,18 +207,12 @@ class sum_layer : public transform {
       const Layer* parent = m_parents[parent_index];
 
       // Get child error signal on GPUs
-      std::vector<DataType*> input;
       if(parent->using_gpus()) {
-        input = parent->gpu_fp_output(this);
+        parent->get_gpu_fp_output(this->m_prev_activations_d, this);
       }
       else {
-        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-        input.resize(num_gpus);
-        for(int i=0; i<num_gpus; ++i) {
-          input[i] = (DataType*) work_spaces[i];
-        }
         parent->get_fp_output(*this->m_prev_activations, this);
-        this->m_cudnn->scatter_to_gpus(input,
+        this->m_cudnn->scatter_to_gpus(this->m_prev_activations_d,
                                        this->m_prev_activations->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
@@ -243,7 +225,7 @@ class sum_layer : public transform {
         CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
-                                   input[i],
+                                   this->m_prev_activations_d[i],
                                    &one,
                                    this->m_neurons_cudnn_desc,
                                    this->m_activations_d[i]));

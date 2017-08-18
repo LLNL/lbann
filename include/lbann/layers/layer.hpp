@@ -184,9 +184,9 @@ class Layer {
   virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
 #ifdef __LIB_CUDNN
   /** Get forward propagation output on GPUs, as seen by next layer. */
-  virtual const std::vector<DataType*> gpu_fp_output(const Layer* next_layer = NULL) const;
+  virtual void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer = NULL) const;
   /** Get backward propagation output on GPUs, as seen by previous layer. */
-  virtual const std::vector<DataType*> gpu_bp_output(const Layer* prev_layer = NULL) const;
+  virtual void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;

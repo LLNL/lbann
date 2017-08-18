@@ -309,15 +309,14 @@ class concatenation_layer : public transform {
         input = this->m_prev_activations_d;
       }
       else {
+        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        for(int i=0; i<num_gpus; ++i) {
+          input.push_back((DataType*) work_spaces[i]);
+        }
         if(parent->using_gpus()) {
-          input = parent->gpu_fp_output(this);
+          parent->get_gpu_fp_output(input, this);
         }
         else {
-          std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-          input.resize(num_gpus);
-          for(int i=0; i<num_gpus; ++i) {
-            input[i] = (DataType*) work_spaces[i];
-          }
           parent->get_fp_output(*this->m_prev_activations, this);
           this->m_cudnn->scatter_to_gpus(input,
                                          this->m_prev_activations->LockedMatrix(),
@@ -460,7 +459,7 @@ class concatenation_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  const std::vector<DataType*> gpu_bp_output(const Layer* prev_layer) const {
+  void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
 
     // Check if input is in the list of child layers
     const int parent_index = (std::find(m_parents.begin(),
@@ -468,7 +467,7 @@ class concatenation_layer : public transform {
                                         prev_layer)
                               - m_parents.begin());
     if(parent_index >= (int) m_parents.size()) {
-      return m_error_signal_d;
+      transform::get_gpu_bp_output(bp_output, prev_layer);
     }
 
     // Split the error signal tensor into slices of width 1 along the
@@ -492,16 +491,11 @@ class concatenation_layer : public transform {
     
     // Copy slices from previous activations tensor into output
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-    std::vector<DataType*> output(num_gpus);
-    for(int i=0; i<num_gpus; ++i) {
-      output[i] = (DataType*) work_spaces[i];
-    }
     for(int slice = 0; slice < num_slices; ++slice) {
       std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
       for(int i = 0; i < num_gpus; ++i) {
         input_slice[i] = this->m_error_signal_d[i] + slice * input_slice_size + slice_offset;
-        output_slice[i] = output[i] + slice * output_slice_size;
+        output_slice[i] = bp_output[i] + slice * output_slice_size;
       }
       this->m_cudnn->copy_on_gpus(output_slice,
                                   input_slice,
@@ -510,9 +504,6 @@ class concatenation_layer : public transform {
                                   this->m_num_neurons,
                                   output_size);
     }
-
-    // Return output
-    return output;
 
   }
   #endif // __LIB_CUDNN

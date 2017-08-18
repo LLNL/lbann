@@ -182,12 +182,8 @@ Layer::~Layer() {
   if(m_cudnn) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    if(m_copy_fp_input_to_gpus) {
-      m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    }
-    if(m_copy_bp_input_to_gpus) {
-      m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    }
+    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
     m_cudnn->unpin_matrix(*m_prev_activations);
     m_cudnn->unpin_matrix(*m_activations);
     m_cudnn->unpin_matrix(*m_prev_error_signal);
@@ -206,6 +202,7 @@ void Layer::forward_prop() {
   double fp_start = get_time();
 
   // Get incoming activations and convert matrix distribution if necessary
+  /// @todo Only copy CPU memory when needed
   if(m_prev_layer != NULL) {
     m_prev_layer->get_fp_output(*m_prev_activations, this);
   }
@@ -221,7 +218,7 @@ void Layer::forward_prop() {
                                m_prev_activations->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_activations_d = m_prev_layer->gpu_fp_output(this);
+      m_prev_layer->get_gpu_fp_output(m_prev_activations_d, this);
     }
   }
 #endif // __LIB_CUDNN
@@ -264,7 +261,7 @@ void Layer::back_prop() {
                                m_prev_error_signal->LockedMatrix(),
                                m_mini_batch_size_per_gpu);
     } else {
-      m_prev_error_signal_d = m_next_layer->gpu_bp_output(this);
+      m_next_layer->get_gpu_bp_output(m_prev_error_signal_d, this);
     }
   }
 #endif // __LIB_CUDNN
@@ -457,16 +454,12 @@ void Layer::setup_gpu() {
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
                             m_mini_batch_size_per_gpu);
-  if(m_copy_fp_input_to_gpus) {
-    m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                              m_num_prev_neurons,
-                              m_mini_batch_size_per_gpu);
-  }
-  if(m_copy_bp_input_to_gpus) {
-    m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                              m_num_neurons,
-                              m_mini_batch_size_per_gpu);
-  }
+  m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                            m_num_prev_neurons,
+                            m_mini_batch_size_per_gpu);
+  m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                            m_num_neurons,
+                            m_mini_batch_size_per_gpu);
 
 #endif // __LIB_CUDNN
 }
@@ -607,16 +600,18 @@ void Layer::pin_data() {
 
   // Pin host memory if needed for GPU memory transfers
   if(pin_fp_input) {
-    m_prev_activations->Resize(m_num_prev_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_prev_activations);
+    /// @todo If m_prev_activations is resized, we might leak pinned memory
+    // m_prev_activations->Resize(m_num_prev_neurons, max_mini_batch_size);
+    // m_cudnn->pin_matrix(*m_prev_activations);
   }
   if(pin_fp_output) {
     m_activations->Resize(m_num_neurons, max_mini_batch_size);
     m_cudnn->pin_matrix(*m_activations);
   }
   if(pin_bp_input) {
-    m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_prev_error_signal);
+    /// @todo If m_prev_error_signal is resized, we might leak pinned memory
+    // m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
+    // m_cudnn->pin_matrix(*m_prev_error_signal);
   }
   if(pin_bp_output) {
     m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
@@ -647,12 +642,18 @@ void Layer::get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const 
 
 #ifdef __LIB_CUDNN
 
-const std::vector<DataType*> Layer::gpu_fp_output(const Layer* next_layer) const {
-  return m_activations_d;
+void Layer::get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
+  this->m_cudnn->copy_on_gpus(fp_output,
+                              m_activations_d,
+                              this->m_num_neurons,
+                              m_mini_batch_size_per_gpu);
 }
 
-const std::vector<DataType*> Layer::gpu_bp_output(const Layer* prev_layer) const {
-  return m_error_signal_d;
+void Layer::get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
+  this->m_cudnn->copy_on_gpus(bp_output,
+                              m_error_signal_d,
+                              this->m_num_prev_neurons,
+                              m_mini_batch_size_per_gpu);
 }
 
 #endif // __LIB_CUDNN
