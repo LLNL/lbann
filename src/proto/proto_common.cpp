@@ -278,7 +278,7 @@ void add_layers(
       std::stringstream s(ell.children());
       vector<const Layer*> children;
       while (s >> i) {
-        assert(all_layers.find(i) !- all_layers.end());
+        assert(all_layers.find(i) != all_layers.end());
         children.push_back(all_layers[i]);
       }
 
