@@ -136,6 +136,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 
@@ -199,6 +200,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 
@@ -308,6 +310,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 
