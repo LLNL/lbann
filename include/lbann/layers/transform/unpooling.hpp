@@ -55,9 +55,8 @@ class unpooling_layer : public transform {
   /// Size of unpooling window
   int m_pool_size;
  
-  /// max pooling mask
-  ElMat* m_max_pool_mask; 
-
+  /// corresponding pooling layer
+  pooling_layer<T_layout>* m_pooling_layer;
 
  public:
 
@@ -97,8 +96,7 @@ class unpooling_layer : public transform {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    // Pooling layer mask matrices
-    m_max_pool_mask = p_layer->get_max_pool_mask();
+    m_pooling_layer = p_layer;
     // Initialize input dimensions and unpooling parameters
     m_pool_dims.assign(pool_dims, pool_dims+num_data_dims);
     m_pool_size = std::accumulate(m_pool_dims.begin(),
@@ -178,7 +176,7 @@ class unpooling_layer : public transform {
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
-    Mat& max_pool_local = m_max_pool_mask->Matrix();
+    const Mat& max_pool_local = m_pooling_layer->get_max_pool_masks().LockedMatrix();
 
     // Output entries are divided amongst channels
     const int num_channels = this->m_prev_neuron_dims[0];
@@ -204,7 +202,7 @@ class unpooling_layer : public transform {
       // Apply max unpooling
       if(m_pool_mode == pool_mode::max) {
         DataType *output_buffer = activations_local.Buffer(0, sample);
-        DataType *mask_buffer = max_pool_local.Buffer(0,sample);
+        const DataType *mask_buffer = max_pool_local.LockedBuffer(0,sample);
         #pragma omp parallel for collapse(2)
         for(int c = 0; c < num_channels; ++c) {
           for(int j = 0; j < num_per_output_channel; ++j) {
@@ -232,7 +230,7 @@ class unpooling_layer : public transform {
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
-    const Mat& max_pool_local = m_max_pool_mask->LockedMatrix();
+    const Mat& max_pool_local = m_pooling_layer->get_max_pool_masks().LockedMatrix();
 
     // Output entries are divided amongst channels
     const int num_channels = this->m_prev_neuron_dims[0];

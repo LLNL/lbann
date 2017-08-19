@@ -313,6 +313,7 @@ message Layer {
    // learning Layers
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
+   Deconvolution deconvolution = 305;
 
    // target Layers
    TargetDistributedMinibatch target_distributed_minibatch = 18;
@@ -487,6 +488,28 @@ message FullyConnected {
 }
 
 message Convolution {
+  int64 num_dims = 1;
+  int64 num_output_channels = 4;
+
+  bool has_vectors = 2;
+
+  // these are used if has_vector = true
+  string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
+  string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
+  string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+
+  // these are used if has_vector = false
+  int64 conv_dims_i = 50; 
+  int64 conv_pads_i = 60; 
+  int64 conv_strides_i = 70; 
+
+
+  string weight_initialization = 9;
+  bool has_bias = 10;
+  double l2_regularization_factor = 11;
+}
+
+message Deconvolution {
   int64 num_dims = 1;
   int64 num_output_channels = 4;
 
