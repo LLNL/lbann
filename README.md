@@ -6,6 +6,16 @@
 
 ## Building LBANN with Spack [for Developers]
 
+### Installing a compiler (if needed)
+
+LBANN uses C++ features provided by newer compilers.  If you do not have the necessary compiler, you can use spack to install one.  For full details, see the [spack documentation](http://spack.readthedocs.io/en/latest/getting_started.html#compiler-configuration).
+
+    spack install gcc@7.1.0
+
+The above command builds and installs a compiler.  It prints the install path as the final line.  If successful, then register this compiler with spack using the spack compiler find command, passing the install path as an argument.
+
+    spack compiler add /path/to/compiler/install
+
 ### Using spack setup
 
 Here is an example of setting up the local build environment on x86\_64 HPC system
