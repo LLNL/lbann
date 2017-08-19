@@ -176,7 +176,7 @@ class unpooling_layer : public transform {
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
-    Mat& max_pool_local = m_pooling_layer->get_max_pool_masks().Matrix();
+    const Mat& max_pool_local = m_pooling_layer->get_max_pool_masks().LockedMatrix();
 
     // Output entries are divided amongst channels
     const int num_channels = this->m_prev_neuron_dims[0];
@@ -202,7 +202,7 @@ class unpooling_layer : public transform {
       // Apply max unpooling
       if(m_pool_mode == pool_mode::max) {
         DataType *output_buffer = activations_local.Buffer(0, sample);
-        DataType *mask_buffer = max_pool_local.Buffer(0,sample);
+        const DataType *mask_buffer = max_pool_local.LockedBuffer(0,sample);
         #pragma omp parallel for collapse(2)
         for(int c = 0; c < num_channels; ++c) {
           for(int j = 0; j < num_per_output_channel; ++j) {
