@@ -113,6 +113,7 @@ esac
 # Create a directory for the build
 DIR="${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
 DIR=${DIR//@/-}
+DIR=${DIR// /-}
 
 echo "Creating directory ${DIR}"
 mkdir -p ${DIR}/build
