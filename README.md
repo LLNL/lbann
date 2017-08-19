@@ -9,6 +9,7 @@
 ### Using spack setup
 
 Here is an example of setting up the local build environment on x86\_64 HPC system
+
     cd lbann
     mkdir spack_builds; cd spack_builds
     ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m mvapich2
@@ -18,6 +19,7 @@ Here is an example of setting up the local build environment on x86\_64 HPC syst
 [Spack Setup](http://spack.readthedocs.io/en/latest/packaging_guide.html?highlight=spack%20diy#build-system-configuration-support)
 
 The build\_lbann.sh script roughly does the following steps for this example:
+
     spack setup lbann@local build_type=Release dtype=4 %gcc@7.1.0 ^elemental@master blas=openblas ^mvapich2
     spack setup lbann@local %intel@18.0.0 ^mvapich2
     mkdir -p gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
@@ -25,6 +27,7 @@ The build\_lbann.sh script roughly does the following steps for this example:
     ../spconfig.py ../../..
 
 By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the following:
+
     ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m 'mvapich2 fabrics=mrail'
 
 ## Using LBANN on LLNL LC clusters
