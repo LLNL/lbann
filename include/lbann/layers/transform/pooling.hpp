@@ -167,8 +167,8 @@ class pooling_layer : public transform {
 
   std::string get_name() const { return "pooling"; }
   
- /** Return max pool position masks associated with this layer. */
-  virtual ElMat& get_max_pool_masks() const { return *m_max_pool_masks; }
+ /** Return view of  max pool position masks associated with this layer. */
+  virtual ElMat& get_max_pool_masks() const { return *m_max_pool_masks_v; }
 
   virtual inline void initialize_distributed_matrices();
 

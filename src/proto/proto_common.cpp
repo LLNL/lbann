@@ -402,7 +402,6 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     // LAYER: unpooling
     //////////////////////////////////////////////////////////////////
-#if 0    
     if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
       bool has_vectors = ell.has_vectors();
@@ -472,8 +471,6 @@ void add_layers(
       layer_mapping[layer.index()] = model->get_layers().size();
       model->add(d);
     }
-#endif
-
 
     //////////////////////////////////////////////////////////////////
     // LAYER: Convolution
@@ -556,6 +553,89 @@ void add_layers(
       layer_mapping[layer.index()] = model->get_layers().size();
       model->add(d);
     }
+
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: Deconvolution
+    //////////////////////////////////////////////////////////////////
+    if (layer.has_deconvolution()) {
+      const lbann_data::Deconvolution& ell = layer.deconvolution();
+      bool has_vectors = ell.has_vectors();
+
+      if (has_vectors) {
+        vector<int> conv_dims;
+        std::stringstream ss;
+        int i;
+        ss.str(ell.conv_dims());
+        while (ss >> i) {
+          conv_dims.push_back(i);
+        }
+
+        vector<int> conv_pads;
+        ss.clear();
+        ss.str(ell.conv_pads());
+        while (ss >> i) {
+          conv_pads.push_back(i);
+        }
+
+        vector<int> conv_strides;
+        ss.clear();
+        ss.str(ell.conv_strides());
+        while (ss >> i) {
+          conv_strides.push_back(i);
+        }
+
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: deconvolution "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.num_output_channels(),
+            &conv_dims[0],
+            &conv_pads[0],
+            &conv_strides[0],
+            get_weight_initialization(ell.weight_initialization()),
+            model->create_optimizer(),
+            ell.has_bias(),
+            cudnn
+          );
+        }
+      }
+
+      else {
+        if (dl == data_layout::MODEL_PARALLEL) {
+          err << __FILE__ << " " << __LINE__ << " :: deconvolution "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
+            layer_id,
+            comm,
+            ell.num_dims(),
+            ell.num_output_channels(),
+            ell.conv_dims_i(),
+            ell.conv_pads_i(),
+            ell.conv_strides_i(),
+            get_weight_initialization(ell.weight_initialization()),
+            model->create_optimizer(),
+            ell.has_bias(),
+            cudnn
+          );
+        }
+      }
+
+      double l2_regularization_factor = ell.l2_regularization_factor();
+      if(l2_regularization_factor != double(0.0)) {
+        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
+      }
+      all_layers[layer.index()] = d;
+      layer_mapping[layer.index()] = model->get_layers().size();
+      model->add(d);
+     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: local_response_normalization
