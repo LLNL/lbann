@@ -98,7 +98,7 @@ case ${BUILD_TYPE} in
     C_FLAGS="-O3"
     CXX_FLAGS="-O3"
     Fortran_FLAGS="-O3"
-    if [[ ${COMPILER} == gcc@* ]]; then
+    if [[ (${COMPILER} == gcc@*) || (${COMPILER} == intel@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
