@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 
     // Number of GPUs
 #if __LIB_CUDNN
+    bool use_gpus = Input("--use-gpus", "whether to use GPUs", true);
     int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 #endif
 
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+    cudnn::cudnn_manager *cudnn = use_gpus ? new cudnn::cudnn_manager(comm, num_gpus) : NULL;
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN

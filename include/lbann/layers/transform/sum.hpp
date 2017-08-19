@@ -157,9 +157,6 @@ class sum_layer : public transform {
       }
     }
 
-    // Deallocate GPU memory for error signal since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -178,11 +175,13 @@ class sum_layer : public transform {
   #ifndef __LIB_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
-      this->m_error_signal_d = this->m_prev_error_signal_d;
+      this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
+                                  this->m_prev_error_signal_d,
+                                  this->m_num_neurons,
+                                  this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
       El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
     }
   }

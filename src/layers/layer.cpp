@@ -645,14 +645,14 @@ void Layer::get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const 
 void Layer::get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
   this->m_cudnn->copy_on_gpus(fp_output,
                               m_activations_d,
-                              this->m_num_neurons,
+                              m_num_neurons,
                               m_mini_batch_size_per_gpu);
 }
 
 void Layer::get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
   this->m_cudnn->copy_on_gpus(bp_output,
                               m_error_signal_d,
-                              this->m_num_prev_neurons,
+                              m_num_prev_neurons,
                               m_mini_batch_size_per_gpu);
 }
 

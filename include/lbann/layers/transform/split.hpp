@@ -159,9 +159,6 @@ class split_layer : public transform {
       }
     }
 
-    // Deallocate GPU memory for activations since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -172,11 +169,13 @@ class split_layer : public transform {
   #ifndef __LIB_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
-      this->m_activations_d = this->m_prev_activations_d;
+      this->m_cudnn->copy_on_gpus(this->m_activations_d,
+                                  this->m_prev_activations_d,
+                                  this->m_num_prev_neurons,
+                                  this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations, *this->m_prev_activations);
       El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }
