@@ -354,7 +354,7 @@ void add_layers(
       while (s >> i) {
         parents.push_back(i);
       }
-      d = new split_layer<>(layer_id, comm, {}, cudnn);
+      d = new sum_layer<>(layer_id, comm, {}, cudnn);
       transform_layers record(d, parents);
       t_layers.push_back(record);
     }
