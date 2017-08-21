@@ -117,22 +117,15 @@ struct transform_layers {
 void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers, std::unordered_map<int, Layer*> the_layers) {
   bool master = comm->am_world_master();
   for (size_t h=0; h<layers.size(); h++) {
-std::cout << "h: " << h << std::endl;
     std::string name = layers[h].slice->get_name();
     if (name == "slice") {
       slice_layer<> *s = (slice_layer<>*)layers[h].slice;
       assert(layers[h].children.size() == layers[h].slice_points.size());
-      std::cout << "<<<< " << layers[h].children.size() << std::endl;
-      std::cout << "<<<< " << layers[h].slice_points.size() << std::endl;
       for (size_t k = 0; k<layers[h].children.size(); k++) {
-std::cout << "k: " << k << std::endl;
         int child_id = layers[h].children[k];
         int slice_pt = layers[h].slice_points[k];
         assert(the_layers.find(child_id) != the_layers.end());
         Layer * child = the_layers[child_id];
-        std::cerr << ">>>>>> " << child->get_name() << std::endl;
-        std::cerr << ">>>>>> " << slice_pt << std::endl;
-        std::cerr << ">>>>>> " << layers[h].slice_points[k] <<std::endl;
         s->push_back_child(child, layers[h].slice_points[k]);
       }
     } else if (name == "split") {
