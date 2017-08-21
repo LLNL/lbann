@@ -150,7 +150,6 @@ class slice_layer : public transform {
     if(m_children.empty()) {
       if(m_comm->am_world_master()) {
         if(slice_point > 0) {
-          std::stringstream err;
           err << __FILE__ << " " << __LINE__ << " :: slice_layer: first child should have a slice point of zero";
           throw lbann_exception(err.str());
         }
