@@ -39,8 +39,10 @@ void lbann_callback_save_images::on_epoch_end(model *m) {
   //@todo: generalize to two matching layers
   //@todo: use view so we can save arbitrary number of valid images
   //using layer just before reconstruction layer because prev_layer_act is protected
-  save_image(m, &(layers[0]->get_activations()),
-             &(layers[layers.size()-2]->get_activations()), epoch);
+  save_image(*m,
+             layers[0]->get_activations(),
+             layers[layers.size()-2]->get_activations(),
+             epoch);
 }
 
 
@@ -49,21 +51,44 @@ void lbann_callback_save_images::on_phase_end(model *m) {
   auto phase = m->get_current_phase();
   auto epoch = m->get_cur_epoch();
   auto index = phase*epoch + epoch;
-  save_image(m, &(layers[phase]->get_activations()),
-             &(layers[phase+2]->get_activations()), index);
+  save_image(*m,
+             layers[phase]->get_activations(),
+             layers[phase+2]->get_activations(),
+             index);
 }
 
-void lbann_callback_save_images::save_image(model *m, ElMat *input, ElMat *output,uint index) {
-  DistMat in_col,out_col;
-  El::View(in_col,*input, El::ALL, El::IR(0));//@todo: remove hardcoded 0, save any image (index) you want, 0 as default
-  El::View(out_col,*output, El::ALL, El::IR(0));
-  CircMat in_pixel = in_col;
-  CircMat out_pixel = out_col;
-  if (m->get_comm()->am_world_master()) {
-    std::cout << "Saving images to " << m_image_dir << std::endl;
-    m_reader->save_image(in_pixel.Matrix(), m_image_dir+"gt_"+ std::to_string(index)+"."+m_extension);
-    m_reader->save_image(out_pixel.Matrix(), m_image_dir+"rc_"+ std::to_string(index)+"."+m_extension);
+void lbann_callback_save_images::save_image(model& m,
+                                            AbsDistMat& input,
+                                            AbsDistMat& output,
+                                            int index) {
+
+  // Save input image
+  AbsDistMat* input_col = input.Construct(input.Grid(),
+                                          input.Root());
+  El::View(*input_col, input, El::ALL, El::IR(0));
+  CircMat input_circ = *input_col;
+  delete input_col;
+  if(m.get_comm()->am_world_master()) {
+    m_reader->save_image(input_circ.Matrix(), m_image_dir+"input_"+ std::to_string(index)+"."+m_extension);
   }
+  
+  // Save output image if it is a reconstruction
+  if(output.Height() == input.Height()) {
+    AbsDistMat* output_col = output.Construct(output.Grid(),
+                                              output.Root());
+    El::View(*output_col, output, El::ALL, El::IR(0));
+    CircMat output_circ = *output_col;
+    delete output_col;
+    if(m.get_comm()->am_world_master()) {
+      m_reader->save_image(input_circ.Matrix(), m_image_dir+"output_"+ std::to_string(index)+"."+m_extension);
+    }
+  }
+
+  // Output message
+  if(m.get_comm()->am_world_master()) {
+    std::cout << "Saved images to " << m_image_dir << std::endl;
+  }
+
 }
 
 
