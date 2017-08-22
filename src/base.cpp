@@ -90,4 +90,29 @@ void finalize(lbann_comm* comm) {
   El::Finalize();
 }
 
+/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
+static std::vector<std::string> weight_initialization_names  = 
+    { "zero", "uniform", "normal", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform"};
+
+/** returns a string representation of the weight_initialization */
+std::string get_weight_initialization_name(weight_initialization m) {
+  if ((int)m < 0 or (int)m >= weight_initialization_names.size()) {
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+          + " Invalid weight_initialization");
+  }
+  return weight_initialization_names[(int)m];
+}
+
+/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
+static std::vector<std::string> pool_mode_names = { "max", "average", "average_no_pad" };
+
+/** returns a string representation of the pool_mode */
+std::string get_pool_mode_name(pool_mode m) {
+  if ((int)m < 0 or (int)m >= pool_mode_names.size()) {
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+          + " Invalid pool_mode");
+  }
+  return pool_mode_names[(int)m];
+}
+
 }  // namespace lbann
