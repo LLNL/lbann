@@ -98,6 +98,9 @@ class Layer {
 
   /** Return this layer's name */
   virtual std::string get_name() const = 0;
+  
+  /** Returns a description of the parameters passed to the ctor */
+  virtual std::string get_description() { return "description not implemented for this layer"; }
 
   /** Return the layer index. */
   inline int get_index() const {

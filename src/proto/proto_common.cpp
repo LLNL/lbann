@@ -155,6 +155,9 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
   }
 }
 
+  //maps: index (wrt prototext) to the Layer
+  std::unordered_map<int, Layer*> the_layers;
+
 void add_layers(
   lbann::sequential_model *model,
   std::map<execution_mode, generic_data_reader *>& data_readers,
@@ -170,8 +173,6 @@ void add_layers(
 
   std::stringstream err;
 
-  //maps: index (wrt prototext) to the Layer
-  std::unordered_map<int, Layer*> the_layers;
 
   //maps: index (wrt model) to the Layer
   std::unordered_map<int, Layer*> model_layers;
@@ -1176,7 +1177,7 @@ void init_callbacks(
           }
           which.insert(layer_mapping.find(a)->second);
           if (master) {
-            cout << "CALLBACK: imcomm: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << endl;
+            cout << "CALLBACK: imcomm: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_name() << std::endl;
           }
         }
       }

@@ -136,6 +136,18 @@ class lbann_callback_imcomm : public lbann_callback {
   void do_summary(model *m, learning *layer, double im_time);
 };
 
+static std::vector<std::string> comm_type_names  =
+    { "none", "normal", "onebit_quantization", "thresh_quantization", "adaptive_quantization" };
+
+/** returns a string representation of the weight_initialization */
+static std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
+  if ((int)m < 0 or (int)m >= comm_type_names.size()) {
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+           + " Invalid comm_type");
+  }
+  return comm_type_names[(int)m];
+}
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED

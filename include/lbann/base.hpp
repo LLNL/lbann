@@ -96,14 +96,37 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
   return NULL;
 }
 
-/// Weight matrix initialization scheme
+/** Weight matrix initialization scheme */
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-//if you change the above enum, please also edit:
-//  static std::string Layer::weight_initialization_name(weight_initialization id);
+
+/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
+static std::vector<std::string> weight_initialization_names  = 
+    { "zero", "uniform", "normal", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform"};
+
+/** returns a string representation of the weight_initialization */
+static std::string get_weight_initialization_name(weight_initialization m) {
+  if ((int)m < 0 or (int)m >= weight_initialization_names.size()) {
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+          + " Invalid weight_initialization");
+  }
+  return weight_initialization_names[(int)m];
+}
 
 
-/// Pooling layer mode
+/** Pooling layer mode */
 enum class pool_mode {max, average, average_no_pad};
+
+/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
+static std::vector<std::string> pool_mode_names = { "max", "average", "average_no_pad" };
+
+/** returns a string representation of the pool_mode */
+static std::string get_pool_mode_name(pool_mode m) {
+  if ((int)m < 0 or (int)m >= pool_mode_names.size()) {
+    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+          + " Invalid pool_mode");
+  }
+  return pool_mode_names[(int)m];
+}
 
 namespace lbann {
 
