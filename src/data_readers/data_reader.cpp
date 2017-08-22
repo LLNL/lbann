@@ -207,6 +207,10 @@ bool generic_data_reader::update() {
     return false;
   }else {
     m_current_mini_batch_idx += m_iteration_stride;
+    if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
+      set_initial_position();
+      return false;
+    }
     return true;
   }
 }
@@ -247,7 +251,7 @@ void generic_data_reader::select_subset_of_data() {
 
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
-    if(count > get_num_data()) {
+    if(count > static_cast<size_t>(get_num_data())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
