@@ -109,7 +109,7 @@ class reconstruction_layer : public target_layer {
 
  public:
   //@todo: call base class
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode() const {
     return this->m_execution_mode;
   }
 
