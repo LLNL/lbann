@@ -37,9 +37,10 @@
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
+#include "lbann/base.hpp"
 #endif
 #include <string>
-#include <cassert>
+#include <sstream>
 
 namespace lbann {
 
@@ -137,6 +138,16 @@ class fully_connected_layer : public learning {
     }
 #endif
   }
+
+  /** Returns description of ctor params */
+  std::string get_description() {
+    return std::string {} +
+     "fully_connected; index: " +  std::to_string(this->m_index) + " num_neurons: " 
+     + std::to_string(this->m_num_neurons)
+     + " weight_init: " + get_weight_initialization_name(this->m_weight_initialization)
+     + " has_bias: " + std::to_string(this->m_bias_scaling_factor);
+  }
+
 
   fully_connected_layer(const fully_connected_layer& other) :
     learning(other),

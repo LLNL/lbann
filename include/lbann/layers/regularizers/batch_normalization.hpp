@@ -341,6 +341,16 @@ class batch_normalization : public regularizer_layer {
 
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() {
+    return std::string {} +
+     "batch_normalization; index: " +  std::to_string(this->m_index) + 
+     + " decay: " + std::to_string(this->m_decay) + " scale_init: " 
+     + std::to_string(this->m_scale_init)
+     + " bias: " + std::to_string(this->m_bias_init) + " epsilon: " 
+     + std::to_string(this->m_epsilon);
+  }
+
   ~batch_normalization() {
   #ifdef __LIB_CUDNN
 
