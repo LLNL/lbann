@@ -46,6 +46,12 @@ model {
     }
   }
   # callback {
+  #   save_images {
+  #     image_dir: ""
+  #     extension: "jpg"
+  #   }
+  # }
+  # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"
   #     interval: 1
