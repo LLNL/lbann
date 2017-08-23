@@ -31,15 +31,15 @@ link_directories(${Elemental_DIR}/lib)
 link_directories(${Elemental_DIR}/lib64)
 set(Elemental_LIBS ${Elemental_LIBRARIES})
 
-file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/lbann_random.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_image_utils.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_augmenter.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_colorizer.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_normalizer.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_process.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_process_patches.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_resizer.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_utils.cpp
+file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/random.cpp
+                          ${LBANN_DIR}/src/data_readers/image_utils.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_process.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_resizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_utils.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp
