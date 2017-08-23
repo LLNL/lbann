@@ -81,7 +81,7 @@ else()
   option(OPENCV_WITH_GSTREAMER_0_10 "OpenCV: Enable Gstreamer 0.10 support (instead of 1.x)"                              OFF) # both
   option(OPENCV_WITH_GTK            "OpenCV: Include GTK support"                                                         OFF) # both
   option(OPENCV_WITH_GTK_2_X        "OpenCV: Use GTK version 2"                                                           OFF) # 3.3.0
-  option(OPENCV_WITH_IPP            "OpenCV: Include Intel IPP support"                                                   OFF) # Causes a hash mismatch error when downloading # both
+  option(OPENCV_WITH_IPP            "OpenCV: Include Intel IPP support"                                                   ON) # Causes a hash mismatch error when downloading # both
   option(OPENCV_WITH_HALIDE         "OpenCV: Include Halide support"                                                      OFF) # 3.3.0
   option(OPENCV_WITH_JASPER         "OpenCV: Include JPEG2K support"                                                      OFF) # both
   option(OPENCV_WITH_JPEG           "OpenCV: Include JPEG support"                                                        ON) # both
@@ -157,7 +157,7 @@ else()
   option(OPENCV_BUILD_PNG              "OpenCV: Build libpng from source"                                           ON) # both
   option(OPENCV_BUILD_OPENEXR          "OpenCV: Build openexr from source"                                          OFF) # both
   option(OPENCV_BUILD_TBB              "OpenCV: Download and build TBB from source"                                 OFF) # both
-  option(OPENCV_BUILD_IPP_IW           "OpenCV: Build IPP IW from source"                                           ON) # 3.3.0
+  option(OPENCV_BUILD_IPP_IW           "OpenCV: Build IPP IW from source"                                           OFF) # 3.3.0
   option(OPENCV_BUILD_ITT              "OpenCV: Build Intel ITT from source"                                        ON) # 3.3.0
 
   # OpenCV installation options
@@ -243,6 +243,7 @@ else()
       -D WITH_GSTREAMER_0_10=${OPENCV_WITH_GSTREAMER_0_10}
       -D WITH_GTK=${OPENCV_WITH_GTK}
       -D WITH_GTK_2_X=${OPENCV_WITH_GTK_2_X}
+      -D IPPROOT=${IPPROOT}
       -D WITH_IPP=${OPENCV_WITH_IPP}
       -D WITH_HALIDE=${OPENCV_WITH_HALIDE}
       -D WITH_JASPER=${OPENCV_WITH_JASPER}
