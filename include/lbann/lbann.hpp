@@ -56,6 +56,7 @@
 
 /// Transform Layers
 #include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
@@ -108,6 +109,7 @@
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
+#include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/optimizer_adagrad.hpp"

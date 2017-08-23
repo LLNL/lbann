@@ -57,7 +57,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
     return;
   }
 
-  ElMat& grad = learning_layer->get_weights_biases_gradient();
+  ElMat& grad = learning_layer->get_weights_gradient();
   if (!is_good(grad)) {
     lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
@@ -78,7 +78,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    ElMat& weights = learning_layer->get_weights_biases();
+    ElMat& weights = learning_layer->get_weights();
     if (!is_good(weights)) {
       lbann_comm *comm = m->get_comm();
       std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<

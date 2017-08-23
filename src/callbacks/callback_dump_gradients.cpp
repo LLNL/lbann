@@ -44,7 +44,7 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m, Layer *l) {
   // Skip non-learning layers.
   learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
   if(learning_layer != NULL) {
-    El::Write(learning_layer->get_weights_biases_gradient(),
+    El::Write(learning_layer->get_weights_gradient(),
               prefix + std::to_string(idx) +
               "-Gradients",
               El::ASCII);

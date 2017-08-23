@@ -133,13 +133,13 @@ class learning : public Layer {
   virtual void summarize_matrices(lbann_summary& summarizer, int step) {
     Layer::summarize_matrices(summarizer, step);
     std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
-    const ElMat& wb = get_weights_biases();
+    const ElMat& wb = get_weights();
     summarizer.reduce_mean(prefix + "mean", wb, step);
     summarizer.reduce_min(prefix + "min", wb, step);
     summarizer.reduce_max(prefix + "max", wb, step);
     summarizer.reduce_stdev(prefix + "stdev", wb, step);
     prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights_gradient/";
-    const ElMat& wb_d = get_weights_biases_gradient();
+    const ElMat& wb_d = get_weights_gradient();
     summarizer.reduce_mean(prefix + "mean", wb_d, step);
     summarizer.reduce_min(prefix + "min", wb_d, step);
     summarizer.reduce_max(prefix + "max", wb_d, step);
@@ -158,14 +158,6 @@ class learning : public Layer {
     }
   }
 
-  /** Return (a view of) the weights/biases matrix for this layer. */
-  virtual ElMat& get_weights_biases() {
-    return *m_weights;
-  }
-  /** Return (a view of) the weights/biases gradient matrix for this layer. */
-  virtual ElMat& get_weights_biases_gradient() {
-    return *m_weights_gradient;
-  }
   /** Return the layer's optimizer. */
   virtual optimizer *get_optimizer() const {
     return m_optimizer;

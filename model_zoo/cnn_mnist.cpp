@@ -142,9 +142,9 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       size_t num_train = mnist_trainset.get_num_data();
-      size_t num_validate = mnist_trainset.get_num_data();
-      double validate_percent = num_validate / (num_train+num_validate)*100.0;
-      double train_percent = num_train / (num_train+num_validate)*100.0;
+      size_t num_validate = mnist_validation_set.get_num_data();
+      double validate_percent = num_validate*100.0 / (num_train+num_validate);
+      double train_percent = num_train*100.0 / (num_train+num_validate);
       std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.get_num_data() << " samples." << std::endl
            << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.get_num_data() << " samples." << std::endl;
     }
@@ -371,7 +371,7 @@ int main(int argc, char *argv[]) {
 
     // train/test
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, true);
+      dnn.train(1, 1);
       // testing
       dnn.evaluate(execution_mode::testing);
     }

@@ -136,6 +136,10 @@ class lbann_callback_imcomm : public lbann_callback {
   void do_summary(model *m, learning *layer, double im_time);
 };
 
+
+/** returns a string representation of the weight_initialization */
+std::string get_comm_type_name(lbann_callback_imcomm::comm_type m);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED

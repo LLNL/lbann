@@ -89,10 +89,10 @@ class reconstruction_layer : public target_layer {
 
   void fp_compute() {
      //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*this->m_prev_activations_v,*this->m_activations);
+    El::Copy(*this->m_prev_activations,*this->m_activations);
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
-    double avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);
+    double avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations, original_layer_act_v);
     this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
     aggregate_cost += avg_error;
     num_forwardprop_steps++;
@@ -100,7 +100,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() {
     // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer, *this->m_prev_activations_v, original_layer_act_v,*this->m_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer, *this->m_prev_activations, original_layer_act_v,*this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
     //is really not previous, but computed in this layer
@@ -109,7 +109,7 @@ class reconstruction_layer : public target_layer {
 
  public:
   //@todo: call base class
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode() const {
     return this->m_execution_mode;
   }
 

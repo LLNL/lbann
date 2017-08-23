@@ -154,7 +154,9 @@ lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate
 float lbann_callback_drop_fixed_learning_rate::schedule(model* m, learning *l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
   if (!m_drop_epochs.empty() && m->get_cur_epoch() == m_drop_epochs.back()) {
-    m_drop_epochs.pop_back();
+    if (l->get_index() == m_last_idx) {
+      m_drop_epochs.pop_back();
+    }
     return cur_lr * m_amt;
   } else {
     return cur_lr;
@@ -163,13 +165,19 @@ float lbann_callback_drop_fixed_learning_rate::schedule(model* m, learning *l) {
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs) :
-  lbann_callback_linear_growth_learning_rate(target, num_epochs,
+  lbann_callback_linear_growth_learning_rate(target, num_epochs, 0,
                                              std::unordered_set<uint>()) {}
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
-  float target, int64_t num_epochs, std::unordered_set<uint> layers) :
+  float target, int64_t num_epochs, int64_t delay) :
+  lbann_callback_linear_growth_learning_rate(target, num_epochs, delay,
+                                             std::unordered_set<uint>()) {}
+
+lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+  float target, int64_t num_epochs, int64_t delay,
+  std::unordered_set<uint> layers) :
   lbann_callback_learning_rate(layers), m_target(target), m_inc(0),
-  m_num_epochs(num_epochs) {}
+  m_num_epochs(num_epochs), m_delay(delay) {}
 
 void lbann_callback_linear_growth_learning_rate::setup(model *m) {
   lbann_callback_learning_rate::setup(m);
@@ -187,7 +195,9 @@ void lbann_callback_linear_growth_learning_rate::setup(model *m) {
 float lbann_callback_linear_growth_learning_rate::schedule(model *m,
                                                            learning *l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
-  if (m->get_cur_epoch() <= m_num_epochs) {
+  if (m->get_cur_epoch() < m_delay) {
+    return cur_lr;
+  } else if (m->get_cur_epoch() <= m_num_epochs + m_delay) {
     return cur_lr + m_inc;
   } else {
     return cur_lr;

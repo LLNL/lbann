@@ -100,7 +100,7 @@ class entrywise_activation_layer : public activation_layer {
     
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    Mat& activations_local = this->m_activations->Matrix();
+    Mat& activations_local = this->m_activations_v->Matrix();
 
     // Local matrix parameters
     const int local_height = prev_activations_local.Height();
@@ -142,7 +142,7 @@ class entrywise_activation_layer : public activation_layer {
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
-    Mat& error_signal_local = this->m_error_signal->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Local matrix parameters
     const int local_height = prev_activations_local.Height();

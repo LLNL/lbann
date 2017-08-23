@@ -181,7 +181,9 @@ class lbann_callback_linear_growth_learning_rate :
   lbann_callback_linear_growth_learning_rate(
     float target, int64_t num_epochs);
   lbann_callback_linear_growth_learning_rate(
-    float target, int64_t num_epochs,
+    float target, int64_t num_epochs, int64_t delay);
+  lbann_callback_linear_growth_learning_rate(
+    float target, int64_t num_epochs, int64_t delay,
     std::unordered_set<uint> layers);
   lbann_callback_linear_growth_learning_rate(
     const lbann_callback_linear_growth_learning_rate&) = default;
@@ -200,6 +202,8 @@ class lbann_callback_linear_growth_learning_rate :
   float m_inc;
   /// Number of epochs over which to scale the learning rate.
   int64_t m_num_epochs;
+  /// Number of epochs to delay before starting growth.
+  int64_t m_delay;
 };
 
 /**

@@ -96,14 +96,17 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
   return NULL;
 }
 
-/// Weight matrix initialization scheme
+/** Weight matrix initialization scheme */
 enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-//if you change the above enum, please also edit:
-//  static std::string Layer::weight_initialization_name(weight_initialization id);
 
+/** returns a string representation of the weight_initialization */
+std::string get_weight_initialization_name(weight_initialization m); 
 
-/// Pooling layer mode
+/** Pooling layer mode */
 enum class pool_mode {max, average, average_no_pad};
+
+/** returns a string representation of the pool_mode */
+std::string get_pool_mode_name(pool_mode m); 
 
 namespace lbann {
 

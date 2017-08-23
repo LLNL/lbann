@@ -19,4 +19,5 @@ add_sources(
   profiler.cpp
   callback_ltfb.cpp
   callback_check_reconstruction_error.cpp
+  callback_variable_minibatch.cpp
 )

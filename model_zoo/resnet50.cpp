@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 
     // Number of GPUs
 #if __LIB_CUDNN
+    bool use_gpus = Input("--use-gpus", "whether to use GPUs", true);
     int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 #endif
 
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+    cudnn::cudnn_manager *cudnn = use_gpus ? new cudnn::cudnn_manager(comm, num_gpus) : NULL;
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
@@ -232,6 +233,7 @@ int main(int argc, char *argv[]) {
       std::make_pair(execution_mode::testing, &imagenet_testset)
     };
     dnn->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
+    dnn->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(5, comm));
 #ifdef PARTITIONED
     Layer *input_layer =
       new input_layer_partitioned_minibatch<>(
@@ -415,7 +417,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
         dnn->add(relu3);
         index++;
 
@@ -538,7 +540,7 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, NULL /*cudnn*/);
+          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
         dnn->add(relu3);
         index++;
 

@@ -28,7 +28,10 @@ LUSTRE_DIR=/p/lscratchf/brainusr
 DATASET_DIR=datasets/ILSVRC2012
 USE_VTUNE= # default: NO
 VTUNE_EXE=amplxe-cl-mpi
-VTUNE_ARGS="-collect hotspots "
+VTUNE_ARGS="-collect hotspots"
+USE_NVPROF= # default: NO
+NVPROF_EXE=nvprof
+NVPROF_ARGS="--profile-child-processes --unified-memory-profiling off"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
@@ -52,6 +55,7 @@ TIME_LIMIT=${TIME_LIMIT:-12:00:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
+USE_NVPROF=${USE_NVPROF:-NO}
 
 # Set cluster-specific defaults
 CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
@@ -216,10 +220,15 @@ case ${USE_GPU} in
 esac
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
-        VTUNE_COMMAND="${VTUNE_EXE} -r ${VTUNE_DIR} -app-working-dir ${EXPERIMENT_DIR} ${VTUNE_ARGS} --"
+        PROFILER_COMMAND="${VTUNE_EXE} -r ${VTUNE_DIR} -app-working-dir ${EXPERIMENT_DIR} ${VTUNE_ARGS} --"
         ;;
 esac
-echo "${SRUN_COMMAND} ${VTUNE_COMMAND} ${EXPERIMENT_COMMAND}" >> ${SLURM_SCRIPT}
+case ${USE_NVPROF} in
+    YES|yes|TRUE|true|ON|on|1)
+        PROFILER_COMMAND="${NVPROF_EXE} ${NVPROF_ARGS} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
+        ;;
+esac
+echo "${SRUN_COMMAND} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${SLURM_SCRIPT}
 
 # Submit script to Slurm
 case ${SUBMIT_JOB} in

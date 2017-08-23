@@ -30,8 +30,10 @@
 
 namespace lbann {
 
-optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
-  : m_comm(comm), m_parameters(nullptr), m_learning_rate(learning_rate) {}
+optimizer::optimizer(lbann_comm *comm, DataType learning_rate,
+                     cudnn::cudnn_manager *cudnn)
+    : m_comm(comm), m_parameters(nullptr), m_learning_rate(learning_rate),
+      m_cudnn(cudnn) {}
 
 optimizer::~optimizer() {}
 
@@ -53,6 +55,12 @@ void optimizer::setup(AbsDistMat *parameters) {
   } else {
     m_matrix_format = matrix_format::invalid;
   }
+}
+
+void optimizer::setup_gpu(AbsDistMat *parameters,
+                          const std::vector<DataType *> &parameters_d) {
+  setup(parameters);
+  m_parameters_d = parameters_d;
 }
 
 optimizer_factory::optimizer_factory(lbann_comm *comm,

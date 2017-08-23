@@ -39,10 +39,11 @@ void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
   DistMat& acts = (DistMat&) l->get_activations();
   if (!is_good(acts)) {
     lbann_comm *comm = m->get_comm();
-    std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-              l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
-              std::endl;
-    throw lbann_exception("checknan: error in activations");
+    dump_network(m);
+    throw lbann_exception(
+      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
+      "]: error in layer " + std::to_string(l->get_index()) +
+      " gradients (step=" + std::to_string(m->get_cur_step()) + ")");
   }
 }
 
@@ -56,13 +57,14 @@ void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
   if (l->get_index() == 0 || l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
-  DistMat& grad = (DistMat&) learning_layer->get_weights_biases_gradient();
+  DistMat& grad = (DistMat&) learning_layer->get_weights_gradient();
   if (!is_good(grad)) {
     lbann_comm *comm = m->get_comm();
-    std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-              l->get_index() << " gradients (step=" << m->get_cur_step() << ")" <<
-              std::endl;
-    throw lbann_exception("checknan: error in gradients");
+    dump_network(m);
+    throw lbann_exception(
+      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
+      "]: error in layer " + std::to_string(l->get_index()) +
+      " gradients (step=" + std::to_string(m->get_cur_step()) + ")");
   }
 }
 
@@ -76,13 +78,14 @@ void lbann_callback_checknan::on_batch_end(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    DistMat& weights = (DistMat&) learning_layer->get_weights_biases();
+    DistMat& weights = (DistMat&) learning_layer->get_weights();
     if (!is_good(weights)) {
       lbann_comm *comm = m->get_comm();
-      std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-                l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
-                std::endl;
-      throw lbann_exception("checknan: error in weights");
+      dump_network(m);
+      throw lbann_exception(
+      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
+      "]: error in layer " + std::to_string(l->get_index()) +
+      " weights (step=" + std::to_string(m->get_cur_step()) + ")");
     }
   }
 }
@@ -104,6 +107,33 @@ bool lbann_callback_checknan::is_good(const DistMat& m) {
     }
   }
   return true;
+}
+
+void lbann_callback_checknan::dump_network(model *m) {
+  std::vector<Layer*>& layers = m->get_layers();
+  // Dump only the local matrices because not every rank will necessarily
+  // have bad data, and the check is purely local.
+  const std::string prefix =
+    "model" + std::to_string(m->get_comm()->get_model_rank()) +
+    "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
+    "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
+    std::to_string(m->get_cur_step()) + "-layer";
+  for (size_t idx = 0; idx < layers.size(); ++idx) {
+    Layer *l = layers[idx];
+    // Dump activations.
+    El::Write(l->get_activations().Matrix(),
+              prefix + std::to_string(l->get_index()) + "-Activations",
+              El::ASCII);
+    learning *learning_layer = dynamic_cast<learning*>(l);
+    if (learning_layer != NULL) {
+      El::Write(learning_layer->get_weights().Matrix(),
+                prefix + std::to_string(l->get_index()) + "-WeightsBiases",
+                El::ASCII);
+      El::Write(learning_layer->get_weights_gradient().Matrix(),
+                prefix + std::to_string(l->get_index()) + "-Gradients",
+                El::ASCII);
+    }
+  }
 }
 
 }  // namespace lbann

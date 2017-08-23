@@ -179,7 +179,7 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
 
 #ifdef LBANN_DEBUG
   // Ensure that gpu_data has right dimensions
-  if(gpu_data.size() != m_num_gpus) {
+  if((int) gpu_data.size() != m_num_gpus) {
     throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -400,6 +400,13 @@ void cudnn_manager::cudnn_manager::synchronize() {
   }
 }
 
+void cudnn_manager::cudnn_manager::synchronize_all() {
+  for(int i=0; i<m_num_gpus; ++i) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaDeviceSynchronize());
+  }
+}
+
 void cudnn_manager::print_version() const {
   std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
@@ -550,6 +557,9 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
     FORCE_CHECK_CUDA(status);
     return;
   }
+
+  // clear the error status
+  cudaGetLastError();
   
   // Allocate pinned memory on host
   const size_t buffer_size = local_height * local_width * sizeof(DataType);
