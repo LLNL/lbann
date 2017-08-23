@@ -121,8 +121,8 @@ class reconstruction_layer : public target_layer {
     return true;
   }
 
-  void summarize_stats(lbann_summary& summarizer, int64_t step) {
-    std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
+  void summarize_stats(lbann_summary& summarizer, int step) {
+    std::string tag = "layer" + std::to_string(this->m_index)
       + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, average_cost(), step);
     // Skip target layer (for now).
