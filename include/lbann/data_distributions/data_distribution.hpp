@@ -76,7 +76,7 @@ public:
   virtual bool update_data_reader() {
     return false;
   }
-  virtual execution_mode get_execution_mode() {
+  virtual execution_mode get_execution_mode() const {
     return execution_mode::invalid;
   }
 

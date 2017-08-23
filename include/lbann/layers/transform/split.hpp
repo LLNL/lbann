@@ -79,6 +79,16 @@ class split_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+    s << std::to_string(this->m_index) << " split; children: ";
+    for (size_t h=0; h<this->m_children.size(); h++) {
+      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name();
+    }
+    return s.str();
+  }
+
   split_layer* copy() const { return new split_layer(*this); }
 
   std::string get_name() const { return "split"; }
@@ -159,21 +169,6 @@ class split_layer : public transform {
       }
     }
 
-    // Allocate workspace if needed
-    if(m_copy_fp_output_from_gpus) {
-      size_t required_work_space = (this->m_num_neurons
-                                    * this->m_mini_batch_size_per_gpu
-                                    * sizeof(DataType));
-      for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
-        if(required_work_space > this->m_cudnn->get_work_space_size(i)) {
-          this->m_cudnn->set_work_space_size(i, required_work_space);
-        }
-      }
-    }
-
-    // Deallocate GPU memory for activations since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -184,12 +179,14 @@ class split_layer : public transform {
   #ifndef __LIB_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
-      this->m_activations_d = this->m_prev_activations_d;
+      this->m_cudnn->copy_on_gpus(this->m_activations_d,
+                                  this->m_prev_activations_d,
+                                  this->m_num_prev_neurons,
+                                  this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations, *this->m_prev_activations);
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }
 
@@ -221,18 +218,13 @@ class split_layer : public transform {
       const Layer* child = m_children[child_index];
 
       // Get child error signal on GPUs
-      std::vector<DataType*> input;
       if(child->using_gpus()) {
-        input = child->gpu_bp_output(this);
+        child->get_gpu_bp_output(this->m_prev_error_signal_d, this);
       }
       else {
-        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-        input.resize(num_gpus);
-        for(int i=0; i<num_gpus; ++i) {
-          input[i] = (DataType*) work_spaces[i];
-        }
-        this->m_cudnn->scatter_to_gpus(input,
-                                       child->bp_output(this).LockedMatrix(),
+        child->get_bp_output(*this->m_prev_error_signal, this);
+        this->m_cudnn->scatter_to_gpus(this->m_prev_error_signal_d,
+                                       this->m_prev_error_signal->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
 
@@ -244,7 +236,7 @@ class split_layer : public transform {
         CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                    &one,
                                    this->m_neurons_cudnn_desc,
-                                   input[i],
+                                   this->m_prev_error_signal_d[i],
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
                                    this->m_error_signal_d[i]));
@@ -256,11 +248,12 @@ class split_layer : public transform {
   }
 
   void bp_compute_cpu() {
-    El::Copy(*this->m_prev_error_signal, *this->m_error_signal);
+    El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
     for(size_t i=1; i<m_children.size(); ++i) {
+      m_children[i]->get_bp_output(*this->m_prev_error_signal, this);
       El::Axpy(DataType(1),
-               m_children[i]->bp_output(this),
-               *this->m_error_signal);
+               *this->m_prev_error_signal,
+               *this->m_error_signal_v);
     }
   }
 

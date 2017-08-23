@@ -29,6 +29,7 @@ DATASET_DIR=datasets/ILSVRC2012
 USE_VTUNE= # default: NO
 VTUNE_EXE=amplxe-cl-mpi
 VTUNE_ARGS="-collect hotspots"
+USE_NVPROF= # default: NO
 NVPROF_EXE=nvprof
 NVPROF_ARGS="--profile-child-processes --unified-memory-profiling off"
 

@@ -19,6 +19,7 @@ DTYPE=4
 EL_VER=master
 MPI=mvapich2
 VARIANTS=
+GPU=0
 
 #Help function
 function HELP {
@@ -29,6 +30,7 @@ function HELP {
   echo "${REV}-c${NORM} <val> --Select ${BOLD}compiler${NORM}. Default is ${BOLD}${COMPILER}${NORM}."
   echo "${REV}-d${NORM}       --Build with ${BOLD}Debug mode${NORM} enabled. Default is ${BOLD}${BUILD_TYPE}${NORM}."
   echo "${REV}-e${NORM} <val> --Select ${BOLD}Elemental version${NORM}. Default is ${BOLD}${EL_VER}${NORM}."
+  echo "${REV}-g${NORM}       --Build with ${BOLD}GPU support${NORM} enabled."
   echo "${REV}-m${NORM} <val> --Select ${BOLD}MPI library${NORM}. Default is ${BOLD}${MPI}${NORM}."
   echo "${REV}-s${NORM}       --Build with ${BOLD}sequential initialization mode${NORM} enabled."
   echo "${REV}-t${NORM} <val> --Select ${BOLD}datatype${NORM}. Default is ${BOLD}${DTYPE}${NORM}."
@@ -36,7 +38,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:hm:t:" opt; do
+while getopts "b:c:de:ghm:t:" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
@@ -49,6 +51,9 @@ while getopts "b:c:de:hm:t:" opt; do
       ;;
     e)
       EL_VER=$OPTARG
+      ;;
+    g)
+      GPU=1
       ;;
     h)
       HELP
@@ -82,7 +87,7 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 ARCH=`uname -m`
 
 PLATFORM=
-if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
+if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
   PLATFORM="+gpu"
   EL_VER="${EL_VER}+cublas"
 fi
@@ -108,6 +113,7 @@ esac
 # Create a directory for the build
 DIR="${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
 DIR=${DIR//@/-}
+DIR=${DIR// /-}
 
 echo "Creating directory ${DIR}"
 mkdir -p ${DIR}/build

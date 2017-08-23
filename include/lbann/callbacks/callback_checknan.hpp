@@ -56,6 +56,8 @@ class lbann_callback_checknan : public lbann_callback {
  private:
   /** Return true if there are no problems with m. */
   bool is_good(const DistMat& m);
+  /** Dump the (local) network matrices for debugging. */
+  void dump_network(model *m);
 };
 
 }  // namespace lbann

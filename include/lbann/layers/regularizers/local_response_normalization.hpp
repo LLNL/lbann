@@ -216,10 +216,17 @@ class local_response_normalization_layer : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
-    // Input and output entries are divided amongst channels
+    // Get matrix buffers
+    const int width_local = prev_activations_local.Width();
+    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    DataType* activations_buffer = activations_local.Buffer();
+    const int activations_ldim = activations_local.LDim();
+
+    // Get LRN parameters
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
 
@@ -235,68 +242,54 @@ class local_response_normalization_layer : public regularizer_layer {
     ////////////////////////////////////////////////////////////////
 
     // Iterate through blocks in channels of each data sample
-    const int block_size = 16;
+    const int max_block_size = 16;
     #pragma omp parallel for collapse(2)
-    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < width_local; ++sample) {
       for(int block_start = 0;
           block_start < num_per_channel;
-          block_start += block_size) {
-        const int current_block_size = std::min(block_size,
-                                                num_per_channel - block_start);
-
-        // Initialize sums in normalization window
-        int window_start = - m_window_width / 2;
-        int window_end = m_window_width / 2;
-        DataType window_sums[block_size];
-        std::memset(window_sums, 0, block_size*sizeof(DataType));
-        for(int channel = std::max(window_start, 0);
-            channel <= std::min(window_end, num_channels-1);
-            ++channel) {
-          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
-            const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType x = prev_activations_local(index, sample);
-            window_sums[block_pos] += x * x;
-          }
-        }
+          block_start += max_block_size) {
+        const int block_size = std::min(max_block_size,
+                                        num_per_channel - block_start);
+        DataType workspace[max_block_size];
 
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
+          const int window_start = std::max(channel - m_window_width / 2, 0);
+          const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
-          // Iterate through block entries
-          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
-            const int index = block_start + block_pos + channel * num_per_channel;
-            DataType& window_sum = window_sums[block_pos];
-
-            // Apply local response normalization to current entry
-            const DataType input_entry = prev_activations_local(index, sample);
-            const DataType scale_factor = m_lrn_k + m_lrn_alpha * window_sum;
-            DataType output_entry;
-            if(default_beta) { // Special case when beta = 0.75
-              output_entry = input_entry / std::sqrt(scale_factor * std::sqrt(scale_factor));
+          // Compute sum of squares in workspace
+          std::fill(workspace, workspace + block_size, DataType(0));
+          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+              const int index = block_start + block_pos + window_pos * num_per_channel;
+              const DataType prev_activations_entry 
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
-            else {
-              output_entry = input_entry * std::pow(scale_factor, -m_lrn_beta);
-            }
-            activations_local(index, sample) = output_entry;
-
-            // Update sum for next normalization window
-            if(window_start >= 0) {
-              const int i = block_start + block_pos + window_start * num_per_channel;
-              const DataType x = prev_activations_local(i, sample);
-              window_sum -= x * x;
-            }
-            if(window_end + 1 < num_channels) {
-              const int i = block_start + block_pos + (window_end + 1) * num_per_channel;
-              const DataType x = prev_activations_local(i, sample);
-              window_sum += x * x;
-            }
-
           }
 
-          // Move to next normalization window
-          ++window_start;
-          ++window_end;
-
+          // Compute 1 / (k + alpha * sum(x^2) ) in workspace
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
+          }
+          
+          // Compute activations
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType scale_factor = workspace[block_pos];
+              const DataType prev_activations_entry
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+            if(default_beta) { // Special case when beta = 0.75
+              activations_buffer[index + sample * activations_ldim]
+                = (prev_activations_entry
+                   * std::sqrt(scale_factor * std::sqrt(scale_factor)));
+            }
+            else {
+              activations_buffer[index + sample * activations_ldim]
+                = prev_activations_entry * std::pow(scale_factor, m_lrn_beta);
+            }
+          }
+          
         }
         
       }
@@ -308,15 +301,26 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
-    // Initialize error signal to zero
-    Zero(error_signal_local);
+    // Get matrix buffers
+    const int width_local = prev_activations_local.Width();
+    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
+    const int prev_activations_ldim = prev_activations_local.LDim();
+    const DataType* activations_buffer = activations_local.LockedBuffer();
+    const int activations_ldim = activations_local.LDim();
+    const DataType* prev_error_signal_buffer = prev_error_signal_local.LockedBuffer();
+    const int prev_error_signal_ldim = prev_error_signal_local.LDim();
+    DataType* error_signal_buffer = error_signal_local.Buffer();
+    const int error_signal_ldim = error_signal_local.LDim();
 
-    // Input and output entries are divided amongst channels
+    // Initialize error signal to zero
+    El::Zero(error_signal_local);
+
+    // Get LRN parameters
     const int num_channels = this->m_neuron_dims[0];
     const int num_per_channel = this->m_num_neurons / num_channels;
 
@@ -336,81 +340,74 @@ class local_response_normalization_layer : public regularizer_layer {
     ////////////////////////////////////////////////////////////////
 
     // Iterate through blocks in channels of each data sample
-    const int block_size = 16;
+    const int max_block_size = 16;
     #pragma omp parallel for collapse(2)
-    for(int sample = 0; sample < prev_activations_local.Width(); ++sample) {
+    for(int sample = 0; sample < width_local; ++sample) {
       for(int block_start = 0;
           block_start < num_per_channel;
-          block_start += block_size) {
-        const int current_block_size = std::min(block_size,
-                                                num_per_channel - block_start);
-
-        // Initialize sums in normalization window
-        int window_start = - m_window_width / 2;
-        int window_end = m_window_width / 2;
-        DataType window_sums[block_size];
-        std::memset(window_sums, 0, block_size*sizeof(DataType));
-        for(int channel = std::max(window_start, 0);
-            channel <= std::min(window_end, num_channels-1);
-            ++channel) {
-          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
-            const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType x = prev_activations_local(index, sample);
-            window_sums[block_pos] += x * x;
-          }
-        }
+          block_start += max_block_size) {
+        const int block_size = std::min(max_block_size,
+                                        num_per_channel - block_start);
+        DataType workspace[max_block_size];
         
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
+          const int window_start = std::max(channel - m_window_width / 2, 0);
+          const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
-          // Iterate through block entries
-          for(int block_pos = 0; block_pos < current_block_size; ++block_pos) {
-            const int index = block_start + block_pos + channel * num_per_channel;
-            DataType& window_sum = window_sums[block_pos];
-
-            // Get data for current entry
-            const DataType activations_entry = activations_local(index, sample);
-            const DataType prev_error_signal_entry = prev_error_signal_local(index, sample);
-            const DataType scale_factor = m_lrn_k + m_lrn_alpha * window_sum;
-
-            // Update current error signal entry
-            DataType error_signal_update;
-            if(default_beta) { // Special case when beta = 0.75
-              error_signal_update = prev_error_signal_entry / std::sqrt(scale_factor * std::sqrt(scale_factor));
+          // Compute sum of squares in workspace
+          std::fill(workspace, workspace + block_size, DataType(0));
+          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+              const int index = block_start + block_pos + window_pos * num_per_channel;
+              const DataType prev_activations_entry 
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
-            else {
-              error_signal_update = prev_error_signal_entry * std::pow(scale_factor, -m_lrn_beta);
-            }
-            error_signal_local(index, sample) += error_signal_update;
-            
-            // Update error signal entries in normalization window
-            for(int c = std::max(window_start, 0);
-                c <= std::min(window_end, num_channels-1);
-                ++c) {
-              const int i = block_start + block_pos + c * num_per_channel;
-              const DataType prev_activations_entry = prev_activations_local(i, sample);
-              error_signal_local(i, sample)
-                += (-2 * m_lrn_alpha * m_lrn_beta / m_window_width * prev_activations_entry
-                    * prev_error_signal_entry * activations_entry / scale_factor);
-            }
-
-            // Update sum for next normalization window
-            if(window_start >= 0) {
-              const int i = block_start + block_pos + window_start * num_per_channel;
-              const DataType x = prev_activations_local(i, sample);
-              window_sum -= x * x;
-            }
-            if(window_end + 1 < num_channels) {
-              const int i = block_start + block_pos + (window_end + 1) * num_per_channel;
-              const DataType x = prev_activations_local(i, sample);
-              window_sum += x * x;
-            }
-
           }
 
-          // Move to next normalization window
-          ++window_start;
-          ++window_end;
+          // Compute 1 / (k + alpha * sum(x^2) ) in workspace
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
+          }
+
+          // Compute error signal contribution for current entry
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType scale_factor = workspace[block_pos];
+            const DataType prev_error_signal_entry
+              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
+            if(default_beta) { // Special case when beta = 0.75
+              error_signal_buffer[index + sample * error_signal_ldim]
+                += prev_error_signal_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
+            }
+            else {
+              error_signal_buffer[index + sample * error_signal_ldim]
+                += prev_error_signal_entry * std::pow(scale_factor, m_lrn_beta);
+            }
+          }
+
+          // Compute y * dy / (k + alpha * sum(x^2) ) in workspace
+          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+            const int index = block_start + block_pos + channel * num_per_channel;
+            const DataType activations_entry
+              = activations_buffer[index + sample * activations_ldim];
+            const DataType prev_error_signal_entry
+              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
+            workspace[block_pos] = (-2 * m_lrn_alpha * m_lrn_beta * workspace[block_pos]
+                                    * activations_entry * prev_error_signal_entry);
+          }
+
+          // Compute error signal contribution for entries in window
+          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+              const int index = block_start + block_pos + window_pos * num_per_channel;
+              const DataType prev_activations_entry
+                = prev_activations_buffer[index + sample * prev_activations_ldim];
+              error_signal_buffer[index + sample * error_signal_ldim]
+                += workspace[block_pos] * prev_activations_entry;
+            }
+          }
 
         }
 
@@ -423,4 +420,4 @@ class local_response_normalization_layer : public regularizer_layer {
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED
+#endif  // LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED

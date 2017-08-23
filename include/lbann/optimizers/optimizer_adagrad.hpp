@@ -45,7 +45,19 @@ class adagrad : public optimizer {
   adagrad& operator=(const adagrad& other);
   /// Destructor
   ~adagrad();
+
+  /// Returns the optimizer's name
+  std::string get_name() const  { return "adagrad"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     " adagrad; learning_rate: "
+     + std::to_string(m_learning_rate) + " eps: " + std::to_string(m_eps);
+  }
+
   adagrad* copy() const { return new adagrad(*this); }
+
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);
   /// Update parameters using objective function gradient

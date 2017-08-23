@@ -61,7 +61,7 @@ class lbann_callback_save_images : public lbann_callback {
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc
   generic_data_reader *m_reader;
-  void save_image(model *m, ElMat *input, ElMat *output,uint index);
+  void save_image(model& m, AbsDistMat& input, AbsDistMat& output, int index);
 };
 
 }  // namespace lbann

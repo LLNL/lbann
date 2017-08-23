@@ -341,6 +341,16 @@ class batch_normalization : public regularizer_layer {
 
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     std::to_string(this->m_index) + " batch_normalization; decay: " 
+     + std::to_string(this->m_decay) + " scale_init: " 
+     + std::to_string(this->m_scale_init)
+     + " bias: " + std::to_string(this->m_bias_init) + " epsilon: " 
+     + std::to_string(this->m_epsilon);
+  }
+
   ~batch_normalization() {
   #ifdef __LIB_CUDNN
 
@@ -549,9 +559,9 @@ class batch_normalization : public regularizer_layer {
     Mat workspace2 = pinned_workspace_local(El::ALL, El::IR(num_gpus, 2*num_gpus));
     
     // Matrix parameters
-    const int height = this->m_prev_activations_v->Height();
-    const int width = this->m_prev_activations_v->Width();
-    const int local_width = this->m_prev_activations_v->LocalWidth();
+    const int height = this->m_prev_activations->Height();
+    const int width = this->m_prev_activations->Width();
+    const int local_width = this->m_prev_activations->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 
@@ -665,9 +675,9 @@ class batch_normalization : public regularizer_layer {
     Mat workspace4 = pinned_workspace_local(El::ALL, El::IR(3*num_gpus, 4*num_gpus));
 
     // Matrix parameters
-    const int height = this->m_prev_activations_v->Height();
-    const int width = this->m_prev_activations_v->Width();
-    const int local_width = this->m_prev_activations_v->LocalWidth();
+    const int height = this->m_prev_activations->Height();
+    const int width = this->m_prev_activations->Width();
+    const int local_width = this->m_prev_activations->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
 
     // Compute local gradient contributions
@@ -752,7 +762,7 @@ class batch_normalization : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     Mat& mean_local = m_mean_v->Matrix();
     Mat& var_local = m_var_v->Matrix();
     Mat& running_mean_local = m_running_mean_v->Matrix();
@@ -762,8 +772,8 @@ class batch_normalization : public regularizer_layer {
     Mat& activations_local = this->m_activations_v->Matrix();
     
     // Matrix parameters
-    const int width = this->m_prev_activations_v->Width();
-    const El::Int local_width = this->m_prev_activations_v->LocalWidth();
+    const int width = this->m_prev_activations->Width();
+    const El::Int local_width = this->m_prev_activations->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 
@@ -844,8 +854,8 @@ class batch_normalization : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     const Mat& mean_local = m_mean_v->LockedMatrix();
     const Mat& var_local = m_var_v->LockedMatrix();
@@ -856,8 +866,8 @@ class batch_normalization : public regularizer_layer {
     Mat& bias_gradient_local = m_bias_gradient_v->Matrix();
     
     // Matrix parameters
-    const int width = this->m_prev_activations_v->Width();
-    const El::Int local_width = this->m_prev_activations_v->LocalWidth();
+    const int width = this->m_prev_activations->Width();
+    const El::Int local_width = this->m_prev_activations->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 

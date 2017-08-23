@@ -47,6 +47,18 @@ class rmsprop : public optimizer {
   rmsprop& operator=(const rmsprop& other);
   /// Destructor
   ~rmsprop();
+  
+  /// Returns the optimizer's name
+  std::string get_name() const  { return "rmsprop"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     " rmsprop; learning_rate: " + std::to_string(m_learning_rate) 
+     + " decay_rate: " + std::to_string(m_decay_rate)
+     + " eps: " + std::to_string(m_eps);
+  }
+
   rmsprop* copy() const { return new rmsprop(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);

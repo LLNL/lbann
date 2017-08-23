@@ -105,11 +105,11 @@ void lbann_callback_summary::save_histograms(model *m) {
     learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
     if(learning_layer != nullptr) {
       m_summarizer->reduce_histogram(prefix + "weights",
-                                     learning_layer->get_weights_biases(),
+                                     learning_layer->get_weights(),
                                      m->get_cur_step());
       m_summarizer->reduce_histogram(
         prefix + "weights_gradient",
-        learning_layer->get_weights_biases_gradient(),
+        learning_layer->get_weights_gradient(),
         m->get_cur_step());
     }
   }

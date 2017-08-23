@@ -48,7 +48,7 @@ void lbann_callback_dump_weights::dump_weights(model *m) {
   for (unsigned i = 1; i < layers.size() - 1; ++i) {
     learning *learning_layer = (learning *) dynamic_cast<learning *> (layers[i]);
     if(learning_layer != NULL) {
-      El::Write(learning_layer->get_weights_biases(),
+      El::Write(learning_layer->get_weights(),
                 prefix + std::to_string(i) + "-WeightsBiases",
                 El::ASCII);
     }

@@ -59,6 +59,7 @@ class slice_layer : public transform {
    */
   AbsDistMat* m_output_slice_v;
 
+
  public:
   /// Constructor
   slice_layer(int index,
@@ -75,7 +76,9 @@ class slice_layer : public transform {
 
     // Check that number of slice points is valid
     if(!children.empty() && children.size()-1 != slice_points.size()) {
-      throw lbann_exception("slice_layer: number of slice points should be one less than number of children");
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer:  number of slice points should be one less than number of children";
+      throw lbann_exception(err.str());
     }
 
     // Initialize list of children
@@ -125,6 +128,21 @@ class slice_layer : public transform {
 
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+    s << std::to_string(this->m_index) << " slice; slice_axis: "
+      << m_slice_axis << " children: ";
+    for (size_t h=0; h<this->m_children.size(); h++) {
+      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name();
+    }
+    s << " slice_points: ";
+    for (size_t h=0; h<this->m_slice_points.size(); h++) {
+      s << this->m_slice_points[h] << " ";
+    }
+    return s.str();
+  }
+
   slice_layer* copy() const { return new slice_layer(*this); }
 
   std::string get_name() const { return "slice"; }
@@ -133,11 +151,13 @@ class slice_layer : public transform {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void push_back_child(const Layer *child, int slice_point) {
+    std::stringstream err;
 
     // Check if child layer is null pointer
     if(child == NULL) {
       if(m_comm->am_world_master()) {
-        std::cerr << "slice_layer: could not add child layer since pointer is null" << "\n";
+        err << __FILE__ << " " << __LINE__ << " :: slice_layer: could not add child layer since pointer is null";
+        throw lbann_exception(err.str());
       }
       return;
     }
@@ -146,7 +166,8 @@ class slice_layer : public transform {
     if(m_children.empty()) {
       if(m_comm->am_world_master()) {
         if(slice_point > 0) {
-          std::cerr << "slice_layer: first child should have a slice point of zero" << "\n";
+          err << __FILE__ << " " << __LINE__ << " :: slice_layer: first child should have a slice point of zero";
+          throw lbann_exception(err.str());
         }
       }
       m_children.push_back(child);
@@ -157,10 +178,12 @@ class slice_layer : public transform {
     else {
       auto child_pos = std::find(m_children.begin(), m_children.end(), child);
       if(child_pos != m_children.end()) {
-        throw lbann_exception("slice_layer: child is already in list of children");
+        err << __FILE__ << " " << __LINE__ << " :: slice_layer:  number of slice points should be one less than number of children";
+        throw lbann_exception(err.str());
       }
       if(slice_point <= m_slice_points.back()) {
-        throw lbann_exception("slice_layer: invalid slice point");
+        err << __FILE__ << " " << __LINE__ << " :: slice_layer:  invalid slice point";
+        throw lbann_exception(err.str());
       }
       m_children.push_back(child);
       m_slice_points.push_back(slice_point);
@@ -170,7 +193,9 @@ class slice_layer : public transform {
 
   void pop_back_child() {
     if(m_children.empty()) {
-      throw lbann_exception("slice_layer: could not remove child since this layer has no children");
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: could not remove child since this layer has no children";
+      throw lbann_exception(err.str());
     }
     m_children.pop_back();
     m_slice_points.pop_back();
@@ -178,15 +203,19 @@ class slice_layer : public transform {
 
   void setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
     transform::setup_pointers(prev_layer, next_layer);
+    std::stringstream err;
 
     // Error if "next" layer isn't already in list of children
     if(next_layer != NULL
        && (std::find(m_children.begin(), m_children.end(), this->m_next_layer)
            == m_children.end())) {
-      throw lbann_exception("slice_layer: can not add child layer during setup phase");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: can not add child layer during setup phase";
+      throw lbann_exception(err.str());
     }
     if(m_children.empty()) {
       throw lbann_exception("slice_layer: can not setup layer since it has no children");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: can not setup layer since it has no children";
+      throw lbann_exception(err.str());
     }
 
     // Make the first child layer the "next" layer
@@ -194,16 +223,19 @@ class slice_layer : public transform {
   }
 
   void setup_dims() {
+    std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
 
     // Check if slice axis and slice points are valid
     if(m_slice_axis < 0 || m_slice_axis >= this->m_num_neuron_dims) {
-      throw lbann_exception("slice_layer: invalid slice axis");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: invalid slice axis";
+      throw lbann_exception(err.str());
     }
     if(m_slice_points.back() >= this->m_neuron_dims[m_slice_axis] - 1) {
-      throw lbann_exception("slice_layer: slice points are greater than slice axis dimensions");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: slice points are greater than slice axis dimensions";
+      throw lbann_exception(err.str());
     }
 
     // Add slice axis dimension to slice point list
@@ -214,7 +246,9 @@ class slice_layer : public transform {
   void setup_gpu() {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
-    throw lbann_exception("slice_layer: cuDNN not detected");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
+    throw lbann_exception(err.str());
   #else
 
     // Copy forward propagation output from GPUs if a child layer is
@@ -248,9 +282,6 @@ class slice_layer : public transform {
       }
     }
 
-    // Deallocate GPU memory for activations since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -259,14 +290,18 @@ class slice_layer : public transform {
   void fp_compute() {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
-      throw lbann_exception("slice_layer: cuDNN not detected");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
+    throw lbann_exception(err.str());
   #else
-      this->m_activations_d = this->m_prev_activations_d;
+    this->m_cudnn->copy_on_gpus(this->m_activations_d,
+                                this->m_prev_activations_d,
+                                this->m_num_prev_neurons,
+                                this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations, *this->m_prev_activations);
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }
 
@@ -280,7 +315,9 @@ class slice_layer : public transform {
 
   void bp_compute_gpu() {
   #ifndef __LIB_CUDNN
-    throw lbann_exception("slice_layer: cuDNN not detected");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
+    throw lbann_exception(err.str());
   #else
 
     // Split the error signal tensor into slices of width 1 along the
@@ -309,18 +346,17 @@ class slice_layer : public transform {
         input = this->m_prev_error_signal_d;
       }
       else {
+        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        for(int i=0; i<num_gpus; ++i) {
+          input.push_back((DataType*) work_spaces[i]);
+        }
         if(child->using_gpus()) {
-          input = child->gpu_bp_output(this);
+          child->get_gpu_bp_output(input, this);
         }
         else {
-          std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-          input.resize(num_gpus);
-          for(int i=0; i<num_gpus; ++i) {
-            input[i] = (DataType*) work_spaces[i];
-          }
-          const AbsDistMat& input_cpu = child->bp_output(this);
+          child->get_bp_output(*this->m_prev_error_signal, this);
           this->m_cudnn->scatter_to_gpus(input,
-                                         input_cpu.LockedMatrix(),
+                                         this->m_prev_error_signal->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
         }
       }
@@ -372,7 +408,7 @@ class slice_layer : public transform {
     for(size_t i = 0; i < m_children.size(); ++i) {
 
       // Split previous error signal tensor into slices
-      const auto& input = m_children[i]->bp_output(this);
+      m_children[i]->get_bp_output(*this->m_prev_error_signal, this);
       const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_slice_points[i] * slice_unit_size;
@@ -381,7 +417,7 @@ class slice_layer : public transform {
       // Copy slices from previous error signal tensor into error signal tensor
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       input,
+                       *this->m_prev_error_signal,
                        El::IR(slice * input_slice_size,
                               (slice+1) * input_slice_size),
                        El::ALL);
@@ -397,7 +433,7 @@ class slice_layer : public transform {
 
   }
 
-  const AbsDistMat& fp_output(const Layer* next_layer) const {
+  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(m_children.begin(),
@@ -405,7 +441,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - m_children.begin());
     if(child_index >= (int) m_children.size()) {
-      return *m_activations;
+      transform::get_fp_output(fp_output, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -427,37 +463,40 @@ class slice_layer : public transform {
     const int slice_offset_start = m_slice_points[child_index] * slice_unit_size;
     const int slice_offset_end = m_slice_points[child_index+1] * slice_unit_size;
     
-    if(num_slices == 1) {
+    if(num_slices == 1
+       && m_activations_v->DistData() == fp_output.DistData()) {
       // Return view of activations tensor slice
-      El::LockedView(*m_output_slice_v,
-                     *this->m_activations,
+      El::LockedView(fp_output,
+                     *this->m_activations_v,
                      El::IR(slice_offset_start, slice_offset_end),
                      El::ALL);
-      return *m_output_slice_v;
     }
     else {
       // Copy slices from activations tensor into output
-      m_fp_output->Resize(output_slice_size, m_activations->Width());
+      fp_output.Empty(false);
+      fp_output.Resize(output_slice_size, m_activations_v->Width());
+      AbsDistMat* output_slice_v
+        = fp_output.Construct(fp_output.Grid(), fp_output.Root());
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       *this->m_activations,
+                       *this->m_activations_v,
                        El::IR(slice * input_slice_size + slice_offset_start,
                               slice * input_slice_size + slice_offset_end),
                        El::ALL);
-        El::View(*m_output_slice_v,
-                 *m_fp_output,
+        El::View(*output_slice_v,
+                 fp_output,
                  El::IR(slice * output_slice_size,
                         (slice+1) * output_slice_size),
                  El::ALL);
-        El::Copy(*m_input_slice_v, *m_output_slice_v);
+        El::Copy(*m_input_slice_v, *output_slice_v);
       }
-      return *m_fp_output;
+      delete output_slice_v;
     }
 
   }
 
   #ifdef __LIB_CUDNN
-  const std::vector<DataType*> gpu_fp_output(const Layer* next_layer) const {
+  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(m_children.begin(),
@@ -465,7 +504,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - m_children.begin());
     if(child_index >= (int) m_children.size()) {
-      return m_activations_d;
+      transform::get_gpu_fp_output(fp_output, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -489,16 +528,11 @@ class slice_layer : public transform {
     
     // Copy slices from previous activations tensor into output
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
-    std::vector<DataType*> output(num_gpus);
-    for(int i=0; i<num_gpus; ++i) {
-      output[i] = (DataType*) work_spaces[i];
-    }
     for(int slice = 0; slice < num_slices; ++slice) {
       std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
       for(int i = 0; i < num_gpus; ++i) {
         input_slice[i] = this->m_activations_d[i] + slice * input_slice_size + slice_offset;
-        output_slice[i] = output[i] + slice * output_slice_size;
+        output_slice[i] = fp_output[i] + slice * output_slice_size;
       }
       this->m_cudnn->copy_on_gpus(output_slice,
                                   input_slice,
@@ -507,9 +541,6 @@ class slice_layer : public transform {
                                   this->m_num_neurons,
                                   output_size);
     }
-
-    // Return output
-    return output;
 
   }
   #endif // __LIB_CUDNN

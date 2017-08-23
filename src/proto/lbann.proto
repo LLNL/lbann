@@ -304,10 +304,16 @@ message Layer {
 
    // transform Layers
    Pooling pooling = 12;
+   Concatenation concatenation = 300;
+   Slice slice = 301;
+   Split split = 302;
+   Sum sum = 303;
+   Unpooling unpooling = 304;
 
    // learning Layers
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
+   Deconvolution deconvolution = 305;
 
    // target Layers
    TargetDistributedMinibatch target_distributed_minibatch = 18;
@@ -411,14 +417,64 @@ message InputPartitionedMiniBatch {
 //////////////////////
 message Pooling {
   int64 num_dims = 1;
-  string input_dims = 3; //should be space-separated list, e.g, "2 2 3"
+
+  bool has_vectors = 2;
+
+  //these are used if has_vectors = true
   string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
   string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
   string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
 
+  //these are used if has_vectors = false
+  int64 pool_dims_i = 10;
+  int64 pool_pads_i = 11;
+  int64 pool_strides_i = 12;
+
   //pool_mode should be one of: max, average, average_no_pad
   //see: lbann/include/lbann/lbann_base.hpp
   string pool_mode = 7;
+}
+
+message Unpooling {
+  int64 num_dims = 1;
+
+  bool has_vectors = 2;
+
+  //these are used if has_vectors = true
+  string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
+  string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
+  string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
+
+  //these are used if has_vectors = false
+  int64 pool_dims_i = 10;
+  int64 pool_pads_i = 11;
+  int64 pool_strides_i = 12;
+
+  int64 pooling_layer = 13; //should be index of pooling layer
+
+  //pool_mode should be one of: max, average, average_no_pad
+  //see: lbann/include/lbann/lbann_base.hpp
+  string pool_mode = 7;
+}
+
+
+message Concatenation {
+  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
+  int64 concatenation_axis = 2;
+}
+
+message Slice {
+  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
+  int64 slice_axis = 2;
+  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+}
+
+message Split {
+  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
+}
+
+message Sum {
+  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 /////////////////////
@@ -434,9 +490,42 @@ message FullyConnected {
 message Convolution {
   int64 num_dims = 1;
   int64 num_output_channels = 4;
+
+  bool has_vectors = 2;
+
+  // these are used if has_vector = true
   string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
   string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+
+  // these are used if has_vector = false
+  int64 conv_dims_i = 50; 
+  int64 conv_pads_i = 60; 
+  int64 conv_strides_i = 70; 
+
+
+  string weight_initialization = 9;
+  bool has_bias = 10;
+  double l2_regularization_factor = 11;
+}
+
+message Deconvolution {
+  int64 num_dims = 1;
+  int64 num_output_channels = 4;
+
+  bool has_vectors = 2;
+
+  // these are used if has_vector = true
+  string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
+  string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
+  string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+
+  // these are used if has_vector = false
+  int64 conv_dims_i = 50; 
+  int64 conv_pads_i = 60; 
+  int64 conv_strides_i = 70; 
+
+
   string weight_initialization = 9;
   bool has_bias = 10;
   double l2_regularization_factor = 11;

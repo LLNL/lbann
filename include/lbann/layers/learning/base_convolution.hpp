@@ -599,14 +599,14 @@ class base_convolution_layer : public learning {
     std::vector<int> input_dims, output_dims;
     int output_size;
     if(during_forward_prop) {
-      input = this->m_prev_activations_v;
+      input = this->m_prev_activations;
       output = this->m_activations_v;
       input_dims = this->m_prev_neuron_dims;
       output_dims = this->m_neuron_dims;
       output_size = this->m_num_neurons;
     }
     else {
-      input = this->m_prev_error_signal_v;
+      input = this->m_prev_error_signal;
       output = this->m_error_signal_v;      
       input_dims = this->m_neuron_dims;
       output_dims = this->m_prev_neuron_dims;
@@ -659,15 +659,15 @@ class base_convolution_layer : public learning {
     std::vector<int> input_dims, output_dims;
     int input_size;
     if(during_forward_prop) {
-      input = this->m_prev_activations_v;
+      input = this->m_prev_activations;
       output = this->m_activations_v;
       input_dims = this->m_prev_neuron_dims;
       input_size = this->m_num_prev_neurons;
       output_dims = this->m_neuron_dims;
     }
     else {
-      input = this->m_prev_error_signal_v;
-      output = this->m_error_signal_v;      
+      input = this->m_prev_error_signal;
+      output = this->m_error_signal_v;
       input_dims = this->m_neuron_dims;
       input_size = this->m_num_neurons;
       output_dims = this->m_prev_neuron_dims;
@@ -745,8 +745,8 @@ class base_convolution_layer : public learning {
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& kernel_weights_gradient_local = m_kernel_weights_gradient_v->Matrix();
     Mat& bias_weights_gradient_local = m_bias_weights_gradient_v->Matrix();
 

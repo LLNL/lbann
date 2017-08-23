@@ -46,6 +46,12 @@ model {
     }
   }
   # callback {
+  #   save_images {
+  #     image_dir: ""
+  #     extension: "jpg"
+  #   }
+  # }
+  # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"
   #     interval: 1
@@ -92,6 +98,7 @@ model {
       conv_strides: "4 4"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -135,6 +142,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 
@@ -153,6 +161,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -197,6 +206,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 
@@ -215,6 +225,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -245,6 +256,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -275,6 +287,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      has_vectors: true
       l2_regularization_factor: 0.0005
     }
   }
@@ -303,6 +316,7 @@ model {
       pool_pads: "0 0"
       pool_strides: "2 2"
       pool_mode: "max"
+      has_vectors: true
     }
   }
 

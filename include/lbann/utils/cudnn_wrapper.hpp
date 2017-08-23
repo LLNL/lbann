@@ -207,8 +207,12 @@ class cudnn_manager {
                  El::Int height,
                  El::Int width);
 
-  /** Synchronize GPUs. */
+  /** Synchronize the default stream. */
   void synchronize();
+
+    /** Synchronize all streams. */
+  void synchronize_all();
+  
 
   /** Pin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
