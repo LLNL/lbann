@@ -156,6 +156,8 @@ int main(int argc, char *argv[]) {
     imagenet_trainset.unit_variance(unit_variance);
     imagenet_trainset.z_score(z_score);
 
+cout << "scale/subtract_mean/unit_variance/z_score: " << scale<<" "<<subtract_mean<<" "<<unit_variance<<" "<<z_score<<endl;
+
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
@@ -651,6 +653,15 @@ int main(int argc, char *argv[]) {
     }
 
     comm->global_barrier();
+
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      std::vector<Layer *>& layers = dnn->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
+    }
 
     //************************************************************************
     // mainloop for train/validate

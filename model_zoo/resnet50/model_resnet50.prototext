@@ -1247,7 +1247,7 @@ model {
     parent: 112
     data_layout: "data_parallel"
     sum {
-      parents: "104 112"
+      parents: "104"
     }
   }
   layer {
@@ -1958,7 +1958,7 @@ model {
       pool_dims_i: 8
       pool_pads_i: 0
       pool_strides_i: 1
-      pool_mode: "max"
+      pool_mode: "average"
     }
   }
   layer {

@@ -126,7 +126,7 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
         int slice_pt = layers[h].slice_points[k];
         assert(the_layers.find(child_id) != the_layers.end());
         Layer * child = the_layers[child_id];
-        s->push_back_child(child, layers[h].slice_points[k]);
+        s->push_back_child(child, slice_pt);
       }
     } else if (name == "split") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {

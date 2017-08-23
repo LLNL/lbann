@@ -192,6 +192,15 @@ int main(int argc, char *argv[]) {
     //@todo
     //model->restartShared();
 
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      std::vector<Layer *>& layers = model->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
+    }
+
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////

@@ -114,7 +114,18 @@ class sum_layer : public transform {
       m_parents.push_back(parent);
     }
     else {
-      throw lbann_exception("sum_layer: could not add parent layer since it is already in list of parents");
+      if(m_comm->am_world_master()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: sum_layer: could not add parent layer since it is already in list of parents;\n"
+          << "my index: " << this->get_index()
+          << " parent index: " << parent->get_index() << " name: " << parent->get_name() << "\n"
+          << "existing parent list: ";
+      for (auto t : m_parents) {
+        err << " index: " << t->get_index() << " name: " << t->get_name();
+      }
+      throw lbann_exception(err.str());
+      }
     }
 
   }
