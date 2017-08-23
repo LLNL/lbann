@@ -62,6 +62,11 @@ class optimizer {
   virtual void setup_gpu(AbsDistMat *parameters,
                          const std::vector<DataType *> &parameters_d);
 
+  /// Returns the optimizer's name
+  virtual std::string get_name() const = 0;
+
+  virtual std::string get_description() const = 0;
+
   /// Update parameters using objective function gradient
   virtual void update(const AbsDistMat *gradient) = 0;
   

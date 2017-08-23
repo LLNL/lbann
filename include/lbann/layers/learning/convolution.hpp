@@ -53,9 +53,9 @@ class convolution_layer : public base_convolution_layer {
   public:
 
   /** Returns description of ctor params */
-  std::string get_description() {
+  std::string get_description() const {
     std::stringstream s;
-    s << "convolution; index: " << std::to_string(this->m_index) << " conv_dims: ";
+    s << std::to_string(this->m_index) << " convolution; conv_dims: ";
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       s << this->m_kernel_dims[h] << " ";
     }

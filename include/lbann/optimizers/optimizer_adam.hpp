@@ -50,6 +50,20 @@ class adam : public optimizer {
   adam& operator=(const adam& other);
   /// Destructor
   ~adam();
+  
+  /// Returns the optimizer's name
+  std::string get_name() const  { return "adam"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     " adam; learning_rate: "
+     + std::to_string(m_learning_rate) 
+     + " beta1: " + std::to_string(m_beta1)
+     + " beta2: " + std::to_string(m_beta2)
+     + " eps: " + std::to_string(m_eps);
+  }
+
   adam* copy() const { return new adam(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);

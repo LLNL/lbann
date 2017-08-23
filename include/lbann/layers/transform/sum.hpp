@@ -79,6 +79,16 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+     s << this->m_index << " sum; parents: ";
+     for (size_t i=0; i<m_parents.size(); i++) {
+       s << m_parents[i]->get_index() << " " << m_parents[i]->get_name();
+     }
+     return s.str();
+  }
+
   sum_layer* copy() const { return new sum_layer(*this); }
 
   std::string get_name() const { return "sum"; }

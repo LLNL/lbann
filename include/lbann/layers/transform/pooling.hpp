@@ -98,6 +98,7 @@ class pooling_layer : public transform {
       m_pool_mode(_pool_mode) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
+
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -150,6 +151,25 @@ class pooling_layer : public transform {
     return *this;
   }
     
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+    s << std::to_string(this->m_index) << " pooling; num_data_dims: "
+    + std::to_string(m_pool_dims.size()) + " pool_dims: ";
+    for (size_t h=0; h<this->m_pool_dims.size(); h++) {
+      s << this->m_pool_dims[h] << " ";
+    }
+    s << " pool_pads: ";
+    for (size_t h=0; h<this->m_pool_pads.size(); h++) {
+      s << this->m_pool_pads[h] << " ";
+    }
+    s << " pool_strides: ";
+    for (size_t h=0; h<this->m_pool_strides.size(); h++) {
+      s << this->m_pool_strides[h] << " ";
+    }
+    s << " pool_mode: " << get_pool_mode_name(this->m_pool_mode);
+    return s.str();
+  }
 
   /// Destructor
   ~pooling_layer() {
