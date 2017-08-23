@@ -84,7 +84,7 @@ class sum_layer : public transform {
     std::stringstream s;
      s << this->m_index << " sum; parents: ";
      for (size_t i=0; i<m_parents.size(); i++) {
-       s << m_parents[i]->get_index() << " " << m_parents[i]->get_name();
+       s << m_parents[i]->get_index() << " " << m_parents[i]->get_name() << " ";
      }
      return s.str();
   }
