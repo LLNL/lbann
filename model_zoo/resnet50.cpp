@@ -156,7 +156,9 @@ int main(int argc, char *argv[]) {
     imagenet_trainset.unit_variance(unit_variance);
     imagenet_trainset.z_score(z_score);
 
-cout << "scale/subtract_mean/unit_variance/z_score: " << scale<<" "<<subtract_mean<<" "<<unit_variance<<" "<<z_score<<endl;
+    if (comm->am_world_master()) {
+      cout << "scale/subtract_mean/unit_variance/z_score: " << scale<<" "<<subtract_mean<<" "<<unit_variance<<" "<<z_score<<endl;
+    }  
 
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (ImageNet)
