@@ -37,6 +37,9 @@ namespace lbann {
  */
 class lbann_callback_check_dataset : public lbann_callback {
  public:
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_evaluate_forward_prop_end;
+
   /**
    * @param basename The basename for writing files.
    */
