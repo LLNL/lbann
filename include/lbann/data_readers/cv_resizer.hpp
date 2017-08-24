@@ -77,6 +77,10 @@ class cv_resizer : public cv_transform {
 
  public:
   cv_resizer();
+  cv_resizer(const cv_resizer& rhs) = default;
+  cv_resizer& operator=(const cv_resizer& rhs) = default;
+  virtual cv_resizer *clone() const;
+  virtual ~cv_resizer() {}
 
   /**
    * Set the parameters all at once

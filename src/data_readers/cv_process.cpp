@@ -42,9 +42,9 @@ namespace lbann {
  */
 cv_process::cv_process(const cv_process& rhs)
   : m_flip(rhs.m_flip), m_split(rhs.m_split),
-    m_normalizer((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL),
-    m_augmenter((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL),
-    m_transform1((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL),
+    m_normalizer((!!rhs.m_normalizer) ? (rhs.m_normalizer->clone()) : NULL),
+    m_augmenter((!!rhs.m_augmenter)   ? (rhs.m_augmenter->clone()) : NULL),
+    m_transform1((!!rhs.m_transform1) ? (rhs.m_transform1->clone()) : NULL),
     m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
     m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
 {}
