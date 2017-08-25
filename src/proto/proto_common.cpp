@@ -446,67 +446,17 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
-      bool has_vectors = ell.has_vectors();
       pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)the_layers[ell.pooling_layer()];
-
-      if (has_vectors) {
-
-        int i;
-        std::stringstream ss(ell.pool_dims());
-        vector<int> pool_dims;
-        while (ss >> i) {
-          pool_dims.push_back(i);
-        }
-
-        vector<int> pool_pads;
-        ss.clear();
-        ss.str(ell.pool_pads());
-        while (ss >> i) {
-          pool_pads.push_back(i);
-        }
-
-        vector<int> pool_strides;
-        ss.clear();
-        ss.str(ell.pool_strides());
-        while (ss >> i) {
-          pool_strides.push_back(i);
-        }
-        assert(the_layers.find(ell.pooling_layer()) != the_layers.end());
-        if (dl == data_layout::MODEL_PARALLEL) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
-              << "does not support MODEL_PARALLEL layouts";
-          throw lbann_exception(err.str());
-        } else {
-          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
-            comm,
-            ell.num_dims(),
-            &pool_dims[0],
-            &pool_pads[0],
-            &pool_strides[0],
-            get_pool_mode(ell.pool_mode()),
-            pl,
-            cudnn
-          );
-        }
+      if (dl == data_layout::MODEL_PARALLEL) {
+        err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
-        if (dl == data_layout::MODEL_PARALLEL) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
-              << "does not support MODEL_PARALLEL layouts";
-          throw lbann_exception(err.str());
-        } else {
-          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
-            comm,
-            ell.num_dims(),
-            ell.pool_dims_i(),
-            ell.pool_pads_i(),
-            ell.pool_strides_i(),
-            get_pool_mode(ell.pool_mode()),
-            pl,
-            cudnn
-          );
-        }
+        d = new unpooling_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          pl
+        );
       }
     }
 

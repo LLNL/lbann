@@ -27,11 +27,11 @@ model {
       interval: 1
     }
   }
-  #callback {
-  #  timer {
-  #    interval: 1
-  #  }
-  #}
+  callback {
+    timer {
+      dir: "none"
+    }
+  }
   callback {
     summary {
       dir: "."
