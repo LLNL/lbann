@@ -1559,6 +1559,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->unit_variance( preprocessor.unit_variance() );
     reader->scale( preprocessor.scale() );
     reader->z_score( preprocessor.z_score() );
+    reader->add_noise( preprocessor.noise_factor() );
     if (preprocessor.disable_augmentation()) {
       reader->disable_augmentation();
     }

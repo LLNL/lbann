@@ -48,6 +48,7 @@ lbann_image_preprocessor::lbann_image_preprocessor() :
   m_shear_range(0.0f),
   m_mean_subtraction(false),
   m_unit_variance(false),
+  m_noise_factor(0.0f),
   m_scale(true),  // We always did scaling by default.
   m_z_score(false) {
 }
@@ -193,6 +194,21 @@ void lbann_image_preprocessor::unit_scale(Mat& pixels,
   // Pixels are in range [0, 255], normalize using that.
   // Channels are not relevant here.
   pixels *= DataType(1) / 255;
+}
+
+
+void lbann_image_preprocessor::pixel_noise(Mat& pixels) 
+{
+  if(m_noise_factor){
+    Mat X_noise;
+    El::Gaussian(X_noise, pixels.Height(), pixels.Width(), DataType(0), DataType(1));
+    El::Axpy(m_noise_factor,X_noise,pixels);
+    //@todo - clip to min and max of input entry
+    auto clip = [](const DataType& z) { 
+         return std::max(DataType(0), std::min(z,DataType(1)));
+    };
+    EntrywiseMap(pixels, El::MakeFunction(clip));
+  } 
 }
 
 void lbann_image_preprocessor::z_score(Mat& pixels,
