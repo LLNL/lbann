@@ -115,9 +115,14 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
+  delete m_obj_fn;
   // Free metrics.
   for (metrics::metric *m : get_metrics()) {
     delete m;
+  }
+  // Free callbacks.
+  for (lbann_callback *c : m_callbacks) {
+    delete c;
   }
 }
 
