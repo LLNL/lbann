@@ -201,7 +201,6 @@ void softmax_layer<T_layout>::bp_compute() {
           std::type_index(typeid(target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>))
           || std::type_index(next_layer_type) ==
           std::type_index(typeid(target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>)))) {
-    El::View(*this->m_error_signal, *this->m_prev_error_signal);
     El::View(*this->m_error_signal_v, *this->m_prev_error_signal);
     return;
   }

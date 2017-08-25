@@ -438,24 +438,7 @@ message Pooling {
 
 message Unpooling {
   int64 num_dims = 1;
-
-  bool has_vectors = 2;
-
-  //these are used if has_vectors = true
-  string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
-  string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
-  string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
-
-  //these are used if has_vectors = false
-  int64 pool_dims_i = 10;
-  int64 pool_pads_i = 11;
-  int64 pool_strides_i = 12;
-
   int64 pooling_layer = 13; //should be index of pooling layer
-
-  //pool_mode should be one of: max, average, average_no_pad
-  //see: lbann/include/lbann/lbann_base.hpp
-  string pool_mode = 7;
 }
 
 

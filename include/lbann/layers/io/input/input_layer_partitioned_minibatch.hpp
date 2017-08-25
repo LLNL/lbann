@@ -113,7 +113,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return data_reader->update();
   }
 
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode() const {
     return this->m_execution_mode;
   }
 };

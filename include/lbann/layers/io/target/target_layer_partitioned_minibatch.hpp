@@ -142,7 +142,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     }
   }
 
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode() const {
     return this->m_execution_mode;
   }
 };

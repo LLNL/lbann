@@ -79,6 +79,16 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+     s << this->m_index << " sum; parents: ";
+     for (size_t i=0; i<m_parents.size(); i++) {
+       s << m_parents[i]->get_index() << " " << m_parents[i]->get_name() << " ";
+     }
+     return s.str();
+  }
+
   sum_layer* copy() const { return new sum_layer(*this); }
 
   std::string get_name() const { return "sum"; }
@@ -104,7 +114,18 @@ class sum_layer : public transform {
       m_parents.push_back(parent);
     }
     else {
-      throw lbann_exception("sum_layer: could not add parent layer since it is already in list of parents");
+      if(m_comm->am_world_master()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: sum_layer: could not add parent layer since it is already in list of parents;\n"
+          << "my index: " << this->get_index()
+          << " parent index: " << parent->get_index() << " name: " << parent->get_name() << "\n"
+          << "existing parent list: ";
+      for (auto t : m_parents) {
+        err << " index: " << t->get_index() << " name: " << t->get_name();
+      }
+      throw lbann_exception(err.str());
+      }
     }
 
   }
@@ -157,9 +178,6 @@ class sum_layer : public transform {
       }
     }
 
-    // Deallocate GPU memory for error signal since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_error_signal_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -178,11 +196,13 @@ class sum_layer : public transform {
   #ifndef __LIB_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
-      this->m_error_signal_d = this->m_prev_error_signal_d;
+      this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
+                                  this->m_prev_error_signal_d,
+                                  this->m_num_neurons,
+                                  this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_error_signal, *this->m_prev_error_signal);
       El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
     }
   }

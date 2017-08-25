@@ -191,7 +191,8 @@ bool generic_data_reader::update() {
   /// Maintain the current width of the matrix
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+  m_current_mini_batch_idx += m_iteration_stride;
+  if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
     if (m_current_pos < (int)m_shuffled_indices.size()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -206,7 +207,6 @@ bool generic_data_reader::update() {
     set_initial_position();
     return false;
   }else {
-    m_current_mini_batch_idx += m_iteration_stride;
     return true;
   }
 }
@@ -247,7 +247,7 @@ void generic_data_reader::select_subset_of_data() {
 
   if (has_max_sample_count()) {
     size_t count = get_max_sample_count();
-    if(count > get_num_data()) {
+    if(count > static_cast<size_t>(get_num_data())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +

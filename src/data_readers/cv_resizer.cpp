@@ -46,6 +46,11 @@ cv_resizer::cv_resizer()
 }
 
 
+cv_resizer *cv_resizer::clone() const {
+  return new cv_resizer(*this);
+}
+
+
 bool cv_resizer::check_center(const cv::Mat& image) {
   const int width = image.cols;
   const int height = image.rows;

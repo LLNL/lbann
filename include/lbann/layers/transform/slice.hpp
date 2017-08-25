@@ -59,6 +59,7 @@ class slice_layer : public transform {
    */
   AbsDistMat* m_output_slice_v;
 
+
  public:
   /// Constructor
   slice_layer(int index,
@@ -127,6 +128,21 @@ class slice_layer : public transform {
 
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+    s << std::to_string(this->m_index) << " slice; slice_axis: "
+      << m_slice_axis << " children: ";
+    for (size_t h=0; h<this->m_children.size(); h++) {
+      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name() << " ";
+    }
+    s << " slice_points: ";
+    for (size_t h=0; h<this->m_slice_points.size(); h++) {
+      s << this->m_slice_points[h] << " ";
+    }
+    return s.str();
+  }
+
   slice_layer* copy() const { return new slice_layer(*this); }
 
   std::string get_name() const { return "slice"; }
@@ -150,7 +166,6 @@ class slice_layer : public transform {
     if(m_children.empty()) {
       if(m_comm->am_world_master()) {
         if(slice_point > 0) {
-          std::stringstream err;
           err << __FILE__ << " " << __LINE__ << " :: slice_layer: first child should have a slice point of zero";
           throw lbann_exception(err.str());
         }
@@ -267,9 +282,6 @@ class slice_layer : public transform {
       }
     }
 
-    // Deallocate GPU memory for activations since it isn't needed
-    this->m_cudnn->deallocate_on_gpus(this->m_activations_d);
-
   #endif // #ifndef __LIB_CUDNN
   }
 
@@ -282,11 +294,13 @@ class slice_layer : public transform {
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
   #else
-      this->m_activations_d = this->m_prev_activations_d;
+    this->m_cudnn->copy_on_gpus(this->m_activations_d,
+                                this->m_prev_activations_d,
+                                this->m_num_prev_neurons,
+                                this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations, *this->m_prev_activations);
       El::LockedView(*this->m_activations_v, *this->m_prev_activations);
     }
   }

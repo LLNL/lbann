@@ -84,6 +84,12 @@ class relu_layer : public entrywise_activation_layer {
 
   std::string get_name() const { return "relu"; }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     std::to_string(this->m_index) + " relu";
+  }
+
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }

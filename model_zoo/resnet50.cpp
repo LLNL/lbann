@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 
     // Number of GPUs
 #if __LIB_CUDNN
+    bool use_gpus = Input("--use-gpus", "whether to use GPUs", true);
     int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 #endif
 
@@ -155,6 +156,10 @@ int main(int argc, char *argv[]) {
     imagenet_trainset.unit_variance(unit_variance);
     imagenet_trainset.z_score(z_score);
 
+    if (comm->am_world_master()) {
+      cout << "scale/subtract_mean/unit_variance/z_score: " << scale<<" "<<subtract_mean<<" "<<unit_variance<<" "<<z_score<<endl;
+    }  
+
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
@@ -215,7 +220,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN (if detected)
 #if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
+    cudnn::cudnn_manager *cudnn = use_gpus ? new cudnn::cudnn_manager(comm, num_gpus) : NULL;
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
@@ -650,6 +655,15 @@ int main(int argc, char *argv[]) {
     }
 
     comm->global_barrier();
+
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      std::vector<Layer *>& layers = dnn->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
+    }
 
     //************************************************************************
     // mainloop for train/validate

@@ -179,7 +179,7 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
 
 #ifdef LBANN_DEBUG
   // Ensure that gpu_data has right dimensions
-  if(gpu_data.size() != m_num_gpus) {
+  if((int) gpu_data.size() != m_num_gpus) {
     throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
   }
 #endif // #ifdef LBANN_DEBUG

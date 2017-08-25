@@ -60,29 +60,21 @@ class dropout : public regularizer_layer {
   dropout(const dropout& other) :
     regularizer_layer(other),
     m_keep_prob(other.m_keep_prob) {
-#ifdef LBANN_PROCDET_DROPOUT
-    m_cur_mask = other.m_cur_mask->Copy();
-#else
-    m_cur_mask = new Mat(*other.m_cur_mask);
-#endif
+    m_mask = other.m_mask->Copy();
   }
 
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    if (m_cur_mask) {
-      delete m_cur_mask;
+    if(m_mask) {
+      delete m_mask;
     }
-#ifdef LBANN_PROCDET_DROPOUT
-    m_cur_mask = other.m_cur_mask->Copy();
-#else
-    m_cur_mask = new Mat(*other.m_cur_mask);
-#endif
+    m_mask = other.m_mask->Copy();
     return *this;
   }
 
   ~dropout() {
-    delete m_cur_mask;
+    delete m_mask;
   }
 
   dropout* copy() const { return new dropout(*this); }
@@ -95,95 +87,67 @@ class dropout : public regularizer_layer {
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() {
-    if (this->get_execution_mode() != execution_mode::training ||
-        m_keep_prob < 0.0f) {
-      // Copy previous activations over.
-      El::Copy(*(this->m_prev_activations), *(this->m_activations_v));
+
+    // Copy previous activations if dropout is disabled
+    if (this->get_execution_mode() != execution_mode::training
+        || m_keep_prob < 0.0f) {
+      El::Copy(*this->m_prev_activations, *this->m_activations_v);
       return;
     }
-    ElMat *input_acts = this->m_prev_activations;
-    const El::Int local_height = input_acts->LocalHeight();
-    const El::Int local_width = input_acts->LocalWidth();
 
+    // Construct mask matrix
+    const DataType scale = DataType(1) / m_keep_prob;
+    const int height = this->m_activations_v->Height();
+    const int width = this->m_activations_v->Width();
+    m_mask->Resize(height, width);
 #ifdef LBANN_PROCDET_DROPOUT
-    const El::Int global_height = input_acts->Height();
-    bernoulli_fill_procdet(*m_cur_mask, input_acts->Height(),
-                           input_acts->Width(), m_keep_prob);
-    *m_cur_mask *= DataType(1.0) / m_keep_prob;
-    if (input_acts->GlobalRow(local_height - 1) == global_height - 1) {
-      for (El::Int col = 0; col < local_width; ++col) {
-        m_cur_mask->SetLocal(local_height - 1, col, DataType(1.0));
-      }
-    }
-    El::Hadamard(*input_acts, *m_cur_mask, *(this->m_activations_v));
+    bernoulli_fill_procdet(*m_mask, height, width, m_keep_prob);
+    *m_mask *= scale;
 #else
-    Mat& local_input_acts = input_acts->Matrix();
-    Mat& local_output_acts = this->m_activations_v->Matrix();
-
-    // Construct dropout mask
-    // Note: Construct Bernoulli matrix and scale by 1/m_keep_prob.
-    m_cur_mask->Resize(local_height, local_width);
-    El::EntrywiseMap(*m_cur_mask,
+    El::EntrywiseMap(*m_mask,
                      (std::function<DataType(const DataType&)>)
-                     ([this](const DataType& z)->DataType {
+                     ([this,scale](const DataType& z)->DataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? DataType(1) / m_keep_prob : DataType(0);
+                       return dist(gen) ? scale : DataType(0);
                      }));
-    // Apply dropout mask to local activations
-    El::Hadamard(local_input_acts, *m_cur_mask, local_output_acts);
-#endif  // LBANN_PROCDET_DROPOUT
+#endif // LBANN_PROCDET_DROPOUT
+
+    // Apply mask matrix to get activations
+    El::Hadamard(*this->m_prev_activations, *m_mask, *this->m_activations_v);
+
   }
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute() {
-    // Terminate early when not training.
-    if (this->get_execution_mode() != execution_mode::training) {
-      return;
-    }
-    if (m_keep_prob < 0.0f) {
-      // Copy error signal through.
-      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal_v));
+
+    // Copy previous error signal if dropout is disabled
+    if (this->get_execution_mode() != execution_mode::training
+        || m_keep_prob < 0.0f) {
+      El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
       return;
     }
 
-#ifdef LBANN_PROCDET_DROPOUT
-    El::Hadamard(*(this->m_prev_error_signal), *m_cur_mask, *(this->m_error_signal_v));
-#else
-    // Re-weight the incoming loss using dropout mask
-    Mat& local_prev_error_signal = this->m_prev_error_signal->Matrix();
-    Mat& local_error_signal = this->m_error_signal_v->Matrix();
-    El::Hadamard(local_prev_error_signal, *m_cur_mask, local_error_signal);
-#endif  // LBANN_PROCDET_DROPOUT
+    // Apply mask matrix to error signal
+    El::Hadamard(*this->m_prev_error_signal, *m_mask, *this->m_error_signal_v);
+
   }
 
   /** Probability of keeping each unit. */
   float m_keep_prob;
-#ifdef LBANN_PROCDET_DROPOUT
   /** Current dropout mask (a scaled Bernoulli random matrix). */
-  ElMat *m_cur_mask;
-#else
-  /** Current dropout mask (a scaled Bernoulli random matrix). */
-  Mat *m_cur_mask;
-#endif
+  AbsDistMat *m_mask;
+
 };
 
 template<> inline void dropout<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   regularizer_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-#ifdef LBANN_PROCDET_DROPOUT
-  m_cur_mask = new DistMat(m_comm->get_model_grid());
-#else
-  m_cur_mask = new Mat;
-#endif
+  m_mask = new DistMat(m_comm->get_model_grid());
 }
 
 template<> inline void dropout<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   regularizer_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-#ifdef LBANN_PROCDET_DROPOUT
-  m_cur_mask = new StarVCMat(m_comm->get_model_grid());
-#else
-  m_cur_mask = new Mat;
-#endif
+  m_mask = new StarVCMat(m_comm->get_model_grid());
 }
 
 }  // namespace lbann

@@ -36,7 +36,8 @@ sgd::sgd(lbann_comm *comm, DataType learning_rate, DataType momentum,
   : optimizer(comm, learning_rate),
     m_momentum(momentum),
     m_decay(decay),
-    m_nesterov(nesterov) {}
+    m_nesterov(nesterov),
+    m_velocity(nullptr) {}
 
 sgd::sgd(const sgd& other) :
   optimizer(other), m_iterations(other.m_iterations),

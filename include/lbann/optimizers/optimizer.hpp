@@ -62,6 +62,11 @@ class optimizer {
   virtual void setup_gpu(AbsDistMat *parameters,
                          const std::vector<DataType *> &parameters_d);
 
+  /// Returns the optimizer's name
+  virtual std::string get_name() const = 0;
+
+  virtual std::string get_description() const = 0;
+
   /// Update parameters using objective function gradient
   virtual void update(const AbsDistMat *gradient) = 0;
   
@@ -131,7 +136,7 @@ class optimizer_factory {
    const std::string name);
   /// Destructor
   virtual ~optimizer_factory();
-  /// Create optimizer
+  /// Create optimizer; caller is responsible for freeing memory.
   virtual optimizer *create_optimizer() = 0;
   /// Get optimizer name
   virtual const std::string name() const {

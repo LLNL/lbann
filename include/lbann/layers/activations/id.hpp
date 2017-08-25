@@ -61,12 +61,10 @@ class id_layer : public entrywise_activation_layer {
   virtual data_layout get_data_layout() const { return T_layout; }
 
   void fp_compute() {
-    El::View(*this->m_activations, *this->m_prev_activations);
     El::View(*this->m_activations_v, *this->m_prev_activations);
   }
 
   void bp_compute() {
-    El::View(*this->m_error_signal, *this->m_prev_error_signal);
     El::View(*this->m_error_signal_v, *this->m_prev_error_signal);
   }
 

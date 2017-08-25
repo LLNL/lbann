@@ -32,13 +32,13 @@ link_directories(${Elemental_DIR}/lib64)
 set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
-                          ${LBANN_DIR}/src/utils/lbann_random.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_image_utils.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_augmenter.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_normalizer.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_process.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_process_patches.cpp
-                          ${LBANN_DIR}/src/data_readers/lbann_cv_utils.cpp)
+                          ${LBANN_DIR}/src/utils/random.cpp
+                          ${LBANN_DIR}/src/data_readers/image_utils.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_process.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_utils.cpp)
 
 add_executable(${PATCHWORKS_EXE} ${PATCHWORKS_SRCS} ${PATCHWORKS_TEST_SRCS} )
 target_link_libraries(${PATCHWORKS_EXE} ${OpenCV_LIBS} ${Elemental_LIBS})

@@ -168,7 +168,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     }
   }
 
-  execution_mode get_execution_mode() {
+  execution_mode get_execution_mode() const {
     return this->m_execution_mode;
   }
 };
