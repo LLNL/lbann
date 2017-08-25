@@ -1607,6 +1607,8 @@ void read_prototext_file(string fn, lbann_data::LbannPB& pb)
     err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
     throw lbann_exception(err.str());
   }
+  input->Close();
+  delete input;
 }
 
 bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)

@@ -56,7 +56,7 @@ class model {
         optimizer_factory *optimizer_fac);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model() {}
+  virtual ~model();
 
   virtual model* copy() const = 0;
 

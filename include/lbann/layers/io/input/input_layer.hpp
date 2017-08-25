@@ -38,6 +38,19 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       io_layer(comm, data_readers) {}
 
+  virtual ~input_layer() {
+    // Input layer always frees data readers.
+    if (m_training_dataset.data_reader != nullptr) {
+      delete m_training_dataset.data_reader;
+    }
+    if (m_validation_dataset.data_reader != nullptr) {
+      delete m_validation_dataset.data_reader;
+    }
+    if (m_testing_dataset.data_reader != nullptr) {
+      delete m_testing_dataset.data_reader;
+    }
+  }
+
   // Input layers copy their datareaders.
   input_layer(const input_layer& other) : generic_data_distribution(other), io_layer(other) {
     if (m_training_dataset.data_reader) {

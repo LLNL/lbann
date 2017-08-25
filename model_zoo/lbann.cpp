@@ -195,6 +195,7 @@ int main(int argc, char *argv[]) {
     if (comm->am_world_master()) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
       std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
@@ -227,6 +228,7 @@ int main(int argc, char *argv[]) {
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory
     delete model;
+    delete optimizer_fac;
 
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);

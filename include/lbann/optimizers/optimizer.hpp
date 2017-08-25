@@ -136,7 +136,7 @@ class optimizer_factory {
    const std::string name);
   /// Destructor
   virtual ~optimizer_factory();
-  /// Create optimizer
+  /// Create optimizer; caller is responsible for freeing memory.
   virtual optimizer *create_optimizer() = 0;
   /// Get optimizer name
   virtual const std::string name() const {
