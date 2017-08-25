@@ -171,7 +171,8 @@ class unpooling_layer : public transform {
              this->m_neuron_dims.data() + 1,
              m_pooling_layer->m_pool_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
-             m_pooling_layer->m_pool_strides.data());
+             m_pooling_layer->m_pool_strides.data(),
+             static_cast<const DataType&(*)(const DataType&,const DataType&)>(&std::max<DataType>));
 
     }
 
