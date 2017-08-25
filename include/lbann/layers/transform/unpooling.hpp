@@ -162,7 +162,6 @@ class unpooling_layer : public transform {
       }
 
       // Convert im2col matrix to output matrix
-      ///@todo max instead of sum
       Mat output_mat = El::View(activations_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
