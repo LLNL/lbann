@@ -46,6 +46,21 @@ class target_layer : public io_layer {
     m_shared_data_reader = shared_data_reader;
   }
 
+  virtual ~target_layer() {
+    if (!m_shared_data_reader) {
+      // Only free the data readers if they're not shared with the input layer.
+      if (m_training_dataset.data_reader != nullptr) {
+        delete m_training_dataset.data_reader;
+      }
+      if (m_validation_dataset.data_reader != nullptr) {
+        delete m_validation_dataset.data_reader;
+      }
+      if (m_testing_dataset.data_reader != nullptr) {
+        delete m_testing_dataset.data_reader;
+      }
+    }
+  }
+
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
