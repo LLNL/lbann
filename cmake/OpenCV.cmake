@@ -33,27 +33,20 @@ else()
   # whether to link with prebuilt libjpeg-turbo
   if(WITH_LIBJPEG_TURBO)
     if ("${LIBJPEG_TURBO_DIR}" STREQUAL "")
-      #set(WITH_LIBJPEG_TURBO OFF)
       include(jpeg-turbo)
       set(BUILD_JPEG_TURBO ON)
       message(STATUS "Building libjpeg-turbo")
       set(LIBJPEG_TURBO_DIR                ${CMAKE_INSTALL_PREFIX})
-      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
-      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
-      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
-      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
-      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
-      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
     else()
       set(BUILD_JPEG_TURBO OFF)
       message(STATUS "Using libjpeg-turbo installed under ${LIBJPEG_TURBO_DIR}")
-      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
-      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
-      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
-      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
-      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
-      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
     endif()
+    set(OPENCV_JPEG_INCLUDE_DIR          ${LIBJPEG_TURBO_DIR}/include)
+    set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
+    set(CMAKE_LIBRARY_PATH               "${LIBJPEG_TURBO_DIR}/lib;${CMAKE_LIBRARY_PATH}")
+    set(CMAKE_INCLUDE_PATH               "${OPENCV_JPEG_INCLUDE_DIR};${CMAKE_INCLUDE_PATH}")
+  else()
+    set(BUILD_JPEG_TURBO OFF)
   endif()
 
   # ============================
@@ -61,7 +54,7 @@ else()
   # ============================
 
   # OpenCV modules
-  option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                                         OFF) # 3.3.0
+  #option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                                         OFF) # 3.3.0
 
   # Optional 3rd party components
   option(OPENCV_WITH_1394           "OpenCV: Include IEEE1394 support"                                                    OFF) # both
@@ -343,8 +336,6 @@ else()
       -D CV_TRACE=${OPENCV_CV_TRACE}
       -D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}
       -D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}
-      ${OPENCV_LIBJPEG_TURBO_INC}
-      ${OPENCV_LIBJPEG_TURBO_LIB}
   )
 
   if(BUILD_JPEG_TURBO)
