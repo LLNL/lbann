@@ -60,8 +60,8 @@ WITH_FULLY_CONNECTED_CUDA=OFF
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
-#LIBJPEG_TURBO_DIR="/p/lscratche/brainusr/libjpeg-turbo"
-#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
+#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo-1.5.2"
+#LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 

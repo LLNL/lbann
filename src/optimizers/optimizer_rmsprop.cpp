@@ -35,7 +35,8 @@ rmsprop::rmsprop(lbann_comm *comm, DataType learning_rate, DataType decay_rate,
                  DataType eps)
   : optimizer(comm, learning_rate),
     m_decay_rate(decay_rate),
-    m_eps(eps) {}
+    m_eps(eps),
+    m_cache(nullptr) {}
 
 rmsprop::rmsprop(const rmsprop& other) :
   optimizer(other), m_decay_rate(other.m_decay_rate), m_eps(other.m_eps),

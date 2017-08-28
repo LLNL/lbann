@@ -5,8 +5,8 @@
 #include <iterator>
 #include <sstream>
 #include <algorithm>
-#include "lbann/lbann_base.hpp"
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/base.hpp"
+#include "lbann/utils/random.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "patchworks_image.hpp"
 

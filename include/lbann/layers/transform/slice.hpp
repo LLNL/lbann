@@ -134,7 +134,7 @@ class slice_layer : public transform {
     s << std::to_string(this->m_index) << " slice; slice_axis: "
       << m_slice_axis << " children: ";
     for (size_t h=0; h<this->m_children.size(); h++) {
-      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name();
+      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name() << " ";
     }
     s << " slice_points: ";
     for (size_t h=0; h<this->m_slice_points.size(); h++) {

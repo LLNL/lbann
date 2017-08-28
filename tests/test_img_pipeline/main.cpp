@@ -5,9 +5,9 @@
 #include <iterator>
 #include <sstream>
 #include <algorithm>
-#include "lbann/data_readers/lbann_image_utils.hpp"
-#include "lbann/data_readers/lbann_cv_resizer.hpp"
-#include "lbann/data_readers/lbann_cv_colorizer.hpp"
+#include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_readers/cv_resizer.hpp"
+#include "lbann/data_readers/cv_colorizer.hpp"
 
 
 using namespace lbann::patchworks;
@@ -138,7 +138,7 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
 }
 
 bool test_image_io(const std::string filename, int sz, const resizer_params& rp, const augmenter_params& ap, const bool do_colorize) {
-#if 0
+#if 1
   std::shared_ptr<lbann::cv_process> pp1;
 
   // Initialize the image processor

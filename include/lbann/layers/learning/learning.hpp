@@ -85,6 +85,7 @@ class learning : public Layer {
   }
 
   virtual ~learning() {
+    delete m_optimizer;
     delete m_weights;
     delete m_weights_gradient;
   }
