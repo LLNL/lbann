@@ -57,9 +57,9 @@ def hostname() :
 def bindir() :
   '''Returns the directory that contains the lbann executable. This may be
      specified on the command line via the --bindir=<string> option; else,
-     returns the relative directory: '../build/<hostname()>.llnl.gov/model_zoo
+     returns the relative directory: '../../..build/<hostname()>.llnl.gov/model_zoo
   '''
-  b = '../build/' + hostname() + '.llnl.gov/model_zoo'
+  b = '../../../build/' + hostname() + '.llnl.gov/model_zoo'
   for n in sys.argv :
     if n.find('--bindir=') != -1 :
       t = n.split('=')
@@ -137,10 +137,15 @@ def run_cmd(model, data_reader, optimizer) :
     print '\n\nERROR: you must specify both --nodes=<int> and --tasks=<int>'
     print '-------------------------------------------------------------------------------'
     print help()
+    print '-------------------------------------------------------------------------------'
+    print '\nERROR: you must specify both --nodes=<int> and --tasks=<int>\n'
     exit(9)
-  return 'srun --nodes=' + str(nnodes) + ' --ntasks_per_node=' + str(ntasks_per_node) \
-          + ' ' + bindir() + '/lbann ' + lbann_options()
-          todo TODO
+  return 'srun --nodes=' + str(nnodes)                  \
+         + ' --ntasks-per-node=' + str(ntasks_per_node) \
+         + ' ' + bindir() + '/lbann ' + lbann_options() \
+         + ' --model=' + model                          \
+         + ' --reader=' + data_reader                   \
+         + ' --optimizer=' + optimizer
 
 def build_and_submit_slurm_script(model, data_reader, optimizer) :
   '''Constructs and writes to file: slurm_script.sh. The script is also
@@ -148,20 +153,22 @@ def build_and_submit_slurm_script(model, data_reader, optimizer) :
      appears on the command line. Various informational messages may be
      written to stdout; these include all 'srun ...' commands'
   '''
-  where = '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now())  
+  print run_cmd(model, data_reader, optimizer) 
+  #where = '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now())  
+  '''
   for n in sys.argv :
     if n == 'this_dir' :
       where = '.'
 
   out = open(where + '/slurm_script.sh', 'w')
-  '''
   out.write('#!/bin/bash\n\n')
   out.write('# ======== Experiment parameters ========\n')
   out.write('# Directory: ' + where + '\n')
-  '''
 
   out.close()
+  '''
 
+'''
 print hostname()
 print bindir()
 print 'opts:', lbann_options()
@@ -169,3 +176,4 @@ print base_cmd()
 print
 print help(model = 'xyz', data_reader = 'imagenet')
 stage_data_to_ssd()
+'''
