@@ -1,5 +1,5 @@
---- Makefile.power	2017-05-26 00:40:14.577175225 -0700
-+++ ./Makefile.power.new	2017-05-25 23:27:29.885660000 -0700
+--- Makefile.power	2017-08-27 21:49:26.000000000 -0700
++++ ./Makefile.power.new	2017-08-27 20:23:50.000000000 -0700
 @@ -13,11 +13,11 @@
  
  ifeq ($(CORE), POWER8)
@@ -16,35 +16,20 @@
  endif
  endif
  
---- Makefile.system	2017-05-26 00:40:14.582209559 -0700
-+++ ./Makefile.system.new	2017-05-26 00:14:59.262294703 -0700
-@@ -397,7 +397,7 @@
- 
- #check
- ifeq ($(USE_THREAD), 0)
--$(error OpenBLAS: Cannot set both USE_OPENMP=1 and USE_THREAD=0. The USE_THREAD=0 is only for building single thread version.)
-+#$(error OpenBLAS: Cannot set both USE_OPENMP=1 and USE_THREAD=0. The USE_THREAD=0 is only for building single thread version.)
- endif
- 
- # ifeq logical or. GCC or LSB
-@@ -406,12 +406,12 @@
- endif
- 
- ifeq ($(C_COMPILER), CLANG)
--$(error OpenBLAS: Clang didn't support OpenMP yet.)
- CCOMMON_OPT    += -fopenmp
+--- Makefile.system	2017-08-27 21:49:26.000000000 -0700
++++ ./Makefile.system.new	2017-08-27 20:23:50.000000000 -0700
+@@ -418,7 +418,7 @@
  endif
  
  ifeq ($(C_COMPILER), INTEL)
 -CCOMMON_OPT    += -openmp
-+#CCOMMON_OPT    += -openmp
 +CCOMMON_OPT    += -qopenmp
  endif
  
  ifeq ($(C_COMPILER), PGI)
---- c_check	2017-05-26 00:40:14.602615478 -0700
-+++ ./c_check.new	2017-05-25 23:27:29.893805885 -0700
-@@ -126,7 +126,7 @@
+--- c_check	2017-08-27 21:49:29.000000000 -0700
++++ ./c_check.new	2017-08-27 20:23:50.000000000 -0700
+@@ -133,7 +133,7 @@
  }
  
  if ($compiler eq "INTEL") {
