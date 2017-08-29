@@ -48,7 +48,7 @@ TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
-LUSTRE_FILEPATH="/p/lscratchh/jacobs32"
+LUSTRE_FILEPATH="/p/lscratchf/brainusr"
 TRAIN_LABEL_FILE="train-labels.idx1-ubyte"
 TRAIN_IMAGE_FILE="train-images.idx3-ubyte"
 TEST_LABEL_FILE="t10k-labels.idx1-ubyte"
@@ -181,7 +181,7 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+BINDIR="${DIRNAME}/../../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo/historical"
 
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 

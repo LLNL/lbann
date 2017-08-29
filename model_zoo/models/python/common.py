@@ -124,6 +124,16 @@ def run_cmd(model, data_reader, optimizer) :
      files. The returned string is something like: 
        srun --node=<int> --ntasks_per_node=<int> <path to>/lbann --todoTODO
   '''
+  for n in sys.argv :
+    if n == '--help' or n == '-h' :
+      cmd = bindir() + '/lbann ' + lbann_options() \
+            + ' --model=' + model                  \
+            + ' --reader=' + data_reader           \
+            + ' --optimizer=' + optimizer          \
+            + ' --help'
+      os.system(cmd)
+      return
+
   nnodes = 0
   ntasks_per_node = 0
   for n in sys.argv :

@@ -1,5 +1,6 @@
 ####Directory Structure:####
-    model_zoo
+
+model_zoo
        |models
        | |alexnet
        | |mnist
