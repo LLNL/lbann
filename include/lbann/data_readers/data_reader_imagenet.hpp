@@ -80,7 +80,7 @@ class imagenet_reader : public generic_data_reader {
 
  protected:
   std::string m_image_dir; // where images are stored
-  std::vector<std::pair<std::string, int>> image_list; // list of image files and labels
+  std::vector<std::pair<std::string, int>> m_image_list; // list of image files and labels
   int m_image_width; // image width
   int m_image_height; // image height
   int m_image_num_channels; // number of image channels

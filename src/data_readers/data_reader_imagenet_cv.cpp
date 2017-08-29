@@ -49,7 +49,7 @@ imagenet_reader_cv::imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process
 
 bool imagenet_reader_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  const std::string imagepath = get_file_dir() + image_list[data_id].first;
+  const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
   ::Mat X_v;
@@ -73,7 +73,7 @@ bool imagenet_reader_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
 bool imagenet_reader_cv::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  const std::string imagepath = get_file_dir() + image_list[data_id].first;
+  const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
   std::vector<::Mat> X_v(X.size());
@@ -93,7 +93,7 @@ bool imagenet_reader_cv::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_
   const bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, pp, X_v);
 
   if (pp.is_self_labeling()) {
-    image_list[data_id].second = pp.get_patch_label();
+    m_image_list[data_id].second = pp.get_patch_label();
   }
 
   if(!ret) {
@@ -164,7 +164,7 @@ int imagenet_reader_cv::fetch_data(std::vector<::Mat>& X) {
 }
 
 bool imagenet_reader_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  int label = image_list[data_id].second;
+  int label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
@@ -173,7 +173,7 @@ void imagenet_reader_cv::load() {
   std::string imageDir = get_file_dir();
   std::string imageListFile = get_data_filename();
 
-  image_list.clear();
+  m_image_list.clear();
 
   // load image list
   FILE *fplist = fopen(imageListFile.c_str(), "rt");
@@ -189,13 +189,13 @@ void imagenet_reader_cv::load() {
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
     }
-    image_list.push_back(std::make_pair(imagepath, imagelabel));
+    m_image_list.push_back(std::make_pair(imagepath, imagelabel));
   }
   fclose(fplist);
 
   // reset indices
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(image_list.size());
+  m_shuffled_indices.resize(m_image_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
