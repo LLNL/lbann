@@ -77,6 +77,8 @@ class cv_process {
 
   virtual ~cv_process() {}
 
+  void reset();
+
   /// Check whether to flip
   bool to_flip() const {
     return (m_flip != cv_transform::_no_flip_);
