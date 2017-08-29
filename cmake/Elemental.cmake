@@ -35,12 +35,8 @@ if (NOT Elemental_FOUND)
     set(ELEMENTAL_URL https://github.com/elemental/Elemental.git)
   endif()
   if(NOT ELEMENTAL_TAG)
-     # Deprecated - Commit from 9/11/2016
-     # Deprecated - set(ELEMENTAL_TAG "d14e8f396cbafac8cf6b46da442ad3b7a1d42508")
-     # 0.87.6
-     # set(ELEMENTAL_TAG "8a1a42c4391b73e1b7e9ea07736459cccb7d6b21")
-     # 0.87.7
-     set(ELEMENTAL_TAG "351bc9460dcc58be62e9b42902e49640a97c0b0e")
+     # Latest development version.
+     set(ELEMENTAL_TAG "ba7780b6a3e580aba470a7674f3882a3d827b64c")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -50,7 +46,7 @@ if (NOT Elemental_FOUND)
   endif()
 
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
+    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
   else()
    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
   endif()

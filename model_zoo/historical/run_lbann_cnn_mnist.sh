@@ -173,7 +173,7 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+BINDIR="${DIRNAME}/../../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 
 # Once all of the options are parsed, you can setup the environment
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_mvapich2 -v 0.86
@@ -227,6 +227,5 @@ fi
 fi
 
 CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${NV_COMP_MODE} ${BINDIR}/cnn_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} --num-epochs ${EPOCHS} --mb-size ${MB_SIZE}"
-#CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache --nvidia_compute_mode=default ${DIRNAME}/lbann_cnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}

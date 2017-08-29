@@ -1,6 +1,7 @@
 #!/bin/sh
 
 DIRNAME=`dirname $0`
+#DIRNAME="/usr/workspace/wsa/jacobs32/lbann.develop/experiments" 
 #Set Script Name variable
 SCRIPT=`basename ${0}`
 
@@ -10,19 +11,20 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=12
+EPOCHS=100
 
 NETWORK="1000"
 
 PARIO=0
-BLOCK_SIZE=128
+BLOCK_SIZE=256
 MODE="false"
-MB_SIZE=256
-LR=0.01
-ACT=3
-LRM=1
+MB_SIZE=32
+LR=0.0001
+ACT=1
+LRM=3
 TEST_W_TRAIN_DATA=0
 LR_DECAY=0.5
+DROPOUT=0.8
 
 RUN="srun"
 
@@ -31,8 +33,11 @@ OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
+CKPT_EPOCHS=0
+CKPT_STEPS=0
+USE_LUSTRE_DIRECT=0
 
-TASKS_PER_NODE=4
+TASKS_PER_NODE=12
 
 if [ "${CLUSTER}" = "catalyst" ]; then
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
@@ -44,18 +49,14 @@ TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
 else
 DATASET_DIR="datasets/mnist-bin"
-LUSTRE_FILEPATH="/p/lscratche/brainusr"
-TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
-TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
-TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
-TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
+LUSTRE_FILEPATH="/p/lscratchh/jacobs32"
+TRAIN_LABEL_FILE="train-labels.idx1-ubyte"
+TRAIN_IMAGE_FILE="train-images.idx3-ubyte"
+TEST_LABEL_FILE="t10k-labels.idx1-ubyte"
+TEST_IMAGE_FILE="t10k-images.idx3-ubyte"
 ENABLE_HT=
-fi
-if [ "${CLUSTER}" = "surface" ]; then
-  NV_COMP_MODE='--nvidia_compute_mode=default'
-fi
-
 USE_LUSTRE_DIRECT=1
+fi
 
 #Set fonts for Help.
 NORM=`tput sgr0`
@@ -75,6 +76,8 @@ function HELP {
   echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."  
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
+  echo "${REV}-k${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} steps Default is ${BOLD}${CKPT_STEPS}${NORM}."
+  echo "${REV}-K${NORM} <val> --Checkpoint after every ${BOLD}N${NORM} epochs. Default is ${BOLD}${CKPT_EPOCHS}${NORM}."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."
   echo "${REV}-m${NORM} <val> --Sets the ${BOLD}mode${NORM}. Default is ${BOLD}${MODE}${NORM}."
   echo "${REV}-n${NORM} <val> --Sets the ${BOLD}network topology${NORM}. Default is ${BOLD}${NETWORK}${NORM}."
@@ -91,7 +94,7 @@ function HELP {
   exit 1
 }
 
-while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
+while getopts ":a:b:cde:f:hi:j:k:K:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
   case $opt in
     a)
       ACT=$OPTARG
@@ -104,7 +107,7 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
       ;;
     d)
       RUN="totalview srun -a"
-      DEBUGDIR="-debug"
+      DEBUGDIR=""
       ;;
     e)
       EPOCHS=$OPTARG
@@ -121,6 +124,12 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
       ;;
     j)
       LR_DECAY=$OPTARG
+      ;;
+    k)
+      CKPT_STEPS=$OPTARG
+      ;;
+    K)
+      CKPT_EPOCHS=$OPTARG
       ;;
     l)
       LOAD_MODEL=$OPTARG
@@ -173,12 +182,9 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+BINDIR="${DIRNAME}/../../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 
 # Once all of the options are parsed, you can setup the environment
-#source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_mvapich2 -v 0.86
-#source ${DIRNAME}/setup_brain_lbann_env.sh -m openmpi -v 0.86
-#source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_openmpi -v 0.86
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 
 TASKS=$((${SLURM_JOB_NUM_NODES} * ${SLURM_CPUS_ON_NODE}))
@@ -187,6 +193,7 @@ TASKS=384
 fi
 LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
 
+#export PATH=/collab/usr/global/tools/stat/file_bcast/chaos_5_x86_64_ib/fbcast:${PATH}
 export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
 if [ ${USE_LUSTRE_DIRECT} -eq 1 ]; then
@@ -226,7 +233,6 @@ fi
 
 fi
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${NV_COMP_MODE} ${BINDIR}/cnn_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} --num-epochs ${EPOCHS} --mb-size ${MB_SIZE}"
-#CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache --nvidia_compute_mode=default ${DIRNAME}/lbann_cnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
+CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${BINDIR}/autoencoder_cifar10 --par-IO ${PARIO} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --num-epochs ${EPOCHS} --mb-size ${MB_SIZE} --drop-out ${DROPOUT} --save-model ${SAVE_MODEL} --ckpt-epochs ${CKPT_EPOCHS} --ckpt-steps ${CKPT_STEPS}"
 echo ${CMD}
 ${CMD}

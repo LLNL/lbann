@@ -1,6 +1,9 @@
 #!/bin/sh
 
 DIRNAME=`dirname $0`
+if [ "$DIRNAME" == "" ] ; then
+ DIRNAME=`pwd`
+fi
 #Set Script Name variable
 SCRIPT=`basename ${0}`
 
@@ -10,52 +13,54 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 #Initialize variables to default values.
 TRAINING_SAMPLES=1
 VALIDATION_SAMPLES=1
-EPOCHS=12
+EPOCHS=20
+
 
 NETWORK="1000"
 
 PARIO=0
-BLOCK_SIZE=128
+BLOCK_SIZE=256
 MODE="false"
-MB_SIZE=256
-LR=0.01
+MB_SIZE=128
+# 1=SIGMOID, 2=TANH, 3=RELU, 4=ID
 ACT=3
-LRM=1
+# 1 - Adagrad, 2 - RMSprop, 3 - Adam, 4 - SGD
+LRM=4
+LR=0.0001
+LR_DECAY=0.1 # for sgd
+LR_MOMENTUM=0.3 # for sgd
+# 0 - zero, 1 - uniform, 2 - normal, 3 - glorot_normal, 4 - glorot_uniform, 5 - he_normal, 6 - he_uniform
+INIT_W8=3
 TEST_W_TRAIN_DATA=0
-LR_DECAY=0.5
+#TRAIN_FILE="shuffle.trn.1"
+#TEST_FILE="shuffle.tst.1"
+TRAIN_FILE="cl.LE.SR.dsc.all.norm" #small unbalanced
+TEST_FILE="cl.LE.SR.dsc.all.norm"
+#TRAIN_FILE="drugcellmerge_first50.txt"
+#TEST_FILE="drugcellmerge_first50.txt"
 
 RUN="srun"
 
 ROOT_DATASET_DIR="/l/ssd"
+# Originated from /usr/mic/post1/metagenomics/cancer/anl_datasets/tmp_norm/
+DATASET_DIR="datasets/cancer/anl_datasets/tmp_norm"
 OUTPUT_DIR="/l/ssd/lbann/outputs"
 PARAM_DIR="/l/ssd/lbann/models"
 SAVE_MODEL=false
 LOAD_MODEL=false
-
-TASKS_PER_NODE=4
+TASKS_PER_NODE=8
 
 if [ "${CLUSTER}" = "catalyst" ]; then
+#LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
 LUSTRE_FILEPATH="/p/lscratchf/brainusr"
-DATASET_DIR="datasets/MNIST"
-TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
-TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
-TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
-TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
-ENABLE_HT=
+#ENABLE_HT=--enable-hyperthread
 else
-DATASET_DIR="datasets/mnist-bin"
+#LUSTRE_FILEPATH="/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm"
 LUSTRE_FILEPATH="/p/lscratche/brainusr"
-TRAIN_LABEL_FILE="train-labels-idx1-ubyte"
-TRAIN_IMAGE_FILE="train-images-idx3-ubyte"
-TEST_LABEL_FILE="t10k-labels-idx1-ubyte"
-TEST_IMAGE_FILE="t10k-images-idx3-ubyte"
 ENABLE_HT=
-fi
-if [ "${CLUSTER}" = "surface" ]; then
-  NV_COMP_MODE='--nvidia_compute_mode=default'
 fi
 
-USE_LUSTRE_DIRECT=1
+USE_LUSTRE_DIRECT=0
 
 #Set fonts for Help.
 NORM=`tput sgr0`
@@ -72,7 +77,7 @@ function HELP {
   echo "${REV}-c${NORM}       --(CHEAT) Test / validate with the ${BOLD}training data${NORM}. Default is ${BOLD}${TEST_W_TRAIN_DATA}${NORM}."
   echo "${REV}-d${NORM}       --Sets the ${BOLD}debug mode${NORM}."
   echo "${REV}-e${NORM} <val> --Sets the ${BOLD}number of epochs${NORM}. Default is ${BOLD}${EPOCHS}${NORM}."
-  echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."  
+  echo "${REV}-f${NORM} <val> --Path to the ${BOLD}datasets${NORM}. Default is ${BOLD}${ROOT_DATASET_DIR}${NORM}."
   echo "${REV}-i${NORM} <val> --Sets the ${BOLD}parallel I/O limit${NORM}. Default is ${BOLD}${PARIO}${NORM}."
   echo "${REV}-j${NORM} <val> --Sets the ${BOLD}learning rate decay${NORM}. Default is ${BOLD}${LR_DECAY}${NORM}."
   echo "${REV}-l${NORM} <val> --Determines if the model is ${BOLD}loaded${NORM}. Default is ${BOLD}${LOAD_MODEL}${NORM}."
@@ -86,12 +91,14 @@ function HELP {
   echo "${REV}-t${NORM} <val> --Sets the number of ${BOLD}training samples${NORM}. Default is ${BOLD}${TRAINING_SAMPLES}${NORM}."
   echo "${REV}-u${NORM}       --Use the ${BOLD}Lustre filesystem${NORM} directly. Default is ${BOLD}${USE_LUSTRE_DIRECT}${NORM}."
   echo "${REV}-v${NORM} <val> --Sets the number of ${BOLD}validation samples${NORM}. Default is ${BOLD}${VALIDATION_SAMPLES}${NORM}."
+  echo "${REV}-x${NORM} <val> --Set ${BOLD}train file name ${NORM}. Default is ${BOLD}${TRAIN_FILE}${NORM}."
+  echo "${REV}-y${NORM} <val> --Set ${BOLD}test file name ${NORM}. Default is ${BOLD}${TEST_FILE}${NORM}."
   echo "${REV}-z${NORM} <val> --Sets the ${BOLD}tasks per node${NORM}. Default is ${BOLD}${TASKS_PER_NODE}${NORM}."
   echo -e "${REV}-h${NORM}    --Displays this help message. No further functions are performed."\\n
   exit 1
 }
 
-while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
+while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:x:y:z:" opt; do
   case $opt in
     a)
       ACT=$OPTARG
@@ -155,6 +162,12 @@ while getopts ":a:b:cde:f:hi:j:l:m:n:o:p:q:r:s:t:uv:z:" opt; do
     v)
       VALIDATION_SAMPLES=$OPTARG
       ;;
+    x)
+      TRAIN_FILE=$OPTARG
+      ;;
+    y)
+      TEST_FILE=$OPTARG
+      ;;
     z)
       TASKS_PER_NODE=$OPTARG
       ;;
@@ -181,11 +194,11 @@ BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_openmpi -v 0.86
 source ${DIRNAME}/setup_brain_lbann_env.sh -m mvapich2 -v El_0.86/v86-6ec56a
 
-TASKS=$((${SLURM_JOB_NUM_NODES} * ${SLURM_CPUS_ON_NODE}))
+TASKS=$((${SLURM_NNODES} * ${SLURM_CPUS_ON_NODE}))
 if [ ${TASKS} -gt 384 ]; then
 TASKS=384
 fi
-LBANN_TASKS=$((${SLURM_JOB_NUM_NODES} * ${TASKS_PER_NODE}))
+LBANN_TASKS=$((${SLURM_NNODES} * ${TASKS_PER_NODE}))
 
 export PATH=/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast:${PATH}
 
@@ -201,32 +214,38 @@ if [ ! -d ${ROOT_DATASET_DIR}/${DATASET_DIR} ]; then
     ${CMD}
 fi
 
-FILES=(${TRAIN_LABEL_FILE} ${TRAIN_IMAGE_FILE} ${TEST_LABEL_FILE} ${TEST_IMAGE_FILE})
-for filename in "${FILES[@]}"
+FILES=(${TEST_FILE} ${TRAIN_FILE})
+for f in "${FILES[@]}"
 do
-    FILE=`basename $filename`
+    FILE=`basename $f`
     if [ ! -e ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE} ]; then
-        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${filename} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
+        CMD="srun -n${TASKS} -N${SLURM_NNODES} file_bcast_par13 1MB ${LUSTRE_FILEPATH}/${DATASET_DIR}/${f} ${ROOT_DATASET_DIR}/${DATASET_DIR}/${FILE}"
         echo "${CMD}"
         ${CMD}
     fi
 done
 
-if [ ! -d ${PARAM_DIR} ]; then
-    CMD="mkdir -p ${PARAM_DIR}"
-    echo ${CMD}
-    ${CMD}
 fi
 
-if [ ! -d ${OUTPUT_DIR} ]; then
-    CMD="mkdir -p ${OUTPUT_DIR}"
-    echo ${CMD}
-    ${CMD}
-fi
+SOCKETS_PER_NODE=2
+TASKS_PER_SOCKET=`echo ${TASKS_PER_NODE} / ${SOCKETS_PER_NODE} | bc`
+#srun_options="-N${SLURM_NNODES} -n${LBANN_TASKS} -m block --cpu_bind=rank --ntasks-per-socket=${TASKS_PER_SOCKET} --sockets-per-node=${SOCKETS_PER_NODE}"
+srun_options="-N${SLURM_NNODES} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE}"
 
-fi
+CMD="${RUN} ${srun_options} ${BINDIR}/dnn_nci_regression \
+     --num-epochs ${EPOCHS} \
+     --mb-size ${MB_SIZE} \
+     --block-size ${BLOCK_SIZE} \
+     --learning-rate ${LR} \
+     --learning-rate-method ${LRM} \
+     --lr-decay-rate ${LR_DECAY} \
+     --lr-momentum ${LR_MOMENTUM} \
+     --activation-type ${ACT} \
+     --lambda 0.1 \
+     --initial-weight-type ${INIT_W8} \
+     --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} \
+     --train-file ${TRAIN_FILE} \
+     --test-file ${TEST_FILE}"
 
-CMD="${RUN} -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} ${NV_COMP_MODE} ${BINDIR}/cnn_mnist  --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY} --lambda 0.1 --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR} --train-label-file ${TRAIN_LABEL_FILE} --train-image-file ${TRAIN_IMAGE_FILE} --test-label-file ${TEST_LABEL_FILE} --test-image-file ${TEST_IMAGE_FILE} --num-epochs ${EPOCHS} --mb-size ${MB_SIZE}"
-#CMD="${RUN} -N1 -n${LBANN_TASKS} ${ENABLE_HT} --ntasks-per-node=${TASKS_PER_NODE} --distribution=block --drop-caches=pagecache --nvidia_compute_mode=default ${DIRNAME}/lbann_cnn_mnist --par-IO ${PARIO} --dataset ${ROOT_DATASET_DIR}/${DATASET_DIR}/  --max-validation-samples ${VALIDATION_SAMPLES} --profiling true --max-training-samples ${TRAINING_SAMPLES} --block-size ${BLOCK_SIZE} --output ${OUTPUT_DIR} --mode ${MODE} --num-epochs ${EPOCHS} --params ${PARAM_DIR} --save-model ${SAVE_MODEL} --load-model ${LOAD_MODEL} --mb-size ${MB_SIZE} --learning-rate ${LR} --activation-type ${ACT} --network ${NETWORK} --learning-rate-method ${LRM} --test-with-train-data ${TEST_W_TRAIN_DATA} --lr-decay-rate ${LR_DECAY}"
 echo ${CMD}
 ${CMD}
