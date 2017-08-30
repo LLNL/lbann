@@ -274,6 +274,11 @@ class io_layer : public Layer {
     return m_training_dataset.m_data_reader->at_new_epoch();
   }
 
+  bool is_execution_mode_valid(execution_mode mode) {
+    dataset& ds = get_dataset(mode);
+    return (ds.m_total_samples != 0);
+  }
+
   bool saveToCheckpointShared(persist& p) {
     // rank 0 writes the file
     if (p.get_rank() == 0) {
