@@ -61,6 +61,12 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     return new target_layer_distributed_minibatch(*this);
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} + " target_layer_distributed_minibatch "
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   std::string get_name() const { return "target:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {

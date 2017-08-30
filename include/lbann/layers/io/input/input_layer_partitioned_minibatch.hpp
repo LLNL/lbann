@@ -58,6 +58,12 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
 
   std::string get_name() const { return "input:partitioned"; }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} + " input_layer_partitioned_minibatch "
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
   }

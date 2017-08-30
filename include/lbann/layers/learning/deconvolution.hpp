@@ -52,6 +52,7 @@ class deconvolution_layer : public base_convolution_layer {
 
   public:
 
+
   deconvolution_layer(int index,
                       lbann_comm *comm,
                       int num_data_dims,
@@ -108,6 +109,28 @@ class deconvolution_layer : public base_convolution_layer {
       this->m_using_gpus = true;
     }
 
+  }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    std::stringstream s;
+    s << " deconvolution; conv_dims: ";
+    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
+      s << this->m_kernel_dims[h] << " ";
+    }
+    s << " conv_pads: ";
+    for (size_t h=0; h<this->m_conv_pads.size(); h++) {
+      s << this->m_conv_pads[h] << " ";
+    }
+    s << " conv_strides: ";
+    for (size_t h=0; h<this->m_conv_strides.size(); h++) {
+      s << this->m_conv_strides[h] << " ";
+    }
+    s << " num_output_channels: " << this->m_neuron_dims[0]
+      << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
+      << " has_bias: " << this->m_bias_scaling_factor
+      << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+    return s.str();
   }
 
   deconvolution_layer(const deconvolution_layer& other) :

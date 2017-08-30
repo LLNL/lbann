@@ -51,6 +51,12 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     initialize_distributed_matrices();
   }
 
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} + " target_layer_partitioned_minibatch "
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   target_layer_partitioned_minibatch* copy() const {
     throw lbann_exception("target_layer_partitioned_minibatch can't be copied");
     return nullptr;

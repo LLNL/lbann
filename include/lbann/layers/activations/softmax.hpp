@@ -84,7 +84,8 @@ class softmax_layer : public activation_layer {
   std::string get_name() const { return "softmax"; }
 
   std::string get_description() const {
-    return std::to_string(this->m_index) + " softmax";
+    return std::string {} + " softmax" + " dataLayout: " 
+           + this->get_data_layout_string(get_data_layout());
   }
 
   virtual inline void initialize_distributed_matrices();
