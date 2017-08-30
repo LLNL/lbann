@@ -39,6 +39,9 @@ namespace lbann {
  */
 class lbann_callback_checknan : public lbann_callback {
  public:
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_backward_prop_end;
+
   lbann_callback_checknan() : lbann_callback() {}
   lbann_callback_checknan(const lbann_callback_checknan&) = default;
   lbann_callback_checknan& operator=(

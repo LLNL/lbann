@@ -102,7 +102,8 @@ void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
       }
     } while(!finished_epoch);
     if(evaluation_frequency > 0
-        && (epoch + 1) % evaluation_frequency == 0) {
+       && (epoch + 1) % evaluation_frequency == 0
+       && is_execution_mode_valid(execution_mode::validation)) {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();

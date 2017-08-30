@@ -43,6 +43,9 @@ namespace lbann {
  */
 class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
  public:
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_evaluate_forward_prop_end;
+
   /**
    * @param basename The basename for writing files.
    */

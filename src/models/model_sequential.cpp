@@ -335,4 +335,11 @@ bool sequential_model::at_epoch_start() {
   return flag;
 }
 
+/// Check if the model has a valid data set for the execution mode
+bool sequential_model::is_execution_mode_valid(execution_mode mode) {
+  io_layer *input = (io_layer *) m_layers[0];
+  bool flag = input->is_execution_mode_valid(mode);
+  return flag;
+}
+
 }  // namespace lbann
