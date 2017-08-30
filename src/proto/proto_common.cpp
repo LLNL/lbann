@@ -1577,7 +1577,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_validation = new imagenet_reader_single_cv(mini_batch_size, shuffle);
       */
 
-      reader_validation->set_role("validate");
+      reader_validation->swap_role("validate");
       reader_validation->use_unused_index_set();
 
       if (master) {

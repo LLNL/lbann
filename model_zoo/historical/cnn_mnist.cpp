@@ -122,50 +122,50 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_trainset(trainParams.MBSize, true);
-    mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
-    mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
-    mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
-    mnist_trainset.set_validation_percent(trainParams.PercentageValidationSamples);
-    mnist_trainset.load();
+    mnist_reader* mnist_trainset = new mnist_reader(trainParams.MBSize, true);
+    mnist_trainset->set_file_dir(trainParams.DatasetRootDir);
+    mnist_trainset->set_data_filename(g_MNIST_TrainImageFile);
+    mnist_trainset->set_label_filename(g_MNIST_TrainLabelFile);
+    mnist_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
+    mnist_trainset->load();
 
-    mnist_trainset.scale(scale);
-    mnist_trainset.subtract_mean(subtract_mean);
-    mnist_trainset.unit_variance(unit_variance);
-    mnist_trainset.z_score(z_score);
+    mnist_trainset->scale(scale);
+    mnist_trainset->subtract_mean(subtract_mean);
+    mnist_trainset->unit_variance(unit_variance);
+    mnist_trainset->z_score(z_score);
 
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_validation_set(mnist_trainset); // Clone the training set object
-    mnist_validation_set.use_unused_index_set();
+    mnist_reader* mnist_validation_set = new mnist_reader(*mnist_trainset); // Clone the training set object
+    mnist_validation_set->use_unused_index_set();
 
     if (comm->am_world_master()) {
-      size_t num_train = mnist_trainset.get_num_data();
-      size_t num_validate = mnist_validation_set.get_num_data();
+      size_t num_train = mnist_trainset->get_num_data();
+      size_t num_validate = mnist_validation_set->get_num_data();
       double validate_percent = num_validate*100.0 / (num_train+num_validate);
       double train_percent = num_train*100.0 / (num_train+num_validate);
-      std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.get_num_data() << " samples." << std::endl
-           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.get_num_data() << " samples." << std::endl;
+      std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset->get_num_data() << " samples." << std::endl
+           << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set->get_num_data() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_testset(trainParams.MBSize, true);
-    mnist_testset.set_file_dir(trainParams.DatasetRootDir);
-    mnist_testset.set_data_filename(g_MNIST_TestImageFile);
-    mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
-    mnist_testset.set_use_percent(trainParams.PercentageTestingSamples);
-    mnist_testset.load();
+    mnist_reader* mnist_testset = new mnist_reader(trainParams.MBSize, true);
+    mnist_testset->set_file_dir(trainParams.DatasetRootDir);
+    mnist_testset->set_data_filename(g_MNIST_TestImageFile);
+    mnist_testset->set_label_filename(g_MNIST_TestLabelFile);
+    mnist_testset->set_use_percent(trainParams.PercentageTestingSamples);
+    mnist_testset->load();
 
-    mnist_testset.scale(scale);
-    mnist_testset.subtract_mean(subtract_mean);
-    mnist_testset.unit_variance(unit_variance);
-    mnist_testset.z_score(z_score);
+    mnist_testset->scale(scale);
+    mnist_testset->subtract_mean(subtract_mean);
+    mnist_testset->unit_variance(unit_variance);
+    mnist_testset->z_score(z_score);
 
     if (comm->am_world_master()) {
-      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset.get_num_data() << " samples." << std::endl;
+      std::cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << mnist_testset->get_num_data() << " samples." << std::endl;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -192,9 +192,9 @@ int main(int argc, char *argv[]) {
 #endif // __LIB_CUDNN
     deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
-    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
-                                                           std::make_pair(execution_mode::validation, &mnist_validation_set),
-                                                           std::make_pair(execution_mode::testing, &mnist_testset)
+    std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training, mnist_trainset),
+                                                           std::make_pair(execution_mode::validation, mnist_validation_set),
+                                                           std::make_pair(execution_mode::testing, mnist_testset)
                                                           };
 
 
@@ -319,8 +319,8 @@ int main(int argc, char *argv[]) {
     Layer *target_layer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
     dnn.add(target_layer);
 
-    lbann_callback_print print_cb;
-    dnn.add_callback(&print_cb);
+    lbann_callback_print* print_cb = new lbann_callback_print;
+    dnn.add_callback(print_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
     lbann_callback_dump_gradients *dump_gradients_cb = nullptr;
@@ -339,12 +339,10 @@ int main(int argc, char *argv[]) {
         trainParams.DumpDir);
       dnn.add_callback(dump_gradients_cb);
     }
-    // lbann_callback_io io_cb({0,3});
-    // dnn.add_callback(&io_cb);
-    //lbann_callback_io io_cb({0,3});
-    //        dnn.add_callback(&io_cb);
-    //lbann_callback_debug debug_cb(execution_mode::testing);
-    //        dnn.add_callback(&debug_cb);
+    // lbann_callback_io* io_cb = new lbann_callback_io({0,3});
+    // dnn.add_callback(io_cb);
+    // lbann_callback_debug* debug_cb = new lbann_callback_debug(execution_mode::testing);
+    // dnn.add_callback(debug_cb);
 
     if (comm->am_world_master()) {
       std::cout << "Parameter settings:" << std::endl;

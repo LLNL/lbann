@@ -73,6 +73,25 @@ cv_process& cv_process::operator=(const cv_process& rhs) {
 }
 
 
+void cv_process::reset() {
+  if (m_normalizer) {
+    m_normalizer->reset();
+  }
+  if (m_augmenter) {
+    m_augmenter->reset();
+  }
+  if (m_transform1) {
+    m_transform1->reset();
+  }
+  if (m_transform2) {
+    m_transform2->reset();
+  }
+  if (m_transform3) {
+    m_transform3->reset();
+  }
+}
+
+
 void cv_process::disable_transforms() {
   if (m_normalizer) {
     m_normalizer->disable();

@@ -51,7 +51,7 @@ class sequential_model : public model {
   sequential_model& operator=(const sequential_model& other);
 
   /// Destructor
-  ~sequential_model();
+  virtual ~sequential_model();
 
   /// Save model to file
   /** @todo This is old and likely broken */
@@ -115,6 +115,9 @@ class sequential_model : public model {
 
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start();
+
+  /** Check if the model has a valid data set for the execution mode */
+  virtual bool is_execution_mode_valid(execution_mode mode);
 
   /// Evaluate model
   virtual void evaluate(execution_mode mode) = 0;

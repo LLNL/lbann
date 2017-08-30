@@ -1,0 +1,133 @@
+model {
+  name: "dnn"
+  objective_function: "mean_squared_error"
+  metric {
+    mean_squared_error {
+    }
+  }
+  data_layout: "model_parallel"
+  mini_batch_size: 32
+  block_size: 256
+  num_epochs: 100
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  #callback {
+  #  save_images {
+  #    image_dir: "images_"
+  #    extension: "pgm"
+  #  }
+  #}
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    index: 1
+    parent: 1
+    data_layout: "model_parallel"
+    input_distributed_minibatch {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode1
+  #################
+  layer {
+    index: 2
+    parent: 1
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 
+  ######
+  layer {
+    index: 3
+    parent: 2
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 
+  #########
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.8
+    }
+  }
+
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    index: 5
+    parent: 4
+    data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
+    fully_connected {
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # SIGMOID
+  #########
+  layer {
+    index: 6
+    parent: 4
+    data_layout: "model_parallel"
+    sigmoid {
+    }
+  }
+
+  # DROPOUT 
+  #########
+  layer {
+    index: 7
+    parent: 6
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.8
+    }
+  }
+
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    index: 8
+    parent: 7
+    data_layout: "model_parallel"
+    reconstruction {
+      original_layer: 1
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

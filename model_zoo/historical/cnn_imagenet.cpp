@@ -27,8 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
-#include "lbann/data_readers/lbann_image_utils.hpp"
 
 #include <time.h>
 #ifdef _WIN32

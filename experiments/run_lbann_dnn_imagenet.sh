@@ -7,7 +7,7 @@ SCRIPT=`basename ${0}`
 # Figure out which cluster we are on
 CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov/model_zoo"
+BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov/model_zoo/historical"
 
 #Initialize variables to default values.
 TRAINING_SAMPLES=-1

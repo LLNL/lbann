@@ -173,7 +173,7 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo/historical"
 
 # Once all of the options are parsed, you can setup the environment
 #source ${DIRNAME}/setup_brain_lbann_env.sh -m debug_mvapich2 -v 0.86

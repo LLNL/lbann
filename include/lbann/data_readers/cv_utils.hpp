@@ -154,7 +154,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     if (image.isContinuous()) {
       cv_normalizer::
       scale(reinterpret_cast<const T *>(image.datastart),
-            reinterpret_cast<const T *const>(image.dataend),
+            reinterpret_cast<const T *>(image.dataend),
             Pixels, pp.get_transform_normalize());
     } else {
       const int stride = Width*NCh;
@@ -234,7 +234,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
       cv_normalizer::
       scale(reinterpret_cast<const T *>(image.datastart),
-            reinterpret_cast<const T *const>(image.dataend),
+            reinterpret_cast<const T *>(image.dataend),
             optr, {trans[ch]});
     }
   } else {
@@ -342,7 +342,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         cv_normalizer::
         scale(reinterpret_cast<const T *>(channels[ch].datastart),
-              reinterpret_cast<const T *const>(channels[ch].dataend),
+              reinterpret_cast<const T *>(channels[ch].dataend),
               Pixels, {trans[ch]});
       }
     }
@@ -350,7 +350,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     if (image.isContinuous()) {
       cv_normalizer::
       scale(reinterpret_cast<const T *>(image.datastart),
-            reinterpret_cast<const T *const>(image.dataend),
+            reinterpret_cast<const T *>(image.dataend),
             Pixels, pp.get_transform_normalize());
     } else {
       const int stride = Width*NCh;
@@ -433,7 +433,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
       for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
         cv_normalizer::
         scale(reinterpret_cast<const T *>(image.datastart),
-              reinterpret_cast<const T *const>(image.dataend),
+              reinterpret_cast<const T *>(image.dataend),
               optr, {trans[ch]});
       }
     } else {

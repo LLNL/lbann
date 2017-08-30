@@ -55,7 +55,7 @@ class convolution_layer : public base_convolution_layer {
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
-    s << std::to_string(this->m_index) << " convolution; conv_dims: ";
+    s << " convolution; conv_dims: ";
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       s << this->m_kernel_dims[h] << " ";
     }
@@ -69,7 +69,8 @@ class convolution_layer : public base_convolution_layer {
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
-      << " has_bias: " << this->m_bias_scaling_factor;
+      << " has_bias: " << this->m_bias_scaling_factor
+      << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 

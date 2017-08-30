@@ -99,6 +99,9 @@ class Layer {
     return std::string {} + get_name() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER";
   }
 
+  /** Returns a string description of the data_layout */
+  std::string get_data_layout_string(data_layout d) const; 
+
   /** Return the layer index. */
   inline int get_index() const {
     return m_index;

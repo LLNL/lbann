@@ -49,16 +49,48 @@ class target_layer : public io_layer {
   virtual ~target_layer() {
     if (!m_shared_data_reader) {
       // Only free the data readers if they're not shared with the input layer.
-      if (m_training_dataset.data_reader != nullptr) {
-        delete m_training_dataset.data_reader;
+      if (m_training_dataset.m_data_reader != nullptr) {
+        delete m_training_dataset.m_data_reader;
+        m_training_dataset.m_data_reader = nullptr;
       }
-      if (m_validation_dataset.data_reader != nullptr) {
-        delete m_validation_dataset.data_reader;
+      if (m_validation_dataset.m_data_reader != nullptr) {
+        delete m_validation_dataset.m_data_reader;
+        m_validation_dataset.m_data_reader = nullptr;
       }
-      if (m_testing_dataset.data_reader != nullptr) {
-        delete m_testing_dataset.data_reader;
+      if (m_testing_dataset.m_data_reader != nullptr) {
+        delete m_testing_dataset.m_data_reader;
+        m_testing_dataset.m_data_reader = nullptr;
       }
     }
+  }
+
+  // Target layers copy their datareaders.
+  target_layer(const target_layer& other) : io_layer(other) {
+    if (m_training_dataset.m_data_reader) {
+      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
+    }
+    if (m_validation_dataset.m_data_reader) {
+      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
+    }
+    if (m_testing_dataset.m_data_reader) {
+      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
+    }
+    m_shared_data_reader = other.m_shared_data_reader;
+  }
+
+  target_layer& operator=(const target_layer& other) {
+    io_layer::operator=(other);
+    if (m_training_dataset.m_data_reader) {
+      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
+    }
+    if (m_validation_dataset.m_data_reader) {
+      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
+    }
+    if (m_testing_dataset.m_data_reader) {
+      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
+    }
+    m_shared_data_reader = other.m_shared_data_reader;
+    return *this;
   }
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
@@ -85,15 +117,16 @@ class target_layer : public io_layer {
     io_layer::setup_data();
     std::stringstream err;
 
+    // The setup should be taken out here. Instead it should be done at the parent scope
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(m_training_dataset.data_reader != nullptr) {
-        m_training_dataset.data_reader->setup();
+      if(m_training_dataset.m_data_reader != nullptr) {
+        m_training_dataset.m_data_reader->setup();
       }
-      if(m_validation_dataset.data_reader != nullptr) {
-        m_validation_dataset.data_reader->setup();
+      if(m_validation_dataset.m_data_reader != nullptr) {
+        m_validation_dataset.m_data_reader->setup();
       }
-      if(m_testing_dataset.data_reader != nullptr) {
-        m_testing_dataset.data_reader->setup();
+      if(m_testing_dataset.m_data_reader != nullptr) {
+        m_testing_dataset.m_data_reader->setup();
       }
     }
 

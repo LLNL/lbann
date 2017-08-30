@@ -55,6 +55,13 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     // Setup the data distribution
     initialize_distributed_matrices();
   }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} + " input_layer_distributed_minibatch "
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   input_layer_distributed_minibatch(
     const input_layer_distributed_minibatch&) = default;
   input_layer_distributed_minibatch& operator=(

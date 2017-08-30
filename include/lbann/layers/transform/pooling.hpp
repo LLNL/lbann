@@ -155,7 +155,7 @@ class pooling_layer : public transform {
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
-    s << std::to_string(this->m_index) << " pooling; num_data_dims: "
+    s << " pooling; num_data_dims: "
     + std::to_string(m_pool_dims.size()) + " pool_dims: ";
     for (size_t h=0; h<this->m_pool_dims.size(); h++) {
       s << this->m_pool_dims[h] << " ";
@@ -169,6 +169,7 @@ class pooling_layer : public transform {
       s << this->m_pool_strides[h] << " ";
     }
     s << " pool_mode: " << get_pool_mode_name(this->m_pool_mode);
+    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 
