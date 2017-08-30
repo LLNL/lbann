@@ -93,7 +93,8 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
 sequential_model::~sequential_model() {
   // Free layers
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    delete m_layers[l];
+    if (m_layers[l])
+      delete m_layers[l];
   }
 }
 
@@ -290,7 +291,8 @@ int sequential_model::add(Layer *new_layer) {
 }
 
 void sequential_model::remove(int index) {
-  delete m_layers[index];
+  if (m_layers[index])
+    delete m_layers[index];
   m_layers.erase(m_layers.begin()+index);
 }
 
