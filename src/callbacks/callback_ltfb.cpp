@@ -52,6 +52,7 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(
   m_round_size = other.m_round_size;
   if (m_remote_model) {
     delete m_remote_model;
+    m_remote_model = nullptr;
   }
   if (other.m_remote_model) {
     m_remote_model = other.m_remote_model->copy();
