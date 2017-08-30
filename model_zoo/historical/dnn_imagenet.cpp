@@ -368,18 +368,18 @@ int main(int argc, char *argv[]) {
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
-    lbann_callback_print print_cb;
-    dnn->add_callback(&print_cb);
+    lbann_callback_print* print_cb = new lbann_callback_print;
+    dnn->add_callback(print_cb);
     // Record training time information.
-    lbann_callback_timer timer_cb(&summarizer);
-    dnn->add_callback(&timer_cb);
+    lbann_callback_timer* timer_cb = new lbann_callback_timer(&summarizer);
+    dnn->add_callback(timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer, 25);
-    dnn->add_callback(&summary_cb);
-    // lbann_callback_io io_cb({0});
-    // dnn->add_callback(&io_cb);
-    lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
-    dnn->add_callback(&lrsched);
+    lbann_callback_summary* summary_cb = new lbann_callback_summary(&summarizer, 25);
+    dnn->add_callback(summary_cb);
+    // lbann_callback_io* io_cb = new lbann_callback_io({0});
+    // dnn->add_callback(io_cb);
+    lbann_callback_adaptive_learning_rate* lrsched = new lbann_callback_adaptive_learning_rate(4, 0.1f);
+    dnn->add_callback(lrsched);
 
     dnn->setup();
 
