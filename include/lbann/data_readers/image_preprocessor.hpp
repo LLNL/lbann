@@ -110,6 +110,15 @@ class lbann_image_preprocessor {
     vertical_shift(0.0f);
     shear_range(0.0f);
   }
+ 
+  /** 
+   * Add noise to data (disable by default)
+   * noise_factor control the ammount of noise
+   * to be set to a value above zero but less than 1 (say 0.5)
+   * */
+  void add_noise(float noise_factor=0.0f) {
+    m_noise_factor = noise_factor;
+   }
 
   /**
    * Preprocess pixels according to the currently-set augmentation transforms.
@@ -160,10 +169,14 @@ class lbann_image_preprocessor {
   /** Whether to normalize via z-score. */
   bool m_z_score;
 
+  float m_noise_factor;
+
   void mean_subtraction(Mat& pixels, unsigned num_channels);
   void unit_variance(Mat& pixels, unsigned num_channels);
   void unit_scale(Mat& pixels, unsigned num_channels);
   void z_score(Mat& pixels, unsigned num_channels);
+
+  void pixel_noise(Mat& pixels);
 
   /**
    * Convert a column vector of pixels to an OpenCV matrix.

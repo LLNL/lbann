@@ -10,7 +10,7 @@ model {
   block_size: 256
   num_epochs: 100
   num_parallel_readers: 0
-  procs_per_model: 12 
+  procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
 
@@ -79,8 +79,6 @@ model {
     }
   }
 
-
-  #################
   # FULLY_CONNECTED decode1
   #################
   layer {

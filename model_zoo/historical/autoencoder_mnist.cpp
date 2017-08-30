@@ -67,9 +67,6 @@ int main(int argc, char *argv[]) {
     //if set to true, above three settings have no effect
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
-    // Number of GPUs per node to use
-    int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
-
     ///////////////////////////////////////////////////////////////////
     // initalize grid, block
     ///////////////////////////////////////////////////////////////////
@@ -121,7 +118,6 @@ int main(int argc, char *argv[]) {
 
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
-    ///////////////////////////////////////////////////////////////////
     mnist_reader mnist_trainset(trainParams.MBSize, true);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
@@ -142,9 +138,9 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       size_t num_train = mnist_trainset.get_num_data();
-      size_t num_validate = mnist_validation_set.get_num_data();
-      double validate_percent = num_validate*100.0 / (num_train+num_validate);
-      double train_percent = num_train*100.0 / (num_train+num_validate);
+      size_t num_validate = mnist_trainset.get_num_data();
+      double validate_percent = num_validate / (num_train+num_validate)*100.0;
+      double train_percent = num_train / (num_train+num_validate)*100.0;
       std::cout << "Training using " << train_percent << "% of the training data set, which is " << mnist_trainset.get_num_data() << " samples." << std::endl
            << "Validating training using " << validate_percent << "% of the training data set, which is " << mnist_validation_set.get_num_data() << " samples." << std::endl;
     }
@@ -176,21 +172,20 @@ int main(int argc, char *argv[]) {
     optimizer_factory *optimizer_fac;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
       optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+      cout << "XX adagrad\n";
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
       optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+      cout << "XX rmsprop\n";
     } else if (trainParams.LearnRateMethod == 3) { // Adam
       optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+      cout << "XX adam\n";
     } else {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+      cout << "XX sgd\n";
     }
 
     // Initialize network
-#if __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
-#else // __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = NULL;
-#endif // __LIB_CUDNN
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm),optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
@@ -198,127 +193,105 @@ int main(int argc, char *argv[]) {
                                                           };
 
 
-    //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers);
     dnn.add(input_layer);
 
-    // First convolution layer
-    {
-      optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      int numDims = 2;
-      int outputChannels = 32;
-      int filterDims[] = {3, 3};
-      int convPads[] = {0, 0};
-      int convStrides[] = {1, 1};
+    Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
+                       1, comm,
+                       1000, 
+                       weight_initialization::glorot_uniform,
+                       optimizer_fac->create_optimizer());
+    dnn.add(encode1);
 
-      convolution_layer<> *layer
-        = new convolution_layer<>(1,
-                                  comm,
-                                  numDims,
-                                  outputChannels,
-                                  filterDims,
-                                  convPads,
-                                  convStrides,
-                                  weight_initialization::glorot_uniform,
-                                  convolution_layer_optimizer,
-                                  true,
-                                  cudnn);
-      dnn.add(layer);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
+    dnn.add(relu1);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
-                                                               comm,
-                                                               cudnn);
-      dnn.add(relu);
-    }
+    /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
+    dnn.add(dropout1);*/
 
-    // Second convolution layer
-    {
-      optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
-      int numDims = 2;
-      int outputChannels = 32;
-      int filterDims[] = {3, 3};
-      int convPads[] = {0, 0};
-      int convStrides[] = {1, 1};
+    //third layer 
+    Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(3, comm,
+                                                        500, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(encode2);
 
-      convolution_layer<> *layer
-        = new convolution_layer<>(3,
-                                  comm,
-                                  numDims,
-                                  outputChannels,
-                                  filterDims,
-                                  convPads,
-                                  convStrides,
-                                  weight_initialization::glorot_uniform,
-                                  convolution_layer_optimizer,
-                                  true,
-                                  cudnn);
-      dnn.add(layer);
+    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(4, comm);
+    dnn.add(relu2);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
-                                                               comm,
-                                                               cudnn);
-      dnn.add(relu);
-    }
+    /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
+    dnn.add(dropout2);*/
 
-    // Pooling layer
-    {
-      int numDims = 2;
-      int poolWindowDims[] = {2, 2};
-      int poolPads[] = {0, 0};
-      int poolStrides[] = {2, 2};
-      pool_mode poolMode = pool_mode::max;
-      pooling_layer<> *layer
-        = new pooling_layer<>(4,
-                              comm,
-                              numDims,
-                              poolWindowDims,
-                              poolPads,
-                              poolStrides,
-                              poolMode,
-                              cudnn);
-      dnn.add(layer);
-    }
+    Layer *encode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5, comm,
+                                                        250,
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(encode3);
+    
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(6, comm);
+    dnn.add(relu3);
 
-    // First fully connected layer
-    {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
-                                                                         comm,
-                                                                         128,
-                                                                         weight_initialization::glorot_uniform,
-                                                                         optimizer_fac->create_optimizer());
-      dnn.add(fc);
-      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(6,
-                                                                comm,
-                                                                NULL);
-      dnn.add(relu);
-      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(7,
-                                                                 comm,
-                                                                 0.5);
-      dnn.add(dropout1);
-    }
+    /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(9,
+                                               comm, trainParams.MBSize,
+                                               trainParams.DropOut);
+    dnn.add(dropout3);*/
 
-    // Second fully connected layer
-    {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
-                                                                         comm,
-                                                                         10,
-                                                                         weight_initialization::glorot_uniform,
-                                                                         optimizer_fac->create_optimizer(),
-                                                                         false);
-      dnn.add(fc);
-    }
+    Layer *encode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(7, comm,
+                                                        30, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(encode4);
+    //decoder
+    Layer *decode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8, comm,
+                                                        250, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(decode4);
+    
+    Layer *relu4 = new relu_layer<data_layout::MODEL_PARALLEL>(9, comm);
+    dnn.add(relu4);
 
-    // Softmax layer
-    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
-      9,
-      comm
-    );
-    dnn.add(sl);
 
-    // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
-    dnn.add(target_layer);
+   
+    Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(10, comm,
+                                                        500, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(decode3);
+    
+    Layer *relu5 = new relu_layer<data_layout::MODEL_PARALLEL>(11, comm);
+    dnn.add(relu5);
 
+
+    Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(12, comm,
+                                                        1000, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(decode2);
+    
+    Layer *relu6 = new relu_layer<data_layout::MODEL_PARALLEL>(13, comm);
+    dnn.add(relu6);
+
+
+    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(14, comm,
+                                                        784, 
+                                                        weight_initialization::glorot_uniform,
+                                                        optimizer_fac->create_optimizer());
+    dnn.add(decode1);
+    
+    Layer *sigmoid1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(15, comm);
+    dnn.add(sigmoid1);
+
+
+    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(16, comm, 
+                                                          input_layer);
+    dnn.add(rcl);
+
+    
     lbann_callback_print print_cb;
     dnn.add_callback(&print_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
@@ -339,18 +312,22 @@ int main(int argc, char *argv[]) {
         trainParams.DumpDir);
       dnn.add_callback(dump_gradients_cb);
     }
-    // lbann_callback_io io_cb({0,3});
-    // dnn.add_callback(&io_cb);
-    //lbann_callback_io io_cb({0,3});
-    //        dnn.add_callback(&io_cb);
-    //lbann_callback_debug debug_cb(execution_mode::testing);
-    //        dnn.add_callback(&debug_cb);
 
     if (comm->am_world_master()) {
       std::cout << "Parameter settings:" << std::endl;
       std::cout << "\tMini-batch size: " << trainParams.MBSize << std::endl;
       std::cout << "\tLearning rate: " << trainParams.LearnRate << std::endl << std::endl;
       std::cout << "\tEpoch count: " << trainParams.EpochCount << std::endl;
+    }
+
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
+      std::vector<Layer *>& layers = dnn.get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -371,7 +348,7 @@ int main(int argc, char *argv[]) {
 
     // train/test
     while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, 1);
+      dnn.train(1, true);
       // testing
       dnn.evaluate(execution_mode::testing);
     }

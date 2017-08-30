@@ -21,6 +21,7 @@ data_reader {
       horizontal_shift: 0
       vertical_shift: 0
       shear_range: 0
+      noise_factor: 0
     }
   }
   reader {

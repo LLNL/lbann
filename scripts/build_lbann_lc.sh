@@ -30,6 +30,11 @@ else
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+    if [ "${CLUSTER}" == "quartz" ]; then
+        IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
+    else
+        IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
+    fi
 elif [ "${ARCH}" == "ppc64le" ]; then
     cuDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
@@ -55,8 +60,8 @@ WITH_FULLY_CONNECTED_CUDA=OFF
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
-#LIBJPEG_TURBO_DIR="/p/lscratche/brainusr/libjpeg-turbo"
-#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo"
+#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo-1.5.2"
+#LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -583,6 +588,7 @@ cmake \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
 -D WITH_FULLY_CONNECTED_CUDA=${WITH_FULLY_CONNECTED_CUDA} \
+-D IPPROOT=${IPPROOT} \
 ${ROOT_DIR}
 EOF
 )

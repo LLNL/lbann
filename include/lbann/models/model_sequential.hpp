@@ -51,7 +51,7 @@ class sequential_model : public model {
   sequential_model& operator=(const sequential_model& other);
 
   /// Destructor
-  ~sequential_model();
+  virtual ~sequential_model();
 
   /// Save model to file
   /** @todo This is old and likely broken */

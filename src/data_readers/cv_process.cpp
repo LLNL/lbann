@@ -42,9 +42,9 @@ namespace lbann {
  */
 cv_process::cv_process(const cv_process& rhs)
   : m_flip(rhs.m_flip), m_split(rhs.m_split),
-    m_normalizer((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL),
-    m_augmenter((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL),
-    m_transform1((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL),
+    m_normalizer((!!rhs.m_normalizer) ? (rhs.m_normalizer->clone()) : NULL),
+    m_augmenter((!!rhs.m_augmenter)   ? (rhs.m_augmenter->clone()) : NULL),
+    m_transform1((!!rhs.m_transform1) ? (rhs.m_transform1->clone()) : NULL),
     m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
     m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
 {}
@@ -70,6 +70,25 @@ cv_process& cv_process::operator=(const cv_process& rhs) {
   m_transform3.reset((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL);
 
   return (*this);
+}
+
+
+void cv_process::reset() {
+  if (m_normalizer) {
+    m_normalizer->reset();
+  }
+  if (m_augmenter) {
+    m_augmenter->reset();
+  }
+  if (m_transform1) {
+    m_transform1->reset();
+  }
+  if (m_transform2) {
+    m_transform2->reset();
+  }
+  if (m_transform3) {
+    m_transform3->reset();
+  }
 }
 
 

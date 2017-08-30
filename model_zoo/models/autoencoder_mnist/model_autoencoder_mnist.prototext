@@ -1,13 +1,17 @@
 model {
   name: "dnn"
   objective_function: "mean_squared_error"
+  metric {
+    categorical_accuracy {
+    }
+  }
   data_layout: "model_parallel"
-  mini_batch_size: 128
+  mini_batch_size: 10
   block_size: 256
   num_epochs: 10
-  num_parallel_readers: 1
-  procs_per_model: 12
-  use_cudnn: false
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: true
   num_gpus: -1
 
   ###################################################
@@ -18,17 +22,17 @@ model {
       interval: 1
     }
   }
-  callback {
-    timer {
-      dir: "none"
-    }
-  }
-  callback {
-    save_images {
-      image_dir: "images_"
-      extension: "pgm"
-    }
-  }
+#  callback {
+#    timer {
+#      dir: "none"
+#    }
+#  }
+#  callback {
+#    save_images {
+#      image_dir: "images_"
+#      extension: "pgm"
+#    }
+#  }
 
   ###################################################
   # start of layers
@@ -45,7 +49,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED encode1
   #################
   layer {
@@ -59,7 +62,6 @@ model {
     }
   }
 
-  ######
   # RELU relu1
   ######
   layer {
@@ -70,7 +72,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED encode2
   #################
   layer {
@@ -84,7 +85,6 @@ model {
     }
   }
 
-  #######
   # RELU relu2
   #######
   layer {
@@ -95,7 +95,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED encode3
   #################
   layer {
@@ -120,7 +119,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED encode4
   #################
   layer {
@@ -134,7 +132,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED decode4
   #################
   layer {
@@ -148,7 +145,6 @@ model {
     }
   }
 
-  #######
   # RELU 4
   #######
   layer {
@@ -159,7 +155,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED decode3
   #################
   layer {
@@ -174,7 +169,6 @@ model {
   }
 
 
-  #######
   # RELU relu5
   #######
   layer {
@@ -185,7 +179,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED decode2
   #################
   layer {
@@ -199,7 +192,6 @@ model {
     }
   }
 
-  #######
   # RELU relu6
   #######
   layer {
@@ -210,7 +202,6 @@ model {
     }
   }
 
-  #################
   # FULLY_CONNECTED decode1
   #################
   layer {

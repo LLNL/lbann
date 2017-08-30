@@ -38,30 +38,46 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       io_layer(comm, data_readers) {}
 
+  virtual ~input_layer() {
+    // Input layer always frees data readers.
+    if (m_training_dataset.m_data_reader != nullptr) {
+      delete m_training_dataset.m_data_reader;
+      m_training_dataset.m_data_reader = nullptr;
+    }
+    if (m_validation_dataset.m_data_reader != nullptr) {
+      delete m_validation_dataset.m_data_reader;
+      m_validation_dataset.m_data_reader = nullptr;
+    }
+    if (m_testing_dataset.m_data_reader != nullptr) {
+      delete m_testing_dataset.m_data_reader;
+      m_testing_dataset.m_data_reader = nullptr;
+    }
+  }
+
   // Input layers copy their datareaders.
   input_layer(const input_layer& other) : generic_data_distribution(other), io_layer(other) {
-    if (m_training_dataset.data_reader) {
-      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    if (m_training_dataset.m_data_reader) {
+      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
     }
-    if (m_validation_dataset.data_reader) {
-      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    if (m_validation_dataset.m_data_reader) {
+      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
     }
-    if (m_testing_dataset.data_reader) {
-      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    if (m_testing_dataset.m_data_reader) {
+      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
     }
   }
 
   input_layer& operator=(const input_layer& other) {
     generic_data_distribution::operator=(other);
     io_layer::operator=(other);
-    if (m_training_dataset.data_reader) {
-      m_training_dataset.data_reader = m_training_dataset.data_reader->copy();
+    if (m_training_dataset.m_data_reader) {
+      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
     }
-    if (m_validation_dataset.data_reader) {
-      m_validation_dataset.data_reader = m_validation_dataset.data_reader->copy();
+    if (m_validation_dataset.m_data_reader) {
+      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
     }
-    if (m_testing_dataset.data_reader) {
-      m_testing_dataset.data_reader = m_testing_dataset.data_reader->copy();
+    if (m_testing_dataset.m_data_reader) {
+      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
     }
     return *this;
   }
@@ -79,14 +95,15 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   void setup_data() {
     io_layer::setup_data();
 
-    if(m_training_dataset.data_reader != nullptr) {
-      m_training_dataset.data_reader->setup();
+    // in case that target_layer gets initialized beforehand
+    if(m_training_dataset.m_data_reader != nullptr) {
+      m_training_dataset.m_data_reader->setup();
     }
-    if(m_validation_dataset.data_reader != nullptr) {
-      m_validation_dataset.data_reader->setup();
+    if(m_validation_dataset.m_data_reader != nullptr) {
+      m_validation_dataset.m_data_reader->setup();
     }
-    if(m_testing_dataset.data_reader != nullptr) {
-      m_testing_dataset.data_reader->setup();
+    if(m_testing_dataset.m_data_reader != nullptr) {
+      m_testing_dataset.m_data_reader->setup();
     }
   }
 
@@ -118,9 +135,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    this->m_training_dataset.data_reader->saveToCheckpointShared(p, "data_reader_training");
-    this->m_validation_dataset.data_reader->saveToCheckpointShared(p, "data_reader_validation");
-    this->m_testing_dataset.data_reader->saveToCheckpointShared(p, "data_reader_testing");
+    this->m_training_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_training");
+    this->m_validation_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_validation");
+    this->m_testing_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_testing");
 
     // save our own state
     io_layer::saveToCheckpointShared(p);
@@ -131,9 +148,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   // reload state of IO from a checkpoint
   bool loadFromCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    this->m_training_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_training");
-    this->m_validation_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_validation");
-    this->m_testing_dataset.data_reader->loadFromCheckpointShared(p, "data_reader_testing");
+    this->m_training_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_training");
+    this->m_validation_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_validation");
+    this->m_testing_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_testing");
 
     // save our own state
     io_layer::loadFromCheckpointShared(p);

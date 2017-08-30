@@ -67,6 +67,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
                 std::endl;
     }
   }
+  hwloc_topology_destroy(topo);
 #ifdef _OPENMP
   // Initialize the default number of threads to use for parallel regions.
   // Note the num_threads directive can override this if specifically set.

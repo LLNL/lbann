@@ -191,7 +191,8 @@ bool generic_data_reader::update() {
   /// Maintain the current width of the matrix
   El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
 
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+  m_current_mini_batch_idx += m_iteration_stride;
+  if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
     if (m_current_pos < (int)m_shuffled_indices.size()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -206,11 +207,6 @@ bool generic_data_reader::update() {
     set_initial_position();
     return false;
   }else {
-    m_current_mini_batch_idx += m_iteration_stride;
-    if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
-      set_initial_position();
-      return false;
-    }
     return true;
   }
 }

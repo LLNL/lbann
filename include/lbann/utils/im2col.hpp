@@ -80,6 +80,33 @@ void col2im(const Mat& col,
             const int * window_dims,
             const int * window_strides);
 
+/// Rearrange matrix columns into image blocks
+/** This is approximately the inverse of im2col. The output tensor im
+ *  is produced from the input matrix col by shifting a window across
+ *  im. Each column of col is matched with the corresponding window
+ *  position and corresponding entries are reduced to im.
+ *  @param col              col matrix. Height should be equal to
+ *                          window size and width equal to number of
+ *                          window shifts. Data should be contiguous.
+ *  @param im               im tensor, represented as a column vector.
+ *  @param num_channels     Number of channels in im tensor.
+ *  @param im_num_dims      Number of dimensions in im tensor.
+ *  @param im_dims          im tensor dimensions.
+ *  @param im_pads          Zero pads for im tensor.
+ *  @param window_dims      Dimensions of window.
+ *  @param window_strides   Window shift strides.
+ *  @param reduction_op     Reduction operation.
+ */
+void col2im(const Mat& col,
+            Mat& im,
+            int num_channels,
+            int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            std::function<DataType(const DataType&,const DataType&)> reduction_op);
+
 /// Rearrange 2D image blocks into matrix columns
 /** This is an optimized implementation of im2col for 2D data. im2col
  *  will automatically call this routine if it detects 2D data.

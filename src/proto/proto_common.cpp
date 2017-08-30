@@ -126,7 +126,7 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
         int slice_pt = layers[h].slice_points[k];
         assert(the_layers.find(child_id) != the_layers.end());
         Layer * child = the_layers[child_id];
-        s->push_back_child(child, layers[h].slice_points[k]);
+        s->push_back_child(child, slice_pt);
       }
     } else if (name == "split") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
@@ -446,67 +446,17 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
-      bool has_vectors = ell.has_vectors();
       pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)the_layers[ell.pooling_layer()];
-
-      if (has_vectors) {
-
-        int i;
-        std::stringstream ss(ell.pool_dims());
-        vector<int> pool_dims;
-        while (ss >> i) {
-          pool_dims.push_back(i);
-        }
-
-        vector<int> pool_pads;
-        ss.clear();
-        ss.str(ell.pool_pads());
-        while (ss >> i) {
-          pool_pads.push_back(i);
-        }
-
-        vector<int> pool_strides;
-        ss.clear();
-        ss.str(ell.pool_strides());
-        while (ss >> i) {
-          pool_strides.push_back(i);
-        }
-        assert(the_layers.find(ell.pooling_layer()) != the_layers.end());
-        if (dl == data_layout::MODEL_PARALLEL) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
-              << "does not support MODEL_PARALLEL layouts";
-          throw lbann_exception(err.str());
-        } else {
-          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
-            comm,
-            ell.num_dims(),
-            &pool_dims[0],
-            &pool_pads[0],
-            &pool_strides[0],
-            get_pool_mode(ell.pool_mode()),
-            pl,
-            cudnn
-          );
-        }
+      if (dl == data_layout::MODEL_PARALLEL) {
+        err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+            << "does not support MODEL_PARALLEL layouts";
+        throw lbann_exception(err.str());
       } else {
-        if (dl == data_layout::MODEL_PARALLEL) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
-              << "does not support MODEL_PARALLEL layouts";
-          throw lbann_exception(err.str());
-        } else {
-          d = new unpooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
-            comm,
-            ell.num_dims(),
-            ell.pool_dims_i(),
-            ell.pool_pads_i(),
-            ell.pool_strides_i(),
-            get_pool_mode(ell.pool_mode()),
-            pl,
-            cudnn
-          );
-        }
+        d = new unpooling_layer<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          pl
+        );
       }
     }
 
@@ -1568,6 +1518,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->unit_variance( preprocessor.unit_variance() );
     reader->scale( preprocessor.scale() );
     reader->z_score( preprocessor.z_score() );
+    reader->add_noise( preprocessor.noise_factor() );
     if (preprocessor.disable_augmentation()) {
       reader->disable_augmentation();
     }
@@ -1657,6 +1608,8 @@ void read_prototext_file(string fn, lbann_data::LbannPB& pb)
     err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
     throw lbann_exception(err.str());
   }
+  input->Close();
+  delete input;
 }
 
 bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)

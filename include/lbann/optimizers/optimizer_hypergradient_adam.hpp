@@ -56,6 +56,20 @@ class hypergradient_adam : public optimizer {
   hypergradient_adam& operator=(const hypergradient_adam& other);
   /// Destructor
   ~hypergradient_adam();
+  
+  /// Returns the optimizer's name
+  std::string get_name() const  { return "hypergradient_adam"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const {
+    return std::string {} +
+     " hypergradient_adam; init_learning_rate: " + std::to_string(m_learning_rate)  
+     + " hyper_learning_rate: " + std::to_string(m_hyper_learning_rate)
+     + " beta1: " + std::to_string(m_beta1)
+     + " beta2: " + std::to_string(m_beta2)
+     + " eps: " + std::to_string(m_eps);
+  }
+
   hypergradient_adam* copy() const { return new hypergradient_adam(*this); }
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters);

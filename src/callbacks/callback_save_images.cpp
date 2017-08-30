@@ -80,7 +80,7 @@ void lbann_callback_save_images::save_image(model& m,
     CircMat output_circ = *output_col;
     delete output_col;
     if(m.get_comm()->am_world_master()) {
-      m_reader->save_image(input_circ.Matrix(), m_image_dir+"output_"+ std::to_string(index)+"."+m_extension);
+      m_reader->save_image(output_circ.Matrix(), m_image_dir+"output_"+ std::to_string(index)+"."+m_extension);
     }
   }
 

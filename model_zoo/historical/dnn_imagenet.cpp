@@ -177,12 +177,12 @@ int main(int argc, char *argv[]) {
       imagenet_validation_set->use_unused_index_set();
 
       if (comm->am_world_master()) {
-        size_t num_train = imagenet_trainset->getNumData();
-        size_t num_validate = imagenet_trainset->getNumData();
-        double validate_percent = num_validate / (num_train+num_validate)*100.0;
-        double train_percent = num_train / (num_train+num_validate)*100.0;
-        cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->getNumData() << " samples." << endl
-             << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->getNumData() << " samples." << endl;
+        size_t num_train = imagenet_trainset->get_num_data();
+        size_t num_validate = imagenet_validation_set->get_num_data();
+        double validate_percent = num_validate*100.0 / (num_train+num_validate);
+        double train_percent = num_train*100.0 / (num_train+num_validate);
+        cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->get_num_data() << " samples." << endl
+             << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->get_num_data() << " samples." << endl;
       }
 
       ///////////////////////////////////////////////////////////////////
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
       imagenet_testset->load();
 
       if (comm->am_world_master()) {
-        cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
+        cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
       imagenet_testset->scale(unit_scale);
@@ -244,12 +244,12 @@ int main(int argc, char *argv[]) {
       imagenet_validation_set->use_unused_index_set();
 
       if (comm->am_world_master()) {
-        size_t num_train = imagenet_trainset->getNumData();
-        size_t num_validate = imagenet_trainset->getNumData();
-        double validate_percent = num_validate / (num_train+num_validate)*100.0;
-        double train_percent = num_train / (num_train+num_validate)*100.0;
-        cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->getNumData() << " samples." << endl
-             << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->getNumData() << " samples." << endl;
+        size_t num_train = imagenet_trainset->get_num_data();
+        size_t num_validate = imagenet_validation_set->get_num_data();
+        double validate_percent = num_validate*100.0 / (num_train+num_validate);
+        double train_percent = num_train*100.0 / (num_train+num_validate);
+        cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset->get_num_data() << " samples." << endl
+             << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set->get_num_data() << " samples." << endl;
       }
 
       ///////////////////////////////////////////////////////////////////
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       imagenet_testset->load();
 
       if (comm->am_world_master()) {
-        cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->getNumData() << " samples." << endl;
+        cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
       imagenet_testset->scale(unit_scale);
@@ -301,11 +301,10 @@ int main(int argc, char *argv[]) {
     deep_neural_network *dnn = NULL;
     dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
-    // input_layer *input_layer = new input_layer_distributed_minibatch(data_layout::DATA_PARALLEL, comm, trainParams.MBSize, data_readers);
 #ifdef PARTITIONED
-    input_layer *input_layer = new input_layer_partitioned_minibatch<>(comm, trainParams.MBSize, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_partitioned_minibatch<>(comm, parallel_io, data_readers);
 #else
-    input_layer *input_layer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers);
+    Layer *input_layer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers);
 #endif
     dnn->add(input_layer);
 
@@ -317,7 +316,6 @@ int main(int argc, char *argv[]) {
         = new fully_connected_layer<DATA_LAYOUT>(
           lcnt++,
           comm,
-          trainParams.MBSize,
           netParams.Network[l],
           weight_initialization::glorot_uniform, 
           dnn->create_optimizer());
@@ -325,19 +323,19 @@ int main(int argc, char *argv[]) {
 
       Layer *act = NULL;
       if (trainParams.ActivationType == 1) { // sigmoid
-        act = new sigmoid_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+        act = new sigmoid_layer<DATA_LAYOUT>(lcnt++, comm);
       } else if (trainParams.ActivationType == 2) { // tanh
-        act = new tanh_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+        act = new tanh_layer<DATA_LAYOUT>(lcnt++, comm);
       } else if (trainParams.ActivationType == 3) { // reLU
-        act = new relu_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+        act = new relu_layer<DATA_LAYOUT>(lcnt++, comm);
       } else { // ID
-        act = new id_layer<DATA_LAYOUT>(lcnt++, comm, trainParams.MBSize);
+        act = new id_layer<DATA_LAYOUT>(lcnt++, comm);
       }
       dnn->add(act);
 
       Layer *reg = new dropout<DATA_LAYOUT>(lcnt++,
-                                                comm, trainParams.MBSize,
-                                                trainParams.DropOut);
+                                            comm,
+                                            trainParams.DropOut);
       dnn->add(reg);
     }
 
@@ -348,7 +346,6 @@ int main(int argc, char *argv[]) {
         = new fully_connected_layer<DATA_LAYOUT>(
           lcnt++,
           comm,
-          trainParams.MBSize,
           netParams.Network[NumLayers-1],
           weight_initialization::glorot_uniform, 
           dnn->create_optimizer(),
@@ -356,37 +353,33 @@ int main(int argc, char *argv[]) {
       dnn->add(fc);
       //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
       Layer *softmax 
-        = new softmax_layer<DATA_LAYOUT>(
-          lcnt++,
-          comm,
-          trainParams.MBSize,
-          dnn->create_optimizer());
+        = new softmax_layer<DATA_LAYOUT>(lcnt++, comm);
       dnn->add(softmax);
     }
 
     //target_layer *target_layer = new target_layer_distributed_minibatch(comm, trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch<>(comm, trainParams.MBSize, parallel_io, data_readers, true);
+    Layer *target_layer = new target_layer_partitioned_minibatch<>(comm, parallel_io, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, trainParams.MBSize, parallel_io, data_readers, true);
+    Layer *target_layer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers, true);
 #endif
     dnn->add(target_layer);
 
 
     lbann_summary summarizer(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
-    lbann_callback_print print_cb;
-    dnn->add_callback(&print_cb);
+    lbann_callback_print* print_cb = new lbann_callback_print;
+    dnn->add_callback(print_cb);
     // Record training time information.
-    lbann_callback_timer timer_cb(&summarizer);
-    dnn->add_callback(&timer_cb);
+    lbann_callback_timer* timer_cb = new lbann_callback_timer(&summarizer);
+    dnn->add_callback(timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary summary_cb(&summarizer, 25);
-    dnn->add_callback(&summary_cb);
-    // lbann_callback_io io_cb({0});
-    // dnn->add_callback(&io_cb);
-    lbann_callback_adaptive_learning_rate lrsched(4, 0.1f);
-    dnn->add_callback(&lrsched);
+    lbann_callback_summary* summary_cb = new lbann_callback_summary(&summarizer, 25);
+    dnn->add_callback(summary_cb);
+    // lbann_callback_io* io_cb = new lbann_callback_io({0});
+    // dnn->add_callback(io_cb);
+    lbann_callback_adaptive_learning_rate* lrsched = new lbann_callback_adaptive_learning_rate(4, 0.1f);
+    dnn->add_callback(lrsched);
 
     dnn->setup();
 
@@ -418,6 +411,15 @@ int main(int argc, char *argv[]) {
 
     mpi::Barrier(grid.Comm());
 
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
+      std::vector<Layer *>& layers = dnn->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
+    }
 
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
@@ -442,7 +444,7 @@ int main(int argc, char *argv[]) {
       // training epoch loop
       //************************************************************************
 
-      dnn->train(1, true);
+      dnn->train(1, 1);
 
       dnn->evaluate(execution_mode::testing);
     }

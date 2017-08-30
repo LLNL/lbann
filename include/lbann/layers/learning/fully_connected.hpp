@@ -140,9 +140,9 @@ class fully_connected_layer : public learning {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() {
+  std::string get_description() const {
     return std::string {} +
-     "fully_connected; index: " +  std::to_string(this->m_index) + " num_neurons: " 
+      std::to_string(this->m_index)  + " fully_connected; num_neurons: " 
      + std::to_string(this->m_num_neurons)
      + " weight_init: " + get_weight_initialization_name(this->m_weight_initialization)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor);

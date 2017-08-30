@@ -33,27 +33,20 @@ else()
   # whether to link with prebuilt libjpeg-turbo
   if(WITH_LIBJPEG_TURBO)
     if ("${LIBJPEG_TURBO_DIR}" STREQUAL "")
-      #set(WITH_LIBJPEG_TURBO OFF)
       include(jpeg-turbo)
       set(BUILD_JPEG_TURBO ON)
       message(STATUS "Building libjpeg-turbo")
       set(LIBJPEG_TURBO_DIR                ${CMAKE_INSTALL_PREFIX})
-      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
-      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
-      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
-      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
-      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
-      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
     else()
       set(BUILD_JPEG_TURBO OFF)
       message(STATUS "Using libjpeg-turbo installed under ${LIBJPEG_TURBO_DIR}")
-      set(OPENCV_JPEG_INCLUDE_DIR          "${LIBJPEG_TURBO_DIR}/include")
-      set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
-      set(CMAKE_LIBRARY_PATH               ${LIBJPEG_TURBO_DIR} ${CMAKE_LIBRARY_PATH})
-      set(CMAKE_INCLUDE_PATH               ${OPENCV_JPEG_INCLUDE_DIR} ${CMAKE_INCLUDE_PATH})
-      set(OPENCV_LIBJPEG_TURBO_INC         "-D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}")
-      set(OPENCV_LIBJPEG_TURBO_LIB         "-D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}")
     endif()
+    set(OPENCV_JPEG_INCLUDE_DIR          ${LIBJPEG_TURBO_DIR}/include)
+    set(OPENCV_JPEG_LIBRARY              ${LIBJPEG_TURBO_DIR}/lib/libjpeg.so)
+    set(CMAKE_LIBRARY_PATH               "${LIBJPEG_TURBO_DIR}/lib;${CMAKE_LIBRARY_PATH}")
+    set(CMAKE_INCLUDE_PATH               "${OPENCV_JPEG_INCLUDE_DIR};${CMAKE_INCLUDE_PATH}")
+  else()
+    set(BUILD_JPEG_TURBO OFF)
   endif()
 
   # ============================
@@ -61,7 +54,7 @@ else()
   # ============================
 
   # OpenCV modules
-  option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                                         OFF) # 3.3.0
+  #option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                                         OFF) # 3.3.0
 
   # Optional 3rd party components
   option(OPENCV_WITH_1394           "OpenCV: Include IEEE1394 support"                                                    OFF) # both
@@ -81,7 +74,7 @@ else()
   option(OPENCV_WITH_GSTREAMER_0_10 "OpenCV: Enable Gstreamer 0.10 support (instead of 1.x)"                              OFF) # both
   option(OPENCV_WITH_GTK            "OpenCV: Include GTK support"                                                         OFF) # both
   option(OPENCV_WITH_GTK_2_X        "OpenCV: Use GTK version 2"                                                           OFF) # 3.3.0
-  option(OPENCV_WITH_IPP            "OpenCV: Include Intel IPP support"                                                   OFF) # Causes a hash mismatch error when downloading # both
+  option(OPENCV_WITH_IPP            "OpenCV: Include Intel IPP support"                                                   ON) # Causes a hash mismatch error when downloading # both
   option(OPENCV_WITH_HALIDE         "OpenCV: Include Halide support"                                                      OFF) # 3.3.0
   option(OPENCV_WITH_JASPER         "OpenCV: Include JPEG2K support"                                                      OFF) # both
   option(OPENCV_WITH_JPEG           "OpenCV: Include JPEG support"                                                        ON) # both
@@ -157,7 +150,7 @@ else()
   option(OPENCV_BUILD_PNG              "OpenCV: Build libpng from source"                                           ON) # both
   option(OPENCV_BUILD_OPENEXR          "OpenCV: Build openexr from source"                                          OFF) # both
   option(OPENCV_BUILD_TBB              "OpenCV: Download and build TBB from source"                                 OFF) # both
-  option(OPENCV_BUILD_IPP_IW           "OpenCV: Build IPP IW from source"                                           ON) # 3.3.0
+  option(OPENCV_BUILD_IPP_IW           "OpenCV: Build IPP IW from source"                                           OFF) # 3.3.0
   option(OPENCV_BUILD_ITT              "OpenCV: Build Intel ITT from source"                                        ON) # 3.3.0
 
   # OpenCV installation options
@@ -243,6 +236,7 @@ else()
       -D WITH_GSTREAMER_0_10=${OPENCV_WITH_GSTREAMER_0_10}
       -D WITH_GTK=${OPENCV_WITH_GTK}
       -D WITH_GTK_2_X=${OPENCV_WITH_GTK_2_X}
+      -D IPPROOT=${IPPROOT}
       -D WITH_IPP=${OPENCV_WITH_IPP}
       -D WITH_HALIDE=${OPENCV_WITH_HALIDE}
       -D WITH_JASPER=${OPENCV_WITH_JASPER}
@@ -342,8 +336,6 @@ else()
       -D CV_TRACE=${OPENCV_CV_TRACE}
       -D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}
       -D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}
-      ${OPENCV_LIBJPEG_TURBO_INC}
-      ${OPENCV_LIBJPEG_TURBO_LIB}
   )
 
   if(BUILD_JPEG_TURBO)

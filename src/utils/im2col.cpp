@@ -133,8 +133,30 @@ void col2im(const Mat& col,
               im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
               window_dims[1], window_dims[0],
               window_strides[1], window_strides[0]);
-    return;
   }
+  else {
+    col2im(col, im, num_channels, im_num_dims,
+           im_dims, im_pads, window_dims, window_strides,
+           std::plus<DataType>());
+  }
+
+}
+
+void col2im(const Mat& col,
+            Mat& im,
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            std::function<DataType(const DataType&,const DataType&)> reduction_op) {
+
+  // Input and output parameters
+  const int col_height = col.Height();
+  const int im_size = im.Height() * im.Width();
+  const DataType *__restrict__ col_buffer = col.LockedBuffer();
+  DataType *__restrict__ im_buffer = im.Buffer();
 
   // im2col parameters
   std::vector<int> offset_start(im_num_dims);
@@ -168,6 +190,7 @@ void col2im(const Mat& col,
 
     // Initialize im matrix entry
     DataType im_entry = 0;
+    bool im_entry_initialized = false;
 
     // Get window offsets containing im matrix entry
     for(int d = 0; d < im_num_dims; ++d) {
@@ -192,7 +215,11 @@ void col2im(const Mat& col,
       const int col_index = col_row + col_col * col_height;
 
       // Add col matrix entry to im matrix entry
-      im_entry += col_buffer[col_index];
+      const DataType col_entry = col_buffer[col_index];
+      im_entry = (im_entry_initialized ?
+                  reduction_op(im_entry, col_entry) :
+                  col_entry);
+      im_entry_initialized = true;
 
       // Move to next window offset
       ++offset[im_num_dims-1];
