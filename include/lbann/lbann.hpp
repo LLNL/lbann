@@ -119,8 +119,8 @@
 #include "lbann/optimizers/optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
-#include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
-#include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
+#include "lbann/objective_functions/cross_entropy.hpp"
+#include "lbann/objective_functions/mean_squared_error.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

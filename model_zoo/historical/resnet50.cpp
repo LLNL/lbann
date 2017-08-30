@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     dnn = new deep_neural_network(
       trainParams.MBSize,
       comm,
-      new objective_functions::categorical_cross_entropy(comm),
+      new objective_functions::cross_entropy(),
       optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {
       std::make_pair(execution_mode::training,&imagenet_trainset),

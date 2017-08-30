@@ -33,7 +33,7 @@ namespace lbann {
 
 greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
                                                            lbann_comm *comm,
-                                                           objective_functions::objective_fn *obj_fn,
+                                                           objective_functions::objective_function *obj_fn,
                                                            optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_phase_end(2), m_start_index(0), m_end_index(0), m_have_mirror(0) {}
@@ -225,11 +225,12 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_fr
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
+    m_obj_fn->reset_statistics();
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
-    bool finished_epoch;
-    do {
+    bool finished_epoch = false;
+    while (!finished_epoch) {
       finished_epoch = train_mini_batch();
 
       // save a checkpoint if needed
@@ -248,10 +249,6 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_fr
 
     do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
 
-    for (Layer *layer : m_layers) {
-      layer->epoch_reset();
-    } // train epoch end, this reset cost
-
     evaluate_phase(execution_mode::validation);
 
     //print validation reconstruction cost
@@ -259,11 +256,6 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_fr
       std::cout << "Layer-wise validation ";
     }
     m_layers[m_end_index]->epoch_print();
-
-    //Reset cost again
-    for (Layer *layer : m_layers) {
-      layer->epoch_reset();
-    } // validation epoch
 
     // Reset execution mode back to training
     m_execution_mode = execution_mode::training;
@@ -329,6 +321,7 @@ void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
+  m_obj_fn->reset_statistics();
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
@@ -377,10 +370,6 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
     std::cout << "Global (rel. to all (in + hidden) layers) testing ";
   }
   m_layers[m_end_index]->epoch_print();
-
-  for (Layer *layer : m_layers) {
-    layer->epoch_reset();
-  }
 
   //@todo: finetune only up to the true layers skipping the reconstruction layers
   //m_layers.resize(m_layers.size()-m_reconstruction_layers.size());

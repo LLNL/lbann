@@ -113,8 +113,10 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     Copy(Ys, *this->m_activations);
 
     /// Compute and record the objective function score
-    DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations, *this->m_activations_v);
-    this->m_neural_network_model->m_obj_fn->record_obj_fn(this->m_execution_mode, avg_error);
+    objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
+    obj_fn->compute_value(*this->m_prev_activations,
+                          *this->m_activations_v);
+    obj_fn->record_and_reset_value();
 
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
@@ -128,10 +130,9 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   void bp_compute() {
 
     // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(*m_prev_layer,
-                                                                      *this->m_prev_activations,
-                                                                      *this->m_activations_v,
-                                                                      *this->m_error_signal_v);
+    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
+                                                             *this->m_activations_v,
+                                                             *this->m_error_signal_v);
 
   }
 

@@ -23,40 +23,25 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
+// lbann_callback_gradient_check .hpp .cpp - Callback hooks for gradient check
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_early_stopping.hpp"
+#include "lbann/callbacks/callback_gradient_check.hpp"
 
 namespace lbann {
 
-lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  lbann_callback(), m_patience(patience) {}
+lbann_callback_gradient_check::lbann_callback_gradient_check() {}
 
-/// Monitor the objective function to see if the validation score
-/// continues to improve
-void lbann_callback_early_stopping::on_validation_end(model *m) {
-  double score = m->m_obj_fn->get_mean_value();
-  if (score < m_last_score) {
-    if (m->get_comm()->am_model_master()) {
-      std::cout << "Model " << m->get_comm()->get_model_rank() <<
-        " early stopping: score is improving " << m_last_score << " >> " <<
-        score << std::endl;
-    }
-    m_last_score = score;
-    m_wait = 0;
-  } else {
-    if (m_wait >= m_patience) {
-      m->set_terminate_training(true);
-      if (m->get_comm()->am_model_master()) {
-        std::cout << "Model " << m->get_comm()->get_model_rank() <<
-          " terminating training due to early stopping: " << score <<
-          " score and " << m_last_score << " last score" << std::endl;
-      }
-    } else {
-      ++m_wait;
-    }
-  }
+lbann_callback_gradient_check::~lbann_callback_gradient_check() {}
+
+void lbann_callback_gradient_check::on_train_end(model *m) {
+
+  std::vector<Layer*>& layers = m->get_layers();
+
+  
+
+}
+
 }
 
 }  // namespace lbann

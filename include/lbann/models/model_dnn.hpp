@@ -41,7 +41,7 @@ class deep_neural_network : public sequential_model {
   /// Constructor
   deep_neural_network(int mini_batch_size,
                       lbann_comm *comm,
-                      objective_functions::objective_fn *obj_fn,
+                      objective_functions::objective_function *obj_fn,
                       optimizer_factory *_optimizer_fac);
   deep_neural_network(const deep_neural_network&) = default;
   deep_neural_network& operator=(const deep_neural_network&) = default;

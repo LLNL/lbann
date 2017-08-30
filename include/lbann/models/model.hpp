@@ -35,7 +35,7 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/objective_functions/objective_fn.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
@@ -52,7 +52,7 @@ class lbann_callback;
 class model {
  public:
   model(lbann_comm *comm, int mini_batch_size,
-        objective_functions::objective_fn *obj_fn,
+        objective_functions::objective_function *obj_fn,
         optimizer_factory *optimizer_fac);
   model(const model& other);
   model& operator=(const model& other);
@@ -202,7 +202,7 @@ class model {
    * training and can be used to adapt training via either early termination or
    * adaptive learning rates.
    */
-  objective_functions::objective_fn *m_obj_fn;
+  objective_functions::objective_function *m_obj_fn;
 
  protected:
   /** The model's current execution mode. */

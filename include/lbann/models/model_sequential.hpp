@@ -45,7 +45,7 @@ class sequential_model : public model {
   /// Constructor
   sequential_model(int mini_batch_size,
                    lbann_comm *comm,
-                   objective_functions::objective_fn *obj_fn,
+                   objective_functions::objective_function *obj_fn,
                    optimizer_factory *optimizer_fac);
   sequential_model(const sequential_model& other);
   sequential_model& operator=(const sequential_model& other);

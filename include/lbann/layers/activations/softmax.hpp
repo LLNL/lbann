@@ -36,7 +36,6 @@
 #include "lbann/models/model.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
-#include "lbann/objective_functions/objective_fn_categorical_cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
 #include <typeinfo>
@@ -189,21 +188,6 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
 // categorical_cross_entropy.
 template <data_layout T_layout>
 void softmax_layer<T_layout>::bp_compute() {
-  // Stop early if objective function is categorical cross entropy
-  // Note: error signal is already computed in objective function object
-  const std::type_info& obj_fn_type = typeid(*(this->m_neural_network_model->m_obj_fn));
-  const std::type_info& next_layer_type = typeid(*m_next_layer);
-  if (std::type_index(obj_fn_type) ==
-      std::type_index(typeid(objective_functions::categorical_cross_entropy))
-      && (std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>))
-          || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>))
-          || std::type_index(next_layer_type) ==
-          std::type_index(typeid(target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>)))) {
-    El::View(*this->m_error_signal_v, *this->m_prev_error_signal);
-    return;
-  }
 
   // Get local matrices and parameters
   const Mat& activations_local = this->m_activations_v->LockedMatrix();
@@ -218,7 +202,7 @@ void softmax_layer<T_layout>::bp_compute() {
     workspace_local(El::Int(0), c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
                                              activations_local(El::ALL,El::IR(c)));
   }
-  AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+  El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
   // Update error signal
   // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)

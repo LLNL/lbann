@@ -1,7 +1,7 @@
 
 model {
   name: "dnn"
-  objective_function: "categorical_cross_entropy"
+  objective_function: "cross_entropy"
   metric {
     categorical_accuracy {
     }

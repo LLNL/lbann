@@ -40,7 +40,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Constructor
   greedy_layerwise_autoencoder(int mini_batch_size,
                                lbann_comm *comm,
-                               objective_functions::objective_fn *obj_fn,
+                               objective_functions::objective_function *obj_fn,
                                optimizer_factory *_optimizer_fac);
   // Not yet supported.
   greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&) = delete;

@@ -73,11 +73,6 @@ class Layer {
    * printing if needed.
    */
   virtual void epoch_print() const {}
-  /**
-   * Called on every layer at the end of each epoch to give it the chance to
-   * reset/clean up.
-   */
-  virtual void epoch_reset() {}
   virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
     return 0.0;
   };

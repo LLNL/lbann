@@ -1346,19 +1346,19 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();
-  const string objective_function = m.objective_function();
+  const string obj_fn_name = m.objective_function();
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
-  objective_functions::objective_fn *obj;
-  if (objective_function == "categorical_cross_entropy") {
-    obj = new objective_functions::categorical_cross_entropy(comm);
-  } else if (objective_function == "mean_squared_error") {
-    obj = new objective_functions::mean_squared_error(comm);
+  objective_functions::objective_function *obj;
+  if (obj_fn_name == "cross_entropy") {
+    obj = new objective_functions::cross_entropy();
+  } else if (obj_fn_name == "mean_squared_error") {
+    obj = new objective_functions::mean_squared_error();
   } else {
     err << __FILE__ << " " << __LINE__
         << " :: init_model() - unknown objective function name: " << name << endl
-        << "; should be one of: categorical_cross_entropy, mean_squared_error";
+        << "; should be one of: cross_entropy, mean_squared_error";
     throw lbann_exception(err.str());
   }
 

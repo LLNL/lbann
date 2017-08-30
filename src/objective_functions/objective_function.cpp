@@ -22,41 +22,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_early_stopping.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 namespace lbann {
 
-lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  lbann_callback(), m_patience(patience) {}
+namespace objective_functions {
 
-/// Monitor the objective function to see if the validation score
-/// continues to improve
-void lbann_callback_early_stopping::on_validation_end(model *m) {
-  double score = m->m_obj_fn->get_mean_value();
-  if (score < m_last_score) {
-    if (m->get_comm()->am_model_master()) {
-      std::cout << "Model " << m->get_comm()->get_model_rank() <<
-        " early stopping: score is improving " << m_last_score << " >> " <<
-        score << std::endl;
-    }
-    m_last_score = score;
-    m_wait = 0;
-  } else {
-    if (m_wait >= m_patience) {
-      m->set_terminate_training(true);
-      if (m->get_comm()->am_model_master()) {
-        std::cout << "Model " << m->get_comm()->get_model_rank() <<
-          " terminating training due to early stopping: " << score <<
-          " score and " << m_last_score << " last score" << std::endl;
-      }
-    } else {
-      ++m_wait;
-    }
+objective_function::objective_function() {
+  reset_statistics();
+}
+
+void objective_function::add_to_value(double value) {
+  m_value += value;
+}
+
+void objective_function::record_and_reset_value() {
+  m_recorded_values += m_value;
+  m_recorded_iterations++;
+  m_value = 0.0;
+}
+
+double objective_function::get_value() const {
+  return m_value;
+}
+
+double objective_function::get_mean_value() const {
+  if(m_recorded_iterations != 0) {
+    return m_recorded_values / m_recorded_iterations;
+  }
+  else {
+    return std::nan("");
   }
 }
+
+void objective_function::reset_statistics() {
+  m_value = 0.0;
+  m_recorded_values = 0.0;
+  m_recorded_iterations = 0;
+}
+
+}  // namespace objective_functions
 
 }  // namespace lbann
