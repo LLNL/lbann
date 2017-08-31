@@ -898,9 +898,6 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       }
-      the_layers[layer.index()] = d;
-      layer_mapping[layer.index()] = model->get_layers().size();
-      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
