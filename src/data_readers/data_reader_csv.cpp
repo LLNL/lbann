@@ -36,6 +36,49 @@ csv_reader::csv_reader(int batch_size, int label_col,
                        bool shuffle)
   : generic_data_reader(batch_size, shuffle), m_label_col(label_col) {}
 
+csv_reader::csv_reader(const csv_reader& other) :
+  generic_data_reader(other),
+  m_separator(other.m_separator),
+  m_skip_cols(other.m_skip_cols),
+  m_skip_rows(other.m_skip_rows),
+  m_has_header(other.m_has_header),
+  m_label_col(other.m_label_col),
+  m_num_cols(other.m_num_cols),
+  m_num_samples(other.m_num_samples),
+  m_num_labels(other.m_num_labels),
+  m_index(other.m_index),
+  m_labels(other.m_labels),
+  m_col_transforms(other.m_col_transforms),
+  m_label_transform(other.m_label_transform) {
+  if (!other.m_ifstreams.empty()) {
+    // Need to set these up again manually.
+    setup_ifstreams();
+  }
+}
+
+csv_reader& csv_reader::operator=(const csv_reader& other) {
+  generic_data_reader::operator=(other);
+  m_separator = other.m_separator;
+  m_skip_cols = other.m_skip_cols;
+  m_skip_rows = other.m_skip_rows;
+  m_has_header = other.m_has_header;
+  m_label_col = other.m_label_col;
+  m_num_cols = other.m_num_cols;
+  m_num_samples = other.m_num_samples;
+  m_num_labels = other.m_num_labels;
+  m_index = other.m_index;
+  m_labels = other.m_labels;
+  m_col_transforms = other.m_col_transforms;
+  m_label_transform = other.m_label_transform;
+  if (!other.m_ifstreams.empty()) {
+    // Possibly free our current ifstreams, set them up again.
+    for (std::ifstream* ifs : m_ifstreams) {
+      delete ifs;
+    }
+    setup_ifstreams();
+  }
+}
+
 csv_reader::~csv_reader() {
   for (auto&& ifs : m_ifstreams) {
     delete ifs;
@@ -43,16 +86,7 @@ csv_reader::~csv_reader() {
 }
 
 void csv_reader::load() {
-  // Set up the ifstreams.
-  m_ifstreams.resize(omp_get_max_threads());
-  for (int i = 0; i < omp_get_max_threads(); ++i) {
-    m_ifstreams[i] = new std::ifstream(
-      get_data_filename(), std::ios::in | std::ios::binary);
-    if (m_ifstreams[i]->fail()) {
-      throw lbann_exception(
-        "csv_reader: failed to open " + get_data_filename());
-    }
-  }
+  setup_ifstreams();
   std::ifstream& ifs = *m_ifstreams[0];
   // TODO: Only one (or a subset) of ranks should read this, then distribute
   // the results to avoid every rank reading the same file.
@@ -254,6 +288,18 @@ void csv_reader::skip_rows(std::ifstream& s, int rows) {
   for (int i = 0; i < rows; ++i) {
     if (!std::getline(s, unused)) {
       throw lbann_exception("csv_reader: error on skipping rows");
+    }
+  }
+}
+
+void csv_reader::setup_ifstreams() {
+  m_ifstreams.resize(omp_get_max_threads());
+  for (int i = 0; i < omp_get_max_threads(); ++i) {
+    m_ifstreams[i] = new std::ifstream(
+      get_data_filename(), std::ios::in | std::ios::binary);
+    if (m_ifstreams[i]->fail()) {
+      throw lbann_exception(
+        "csv_reader: failed to open " + get_data_filename());
     }
   }
 }
