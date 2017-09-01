@@ -435,19 +435,10 @@ int main(int argc, char *argv[]) {
     //int trainStart; // index into indices we should start at
 
     //************************************************************************
-    // mainloop for train/validate
+    // training and validating
     //************************************************************************
-    for (int epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
-      decayIterations = 1;
-
-      //************************************************************************
-      // training epoch loop
-      //************************************************************************
-
-      dnn->train(1, 1);
-
-      dnn->evaluate(execution_mode::testing);
-    }
+    dnn->train(trainParams.EpochCount);
+    dnn->evaluate(execution_mode::testing);
 
     delete dnn;
   } catch (lbann_exception& e) {

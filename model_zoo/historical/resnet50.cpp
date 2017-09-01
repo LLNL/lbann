@@ -666,12 +666,10 @@ int main(int argc, char *argv[]) {
     }
 
     //************************************************************************
-    // mainloop for train/validate
+    // train and validate
     //************************************************************************
-    for (int epoch = 0; epoch < trainParams.EpochCount; epoch++) {
-      dnn->train(1, true);
-      dnn->evaluate(execution_mode::testing);
-    }
+    dnn->train(trainParams.EpochCount);
+    dnn->evaluate(execution_mode::testing);
 
     delete dnn;
   } catch (lbann_exception& e) {

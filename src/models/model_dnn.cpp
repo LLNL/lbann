@@ -64,7 +64,7 @@ void deep_neural_network::summarize_matrices(lbann_summary& summarizer) {
   }
 }
 
-void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
+void deep_neural_network::train(int num_epochs) {
   do_train_begin_cbs();
 
   // Epoch main loop
@@ -84,7 +84,7 @@ void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
 
     // Set the execution mode to training
     m_execution_mode = execution_mode::training;
-    for (size_t l = 0u; l < m_layers.size(); ++l) {
+    for (size_t l = 0; l < m_layers.size(); ++l) {
       m_layers[l]->set_execution_mode(execution_mode::training);
     }
 
@@ -104,20 +104,12 @@ void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
       }
     }
 
-    if (evaluation_frequency > 0
-        && (epoch + 1) % evaluation_frequency == 0
-        && is_execution_mode_valid(execution_mode::validation)) {
+    if (is_execution_mode_valid(execution_mode::validation)) {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();
       evaluate(execution_mode::validation);
       // do_validation_end_cbs();
-
-      // Set execution mode back to training
-      m_execution_mode = execution_mode::training;
-      for (size_t l = 0; l < m_layers.size(); l++) {
-        m_layers[l]->set_execution_mode(execution_mode::training);
-      }
     }
 
     do_epoch_end_cbs();

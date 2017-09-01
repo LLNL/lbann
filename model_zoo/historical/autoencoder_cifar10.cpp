@@ -293,11 +293,10 @@ int main(int argc, char *argv[]) {
     dnn.restartShared();
 
     // train/test
-    while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, true);
-      // testing
-      dnn.evaluate(execution_mode::testing);
-    }
+    dnn.train(trainParams.EpochCount);
+    
+    // testing
+    dnn.evaluate(execution_mode::testing);
 
     // Free dynamically allocated memory
     // delete target_layer;  // Causes segfault

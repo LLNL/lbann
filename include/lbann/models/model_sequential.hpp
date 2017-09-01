@@ -105,11 +105,7 @@ class sequential_model : public model {
   virtual void setup(int start_index=0, int end_index=0);
 
   /// Train model
-  /** @param num_epochs Number of epochs to train
-   *  @param evaluation_frequency How often to evaluate model on
-   *  validation set. A value less than 1 will disable evaluation.
-   */
-  virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
+  virtual void train(int num_epochs) = 0;
   /// Training step on one mini-batch
   virtual bool train_mini_batch() = 0;
 

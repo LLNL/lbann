@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
       }
     }
     ///////////////////////////////////////////////////////////////////
-    // main loop for training/testing
+    // training and testing
     ///////////////////////////////////////////////////////////////////
 
     // Initialize the model's data structures
@@ -375,12 +375,11 @@ int main(int argc, char *argv[]) {
     // restart model from checkpoint if we have one
     dnn.restartShared();
 
-    // train/test
-    while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, 1);
-      // testing
-      dnn.evaluate(execution_mode::testing);
-    }
+    // train
+    dnn.train(trainParams.EpochCount);
+    
+    // testing
+    dnn.evaluate(execution_mode::testing);
 
     // Free dynamically allocated memory
     // delete target_layer;  // Causes segfault

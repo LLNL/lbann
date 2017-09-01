@@ -176,10 +176,10 @@ void greedy_layerwise_autoencoder::set_end_index() {
 }
 
 
-void greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequency) {
+void greedy_layerwise_autoencoder::train(int num_epochs) {
   while(m_end_index < m_layers.size()-1) {
     set_end_index();
-    train_phase(num_epochs, evaluation_frequency);
+    train_phase(num_epochs);
     m_start_index = m_end_index; 
     m_reconstruction_layers.insert(m_reconstruction_layers.begin(),m_layers[m_end_index]);
     // move on to the next (layerwise) phase
@@ -191,7 +191,7 @@ void greedy_layerwise_autoencoder::train(int num_epochs, int evaluation_frequenc
 }
 
 //@todo: rename to train layer wise
-void greedy_layerwise_autoencoder::train_phase(int num_epochs, int evaluation_frequency) {
+void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
   do_train_begin_cbs();
 
   // Epoch main loop
