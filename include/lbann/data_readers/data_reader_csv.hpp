@@ -49,8 +49,8 @@ class csv_reader : public generic_data_reader {
    * skipped.
    */
   csv_reader(int batch_size, int label_col = -1, bool shuffle = true);
-  csv_reader(const csv_reader&) = default;
-  csv_reader& operator=(const csv_reader&) = default;
+  csv_reader(const csv_reader&);
+  csv_reader& operator=(const csv_reader&);
   ~csv_reader();
 
   csv_reader* copy() const { return new csv_reader(*this); }
@@ -127,6 +127,9 @@ class csv_reader : public generic_data_reader {
 
   /// Skip rows in an ifstream.
   void skip_rows(std::ifstream& s, int rows);
+
+  /// Initialize the ifstreams vector.
+  void setup_ifstreams();
 
   /// String value that separates data.
   char m_separator = ',';
