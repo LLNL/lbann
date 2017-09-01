@@ -843,7 +843,7 @@ public:
   /// Update convolution kernel and bias
   bool update_compute() {
     if(this->m_execution_mode == execution_mode::training) {
-      this->l2_regularize();
+      this->l2_regularize_gradient();
       this->m_optimizer->update(this->m_weights_gradient);
     }
     return true;

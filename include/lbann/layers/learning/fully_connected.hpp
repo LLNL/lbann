@@ -365,7 +365,8 @@ class fully_connected_layer : public learning {
   void fp_compute() {
 #ifdef __LBANN_DEBUG
     this->m_cudnn->synchronize_all();
-#endif    
+#endif
+    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
@@ -514,7 +515,7 @@ class fully_connected_layer : public learning {
 
   bool update_compute() {
     if(this->m_execution_mode == execution_mode::training) {
-      this->l2_regularize();
+      this->l2_regularize_gradient();
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))      
       this->m_optimizer->update(this->m_weights_gradient);
 #else

@@ -309,6 +309,7 @@ class deconvolution_layer : public base_convolution_layer {
  protected:
 
   void fp_compute() {
+    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       apply_transposed_convolution_cudnn(true);
       apply_bias_cudnn();
