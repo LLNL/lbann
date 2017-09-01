@@ -44,7 +44,7 @@ class mean_squared_error : public objective_function {
   /** Copy assignment operator. */
   mean_squared_error& operator=(const mean_squared_error& other) = default;
   /** Destructor. */
-  ~mean_squared_error();
+  ~mean_squared_error() = default;
   /** Copy function. */
   mean_squared_error* copy() const { return new mean_squared_error(*this); }
 

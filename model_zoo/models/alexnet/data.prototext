@@ -52,7 +52,7 @@ data_reader {
 }
 model {
   name: "dnn"
-  objective_function: "categorical_cross_entropy"
+  objective_function: "cross_entropy"
   num_epochs: 20
   metric {
     categorical_accuracy {

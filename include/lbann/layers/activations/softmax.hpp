@@ -120,7 +120,7 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(El::Int(0), col) = max_entry;
     }
-    AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
+    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
 
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
@@ -137,7 +137,7 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(El::Int(0), col) = sum;
     }
-    AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
     // Divide activations by column sums
     // This truncates small values to 0 to avoid them becoming denormalized later
@@ -146,9 +146,10 @@ class softmax_layer : public activation_layer {
     El::IndexDependentMap(activations_local,
                           (std::function<DataType(El::Int,El::Int,const DataType&)>)
                           ([this,&workspace_local](El::Int r, El::Int c, const DataType& z)->DataType {
-                            const DataType v = z / workspace_local(Int(0), c);
-                            return Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
+                            const DataType v = z / workspace_local(El::Int(0), c);
+                            return El::Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
                           }));
+
   }
 
   // Defined below to avoid circular definitions.
@@ -211,14 +212,15 @@ void softmax_layer<T_layout>::bp_compute() {
 
   // Update error signal
   // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-  El::IndexDependentMap(error_signal_local,
-                        (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                        ([this,&activations_local,&workspace_local]
-                         (El::Int r, El::Int c, const DataType& z)->DataType {
-                          const DataType activations_entry = activations_local(r,c);
-                          const DataType dot_product_entry = workspace_local(Int(0),c);
-                          return activations_entry * (z - dot_product_entry);
-                        }));
+  El::IndexDependentFill(error_signal_local,
+                         (std::function<DataType(El::Int,El::Int)>)
+                         ([this,&activations_local,&prev_error_signal_local,&workspace_local]
+                          (El::Int r, El::Int c)->DataType {
+                           const DataType activations_entry = activations_local(r,c);
+                           const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
+                           const DataType dot_product_entry = workspace_local(Int(0),c);
+                           return activations_entry * (prev_error_signal_entry - dot_product_entry);
+                         }));
 }
 
 }  // namespace lbann

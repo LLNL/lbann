@@ -32,7 +32,8 @@ namespace lbann {
 namespace objective_functions {
 
 cross_entropy::cross_entropy(bool use_softmax_shortcut)
-  : m_using_softmax_shortcut(use_softmax_shortcut) {}
+  : objective_function(),
+    m_using_softmax_shortcut(use_softmax_shortcut) {}
 
 void cross_entropy::compute_value(const AbsDistMat& predictions,
                                   const AbsDistMat& ground_truth) {

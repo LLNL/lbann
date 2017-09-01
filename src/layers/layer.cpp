@@ -656,14 +656,18 @@ void Layer::get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* pr
                               m_mini_batch_size_per_gpu);
 }
 
-std::string Layer::get_data_layout_string(data_layout d) const {
-  if (d == data_layout::DATA_PARALLEL) {
-    return "data_parallel";
-  }
-  return "model_parallel";
-}
-
 #endif // __LIB_CUDNN
+
+std::string Layer::get_data_layout_string(data_layout d) const {
+  switch(d) {
+  case data_layout::DATA_PARALLEL:
+    return "data_parallel";
+  case data_layout::MODEL_PARALLEL:
+    return "model_parallel";
+  default:
+    throw lbann_exception("Layer: invalid data layout");
+  }
+}
 
 const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;

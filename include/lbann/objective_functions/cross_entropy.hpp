@@ -44,7 +44,7 @@ class cross_entropy : public objective_function {
   /** Copy assignment operator. */
   cross_entropy& operator=(const cross_entropy& other) = default;
   /** Destructor. */
-  ~cross_entropy();
+  ~cross_entropy() = default;
   /** Copy function. */
   cross_entropy* copy() const {
     return new cross_entropy(*this);
