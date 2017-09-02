@@ -34,8 +34,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
+#include "lbann/objective_functions/cross_entropy.hpp"
 #include <unistd.h>
 #include <string>
 #include <typeinfo>
@@ -47,13 +46,16 @@ template <data_layout T_layout>
 class softmax_layer : public activation_layer {
 
  private:
+
+  /** Workspace for column-wise reductions. */
   AbsDistMat *m_workspace;
+  /** View into workspace for column-wise reductions. */
   AbsDistMat *m_workspace_v;
 
  public:
   softmax_layer(int index,
                 lbann_comm *comm)
-     :  activation_layer(index, comm) {
+    : activation_layer(index, comm) {
     initialize_distributed_matrices();
   }
 
@@ -152,8 +154,44 @@ class softmax_layer : public activation_layer {
 
   }
 
-  // Defined below to avoid circular definitions.
-  void bp_compute();
+  void bp_compute() {
+
+    // Apply softmax-cross-entropy shortcut if activated
+    objective_functions::cross_entropy* obj
+      = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
+    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
+      return;
+    }
+
+    // Get local matrices and parameters
+    const Mat& activations_local = this->m_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
+    Mat& workspace_local = m_workspace_v->Matrix();
+    const Int local_width = activations_local.Width();
+
+    // Compute dot products
+    // Note: prev_error_signal^T activations
+    for(El::Int c=0; c<local_width; ++c) {
+      workspace_local(El::Int(0), c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
+                                               activations_local(El::ALL,El::IR(c)));
+    }
+    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+
+    // Update error signal
+    // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
+    El::IndexDependentFill(error_signal_local,
+                           (std::function<DataType(El::Int,El::Int)>)
+                           ([this,&activations_local,&prev_error_signal_local,&workspace_local]
+                            (El::Int r, El::Int c)->DataType {
+                             const DataType activations_entry = activations_local(r,c);
+                             const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
+                             const DataType dot_product_entry = workspace_local(Int(0),c);
+                             return activations_entry * (prev_error_signal_entry - dot_product_entry);
+                           }));
+
+  }
 
   bool update_compute() {
     return true;
@@ -188,39 +226,6 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
   activation_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_workspace = new StarVCMat(this->m_comm->get_model_grid());
   m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
-}
-
-// Definited outside of the class to avoid circular dependencies with
-// categorical_cross_entropy.
-template <data_layout T_layout>
-void softmax_layer<T_layout>::bp_compute() {
-
-  // Get local matrices and parameters
-  const Mat& activations_local = this->m_activations_v->LockedMatrix();
-  const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
-  Mat& error_signal_local = this->m_error_signal_v->Matrix();
-  Mat& workspace_local = m_workspace_v->Matrix();
-  const Int local_width = activations_local.Width();
-
-  // Compute dot products
-  // Note: prev_error_signal^T activations
-  for(El::Int c=0; c<local_width; ++c) {
-    workspace_local(El::Int(0), c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
-                                             activations_local(El::ALL,El::IR(c)));
-  }
-  El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
-
-  // Update error signal
-  // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-  El::IndexDependentFill(error_signal_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([this,&activations_local,&prev_error_signal_local,&workspace_local]
-                          (El::Int r, El::Int c)->DataType {
-                           const DataType activations_entry = activations_local(r,c);
-                           const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
-                           const DataType dot_product_entry = workspace_local(Int(0),c);
-                           return activations_entry * (prev_error_signal_entry - dot_product_entry);
-                         }));
 }
 
 }  // namespace lbann

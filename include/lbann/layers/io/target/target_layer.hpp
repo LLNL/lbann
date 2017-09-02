@@ -146,6 +146,10 @@ class target_layer : public io_layer {
                this->m_neural_network_model->get_max_mini_batch_size());
       m->m_neural_network_model = this->m_neural_network_model;
     }
+    
+    // Initialize objective function
+    this->m_neural_network_model->m_obj_fn->setup(*this->m_prev_layer);
+
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {

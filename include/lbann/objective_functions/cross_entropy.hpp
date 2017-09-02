@@ -38,7 +38,7 @@ class cross_entropy : public objective_function {
 
  public:
   /** Default constructor. */
-  cross_entropy(bool use_softmax_shortcut = false);
+  cross_entropy(bool categorical_ground_truth = true);
   /** Copy constructor. */
   cross_entropy(const cross_entropy& other) = default;
   /** Copy assignment operator. */
@@ -49,6 +49,8 @@ class cross_entropy : public objective_function {
   cross_entropy* copy() const {
     return new cross_entropy(*this);
   }
+
+  void setup(const Layer& prev_layer);
 
   /** Compute the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -71,35 +73,42 @@ class cross_entropy : public objective_function {
    *    \f[
    *    \nabla_y CE (y,\hat{y}) = - \frac{y} ./ y
    *    \f]
-   *  If the softmax shortcut is activated (see description for
-   *  m_using_softmax_shortcut), the returned gradient is with respect
-   *  to the softmax layer input.
+   *  If the softmax-cross-entropy shortcut is activated (see
+   *  description for m_shortcut_softmax_layer), the returned gradient
+   *  is with respect to the softmax layer input.
    */
   void compute_gradient(const AbsDistMat& predictions,
                         const AbsDistMat& ground_truth,
                         AbsDistMat& gradient);
 
-  /** Set flag for softmax shortcut.
-   *  See description for m_using_softmax_shortcut.
-   */
-  void set_softmax_shortcut(bool use_shortcut);
-
   /** Get the name of the objective function. */
   std::string name() const { return "cross entropy"; }
 
+  /** Get softmax layer for softmax-cross-entropy shortcut. 
+   *  See description for m_shortcut_softmax_layer.
+   */
+  const Layer* get_shortcut_softmax_layer() {
+    return m_shortcut_softmax_layer;
+  }
+
  private:
 
-  /** Whether to use softmax shortcut.
-   *  If the penultimate layer is a softmax layer and the ground truth
-   *  is categorical, then we can use a mathematical trick. Given a
-   *  predicted distribution \f$y\f$ and ground truth distribution
-   *  \f$\hat{y}\f$, the gradient of the categorical cross entropy
-   *  with respect to the softmax layer input is
+  /** Whether the ground truth is categorical. */
+  bool m_categorical_ground_truth;
+
+  /** Softmax layer for softmax-cross-entropy shortcut.
+   *  If this is not a null pointer, then it activates the
+   *  softmax-cross-entropy shortcut. If the penultimate layer is a
+   *  softmax layer, the objective function is cross entropy, and the
+   *  ground truth is categorical, then we can use a mathematical
+   *  trick. Given a predicted distribution \f$y\f$ and ground truth
+   *  distribution \f$\hat{y}\f$, the gradient of the categorical
+   *  cross entropy with respect to the softmax layer input is
    *    \f[
    *      \nabla CE (y,\hat{y}) = y - \hat{y}
    *    \f]
    */
-  bool m_using_softmax_shortcut;
+  const Layer* m_shortcut_softmax_layer = nullptr;
 
 };
 

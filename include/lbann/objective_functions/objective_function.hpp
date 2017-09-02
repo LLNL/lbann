@@ -28,6 +28,7 @@
 #define LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -46,6 +47,8 @@ class objective_function {
   virtual ~objective_function() {}
   /** Copy function. */
   virtual objective_function* copy() const = 0;
+
+  virtual void setup(const Layer& prev_layer) {}
   
   /** Compute the objective function value. */
   virtual void compute_value(const AbsDistMat& predictions,

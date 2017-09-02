@@ -54,7 +54,7 @@ message ImagePreprocessor {
 
 message Model {
   string name = 1; //dnn, greedy_layerwise_autoencoder
-  string objective_function = 2; //categorical_cross_entropy, mean_squared_error
+  string objective_function = 2; // cross_entropy, mean_squared_error
   repeated Metric metric = 5; 
   string data_layout = 6;
 

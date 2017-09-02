@@ -25,15 +25,37 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/cross_entropy.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include <typeinfo>
+#include <typeindex>
 #include <limits>
 
 namespace lbann {
 
 namespace objective_functions {
 
-cross_entropy::cross_entropy(bool use_softmax_shortcut)
+cross_entropy::cross_entropy(bool categorical_ground_truth)
   : objective_function(),
-    m_using_softmax_shortcut(use_softmax_shortcut) {}
+    m_categorical_ground_truth(categorical_ground_truth) {}
+
+void cross_entropy::setup(const Layer& prev_layer) {
+
+  // Activate softmax-cross-entropy shortcut if possible
+  if(m_categorical_ground_truth) {
+    const std::type_info& prev_layer_type = typeid(prev_layer);
+    const std::type_info& data_parallel_softmax_type
+      = typeid(softmax_layer<data_layout::DATA_PARALLEL>);
+    const std::type_info& model_parallel_softmax_type
+      = typeid(softmax_layer<data_layout::MODEL_PARALLEL>);
+    if((std::type_index(prev_layer_type)
+        == std::type_index(data_parallel_softmax_type))
+       || (std::type_index(prev_layer_type)
+           == std::type_index(model_parallel_softmax_type))) {
+      m_shortcut_softmax_layer = &prev_layer;
+    }
+  }
+
+}
 
 void cross_entropy::compute_value(const AbsDistMat& predictions,
                                   const AbsDistMat& ground_truth) {
@@ -74,8 +96,8 @@ void cross_entropy::compute_gradient(const AbsDistMat& predictions,
                                      const AbsDistMat& ground_truth,
                                      AbsDistMat& gradient) {
 
-  // Apply softmax shortcut if activated
-  if(m_using_softmax_shortcut) {
+  // Apply softmax-cross-entropy shortcut if activated
+  if(m_shortcut_softmax_layer != nullptr) {
     El::Copy(predictions, gradient);
     El::Axpy(DataType(-1), ground_truth, gradient);
     return;
@@ -101,10 +123,6 @@ void cross_entropy::compute_gradient(const AbsDistMat& predictions,
                            }
                          }));
 
-}
-
-void cross_entropy::set_softmax_shortcut(bool use_shortcut) {
-  m_using_softmax_shortcut = use_shortcut;
 }
 
 }  // namespace objective_functions
