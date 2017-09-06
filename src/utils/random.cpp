@@ -129,7 +129,7 @@ void init_data_seq_random(int seed) {
 #endif
 }
 
-void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
+void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                    DataType stddev) {
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
   El::Gaussian(mat, m, n, mean, stddev);
@@ -138,7 +138,7 @@ void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean,
 #endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
-void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
   El::Bernoulli(mat, m, n, p);
 #else
@@ -146,7 +146,7 @@ void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p) {
 #endif  // LBANN_PARALLEL_RANDOM_MATRICES  
 }
 
-void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
+void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                   DataType radius) {
 #ifdef LBANN_PARALLEL_RANDOM_MATRICES
   El::Uniform(mat, m, n, center, radius);
@@ -155,7 +155,7 @@ void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center,
 #endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
-void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
+void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                            DataType stddev) {
   El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
@@ -171,7 +171,7 @@ void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType mean,
   mat.ProcessQueues();
 }
 
-void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
   El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
     mat.Reserve(m * n);
@@ -186,7 +186,7 @@ void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p) {
   mat.ProcessQueues();
 }
 
-void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
+void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                           DataType radius) {
   El::Zeros(mat, m, n);
   if (mat.Grid().Rank() == 0) {
@@ -204,7 +204,7 @@ void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n, DataType center,
 }
 
 
-void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out) {
+void initialize_matrix(AbsDistMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out) {
   switch(initialization) {
   case weight_initialization::uniform:
     uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
