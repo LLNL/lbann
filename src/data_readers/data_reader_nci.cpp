@@ -34,7 +34,10 @@
 namespace lbann {
 
 data_reader_nci::data_reader_nci(int batch_size, bool shuffle)
-  : csv_reader(batch_size, 3, shuffle) {
+  : csv_reader(batch_size, shuffle) {
+  set_response_col(2);
+  enable_responses();
+  set_label_col(3);
   set_separator(' ');
   // First five columns are metadata, not the sample.
   set_skip_cols(5);

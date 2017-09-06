@@ -32,9 +32,8 @@
 
 namespace lbann {
 
-csv_reader::csv_reader(int batch_size, int label_col,
-                       bool shuffle)
-  : generic_data_reader(batch_size, shuffle), m_label_col(label_col) {}
+csv_reader::csv_reader(int batch_size, bool shuffle)
+  : generic_data_reader(batch_size, shuffle) {}
 
 csv_reader::csv_reader(const csv_reader& other) :
   generic_data_reader(other),
@@ -43,13 +42,18 @@ csv_reader::csv_reader(const csv_reader& other) :
   m_skip_rows(other.m_skip_rows),
   m_has_header(other.m_has_header),
   m_label_col(other.m_label_col),
+  m_response_col(other.m_response_col),
+  m_disable_labels(other.m_disable_labels),
+  m_disable_responses(other.m_disable_responses),
   m_num_cols(other.m_num_cols),
   m_num_samples(other.m_num_samples),
   m_num_labels(other.m_num_labels),
   m_index(other.m_index),
   m_labels(other.m_labels),
+  m_responses(other.m_responses),
   m_col_transforms(other.m_col_transforms),
-  m_label_transform(other.m_label_transform) {
+  m_label_transform(other.m_label_transform),
+  m_response_transform(other.m_response_transform) {
   if (!other.m_ifstreams.empty()) {
     // Need to set these up again manually.
     setup_ifstreams();
@@ -63,13 +67,18 @@ csv_reader& csv_reader::operator=(const csv_reader& other) {
   m_skip_rows = other.m_skip_rows;
   m_has_header = other.m_has_header;
   m_label_col = other.m_label_col;
+  m_response_col = other.m_response_col;
+  m_disable_labels = other.m_disable_labels;
+  m_disable_responses = other.m_disable_responses;
   m_num_cols = other.m_num_cols;
   m_num_samples = other.m_num_samples;
   m_num_labels = other.m_num_labels;
   m_index = other.m_index;
   m_labels = other.m_labels;
+  m_responses = other.m_responses;
   m_col_transforms = other.m_col_transforms;
   m_label_transform = other.m_label_transform;
+  m_response_transform = other.m_response_transform;
   if (!other.m_ifstreams.empty()) {
     // Possibly free our current ifstreams, set them up again.
     for (std::ifstream* ifs : m_ifstreams) {
@@ -102,14 +111,27 @@ void csv_reader::load() {
       throw lbann_exception(
         "csv_reader: asked to skip more columns than are present");
     }
-    if (m_label_col < 0) {
-      // Last column becomes the label column.
-      m_label_col = m_num_cols - 1;
+    if (!m_disable_labels) {
+      if (m_label_col < 0) {
+        // Last column becomes the label column.
+        m_label_col = m_num_cols - 1;
+      }
+      if (m_label_col >= m_num_cols) {
+        throw lbann_exception(
+          "csv_reader: label column" + std::to_string(m_label_col) +
+          " is not present");
+      }
     }
-    if (m_label_col >= m_num_cols) {
-      throw lbann_exception(
-        "csv_reader: label column" + std::to_string(m_label_col) +
-        " is not present");
+    if (!m_disable_responses) {
+      if (m_response_col < 0) {
+        // Last column becomes the response column.
+        m_response_col = m_num_cols - 1;
+      }
+      if (m_response_col >= m_num_cols) {
+        throw lbann_exception(
+          "csv_reader: response column" + std::to_string(m_response_col) +
+          " is not present");
+      }
     }
   } else {
     throw lbann_exception(
@@ -140,15 +162,17 @@ void csv_reader::load() {
     }
     m_index.push_back(ifs.tellg());
     // Extract the label.
-    size_t cur_pos = 0;
-    for (int col = 0; col < m_num_cols; ++col) {
-      size_t end_pos = line.find_first_of(m_separator, cur_pos);
-      if (col == m_label_col) {
-        label_classes.insert(
-          m_label_transform(line.substr(cur_pos, end_pos - cur_pos)));
-        break;
+    if (!m_disable_labels) {
+      size_t cur_pos = 0;
+      for (int col = 0; col < m_num_cols; ++col) {
+        size_t end_pos = line.find_first_of(m_separator, cur_pos);
+        if (col == m_label_col) {
+          label_classes.insert(
+            m_label_transform(line.substr(cur_pos, end_pos - cur_pos)));
+          break;
+        }
+        cur_pos = end_pos + 1;
       }
-      cur_pos = end_pos + 1;
     }
   }
   if (!ifs.eof()) {
@@ -156,19 +180,21 @@ void csv_reader::load() {
     throw lbann_exception(
       "csv_reader: did not reach EOF");
   }
-  // Do some simple validation checks on the classes.
-  // Ensure the elements begin with 0, and there are no gaps.
-  auto minmax = std::minmax_element(label_classes.begin(), label_classes.end());
-  if (*minmax.first != 0) {
-    throw lbann_exception(
-      "csv_reader: classes are not indexed from 0");
-  }
-  if (*minmax.second != label_classes.size() - 1) {
-    throw lbann_exception(
-      "csv_reader: label classes are not contiguous");
+  if (!m_disable_labels) {
+    // Do some simple validation checks on the classes.
+    // Ensure the elements begin with 0, and there are no gaps.
+    auto minmax = std::minmax_element(label_classes.begin(), label_classes.end());
+    if (*minmax.first != 0) {
+      throw lbann_exception(
+        "csv_reader: classes are not indexed from 0");
+    }
+    if (*minmax.second != label_classes.size() - 1) {
+      throw lbann_exception(
+        "csv_reader: label classes are not contiguous");
+    }
+    m_num_labels = label_classes.size();
   }
   m_num_samples = m_index.size() - 1;
-  m_num_labels = label_classes.size();
   // End of file offset.
   m_index.push_back(ifs.tellg());
   // Seek back to the beginning.
@@ -178,22 +204,32 @@ void csv_reader::load() {
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
-  // Allocate space to store labels.
-  m_labels.resize(m_num_samples);
+  if (!m_disable_labels) {
+    // Allocate space to store labels.
+    m_labels.resize(m_num_samples);
+  }
+  if (!m_disable_responses) {
+    // Allocate space to store responses.
+    m_responses.resize(m_num_samples);
+  }
 }
 
 bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  auto line = fetch_line_and_label(data_id);
-  // Todo: Avoid the unneeded copies.
-  m_labels[data_id] = line.second;
-  for (size_t i = 0; i < line.first.size(); ++i) {
-    X(i, mb_idx) = line.first[i];
+  auto line = fetch_line_label_response(data_id);
+  // Todo: Avoid unneeded copies.
+  for (size_t i = 0; i < line.size(); ++i) {
+    X(i, mb_idx) = line[i];
   }
   return true;
 }
 
 bool csv_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   Y(m_labels[data_id], mb_idx) = 1;
+  return true;
+}
+
+bool csv_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
 
@@ -225,20 +261,26 @@ std::vector<DataType> csv_reader::fetch_line(int data_id) {
   return parsed_line;
 }
 
-std::pair<std::vector<DataType>, DataType> csv_reader::fetch_line_and_label(
+std::vector<DataType> csv_reader::fetch_line_label_response(
   int data_id) {
   std::string line = fetch_raw_line(data_id);
   std::vector<DataType> parsed_line;
-  DataType label = 0;
   // Note: load already verified that every line is properly formatted.
   size_t cur_pos = 0;  // Current *start* of a column.
   for (int col = 0; col < m_num_cols; ++col) {
     // Note for last column, this returns std::npos, which substr handles.
     size_t end_pos = line.find_first_of(m_separator, cur_pos);
-    // Handle the label.
-    if (col == m_label_col) {
-      std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
-      label = m_label_transform(str_val);
+    // Handle the label/response.
+    if ((!m_disable_labels && col == m_label_col) ||
+        (!m_disable_responses && col == m_response_col)) {
+      if (!m_disable_labels && col == m_label_col) {
+        std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
+        m_labels[data_id] = m_label_transform(str_val);
+      }
+      if (!m_disable_responses && col == m_response_col) {
+        std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
+        m_responses[data_id] = m_response_transform(str_val);
+      }
       cur_pos = end_pos + 1;
       continue;
     }
@@ -264,7 +306,7 @@ std::pair<std::vector<DataType>, DataType> csv_reader::fetch_line_and_label(
     }
     parsed_line.push_back(val);
   }
-  return std::make_pair(parsed_line, label);
+  return parsed_line;
 }
 
 std::string csv_reader::fetch_raw_line(int data_id) {

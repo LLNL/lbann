@@ -44,17 +44,23 @@ namespace lbann {
 class csv_reader : public generic_data_reader {
  public:
   /**
-   * @param label_col The column containing labels; -1 for the last column.
-   * The label column ignores skipped columns, and can be among columns that are
-   * skipped.
+   * This defaults to using the last column for the label/response.
    */
-  csv_reader(int batch_size, int label_col = -1, bool shuffle = true);
+  csv_reader(int batch_size, bool shuffle = true);
   csv_reader(const csv_reader&);
   csv_reader& operator=(const csv_reader&);
   ~csv_reader();
 
   csv_reader* copy() const { return new csv_reader(*this); }
 
+  /// Set the label column.
+  void set_label_col(int col) { m_label_col = col; }
+  /// Set the response column.
+  void set_response_col(int col) { m_response_col = col; }
+  /// Disable fetching labels.
+  void disable_labels() { m_disable_labels = true; }
+  /// Enable fetching responses (disabled by default).
+  void enable_responses() { m_disable_responses = false; }
   /// Set the column separator (default is ',').
   void set_separator(char sep) { m_separator = sep; }
   /// Set the number of columns (from the left) to skip; default 0.
@@ -81,6 +87,12 @@ class csv_reader : public generic_data_reader {
    */ 
   void set_label_transform(std::function<int(const std::string&)> f) {
     m_label_transform = f;
+  }
+  /**
+   * Supply a custom transform to convert the response column to a DataType.
+   */
+  void set_response_transform(std::function<DataType(const std::string&)> f) {
+    m_response_transform = f;
   }
 
   /**
@@ -112,18 +124,21 @@ class csv_reader : public generic_data_reader {
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   /// Fetch the label associated with data_id.
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  /// Fetch the response associated with data_id.
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
 
   /** Return a raw line from the CSV file. */
   std::string fetch_raw_line(int data_id);
   /**
-   * Return the parsed CSV line. This does not extract the label.
+   * Return the parsed CSV line. This does not extract the label/response.
    */
   std::vector<DataType> fetch_line(int data_id);
   /**
-   * Return the parsed CSV line and the label.
-   * The label is not present in the vector.
+   * Return the parsed CSV line and store the label and response in the m_labels
+   * and m_responses vectors, respectively. The label and response are not
+   * present in the vector.
    */
-  std::pair<std::vector<DataType>, DataType> fetch_line_and_label(int data_id);
+  std::vector<DataType> fetch_line_label_response(int data_id);
 
   /// Skip rows in an ifstream.
   void skip_rows(std::ifstream& s, int rows);
@@ -139,8 +154,18 @@ class csv_reader : public generic_data_reader {
   int m_skip_rows = 0;
   /// Whether the CSV file has a header.
   bool m_has_header = true;
-  /// Column containing label data.
-  int m_label_col = 0;
+  /**
+   * Column containing labels. -1 is used for the last column.
+   * The label column ignores skipped columns, and can be among columns that are
+   * skipped.
+   */
+  int m_label_col = -1;
+  /// Column containing responses; functions the same as the label column.
+  int m_response_col = -1;
+  /// Whether to fetch labels.
+  bool m_disable_labels = false;
+  /// Whether to fetch responses.
+  bool m_disable_responses = true;
   /// Number of columns (including the label column and skipped columns).
   int m_num_cols = 0;
   /// Number of samples.
@@ -157,12 +182,17 @@ class csv_reader : public generic_data_reader {
   std::vector<std::streampos> m_index;
   /// Store labels.
   std::vector<int> m_labels;
+  /// Store responses.
+  std::vector<int> m_responses;
   /// Per-column transformation functions.
   std::unordered_map<int, std::function<DataType(const std::string&)>>
     m_col_transforms;
   /// Label transform function that converts to an int.
   std::function<int(const std::string&)> m_label_transform =
     [] (const std::string& s) -> int { return std::stoi(s); };
+  /// Response transform function that converts to a DataType.
+  std::function<DataType(const std::string&)> m_response_transform =
+    [] (const std::string& s) -> DataType { return std::stod(s); };
 };
 
 }  // namespace lbann
