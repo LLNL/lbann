@@ -86,6 +86,7 @@ csv_reader& csv_reader::operator=(const csv_reader& other) {
     }
     setup_ifstreams();
   }
+  return *this;
 }
 
 csv_reader::~csv_reader() {
