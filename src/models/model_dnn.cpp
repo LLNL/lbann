@@ -128,13 +128,15 @@ bool deep_neural_network::train_mini_batch() {
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  //DataType L2NormSum = 0;
   for (size_t l = 0u; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forward_prop();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -210,6 +212,9 @@ bool deep_neural_network::evaluate_mini_batch() {
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_evaluate_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
 
   // Update layers
   // Note: should only affect the input and target layers

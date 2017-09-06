@@ -288,6 +288,9 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
   }
   do_model_forward_prop_end_cbs();
 
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
+
   ++m_current_step;
 
   // Backward propagation
@@ -343,6 +346,9 @@ bool greedy_layerwise_autoencoder::evaluate_mini_batch() {
   for (size_t l = 0; l < m_layers.size(); l++) {
     m_layers[l]->forward_prop();
   }
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
   
   //done processing a minibatch?  
   const bool data_set_processed = m_layers[0]->update();

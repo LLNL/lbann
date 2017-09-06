@@ -177,6 +177,7 @@ message Callback {
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
    CallbackProfiler profiler = 21;
    CallbackStepMinibatch step_minibatch = 22;
+   CallbackGradientCheck gradient_check = 23;
 }
 
 message CallbackStepLearningRate {
@@ -279,6 +280,10 @@ message CallbackLinearGrowthLearningRate {
 message CallbackStepMinibatch {
   int64 starting_mbsize = 1;
   int64 step = 2;
+}
+
+message CallbackGradientCheck {
+  double max_error = 1;
 }
 
 //========================================================================

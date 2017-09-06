@@ -122,7 +122,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
     obj_fn->compute_value(*this->m_prev_activations,
                           *this->m_activations_v);
-    obj_fn->record_and_reset_value();
 
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);

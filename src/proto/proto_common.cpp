@@ -1330,6 +1330,20 @@ void init_callbacks(
       lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
       model->add_callback(step_mb_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: gradient_check
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_gradient_check()) {
+      const lbann_data::CallbackGradientCheck& c = callback.gradient_check();
+      if (master) {
+        std::cout << "adding gradient_check callback" << std::endl;
+      }
+      lbann_callback_gradient_check *gradient_check_cb = new
+      lbann_callback_gradient_check(DataType(c.max_error()));
+      model->add_callback(gradient_check_cb);
+    }
+
   }
 
 }

@@ -110,6 +110,7 @@
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
+#include "lbann/callbacks/callback_gradient_check.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/optimizer_adagrad.hpp"

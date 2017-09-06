@@ -94,7 +94,6 @@ class reconstruction_layer : public target_layer {
     // and original layer fp_input/original input
     this->m_neural_network_model->m_obj_fn->compute_value(*this->m_prev_activations,
                                                           original_layer_act_v);
-    this->m_neural_network_model->m_obj_fn->record_and_reset_value();
   }
 
   void bp_compute() {

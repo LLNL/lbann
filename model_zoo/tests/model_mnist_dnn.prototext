@@ -1,0 +1,97 @@
+model {
+  name: "dnn"
+  objective_function: "cross_entropy"
+  metric {
+    categorical_accuracy {
+    }
+  }
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 32
+  num_epochs: 10
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+      dir: "none"
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      interval: 1
+    }
+  }
+  callback {
+    gradient_check {
+      max_error: 1e-4
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    index: 1
+    parent: 1
+    data_layout: "data_parallel"
+    input_partitioned_minibatch {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED
+  #################
+  layer {
+    index: 2
+    parent: 1
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+      has_bias: false
+    }
+  }
+
+  #########
+  # SOFTMAX
+  #########
+  layer {
+    index: 3
+    parent: 2
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+
+  ########
+  # TARGET
+  ########
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "data_parallel"
+    target_partitioned_minibatch {
+      shared_data_reader: true
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}
