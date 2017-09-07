@@ -246,7 +246,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(Mat& Y);
 
- public:
   /**
    * Save pixels to an image. The implementing data reader is responsible for
    * handling format detection, conversion, etc.
@@ -570,6 +569,8 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
+
+  friend class data_reader_merge;
 };
 
 }  // namespace lbann
