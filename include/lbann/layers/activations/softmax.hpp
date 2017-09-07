@@ -116,11 +116,11 @@ class softmax_layer : public activation_layer {
     // Find maximum entry in each column
     #pragma omp parallel for
     for(El::Int col = 0; col < local_width; ++col) {
-      DataType max_entry = prev_activations_local(El::Int(0), col);
+      DataType max_entry = prev_activations_local(0, col);
       for(El::Int row = 1; row < local_height; ++row) {
         max_entry = std::max(max_entry, prev_activations_local(row,col));
       }
-      workspace_local(El::Int(0), col) = max_entry;
+      workspace_local(0, col) = max_entry;
     }
     El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
 
@@ -137,19 +137,20 @@ class softmax_layer : public activation_layer {
         activations_local(row, col) = activations_entry;
         sum += activations_entry;
       }
-      workspace_local(El::Int(0), col) = sum;
+      workspace_local(0, col) = sum;
     }
     El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
     // Divide activations by column sums
-    // This truncates small values to 0 to avoid them becoming denormalized later
-    // in the forward/backward stages. Denormalized values can significantly
-    // impact floating point performance.
+    // Note: Small values are truncated to zero to avoid denormalized floats.
+    const DataType epsilon = std::numeric_limits<DataType>::epsilon();
     El::IndexDependentMap(activations_local,
                           (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                          ([this,&workspace_local](El::Int r, El::Int c, const DataType& z)->DataType {
-                            const DataType v = z / workspace_local(El::Int(0), c);
-                            return El::Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
+                          ([this,&workspace_local,epsilon](El::Int r, El::Int c, const DataType& x)
+                           ->DataType {
+                            const DataType sum = workspace_local(0, c);
+                            const DataType y = x / sum;
+                            return y >= epsilon ? y : DataType(0);
                           }));
 
   }
