@@ -1368,8 +1368,8 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
     obj = new objective_functions::mean_squared_error();
   } else {
     err << __FILE__ << " " << __LINE__
-        << " :: init_model() - unknown objective function name: " << name << endl
-        << "; should be one of: cross_entropy, mean_squared_error";
+        << " :: init_model() - unknown objective function name: " << obj_fn_name
+        << std::endl << "; should be one of: cross_entropy, mean_squared_error";
     throw lbann_exception(err.str());
   }
 

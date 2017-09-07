@@ -35,7 +35,9 @@ namespace lbann {
 
 numpy_reader::numpy_reader(int batch_size, bool shuffle)
   : generic_data_reader(batch_size, shuffle), m_num_samples(0),
-    m_num_features(0) {}
+    m_num_features(0) {
+  m_data.data = nullptr;
+}
 
 numpy_reader::numpy_reader(const numpy_reader& source) :
   generic_data_reader((const generic_data_reader&) source),
@@ -65,7 +67,9 @@ numpy_reader& numpy_reader::operator=(const numpy_reader& source) {
 }
 
 numpy_reader::~numpy_reader() {
-  m_data.destruct();
+  if (m_data.data) {
+    m_data.destruct();
+  }
 }
 
 void numpy_reader::load() {
