@@ -33,16 +33,16 @@ namespace lbann {
 
 class dataset {
  public:
-  dataset(generic_data_reader *d_reader) : data_reader(d_reader), num_samples_processed(0), total_samples(0) {};
+  dataset(generic_data_reader *d_reader) : m_data_reader(d_reader), m_num_samples_processed(0), m_total_samples(0) {};
   // The associated model/IO layer using this dataset is responsible for copying
   // the data reader.
   dataset(const dataset& other) = default;
   dataset& operator=(const dataset& other) = default;
 
  public:
-  generic_data_reader *data_reader;
-  long num_samples_processed;
-  long total_samples;
+  generic_data_reader *m_data_reader;
+  long m_num_samples_processed;
+  long m_total_samples;
 };
 
 }  // namespace lbann

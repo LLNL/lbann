@@ -118,20 +118,20 @@ void init_data_seq_random(int seed = -1);
  * not change as the grid it is distributed over changes; that is, it will have
  * the same entries when mat spans any number of processes.
  */
-void gaussian_fill(ElMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
+void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
                    DataType stddev = 1.0f);
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
  * This makes the same gaurantees as gaussian_fill.
  */
-void bernoulli_fill(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
+void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill.
  */
-void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
+void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
                   DataType radius = 1.0f);
 
 /**
@@ -140,27 +140,30 @@ void uniform_fill(ElMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
  * This always ensures that the entries of the matrix do not change as the grid
  * it is distributed over changes.
  */
-void gaussian_fill_procdet(ElMat& mat, El::Int m, El::Int n,
+void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
                            DataType mean = 0.0f, DataType stddev = 1.0f);
 /**
  * Make mat into an m x n matrix where each entry is an independent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void bernoulli_fill_procdet(ElMat& mat, El::Int m, El::Int n, double p = 0.5);
+void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void uniform_fill_procdet(ElMat& mat, El::Int m, El::Int n,
+void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
 
 /**
  * Using one of the available initialization methods, initialize a
  * matrix
  */
-void initialize_matrix(ElMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out);
+void initialize_matrix(AbsDistMat& matrix_v,
+                       weight_initialization initialization,
+                       El::Int fan_in,
+                       El::Int fan_out);
 
 template<typename DistType,typename DType=DataType>
 class rng {

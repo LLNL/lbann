@@ -142,10 +142,11 @@ class fully_connected_layer : public learning {
   /** Returns description of ctor params */
   std::string get_description() const {
     return std::string {} +
-      std::to_string(this->m_index)  + " fully_connected; num_neurons: " 
+     " fully_connected; num_neurons: " 
      + std::to_string(this->m_num_neurons)
      + " weight_init: " + get_weight_initialization_name(this->m_weight_initialization)
-     + " has_bias: " + std::to_string(this->m_bias_scaling_factor);
+     + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
+     + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
 
@@ -364,7 +365,8 @@ class fully_connected_layer : public learning {
   void fp_compute() {
 #ifdef __LBANN_DEBUG
     this->m_cudnn->synchronize_all();
-#endif    
+#endif
+    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
@@ -471,6 +473,10 @@ class fully_connected_layer : public learning {
                 *m_bias_weights_gradient_repl);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
+
+    // Apply L2 regularization
+    this->l2_regularize_gradient();
+
   }
 
   void bp_compute_cuda() {
@@ -489,6 +495,8 @@ class fully_connected_layer : public learning {
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
                                     m_bias_weights_gradient_d);
     }
+
+    // TODO: L2 regularization
 #ifdef LBANN_DEBUG
     this->m_cudnn->check_error();
 #endif
@@ -513,7 +521,6 @@ class fully_connected_layer : public learning {
 
   bool update_compute() {
     if(this->m_execution_mode == execution_mode::training) {
-      this->l2_regularize();
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))      
       this->m_optimizer->update(this->m_weights_gradient);
 #else

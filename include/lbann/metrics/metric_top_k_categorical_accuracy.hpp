@@ -58,7 +58,7 @@ class top_k_categorical_accuracy : public metric {
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int64_t cur_mini_batch_size) {}
+  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
   double compute_metric(ElMat& predictions_v, ElMat& ground_truth_v) {
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and

@@ -155,8 +155,6 @@ int main(int argc, char *argv[]) {
 
     // Construct optimizer
     optimizer_factory *optimizer_fac = init_optimizer_factory(comm, cudnn, pb);
-    
-
 
     // User feedback
     print_parameters(comm, pb);
@@ -205,6 +203,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
+
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
     // Under normal conditions, reinitialize the random number generator so
     // that regularization techniques (e.g. dropout) generate unique patterns
@@ -220,10 +219,12 @@ int main(int argc, char *argv[]) {
                 << std::endl;
     }
 #endif
-    while (model->get_cur_epoch() < pb_model->num_epochs()) {
-      model->train(1, true);
-      model->evaluate(execution_mode::testing);
-    }
+
+    // Train model
+    model->train(pb_model->num_epochs());
+
+    // Evaluate model on test set
+    model->evaluate(execution_mode::testing);
 
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory

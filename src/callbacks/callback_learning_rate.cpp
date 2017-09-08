@@ -119,7 +119,7 @@ lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
 /// continues to improve
 float lbann_callback_adaptive_learning_rate::schedule(model *m, learning *l) {
   float cur_lr = l->get_optimizer()->get_learning_rate();
-  double score = m->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::validation);
+  double score = m->m_obj_fn->get_mean_value();
   if (score < m_last_score) {
     m_last_score = score;
     m_wait = 0;

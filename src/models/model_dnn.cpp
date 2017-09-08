@@ -46,7 +46,7 @@ namespace lbann {
 
 deep_neural_network::deep_neural_network(int mini_batch_size,
                                          lbann_comm *comm,
-                                         objective_functions::objective_fn *obj_fn,
+                                         objective_functions::objective_function *obj_fn,
                                          optimizer_factory *_optimizer_fac)
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac) {}
 
@@ -64,11 +64,12 @@ void deep_neural_network::summarize_matrices(lbann_summary& summarizer) {
   }
 }
 
-void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
+void deep_neural_network::train(int num_epochs) {
   do_train_begin_cbs();
 
   // Epoch main loop
   for (int epoch = 0; epoch < num_epochs; ++epoch) {
+
     // Check if training has been terminated
     if (get_terminate_training()) {
       break;
@@ -81,46 +82,37 @@ void deep_neural_network::train(int num_epochs, int evaluation_frequency) {
       do_epoch_begin_cbs();
     }
 
-    /// Set the execution mode to training
+    // Set the execution mode to training
     m_execution_mode = execution_mode::training;
-    for (size_t l = 0u; l < m_layers.size(); ++l) {
+    for (size_t l = 0; l < m_layers.size(); ++l) {
       m_layers[l]->set_execution_mode(execution_mode::training);
     }
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
+    m_obj_fn->reset_statistics();
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
-    bool finished_epoch;
-    do {
+    bool finished_epoch = false;
+    while (!finished_epoch) {
       finished_epoch = train_mini_batch();
 
       // save a checkpoint if needed
       if (need_checkpoint()) {
         checkpointShared();
       }
-    } while(!finished_epoch);
-    if(evaluation_frequency > 0
-        && (epoch + 1) % evaluation_frequency == 0) {
+    }
+
+    if (is_execution_mode_valid(execution_mode::validation)) {
       // Evaluate model on validation set
       // TODO: do we need validation callbacks here?
       // do_validation_begin_cbs();
       evaluate(execution_mode::validation);
       // do_validation_end_cbs();
-
-      // Set execution mode back to training
-      m_execution_mode = execution_mode::training;
-      for (size_t l = 0; l < m_layers.size(); l++) {
-        m_layers[l]->set_execution_mode(execution_mode::training);
-      }
     }
 
     do_epoch_end_cbs();
-
-    for (Layer *layer : m_layers) {
-      layer->epoch_reset();
-    }
 
     // save checkpoint after epoch
     if (need_checkpoint()) {
@@ -136,13 +128,15 @@ bool deep_neural_network::train_mini_batch() {
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  //DataType L2NormSum = 0;
   for (size_t l = 0u; l < m_layers.size(); ++l) {
     do_layer_forward_prop_begin_cbs(m_layers[l]);
     m_layers[l]->forward_prop();
     do_layer_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -184,13 +178,14 @@ void deep_neural_network::evaluate(execution_mode mode) {
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
+  m_obj_fn->reset_statistics();
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
-  bool finished_epoch;
-  do {
+  bool finished_epoch = false;
+  while (!finished_epoch) {
     finished_epoch = evaluate_mini_batch();
-  } while(!finished_epoch);
+  }
 
   switch(mode) {
   case execution_mode::validation:
@@ -198,10 +193,6 @@ void deep_neural_network::evaluate(execution_mode mode) {
     break;
   case execution_mode::testing:
     do_test_end_cbs();
-    // Reset after testing.
-    for (Layer *layer : m_layers) {
-      layer->epoch_reset();
-    }
     break;
   default:
     throw lbann_exception("Illegal execution mode in evaluate function");
@@ -221,6 +212,9 @@ bool deep_neural_network::evaluate_mini_batch() {
     do_layer_evaluate_forward_prop_end_cbs(m_layers[l]);
   }
   do_model_evaluate_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
 
   // Update layers
   // Note: should only affect the input and target layers

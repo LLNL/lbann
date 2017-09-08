@@ -20,4 +20,5 @@ add_sources(
   callback_ltfb.cpp
   callback_check_reconstruction_error.cpp
   callback_variable_minibatch.cpp
+  callback_gradient_check.cpp
 )

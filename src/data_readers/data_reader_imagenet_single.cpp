@@ -76,7 +76,7 @@ void imagenet_readerSingle::load() {
   }
 
   //read the offsets file
-  int num_images;
+  size_t num_images;
   in >> num_images;
   if (is_master()) {
     cout << "num images: " << num_images << endl;
@@ -115,7 +115,7 @@ bool imagenet_readerSingle::fetch_datum(Mat& X, int data_id, int mb_idx, int tid
   stringstream err;
   int width, height;
 
-  if (data_id > m_offsets.size()-1) {
+  if (data_id > (int) m_offsets.size()-1) {
     err << __FILE__ << " " << __LINE__ << " :: data_id= " << data_id << " is larger than m_offsets.size()= " << m_offsets.size() << " -2";
     throw lbann_exception(err.str());
   }
@@ -150,7 +150,7 @@ bool imagenet_readerSingle::fetch_datum(Mat& X, int data_id, int mb_idx, int tid
     throw lbann_exception(err.str());
   }
 
-  for (size_t p = 0; p < num_channel_values; p++) {
+  for (El::Int p = 0; p < num_channel_values; p++) {
     X.Set(p, mb_idx, pixels[p]);
   }
 

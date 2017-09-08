@@ -44,6 +44,8 @@ namespace lbann {
  */
 class lbann_callback_dump_activations : public lbann_callback {
  public:
+  using lbann_callback::on_forward_prop_end;
+
   /**
    * @param basename The basename for writing files.
    */

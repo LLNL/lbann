@@ -28,7 +28,7 @@
 #define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 
 #include "lbann/metrics/metric.hpp"
-#include "lbann/objective_functions/objective_fn_mean_squared_error.hpp"
+#include "lbann/objective_functions/mean_squared_error.hpp"
 
 namespace lbann {
 
@@ -39,8 +39,7 @@ class mean_squared_error : public metric {
  public:
   /// Constructor
   mean_squared_error(lbann_comm *comm) :
-    metric(comm),
-    internal_obj_fn(comm) {}
+    metric(comm) {}
   mean_squared_error(const mean_squared_error<T_layout>& other) = default;
   mean_squared_error& operator=(
     const mean_squared_error<T_layout>& other) = default;
@@ -52,17 +51,32 @@ class mean_squared_error : public metric {
 
   void setup(int num_neurons, int mini_batch_size) {
     metric::setup(num_neurons, mini_batch_size);
-    // Setup the internal objective function
-    internal_obj_fn.setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {
-    // Set the view based on the size of the current mini-batch
-    internal_obj_fn.fp_set_std_matrix_view(cur_mini_batch_size);
-  }
+  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
   double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
-    double num_errors =
-      internal_obj_fn.compute_mean_squared_error(predictions_v, groundtruth_v);
-    return num_errors;
+    
+    // Get local matrices and matrix parameters
+    const Mat& predictions_local = predictions_v.LockedMatrix();
+    const Mat& groundtruth_local = groundtruth_v.LockedMatrix();
+    const El::Int height = predictions_v.Height();
+    const El::Int width = predictions_v.Width();
+    const El::Int local_height = predictions_local.Height();
+    const El::Int local_width = predictions_local.Width();
+
+    // Compute mean squared error
+    double mse = 0.0;
+    for(El::Int col = 0; col < local_width; ++col) {
+      for(El::Int row = 0; row < local_height; ++row) {
+        const double pred_val = predictions_local(row, col);
+        const double true_val = groundtruth_local(row, col);
+        const double error = pred_val - true_val;
+        mse += error * error;
+      }
+    }
+    mse /= height * width;
+    mse = El::mpi::AllReduce(mse, predictions_v.DistComm());
+    return mse;
+
   }
 
   double report_metric(execution_mode mode) {
@@ -88,8 +102,6 @@ class mean_squared_error : public metric {
 
   std::string name() const { return "mean squared error"; }
 
- protected:
-  lbann::objective_functions::mean_squared_error internal_obj_fn;
 };
 
 }  // namespace metrics

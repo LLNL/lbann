@@ -42,7 +42,7 @@ namespace lbann {
 
 sequential_model::sequential_model(int mini_batch_size,
                                    lbann_comm *comm,
-                                   objective_functions::objective_fn *obj_fn,
+                                   objective_functions::objective_function *obj_fn,
                                    optimizer_factory *optimizer_fac)
   : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
 
@@ -93,7 +93,8 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
 sequential_model::~sequential_model() {
   // Free layers
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    delete m_layers[l];
+    if (m_layers[l])
+      delete m_layers[l];
   }
 }
 
@@ -290,7 +291,8 @@ int sequential_model::add(Layer *new_layer) {
 }
 
 void sequential_model::remove(int index) {
-  delete m_layers[index];
+  if (m_layers[index])
+    delete m_layers[index];
   m_layers.erase(m_layers.begin()+index);
 }
 
@@ -330,6 +332,13 @@ bool sequential_model::at_epoch_start() {
   // use mini batch index in data reader to signify start of epoch
   io_layer *input = (io_layer *) m_layers[0];
   bool flag = input->at_new_epoch();
+  return flag;
+}
+
+/// Check if the model has a valid data set for the execution mode
+bool sequential_model::is_execution_mode_valid(execution_mode mode) {
+  io_layer *input = (io_layer *) m_layers[0];
+  bool flag = input->is_execution_mode_valid(mode);
   return flag;
 }
 

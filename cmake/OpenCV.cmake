@@ -54,135 +54,166 @@ else()
   # ============================
 
   # OpenCV modules
-  #option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                                         OFF) # 3.3.0
+  option(OPENCV_BUILD_opencv_core       "OpenCV: core module"                                       ON)
+  option(OPENCV_BUILD_opencv_flann      "OpenCV: flann module"                                      OFF)
+  option(OPENCV_BUILD_opencv_imgproc    "OpenCV: imgproc module"                                    ON)
+  option(OPENCV_BUILD_opencv_highgui    "OpenCV: highgui module"                                    ON)
+  option(OPENCV_BUILD_opencv_features2d "OpenCV: features2d module"                                 OFF)
+  option(OPENCV_BUILD_opencv_calib3d    "OpenCV: calib3d module"                                    OFF)
+  option(OPENCV_BUILD_opencv_ml         "OpenCV: ml module"                                         OFF)
+  option(OPENCV_BUILD_opencv_video      "OpenCV: video module"                                      OFF)
+  option(OPENCV_BUILD_opencv_legacy     "OpenCV: legacy module"                                     OFF)
+  option(OPENCV_BUILD_opencv_objdetect  "OpenCV: objdetect module"                                  OFF)
+  option(OPENCV_BUILD_opencv_photo      "OpenCV: photo module"                                      OFF)
+  option(OPENCV_BUILD_opencv_gpu        "OpenCV: gpu module"                                        OFF)
+  option(OPENCV_BUILD_opencv_nonfree    "OpenCV: nonfree module"                                    OFF)
+  option(OPENCV_BUILD_opencv_contrib    "OpenCV: contrib module"                                    OFF)
+  option(OPENCV_BUILD_opencv_java       "OpenCV: java module"                                       OFF)
+  option(OPENCV_BUILD_opencv_python     "OpenCV: python module"                                     OFF)
+  option(OPENCV_BUILD_opencv_stitching  "OpenCV: stitching module"                                  OFF)
+  option(OPENCV_BUILD_opencv_superres   "OpenCV: superres module"                                   OFF)
+  option(OPENCV_BUILD_opencv_ts         "OpenCV: ts module"                                         OFF)
+  option(OPENCV_BUILD_opencv_videostab  "OpenCV: videostab module"                                  OFF)
+  option(OPENCV_BUILD_opencv_world      "OpenCV: world module"                                      OFF)
+  option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                        OFF) # 3.3.0
 
   # Optional 3rd party components
-  option(OPENCV_WITH_1394           "OpenCV: Include IEEE1394 support"                                                    OFF) # both
-  option(OPENCV_WITH_AVFOUNDATION   "OpenCV: Use AVFoundation for Video I/O (iOS/Mac)"                                    OFF) # both
-  option(OPENCV_WITH_CARBON         "OpenCV: Use Carbon for UI instead of Cocoa"                                          OFF) # both
-  option(OPENCV_WITH_CAROTENE       "OpenCV: Use NVidia carotene acceleration library for ARM platform"                   OFF) # 3.3.0
-  option(OPENCV_WITH_CPUFEATURES    "OpenCV: Use cpufeatures Android library"                                             OFF) # 3.3.0
-  option(OPENCV_WITH_VTK            "OpenCV: Include VTK library support (and build opencv_viz module eiher)"             OFF) # both
-  option(OPENCV_WITH_CUDA           "OpenCV: Include NVidia Cuda Runtime support"                                         OFF) # both
-  option(OPENCV_WITH_CUFFT          "OpenCV: Include NVidia Cuda Fast Fourier Transform (FFT) library support"            OFF) # both
-  option(OPENCV_WITH_CUBLAS         "OpenCV: Include NVidia Cuda Basic Linear Algebra Subprograms (BLAS) library support" OFF) # both
-  option(OPENCV_WITH_NVCUVID        "OpenCV: Include NVidia Video Decoding library support"                               OFF) # both
-  option(OPENCV_WITH_EIGEN          "OpenCV: Include Eigen2/Eigen3 support"                                               OFF) # both
-  option(OPENCV_WITH_VFW            "OpenCV: Include Video for Windows support"                                           OFF) # both
-  option(OPENCV_WITH_FFMPEG         "OpenCV: Include FFMPEG support"                                                      OFF) # both
-  option(OPENCV_WITH_GSTREAMER      "OpenCV: Include Gstreamer support"                                                   OFF) # both
-  option(OPENCV_WITH_GSTREAMER_0_10 "OpenCV: Enable Gstreamer 0.10 support (instead of 1.x)"                              OFF) # both
-  option(OPENCV_WITH_GTK            "OpenCV: Include GTK support"                                                         OFF) # both
-  option(OPENCV_WITH_GTK_2_X        "OpenCV: Use GTK version 2"                                                           OFF) # 3.3.0
-  option(OPENCV_WITH_IPP            "OpenCV: Include Intel IPP support"                                                   ON) # Causes a hash mismatch error when downloading # both
-  option(OPENCV_WITH_HALIDE         "OpenCV: Include Halide support"                                                      OFF) # 3.3.0
-  option(OPENCV_WITH_JASPER         "OpenCV: Include JPEG2K support"                                                      OFF) # both
-  option(OPENCV_WITH_JPEG           "OpenCV: Include JPEG support"                                                        ON) # both
-  option(OPENCV_WITH_WEBP           "OpenCV: Include WebP support"                                                        OFF) # 3.3.0
-  option(OPENCV_WITH_OPENEXR        "OpenCV: Include ILM support via OpenEXR"                                             OFF) # both
-  option(OPENCV_WITH_OPENGL         "OpenCV: Include OpenGL support"                                                      OFF) # both
-  option(OPENCV_WITH_OPENVX         "OpenCV: Include OpenVX support"                                                      OFF) # 3.3.0
-  option(OPENCV_WITH_OPENNI         "OpenCV: Include OpenNI support"                                                      OFF) # both
-  option(OPENCV_WITH_OPENNI2        "OpenCV: Include OpenNI2 support"                                                     OFF) # 3.3.0
-  option(OPENCV_WITH_PNG            "OpenCV: Include PNG support"                                                         ON) # both
-  option(OPENCV_WITH_GDCM           "OpenCV: Include DICOM support"                                                       OFF) # 3.3.0
-  option(OPENCV_WITH_PVAPI          "OpenCV: Include Prosilica GigE support"                                              OFF) # both
-  option(OPENCV_WITH_GIGEAPI        "OpenCV: Include Smartek GigE support"                                                OFF) # both
-  option(OPENCV_WITH_ARAVIS         "OpenCV: Include Aravis GigE support"                                                 OFF) # 3.3.0
-  option(OPENCV_WITH_QT             "OpenCV: Build with Qt Backend support"                                               OFF) # both
-  option(OPENCV_WITH_WIN32UI        "OpenCV: Build with Win32 UI Backend support"                                         OFF) # both
-  option(OPENCV_WITH_QUICKTIME      "OpenCV: Use QuickTime for Video I/O"                                                 OFF) # both
-  option(OPENCV_WITH_QTKIT          "OpenCV: Use QTKit Video I/O backend"                                                 OFF) # 3.3.0
-  option(OPENCV_WITH_TBB            "OpenCV: Include Intel TBB support"                                                   OFF) # both
-  option(OPENCV_WITH_OPENMP         "OpenCV: Include OpenMP support"                                                      OFF) # both
-  option(OPENCV_WITH_CSTRIPES       "OpenCV: Include C= support"                                                          OFF) # both
-  option(OPENCV_WITH_PTHREADS_PF    "OpenCV: Use pthreads-based parallel_for"                                             OFF) # 3.3.0
-  option(OPENCV_WITH_TIFF           "OpenCV: Include TIFF support"                                                        ON) # both
-  option(OPENCV_WITH_UNICAP         "OpenCV: Include Unicap support (GPL)"                                                OFF) # both
-  option(OPENCV_WITH_V4L            "OpenCV: Include Video 4 Linux support"                                               OFF) # both
-  option(OPENCV_WITH_LIBV4L         "OpenCV: Use libv4l for Video 4 Linux support"                                        OFF) # both
-  option(OPENCV_WITH_DSHOW          "OpenCV: Build VideoIO with DirectShow support"                                       OFF) # both
-  option(OPENCV_WITH_MSMF           "OpenCV: Build VideoIO with Media Foundation support"                                 OFF) # both
-  option(OPENCV_WITH_XIMEA          "OpenCV: Include XIMEA cameras support"                                               OFF) # both
-  option(OPENCV_WITH_XINE           "OpenCV: Include Xine support (GPL)"                                                  OFF) # both
-  option(OPENCV_WITH_CLP            "OpenCV: Include Clp support (EPL)"                                                   OFF) # 3.3.0
-  option(OPENCV_WITH_OPENCL         "OpenCV: Include OpenCL Runtime support"                                              OFF) # both
-  option(OPENCV_WITH_OPENCL_SVM     "OpenCV: Include OpenCL Shared Virtual Memory support"                                OFF) # experimental 3.3.0
-  option(OPENCV_WITH_OPENCLAMDFFT   "OpenCV: Include AMD OpenCL FFT library support"                                      OFF) # both
-  option(OPENCV_WITH_OPENCLAMDBLAS  "OpenCV: Include AMD OpenCL BLAS library support"                                     OFF) # both
-  option(OPENCV_WITH_DIRECTX        "OpenCV: Include DirectX support"                                                     OFF) # 3.3.0
-  option(OPENCV_WITH_INTELPERC      "OpenCV: Include Intel Perceptual Computing support"                                  OFF) # both
-  option(OPENCV_WITH_IPP_A          "OpenCV: Include Intel IPP_A support"                                                 OFF) # 3.3.0
-  option(OPENCV_WITH_MATLAB         "OpenCV: Include Matlab support"                                                      OFF) # 3.3.0
-  option(OPENCV_WITH_VA             "OpenCV: Include VA support"                                                          OFF) # 3.3.0
-  option(OPENCV_WITH_VA_INTEL       "OpenCV: Include Intel VA-API/OpenCL support"                                         OFF) # 3.3.0
-  option(OPENCV_WITH_MFX            "OpenCV: Include Intel Media SDK support"                                             OFF) # 3.3.0
-  option(OPENCV_WITH_GDAL           "OpenCV: Include GDAL Support"                                                        OFF) # 3.3.0
-  option(OPENCV_WITH_GPHOTO2        "OpenCV: Include gPhoto2 library support"                                             OFF) # 3.3.0
-  option(OPENCV_WITH_LAPACK         "OpenCV: Include Lapack library support"                                              OFF) # 3.3.0
-  option(OPENCV_WITH_ITT            "OpenCV: Include Intel ITT support"                                                   ON) # 3.3.0
+  option(OPENCV_WITH_1394               "OpenCV: Include IEEE1394 support"                          OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_AVFOUNDATION       "OpenCV: Use AVFoundation for Video I/O (iOS/Mac)"          OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CARBON             "OpenCV: Use Carbon for UI instead of Cocoa"                OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CAROTENE           "OpenCV: Use NVidia carotene acceleration library for ARM platform" OFF) # 3.3.0
+  option(OPENCV_WITH_CPUFEATURES        "OpenCV: Use cpufeatures Android library"                   OFF) # 3.3.0
+  option(OPENCV_WITH_VTK                "OpenCV: Include VTK library support (and build opencv_viz module eiher)" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CUDA               "OpenCV: Include NVidia Cuda Runtime support"               OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CUFFT              "OpenCV: Include NVidia Cuda Fast Fourier Transform (FFT) library support" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CUBLAS             "OpenCV: Include NVidia Cuda Basic Linear Algebra Subprograms (BLAS) library support" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_NVCUVID            "OpenCV: Include NVidia Video Decoding library support"     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_EIGEN              "OpenCV: Include Eigen2/Eigen3 support"                     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_VFW                "OpenCV: Include Video for Windows support"                 OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_FFMPEG             "OpenCV: Include FFMPEG support"                            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GSTREAMER          "OpenCV: Include Gstreamer support"                         OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GSTREAMER_0_10     "OpenCV: Enable Gstreamer 0.10 support (instead of 1.x)"    OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GTK                "OpenCV: Include GTK support"                               OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GTK_2_X            "OpenCV: Use GTK version 2"                                 OFF) # 3.3.0
+  option(OPENCV_WITH_IMAGEIO            "OpenCV: ImageIO support for OS X"                          OFF) # 2.4.13
+  option(OPENCV_WITH_IPP                "OpenCV: Include Intel IPP support"                         ON) # Causes a hash mismatch error when downloading # 2.4.13, 3.3.0
+  option(OPENCV_WITH_HALIDE             "OpenCV: Include Halide support"                            OFF) # 3.3.0
+  option(OPENCV_WITH_JASPER             "OpenCV: Include JPEG2K support"                            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_JPEG               "OpenCV: Include JPEG support"                              ON) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_WEBP               "OpenCV: Include WebP support"                              OFF) # 3.3.0
+  option(OPENCV_WITH_OPENEXR            "OpenCV: Include ILM support via OpenEXR"                   OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENGL             "OpenCV: Include OpenGL support"                            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENVX             "OpenCV: Include OpenVX support"                            OFF) # 3.3.0
+  option(OPENCV_WITH_OPENNI             "OpenCV: Include OpenNI support"                            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENNI2            "OpenCV: Include OpenNI2 support"                           OFF) # 3.3.0
+  option(OPENCV_WITH_PNG                "OpenCV: Include PNG support"                               ON) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GDCM               "OpenCV: Include DICOM support"                             OFF) # 3.3.0
+  option(OPENCV_WITH_PVAPI              "OpenCV: Include Prosilica GigE support"                    OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_GIGEAPI            "OpenCV: Include Smartek GigE support"                      OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_ARAVIS             "OpenCV: Include Aravis GigE support"                       OFF) # 3.3.0
+  option(OPENCV_WITH_QT                 "OpenCV: Build with Qt Backend support"                     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_WIN32UI            "OpenCV: Build with Win32 UI Backend support"               OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_QUICKTIME          "OpenCV: Use QuickTime for Video I/O"                       OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_QTKIT              "OpenCV: Use QTKit Video I/O backend"                       OFF) # 3.3.0
+  option(OPENCV_WITH_TBB                "OpenCV: Include Intel TBB support"                         OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENMP             "OpenCV: Include OpenMP support"                            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CSTRIPES           "OpenCV: Include C= support"                                OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_PTHREADS_PF        "OpenCV: Use pthreads-based parallel_for"                   OFF) # 3.3.0
+  option(OPENCV_WITH_TIFF               "OpenCV: Include TIFF support"                              ON) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_UNICAP             "OpenCV: Include Unicap support (GPL)"                      OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_V4L                "OpenCV: Include Video 4 Linux support"                     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_LIBV4L             "OpenCV: Use libv4l for Video 4 Linux support"              OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_DSHOW              "OpenCV: Build VideoIO with DirectShow support"             OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_MSMF               "OpenCV: Build VideoIO with Media Foundation support"       OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_XIMEA              "OpenCV: Include XIMEA cameras support"                     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_XINE               "OpenCV: Include Xine support (GPL)"                        OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_CLP                "OpenCV: Include Clp support (EPL)"                         OFF) # 3.3.0
+  option(OPENCV_WITH_OPENCL             "OpenCV: Include OpenCL Runtime support"                    OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENCL_SVM         "OpenCV: Include OpenCL Shared Virtual Memory support"      OFF) # experimental 3.3.0
+  option(OPENCV_WITH_OPENCLAMDFFT       "OpenCV: Include AMD OpenCL FFT library support"            OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_OPENCLAMDBLAS      "OpenCV: Include AMD OpenCL BLAS library support"           OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_DIRECTX            "OpenCV: Include DirectX support"                           OFF) # 3.3.0
+  option(OPENCV_WITH_INTELPERC          "OpenCV: Include Intel Perceptual Computing support"        OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WITH_IPP_A              "OpenCV: Include Intel IPP_A support"                       OFF) # 3.3.0
+  option(OPENCV_WITH_MATLAB             "OpenCV: Include Matlab support"                            OFF) # 3.3.0
+  option(OPENCV_WITH_VA                 "OpenCV: Include VA support"                                OFF) # 3.3.0
+  option(OPENCV_WITH_VA_INTEL           "OpenCV: Include Intel VA-API/OpenCL support"               OFF) # 3.3.0
+  option(OPENCV_WITH_MFX                "OpenCV: Include Intel Media SDK support"                   OFF) # 3.3.0
+  option(OPENCV_WITH_GDAL               "OpenCV: Include GDAL Support"                              OFF) # 3.3.0
+  option(OPENCV_WITH_GPHOTO2            "OpenCV: Include gPhoto2 library support"                   OFF) # 3.3.0
+  option(OPENCV_WITH_LAPACK             "OpenCV: Include Lapack library support"                    OFF) # 3.3.0
+  option(OPENCV_WITH_ITT                "OpenCV: Include Intel ITT support"                         ON) # 3.3.0
 
   # OpenCV build components
-  option(OPENCV_BUILD_SHARED_LIBS      "OpenCV: Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON) # both
-  option(OPENCV_BUILD_opencv_apps      "OpenCV: Build utility applications (used for example to train classifiers)" OFF) # both
-  option(OPENCV_BUILD_ANDROID_EXAMPLES "OpenCV: Build examples for Android platform"                                OFF) # both
-  option(OPENCV_BUILD_DOCS             "OpenCV: Create build rules for OpenCV Documentation"                        OFF) # both
-  option(OPENCV_BUILD_EXAMPLES         "OpenCV: Build all examples"                                                 OFF) # both
-  option(OPENCV_BUILD_PACKAGE          "OpenCV: Create build rules for OpenCV Documentation"                        OFF) # both
-  option(OPENCV_BUILD_PERF_TESTS       "OpenCV: Build performance tests"                                            OFF) # both
-  option(OPENCV_BUILD_TESTS            "OpenCV: Build accuracy & regression tests"                                  OFF) # both
-  option(OPENCV_BUILD_WITH_DEBUG_INFO  "OpenCV: Include debug info into debug libs (not MSCV only)"                 OFF) # both
-  option(OPENCV_BUILD_WITH_STATIC_CRT  "OpenCV: Enables use of staticaly linked CRT for staticaly linked OpenCV"    OFF) # both
-  option(OPENCV_BUILD_WITH_DYNAMIC_IPP "OpenCV: Enables dynamic linking of IPP (only for standalone IPP)"           OFF) # 3.3.0
-  option(OPENCV_BUILD_FAT_JAVA_LIB     "OpenCV: Create fat java wrapper containing the whole OpenCV library"        OFF) # both
-  option(OPENCV_BUILD_ANDROID_SERVICE  "OpenCV: Build OpenCV Manager for Google Play"                               OFF) # both
-  option(OPENCV_BUILD_CUDA_STUBS       "OpenCV: Build CUDA modules stubs when no CUDA SDK"                          OFF) # 3.3.0
+  option(OPENCV_BUILD_SHARED_LIBS       "OpenCV: Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_opencv_apps       "OpenCV: Build utility applications (used for example to train classifiers)" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_ANDROID_EXAMPLES  "OpenCV: Build examples for Android platform"               OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_DOCS              "OpenCV: Create build rules for OpenCV Documentation"       OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_EXAMPLES          "OpenCV: Build all examples"                                OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_PACKAGE           "OpenCV: Create build rules for OpenCV Documentation"       OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_PERF_TESTS        "OpenCV: Build performance tests"                           OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_TESTS             "OpenCV: Build accuracy & regression tests"                 OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_WITH_DEBUG_INFO   "OpenCV: Include debug info into debug libs (not MSCV only)" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_WITH_STATIC_CRT   "OpenCV: Enables use of staticaly linked CRT for staticaly linked OpenCV" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_WITH_DYNAMIC_IPP  "OpenCV: Enables dynamic linking of IPP (only for standalone IPP)" OFF) # 3.3.0
+  option(OPENCV_BUILD_FAT_JAVA_LIB      "OpenCV: Create fat java wrapper containing the whole OpenCV library" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_ANDROID_SERVICE   "OpenCV: Build OpenCV Manager for Google Play"              OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_ANDROID_PACKAGE   "OpenCV: Build platform-specific package for Google Play"   OFF) # 2.4.13
+  option(OPENCV_BUILD_TINY_GPU_MODULE   "OpenCV: Build tiny gpu module with limited image format support" OFF) # 2.4.13
+  option(OPENCV_BUILD_CUDA_STUBS        "OpenCV: Build CUDA modules stubs when no CUDA SDK"         OFF) # 3.3.0
 
-# 3rd party libs
-  option(OPENCV_BUILD_ZLIB             "OpenCV: Build zlib from source"                                             ON) # both
-  option(OPENCV_BUILD_TIFF             "OpenCV: Build libtiff from source"                                          ON) # both
-  option(OPENCV_BUILD_JASPER           "OpenCV: Build libjasper from source"                                        OFF) # both
+  # 3rd party libs
+  option(OPENCV_BUILD_ZLIB              "OpenCV: Build zlib from source"                            ON) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_TIFF              "OpenCV: Build libtiff from source"                         ON) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_JASPER            "OpenCV: Build libjasper from source"                       OFF) # 2.4.13, 3.3.0
   if(WITH_LIBJPEG_TURBO)
-    option(OPENCV_BUILD_JPEG           "OpenCV: Build libjpeg from source"                                          OFF) # both
+    option(OPENCV_BUILD_JPEG            "OpenCV: Build libjpeg from source"                         OFF) # 2.4.13, 3.3.0
   else()
-    option(OPENCV_BUILD_JPEG           "OpenCV: Build libjpeg from source"                                          ON) # both
+    option(OPENCV_BUILD_JPEG            "OpenCV: Build libjpeg from source"                         ON) # 2.4.13, 3.3.0
   endif()
-  option(OPENCV_BUILD_PNG              "OpenCV: Build libpng from source"                                           ON) # both
-  option(OPENCV_BUILD_OPENEXR          "OpenCV: Build openexr from source"                                          OFF) # both
-  option(OPENCV_BUILD_TBB              "OpenCV: Download and build TBB from source"                                 OFF) # both
-  option(OPENCV_BUILD_IPP_IW           "OpenCV: Build IPP IW from source"                                           OFF) # 3.3.0
-  option(OPENCV_BUILD_ITT              "OpenCV: Build Intel ITT from source"                                        ON) # 3.3.0
+  option(OPENCV_BUILD_PNG               "OpenCV: Build libpng from source"                          ON) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_OPENEXR           "OpenCV: Build openexr from source"                         OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_TBB               "OpenCV: Download and build TBB from source"                OFF) # 2.4.13, 3.3.0
+  option(OPENCV_BUILD_IPP_IW            "OpenCV: Build IPP IW from source"                          OFF) # 3.3.0
+  option(OPENCV_BUILD_ITT               "OpenCV: Build Intel ITT from source"                       ON) # 3.3.0
 
   # OpenCV installation options
-  option(OPENCV_INSTALL_CREATE_DISTRIB   "OpenCV: Change install rules to build the distribution package"              OFF) # both
-  option(OPENCV_INSTALL_C_EXAMPLES       "OpenCV: Install C examples"                                                  OFF) # both
-  option(OPENCV_INSTALL_PYTHON_EXAMPLES  "OpenCV: Install Python examples"                                             OFF) # both
-  option(OPENCV_INSTALL_ANDROID_EXAMPLES "OpenCV: Install Android examples"                                            OFF) # both
-  option(OPENCV_INSTALL_TO_MANGLED_PATHS "OpenCV: Enables mangled install paths, that help with side by side installs" OFF) # both
-  option(OPENCV_INSTALL_TESTS            "OpenCV: Install accuracy and performance test binaries and test data"        OFF) # both
+  option(OPENCV_INSTALL_CREATE_DISTRIB  "OpenCV: Change install rules to build the distribution package" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_INSTALL_C_EXAMPLES      "OpenCV: Install C examples"                                OFF) # 2.4.13, 3.3.0
+  option(OPENCV_INSTALL_PYTHON_EXAMPLES "OpenCV: Install Python examples"                           OFF) # 2.4.13, 3.3.0
+  option(OPENCV_INSTALL_ANDROID_EXAMPLES "OpenCV: Install Android examples"                         OFF) # 2.4.13, 3.3.0
+  option(OPENCV_INSTALL_TO_MANGLED_PATHS "OpenCV: Enables mangled install paths, that help with side by side installs" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_INSTALL_TESTS           "OpenCV: Install accuracy and performance test binaries and test data" OFF) # 2.4.13, 3.3.0
 
   # OpenCV build options
-  option(OPENCV_ENABLE_CCACHE              "OpenCV: Use ccache"                                               OFF) # 3.3.0
-  option(OPENCV_ENABLE_PRECOMPILED_HEADERS "OpenCV: Use precompiled headers"                                  OFF) # both
-  option(OPENCV_ENABLE_SOLUTION_FOLDERS    "OpenCV: Solution folder in Visual Studio or in other IDEs"        OFF) # both
-  option(OPENCV_ENABLE_PROFILING           "OpenCV: Enable profiling in the GCC compiler (Add flags: -g -pg)" ON) # both
-  option(OPENCV_ENABLE_COVERAGE            "OpenCV: Enable coverage collection with  GCov"                    OFF) # both
-  option(OPENCV_ENABLE_OMIT_FRAME_POINTER  "OpenCV: Enable -fomit-frame-pointer for GCC"                      ON) # both
-  option(OPENCV_ENABLE_POWERPC             "OpenCV: Enable PowerPC for GCC"                                   ON) # both
-  option(OPENCV_ENABLE_FAST_MATH           "OpenCV: Enable -ffast-math (not recommended for GCC 4.6.x)"       ON) # both
-  option(OPENCV_ENABLE_NEON                "OpenCV: Enable NEON instructions"                                 OFF) # both
-  option(OPENCV_ENABLE_VFPV3               "OpenCV: Enable VFPv3-D32 instructions"                            OFF) # both
-  option(OPENCV_ENABLE_NOISY_WARNINGS      "OpenCV: Show all warnings even if they are too noisy"             OFF) # both
-  option(OPENCV_WARNINGS_ARE_ERRORS        "OpenCV: Treat warnings as errors"                                 OFF) # both
+  option(OPENCV_ENABLE_CCACHE           "OpenCV: Use ccache"                                        OFF) # 2.4.13, 3.3.0
+  option(OPENCV_DYNAMIC_CUDA            "OpenCV: Enabled dynamic CUDA linkage"                      OFF) # 2.4.13
+  option(OPENCV_ENABLE_PRECOMPILED_HEADERS "OpenCV: Use precompiled headers"                        OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_SOLUTION_FOLDERS "OpenCV: Solution folder in Visual Studio or in other IDEs" OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_PROFILING        "OpenCV: Enable profiling in the GCC compiler (Add flags: -g -pg)" ON) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_COVERAGE         "OpenCV: Enable coverage collection with  GCov"             OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_OMIT_FRAME_POINTER "OpenCV: Enable -fomit-frame-pointer for GCC"             ON) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_POWERPC          "OpenCV: Enable PowerPC for GCC"                            ON) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_FAST_MATH        "OpenCV: Enable -ffast-math (not recommended for GCC 4.6.x)" ON) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_NEON             "OpenCV: Enable NEON instructions"                          OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_VFPV3            "OpenCV: Enable VFPv3-D32 instructions"                     OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_NOISY_WARNINGS   "OpenCV: Show all warnings even if they are too noisy"      OFF) # 2.4.13, 3.3.0
+  option(OPENCV_WARNINGS_ARE_ERRORS     "OpenCV: Treat warnings as errors"                          OFF) # 2.4.13, 3.3.0
+  option(OPENCV_ENABLE_WINRT_MODE       "OpenCV: Build with Windows Runtime support"                OFF) # 2.4.13
+  option(OPENCV_ENABLE_WINRT_MODE_NATIVE "OpenCV: Build with Windows Runtime native C++ support"    OFF) # 2.4.13
+  option(OPENCV_ENABLE_LIBVS2013        "OpenCV: Build VS2013 with Visual Studio 2013 libraries"    OFF) # 2.4.13
+  option(OPENCV_ENABLE_WINSDK81         "OpenCV: Build VS2013 with Windows 8.1 SDK"                 OFF) # 2.4.13
+  option(OPENCV_ENABLE_WINPHONESDK80    "OpenCV: Build with Windows Phone 8.0 SDK"                  OFF) # 2.4.13
+  option(OPENCV_ENABLE_WINPHONESDK81    "OpenCV: Build VS2013 with Windows Phone 8.1 SDK"           OFF) # 2.4.13
   option(OPENCV_ANDROID_EXAMPLES_WITH_LIBS "OpenCV: Build binaries of Android examples with native libraries" OFF) # 3.3.0
-  option(OPENCV_ENABLE_IMPL_COLLECTION     "OpenCV: Collect implementation data on function call"             OFF) # 3.3.0
-  option(OPENCV_ENABLE_INSTRUMENTATION     "OpenCV: Instrument functions to collect calls trace and performance" OFF) # 3.3.0
-  option(OPENCV_ENABLE_GNU_STL_DEBUG       "OpenCV: Enable GNU STL Debug mode (defines _GLIBCXX_DEBUG)"       OFF) # 3.3.0
-  option(OPENCV_ENABLE_BUILD_HARDENING     "OpenCV: Enable hardening of the resulting binaries (against security attacks, detects memory corruption, etc)" OFF) # 3.3.0
-  option(OPENCV_GENERATE_ABI_DESCRIPTOR    "OpenCV: Generate XML file for abi_compliance_checker tool"        OFF) # 3.3.0
-  option(OPENCV_CV_ENABLE_INTRINSICS       "OpenCV: Use intrinsic-based optimized code"                       ON) # 3.3.0
-  option(OPENCV_CV_DISABLE_OPTIMIZATION    "OpenCV: Disable explicit optimized code (dispatched code/intrinsics/loop unrolling/etc)" OFF) # 3.3.0
-  option(OPENCV_CV_TRACE                   "OpenCV: Enable OpenCV code trace"                                 OFF) # 3.3.0
+  option(OPENCV_ENABLE_IMPL_COLLECTION  "OpenCV: Collect implementation data on function call"   OFF) # 3.3.0
+  option(OPENCV_ENABLE_INSTRUMENTATION  "OpenCV: Instrument functions to collect calls trace and performance" OFF) # 3.3.0
+  option(OPENCV_ENABLE_GNU_STL_DEBUG    "OpenCV: Enable GNU STL Debug mode (defines _GLIBCXX_DEBUG)" OFF) # 3.3.0
+  option(OPENCV_ENABLE_BUILD_HARDENING  "OpenCV: Enable hardening of the resulting binaries (against security attacks, detects memory corruption, etc)" OFF) # 3.3.0
+  option(OPENCV_GENERATE_ABI_DESCRIPTOR "OpenCV: Generate XML file for abi_compliance_checker tool" OFF) # 3.3.0
+  option(OPENCV_CV_ENABLE_INTRINSICS    "OpenCV: Use intrinsic-based optimized code"                ON) # 3.3.0
+  option(OPENCV_CV_DISABLE_OPTIMIZATION "OpenCV: Disable explicit optimized code (dispatched code/intrinsics/loop unrolling/etc)" OFF) # 3.3.0
+  option(OPENCV_CV_TRACE                "OpenCV: Enable OpenCV code trace"                          OFF) # 3.3.0
 
   # ============================
 
@@ -218,6 +249,27 @@ else()
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=${CMAKE_INSTALL_RPATH_USE_LINK_PATH}
       -D CMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
       -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
+      -D BUILD_opencv_core=${OPENCV_BUILD_opencv_core}
+      -D BUILD_opencv_flann=${OPENCV_BUILD_opencv_flann}
+      -D BUILD_opencv_imgproc=${OPENCV_BUILD_opencv_imgproc}
+      -D BUILD_opencv_highgui=${OPENCV_BUILD_opencv_highgui}
+      -D BUILD_opencv_features2d=${OPENCV_BUILD_opencv_features2d}
+      -D BUILD_opencv_calib3d=${OPENCV_BUILD_opencv_calib3d}
+      -D BUILD_opencv_ml=${OPENCV_BUILD_opencv_ml}
+      -D BUILD_opencv_video=${OPENCV_BUILD_opencv_video}
+      -D BUILD_opencv_legacy=${OPENCV_BUILD_opencv_legacy}
+      -D BUILD_opencv_objdetect=${OPENCV_BUILD_opencv_objdetect}
+      -D BUILD_opencv_photo=${OPENCV_BUILD_opencv_photo}
+      -D BUILD_opencv_gpu=${OPENCV_BUILD_opencv_gpu}
+      -D BUILD_opencv_nonfree=${OPENCV_BUILD_opencv_nonfree}
+      -D BUILD_opencv_contrib=${OPENCV_BUILD_opencv_contrib}
+      -D BUILD_opencv_java=${OPENCV_BUILD_opencv_java}
+      -D BUILD_opencv_python=${OPENCV_BUILD_opencv_python}
+      -D BUILD_opencv_stitching=${OPENCV_BUILD_opencv_stitching}
+      -D BUILD_opencv_superres=${OPENCV_BUILD_opencv_superres}
+      -D BUILD_opencv_ts=${OPENCV_BUILD_opencv_ts}
+      -D BUILD_opencv_videostab=${OPENCV_BUILD_opencv_videostab}
+      -D BUILD_opencv_world=${OPENCV_BUILD_opencv_world}
       -D OPENCV_ENABLE_NONFREE=${OPENCV_ENABLE_NONFREE}
       -D WITH_1394=${OPENCV_WITH_1394}
       -D WITH_AVFOUNDATION=${OPENCV_WITH_AVFOUNDATION}
@@ -297,6 +349,8 @@ else()
       -D BUILD_WITH_DYNAMIC_IPP=${OPENCV_BUILD_WITH_DYNAMIC_IPP}
       -D BUILD_FAT_JAVA_LIB=${OPENCV_BUILD_FAT_JAVA_LIB}
       -D BUILD_ANDROID_SERVICE=${OPENCV_BUILD_ANDROID_SERVICE}
+      -D BUILD_ANDROID_PACKAGE=${OPENCV_BUILD_ANDROID_PACKAGE}
+      -D BUILD_TINY_GPU_MODULE=${OPENCV_BUILD_TINY_GPU_MODULE}
       -D BUILD_CUDA_STUBS=${OPENCV_BUILD_CUDA_STUBS}
       -D BUILD_ZLIB=${OPENCV_BUILD_ZLIB}
       -D BUILD_TIFF=${OPENCV_BUILD_TIFF}
@@ -314,6 +368,7 @@ else()
       -D INSTALL_TO_MANGLED_PATHS=${OPENCV_INSTALL_TO_MANGLED_PATHS}
       -D INSTALL_TESTS=${OPENCV_INSTALL_TESTS}
       -D ENABLE_CCACHE=${OPENCV_ENABLE_CCACHE}
+      -D DYNAMIC_CUDA=${OPENCV_DYNAMIC_CUDA}
       -D ENABLE_PRECOMPILED_HEADERS=${OPENCV_ENABLE_PRECOMPILED_HEADERS}
       -D ENABLE_SOLUTION_FOLDERS=${OPENCV_ENABLE_SOLUTION_FOLDERS}
       -D ENABLE_PROFILING=${OPENCV_ENABLE_PROFILING}
@@ -325,6 +380,12 @@ else()
       -D ENABLE_VFPV3=${OPENCV_ENABLE_VFPV3}
       -D ENABLE_NOISY_WARNINGS=${OPENCV_ENABLE_NOISY_WARNINGS}
       -D OPENCV_WARNINGS_ARE_ERRORS=${OPENCV_WARNINGS_ARE_ERRORS}
+      -D ENABLE_WINRT_MODE=${OPENCV_ENABLE_WINRT_MODE}
+      -D ENABLE_WINRT_MODE_NATIVE=${OPENCV_ENABLE_WINRT_MODE_NATIVE}
+      -D ENABLE_LIBVS2013=${OPENCV_ENABLE_LIBVS2013}
+      -D ENABLE_WINSDK81=${OPENCV_ENABLE_WINSDK81}
+      -D ENABLE_WINPHONESDK80=${OPENCV_ENABLE_WINPHONESDK80}
+      -D ENABLE_WINPHONESDK81=${OPENCV_ENABLE_WINPHONESDK81}
       -D ANDROID_EXAMPLES_WITH_LIBS=${OPENCV_ANDROID_EXAMPLES_WITH_LIBS}
       -D ENABLE_IMPL_COLLECTION=${OPENCV_ENABLE_IMPL_COLLECTION}
       -D ENABLE_INSTRUMENTATION=${OPENCV_ENABLE_INSTRUMENTATION}

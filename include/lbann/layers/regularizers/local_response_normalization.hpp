@@ -106,6 +106,13 @@ class local_response_normalization_layer : public regularizer_layer {
 
   std::string get_name() const { return "local response normalization"; }
 
+  std::string get_description() const {
+    return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
+      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta) 
+      + " k: " + std::to_string(m_lrn_k)
+      + " dataLayout: " + get_data_layout_string(get_data_layout());
+  }
+
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }

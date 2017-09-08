@@ -898,9 +898,6 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       }
-      the_layers[layer.index()] = d;
-      layer_mapping[layer.index()] = model->get_layers().size();
-      model->add(d);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -1333,6 +1330,19 @@ void init_callbacks(
       lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
       model->add_callback(step_mb_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: gradient_check
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_gradient_check()) {
+      if (master) {
+        std::cout << "adding gradient_check callback" << std::endl;
+      }
+      lbann_callback_gradient_check *gradient_check_cb = new
+      lbann_callback_gradient_check();
+      model->add_callback(gradient_check_cb);
+    }
+
   }
 
 }
@@ -1346,19 +1356,19 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();
-  const string objective_function = m.objective_function();
+  const string obj_fn_name = m.objective_function();
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
-  objective_functions::objective_fn *obj;
-  if (objective_function == "categorical_cross_entropy") {
-    obj = new objective_functions::categorical_cross_entropy(comm);
-  } else if (objective_function == "mean_squared_error") {
-    obj = new objective_functions::mean_squared_error(comm);
+  objective_functions::objective_function *obj;
+  if (obj_fn_name == "cross_entropy") {
+    obj = new objective_functions::cross_entropy();
+  } else if (obj_fn_name == "mean_squared_error") {
+    obj = new objective_functions::mean_squared_error();
   } else {
     err << __FILE__ << " " << __LINE__
-        << " :: init_model() - unknown objective function name: " << name << endl
-        << "; should be one of: categorical_cross_entropy, mean_squared_error";
+        << " :: init_model() - unknown objective function name: " << obj_fn_name
+        << std::endl << "; should be one of: cross_entropy, mean_squared_error";
     throw lbann_exception(err.str());
   }
 
@@ -1479,6 +1489,17 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
+    } else if (name == "csv") {
+      csv_reader* reader_csv = new csv_reader(mini_batch_size, shuffle);
+      reader_csv->set_label_col(readme.label_col());
+      reader_csv->set_response_col(readme.response_col());
+      reader_csv->disable_labels(readme.disable_labels()); 
+      reader_csv->enable_responses(readme.disable_reponses());
+      reader_csv->set_separator(readme.separator()[0]);
+      reader_csv->set_skip_cols(readme.skip_cols());
+      reader_csv->set_skip_rows(readme.skip_rows());
+      reader_csv->set_has_header(readme.has_header());
+      reader = reader_csv;
     } else if (name == "numpy") {
       reader = new numpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
@@ -1553,6 +1574,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
+      } else if (name == "csv") {
+        reader_validation = new csv_reader(mini_batch_size, shuffle);
+        (*(csv_reader *)reader_validation) = (*(csv_reader *)reader);
       } else if (name == "numpy") {
         reader_validation = new numpy_reader(mini_batch_size, shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
@@ -1577,7 +1601,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_validation = new imagenet_reader_single_cv(mini_batch_size, shuffle);
       */
 
-      reader_validation->set_role("validate");
+      reader_validation->swap_role("validate");
       reader_validation->use_unused_index_set();
 
       if (master) {

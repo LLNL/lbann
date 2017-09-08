@@ -348,7 +348,8 @@ class batch_normalization : public regularizer_layer {
      + std::to_string(this->m_decay) + " scale_init: " 
      + std::to_string(this->m_scale_init)
      + " bias: " + std::to_string(this->m_bias_init) + " epsilon: " 
-     + std::to_string(this->m_epsilon);
+     + std::to_string(this->m_epsilon)
+     + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
   ~batch_normalization() {

@@ -1,5 +1,5 @@
 add_sources(
-  objective_fn.cpp
-  objective_fn_categorical_cross_entropy.cpp
-  objective_fn_mean_squared_error.cpp
+  objective_function.cpp
+  cross_entropy.cpp
+  mean_squared_error.cpp
 )

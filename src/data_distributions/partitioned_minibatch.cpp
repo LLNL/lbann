@@ -62,15 +62,9 @@ void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 }
 
 bool lbann::partitioned_minibatch::is_data_set_processed() {
-  int num_readers_done = 0;
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
   m_local_reader_done = !update_data_reader();
-
-  /// Set the reduction variable
-  if(m_local_reader_done) {
-    num_readers_done = 1;
-  }
 
   if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
@@ -118,6 +112,8 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == NULL) { return; }
+  // If the data reader does not have any data bail out (e.g. unused validation reader)
+  if(data_reader->get_use_percent() == double(0.0)) { return; }
 
   /// Make sure that the mini-batch size is not larger than the data set
   if(max_mini_batch_size > data_reader->get_num_data()) {
@@ -207,6 +203,8 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == NULL) { return; }
+  // If the data reader does not have any data bail out (e.g. unused validation reader)
+  if(data_reader->get_use_percent() == double(0.0)) { return; }
 
   if(max_mini_batch_size > data_reader->get_num_data()) {
     max_mini_batch_size = data_reader->get_num_data();

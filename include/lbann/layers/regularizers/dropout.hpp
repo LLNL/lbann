@@ -81,6 +81,11 @@ class dropout : public regularizer_layer {
 
   std::string get_name() const { return "dropout"; }
 
+  std::string get_description() const {
+    return " dropout keep_prob: " + std::to_string(m_keep_prob) 
+           + " dataLayout: " + get_data_layout_string(get_data_layout());
+  }
+
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 

@@ -62,16 +62,16 @@ class io_layer : public Layer {
       m_validation_dataset(data_readers[execution_mode::validation]),
       m_data_sets_span_models(data_sets_span_models),
       m_for_regression(for_regression) {
-    if(m_training_dataset.data_reader != nullptr) {
-      m_training_dataset.total_samples = m_training_dataset.data_reader->get_num_data();
+    if(m_training_dataset.m_data_reader != nullptr) {
+      m_training_dataset.m_total_samples = m_training_dataset.m_data_reader->get_num_data();
     }
 
-    if(m_validation_dataset.data_reader != nullptr) {
-      m_validation_dataset.total_samples = m_validation_dataset.data_reader->get_num_data();
+    if(m_validation_dataset.m_data_reader != nullptr) {
+      m_validation_dataset.m_total_samples = m_validation_dataset.m_data_reader->get_num_data();
     }
 
-    if(m_testing_dataset.data_reader != nullptr) {
-      m_testing_dataset.total_samples = m_testing_dataset.data_reader->get_num_data();
+    if(m_testing_dataset.m_data_reader != nullptr) {
+      m_testing_dataset.m_total_samples = m_testing_dataset.m_data_reader->get_num_data();
     }
   }
 
@@ -91,30 +91,30 @@ class io_layer : public Layer {
   generic_data_reader *set_training_data_reader(generic_data_reader *data_reader) {
     /// @todo put in a check to make sure that this is a data reader
     /// that matches what was already there
-    generic_data_reader *old_data_reader = m_training_dataset.data_reader;
-    m_training_dataset.data_reader = data_reader;
-    m_training_dataset.num_samples_processed = 0;
-    m_training_dataset.total_samples = data_reader->get_num_data();
+    generic_data_reader *old_data_reader = m_training_dataset.m_data_reader;
+    m_training_dataset.m_data_reader = data_reader;
+    m_training_dataset.m_num_samples_processed = 0;
+    m_training_dataset.m_total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
   generic_data_reader *set_validation_data_reader(generic_data_reader *data_reader) {
     /// @todo put in a check to make sure that this is a data reader
     /// that matches what was already there
-    generic_data_reader *old_data_reader = m_validation_dataset.data_reader;
-    m_validation_dataset.data_reader = data_reader;
-    m_validation_dataset.num_samples_processed = 0;
-    m_validation_dataset.total_samples = data_reader->get_num_data();
+    generic_data_reader *old_data_reader = m_validation_dataset.m_data_reader;
+    m_validation_dataset.m_data_reader = data_reader;
+    m_validation_dataset.m_num_samples_processed = 0;
+    m_validation_dataset.m_total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
   generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader) {
     /// @todo put in a check to make sure that this is a data reader
     /// that matches what was already there
-    generic_data_reader *old_data_reader = m_testing_dataset.data_reader;
-    m_testing_dataset.data_reader = data_reader;
-    m_testing_dataset.num_samples_processed = 0;
-    m_testing_dataset.total_samples = data_reader->get_num_data();
+    generic_data_reader *old_data_reader = m_testing_dataset.m_data_reader;
+    m_testing_dataset.m_data_reader = data_reader;
+    m_testing_dataset.m_num_samples_processed = 0;
+    m_testing_dataset.m_total_samples = data_reader->get_num_data();
     return old_data_reader;
   }
 
@@ -147,11 +147,11 @@ class io_layer : public Layer {
    * Returns null if none are valid.
    */
   dataset* select_first_valid_dataset() {
-    if (m_training_dataset.data_reader) {
+    if (m_training_dataset.m_data_reader) {
       return &m_training_dataset;
-    } else if (m_validation_dataset.data_reader) {
+    } else if (m_validation_dataset.m_data_reader) {
       return &m_validation_dataset;
-    } else if (m_testing_dataset.data_reader) {
+    } else if (m_testing_dataset.m_data_reader) {
       return &m_testing_dataset;
     } else {
       return nullptr;
@@ -163,7 +163,7 @@ class io_layer : public Layer {
    */
   generic_data_reader *select_data_reader() {
     dataset& ds = select_dataset();
-    return ds.data_reader;
+    return ds.m_data_reader;
   }
 
   /**
@@ -171,8 +171,8 @@ class io_layer : public Layer {
    */
   long update_num_samples_processed(long num_samples) {
     dataset& ds = select_dataset();
-    ds.num_samples_processed += num_samples;
-    return ds.num_samples_processed;
+    ds.m_num_samples_processed += num_samples;
+    return ds.m_num_samples_processed;
   }
 
   /**
@@ -189,7 +189,7 @@ class io_layer : public Layer {
   const std::vector<int> get_data_dims() {
     dataset* ds = select_first_valid_dataset();
     if (ds) {
-      return ds->data_reader->get_data_dims();
+      return ds->m_data_reader->get_data_dims();
     }
     return std::vector<int>(1, 0);
   }
@@ -200,20 +200,20 @@ class io_layer : public Layer {
   long get_linearized_data_size() {
     long linearized_data_size = -1;
     dataset& train_ds = get_dataset(execution_mode::training);
-    if (train_ds.data_reader) {
-      linearized_data_size = train_ds.data_reader->get_linearized_data_size();
+    if (train_ds.m_data_reader) {
+      linearized_data_size = train_ds.m_data_reader->get_linearized_data_size();
     }
     dataset& val_ds = get_dataset(execution_mode::validation);
-    if (val_ds.data_reader) {
-      long tmp_data_size = val_ds.data_reader->get_linearized_data_size();
+    if (val_ds.m_data_reader) {
+      long tmp_data_size = val_ds.m_data_reader->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: validation data set size does not "
                               "match the currently established data set size");
       }
     }
     dataset& test_ds = get_dataset(execution_mode::testing);
-    if (test_ds.data_reader) {
-      long tmp_data_size = test_ds.data_reader->get_linearized_data_size();
+    if (test_ds.m_data_reader) {
+      long tmp_data_size = test_ds.m_data_reader->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: testing data set size does not "
                               "match the currently established data set size");
@@ -231,20 +231,20 @@ class io_layer : public Layer {
     }
     long linearized_label_size = -1;
     dataset& train_ds = get_dataset(execution_mode::training);
-    if (train_ds.data_reader) {
-      linearized_label_size = train_ds.data_reader->get_linearized_label_size();
+    if (train_ds.m_data_reader) {
+      linearized_label_size = train_ds.m_data_reader->get_linearized_label_size();
     }
     dataset& val_ds = get_dataset(execution_mode::validation);
-    if (val_ds.data_reader) {
-      long tmp_label_size = val_ds.data_reader->get_linearized_label_size();
+    if (val_ds.m_data_reader) {
+      long tmp_label_size = val_ds.m_data_reader->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: validation label set size does not "
                               "match the currently established data set size");
       }
     }
     dataset& test_ds = get_dataset(execution_mode::testing);
-    if (test_ds.data_reader) {
-      long tmp_label_size = test_ds.data_reader->get_linearized_label_size();
+    if (test_ds.m_data_reader) {
+      long tmp_label_size = test_ds.m_data_reader->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: testing label set size does not "
                               "match the currently established data set size");
@@ -258,39 +258,44 @@ class io_layer : public Layer {
   }
 
   long get_num_samples_trained() {
-    return m_training_dataset.num_samples_processed;
+    return m_training_dataset.m_num_samples_processed;
   }
   long get_num_samples_tested() {
-    return m_testing_dataset.num_samples_processed;
+    return m_testing_dataset.m_num_samples_processed;
   }
   long get_total_num_training_samples() {
-    return m_training_dataset.total_samples;
+    return m_training_dataset.m_total_samples;
   }
   long get_total_num_testing_samples() {
-    return m_testing_dataset.total_samples;
+    return m_testing_dataset.m_total_samples;
   }
 
   bool at_new_epoch() {
-    return m_training_dataset.data_reader->at_new_epoch();
+    return m_training_dataset.m_data_reader->at_new_epoch();
+  }
+
+  bool is_execution_mode_valid(execution_mode mode) {
+    dataset& ds = get_dataset(mode);
+    return (ds.m_total_samples != 0);
   }
 
   bool saveToCheckpointShared(persist& p) {
     // rank 0 writes the file
     if (p.get_rank() == 0) {
       p.write_uint64(persist_type::train, "reader_train_processed",
-                     (uint64_t) m_training_dataset.num_samples_processed);
+                     (uint64_t) m_training_dataset.m_num_samples_processed);
       p.write_uint64(persist_type::train, "reader_train_total",
-                     (uint64_t) m_training_dataset.total_samples);
+                     (uint64_t) m_training_dataset.m_total_samples);
 
       p.write_uint64(persist_type::train, "reader_test_processed",
-                     (uint64_t) m_testing_dataset.num_samples_processed);
+                     (uint64_t) m_testing_dataset.m_num_samples_processed);
       p.write_uint64(persist_type::train, "reader_test_total",
-                     (uint64_t) m_testing_dataset.total_samples);
+                     (uint64_t) m_testing_dataset.m_total_samples);
 
       p.write_uint64(persist_type::train, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.num_samples_processed);
+                     (uint64_t) m_validation_dataset.m_num_samples_processed);
       p.write_uint64(persist_type::train, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.total_samples);
+                     (uint64_t) m_validation_dataset.m_total_samples);
     }
 
     return true;
@@ -322,12 +327,12 @@ class io_layer : public Layer {
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
 
     // set our fields
-    m_training_dataset.num_samples_processed   = (long) header.train_proc;
-    m_training_dataset.total_samples           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed    = (long) header.test_proc;
-    m_testing_dataset.total_samples            = (long) header.test_total;
-    m_validation_dataset.num_samples_processed = (long) header.validate_proc;
-    m_validation_dataset.total_samples         = (long) header.validate_total;
+    m_training_dataset.m_num_samples_processed   = (long) header.train_proc;
+    m_training_dataset.m_total_samples           = (long) header.train_total;
+    m_testing_dataset.m_num_samples_processed    = (long) header.test_proc;
+    m_testing_dataset.m_total_samples            = (long) header.test_total;
+    m_validation_dataset.m_num_samples_processed = (long) header.validate_proc;
+    m_validation_dataset.m_total_samples         = (long) header.validate_total;
 
     return true;
   }

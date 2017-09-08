@@ -1,0 +1,217 @@
+
+model {
+  name: "dnn"
+  objective_function: "cross_entropy"
+  metric {
+    categorical_accuracy {
+    }
+  }
+  data_layout: "model_parallel"
+  mini_batch_size: 10
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 1
+  use_cudnn: false
+  num_gpus: -1
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+      dir: "."
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      interval: 1
+    }
+  }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
+  callback {
+    adaptive_learning_rate {
+      patience: 4
+      amt: 0.1
+      layers: ""
+    }
+  }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      layers: "2 5 8 11"
+    }
+  }
+  # callback {
+  #   dump_mb_indices {
+  #     basename: "debug_alexnet/"
+  #     interval: 1
+  #   }
+  # }
+  # callback {
+  #   disp_io_stats {
+  #     layers: "1"
+  #   }
+  # }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+
+  # INPUT 1
+  ######################
+  layer {
+    index: 1
+    parent: 0
+    data_layout: "model_parallel"
+    input_distributed_minibatch {
+    }
+  }
+
+  # FULLY_CONNECTED 2
+  ######################
+  layer {
+    index: 2
+    parent: 1
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 3
+  ######################
+  layer {
+    index: 3
+    parent: 2
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 4
+  ######################
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 5
+  ######################
+  layer {
+    index: 5
+    parent: 4
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 6
+  ######################
+  layer {
+    index: 6
+    parent: 5
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 7
+  ######################
+  layer {
+    index: 7
+    parent: 6
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 8
+  ######################
+  layer {
+    index: 8
+    parent: 7
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 9
+  ######################
+  layer {
+    index: 9
+    parent: 8
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 10
+  ######################
+  layer {
+    index: 10
+    parent: 9
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 11
+  ######################
+  layer {
+    index: 11
+    parent: 10
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+      has_bias: false
+    }
+  }
+
+  # SOFTMAX 12
+  ######################
+  layer {
+    index: 12
+    parent: 11
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+
+  # TARGET 13
+  ######################
+  layer {
+    index: 13
+    parent: 12
+    data_layout: "model_parallel"
+    target_distributed_minibatch {
+      shared_data_reader: true
+    }
+  }
+}

@@ -64,7 +64,7 @@ class numpy_reader : public generic_data_reader {
                             m_data.shape.end());
   }
 
-// protected:
+ protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
 
   /// Number of samples.

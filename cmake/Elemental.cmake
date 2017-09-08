@@ -46,7 +46,7 @@ if (NOT Elemental_FOUND)
   endif()
 
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" OFF)
+    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
   else()
    option(ELEMENTAL_HYBRID "Elemental: make use of OpenMP within MPI packing/unpacking" ON)
   endif()
