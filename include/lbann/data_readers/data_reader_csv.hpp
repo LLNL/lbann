@@ -58,9 +58,9 @@ class csv_reader : public generic_data_reader {
   /// Set the response column.
   void set_response_col(int col) { m_response_col = col; }
   /// Disable fetching labels.
-  void disable_labels() { m_disable_labels = true; }
+  void disable_labels(bool b = true) { m_disable_labels = b; }
   /// Enable fetching responses (disabled by default).
-  void enable_responses() { m_disable_responses = false; }
+  void enable_responses(bool b = false) { m_disable_responses = b; }
   /// Set the column separator (default is ',').
   void set_separator(char sep) { m_separator = sep; }
   /// Set the number of columns (from the left) to skip; default 0.

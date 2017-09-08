@@ -1490,6 +1490,17 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       */
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
+    } else if (name == "csv") {
+      csv_reader* reader_csv = new csv_reader(mini_batch_size, shuffle);
+      reader_csv->set_label_col(readme.label_col());
+      reader_csv->set_response_col(readme.response_col());
+      reader_csv->disable_labels(readme.disable_labels()); 
+      reader_csv->enable_responses(readme.disable_reponses());
+      reader_csv->set_separator(readme.separator()[0]);
+      reader_csv->set_skip_cols(readme.skip_cols());
+      reader_csv->set_skip_rows(readme.skip_rows());
+      reader_csv->set_has_header(readme.has_header());
+      reader = reader_csv;
     } else if (name == "numpy") {
       reader = new numpy_reader(mini_batch_size, shuffle);
     } else if (name == "cifar10") {
@@ -1564,6 +1575,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
+      } else if (name == "csv") {
+        reader_validation = new csv_reader(mini_batch_size, shuffle);
+        (*(csv_reader *)reader_validation) = (*(csv_reader *)reader);
       } else if (name == "numpy") {
         reader_validation = new numpy_reader(mini_batch_size, shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
