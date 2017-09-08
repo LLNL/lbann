@@ -9,7 +9,6 @@ language: cpp
 branches:
   except:
     - release-v0.93
-    - develop
     - gh-pages
 
 # Environment variables (Set the gh-pages repo dir to html to match with doxygen)
