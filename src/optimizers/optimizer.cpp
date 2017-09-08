@@ -32,8 +32,8 @@ namespace lbann {
 
 optimizer::optimizer(lbann_comm *comm, DataType learning_rate,
                      cudnn::cudnn_manager *cudnn)
-    : m_comm(comm), m_parameters(nullptr), m_learning_rate(learning_rate),
-      m_cudnn(cudnn) {}
+  : m_comm(comm), m_cudnn(cudnn), m_parameters(nullptr),
+    m_learning_rate(learning_rate) {}
 
 optimizer::~optimizer() {}
 

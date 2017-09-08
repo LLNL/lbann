@@ -62,15 +62,9 @@ void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 }
 
 bool lbann::partitioned_minibatch::is_data_set_processed() {
-  int num_readers_done = 0;
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
 
   m_local_reader_done = !update_data_reader();
-
-  /// Set the reduction variable
-  if(m_local_reader_done) {
-    num_readers_done = 1;
-  }
 
   if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;

@@ -37,7 +37,7 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
                              "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
                              std::to_string(m->get_cur_step()) + "-layer";
   // Skip the output layer.
-  if (l->get_index() == m->get_layers().size() - 1) {
+  if (l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
   El::Write(l->get_activations(),

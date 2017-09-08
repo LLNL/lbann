@@ -122,8 +122,6 @@ void col2im(const Mat& col,
             const int * window_strides) {
 
   // Input and output parameters
-  const int col_height = col.Height();
-  const int im_size = im.Height() * im.Width();
   const DataType *__restrict__ col_buffer = col.LockedBuffer();
   DataType *__restrict__ im_buffer = im.Buffer();
 

@@ -189,7 +189,7 @@ void csv_reader::load() {
       throw lbann_exception(
         "csv_reader: classes are not indexed from 0");
     }
-    if (*minmax.second != label_classes.size() - 1) {
+    if (*minmax.second != (int) label_classes.size() - 1) {
       throw lbann_exception(
         "csv_reader: label classes are not contiguous");
     }
