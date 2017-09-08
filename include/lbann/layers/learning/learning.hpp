@@ -48,10 +48,31 @@ class learning : public Layer {
   /** Add L2 regularization term to objective function. */
   virtual void l2_regularize_objective_function() {
     if (m_l2_regularization_factor > DataType(0)) {
-      const DataType l2_norm = El::FrobeniusNorm(*m_weights);
-      const DataType regularization_term
-        = m_l2_regularization_factor * l2_norm * l2_norm / 2;
+
+      // Get local weight data
+      const DataType *weights_buffer = m_weights->LockedBuffer();
+      const int weights_ldim = m_weights->LDim();
+      const int local_height = m_weights->LocalHeight();
+      const int local_width = m_weights->LocalWidth();
+
+      // Compute sum of squares with Kahan summation
+      DataType sum = 0;
+      DataType correction = 0;
+      for (int col = 0; col < local_width; ++col) {
+        for (int row = 0; row < local_height; ++row) {
+          const DataType x = weights_buffer[row + col * weights_ldim];
+          const DataType term = x * x + correction;
+          const double next_sum = sum + term;
+          correction = term - (next_sum - sum);
+          sum = next_sum;
+        }
+      }
+      sum = El::mpi::AllReduce(sum, m_weights->DistComm());
+      
+      // Add regularization term to objective function
+      const DataType regularization_term = m_l2_regularization_factor * sum / 2;
       this->m_neural_network_model->m_obj_fn->add_to_value(regularization_term);
+
     }
   }
 
