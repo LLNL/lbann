@@ -1335,7 +1335,6 @@ void init_callbacks(
     // CALLBACK: gradient_check
     //////////////////////////////////////////////////////////////////
     if (callback.has_gradient_check()) {
-      const lbann_data::CallbackGradientCheck& c = callback.gradient_check();
       if (master) {
         std::cout << "adding gradient_check callback" << std::endl;
       }

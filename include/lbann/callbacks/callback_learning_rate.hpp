@@ -69,7 +69,7 @@ class lbann_callback_learning_rate : public lbann_callback {
   /** Indicies of layers to update. */
   std::unordered_set<uint> m_layer_indices;
   /** Index of the last layer to update. */
-  uint m_last_idx;
+  int m_last_idx;
 };
 
 /**

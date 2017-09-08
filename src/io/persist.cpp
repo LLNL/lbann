@@ -286,11 +286,13 @@ void lbann::persist::close_restart() {
 
 bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat *M) {
   // define full path to file to store matrix
-  char filename[1024];
+  std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
-    snprintf(filename, sizeof(filename), "%s/train_%s", m_checkpoint_dir, name);
+    filename += std::string("/train_") + name;
   } else if (type == persist_type::model) {
-    snprintf(filename, sizeof(filename), "%s/model_%s", m_checkpoint_dir, name);
+    filename += std::string("/model_") + name;
+  } else {
+    throw lbann_exception("persist: invalid persist_type");
   }
 
   Write(*M, filename, BINARY, "");
@@ -304,15 +306,17 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat 
 
 bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *M) {
   // define full path to file to store matrix
-  char filename[1024];
+  std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
-    snprintf(filename, sizeof(filename), "%s/train_%s", m_checkpoint_dir, name);
+    filename += std::string("/train_") + name;
   } else if (type == persist_type::model) {
-    snprintf(filename, sizeof(filename), "%s/model_%s", m_checkpoint_dir, name);
+    filename += std::string("/model_") + name;
+  } else {
+    throw lbann_exception("persist: invalid persist_type");
   }
 
   // check whether file exists
-  int exists = lbann::exists(filename);
+  int exists = lbann::exists(filename.c_str());
   if (! exists) {
     throw lbann_exception(std::string("Failed to read distmat: ") + filename);
     return false;

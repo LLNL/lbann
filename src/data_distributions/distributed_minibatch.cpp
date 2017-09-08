@@ -82,8 +82,6 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 }
 
 bool lbann::distributed_minibatch::is_data_set_processed() {
-  int num_readers_done = 0;
-  int max_active_parallel_readers = get_num_parallel_readers();  // When calculating if all parallel readers are done, include the maximum number,
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
   int num_parallel_readers = get_num_parallel_readers();
@@ -99,11 +97,6 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
       }
       m_local_reader_done = !update_data_reader();
     }
-  }
-
-  /// Set the reduction variable
-  if(m_local_reader_done) {
-    num_readers_done = 1;
   }
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished

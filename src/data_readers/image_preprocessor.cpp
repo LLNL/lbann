@@ -48,9 +48,9 @@ lbann_image_preprocessor::lbann_image_preprocessor() :
   m_shear_range(0.0f),
   m_mean_subtraction(false),
   m_unit_variance(false),
-  m_noise_factor(0.0f),
   m_scale(true),  // We always did scaling by default.
-  m_z_score(false) {
+  m_z_score(false),
+  m_noise_factor(0.0f) {
 }
 
 void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,

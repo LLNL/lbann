@@ -53,9 +53,9 @@ adam::adam(const adam& other)
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
     if (other.m_moment1_d.size() > 0) {
+#ifdef __LIB_CUDNN
       int local_height = m_parameters->LocalHeight();
       int local_width = m_parameters->LocalWidth();
-#ifdef __LIB_CUDNN
       m_cudnn->allocate_on_gpus(m_moment1_d, local_height, local_width);
       m_cudnn->copy_on_gpus(m_moment1_d, other.m_moment1_d, local_height, local_width);
       m_cudnn->allocate_on_gpus(m_moment2_d, local_height, local_width);
@@ -88,9 +88,9 @@ adam& adam::operator=(const adam& other) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
     if (other.m_moment1_d.size() > 0) {
+#ifdef __LIB_CUDNN
       int local_height = m_parameters->LocalHeight();
       int local_width = m_parameters->LocalWidth();
-#ifdef __LIB_CUDNN
       m_cudnn->allocate_on_gpus(m_moment1_d, local_height, local_width);
       m_cudnn->copy_on_gpus(m_moment1_d, other.m_moment1_d, local_height, local_width);
       m_cudnn->allocate_on_gpus(m_moment2_d, local_height, local_width);

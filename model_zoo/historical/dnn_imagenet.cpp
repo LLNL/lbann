@@ -92,8 +92,6 @@ int main(int argc, char *argv[]) {
     //const bool g_AutoEncoder = Input("--mode", "DNN: false, AutoEncoder: true", false);
 
     // training settings
-    int decayIterations = 1;
-
     bool unit_scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
     bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
     bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
@@ -425,13 +423,10 @@ int main(int argc, char *argv[]) {
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
 
-    int last_layer_size;
-    last_layer_size = netParams.Network[netParams.Network.size()-1];
-
     //************************************************************************
     // read training state from checkpoint file if we have one
     //************************************************************************
-    int epochStart = 0; // epoch number we should start at
+    //int epochStart = 0; // epoch number we should start at
     //int trainStart; // index into indices we should start at
 
     //************************************************************************
