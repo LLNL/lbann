@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
@@ -347,11 +347,10 @@ int main(int argc, char *argv[]) {
     dnn.restartShared();
 
     // train/test
-    while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, true);
-      // testing
-      dnn.evaluate(execution_mode::testing);
-    }
+    dnn.train(trainParams.EpochCount);
+    
+    // testing
+    dnn.evaluate(execution_mode::testing);
 
     // Free dynamically allocated memory
     // delete target_layer;  // Causes segfault

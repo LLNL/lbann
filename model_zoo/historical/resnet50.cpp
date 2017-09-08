@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     dnn = new deep_neural_network(
       trainParams.MBSize,
       comm,
-      new objective_functions::categorical_cross_entropy(comm),
+      new objective_functions::cross_entropy(),
       optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {
       std::make_pair(execution_mode::training,&imagenet_trainset),
@@ -666,12 +666,10 @@ int main(int argc, char *argv[]) {
     }
 
     //************************************************************************
-    // mainloop for train/validate
+    // train and validate
     //************************************************************************
-    for (int epoch = 0; epoch < trainParams.EpochCount; epoch++) {
-      dnn->train(1, true);
-      dnn->evaluate(execution_mode::testing);
-    }
+    dnn->train(trainParams.EpochCount);
+    dnn->evaluate(execution_mode::testing);
 
     delete dnn;
   } catch (lbann_exception& e) {

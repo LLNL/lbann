@@ -212,4 +212,3 @@ fi
 FIX="spack uninstall -y lbann"
 echo $FIX
 eval $FIX
-

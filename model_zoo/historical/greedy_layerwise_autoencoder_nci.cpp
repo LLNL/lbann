@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
         std::cout << "\n(Pre) train autoencoder - unsupersived training, global epoch [ " << i << " ]" << std::endl;
         std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
       }
-      gla.train(1,true);
+      gla.train(1);
       gla.reset_phase();
     }
 

@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(comm), optimizer_fac);
+    greedy_layerwise_autoencoder gla(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, &mnist_testset)

@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(mb_size, comm, new objective_functions::mean_squared_error(comm),optimizer_fac);
+    deep_neural_network dnn(mb_size, comm, new objective_functions::mean_squared_error(),optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
                                                            std::make_pair(execution_mode::validation, &synthetic_validation_set),
                                                            std::make_pair(execution_mode::testing, &synthetic_testset)

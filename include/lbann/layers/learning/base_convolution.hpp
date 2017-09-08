@@ -836,6 +836,9 @@ class base_convolution_layer : public learning {
     El::AllReduce(*this->m_weights_gradient,
                   this->m_weights_gradient->RedundantComm());
 
+    // Apply L2 regularization
+    this->l2_regularize_gradient();
+
   }
 
 public:
@@ -843,7 +846,6 @@ public:
   /// Update convolution kernel and bias
   bool update_compute() {
     if(this->m_execution_mode == execution_mode::training) {
-      this->l2_regularize();
       this->m_optimizer->update(this->m_weights_gradient);
     }
     return true;

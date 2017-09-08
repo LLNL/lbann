@@ -38,7 +38,7 @@
 namespace lbann {
 
 model::model(lbann_comm *comm, int mini_batch_size,
-             objective_functions::objective_fn *obj_fn,
+             objective_functions::objective_function *obj_fn,
              optimizer_factory *optimizer_fac) :
   m_obj_fn(obj_fn),
   m_execution_mode(execution_mode::invalid),

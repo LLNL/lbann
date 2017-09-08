@@ -92,8 +92,6 @@ int main(int argc, char *argv[]) {
     //const bool g_AutoEncoder = Input("--mode", "DNN: false, AutoEncoder: true", false);
 
     // training settings
-    int decayIterations = 1;
-
     bool unit_scale = Input("--scale", "scale data to [0,1], or [-1,1]", true);
     bool subtract_mean = Input("--subtract-mean", "subtract mean, per example", true);
     bool unit_variance = Input("--unit-variance", "standardize to unit-variance", true);
@@ -299,7 +297,7 @@ int main(int argc, char *argv[]) {
     }
 
     deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
+    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
 #ifdef PARTITIONED
     Layer *input_layer = new input_layer_partitioned_minibatch<>(comm, parallel_io, data_readers);
@@ -425,29 +423,17 @@ int main(int argc, char *argv[]) {
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
 
-    int last_layer_size;
-    last_layer_size = netParams.Network[netParams.Network.size()-1];
-
     //************************************************************************
     // read training state from checkpoint file if we have one
     //************************************************************************
-    int epochStart = 0; // epoch number we should start at
+    //int epochStart = 0; // epoch number we should start at
     //int trainStart; // index into indices we should start at
 
     //************************************************************************
-    // mainloop for train/validate
+    // training and validating
     //************************************************************************
-    for (int epoch = epochStart; epoch < trainParams.EpochCount; epoch++) {
-      decayIterations = 1;
-
-      //************************************************************************
-      // training epoch loop
-      //************************************************************************
-
-      dnn->train(1, 1);
-
-      dnn->evaluate(execution_mode::testing);
-    }
+    dnn->train(trainParams.EpochCount);
+    dnn->evaluate(execution_mode::testing);
 
     delete dnn;
   } catch (lbann_exception& e) {

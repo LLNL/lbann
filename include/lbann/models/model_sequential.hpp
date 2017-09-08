@@ -45,7 +45,7 @@ class sequential_model : public model {
   /// Constructor
   sequential_model(int mini_batch_size,
                    lbann_comm *comm,
-                   objective_functions::objective_fn *obj_fn,
+                   objective_functions::objective_function *obj_fn,
                    optimizer_factory *optimizer_fac);
   sequential_model(const sequential_model& other);
   sequential_model& operator=(const sequential_model& other);
@@ -105,11 +105,7 @@ class sequential_model : public model {
   virtual void setup(int start_index=0, int end_index=0);
 
   /// Train model
-  /** @param num_epochs Number of epochs to train
-   *  @param evaluation_frequency How often to evaluate model on
-   *  validation set. A value less than 1 will disable evaluation.
-   */
-  virtual void train(int num_epochs, int evaluation_frequency=0) = 0;
+  virtual void train(int num_epochs) = 0;
   /// Training step on one mini-batch
   virtual bool train_mini_batch() = 0;
 

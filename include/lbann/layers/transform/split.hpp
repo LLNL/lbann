@@ -82,10 +82,11 @@ class split_layer : public transform {
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
-    s << std::to_string(this->m_index) << " split; children: ";
+    s << " split; children: ";
     for (size_t h=0; h<this->m_children.size(); h++) {
       s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name() << " ";
     }
+    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 

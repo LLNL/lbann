@@ -29,13 +29,13 @@
 #ifndef LBANN_DATA_READER_NCI_HPP
 #define LBANN_DATA_READER_NCI_HPP
 
-#include "data_reader.hpp"
+#include "data_reader_csv.hpp"
 
 #define NCI_HAS_HEADER
 
 namespace lbann {
 
-class data_reader_nci : public generic_data_reader {
+class data_reader_nci : public csv_reader {
  public:
   data_reader_nci(int batchSize, bool shuffle);
   data_reader_nci(int batchSize);
@@ -44,49 +44,7 @@ class data_reader_nci : public generic_data_reader {
   ~data_reader_nci() {}
   data_reader_nci* copy() const { return new data_reader_nci(*this); }
 
-  void preprocess_data_source(int tid);
-  void postprocess_data_source(int tid);
-
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
-
-  int get_num_labels() const {
-    // m_num_responses should be equivalent
-    return m_num_labels;  //@todo; check if used
-  }
-
-  void load();
-
-  size_t get_num_samples() const {
-    return m_num_samples;
-  }
-  size_t get_num_features() const {
-    return m_num_features;
-  }
-  inline int map_label_2int(const std::string label);
-
-  int get_linearized_data_size() const {
-    return m_num_features;
-  }
-  int get_linearized_label_size() const {
-    return m_num_labels;  // m_num_responses should be equivalent
-  }
-  const std::vector<int> get_data_dims() const {
-    return {static_cast<int>(m_num_features)};
-  }
-
- private:
-  //@todo add response mode {binary, ternary, continuous}
-  int m_num_labels;  //2 for binary response mode
-  int m_num_responses;
-  size_t m_num_samples; //rows
-  size_t m_num_features; //cols
-  std::vector<int> m_labels;
-  std::vector<DataType> m_responses;
-  std::vector<std::streampos> m_index_map; // byte offset of each line in the input file
-  std::string m_infile; //input file name
-  std::vector<ifstream*> m_ifs;
+  // Todo: Support regression/get response.
 };
 
 }  // namespace lbann

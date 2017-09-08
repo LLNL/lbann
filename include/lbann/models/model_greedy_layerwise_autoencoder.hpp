@@ -40,7 +40,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Constructor
   greedy_layerwise_autoencoder(int mini_batch_size,
                                lbann_comm *comm,
-                               objective_functions::objective_fn *obj_fn,
+                               objective_functions::objective_function *obj_fn,
                                optimizer_factory *_optimizer_fac);
   // Not yet supported.
   greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&) = delete;
@@ -67,14 +67,10 @@ class greedy_layerwise_autoencoder : public sequential_model {
   void summarize_matrices(lbann_summary& summarizer);
 
   /// Train neural network
-  /** @param num_epochs Number of epochs to train at each phase
-   *  @param evaluation_frequency How often to evaluate model on
-   *  validation set. A value less than 1 will disable evaluation.
-   */
-  void train(int num_epochs, int evaluation_frequency=0);
+  void train(int num_epochs);
 
   // Train each phase ( a set of (original) input, hidden and mirror layers (output))
-  void train_phase(int num_epochs, int evaluation_frequency);
+  void train_phase(int num_epochs);
 
   /// Training step on one mini-batch
   bool train_mini_batch();

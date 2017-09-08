@@ -67,8 +67,10 @@ int main(int argc, char *argv[]) {
     //if set to true, above three settings have no effect
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
+#if __LIB_CUDNN
     // Number of GPUs per node to use
     int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
+#endif
 
     ///////////////////////////////////////////////////////////////////
     // initalize grid, block
@@ -190,7 +192,7 @@ int main(int argc, char *argv[]) {
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
 #endif // __LIB_CUDNN
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm),optimizer_fac);
+    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training, mnist_trainset),
                                                            std::make_pair(execution_mode::validation, mnist_validation_set),
@@ -360,7 +362,7 @@ int main(int argc, char *argv[]) {
       }
     }
     ///////////////////////////////////////////////////////////////////
-    // main loop for training/testing
+    // training and testing
     ///////////////////////////////////////////////////////////////////
 
     // Initialize the model's data structures
@@ -375,12 +377,11 @@ int main(int argc, char *argv[]) {
     // restart model from checkpoint if we have one
     dnn.restartShared();
 
-    // train/test
-    while (dnn.get_cur_epoch() < trainParams.EpochCount) {
-      dnn.train(1, 1);
-      // testing
-      dnn.evaluate(execution_mode::testing);
-    }
+    // train
+    dnn.train(trainParams.EpochCount);
+    
+    // testing
+    dnn.evaluate(execution_mode::testing);
 
     // Free dynamically allocated memory
     // delete target_layer;  // Causes segfault

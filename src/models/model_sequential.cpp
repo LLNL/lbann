@@ -42,7 +42,7 @@ namespace lbann {
 
 sequential_model::sequential_model(int mini_batch_size,
                                    lbann_comm *comm,
-                                   objective_functions::objective_fn *obj_fn,
+                                   objective_functions::objective_function *obj_fn,
                                    optimizer_factory *optimizer_fac)
   : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
 

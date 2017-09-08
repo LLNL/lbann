@@ -25,7 +25,7 @@ model {
   }
   callback {
     summary {
-      dir: "none"
+      dir: " "
       interval: 1
     }
   }

@@ -55,7 +55,7 @@ class convolution_layer : public base_convolution_layer {
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
-    s << std::to_string(this->m_index) << " convolution; conv_dims: ";
+    s << " convolution; conv_dims: ";
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       s << this->m_kernel_dims[h] << " ";
     }
@@ -69,7 +69,8 @@ class convolution_layer : public base_convolution_layer {
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
-      << " has_bias: " << this->m_bias_scaling_factor;
+      << " has_bias: " << this->m_bias_scaling_factor
+      << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 
@@ -208,15 +209,17 @@ class convolution_layer : public base_convolution_layer {
 
   void setup_views() {
     base_convolution_layer::setup_views();
+    const El::Int kernel_size_per_channel
+      = m_kernel_size / this->m_neuron_dims[0];
     El::View(*m_kernel_weights_v, *this->m_weights,
-             El::IR(0,m_kernel_size / this->m_neuron_dims[0]), El::ALL);
+             El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
     El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
-             El::IR(0,m_kernel_size / this->m_neuron_dims[0]), El::ALL);
+             El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
     if(m_bias_scaling_factor != DataType(0)) {
       El::View(*m_bias_weights_v, *this->m_weights,
-               El::IR(m_kernel_size / this->m_neuron_dims[0]), El::ALL);
+               El::IR(kernel_size_per_channel), El::ALL);
       El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
-               El::IR(m_kernel_size / this->m_neuron_dims[0]), El::ALL);
+               El::IR(kernel_size_per_channel), El::ALL);
     }
   }
 
@@ -296,6 +299,7 @@ class convolution_layer : public base_convolution_layer {
  protected:
 
   void fp_compute() {
+    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       apply_convolution_cudnn(true);
       apply_bias_cudnn();

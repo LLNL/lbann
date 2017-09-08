@@ -1,0 +1,28 @@
+data_reader {
+  reader {
+    name: "csv"
+    role: "train"
+    shuffle: true
+    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.train.X.1"
+    train_or_test_percent: 1.0
+    validation_percent: 0.1
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    separator: '\t'
+    disable_labels: true
+  }
+  reader {
+    name: "csv"
+    role: "test"
+    shuffle: true
+    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.val.X.1"
+    train_or_test_percent: 1.0
+    validation_percent: 1.0
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    separator: '\t'
+    disable_labels: true
+  }
+}

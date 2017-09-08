@@ -141,14 +141,15 @@ class target_layer : public io_layer {
           << " :: lbann_target_layer: target layer has invalid objective function pointer";
       throw lbann_exception(err.str());
     }
-    this->m_neural_network_model->m_obj_fn->setup(
-      this->m_num_neurons,
-      this->m_neural_network_model->get_max_mini_batch_size());
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       m->setup(this->m_num_neurons,
                this->m_neural_network_model->get_max_mini_batch_size());
       m->m_neural_network_model = this->m_neural_network_model;
     }
+    
+    // Initialize objective function
+    this->m_neural_network_model->m_obj_fn->setup(*this->m_prev_layer);
+
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
@@ -164,7 +165,6 @@ class target_layer : public io_layer {
   void fp_set_std_matrix_view() {
     int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
-    this->m_neural_network_model->m_obj_fn->fp_set_std_matrix_view(cur_mini_batch_size);
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       m->fp_set_std_matrix_view(cur_mini_batch_size);
     }
@@ -179,13 +179,13 @@ class target_layer : public io_layer {
       obj_name;
     summarizer.reduce_scalar(
       tag,
-      this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(
-        execution_mode::training), step);
+      this->m_neural_network_model->m_obj_fn->get_mean_value(),
+      step);
     io_layer::summarize_stats(summarizer, step);
   }
 
   void epoch_print() const {
-    double obj_cost = this->m_neural_network_model->m_obj_fn->report_aggregate_avg_obj_fn(execution_mode::training);
+    double obj_cost = this->m_neural_network_model->m_obj_fn->get_mean_value();
     if (this->m_comm->am_world_master()) {
       std::vector<double> avg_obj_fn_costs(this->m_comm->get_num_models());
       this->m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
@@ -197,15 +197,6 @@ class target_layer : public io_layer {
     } else {
       this->m_comm->intermodel_gather(obj_cost, this->m_comm->get_world_master());
     }
-  }
-
-  void epoch_reset() {
-    Layer::epoch_reset();
-    resetCost();
-  }
-
-  void resetCost() {
-    this->m_neural_network_model->m_obj_fn->reset_obj_fn();
   }
 
   bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {

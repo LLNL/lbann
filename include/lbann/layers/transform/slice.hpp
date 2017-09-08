@@ -131,7 +131,7 @@ class slice_layer : public transform {
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
-    s << std::to_string(this->m_index) << " slice; slice_axis: "
+    s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
     for (size_t h=0; h<this->m_children.size(); h++) {
       s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name() << " ";
@@ -140,6 +140,7 @@ class slice_layer : public transform {
     for (size_t h=0; h<this->m_slice_points.size(); h++) {
       s << this->m_slice_points[h] << " ";
     }
+    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 
