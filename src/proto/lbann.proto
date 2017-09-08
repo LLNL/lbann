@@ -31,6 +31,15 @@ message Reader {
   ImagePreprocessor image_preprocessor = 13;
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
+  //csv attributes
+  string separator = 102;
+  int32 skip_cols = 103;
+  int32 skip_rows = 104;
+  bool has_header = 105;
+  int32 label_col = 106;
+  int32 response_col = 107;
+  bool disable_labels = 108;
+  bool disable_reponses = 109;
 }
 
 message ImagePreprocessor {

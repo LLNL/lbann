@@ -100,38 +100,41 @@ DIST=
 case ${BUILD_TYPE} in
   Release)
     DIST=rel
-    C_FLAGS="-O3"
-    CXX_FLAGS="-O3"
-    Fortran_FLAGS="-O3"
-    if [[ (${COMPILER} == gcc@*) || (${COMPILER} == intel@*) ]]; then
+    # Don't use the march=native flag for gcc and intel compilers since that 
+    # wouldn't allow spack to differentiate between optimization sets
+    # C_FLAGS="${C_FLAGS} -march=native"
+    # CXX_FLAGS="${CXX_FLAGS} -march=native"
+    # Fortran_FLAGS="${Fortran_FLAGS} -march=native"
+    if [[ (${COMPILER} == gcc@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
-            C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
-            CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
-            Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
+            ARCH_FLAGS="-march=ivybridge -mtune=ivybridge"
         elif [ "${CLUSTER}" == "quartz" ]; then
-            C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
-            CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
-            Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
+            ARCH_FLAGS="-march=broadwell -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
-            C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
-            CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
-            Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+            ARCH_FLAGS="-march=sandybridge -mtune=sandybridge"
         elif [ "${CLUSTER}" == "flash" ]; then
-            C_FLAGS="${C_FLAGS} -march=haswell -mtune=haswell"
-            CXX_FLAGS="${CXX_FLAGS} -march=haswell -mtune=haswell"
-            Fortran_FLAGS="${Fortran_FLAGS} -march=haswell -mtune=haswell"
+            ARCH_FLAGS="-march=haswell -mtune=haswell"
+        fi
+    elif [[ (${COMPILER} == intel@*) ]]; then
+        if [ "${CLUSTER}" == "catalyst" ]; then
+            ARCH_FLAGS="-march=corei7-avx -mtune=ivybridge"
+        elif [ "${CLUSTER}" == "quartz" ]; then
+            ARCH_FLAGS="-march=core-avx2 -mtune=broadwell"
+        elif [ "${CLUSTER}" == "surface" ]; then
+            ARCH_FLAGS="-march=corei7-avx -mtune=sandybridge"
+        elif [ "${CLUSTER}" == "flash" ]; then
+            ARCH_FLAGS="-march=core-avx2 -mtune=haswell"
         fi
     elif [[ ${COMPILER} == clang@* ]]; then
         if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
-            C_FLAGS="${C_FLAGS} -mavx -march=native"
-            CXX_FLAGS="${CXX_FLAGS} -mavx -march=native"
-            Fortran_FLAGS="${Fortran_FLAGS} -mavx -march=native"
+            ARCH_FLAGS="-mavx -march=native"
         elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
-            C_FLAGS="${C_FLAGS} -mavx2 -march=native"
-            CXX_FLAGS="${CXX_FLAGS} -mavx2 -march=native"
-            Fortran_FLAGS="${Fortran_FLAGS} -mavx2 -march=native"
+            ARCH_FLAGS="-mavx2 -march=native"
         fi
     fi
+    C_FLAGS="-O3 -g ${ARCH_FLAGS}"
+    CXX_FLAGS="-O3 -g ${ARCH_FLAGS}"
+    Fortran_FLAGS="-O3 -g ${ARCH_FLAGS}"
     ;;
   Debug)
     DIST=debug
@@ -209,4 +212,3 @@ fi
 FIX="spack uninstall -y lbann"
 echo $FIX
 eval $FIX
-

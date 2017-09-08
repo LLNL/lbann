@@ -1,0 +1,93 @@
+/** \page callbacks Callbacks
+\copydetails lbann::lbann_callback LBANN supported callbacks are found below.
+
+
+\section checkinit Check Initialization
+    \copydetails lbann::lbann_callback_check_init
+       
+    Implementation details: lbann::lbann_callback_check_init
+
+\section checkreconstruction Check Reconstruction
+    \copydetails lbann::lbann_callback_check_reconstruction_error
+      
+    Implementation details: lbann::lbann_callback_check_reconstruction_erro
+
+\section checknan Check NAN
+    \copydetails lbann::lbann_callback_checknan
+      
+    Implementation details: lbann::lbann_callback_checknan
+
+\section checksmall Check Small
+    \copydetails lbann::lbann_callback_checksmall
+      
+    Implementation details: lbann::lbann_callback_checksmall
+    
+
+\section dump_acts Dump Activations
+    \copydetails lbann::lbann_callback_dump_activations
+    
+    Implementation details: lbann::lbann_callback_dump_activations
+
+
+\section dump_grads Dump Gradients
+    \copydetails lbann::lbann_callback_dump_gradients
+       
+    Implementation details: lbann::lbann_callback_dump_gradients
+
+\section dump_mb_sample_indices Dump Minibatch Sample Indices
+    \copydetails lbann::lbann_callback_dump_minibatch_sample_indices
+      
+    Implementation details: lbann::lbann_callback_dump_minibatch_sample_indices
+
+\section dump_wei Dump Weights
+    \copydetails lbann::lbann_callback_dump_weights
+      
+    Implementation details: lbann::lbann_callback_dump_weights
+
+\section im_comm Inter-model Communication
+    \copydetails lbann::lbann_callback_imcomm
+      
+    Implementation details: lbann::lbann_callback_imcomm
+
+\section io Print IO
+    \copydetails lbann::lbann_callback_io
+      
+    Implementation details: lbann::lbann_callback_io
+
+\section learningrate Learning Rate
+    \copydetails lbann::lbann_callback_learning_rate
+      
+    Implementation details: lbann::lbann_callback_learning_rate
+
+\section LTFB Manage LTFB
+    \copydetails lbann::lbann_callback_ltfb
+      
+    Implementation details: lbann::lbann_callback_ltfb
+
+\section print_acc Print Accuracy
+    \copydetails lbann::lbann_callback_print
+      
+    Implementation details: lbann::lbann_callback_print
+
+\section save_images Save Images
+    \copydetails lbann::lbann_callback_save_images
+      
+    Implementation details: lbann::lbann_callback_save_images
+
+\section sum Summary
+    \copydetails lbann::lbann_callback_summary
+      
+    Implementation details: lbann::lbann_callback_summary
+
+\section timer Timer
+    \copydetails lbann::lbann_callback_timer
+      
+    Implementation details: lbann::lbann_callback_timer
+
+
+\section dbg Debug
+    \copydetails lbann::lbann_callback_debug
+      
+    Implementation details: lbann::lbann_callback_debug
+
+*/
