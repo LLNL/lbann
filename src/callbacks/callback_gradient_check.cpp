@@ -59,12 +59,13 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   // The bound E = E_trunc + E_fl is minimized with
   //   h = cbrt( 3 * epsilon * | f(chi) | / | f'''(xi) | )
   // For simplicity, we assume f(chi) ~ f(x), and | f'''(xi) | ~ 1.
-  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.75);
+  const DataType epsilon = std::numeric_limits<DataType>::epsilon();
   const DataType effective_objective = (objective != DataType(0) ?
                                         objective : DataType(1));
   const DataType step = std::cbrt(3 * epsilon * effective_objective);
-  const DataType expected_error = (epsilon * effective_objective / step
-                                   + step * step / 6);
+  DataType expected_error = (epsilon * effective_objective / step
+                             + step * step / 6);
+  expected_error = std::pow(expected_error, 0.75);
 
   // Compute gradients
   for (size_t l = layers.size(); l-- > 0u;) {
