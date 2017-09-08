@@ -1340,7 +1340,7 @@ void init_callbacks(
         std::cout << "adding gradient_check callback" << std::endl;
       }
       lbann_callback_gradient_check *gradient_check_cb = new
-      lbann_callback_gradient_check(DataType(c.max_error()));
+      lbann_callback_gradient_check();
       model->add_callback(gradient_check_cb);
     }
 

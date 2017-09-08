@@ -30,9 +30,6 @@
 
 namespace lbann {
 
-lbann_callback_gradient_check::lbann_callback_gradient_check(DataType max_error)
-  : m_max_error(max_error) {}
-
 void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Get model members
@@ -58,14 +55,16 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   // By Taylor's theorem, the truncation error is bounded by
   //   E_trunc <= | f'''(xi) | / 6 * h^2
   // By basic numerical analysis, the floating point error is bounded by
-  //   E_fl <= eps * f(chi) / h
+  //   E_fl <= eps * | f(chi) | / h
   // The bound E = E_trunc + E_fl is minimized with
-  //   h = cbrt( 3 * epsilon * f(chi) / f'''(xi) )
-  // For simplicity, we assume f(chi) ~ f(x), and f'''(xi) ~ 1.
+  //   h = cbrt( 3 * epsilon * | f(chi) | / | f'''(xi) | )
+  // For simplicity, we assume f(chi) ~ f(x), and | f'''(xi) | ~ 1.
   const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.75);
-  const DataType step = (objective != DataType(0) ?
-                         std::cbrt(3 * epsilon * objective) :
-                         std::cbrt(3 * epsilon));
+  const DataType effective_objective = (objective != DataType(0) ?
+                                        objective : DataType(1));
+  const DataType step = std::cbrt(3 * epsilon * effective_objective);
+  const DataType expected_error = (epsilon * effective_objective / step
+                                   + step * step / 6);
 
   // Compute gradients
   for (size_t l = layers.size(); l-- > 0u;) {
@@ -76,7 +75,8 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   if (comm->am_world_master()) {
     std::cout << "--------------------------------------------------------------------------------" << std::endl
               << "Gradient checking..." << std::endl
-              << "  Objective function value = " << objective << std::endl;
+              << "  Objective function value = " << objective << std::endl
+              << "  Expected gradient error  = " << expected_error << std::endl;
   }
 
   // Iterate through layers
@@ -124,7 +124,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         }
         
         // Print warning if relative error is large
-        if (relative_error > m_max_error && comm->am_world_master()) {
+        if (error > expected_error && comm->am_world_master()) {
           std::cout << "  Gradient error in layer " << layer_index << ", "
                     << "entry (" << row << "," << col << ")" << std::endl;
           std::cout << "    Weight              = " << initial_weight << std::endl

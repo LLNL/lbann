@@ -35,7 +35,6 @@ model {
   }
   callback {
     gradient_check {
-      max_error: 1e-4
     }
   }
 
@@ -64,8 +63,8 @@ model {
     fully_connected {
       num_neurons: 10
       weight_initialization: "glorot_uniform"
-      has_bias: true
-      l2_regularization_factor: 0.001
+      has_bias: false
+      l2_regularization_factor: 0.01
     }
   }
 
