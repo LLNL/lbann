@@ -52,17 +52,25 @@ class softmax_layer : public activation_layer {
   /** View into workspace for column-wise reductions. */
   AbsDistMat *m_workspace_v;
 
+  /** Lower bound for outputs.
+   *  This should be sufficiently large to avoid denormalized
+   *  floats.
+   */
+  DataType m_min_output;
+
  public:
   softmax_layer(int index,
                 lbann_comm *comm)
     : activation_layer(index, comm) {
     initialize_distributed_matrices();
+    m_min_output = std::sqrt(std::numeric_limits<DataType>::min());
   }
 
   softmax_layer(const softmax_layer& other) :
     activation_layer(other) {
     m_workspace = other.m_workspace->Copy();
     m_workspace_v = other.m_workspace_v->Copy();
+    m_min_output = other.m_min_output;
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
@@ -73,6 +81,7 @@ class softmax_layer : public activation_layer {
     }
     m_workspace = other.m_workspace->Copy();
     m_workspace_v = other.m_workspace_v->Copy();
+    m_min_output = other.m_min_output;
   }
 
   ~softmax_layer() {
@@ -116,66 +125,79 @@ class softmax_layer : public activation_layer {
     // Find maximum entry in each column
     #pragma omp parallel for
     for(El::Int col = 0; col < local_width; ++col) {
-      DataType max_entry = prev_activations_local(El::Int(0), col);
+      DataType max_entry = prev_activations_local(0, col);
       for(El::Int row = 1; row < local_height; ++row) {
         max_entry = std::max(max_entry, prev_activations_local(row,col));
       }
-      workspace_local(El::Int(0), col) = max_entry;
+      workspace_local(0, col) = max_entry;
     }
     El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
 
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
-    //   blowing up. Large negative values underflow to 0.
+    // blowing up. Large negative values underflow to 0.
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType shift = workspace_local(0, col);
       DataType sum = 0;
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType prev_activations_entry = prev_activations_local(row, col);
-        const DataType activations_entry = El::Exp(prev_activations_entry - shift);
+        const DataType activations_entry = std::exp(prev_activations_entry - shift);
         activations_local(row, col) = activations_entry;
         sum += activations_entry;
       }
-      workspace_local(El::Int(0), col) = sum;
+      workspace_local(0, col) = sum;
     }
     El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
     // Divide activations by column sums
-    // This truncates small values to 0 to avoid them becoming denormalized later
-    // in the forward/backward stages. Denormalized values can significantly
-    // impact floating point performance.
+    // Note: Small values are rounded to minimum output value to avoid
+    // denormalized floats.
     El::IndexDependentMap(activations_local,
                           (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                          ([this,&workspace_local](El::Int r, El::Int c, const DataType& z)->DataType {
-                            const DataType v = z / workspace_local(El::Int(0), c);
-                            return El::Abs(v) < DataType(1e-8) ? DataType(1e-8) : v;
+                          ([this,&workspace_local](El::Int r, El::Int c, const DataType& x)
+                           ->DataType {
+                            const DataType sum = workspace_local(0, c);
+                            const DataType y = x / sum;
+                            return y > m_min_output ? y : m_min_output;
                           }));
 
   }
 
   void bp_compute() {
 
-    // Apply softmax-cross-entropy shortcut if activated
-    objective_functions::cross_entropy* obj
-      = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
-    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
-      return;
-    }
-
     // Get local matrices and parameters
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     Mat& workspace_local = m_workspace_v->Matrix();
-    const Int local_width = activations_local.Width();
+    const El::Int local_width = activations_local.Width();
+
+    // Apply softmax-cross-entropy shortcut if activated
+    objective_functions::cross_entropy* obj
+      = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
+    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
+      El::IndexDependentFill(error_signal_local,
+                             (std::function<DataType(El::Int,El::Int)>)
+                             ([this,&activations_local,&prev_error_signal_local]
+                              (El::Int r, El::Int c)->DataType {
+                               const DataType activations_entry = activations_local(r,c);
+                               const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
+                               if(activations_entry > m_min_output) {
+                                 return activations_entry - prev_error_signal_entry;
+                               }
+                               else {
+                                 return DataType(0);
+                               }
+                             }));
+      return;
+    }
 
     // Compute dot products
     // Note: prev_error_signal^T activations
     for(El::Int c=0; c<local_width; ++c) {
-      workspace_local(El::Int(0), c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
-                                               activations_local(El::ALL,El::IR(c)));
+      workspace_local(0, c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
+                                      activations_local(El::ALL,El::IR(c)));
     }
     El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
 
@@ -188,7 +210,13 @@ class softmax_layer : public activation_layer {
                              const DataType activations_entry = activations_local(r,c);
                              const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
                              const DataType dot_product_entry = workspace_local(Int(0),c);
-                             return activations_entry * (prev_error_signal_entry - dot_product_entry);
+                             if(activations_entry > m_min_output) {
+                               return activations_entry * (prev_error_signal_entry
+                                                           - dot_product_entry);
+                             }
+                             else {
+                               return DataType(0);
+                             }
                            }));
 
   }

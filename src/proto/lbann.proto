@@ -292,7 +292,6 @@ message CallbackStepMinibatch {
 }
 
 message CallbackGradientCheck {
-  double max_error = 1;
 }
 
 //========================================================================

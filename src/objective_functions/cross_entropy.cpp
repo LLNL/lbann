@@ -67,23 +67,23 @@ void cross_entropy::compute_value(const AbsDistMat& predictions,
   const El::Int local_height = predictions_local.Height();
   const El::Int local_width = predictions_local.Width();
 
-  // Compute mean cross entropy
-  double mean_cross_entropy = 0.0;
+  // Compute sum of cross entropy terms with Kahan summation
+  double sum = 0;
+  double correction = 0;
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const double true_val = ground_truth_local(row, col);
-      if(true_val != 0.0) {
-        const double pred_val = predictions_local(row, col);
-        if(pred_val > 0.0) {
-          mean_cross_entropy += - true_val * std::log(pred_val);
-        }
-        else {
-          mean_cross_entropy = std::numeric_limits<double>::infinity();
-        }
-      }
+      const double pred_val = predictions_local(row, col);
+      double term = - true_val * std::log(pred_val);
+      term += correction;
+      const double next_sum = sum + term;
+      correction = term - (next_sum - sum);
+      sum = next_sum;
     }
   }
-  mean_cross_entropy /= width;
+
+  // Compute mean cross entropy across mini-batch
+  double mean_cross_entropy = sum / width;
   mean_cross_entropy = El::mpi::AllReduce(mean_cross_entropy,
                                           predictions.DistComm());
 
@@ -98,8 +98,7 @@ void cross_entropy::compute_gradient(const AbsDistMat& predictions,
 
   // Apply softmax-cross-entropy shortcut if activated
   if(m_shortcut_softmax_layer != nullptr) {
-    El::Copy(predictions, gradient);
-    El::Axpy(DataType(-1), ground_truth, gradient);
+    El::LockedView(gradient, ground_truth);
     return;
   }
 

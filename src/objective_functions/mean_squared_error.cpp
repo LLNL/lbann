@@ -41,17 +41,24 @@ void mean_squared_error::compute_value(const AbsDistMat& predictions,
   const El::Int local_height = predictions_local.Height();
   const El::Int local_width = predictions_local.Width();
 
-  // Compute mean squared error
-  double mse = 0.0;
+  // Compute sum of squared errors with Kahan summation
+  double sum = 0;
+  double correction = 0;
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
-      const double pred_val = predictions_local(row, col);
       const double true_val = ground_truth_local(row, col);
+      const double pred_val = predictions_local(row, col);
       const double error = pred_val - true_val;
-      mse += error * error;
+      double term = error * error;
+      term += correction;
+      const double next_sum = sum + term;
+      correction = term - (next_sum - sum);
+      sum = next_sum;
     }
   }
-  mse /= height * width;
+  
+  // Compute mean squared error
+  double mse = sum / (height * width);
   mse = El::mpi::AllReduce(mse, predictions.DistComm());
 
   // Update objective function value
