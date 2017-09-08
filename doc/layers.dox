@@ -1,0 +1,108 @@
+/** \page layers Layers
+Detailed information for layer types and options within these types can be found in this section. The layers are \ref learning, \ref regularizer, \ref transform, \ref activation, and \ref io.
+
+\section learning Learning
+    
+\section regularizer Regularizer
+    \subsection batchNorm Batch Normalization
+        \copydetails lbann::batch_normalization
+
+        Implementation details: lbann::batch_normalization
+
+    \subsection dropout Dropout
+        \copydetails lbann::dropout
+
+        Implementation details: lbann::dropout
+
+     \subsection selu_dropout Selu Dropout
+        \copydetails lbann::selu_dropout
+               
+        Implementation details: lbann::selu_dropout
+
+      \subsection local_response_norm_layer Local Response Norm Layer
+        \copydetails lbann::local_response_normalization_layer
+                
+        Implementation details: lbann::local_response_normalization_layer
+
+\section transform Transform
+    \subsection concatenation Concatenation
+        \copydetails lbann::concatenation_layer
+
+        Implementation details: lbann::concatenation_layer
+
+    \subsection pooling Pooling
+        \copydetail lbann::pooling_layer
+
+        Implementation details: lbann::pooling_layer
+
+    \subsection slice Slice
+        \copydetails lbann::slice_layer
+                       
+        Implementation details: lbann::slice_layer
+                                 
+    \subsection split Split
+        \copydetail lbann::split_layer
+        
+        Implementation details: lbann::split_layer
+
+
+    \subsection sum Sum
+        \copydetails lbann::sum_layer
+            
+        Implementation details: lbann::sum_layer
+                                 
+\section activation Activation
+   
+   \subsection idlayer Identity 
+        \copydetails lbann::id_layer
+        
+        Implementation details: lbann::id_layer 
+   
+   \subsection reluLayer Rectified Linear Unit
+        \copydetails lbann::relu_layer
+        
+        Implementation details: lbann::relu_layer
+   
+   \subsection leakyrelu Leaky Relu
+        \copydetails lbann::leaky_relu_layer
+        
+        Implementation details: lbann::leaky_relu_layer:
+   
+   \subsection smoothrelu Smooth Relu
+        \copydetails lbann::smooth_relu_layer
+        
+        Implementation details: lbann::smooth_relu_layer
+   
+   \subsection expLinUn Exponential Linear Unit
+        \copydetails lbann::elu_layer
+        
+        Implementation details: lbann::elu_layer
+   
+   \subsection seluLayer Scaled Elu
+        \copydetails lbann::selu_layer
+        
+        Implementation details: lbann::selu_layer
+    
+    \subsection sigLayer Sigmoid
+        \copydetails lbann::sigmoid_layer
+        
+        Implementation details: lbann::sigmoid_layer
+
+    \subsection softplus Softplus
+        \copydetails lbann::softplus_layer
+        
+        Implementation details: lbann::softplus_layer
+
+    \subsection softmax Softmax
+        \copydetails lbann::softmax_layer
+        
+        Implementation details: lbann::softmax_layer
+
+    \subsection tanh Tanh
+        \copydetails lbann::tanh_layer
+        
+        Implementation details: lbann::tanh_layer
+
+\section io IO
+
+*/

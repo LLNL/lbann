@@ -1,19 +1,22 @@
-/** \mainpage LBANN Documentation
+/** \mainpage Overview
 
-\section overview Overview
+This is the API documentation for LBANN ( Livermore Big Artificial Neural Network). LBANN is a toolkit for deep
+learning training on HPC systems. To get started with LBANN please refer to the \link getting_started Getting Started pages \endlink for installation and basic usage information. To see detailed information on the neural network features available in LBANN refer to the following pages:
 
-LBANN ( Livermore Big Artificial Neural Network) is a toolkit for deep
-learning training on HPC systems.
+-\link layers Layers \endlink
+
+-\link metrics Metrics \endlink
+
+-\link obj_fn Objective Functions \endlink
+
+-\link optimizers Optimizers \endlink
+
+-\link callbacks Callbacks \endlink
+
 
 \warning This manual is under construction.  Please direct questions
 to lbann-dev@llnl.gov. Users are encourage to join
 lbann-users@llnl.gov.
-
-This manual is divided in the following sections:
-- \subpage getting_started
-- \subpage basic_usage
-- \subpage developer_guide
-- \subpage publications
 
 \section team LBANN Development Team
 
@@ -51,36 +54,5 @@ distributed under the License is distributed on an “AS IS” BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the license.
-
-*/
-
-//-----------------------------------------------------------
-
-/** \page basic_usage Basic Usage
-
-\section running_mpi_program Running MPI Program
-
-Familiarize yourself with how to execute an MPI program for your
-system.  For this manual, we will use <i>mpiexec</i> for launching an
-MPI job, but your system my require <i>srun</i>, <i>mpirun</i>, or
-some other method.  Contact your local system administrator if you are
-unfamiliar with using MPI on your system.
-
-\subsection running_mpi_program_osx Running MPI Program on OS X
-
-\code{.sh}
- $ From the <build dir>
- $ mpiexec -n 1 -host localhost model_zoo/lbann_dnn_mnist
-\endcode
-
-\subpage using_tensorboard
-*/
-
-//-----------------------------------------------------------
-
-/** \page publications Publications
-
-Earlier incarnations of this code have been presented in the following
-publications:
 
 */
