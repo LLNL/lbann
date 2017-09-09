@@ -1,0 +1,11 @@
+/** \page obj_fn Objective Functions
+\copydetails lbann::objective_functions::objective_fn  
+
+\section cate_cross_entropy Categorical Cross Entropy
+Implementation details: lbann::objective_functions::categorical_cross_entropy
+\section Omse Objective Mean Squared Error
+Implementation details: lbann::objective_functions::mean_squared_error
+                                               
+                               
+*/
+

@@ -50,6 +50,7 @@ if [ -z "${PROCS_PER_NODE}" ]; then
         PROCS_PER_NODE=2
     fi
 fi
+NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 REBOOT_NODES=${REBOOT_NODES:-NO}
 TIME_LIMIT=${TIME_LIMIT:-12:00:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
@@ -170,7 +171,7 @@ esac
 echo "#SBATCH --time=${TIME_LIMIT}"                     >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 echo "# ======== Print node name ========"              >> ${SLURM_SCRIPT}
-SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=1"
+SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
 echo "${SRUN_COMMAND} hostname"                         >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 
@@ -180,8 +181,8 @@ case ${CACHE_DATASET} in
         echo "# ======== Cache dataset ========" >> ${SLURM_SCRIPT}
         echo "echo \"Caching dataset...\"" >> ${SLURM_SCRIPT}
         BCAST="/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast/file_bcast_par13 1MB"
-        SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=1"
-        COPY_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=2 ${BCAST}"
+        SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
+        COPY_COMMAND="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES})) ${BCAST}"
         echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
         echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/labels" >> ${SLURM_SCRIPT}
         for TARBALL in resized_256x256/train.tar resized_256x256/val.tar
@@ -212,7 +213,7 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${SLURM_SCRIPT}
-SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks-per-node=${PROCS_PER_NODE}"
+SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         SRUN_COMMAND="${SRUN_COMMAND} --nvidia_compute_mode=default"

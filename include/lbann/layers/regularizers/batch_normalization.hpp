@@ -191,7 +191,7 @@ class batch_normalization : public regularizer_layer {
    * @param decay Controls the momentum of the running mean/standard
    * deviation averages.
    * @param scale_init The initial value for scaling parameter
-   * \f$\gamma$\f$. The paper recommends 1.0 as a starting point, but
+   * \f$\gamma\f$. The paper recommends 1.0 as a starting point, but
    * other papers have had better results with a smaller value
    * (e.g. 0.1).
    * @param bias_init The initial value for bias parameter

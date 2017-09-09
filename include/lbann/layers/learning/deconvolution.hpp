@@ -164,7 +164,7 @@ class deconvolution_layer : public base_convolution_layer {
 
     // Check if previous neuron tensor dimensions are valid
   #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != this->m_kernel_dims.size()) {
+    if(this->m_num_neuron_dims != (int) this->m_kernel_dims.size()) {
       throw lbann_exception("deconvolution_layer: previous neuron tensor dimensions are unexpected");
     }
   #endif
@@ -309,7 +309,6 @@ class deconvolution_layer : public base_convolution_layer {
  protected:
 
   void fp_compute() {
-    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       apply_transposed_convolution_cudnn(true);
       apply_bias_cudnn();
@@ -317,6 +316,7 @@ class deconvolution_layer : public base_convolution_layer {
       apply_transposed_convolution_im2col(true);
       apply_bias_cpu();
     }
+    l2_regularize_objective_function();
   }
 
   void bp_compute() {
@@ -327,6 +327,7 @@ class deconvolution_layer : public base_convolution_layer {
       apply_convolution_im2col(false);
       compute_gradients_im2col(true);
     }
+    l2_regularize_gradient();
   }
 
 };
