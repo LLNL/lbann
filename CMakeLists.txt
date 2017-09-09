@@ -301,6 +301,9 @@ endif()
 # LBANN also requires HWLOC. This seems sufficient for now.
 target_link_libraries(lbann hwloc)
 
+target_compile_options(src PUBLIC "-Werror")
+target_compile_options(lbann PUBLIC "-Werror")
+
 ################################################################
 # Install LBANN
 ################################################################
