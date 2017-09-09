@@ -153,7 +153,7 @@ class batch_normalization : public regularizer_layer {
 
   /** Small number to avoid division by zero. */
   DataType m_epsilon;
-  /** Whether to use running statistics when training. */
+  /** Whether to use global running statistics when training. */
   bool m_use_global_stats;
 
 #ifdef __LIB_CUDNN
@@ -206,15 +206,21 @@ class batch_normalization : public regularizer_layer {
                       DataType scale_init=1.0,
                       DataType bias_init=0.0,
                       DataType epsilon=1e-5,
-                      cudnn::cudnn_manager *cudnn = NULL
+                      cudnn::cudnn_manager *cudnn = NULL,
+                      bool use_global_stats = true
                       )
     : regularizer_layer(index, comm),
       m_decay(decay),
       m_scale_init(scale_init),
       m_bias_init(bias_init),
-      m_epsilon(epsilon) {
+      m_epsilon(epsilon),
+      m_use_global_stats(use_global_stats) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
+  #ifdef LBANN_SEQUENTIAL_CONSISTENCY
+    // Force global computation.
+    m_use_global_stats = true;
+  #endif
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -237,7 +243,8 @@ class batch_normalization : public regularizer_layer {
     m_decay(other.m_decay),
     m_scale_init(other.m_scale_init),
     m_bias_init(other.m_bias_init),
-    m_epsilon(other.m_epsilon) {
+    m_epsilon(other.m_epsilon),
+    m_use_global_stats(other.m_use_global_stats) {
 
     // Copy matrices
     m_parameters = other.m_parameters->Copy();
@@ -300,6 +307,7 @@ class batch_normalization : public regularizer_layer {
     m_scale_init = other.m_scale_init;
     m_bias_init = other.m_bias_init;
     m_epsilon = other.m_epsilon;
+    m_use_global_stats = other.m_use_global_stats;
 
     // Copy matrices
     m_parameters = other.m_parameters->Copy();
@@ -599,9 +607,11 @@ class batch_normalization : public regularizer_layer {
           var_local += workspace2(El::ALL, El::IR(i));
         }
       }
-      El::AllReduce(*m_statistics_v,
-                    m_statistics_v->RedundantComm(),
-                    El::mpi::SUM);
+      if (m_use_global_stats) {
+        El::AllReduce(*m_statistics_v,
+                      m_statistics_v->RedundantComm(),
+                      El::mpi::SUM);
+      }
 
       // Compute minibatch statistics and running statistics
       const DataType num_samples = width * channel_size;
@@ -728,9 +738,11 @@ class batch_normalization : public regularizer_layer {
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*m_parameters_gradient,
-                  m_parameters_gradient->RedundantComm(),
-                  El::mpi::SUM);
+    if (m_use_global_stats) {
+      El::AllReduce(*m_parameters_gradient,
+                    m_parameters_gradient->RedundantComm(),
+                    El::mpi::SUM);
+    }
     this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, mean_gradient_local);
     this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, var_gradient_local);
 
@@ -798,9 +810,11 @@ class batch_normalization : public regularizer_layer {
         mean_local(channel, 0) = sum;
         var_local(channel, 0) = sqsum;
       }
-      El::AllReduce(*m_statistics_v,
-                    m_statistics_v->RedundantComm(),
-                    El::mpi::SUM);
+      if (m_use_global_stats) {
+        El::AllReduce(*m_statistics_v,
+                      m_statistics_v->RedundantComm(),
+                      El::mpi::SUM);
+      }
 
       // Compute minibatch statistics and running statistics
       const DataType num_samples = width * channel_size;
@@ -914,9 +928,11 @@ class batch_normalization : public regularizer_layer {
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*m_parameters_gradient,
-                  m_parameters_gradient->RedundantComm(),
-                  El::mpi::SUM);
+    if (m_use_global_stats) {
+      El::AllReduce(*m_parameters_gradient,
+                    m_parameters_gradient->RedundantComm(),
+                    El::mpi::SUM);
+    }
     
     // Compute error signal
     #pragma omp parallel for
