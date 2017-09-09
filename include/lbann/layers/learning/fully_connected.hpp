@@ -366,12 +366,12 @@ class fully_connected_layer : public learning {
 #ifdef __LBANN_DEBUG
     this->m_cudnn->synchronize_all();
 #endif
-    l2_regularize_objective_function();
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
       fp_compute_cpu();
     }
+    l2_regularize_objective_function();
 #ifdef __LBANN_DEBUG
     this->m_cudnn->synchronize_all();
 #endif    
@@ -458,6 +458,7 @@ class fully_connected_layer : public learning {
     } else {
       bp_compute_cpu();
     }
+    this->l2_regularize_gradient();
   }
 
   void bp_compute_cpu() {
@@ -473,9 +474,6 @@ class fully_connected_layer : public learning {
                 *m_bias_weights_gradient_repl);
       El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
     }
-
-    // Apply L2 regularization
-    this->l2_regularize_gradient();
 
   }
 

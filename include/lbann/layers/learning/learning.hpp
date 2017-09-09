@@ -47,7 +47,7 @@ class learning : public Layer {
 
   /** Add L2 regularization term to objective function. */
   virtual void l2_regularize_objective_function() {
-    if (m_l2_regularization_factor > DataType(0)) {
+    if (m_l2_regularization_factor != DataType(0)) {
 
       // Get local weight data
       const DataType *weights_buffer = m_weights->LockedBuffer();
@@ -78,7 +78,7 @@ class learning : public Layer {
 
   /** Add L2 regularization term to gradient. */
   virtual void l2_regularize_gradient() {
-    if (m_l2_regularization_factor > DataType(0)) {
+    if (m_l2_regularization_factor != DataType(0)) {
       El::Axpy(m_l2_regularization_factor, *m_weights, *m_weights_gradient);
     }
   }
