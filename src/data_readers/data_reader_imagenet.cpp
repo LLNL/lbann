@@ -43,19 +43,19 @@ imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
 
   // Preallocate buffer space for each thread.
   m_pixel_bufs.resize(omp_get_max_threads());
-  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
+  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     m_pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
   }
 }
 
 bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
-  std::string imagepath = get_file_dir() + m_image_list[data_id].first;
+  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
+  const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width, height;
   unsigned char *pixels = m_pixel_bufs[tid].data();
-  bool ret = lbann::image_utils::loadJPG(imagepath.c_str(), width, height, false, pixels);
+  bool ret = lbann::image_utils::loadJPG(imagepath, width, height, false, pixels);
   if(!ret) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: image_utils::loadJPG failed to load - " 
@@ -86,8 +86,8 @@ bool imagenet_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 }
 
 void imagenet_reader::load() {
-  std::string imageDir = get_file_dir();
-  std::string imageListFile = get_data_filename();
+  const std::string imageDir = get_file_dir(); // TODO: remove or use this
+  const std::string imageListFile = get_data_filename();
 
   m_image_list.clear();
 
