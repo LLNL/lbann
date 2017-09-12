@@ -1102,11 +1102,9 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      /*if (c.summary_dir() != "none" && !summarizer) {
-        summarizer = new lbann_summary(c.summary_dir(), comm);
+      if (!summarizer) {
+        summarizer = new lbann_summary(".", comm);
       }
-      */
-      summarizer = new lbann_summary(".", comm);
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;

@@ -39,6 +39,10 @@ namespace lbann {
  */
 class lbann_callback_summary : public lbann_callback {
  public:
+  /**
+   * @param summarizer The summary object to write to; this callback takes
+   * ownership of it.
+   */
   lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1,
     int mat_interval = 25);
   virtual ~lbann_callback_summary();
