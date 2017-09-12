@@ -44,6 +44,7 @@ C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
 CLEAN_BUILD=0
+DATATYPE=4
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
@@ -91,6 +92,7 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or 'clang').
   ${C}--mpi${N} <val>             Specify MPI library ('mvapich2' or 'openmpi' or 'spectrum').
+  ${C}--datatype${N} <val>        Datatype size in bytes (4 for float and 8 for double).
   ${C}--verbose${N}               Verbose output.
   ${C}--debug${N}                 Build with debug flag.
   ${C}--tbinf${N}                 Build with Tensorboard interface.
@@ -151,6 +153,16 @@ while :; do
             # Choose mpi library
             if [ -n "${2}" ]; then
                 MPI=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --datatype)
+            # Set datatype size
+            if [ -n "${2}" ]; then
+                DATATYPE=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -420,7 +432,8 @@ else
     fi
     if [ "${BUILD_TYPE}" == "Debug" ] && [ -z "$(echo ${MPI_DOTKIT} | grep debug)" ]; then
         unuse ${MPI_DOTKIT}
-        MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug-%s\n",$1,$2,$3)}')
+        #MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug-%s\n",$1,$2,$3)}')
+        MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug\n",$1,$2)}')
         use ${MPI_DOTKIT}
         if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
             echo "Could not load dotkit (${MPI_DOTKIT})"
@@ -577,6 +590,7 @@ cmake \
 -D cuDNN_DIR=${cuDNN_DIR} \
 -D VTUNE_DIR=${VTUNE_DIR} \
 -D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
+-D DATATYPE=${DATATYPE} \
 -D VERBOSE=${VERBOSE} \
 -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
 -D LBANN_HOME=${ROOT_DIR} \

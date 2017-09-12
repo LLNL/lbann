@@ -30,6 +30,10 @@
 
 namespace lbann {
 
+lbann_callback_gradient_check::lbann_callback_gradient_check(DataType step_size,
+                                                             bool verbose)
+  : m_step_size(step_size), m_verbose(verbose) {}
+
 void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Get model members
@@ -59,13 +63,15 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   // The bound E = E_trunc + E_fl is minimized with
   //   h = cbrt( 3 * epsilon * | f(chi) | / | f'''(xi) | )
   // For simplicity, we assume f(chi) ~ f(x), and | f'''(xi) | ~ 1.
-  const DataType epsilon = std::numeric_limits<DataType>::epsilon();
+  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.8);
   const DataType effective_objective = (objective != DataType(0) ?
                                         objective : DataType(1));
-  const DataType step = std::cbrt(3 * epsilon * effective_objective);
-  DataType expected_error = (epsilon * effective_objective / step
-                             + step * step / 6);
-  expected_error = std::pow(expected_error, 0.75);
+  const DataType step_size = (m_step_size > DataType(0) ?
+                              m_step_size :
+                              std::cbrt(3 * epsilon * effective_objective));
+  DataType expected_error = (epsilon * effective_objective / step_size
+                             + step_size * step_size / 6);
+  expected_error = std::pow(expected_error, 0.8);
 
   // Compute gradients
   for (size_t l = layers.size(); l-- > 0u;) {
@@ -77,6 +83,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     std::cout << "--------------------------------------------------------------------------------" << std::endl
               << "Gradient checking..." << std::endl
               << "  Objective function value = " << objective << std::endl
+              << "  Step size                = " << step_size << std::endl
               << "  Expected gradient error  = " << expected_error << std::endl;
   }
 
@@ -99,7 +106,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         const DataType initial_weight = weights.Get(row, col);
 
         // Compute objective function with positive step
-        weights.Set(row, col, initial_weight + step);
+        weights.Set(row, col, initial_weight + step_size);
         for (size_t l = 1; l < layers.size(); l++) {
           layers[l]->forward_prop();
         }
@@ -107,7 +114,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         m->m_obj_fn->reset_statistics();
 
         // Compute objective function with negative step
-        weights.Set(row, col, initial_weight - step);
+        weights.Set(row, col, initial_weight - step_size);
         for (size_t l = 1; l < layers.size(); l++) {
           layers[l]->forward_prop();
         }
@@ -116,7 +123,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         
         // Compute relative error in gradient
         const DataType analytical_gradient = weights_gradient.Get(row, col);
-        const DataType numerical_gradient = (objective_plus - objective_minus) / (2 * step);
+        const DataType numerical_gradient = (objective_plus - objective_minus) / (2 * step_size);
         const DataType error = std::fabs(analytical_gradient - numerical_gradient);
         DataType relative_error = DataType(0);
         if (error != DataType(0)) {
@@ -125,11 +132,11 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         }
         
         // Print warning if relative error is large
-        if (error > expected_error && comm->am_world_master()) {
+        if ((error > expected_error || m_verbose)
+            && comm->am_world_master()) {
           std::cout << "  Gradient error in layer " << layer_index << ", "
                     << "entry (" << row << "," << col << ")" << std::endl;
           std::cout << "    Weight              = " << initial_weight << std::endl
-                    << "    Step                = " << step << std::endl
                     << "    Analytical gradient = " << analytical_gradient << std::endl
                     << "    Numerical gradient  = " << numerical_gradient << std::endl
                     << "    Error               = " << error << std::endl

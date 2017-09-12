@@ -33,14 +33,29 @@
 
 namespace lbann {
 
+/** Callback hooks for gradient check. */
 class lbann_callback_gradient_check : public lbann_callback {
  public:
-  lbann_callback_gradient_check() = default;
+  
+  /** Constructor.
+   *  @param step_size  Step size for numerical differentiation.
+   *  @param verbose    Whether to print results for each parameter.
+   */
+  lbann_callback_gradient_check(DataType step_size = DataType(0),
+                                bool verbose = false);
+
   lbann_callback_gradient_check(const lbann_callback_gradient_check&) = default;
   lbann_callback_gradient_check& operator=(const lbann_callback_gradient_check&) = default;
   lbann_callback_gradient_check* copy() const { return new lbann_callback_gradient_check(*this); }
   void on_test_begin(model *m);
   std::string name() const { return "gradient check"; }
+
+private:
+  /** Step size for numerical differentiation. */
+  DataType m_step_size;
+  /** Whether to print results for each parameter. */
+  bool m_verbose;
+
 };
 
 }  // namespace lbann

@@ -286,9 +286,8 @@ model {
     index: 20
     parent: 19
     data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
     fully_connected {
-      num_neurons: 1023 
-      #num_neurons: 9215 
       weight_initialization: "glorot_uniform"
       has_bias: true
     }

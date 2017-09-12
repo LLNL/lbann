@@ -78,9 +78,9 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
    To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
  ```
   srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \
---model=model_zoo/prototext/model_mnist_multi.prototext \
---reader=model_zoo/prototext/data_reader_mnist.prototext \
---optimizer=model_zoo/prototext/opt_adagrad.prototext
+--model=model_zoo/historical/prototext/model_mnist_multi.prototext \
+--reader=model_zoo/data_readers/data_reader_mnist.prototext \
+--optimizer=model_zoo/optimizer/opt_adagrad.prototext
 ```
   This should produce the following final results on Catalyst:
   ```
@@ -104,8 +104,8 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
 Launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
 ```
 srun -n2 catalyst.llnl.gov/model_zoo/lbann
---model=../model_zoo/prototext/model_mnist_multi.prototext
---reader=../model_zoo/prototext/data_reader_mnist.prototext
---optimizer=../model_zoo/prototext/opt_adagrad.prototext
+--model=../model_zoo/historical/prototext/model_mnist_multi.prototext
+--reader=../model_zoo/data_readers/data_reader_mnist.prototext
+--optimizer=../model_zoo/optimizer/opt_adagrad.prototext
 ```
 

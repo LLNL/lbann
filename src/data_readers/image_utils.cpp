@@ -79,10 +79,10 @@ typedef struct __BMP_INFO {
 #pragma pack(pop)
 
 
-bool lbann::image_utils::loadBMP(const char *Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
-  FILE *infile = fopen(Imagefile, "rb");
+bool lbann::image_utils::loadBMP(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
+  FILE *infile = fopen(Imagefile.c_str(), "rb");
   if (infile == NULL) {
-    fprintf(stderr, "can't open %s\n", Imagefile);
+    fprintf(stderr, "can't open %s\n", Imagefile.c_str());
     return false;
   }
 
@@ -133,7 +133,7 @@ bool lbann::image_utils::loadBMP(const char *Imagefile, int& Width, int& Height,
   return true;
 }
 
-bool lbann::image_utils::saveBMP(const char *Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
+bool lbann::image_utils::saveBMP(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
   if (BPP != 3) {
     return false;
   }
@@ -143,10 +143,10 @@ bool lbann::image_utils::saveBMP(const char *Imagefile, int Width, int Height, i
   return false;
 }
 
-bool lbann::image_utils::loadPGM(const char *Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
-  FILE *infile = fopen(Imagefile, "rb");
+bool lbann::image_utils::loadPGM(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
+  FILE *infile = fopen(Imagefile.c_str(), "rb");
   if (infile == NULL) {
-    fprintf(stderr, "can't open %s\n", Imagefile);
+    fprintf(stderr, "can't open %s\n", Imagefile.c_str());
     return false;
   }
 
@@ -174,14 +174,14 @@ bool lbann::image_utils::loadPGM(const char *Imagefile, int& Width, int& Height,
   return true;
 }
 
-bool lbann::image_utils::savePGM(const char *Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
+bool lbann::image_utils::savePGM(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
   if (BPP != 1) {
     return false;
   }
 
-  FILE *outfile = fopen(Imagefile, "wb");
+  FILE *outfile = fopen(Imagefile.c_str(), "wb");
   if (outfile == NULL) {
-    fprintf(stderr, "can't create %s\n", Imagefile);
+    fprintf(stderr, "can't create %s\n", Imagefile.c_str());
     return false;
   }
 
@@ -200,7 +200,7 @@ bool lbann::image_utils::savePGM(const char *Imagefile, int Width, int Height, i
   return true;
 }
 
-bool lbann::image_utils::loadPNG(const char *Imagefile, int& Width, int& Height, bool Flip, uchar *&Pixels) {
+bool lbann::image_utils::loadPNG(const std::string& Imagefile, int& Width, int& Height, bool Flip, uchar *&Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
@@ -226,7 +226,7 @@ bool lbann::image_utils::loadPNG(const char *Imagefile, int& Width, int& Height,
 #endif
 }
 
-bool lbann::image_utils::savePNG(const char *Imagefile, int Width, int Height, bool Flip, uchar *Pixels) {
+bool lbann::image_utils::savePNG(const std::string& Imagefile, int Width, int Height, bool Flip, uchar *Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
@@ -240,7 +240,7 @@ bool lbann::image_utils::savePNG(const char *Imagefile, int Width, int Height, b
       image.at<cv::Vec3b>(y, x) = pixel;
     }
   }
-  imwrite(Imagefile, image);
+  cv::imwrite(Imagefile, image);
 
   return true;
 #else
@@ -248,7 +248,7 @@ bool lbann::image_utils::savePNG(const char *Imagefile, int Width, int Height, b
 #endif
 }
 
-bool lbann::image_utils::loadJPG(const char *Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+bool lbann::image_utils::loadJPG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
@@ -302,7 +302,7 @@ bool lbann::image_utils::loadJPG(std::vector<unsigned char>& image_buf, int& Wid
 #endif
 }
 
-bool lbann::image_utils::saveJPG(const char *Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
+bool lbann::image_utils::saveJPG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
