@@ -156,7 +156,7 @@ class deconvolution_layer : public base_convolution_layer {
   void setup_dims() {
 
     // Initialize previous neuron tensor dimensions
-    learning::setup_dims();
+    base_convolution_layer::setup_dims();
 
     // Initialize convolution kernel dimensions
     this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
@@ -164,13 +164,13 @@ class deconvolution_layer : public base_convolution_layer {
 
     // Check if previous neuron tensor dimensions are valid
   #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != (int) this->m_kernel_dims.size()) {
+    if(this->m_num_neuron_dims != (int) this->m_kernel_dims.size() - 1) {
       throw lbann_exception("deconvolution_layer: previous neuron tensor dimensions are unexpected");
     }
   #endif
 
     // Initialize neuron tensor dimensions
-    this->m_neuron_dims[0] = this->m_kernel_dims[0];
+    this->m_neuron_dims[0] = this->m_kernel_dims[1];
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
       this->m_neuron_dims[i+1]
         = ((this->m_prev_neuron_dims[i+1]-1) * this->m_conv_strides[i]

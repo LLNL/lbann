@@ -155,7 +155,7 @@ class convolution_layer : public base_convolution_layer {
   void setup_dims() {
 
     // Initialize previous neuron tensor dimensions
-    learning::setup_dims();
+    base_convolution_layer::setup_dims();
 
     // Initialize convolution kernel dimensions
     this->m_kernel_dims.insert(this->m_kernel_dims.begin() + 1,

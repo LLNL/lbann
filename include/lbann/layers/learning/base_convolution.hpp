@@ -768,15 +768,21 @@ class base_convolution_layer : public learning {
     El::Zero(*this->m_weights_gradient);
 
     // Compute bias gradient
+    // Note: Sum is computed with Kahan summation
     if(m_bias_scaling_factor != DataType(0)) {
       #pragma omp parallel for
       for(int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
         const El::Int row_end = (channel+1) * num_per_output_channel;
         DataType sum = 0;
+        DataType correction = 0;
         for(El::Int col = 0; col < width_local; ++col) {
           for(El::Int row = row_start; row < row_end; ++row) {
-            sum += prev_error_signal_local(row, col);
+            DataType term = prev_error_signal_local(row, col);
+            term += correction;
+            const DataType next_sum = sum + term;
+            correction = term - (next_sum - sum);
+            sum = next_sum;
           }
         }
         bias_weights_gradient_local(0, channel) = m_bias_scaling_factor * sum;
