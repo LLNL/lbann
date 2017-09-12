@@ -685,7 +685,8 @@ void add_layers(
           ell.scale_init(),
           ell.bias_init(),
           ell.epsilon(),
-          cudnn);
+          cudnn/*,
+                 ell.global_stats()*/);
       }
     }
 
