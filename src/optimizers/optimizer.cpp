@@ -64,8 +64,8 @@ void optimizer::setup_gpu(AbsDistMat *parameters,
 }
 
 optimizer_factory::optimizer_factory(lbann_comm *comm,
-                                     const std::string name)
-  : m_comm(comm), m_name(name) {}
+                                     const std::string _name)
+  : m_comm(comm), m_name(_name) {}
 
 optimizer_factory::~optimizer_factory() {}
 
