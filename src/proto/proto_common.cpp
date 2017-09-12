@@ -1335,11 +1335,12 @@ void init_callbacks(
     // CALLBACK: gradient_check
     //////////////////////////////////////////////////////////////////
     if (callback.has_gradient_check()) {
+      const lbann_data::CallbackGradientCheck& c = callback.gradient_check();
       if (master) {
         std::cout << "adding gradient_check callback" << std::endl;
       }
       lbann_callback_gradient_check *gradient_check_cb = new
-      lbann_callback_gradient_check();
+      lbann_callback_gradient_check(c.step_size(), c.verbose());
       model->add_callback(gradient_check_cb);
     }
 
