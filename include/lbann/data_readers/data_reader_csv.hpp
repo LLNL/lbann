@@ -183,7 +183,7 @@ class csv_reader : public generic_data_reader {
   /// Store labels.
   std::vector<int> m_labels;
   /// Store responses.
-  std::vector<int> m_responses;
+  std::vector<DataType> m_responses;
   /// Per-column transformation functions.
   std::unordered_map<int, std::function<DataType(const std::string&)>>
     m_col_transforms;

@@ -37,7 +37,7 @@ lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
   m_mat_interval(mat_interval) {}
 
 lbann_callback_summary::~lbann_callback_summary() {
-//  delete m_summarizer;
+  delete m_summarizer;
 }
 
 void lbann_callback_summary::on_train_begin(model *m) {

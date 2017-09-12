@@ -85,13 +85,12 @@ cv_augmenter& cv_augmenter::operator=(const cv_augmenter& rhs) {
 
 
 bool cv_augmenter::check_to_enable() const {
-  bool enable = m_do_horizontal_flip || m_do_vertical_flip ||
-                (m_horizontal_shift_range != 0.0f) ||
-                (m_vertical_shift_range != 0.0f) ||
-                (m_shear_range != 0.0f) ||
-                (m_rotation_range != 0.0f);
-
-  return enable;
+  return ( m_do_horizontal_flip ||
+           m_do_vertical_flip ||
+          (m_horizontal_shift_range != 0.0f) ||
+          (m_vertical_shift_range != 0.0f) ||
+          (m_shear_range != 0.0f) ||
+          (m_rotation_range != 0.0f));
 }
 
 

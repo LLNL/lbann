@@ -44,17 +44,17 @@
 namespace lbann {
 class image_utils {
  public:
-  static bool loadBMP(const char *Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
-  static bool saveBMP(const char *Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
+  static bool loadBMP(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
+  static bool saveBMP(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
 
-  static bool loadPGM(const char *Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
-  static bool savePGM(const char *Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
-  static bool loadPNG(const char *Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool savePNG(const char *Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
+  static bool loadPGM(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
+  static bool savePGM(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
+  static bool loadPNG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
+  static bool savePNG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
 
   static bool loadJPG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool loadJPG(const char *Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool saveJPG(const char *Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
+  static bool loadJPG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
+  static bool saveJPG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
 
   // load/save an image into/from a temporary buffer
   /// Load an image from a file and put it into a serialized buffer

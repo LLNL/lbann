@@ -685,7 +685,8 @@ void add_layers(
           ell.scale_init(),
           ell.bias_init(),
           ell.epsilon(),
-          cudnn);
+          cudnn/*,
+                 ell.global_stats()*/);
       }
     }
 
@@ -1102,11 +1103,9 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      /*if (c.summary_dir() != "none" && !summarizer) {
-        summarizer = new lbann_summary(c.summary_dir(), comm);
+      if (!summarizer) {
+        summarizer = new lbann_summary(".", comm);
       }
-      */
-      summarizer = new lbann_summary(".", comm);
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;
@@ -1335,11 +1334,12 @@ void init_callbacks(
     // CALLBACK: gradient_check
     //////////////////////////////////////////////////////////////////
     if (callback.has_gradient_check()) {
+      const lbann_data::CallbackGradientCheck& c = callback.gradient_check();
       if (master) {
         std::cout << "adding gradient_check callback" << std::endl;
       }
       lbann_callback_gradient_check *gradient_check_cb = new
-      lbann_callback_gradient_check();
+      lbann_callback_gradient_check(c.step_size(), c.verbose());
       model->add_callback(gradient_check_cb);
     }
 
