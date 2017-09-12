@@ -50,6 +50,12 @@ class lbann_callback_gradient_check : public lbann_callback {
   void on_test_begin(model *m);
   std::string name() const { return "gradient check"; }
 
+  /** Compute objective function value.
+   *  It is assumed that input data has already been loaded into the
+   *  activations of the first layer.
+   */
+  DataType compute_objective_function(model *m);
+
 private:
   /** Step size for numerical differentiation. */
   DataType m_step_size;

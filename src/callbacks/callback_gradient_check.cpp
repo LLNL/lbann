@@ -44,34 +44,29 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   for (size_t l = 0; l < layers.size(); ++l) {
     layers[l]->set_execution_mode(execution_mode::testing);
   }
-  m->m_obj_fn->reset_statistics();
 
   // Compute objective function
-  for (size_t l = 0; l < layers.size(); l++) {
-    layers[l]->forward_prop();
-  }
-  const DataType objective = m->m_obj_fn->get_value();
-  m->m_obj_fn->reset_statistics();
+  layers[0]->set_execution_mode(execution_mode::testing);
+  const DataType objective = compute_objective_function(m);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:
-  //   f'(x) ~ ( f(x+h) - f(x-h) ) / 2h
+  //   f'(x) ~ ( - f(x+2h) + 8 f(x+h) - 8 f(x-h) + f(x-2h) ) / 12h
   // By Taylor's theorem, the truncation error is bounded by
-  //   E_trunc <= | f'''(xi) | / 6 * h^2
-  // By basic numerical analysis, the floating point error is bounded by
-  //   E_fl <= eps * | f(chi) | / h
-  // The bound E = E_trunc + E_fl is minimized with
-  //   h = cbrt( 3 * epsilon * | f(chi) | / | f'''(xi) | )
-  // For simplicity, we assume f(chi) ~ f(x), and | f'''(xi) | ~ 1.
-  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.8);
-  const DataType effective_objective = (objective != DataType(0) ?
-                                        objective : DataType(1));
-  const DataType step_size = (m_step_size > DataType(0) ?
-                              m_step_size :
-                              std::cbrt(3 * epsilon * effective_objective));
-  DataType expected_error = (epsilon * effective_objective / step_size
-                             + step_size * step_size / 6);
-  expected_error = std::pow(expected_error, 0.8);
+  //   E_trunc <= | f'''''(xi) | / 18 * h^4
+  // Assuming f can be computed to a relative accuracy of epsilon,
+  //   E_fl <= epsilon * | f(chi) | / h
+  // For simplicity, we assume f(chi) ~ f(x), and | f'''''(xi) | ~ 1.
+  // If step size is not specified, then we choose h so that
+  //   E_fl <= sqrt(epsilon)
+  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
+  DataType step_size = m_step_size;
+  if (m_step_size <= DataType(0)) {
+    step_size = std::fabs(objective) * std::sqrt(epsilon);
+  }
+  DataType expected_error = (epsilon * objective / step_size
+                             + std::pow(step_size, 4) / 18);
+  expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
   for (size_t l = layers.size(); l-- > 0u;) {
@@ -105,25 +100,20 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
       for (El::Int row = 0; row < weights.Height(); ++row) {
         const DataType initial_weight = weights.Get(row, col);
 
-        // Compute objective function with positive step
+        // Compute objective function values
+        weights.Set(row, col, initial_weight + 2 * step_size);
+        const DataType f_2h = compute_objective_function(m);
         weights.Set(row, col, initial_weight + step_size);
-        for (size_t l = 1; l < layers.size(); l++) {
-          layers[l]->forward_prop();
-        }
-        const DataType objective_plus = m->m_obj_fn->get_value();
-        m->m_obj_fn->reset_statistics();
-
-        // Compute objective function with negative step
+        const DataType f_h = compute_objective_function(m);
         weights.Set(row, col, initial_weight - step_size);
-        for (size_t l = 1; l < layers.size(); l++) {
-          layers[l]->forward_prop();
-        }
-        const DataType objective_minus = m->m_obj_fn->get_value();
-        m->m_obj_fn->reset_statistics();
+        const DataType f_nh = compute_objective_function(m);
+        weights.Set(row, col, initial_weight - 2 * step_size);
+        const DataType f_n2h = compute_objective_function(m);
         
         // Compute relative error in gradient
         const DataType analytical_gradient = weights_gradient.Get(row, col);
-        const DataType numerical_gradient = (objective_plus - objective_minus) / (2 * step_size);
+        const DataType numerical_gradient
+          = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
         const DataType error = std::fabs(analytical_gradient - numerical_gradient);
         DataType relative_error = DataType(0);
         if (error != DataType(0)) {
@@ -155,6 +145,17 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     std::cout << "--------------------------------------------------------------------------------" << std::endl;
   }
 
+}
+
+DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
+  std::vector<Layer*>& layers = m->get_layers();
+  m->m_obj_fn->reset_statistics();
+  for (size_t l = 1; l < layers.size(); l++) {
+    layers[l]->forward_prop();
+  }
+  const DataType value = m->m_obj_fn->get_value();
+  m->m_obj_fn->reset_statistics();
+  return value;
 }
 
 }  // namespace lbann
