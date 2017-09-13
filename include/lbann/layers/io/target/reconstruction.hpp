@@ -40,8 +40,7 @@ class reconstruction_layer : public target_layer {
   Layer *m_original_layer;
   double aggregate_cost;
   long num_forwardprop_steps;
-  //  weight_initialization m_weight_initialization;
-  DistMat original_layer_act_v;
+  AbsDistMat *original_layer_act_v;
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
@@ -63,6 +62,7 @@ class reconstruction_layer : public target_layer {
 
   std::string get_name() const { return "reconstruction"; }
 
+  //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
@@ -83,7 +83,8 @@ class reconstruction_layer : public target_layer {
 
     //view of original layer
     ElMat& orig_acts = m_original_layer->get_activations();
-    El::View(original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
+    original_layer_act_v = orig_acts.Construct(this->m_comm->get_model_grid(),this->m_comm->get_model_master());
+    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
 
@@ -93,13 +94,13 @@ class reconstruction_layer : public target_layer {
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
     this->m_neural_network_model->m_obj_fn->compute_value(*this->m_prev_activations,
-                                                          original_layer_act_v);
+                                                          *original_layer_act_v);
   }
 
   void bp_compute() {
     // Compute error signal
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             original_layer_act_v,
+                                                             *original_layer_act_v,
                                                              *this->m_error_signal_v);
 
     //m_prev_error_signal_v is the error computed by objective function
@@ -143,6 +144,7 @@ class reconstruction_layer : public target_layer {
   }
 
 };
+
 }
 
 #endif  // LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
