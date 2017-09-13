@@ -86,7 +86,7 @@ bool imagenet_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 }
 
 void imagenet_reader::load() {
-  const std::string imageDir = get_file_dir(); // TODO: remove or use this
+  //const std::string imageDir = get_file_dir();
   const std::string imageListFile = get_data_filename();
 
   m_image_list.clear();

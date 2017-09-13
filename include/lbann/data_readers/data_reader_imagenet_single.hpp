@@ -41,9 +41,11 @@ class imagenet_readerSingle : public imagenet_reader {
 
   imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
+  void load();
+
+ protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  void load();
 
  private:
   std::ifstream m_data_filestream;
