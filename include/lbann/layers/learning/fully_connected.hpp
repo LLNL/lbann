@@ -488,7 +488,7 @@ class fully_connected_layer : public learning {
     if(m_bias_scaling_factor != DataType(0)) {
       fully_connected_cuda::row_sum(*this->m_cudnn,
                                     m_prev_error_signal_d,
-                                    m_prev_error_signal_v->Height(),
+                                    m_prev_error_signal->Height(),
                                     m_mini_batch_size_per_gpu,
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
                                     m_bias_weights_gradient_d);
