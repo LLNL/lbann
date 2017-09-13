@@ -681,6 +681,7 @@ void add_layers(
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
+          model->create_optimizer(),
           ell.decay(),
           ell.scale_init(),
           ell.bias_init(),

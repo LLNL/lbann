@@ -30,12 +30,13 @@
 #define LBANN_LAYER_LEARNING_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/optimizable_layer.hpp"
 #include <string>
 #include <vector>
 
 namespace lbann {
 
-class learning : public Layer {
+class learning : public Layer, public optimizable_layer {
  protected:
   optimizer  *m_optimizer;
 
@@ -191,7 +192,7 @@ class learning : public Layer {
   }
 
   /** Return the layer's optimizer. */
-  virtual optimizer *get_optimizer() const {
+  optimizer *get_optimizer() const override {
     return m_optimizer;
   }
 

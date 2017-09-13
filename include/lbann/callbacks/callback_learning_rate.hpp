@@ -32,6 +32,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/layers/optimizable_layer.hpp"
 
 namespace lbann {
 
@@ -60,7 +61,7 @@ class lbann_callback_learning_rate : public lbann_callback {
    * @param l The layer in the model currently being potentially updated.
    * @return A new learning rate.
    */
-  virtual float schedule(model *m, learning *l) = 0;
+  virtual float schedule(model *m, Layer *l) = 0;
   /** Return true if l is the last layer to update this epoch. */
   bool is_last_layer(const Layer *l) const {
     return l->get_index() == (int) m_last_idx;
@@ -90,7 +91,7 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   }
   std::string name() const { return "step learning rate"; }
  protected:
-  float schedule(model *m, learning *l);
+  float schedule(model *m, Layer *l);
  private:
   /** Number of epochs between each learning rate decrease. */
   int m_step;
@@ -120,7 +121,7 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   }
   std::string name() const { return "adaptive learning rate"; }
  protected:
-  float schedule(model *m, learning *l);
+  float schedule(model *m, Layer *l);
  private:
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;
@@ -156,7 +157,7 @@ class lbann_callback_drop_fixed_learning_rate :
   }
   std::string name() const { return "drop fixed learning rate"; }
  protected:
-  float schedule(model *m, learning *l);
+  float schedule(model *m, Layer *l);
  private:
   /// Amount to decrease the learning rate by.
   float m_amt;
@@ -194,7 +195,7 @@ class lbann_callback_linear_growth_learning_rate :
   void setup(model *m);
   std::string name() const { return "linear growth learning rate"; }
  protected:
-  float schedule(model *m, learning *l);
+  float schedule(model *m, Layer *l);
  private:
   /// Target learning rate to reach.
   float m_target;
@@ -213,9 +214,9 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
  public:
   /** Use custom_schedule to change the learning rate. */
   lbann_callback_custom_learning_rate(
-    std::function<float(model *, learning *)> custom_schedule);
+    std::function<float(model *, Layer *)> custom_schedule);
   lbann_callback_custom_learning_rate(
-    std::function<float(model *, learning *)> custom_schedule,
+    std::function<float(model *, Layer *)> custom_schedule,
     std::unordered_set<uint> layers);
   /**
    * @todo Need to provide a way for model/layer to be updated after copy.
@@ -229,10 +230,10 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
   }
   std::string name() const { return "custom learning rate"; }
  protected:
-  float schedule(model *m, learning *l);
+  float schedule(model *m, Layer *l);
  private:
   /** Custom update schedule. */
-  std::function<float(model *, learning *)> m_custom_schedule;
+  std::function<float(model *, Layer *)> m_custom_schedule;
 };
 
 }  // namespace lbann
