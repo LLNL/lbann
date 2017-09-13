@@ -32,27 +32,26 @@
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
+#include "cv_process_patches.hpp"
 
 namespace lbann {
 class imagenet_reader_cv : public generic_data_reader {
  public:
-  imagenet_reader_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv&) = default;
-  imagenet_reader_cv& operator=(const imagenet_reader_cv&) = default;
-  ~imagenet_reader_cv() {}
+  imagenet_reader_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_cv(const imagenet_reader_cv&);
+  imagenet_reader_cv& operator=(const imagenet_reader_cv&);
+  ~imagenet_reader_cv();
 
   imagenet_reader_cv* copy() const { return new imagenet_reader_cv(*this); }
-
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
-
-  int get_num_labels() const {
-    return m_num_labels;
-  }
 
   // ImageNet specific functions
   virtual void load();
 
+  virtual int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
+
+  int get_num_labels() const {
+    return m_num_labels;
+  }
   int get_image_width() const {
     return m_image_width;
   }
@@ -78,17 +77,22 @@ class imagenet_reader_cv : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
+  virtual bool replicate_preprocessor(const std::shared_ptr<cv_process>& pp);
+  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
+  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
  protected:
-  std::string m_image_dir; // where images are stored
-  std::vector<std::pair<std::string, int> > m_image_list; // list of image files and labels
-  int m_image_width; // image width
-  int m_image_height; // image height
-  int m_image_num_channels; // number of image channels
-  int m_num_labels; // number of labels
-  std::shared_ptr<cv_process> m_pp;
+  std::string m_image_dir; ///< where images are stored
+  std::vector<std::pair<std::string, int> > m_image_list; ///< list of image files and labels
+  int m_image_width; ///< image width
+  int m_image_height; ///< image height
+  int m_image_num_channels; ///< number of image channels
+  int m_num_labels; ///< number of labels
+  /// preprocessor duplicated for each omp thread
+  std::vector<std::unique_ptr<cv_process> > m_pps;
+  /// preprocessor for patches duplicated for each omp thread
+  std::vector<std::unique_ptr<cv_process_patches> > m_ppps;
 };
 
 }  // namespace lbann
