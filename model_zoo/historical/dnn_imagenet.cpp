@@ -300,11 +300,11 @@ int main(int argc, char *argv[]) {
     dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
 #ifdef PARTITIONED
-    Layer *input_layer = new input_layer_partitioned_minibatch<>(comm, parallel_io, data_readers);
+    Layer *ilayer = new input_layer_partitioned_minibatch<>(comm, parallel_io, data_readers);
 #else
-    Layer *input_layer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers);
+    Layer *ilayer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers);
 #endif
-    dnn->add(input_layer);
+    dnn->add(ilayer);
 
     const int NumLayers = netParams.Network.size();
     int lcnt = 1;
@@ -355,24 +355,24 @@ int main(int argc, char *argv[]) {
       dnn->add(softmax);
     }
 
-    //target_layer *target_layer = new target_layer_distributed_minibatch(comm, trainParams.MBSize, &imagenet_trainset, &imagenet_testset, true);
 #ifdef PARTITIONED
-    Layer *target_layer = new target_layer_partitioned_minibatch<>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_partitioned_minibatch<>(comm, parallel_io, data_readers, true);
 #else
-    Layer *target_layer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers, true);
 #endif
-    dnn->add(target_layer);
+    dnn->add(tlayer);
 
 
-    lbann_summary summarizer(trainParams.SummaryDir, comm);
+    lbann_summary* summarizer1 = new lbann_summary(trainParams.SummaryDir, comm);
+    lbann_summary* summarizer2 = new lbann_summary(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
     lbann_callback_print* print_cb = new lbann_callback_print;
     dnn->add_callback(print_cb);
     // Record training time information.
-    lbann_callback_timer* timer_cb = new lbann_callback_timer(&summarizer);
+    lbann_callback_timer* timer_cb = new lbann_callback_timer(summarizer1);
     dnn->add_callback(timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary* summary_cb = new lbann_callback_summary(&summarizer, 25);
+    lbann_callback_summary* summary_cb = new lbann_callback_summary(summarizer2, 25);
     dnn->add_callback(summary_cb);
     // lbann_callback_io* io_cb = new lbann_callback_io({0});
     // dnn->add_callback(io_cb);
