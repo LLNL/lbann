@@ -38,8 +38,8 @@ namespace lbann {
  * Data reader for data stored in numpy (.npy) files.
  * This assumes that the zero'th axis is the sample axis and that all subsequent
  * axes can be flattened to form a sample.
- * This does not support fetching labels from the same file; labels must be
- * provided by some other means and composed with this data reader.
+ * This supports fetching labels, but only from the last column. (This can be
+ * relaxed if necessary.) Ditto responses.
  */
 class numpy_reader : public generic_data_reader {
  public:
@@ -49,6 +49,11 @@ class numpy_reader : public generic_data_reader {
   ~numpy_reader();
 
   numpy_reader* copy() const { return new numpy_reader(*this); }
+
+  /// Set whether to fetch labels.
+  void set_has_labels(bool b) { m_has_labels = b; }
+  /// Set whether to fetch responses.
+  void set_has_responses(bool b) { m_has_responses = b; }
 
   void load();
 
@@ -66,11 +71,19 @@ class numpy_reader : public generic_data_reader {
 
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
 
   /// Number of samples.
-  int m_num_samples;
+  int m_num_samples = 0;
   /// Number of features in each sample.
-  int m_num_features;
+  int m_num_features = 0;
+  /// Number of label classes.
+  int m_num_labels = 0;
+  /// Whether to fetch a label from the last column.
+  bool m_has_labels = true;
+  /// Whether to fetch a response from the last column.
+  bool m_has_responses = false;
   /// Underlying numpy data.
   cnpy::NpyArray m_data;
 };
