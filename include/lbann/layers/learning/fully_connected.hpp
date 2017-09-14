@@ -132,7 +132,7 @@ class fully_connected_layer : public learning {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
     
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-    if (cudnn) {
+    if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
@@ -263,6 +263,11 @@ class fully_connected_layer : public learning {
     if (this->m_optimizer != NULL) {
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
       this->m_optimizer->setup(this->m_weights);
+#else
+      // setup_gpu is used when using GPUs
+      if (!this->m_using_gpus) {
+        this->m_optimizer->setup(this->m_weights);        
+      }
 #endif
     }
   }
@@ -364,7 +369,9 @@ class fully_connected_layer : public learning {
 
   void fp_compute() {
 #ifdef __LBANN_DEBUG
-    this->m_cudnn->synchronize_all();
+    if(this->m_using_gpus) {
+      this->m_cudnn->synchronize_all();
+    }      
 #endif
     if(this->m_using_gpus) {
       fp_compute_cuda();
@@ -373,7 +380,9 @@ class fully_connected_layer : public learning {
     }
     l2_regularize_objective_function();
 #ifdef __LBANN_DEBUG
-    this->m_cudnn->synchronize_all();
+    if(this->m_using_gpus) {
+      this->m_cudnn->synchronize_all();
+    }      
 #endif    
   }
 
@@ -522,7 +531,11 @@ class fully_connected_layer : public learning {
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))      
       this->m_optimizer->update(this->m_weights_gradient);
 #else
-      this->m_optimizer->update_gpu(m_weights_gradient_d);
+      if (this->m_using_gpus) {
+        this->m_optimizer->update_gpu(m_weights_gradient_d);
+      } else {
+        this->m_optimizer->update(this->m_weights_gradient);        
+      }
 #endif
     }
     return true;
