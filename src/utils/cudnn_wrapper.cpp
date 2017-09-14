@@ -498,8 +498,8 @@ std::vector<void *> cudnn_manager::get_work_spaces() {
   for(int i=0; i<m_num_gpus; ++i) {
     if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
       CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                            m_work_space_sizes[i]));
+      FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
+                                  m_work_space_sizes[i]));
     }
   }
   return m_work_spaces;
@@ -508,8 +508,8 @@ std::vector<void *> cudnn_manager::get_work_spaces() {
 void *cudnn_manager::get_work_space(int i) {
   if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                          m_work_space_sizes[i]));
+    FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
+                                m_work_space_sizes[i]));
   }
   return m_work_spaces[i];
 }
