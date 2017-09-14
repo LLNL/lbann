@@ -41,12 +41,13 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   std::vector<Layer*>& layers = m->get_layers();
 
   // Initialize network for testing
+  m->set_execution_mode(execution_mode::testing);
   for (size_t l = 0; l < layers.size(); ++l) {
     layers[l]->set_execution_mode(execution_mode::testing);
   }
+  layers[0]->forward_prop();
 
   // Compute objective function
-  layers[0]->set_execution_mode(execution_mode::testing);
   const DataType objective = compute_objective_function(m);
 
   // Choose finite difference step
