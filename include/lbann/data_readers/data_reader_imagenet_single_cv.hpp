@@ -36,15 +36,18 @@
 namespace lbann {
 class imagenet_readerSingle_cv : public imagenet_reader_cv {
  public:
-  imagenet_readerSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_readerSingle_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_readerSingle_cv(const imagenet_readerSingle_cv& source);
+  imagenet_readerSingle_cv& operator=(const imagenet_readerSingle_cv& source);
   ~imagenet_readerSingle_cv();
 
-  imagenet_readerSingle_cv& operator=(const imagenet_readerSingle_cv& source);
+  imagenet_readerSingle_cv* copy() const { return new imagenet_readerSingle_cv(*this); }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  void load();
+  virtual void load();
+
+ protected:
+  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
  private:
   std::ifstream m_data_filestream;
@@ -53,6 +56,9 @@ class imagenet_readerSingle_cv : public imagenet_reader_cv {
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
 
   void open_data_stream();
+
+  /// preprocessor duplicated for each omp thread
+  std::vector<std::unique_ptr<cv_process> > m_pps;
 };
 
 }  // namespace lbann

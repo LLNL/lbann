@@ -201,8 +201,8 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *input_layer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
-    dnn.add(input_layer);
+    Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
+    dnn.add(ilayer);
 
     // First convolution layer
     {
@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *target_layer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
-    dnn.add(target_layer);
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
+    dnn.add(tlayer);
 
     lbann_callback_print* print_cb = new lbann_callback_print;
     dnn.add_callback(print_cb);
@@ -384,8 +384,8 @@ int main(int argc, char *argv[]) {
     dnn.evaluate(execution_mode::testing);
 
     // Free dynamically allocated memory
-    // delete target_layer;  // Causes segfault
-    // delete input_layer;  // Causes segfault
+    // delete tlayer;  // Causes segfault
+    // delete ilayer;  // Causes segfault
     // delete lfac;  // Causes segfault
     if (trainParams.DumpWeights) {
       delete dump_weights_cb;

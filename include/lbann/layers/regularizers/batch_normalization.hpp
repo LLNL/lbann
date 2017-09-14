@@ -29,7 +29,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/regularizers/learning_regularizer.hpp"
 
 namespace lbann {
 
@@ -109,7 +109,7 @@ void batch_normalization_backprop2(int height,
  * https://cthorey.github.io/backpropagation/
  */
 template <data_layout T_layout>
-class batch_normalization : public regularizer_layer {
+class batch_normalization : public learning_regularizer {
 
  private:
   /** Batch normalization parameters. */
@@ -142,18 +142,18 @@ class batch_normalization : public regularizer_layer {
   AbsDistMat *m_scale_v;
   /** View into bias term. */
   AbsDistMat *m_bias_v;
+  /** View into both the scale and bias terms. */
+  AbsDistMat *m_scale_bias_v;
   /** View into gradient w.r.t. scaling term. */
   AbsDistMat *m_scale_gradient_v;
   /** View into gradient w.r.t. bias term. */
   AbsDistMat *m_bias_gradient_v;
-  /** Optimizer for learning scaling term. */
-  optimizer *m_scale_optimizer;
-  /** Optimizer for learning bias term. */
-  optimizer *m_bias_optimizer;
+  /** View into both the scale and bias gradients. */
+  AbsDistMat *m_scale_bias_gradient_v;
 
   /** Small number to avoid division by zero. */
   DataType m_epsilon;
-  /** Whether to use running statistics when training. */
+  /** Whether to use global running statistics when training. */
   bool m_use_global_stats;
 
 #ifdef __LIB_CUDNN
@@ -202,19 +202,26 @@ class batch_normalization : public regularizer_layer {
    */
   batch_normalization(int index,
                       lbann_comm *comm,
+                      optimizer *opt,
                       DataType decay=0.9,
                       DataType scale_init=1.0,
                       DataType bias_init=0.0,
                       DataType epsilon=1e-5,
-                      cudnn::cudnn_manager *cudnn = NULL
+                      cudnn::cudnn_manager *cudnn = NULL,
+                      bool use_global_stats = true
                       )
-    : regularizer_layer(index, comm),
+    : learning_regularizer(index, comm, opt),
       m_decay(decay),
       m_scale_init(scale_init),
       m_bias_init(bias_init),
-      m_epsilon(epsilon) {
+      m_epsilon(epsilon),
+      m_use_global_stats(use_global_stats) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
+  #ifdef LBANN_SEQUENTIAL_CONSISTENCY
+    // Force global computation.
+    m_use_global_stats = true;
+  #endif
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -233,11 +240,12 @@ class batch_normalization : public regularizer_layer {
   }
 
   batch_normalization(const batch_normalization& other) :
-    regularizer_layer(other),
+    learning_regularizer(other),
     m_decay(other.m_decay),
     m_scale_init(other.m_scale_init),
     m_bias_init(other.m_bias_init),
-    m_epsilon(other.m_epsilon) {
+    m_epsilon(other.m_epsilon),
+    m_use_global_stats(other.m_use_global_stats) {
 
     // Copy matrices
     m_parameters = other.m_parameters->Copy();
@@ -250,34 +258,20 @@ class batch_normalization : public regularizer_layer {
     m_var_gradient_v = other.m_var_gradient_v->Copy();
     m_scale_v = other.m_scale_v->Copy();
     m_bias_v = other.m_bias_v->Copy();
+    m_scale_bias_v = other.m_scale_bias_v->Copy();
     m_scale_gradient_v = other.m_scale_gradient_v->Copy();
     m_bias_gradient_v = other.m_bias_gradient_v->Copy();
+    m_scale_bias_gradient_v = other.m_scale_bias_gradient_v->Copy();
 
     // Setup matrix views
     setup_views();
 
-    // Copy optimizers
-    if(other.m_scale_optimizer) {
-      m_scale_optimizer = other.m_scale_optimizer->copy();
-      if(m_scale_optimizer->get_parameters()) {
-        m_scale_optimizer->set_parameters(m_scale_v);
-      }
-    } else {
-      m_scale_optimizer = NULL;
-    }
-    if(other.m_bias_optimizer) {
-      m_bias_optimizer = other.m_bias_optimizer->copy();
-      if(m_bias_optimizer->get_parameters()) {
-        m_bias_optimizer->set_parameters(m_bias_v);
-      }
-    } else {
-      m_scale_optimizer = NULL;
-    }
-
+    // Update optimizer.
+    this->m_optimizer->set_parameters(m_scale_bias_v);
   }
 
   batch_normalization& operator=(const batch_normalization& other) {
-    regularizer_layer::operator=(other);
+    learning_regularizer::operator=(other);
 
     // Deallocate matrices
     if(m_parameters)          delete m_parameters;
@@ -290,16 +284,17 @@ class batch_normalization : public regularizer_layer {
     if(m_var_gradient_v)      delete m_var_gradient_v;
     if(m_scale_v)             delete m_scale_v;
     if(m_bias_v)              delete m_bias_v;
+    if(m_scale_bias_v)        delete m_scale_bias_v;
     if(m_scale_gradient_v)    delete m_scale_gradient_v;
     if(m_bias_gradient_v)     delete m_bias_gradient_v;
-    if(m_scale_optimizer)     delete m_scale_optimizer;
-    if(m_bias_optimizer)      delete m_bias_optimizer;
+    if(m_scale_bias_gradient_v) delete m_scale_bias_gradient_v;
 
     // Copy POD members
     m_decay = other.m_decay;
     m_scale_init = other.m_scale_init;
     m_bias_init = other.m_bias_init;
     m_epsilon = other.m_epsilon;
+    m_use_global_stats = other.m_use_global_stats;
 
     // Copy matrices
     m_parameters = other.m_parameters->Copy();
@@ -312,29 +307,16 @@ class batch_normalization : public regularizer_layer {
     m_var_gradient_v = other.m_var_gradient_v->Copy();
     m_scale_v = other.m_scale_v->Copy();
     m_bias_v = other.m_bias_v->Copy();
+    m_scale_bias_v = other.m_scale_bias_v->Copy();
     m_scale_gradient_v = other.m_scale_gradient_v->Copy();
     m_bias_gradient_v = other.m_bias_gradient_v->Copy();
+    m_scale_bias_gradient_v = other.m_scale_bias_gradient_v->Copy();
 
     // Setup matrix view
     setup_views();
 
-    // Copy optimizers
-    if(other.m_scale_optimizer) {
-      m_scale_optimizer = other.m_scale_optimizer->copy();
-      if(m_scale_optimizer->get_parameters()) {
-        m_scale_optimizer->set_parameters(m_scale_v);
-      }
-    } else {
-      m_scale_optimizer = NULL;
-    }
-    if(other.m_bias_optimizer) {
-      m_bias_optimizer = other.m_bias_optimizer->copy();
-      if(m_bias_optimizer->get_parameters()) {
-        m_bias_optimizer->set_parameters(m_bias_v);
-      }
-    } else {
-      m_scale_optimizer = NULL;
-    }
+    // Update optimizer.
+    this->m_optimizer->set_parameters(m_scale_bias_v);
 
     // Return copy
     return *this;
@@ -387,13 +369,10 @@ class batch_normalization : public regularizer_layer {
     if(m_var_gradient_v)      delete m_var_gradient_v;
     if(m_scale_v)             delete m_scale_v;
     if(m_bias_v)              delete m_bias_v;
+    if(m_scale_bias_v)        delete m_scale_bias_v;
     if(m_scale_gradient_v)    delete m_scale_gradient_v;
     if(m_bias_gradient_v)     delete m_bias_gradient_v;
-
-    // Deallocate optimizers
-    if(m_scale_optimizer)     delete m_scale_optimizer;
-    if(m_bias_optimizer)      delete m_bias_optimizer;
-
+    if(m_scale_bias_gradient_v) delete m_scale_bias_gradient_v;
   }
 
   batch_normalization* copy() const { return new batch_normalization(*this); }
@@ -413,8 +392,10 @@ class batch_normalization : public regularizer_layer {
     m_var_gradient_v = new StarMat(this->m_comm->get_model_grid());
     m_scale_v = new StarMat(this->m_comm->get_model_grid());
     m_bias_v = new StarMat(this->m_comm->get_model_grid());
+    m_scale_bias_v = new StarMat(this->m_comm->get_model_grid());
     m_scale_gradient_v = new StarMat(this->m_comm->get_model_grid());
     m_bias_gradient_v = new StarMat(this->m_comm->get_model_grid());
+    m_scale_bias_gradient_v = new StarMat(this->m_comm->get_model_grid());
   #ifdef __LIB_CUDNN
     m_pinned_workspace = new StarMat(this->m_comm->get_model_grid());
   #endif // #ifdef __LIB_CUDNN
@@ -438,15 +419,13 @@ class batch_normalization : public regularizer_layer {
     // Initialize scaling and bias terms
     El::View(*m_scale_v, *m_parameters, El::ALL, El::IR(4));
     El::View(*m_bias_v, *m_parameters, El::ALL, El::IR(5));
+    El::View(*m_scale_bias_v, *m_parameters, El::ALL, El::IR(4, 6));
     El::Fill(*m_scale_v, m_scale_init);
     El::Fill(*m_bias_v, m_bias_init);
 
-    // Initialize optimizers
-    m_scale_optimizer = this->get_neural_network_model()->create_optimizer();
-    m_bias_optimizer = this->get_neural_network_model()->create_optimizer();
-    m_scale_optimizer->setup(m_scale_v);
-    m_bias_optimizer->setup(m_bias_v);
-
+    // Initialize optimizer; since optimizers are element-wise, we use one
+    // optimizer for both the scale and bias parameters.
+    this->m_optimizer->setup(m_scale_bias_v);
   }
 
   void setup_views() {
@@ -460,13 +439,15 @@ class batch_normalization : public regularizer_layer {
     El::View(*m_running_var_v, *m_parameters, El::ALL, El::IR(3));
     El::View(*m_scale_v, *m_parameters, El::ALL, El::IR(4));
     El::View(*m_bias_v, *m_parameters, El::ALL, El::IR(5));
+    El::View(*m_scale_bias_v, *m_parameters, El::ALL, El::IR(4, 6));
 
     // Initialize views into parameter gradients
     El::View(*m_mean_gradient_v, *m_parameters_gradient, El::ALL, El::IR(0));
     El::View(*m_var_gradient_v, *m_parameters_gradient, El::ALL, El::IR(1));
     El::View(*m_scale_gradient_v, *m_parameters_gradient, El::ALL, El::IR(2));
     El::View(*m_bias_gradient_v, *m_parameters_gradient, El::ALL, El::IR(3));
-
+    El::View(*m_scale_bias_gradient_v, *m_parameters_gradient, El::ALL,
+             El::IR(2, 4));
   }
 
   void setup_gpu() {
@@ -599,9 +580,11 @@ class batch_normalization : public regularizer_layer {
           var_local += workspace2(El::ALL, El::IR(i));
         }
       }
-      El::AllReduce(*m_statistics_v,
-                    m_statistics_v->RedundantComm(),
-                    El::mpi::SUM);
+      if (m_use_global_stats) {
+        El::AllReduce(*m_statistics_v,
+                      m_statistics_v->RedundantComm(),
+                      El::mpi::SUM);
+      }
 
       // Compute minibatch statistics and running statistics
       const DataType num_samples = width * channel_size;
@@ -728,9 +711,11 @@ class batch_normalization : public regularizer_layer {
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*m_parameters_gradient,
-                  m_parameters_gradient->RedundantComm(),
-                  El::mpi::SUM);
+    if (m_use_global_stats) {
+      El::AllReduce(*m_parameters_gradient,
+                    m_parameters_gradient->RedundantComm(),
+                    El::mpi::SUM);
+    }
     this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, mean_gradient_local);
     this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, var_gradient_local);
 
@@ -798,9 +783,11 @@ class batch_normalization : public regularizer_layer {
         mean_local(channel, 0) = sum;
         var_local(channel, 0) = sqsum;
       }
-      El::AllReduce(*m_statistics_v,
-                    m_statistics_v->RedundantComm(),
-                    El::mpi::SUM);
+      if (m_use_global_stats) {
+        El::AllReduce(*m_statistics_v,
+                      m_statistics_v->RedundantComm(),
+                      El::mpi::SUM);
+      }
 
       // Compute minibatch statistics and running statistics
       const DataType num_samples = width * channel_size;
@@ -914,9 +901,11 @@ class batch_normalization : public regularizer_layer {
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*m_parameters_gradient,
-                  m_parameters_gradient->RedundantComm(),
-                  El::mpi::SUM);
+    if (m_use_global_stats) {
+      El::AllReduce(*m_parameters_gradient,
+                    m_parameters_gradient->RedundantComm(),
+                    El::mpi::SUM);
+    }
     
     // Compute error signal
     #pragma omp parallel for
@@ -956,8 +945,7 @@ class batch_normalization : public regularizer_layer {
 
   bool update_compute() {
     if (this->get_execution_mode() == execution_mode::training) {
-      m_scale_optimizer->update(m_scale_gradient_v);
-      m_bias_optimizer->update(m_bias_gradient_v);
+      this->m_optimizer->update(m_scale_bias_gradient_v);
     }
     return true;
   }

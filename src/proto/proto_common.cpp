@@ -681,11 +681,13 @@ void add_layers(
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
+          model->create_optimizer(),
           ell.decay(),
           ell.scale_init(),
           ell.bias_init(),
           ell.epsilon(),
-          cudnn);
+          cudnn/*,
+                 ell.global_stats()*/);
       }
     }
 
@@ -1102,11 +1104,9 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      /*if (c.summary_dir() != "none" && !summarizer) {
-        summarizer = new lbann_summary(c.summary_dir(), comm);
+      if (!summarizer) {
+        summarizer = new lbann_summary(".", comm);
       }
-      */
-      summarizer = new lbann_summary(".", comm);
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
       uint a;

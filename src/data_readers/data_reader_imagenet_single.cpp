@@ -115,7 +115,7 @@ bool imagenet_readerSingle::fetch_datum(Mat& X, int data_id, int mb_idx, int tid
   stringstream err;
   int width, height;
 
-  if (data_id > (int) m_offsets.size()-1) {
+  if (static_cast<size_t>(data_id+1) >= m_offsets.size()) {
     err << __FILE__ << " " << __LINE__ << " :: data_id= " << data_id << " is larger than m_offsets.size()= " << m_offsets.size() << " -2";
     throw lbann_exception(err.str());
   }

@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-imagenet_readerSingle_cv::imagenet_readerSingle_cv(int batchSize, std::shared_ptr<cv_process>& pp, bool shuffle)
+imagenet_readerSingle_cv::imagenet_readerSingle_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle)
   : imagenet_reader_cv(batchSize, pp, shuffle) {
 }
 
@@ -50,14 +50,14 @@ imagenet_readerSingle_cv::~imagenet_readerSingle_cv() {
 
 
 bool imagenet_readerSingle_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  int label = m_offsets[data_id+1].second;
+  const int label = m_offsets[data_id+1].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
 void imagenet_readerSingle_cv::load() {
-  std::string image_dir = get_file_dir();
-  std::string base_filename = get_data_filename();
+  const std::string image_dir = get_file_dir();
+  const std::string base_filename = get_data_filename();
 
   //open offsets file, with error checking
   std::stringstream b;
@@ -74,16 +74,19 @@ void imagenet_readerSingle_cv::load() {
   }
 
   //read the offsets file
-  unsigned int num_images;
+  size_t num_images = 0u;
   in >> num_images;
+
   if (is_master()) {
     std::cout << "num images: " << num_images << std::endl;
   }
+
   m_offsets.reserve(num_images);
   m_offsets.push_back(std::make_pair(0,0));
-  size_t last_offset = 0;
-  size_t offset;
-  int label;
+  size_t last_offset = 0u;
+  size_t offset = 0u;
+  int label = 0;
+
   while (in >> offset >> label) {
     m_offsets.push_back(std::make_pair(offset + last_offset, label));
     last_offset = m_offsets.back().first;
@@ -112,7 +115,7 @@ bool imagenet_readerSingle_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int 
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   std::stringstream err;
 
-  if (data_id >= m_offsets.size()) {
+  if (static_cast<size_t>(data_id+1) >= m_offsets.size()) {
     err << __FILE__ << " " << __LINE__ << " :: data_id= " << data_id << " is larger than m_offsets.size()= " << m_offsets.size() << " -2";
     throw lbann_exception(err.str());
   }
@@ -139,17 +142,14 @@ bool imagenet_readerSingle_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int 
   ::Mat X_v;
   El::View(X_v, X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 
-  // Construct a thread private object out of a shared pointer
-  cv_process pp(*m_pp);
-
-  bool ret = image_utils::import_image(m_work_buffer, width, height, img_type, pp, X_v);
+  const bool ret = image_utils::import_image(m_work_buffer, width, height, img_type, *(m_pps[tid]), X_v);
 
   if(!ret) {
-    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << data_id;
+    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::import_image failed to load index: " << data_id;
     throw lbann_exception(err.str());
   }
   if ((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
-    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width or height";
+    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width, height or channel";
     throw lbann_exception(err.str());
   }
 
@@ -173,8 +173,9 @@ imagenet_readerSingle_cv& imagenet_readerSingle_cv::operator=(const imagenet_rea
 }
 
 void imagenet_readerSingle_cv::open_data_stream() {
-  std::string image_dir = get_file_dir();
-  std::string base_filename = get_data_filename();
+  const std::string image_dir = get_file_dir();
+  const std::string base_filename = get_data_filename();
+
   std::stringstream b;
   b << image_dir << "/" << base_filename << "_data.bin";
   if (is_master()) {

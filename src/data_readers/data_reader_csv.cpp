@@ -168,8 +168,23 @@ void csv_reader::load() {
       for (int col = 0; col < m_num_cols; ++col) {
         size_t end_pos = line.find_first_of(m_separator, cur_pos);
         if (col == m_label_col) {
-          label_classes.insert(
-            m_label_transform(line.substr(cur_pos, end_pos - cur_pos)));
+          int label = m_label_transform(line.substr(cur_pos, end_pos - cur_pos));
+          label_classes.insert(label);
+          m_labels.push_back(label);
+          break;
+        }
+        cur_pos = end_pos + 1;
+      }
+    }
+    // Possibly extract the response.
+    if (!m_disable_responses) {
+      size_t cur_pos = 0;
+      for (int col = 0; col < m_num_cols; ++col) {
+        size_t end_pos = line.find_first_of(m_separator, cur_pos);
+        if (col == m_response_col) {
+          DataType response = m_response_transform(
+            line.substr(cur_pos, end_pos - cur_pos));
+          m_responses.push_back(response);
           break;
         }
         cur_pos = end_pos + 1;
@@ -205,14 +220,6 @@ void csv_reader::load() {
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
-  if (!m_disable_labels) {
-    // Allocate space to store labels.
-    m_labels.resize(m_num_samples);
-  }
-  if (!m_disable_responses) {
-    // Allocate space to store responses.
-    m_responses.resize(m_num_samples);
-  }
 }
 
 bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
@@ -271,22 +278,10 @@ std::vector<DataType> csv_reader::fetch_line_label_response(
   for (int col = 0; col < m_num_cols; ++col) {
     // Note for last column, this returns std::npos, which substr handles.
     size_t end_pos = line.find_first_of(m_separator, cur_pos);
-    // Handle the label/response.
+    // Skip the label, response, and any columns if needed.
     if ((!m_disable_labels && col == m_label_col) ||
-        (!m_disable_responses && col == m_response_col)) {
-      if (!m_disable_labels && col == m_label_col) {
-        std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
-        m_labels[data_id] = m_label_transform(str_val);
-      }
-      if (!m_disable_responses && col == m_response_col) {
-        std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
-        m_responses[data_id] = m_response_transform(str_val);
-      }
-      cur_pos = end_pos + 1;
-      continue;
-    }
-    // Skip columns if needed.
-    if (col < m_skip_cols) {
+        (!m_disable_responses && col == m_response_col) ||
+        col < m_skip_cols) {
       cur_pos = end_pos + 1;
       continue;
     }

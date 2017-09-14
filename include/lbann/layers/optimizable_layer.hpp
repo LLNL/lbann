@@ -23,39 +23,29 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
+// optimizable_layer.hpp - Interface for layers that use optimizers
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
-#define LBANN_DATA_READER_IMAGENET_SINGLE_HPP
+#ifndef LBANN_OPTIMIZABLE_LAYER_HPP_INCLUDED
+#define LBANN_OPTIMIZABLE_LAYER_HPP_INCLUDED
 
-#include "data_reader_imagenet.hpp"
-#include "image_preprocessor.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
-class imagenet_readerSingle : public imagenet_reader {
+
+/**
+ * ABC for layers that have optimizers and want to allow external access to
+ * them.
+ * This only defines an external interface; layers are free to manage their
+ * optimizers internally however they wish.
+ */
+class optimizable_layer {
  public:
-  imagenet_readerSingle(int batchSize, bool shuffle = true);
-  imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle();
-
-  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
-
-  void load();
-
- protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-
- private:
-  std::ifstream m_data_filestream;
-  size_t m_file_size;
-  std::vector<unsigned char> m_work_buffer;
-  std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
-
-  void open_data_stream();
+  virtual ~optimizable_layer() {}
+  /// Return this layer's optimizer.
+  virtual optimizer* get_optimizer() const = 0;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_HPP
+#endif  // LBANN_OPTIMIZABLE_LAYER_HPP_INCLUDED
