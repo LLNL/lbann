@@ -25,8 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/im2col.hpp"
-
-using namespace El;
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -40,19 +39,11 @@ void im2col(const Mat& im,
             const int * window_strides) {
 
   // Input and output parameters
+  const int im_size = im.Height();
   const int col_height = col.Height();
   const int col_width = col.Width();
   const DataType *__restrict__ im_buffer = im.LockedBuffer();
   DataType *__restrict__ col_buffer = col.Buffer();
-
-  // Call optimized routine if data is 2D
-  if(im_num_dims == 2) {
-    im2col_2d(im_buffer, col_buffer,
-              im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
-              window_dims[1], window_dims[0],
-              window_strides[1], window_strides[0]);
-    return;
-  }
 
   // im2col parameters
   std::vector<int> offset_start(im_num_dims);
@@ -64,6 +55,46 @@ void im2col(const Mat& im,
     offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
     offset_stride[d] = window_strides[d];
     offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
+  }
+
+  #ifdef LBANN_DEBUG
+  // Check matrix dimensions
+  const int expected_im_size = std::accumulate(im_dims,
+                                               im_dims + im_num_dims,
+                                               num_channels,
+                                               std::multiplies<int>());
+  const int expected_col_height = std::accumulate(window_dims,
+                                                  window_dims + im_num_dims,
+                                                  num_channels,
+                                                  std::multiplies<int>());
+  const int expected_col_width = std::accumulate(offset_num.begin(),
+                                                 offset_num.end(),
+                                                 1,
+                                                 std::multiplies<int>());
+  if(im_size != expected_im_size || im.Width() != 1) {
+    std::stringstream ss;
+    ss << "im2col: im matrix has invalid dimensions "
+       << "(expected " << expected_im_size << " x " << 1 << ", "
+       << "found " << im_size << " x " << im.Width() << ")";
+    throw lbann_exception(ss.str());
+  }
+  if(col_height != expected_col_height
+     || col_width != expected_col_width) {
+    std::stringstream ss;
+    ss << "im2col: col matrix has invalid dimensions "
+       << "(expected " << expected_col_height << " x " << expected_col_width << ", "
+       << "found " << col_height << " x " << col_width << ")";
+    throw lbann_exception(ss.str());
+  }
+  #endif // LBANN_DEBUG  
+
+  // Call optimized routine if data is 2D
+  if(im_num_dims == 2) {
+    im2col_2d(im_buffer, col_buffer,
+              im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
+              window_dims[1], window_dims[0],
+              window_strides[1], window_strides[0]);
+    return;
   }
 
   // Iterate through col matrix columns
@@ -104,8 +135,8 @@ void im2col(const Mat& im,
       }
 
       // Copy im matrix entry to col matrix if valid
-      col_buffer[col_index]
-        = im_pos_valid ? im_buffer[im_index] : DataType(0);
+      col_buffer[col_index] = (im_pos_valid ?
+                               im_buffer[im_index] : DataType(0));
 
     }
   }
@@ -122,8 +153,54 @@ void col2im(const Mat& col,
             const int * window_strides) {
 
   // Input and output parameters
+  const int im_size = im.Height();
+  const int col_height = col.Height();
+  const int col_width = col.Width();
   const DataType *__restrict__ col_buffer = col.LockedBuffer();
   DataType *__restrict__ im_buffer = im.Buffer();
+
+  // col2im parameters
+  std::vector<int> offset_start(im_num_dims);
+  std::vector<int> offset_end(im_num_dims);
+  std::vector<int> offset_stride(im_num_dims);
+  std::vector<int> offset_num(im_num_dims);
+  for(int d = 0; d < im_num_dims; ++d) {
+    offset_start[d] = -im_pads[d];
+    offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
+    offset_stride[d] = window_strides[d];
+    offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
+  }
+
+  #ifdef LBANN_DEBUG
+  // Check matrix dimensions
+  const int expected_im_size = std::accumulate(im_dims,
+                                               im_dims + im_num_dims,
+                                               num_channels,
+                                               std::multiplies<int>());
+  const int expected_col_height = std::accumulate(window_dims,
+                                                  window_dims + im_num_dims,
+                                                  num_channels,
+                                                  std::multiplies<int>());
+  const int expected_col_width = std::accumulate(offset_num.begin(),
+                                                 offset_num.end(),
+                                                 1,
+                                                 std::multiplies<int>());
+  if(im_size != expected_im_size || im.Width() != 1) {
+    std::stringstream ss;
+    ss << "im2col: im matrix has invalid dimensions "
+       << "(expected " << expected_im_size << " x " << 1 << ", "
+       << "found " << im_size << " x " << im.Width() << ")";
+    throw lbann_exception(ss.str());
+  }
+  if(col_height != expected_col_height
+     || col_width != expected_col_width) {
+    std::stringstream ss;
+    ss << "im2col: col matrix has invalid dimensions "
+       << "(expected " << expected_col_height << " x " << expected_col_width << ", "
+       << "found " << col_height << " x " << col_width << ")";
+    throw lbann_exception(ss.str());
+  }
+  #endif // LBANN_DEBUG  
 
   // Call optimized routine if data is 2D
   if(im_num_dims == 2) {
@@ -152,7 +229,7 @@ void col2im(const Mat& col,
 
   // Input and output parameters
   const int col_height = col.Height();
-  const int im_size = im.Height() * im.Width();
+  const int im_size = im.Height();
   const DataType *__restrict__ col_buffer = col.LockedBuffer();
   DataType *__restrict__ im_buffer = im.Buffer();
 
@@ -189,26 +266,30 @@ void col2im(const Mat& col,
     // Initialize im matrix entry
     DataType im_entry = 0;
     bool im_entry_initialized = false;
+    bool offsets_finished = false;
 
     // Get window offsets containing im matrix entry
     for(int d = 0; d < im_num_dims; ++d) {
-      first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d]) / offset_stride[d] + 1;
+      first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d] + offset_stride[d]) / offset_stride[d];
       first_offset[d] = std::max(first_offset[d], 0);
       last_offset[d] = (im_pos[d] - offset_start[d]) / offset_stride[d];
       last_offset[d] = std::min(last_offset[d], offset_num[d] - 1);
       offset[d] = first_offset[d];
+      if(first_offset[d] > last_offset[d]) {
+        offsets_finished = true;
+      }
     }
 
     // Iterate through window offsets containing im matrix entry
-    while(offset[0] <= last_offset[0]) {
+    while(!offsets_finished) {
 
       // Get col matrix entry corresponding to im matrix entry
-      int col_col = 0;
       int col_row = channel;
+      int col_col = 0;
       for(int d = 0; d < im_num_dims; ++d) {
         const int window_pos = im_pos[d] - (offset_start[d] + offset[d] * offset_stride[d]);
-        col_col = offset[d] + col_col * offset_num[d];
         col_row = window_pos + col_row * window_dims[d];
+        col_col = offset[d] + col_col * offset_num[d];
       }
       const int col_index = col_row + col_col * col_height;
 
@@ -227,7 +308,8 @@ void col2im(const Mat& col,
           ++offset[d-1];
         }
       }
-
+      offsets_finished = offset[0] > last_offset[0];
+      
     }
 
     // Update output entry
@@ -340,8 +422,8 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
         DataType output_entry = 0;
 
         // Get window offsets containing output entry
-        const int offset_x_lower = (output_pos_x - offset_start_x - window_dim_x) / offset_stride_x + 1;
-        const int offset_y_lower = (output_pos_y - offset_start_y - window_dim_y) / offset_stride_y + 1;
+        const int offset_x_lower = (output_pos_x - offset_start_x - window_dim_x + offset_stride_x) / offset_stride_x;
+        const int offset_y_lower = (output_pos_y - offset_start_y - window_dim_y + offset_stride_y) / offset_stride_y;
         const int offset_x_upper = (output_pos_x - offset_start_x) / offset_stride_x;
         const int offset_y_upper = (output_pos_y - offset_start_y) / offset_stride_y;
         const int first_offset_x = std::max(offset_x_lower, 0);

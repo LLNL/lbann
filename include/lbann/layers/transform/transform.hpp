@@ -50,7 +50,7 @@ class transform : public Layer {
   transform(const transform&) = default;
   transform& operator=(const transform&) = default;
 
-  virtual ~transform() {}
+  virtual ~transform() = default;
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();

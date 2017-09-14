@@ -67,6 +67,12 @@ model {
   #     phase: "train"
   #   }
   # }
+  # callback {
+  #   gradient_check {
+  #     step_size: 0
+  #     verbose: false
+  #   }
+  # }
 
   ###################################################
   # start of layers

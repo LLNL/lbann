@@ -190,10 +190,6 @@ class pooling_layer : public transform {
   virtual inline void initialize_distributed_matrices();
 
   virtual data_layout get_data_layout() const { return T_layout; }
-  
-  void setup_data() {
-    transform::setup_data();
-  }
 
   void setup_dims() {
 
@@ -334,7 +330,7 @@ class pooling_layer : public transform {
 
     // Throw exception if pooling mode is not max or average pooling
     if(m_pool_mode != pool_mode::max
-        && m_pool_mode != pool_mode::average) {
+       && m_pool_mode != pool_mode::average) {
       throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
     }
 
@@ -352,20 +348,21 @@ class pooling_layer : public transform {
       m_max_pool_indices.assign(this->m_num_neurons * local_width, 0);
     }
 
-    // Initialize im2col matrix
+    // Initialize matrices
     Mat im2col_mat(m_pool_size * num_channels, num_per_output_channel);
+    Mat input_mat;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Construct im2col matrix from input
-      const Mat input_mat = El::LockedView(prev_activations_local,
-                                           El::ALL, El::IR(sample));
+      El::LockedView(input_mat, prev_activations_local,
+                     El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_channels,
              this->m_num_prev_neuron_dims - 1,
-             this->m_prev_neuron_dims.data() + 1,
+             &this->m_prev_neuron_dims[1],
              m_pool_pads.data(),
              m_pool_dims.data(),
              m_pool_strides.data());
@@ -400,7 +397,8 @@ class pooling_layer : public transform {
         #pragma omp parallel for
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
-            DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+            const DataType *im2col_buffer
+              = im2col_mat.LockedBuffer(channel*m_pool_size, j);
             DataType output_entry = 0;
             for(int i = 0; i < m_pool_size; ++i) {
               output_entry += im2col_buffer[i];
@@ -434,8 +432,9 @@ class pooling_layer : public transform {
     const int num_channels = this->m_prev_neuron_dims[0];
     const int num_per_input_channel = this->m_num_neurons / num_channels;
 
-    // Initialize im2col matrix
+    // Initialize matrices
     Mat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    Mat output_mat;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -485,12 +484,12 @@ class pooling_layer : public transform {
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
-      Mat output_mat = El::View(error_signal_local, El::ALL, El::IR(sample));
+      El::View(output_mat, error_signal_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
              num_channels,
              this->m_num_prev_neuron_dims - 1,
-             this->m_prev_neuron_dims.data() + 1,
+             &this->m_prev_neuron_dims[1],
              m_pool_pads.data(),
              m_pool_dims.data(),
              m_pool_strides.data());
