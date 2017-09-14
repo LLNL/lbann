@@ -39,12 +39,7 @@ using namespace std;
 using namespace lbann;
 using namespace El;
 
-//#define PARTITIONED
-#if defined(PARTITIONED)
-#define DATA_LAYOUT data_layout::DATA_PARALLEL
-#else
 #define DATA_LAYOUT data_layout::MODEL_PARALLEL
-#endif
 
 // train/test data info
 const int g_SaveImageIndex[1] = {0}; // for auto encoder
@@ -125,24 +120,17 @@ int main(int argc, char *argv[]) {
     }
 
     int parallel_io = perfParams.MaxParIOSize;
-    //        int io_offset = 0;
-    if(parallel_io == 0) {
-      if(comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() << " (Limited to # Processes)" << endl;
+    if (parallel_io == 0) {
+      if (comm->am_world_master()) {
+        std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+             " (Limited to # Processes)" << std::endl;
       }
       parallel_io = comm->get_procs_per_model();
-      //          io_offset = comm->get_rank_in_model() *trainParams.MBSize;
     } else {
-      if(comm->am_world_master()) {
-        cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+      if (comm->am_world_master()) {
+        std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
       }
-      //          parallel_io = grid.Size();
-      // if(perfParams.MaxParIOSize > 1) {
-      //   io_offset = comm->get_rank_in_model() *trainParams.MBSize;
-      // }
     }
-
-    parallel_io = 1;
 
     std::map<execution_mode, generic_data_reader *> data_readers;
     ///////////////////////////////////////////////////////////////////
@@ -299,11 +287,7 @@ int main(int argc, char *argv[]) {
     deep_neural_network *dnn = NULL;
     dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
-#ifdef PARTITIONED
-    Layer *ilayer = new input_layer_partitioned_minibatch<>(comm, parallel_io, data_readers);
-#else
-    Layer *ilayer = new input_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers);
-#endif
+    Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
     dnn->add(ilayer);
 
     const int NumLayers = netParams.Network.size();
@@ -355,11 +339,7 @@ int main(int argc, char *argv[]) {
       dnn->add(softmax);
     }
 
-#ifdef PARTITIONED
-    Layer *tlayer = new target_layer_partitioned_minibatch<>(comm, parallel_io, data_readers, true);
-#else
-    Layer *tlayer = new target_layer_distributed_minibatch<DATA_LAYOUT>(comm, parallel_io, data_readers, true);
-#endif
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers, true);
     dnn->add(tlayer);
 
 
