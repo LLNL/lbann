@@ -8,7 +8,7 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 LBANN_EXE="${LBANN_DIR}/build/${CLUSTER}.llnl.gov/model_zoo/lbann"
 
 # Run experiment
-srun --nodes=1 --ntasks=1 ${LBANN_EXE} --model=${LBANN_DIR}/model_zoo/tests/model_mnist_ridge_regression.prototext --optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext --reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_mnist.prototext
+salloc -N1 srun --ntasks=1 ${LBANN_EXE} --model=${LBANN_DIR}/model_zoo/tests/model_mnist_ridge_regression.prototext --optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext --reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_mnist.prototext
 
 # Return status
 if [ $? -ne 0 ]; then
