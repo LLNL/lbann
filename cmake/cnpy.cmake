@@ -21,7 +21,7 @@ if (NOT CNPY_FOUND)
     set(CNPY_URL https://github.com/rogersce/cnpy.git)
   endif ()
   if (NOT CNPY_TAG)
-    set(CNPY_TAG "1.0")
+    set(CNPY_TAG "b39d58d3640f77c043bfe92591afeafdd82e78db")
   endif ()
   message(STATUS "Will pull CNPY (tag ${CNPY_TAG}) from ${CNPY_URL}")
 

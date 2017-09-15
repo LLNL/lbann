@@ -44,9 +44,11 @@ namespace lbann {
 class numpy_reader : public generic_data_reader {
  public:
   numpy_reader(int batch_size, bool shuffle = true);
-  numpy_reader(const numpy_reader& source);
-  numpy_reader& operator=(const numpy_reader& source);
-  ~numpy_reader();
+  // These need to be explicit because of some issue with the cnpy copy
+  // constructor/assignment operator not linking correctly otherwise.
+  numpy_reader(const numpy_reader&);
+  numpy_reader& operator=(const numpy_reader&);
+  ~numpy_reader() {}
 
   numpy_reader* copy() const { return new numpy_reader(*this); }
 
@@ -84,7 +86,11 @@ class numpy_reader : public generic_data_reader {
   bool m_has_labels = true;
   /// Whether to fetch a response from the last column.
   bool m_has_responses = false;
-  /// Underlying numpy data.
+  /**
+   * Underlying numpy data.
+   * Note raw data is managed with shared smart pointer semantics (relevant
+   * for copying).
+   */
   cnpy::NpyArray m_data;
 };
 
