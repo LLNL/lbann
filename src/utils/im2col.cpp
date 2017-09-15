@@ -39,7 +39,6 @@ void im2col(const Mat& im,
             const int * window_strides) {
 
   // Input and output parameters
-  const int im_size = im.Height();
   const int col_height = col.Height();
   const int col_width = col.Width();
   const DataType *__restrict__ im_buffer = im.LockedBuffer();
@@ -58,6 +57,7 @@ void im2col(const Mat& im,
   }
 
   #ifdef LBANN_DEBUG
+  const int im_size = im.Height();
   // Check matrix dimensions
   const int expected_im_size = std::accumulate(im_dims,
                                                im_dims + im_num_dims,
@@ -153,9 +153,6 @@ void col2im(const Mat& col,
             const int * window_strides) {
 
   // Input and output parameters
-  const int im_size = im.Height();
-  const int col_height = col.Height();
-  const int col_width = col.Width();
   const DataType *__restrict__ col_buffer = col.LockedBuffer();
   DataType *__restrict__ im_buffer = im.Buffer();
 
@@ -172,6 +169,9 @@ void col2im(const Mat& col,
   }
 
   #ifdef LBANN_DEBUG
+  const int im_size = im.Height();
+  const int col_height = col.Height();
+  const int col_width = col.Width();
   // Check matrix dimensions
   const int expected_im_size = std::accumulate(im_dims,
                                                im_dims + im_num_dims,
