@@ -44,5 +44,5 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
 endif()
 
 set(LBANN_HAS_LBANN_PROTO TRUE)
-include_directories(${LBANN_PROTO_DIR})
+include_directories(SYSTEM ${LBANN_PROTO_DIR})
 

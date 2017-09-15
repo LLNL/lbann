@@ -32,7 +32,7 @@ if(LBANN_HAS_PROTOBUF)
 
   # Include header files
   set(TBinf_INCLUDE_DIRS ${TBINF_PROTO_DIR} ${TBINF_SOURCE_DIR})
-  include_directories(${TBinf_INCLUDE_DIRS})
+  include_directories(SYSTEM ${TBinf_INCLUDE_DIRS})
 
   # Build library
   add_library(TBinf SHARED ${TBINF_SOURCE_DIR}/TBinf.cpp ${TBINF_PROTO_DIR}/summary.pb.cc ${TBINF_PROTO_DIR}/event.pb.cc)
