@@ -23,25 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_merge .hpp .cpp - Merge multiple data readers
+// data_reader_merge_features .hpp .cpp - Merge features from multiple data readers
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_merge.hpp"
+#include "lbann/data_readers/data_reader_merge_features.hpp"
 
 namespace lbann {
 
-data_reader_merge::data_reader_merge(
+data_reader_merge_features::data_reader_merge_features(
   int batch_size, std::vector<generic_data_reader*> data_readers,
   generic_data_reader *label_reader, bool shuffle) :
   generic_data_reader(batch_size, shuffle),
   m_data_readers(data_readers), m_label_reader(label_reader) {
   if (m_data_readers.empty()) {
     throw lbann_exception(
-      "data_reader_merge: data reader list is empty");
+      "data_reader_merge_features: data reader list is empty");
   }
 }
 
-data_reader_merge::data_reader_merge(const data_reader_merge& other) :
+data_reader_merge_features::data_reader_merge_features(
+  const data_reader_merge_features& other) :
   generic_data_reader(other),
   m_data_size(other.m_data_size) {
   for (auto&& reader : other.m_data_readers) {
@@ -50,8 +51,8 @@ data_reader_merge::data_reader_merge(const data_reader_merge& other) :
   m_label_reader = other.m_label_reader->copy();
 }
 
-data_reader_merge& data_reader_merge::operator=(
-  const data_reader_merge& other) {
+data_reader_merge_features& data_reader_merge_features::operator=(
+  const data_reader_merge_features& other) {
   generic_data_reader::operator=(other);
   m_data_size = other.m_data_size;
   if (!m_data_readers.empty()) {
@@ -70,14 +71,14 @@ data_reader_merge& data_reader_merge::operator=(
   return *this;
 }
 
-data_reader_merge::~data_reader_merge() {
+data_reader_merge_features::~data_reader_merge_features() {
   for (auto&& reader : m_data_readers) {
     delete reader;
   }
   delete m_label_reader;
 }
 
-void data_reader_merge::load() {
+void data_reader_merge_features::load() {
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
     reader->load();
@@ -88,7 +89,7 @@ void data_reader_merge::load() {
   for (auto&& reader : m_data_readers) {
     if (num_samples != reader->get_num_data()) {
       throw lbann_exception(
-        "data_reader_merge: data readers do not have the same amount of data");
+        "data_reader_merge_features: data readers do not have the same amount of data");
     }
   }
   m_label_reader->load();
@@ -98,7 +99,8 @@ void data_reader_merge::load() {
   select_subset_of_data();
 }
 
-bool data_reader_merge::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
+                                             int tid) {
   int start = 0;
   for (auto&& reader : m_data_readers) {
     auto X_view = X(El::IR(start, start + reader->get_linearized_data_size()),
@@ -109,11 +111,13 @@ bool data_reader_merge::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool data_reader_merge::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_merge_features::fetch_label(Mat& Y, int data_id, int mb_idx,
+                                             int tid) {
   return m_label_reader->fetch_datum(Y, data_id, mb_idx, tid);
 }
 
-bool data_reader_merge::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_merge_features::fetch_response(Mat& Y, int data_id, int mb_idx,
+                                                int tid) {
   return m_label_reader->fetch_datum(Y, data_id, mb_idx, tid);
 }
 

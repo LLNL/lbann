@@ -570,7 +570,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
-  friend class data_reader_merge;
+  friend class data_reader_merge_features;
 };
 
 }  // namespace lbann

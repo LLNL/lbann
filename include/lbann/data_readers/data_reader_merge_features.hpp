@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_merge .hpp .cpp - Merge multiple data readers
+// data_reader_merge_features .hpp .cpp - Merge features from multiple data readers
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_MERGE_HPP
-#define LBANN_DATA_READER_MERGE_HPP
+#ifndef LBANN_DATA_READER_MERGE_FEATURES_HPP
+#define LBANN_DATA_READER_MERGE_FEATURES_HPP
 
 #include "data_reader.hpp"
 
@@ -40,16 +40,18 @@ namespace lbann {
  * provide the label. This data reader uses the fetch_datum method of its
  * subsidiary data readers to fetch all data, including the labels.
  */
-class data_reader_merge : public generic_data_reader {
+class data_reader_merge_features : public generic_data_reader {
  public:
-  data_reader_merge(int batch_size,
-                    std::vector<generic_data_reader*> data_readers,
-                    generic_data_reader *label_reader,
-                    bool shuffle = true);
-  data_reader_merge(const data_reader_merge&);
-  data_reader_merge& operator=(const data_reader_merge&);
-  ~data_reader_merge();
-  data_reader_merge* copy() const { return new data_reader_merge(*this); }
+  data_reader_merge_features(int batch_size,
+                             std::vector<generic_data_reader*> data_readers,
+                             generic_data_reader *label_reader,
+                             bool shuffle = true);
+  data_reader_merge_features(const data_reader_merge_features&);
+  data_reader_merge_features& operator=(const data_reader_merge_features&);
+  ~data_reader_merge_features();
+  data_reader_merge_features* copy() const {
+    return new data_reader_merge_features(*this);
+  }
 
   /// Call load on the subsidiary data readers.
   void load();
@@ -78,4 +80,4 @@ class data_reader_merge : public generic_data_reader {
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_MERGE_HPP
+#endif  // LBANN_DATA_READER_MERGE_FEATURES_HPP
