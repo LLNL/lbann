@@ -6,5 +6,5 @@ import common
 
 common.build_and_submit_slurm_script( 
    'model_imagenet.prototext', 
-   '../../data_readers/data_reader_imagenet.prototext',
+   'data_reader_imagenet.prototext',
    '../../optimizers/opt_adagrad.prototext' )

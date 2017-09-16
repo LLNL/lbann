@@ -268,6 +268,10 @@ int main(int argc, char *argv[]) {
       data_readers[execution_mode::testing] = imagenet_testset;
     }
 
+    //data_readers[execution_mode::training]->set_num_parallel_readers(parallel_io);
+    //data_readers[execution_mode::validation]->set_num_parallel_readers(parallel_io);
+    //data_readers[execution_mode::testing]->set_num_parallel_readers(parallel_io);
+
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
     ///////////////////////////////////////////////////////////////////
@@ -343,16 +347,15 @@ int main(int argc, char *argv[]) {
     dnn->add(tlayer);
 
 
-    lbann_summary* summarizer1 = new lbann_summary(trainParams.SummaryDir, comm);
-    lbann_summary* summarizer2 = new lbann_summary(trainParams.SummaryDir, comm);
+    lbann_summary* summarizer = new lbann_summary(trainParams.SummaryDir, comm);
     // Print out information for each epoch.
     lbann_callback_print* print_cb = new lbann_callback_print;
     dnn->add_callback(print_cb);
     // Record training time information.
-    lbann_callback_timer* timer_cb = new lbann_callback_timer(summarizer1);
+    lbann_callback_timer* timer_cb = new lbann_callback_timer(summarizer);
     dnn->add_callback(timer_cb);
     // Summarize information to Tensorboard.
-    lbann_callback_summary* summary_cb = new lbann_callback_summary(summarizer2, 25);
+    lbann_callback_summary* summary_cb = new lbann_callback_summary(summarizer, 25);
     dnn->add_callback(summary_cb);
     // lbann_callback_io* io_cb = new lbann_callback_io({0});
     // dnn->add_callback(io_cb);
