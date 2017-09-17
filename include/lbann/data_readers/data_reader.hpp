@@ -571,6 +571,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
   friend class data_reader_merge_features;
+  friend class data_reader_merge_samples;
 };
 
 }  // namespace lbann

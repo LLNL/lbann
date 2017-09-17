@@ -86,6 +86,9 @@
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
+#include "lbann/data_readers/data_reader_csv.hpp"
+#include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/data_readers/data_reader_merge_features.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
