@@ -131,7 +131,6 @@ void numpy_reader::load() {
 }
 
 bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  std::cout << "Fetching " << data_id << std::endl;
   int features_size = m_num_features;
   if (m_has_labels || m_has_responses) {
     features_size += 1;

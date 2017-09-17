@@ -59,16 +59,16 @@ class numpy_reader : public generic_data_reader {
 
   void load();
 
-  int get_num_labels() const {
-    throw lbann_exception("numpy_reader: labels not supported");
-  }
+  int get_num_labels() const { return m_num_labels; }
   int get_linearized_data_size() const { return m_num_features; }
-  int get_linearized_label_size() const {
-    throw lbann_exception("numpy_reader: labels not supported");
-  }
+  int get_linearized_label_size() const { return m_num_labels; }
   const std::vector<int> get_data_dims() const {
-    return std::vector<int>(m_data.shape.begin() + 1,
-                            m_data.shape.end());
+    std::vector<int> dims(m_data.shape.begin() + 1,
+                          m_data.shape.end());
+    if (m_has_labels || m_has_responses) {
+      dims.back() -= 1;
+    }
+    return dims;
   }
 
  protected:
