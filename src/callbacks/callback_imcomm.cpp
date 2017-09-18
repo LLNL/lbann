@@ -93,7 +93,7 @@ void lbann_callback_imcomm::setup(model *m) {
         //const std::type_info& layer_type = typeid(*(layers[layer]));
       }
       if (ct_does_quantization(params.ct)) {
-        const ElMat& gradients = learning_layer->get_weights_gradient();
+        const AbsDistMat& gradients = learning_layer->get_weights_gradient();
         if (params.reshape_height > 0) {
           El::Zeros(params.error, params.reshape_height, params.reshape_width);
         } else {

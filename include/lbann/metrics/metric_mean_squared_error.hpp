@@ -53,7 +53,7 @@ class mean_squared_error : public metric {
     metric::setup(num_neurons, mini_batch_size);
   }
   void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
     
     // Get local matrices and matrix parameters
     const Mat& predictions_local = predictions_v.LockedMatrix();

@@ -64,7 +64,7 @@ class lbann_callback_checksmall : public lbann_callback {
   /** Smallest allowable value. */
   const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());
   /** Return true if there are no problems with m. */
-  bool is_good(const ElMat& m);
+  bool is_good(const AbsDistMat& m);
 };
 
 }  // namespace lbann

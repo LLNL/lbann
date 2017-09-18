@@ -105,7 +105,7 @@ class selu_dropout : public regularizer_layer {
       El::Copy(*(this->m_prev_activations), *(this->m_activations_v));
       return;
     }
-    ElMat *input_acts = this->m_prev_activations;
+    AbsDistMat *input_acts = this->m_prev_activations;
     const El::Int local_height = input_acts->LocalHeight();
     const El::Int local_width = input_acts->LocalWidth();
 

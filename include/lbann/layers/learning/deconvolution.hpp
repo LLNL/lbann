@@ -213,22 +213,30 @@ class deconvolution_layer : public base_convolution_layer {
     El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
              El::ALL, El::IR(0,this->m_prev_neuron_dims[0]));
     if(m_bias_scaling_factor != DataType(0)) {
-      m_bias_weights_v->Attach(1,
-                               this->m_neuron_dims[0],
-                               m_bias_weights_v->Grid(),
-                               m_bias_weights_v->ColAlign(),
-                               m_bias_weights_v->RowAlign(),
-                               m_weights->Buffer(0,this->m_prev_neuron_dims[0]),
-                               1,
-                               m_bias_weights_v->Root());
-      m_bias_weights_gradient_v->Attach(1,
-                                        this->m_neuron_dims[0],
-                                        m_bias_weights_gradient_v->Grid(),
-                                        m_bias_weights_gradient_v->ColAlign(),
-                                        m_bias_weights_gradient_v->RowAlign(),
-                                        m_weights_gradient->Buffer(0,this->m_prev_neuron_dims[0]),
-                                        1,
-                                        m_bias_weights_gradient_v->Root());
+      ElMat *bias_weights_v = dynamic_cast<ElMat*>(m_bias_weights_v);
+      ElMat *bias_weights_gradient_v = dynamic_cast<ElMat*>(m_bias_weights_gradient_v);
+      if(bias_weights_v == nullptr) {
+        throw lbann_exception("deconvolution_layer: weights matrix has invalid data distribution");
+      }
+      if(bias_weights_gradient_v == nullptr) {
+        throw lbann_exception("deconvolution_layer: weights gradient matrix has invalid data distribution");
+      }
+      bias_weights_v->Attach(1,
+                             this->m_neuron_dims[0],
+                             m_bias_weights_v->Grid(),
+                             m_bias_weights_v->ColAlign(),
+                             m_bias_weights_v->RowAlign(),
+                             m_weights->Buffer(0,this->m_prev_neuron_dims[0]),
+                             1,
+                             m_bias_weights_v->Root());
+      bias_weights_gradient_v->Attach(1,
+                                      this->m_neuron_dims[0],
+                                      m_bias_weights_gradient_v->Grid(),
+                                      m_bias_weights_gradient_v->ColAlign(),
+                                      m_bias_weights_gradient_v->RowAlign(),
+                                      m_weights_gradient->Buffer(0,this->m_prev_neuron_dims[0]),
+                                      1,
+                                      m_bias_weights_gradient_v->Root());
     }
   }
 

@@ -83,7 +83,7 @@ class metric {
 
   virtual void setup(int num_neurons, int mini_batch_size) {}
   virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  virtual double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+  virtual double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
     return 0.0;
   }
   virtual double report_metric(execution_mode mode) {

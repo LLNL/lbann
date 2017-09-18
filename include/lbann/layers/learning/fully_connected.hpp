@@ -52,14 +52,14 @@ class fully_connected_layer : public learning {
   weight_initialization m_weight_initialization;
 
   /// Views of the weight matrix that allow you to separate activation weights from bias weights
-  ElMat *m_activation_weights_v;
-  ElMat *m_bias_weights_v;
-  ElMat *m_activation_weights_gradient_v;
-  ElMat *m_bias_weights_gradient_v;
+  AbsDistMat *m_activation_weights_v;
+  AbsDistMat *m_bias_weights_v;
+  AbsDistMat *m_activation_weights_gradient_v;
+  AbsDistMat *m_bias_weights_gradient_v;
 
   /// Special matrices to allow backprop across the bias term
-  ElMat *m_bias_weights_repl;
-  ElMat *m_bias_weights_gradient_repl;
+  AbsDistMat *m_bias_weights_repl;
+  AbsDistMat *m_bias_weights_gradient_repl;
   DataType m_bias_scaling_factor;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)

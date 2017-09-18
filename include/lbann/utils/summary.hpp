@@ -70,19 +70,19 @@ class lbann_summary {
   ~lbann_summary();
 
   /** Report the mean of mat. */
-  void reduce_mean(const std::string tag, const ElMat& mat, int step);
+  void reduce_mean(const std::string tag, const AbsDistMat& mat, int step);
   /** Report the minimum value of mat. */
-  void reduce_min(const std::string tag, const ElMat& mat, int step);
+  void reduce_min(const std::string tag, const AbsDistMat& mat, int step);
   /** Report the maximum value of mat. */
-  void reduce_max(const std::string tag, const ElMat& mat, int step);
+  void reduce_max(const std::string tag, const AbsDistMat& mat, int step);
   /** Report the standard deviation of mat. */
-  void reduce_stdev(const std::string tag, const ElMat& mat, int step);
+  void reduce_stdev(const std::string tag, const AbsDistMat& mat, int step);
   /** Report a scalar from each model (only meaningful on model masters). */
   void reduce_scalar(const std::string tag, DataType s, int step);
   /** Do a model_reduce (sum) on a scalar, then report that sum. */
   void sum_reduce_scalar(const std::string tag, DataType s, int step);
   /** Report a histogram of the values in mat. */
-  void reduce_histogram(const std::string tag, const ElMat& mat, int step);
+  void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step);
 
   /**
    * Write all summaries out.
@@ -189,13 +189,13 @@ class lbann_summary {
  public:
   lbann_summary(std::string logdir, lbann_comm *comm) {}
 
-  void reduce_mean(const std::string tag, const ElMat& mat, int step) {}
-  void reduce_min(const std::string tag, const ElMat& mat, int step) {}
-  void reduce_max(const std::string tag, const ElMat& mat, int step) {}
-  void reduce_stdev(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_mean(const std::string tag, const AbsDistMat& mat, int step) {}
+  void reduce_min(const std::string tag, const AbsDistMat& mat, int step) {}
+  void reduce_max(const std::string tag, const AbsDistMat& mat, int step) {}
+  void reduce_stdev(const std::string tag, const AbsDistMat& mat, int step) {}
   void reduce_scalar(const std::string tag, DataType s, int step) {}
   void sum_reduce_scalar(const std::string tag, DataType s, int step) {}
-  void reduce_histogram(const std::string tag, const ElMat& mat, int step) {}
+  void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
   void flush() {}
 };
 

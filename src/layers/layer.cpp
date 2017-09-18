@@ -40,38 +40,44 @@ using namespace El;
 
 namespace lbann {
 
-/// Matrices should be in MC,MR distributions
 template <>
 void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-  m_prev_activations    = new DistMat(m_comm->get_model_grid());
-  m_activations         = new DistMat(m_comm->get_model_grid());
-  m_prev_error_signal   = new DistMat(m_comm->get_model_grid());
-  m_error_signal        = new DistMat(m_comm->get_model_grid());
+  El::Grid& grid = m_comm->get_model_grid();
 
-  /// Instantiate these view objects but do not allocate data for them
-  m_activations_v       = new DistMat(m_comm->get_model_grid());
-  m_error_signal_v      = new DistMat(m_comm->get_model_grid());
+  // Instantiate matrices with MC,MR distribution
+  m_prev_activations  = new DistMat(grid);
+  m_activations       = new DistMat(grid);
+  m_prev_error_signal = new DistMat(grid);
+  m_error_signal      = new DistMat(grid);
+
+  // Construct matrix views
+  m_activations_v = m_activations->Construct(grid, m_activations->Root());
+  m_error_signal_v = m_error_signal->Construct(grid, m_error_signal->Root());
+
 }
 
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 template<>
 void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-  m_prev_activations    = new StarVCMat(m_comm->get_model_grid());
-  m_activations         = new StarVCMat(m_comm->get_model_grid());
-  m_prev_error_signal   = new StarVCMat(m_comm->get_model_grid());
-  m_error_signal        = new StarVCMat(m_comm->get_model_grid());
+  El::Grid& grid = m_comm->get_model_grid();
 
-  /// Instantiate these view objects but do not allocate data for them
-  m_activations_v       = new StarVCMat(m_comm->get_model_grid());
-  m_error_signal_v      = new StarVCMat(m_comm->get_model_grid());
+  // Instantiate matrices with STAR,VC distribution
+  m_prev_activations  = new StarVCMat(grid);
+  m_activations       = new StarVCMat(grid);
+  m_prev_error_signal = new StarVCMat(grid);
+  m_error_signal      = new StarVCMat(grid);
+
+  // Construct matrix views
+  m_activations_v = m_activations->Construct(grid, m_activations->Root());
+  m_error_signal_v = m_error_signal->Construct(grid, m_error_signal->Root());
+
 }
 
 Layer::Layer(const int index, lbann_comm *comm)
   : m_index(index),
     m_comm(comm),
     m_execution_mode(execution_mode::training),
-    m_cudnn(nullptr)
-{
+    m_cudnn(nullptr) {
+
   // Initialize neuron tensor dimensions
   m_num_neurons = 0;
   m_num_neuron_dims = 1;
@@ -90,8 +96,8 @@ Layer::Layer(const int index, lbann_comm *comm)
   m_copy_fp_output_from_gpus = false;
   m_copy_bp_input_to_gpus = false;
   m_copy_bp_output_from_gpus = false;
-  m_prev_neurons_cudnn_desc = NULL;  
-  m_neurons_cudnn_desc = NULL;
+  m_prev_neurons_cudnn_desc = nullptr;
+  m_neurons_cudnn_desc = nullptr;
 #endif // __LIB_CUDNN
 
   reset_counters();
@@ -153,21 +159,26 @@ Layer& Layer::operator=(const Layer& other) {
   bp_time = other.bp_time;
   bp_compute_time = other.bp_compute_time;
   update_time = other.update_time;
-  // Free allocated memory.
-  if (m_prev_error_signal) {
-    delete m_prev_error_signal;
-    delete m_error_signal;
-    delete m_activations;
-    delete m_prev_activations;
-    delete m_error_signal_v;
-    delete m_activations_v;
-  }
-  m_prev_error_signal = other.m_prev_error_signal->Copy();
-  m_error_signal = other.m_error_signal->Copy();
-  m_error_signal_v = other.m_error_signal_v->Copy();
-  m_activations = other.m_activations->Copy();
-  m_prev_activations = other.m_prev_activations->Copy();
-  m_activations_v = other.m_activations_v->Copy();
+
+  // Free allocated memory and copy data from other matrix
+#define FREE_AND_COPY_MATRIX(matrix, other_matrix)      \
+  do {                                                  \
+    if(matrix != nullptr) {                             \
+      delete matrix;                                    \
+      matrix = nullptr;                                 \
+    }                                                   \
+    if(other_matrix != nullptr) {                       \
+      matrix = other_matrix->Copy();                    \
+    }                                                   \
+  } while(false)
+  FREE_AND_COPY_MATRIX(m_prev_activations, other.m_prev_activations);
+  FREE_AND_COPY_MATRIX(m_activations, other.m_activations);
+  FREE_AND_COPY_MATRIX(m_prev_error_signal, other.m_prev_error_signal);
+  FREE_AND_COPY_MATRIX(m_error_signal, other.m_error_signal);
+  FREE_AND_COPY_MATRIX(m_activations_v, other.m_activations_v);
+  FREE_AND_COPY_MATRIX(m_error_signal_v, other.m_error_signal_v);
+#undef FREE_AND_COPY_MATRIX
+
   return *this;
 }
 
@@ -190,12 +201,12 @@ Layer::~Layer() {
     m_cudnn->unpin_matrix(*m_error_signal);
   }
 #endif // __LIB_CUDNN
-  delete m_prev_error_signal;
-  delete m_error_signal;
-  delete m_activations;
-  delete m_prev_activations;
-  delete m_error_signal_v;
-  delete m_activations_v;
+  if(m_prev_activations  != nullptr) delete m_prev_activations;
+  if(m_activations       != nullptr) delete m_activations;
+  if(m_prev_error_signal != nullptr) delete m_prev_error_signal;
+  if(m_error_signal      != nullptr) delete m_error_signal;
+  if(m_activations_v     != nullptr) delete m_activations_v;
+  if(m_error_signal_v    != nullptr) delete m_error_signal_v;
 }
 
 void Layer::forward_prop() {
@@ -356,18 +367,14 @@ void Layer::setup_dims() {
 void Layer::setup_data() {
 
   // Initialize matrices
-  if (m_num_neurons == 0) {
-    throw lbann_exception("lbann_layer: " + std::to_string(m_index) +
-                          " num_neurons is 0");
+  const int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
+  if(max_mini_batch_size <= 0) {
+    throw lbann_exception("Layer: max mini-batch size is invalid");
   }
-  if (m_neural_network_model->get_max_mini_batch_size() == 0) {
-    throw lbann_exception("model max mini-batch size is 0");
-  }
-  int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
-  if (m_num_prev_neurons > 0) {
+  if(m_num_prev_neurons > 0) {
     El::Zeros(*m_error_signal, m_num_prev_neurons, max_mini_batch_size);
   }
-  if (m_num_neurons > 0) {
+  if(m_num_neurons > 0) {
     El::Zeros(*m_activations, m_num_neurons, max_mini_batch_size);
   }
 
@@ -492,12 +499,12 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 }
 
 void Layer::fp_set_std_matrix_view() {
-  El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
 }
 
 void Layer::bp_set_std_matrix_view() {
-  El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
   El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, cur_mini_batch_size));
 }

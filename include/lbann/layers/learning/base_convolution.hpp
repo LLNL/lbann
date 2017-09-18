@@ -62,13 +62,13 @@ class base_convolution_layer : public learning {
   int m_kernel_size;
   
   /** View into convolutional kernel weights. */
-  ElMat *m_kernel_weights_v;
+  AbsDistMat *m_kernel_weights_v;
   /** View into convolutional kernel weights gradient. */
-  ElMat *m_kernel_weights_gradient_v;
+  AbsDistMat *m_kernel_weights_gradient_v;
   /** View into bias weights. */
-  ElMat *m_bias_weights_v;
+  AbsDistMat *m_bias_weights_v;
   /** View into bias weights gradient. */
-  ElMat *m_bias_weights_gradient_v;
+  AbsDistMat *m_bias_weights_gradient_v;
 
   /** Weight initialization scheme. */
   weight_initialization m_weight_initialization;
@@ -237,13 +237,14 @@ class base_convolution_layer : public learning {
 
     /// Instantiate these view objects but do not allocate data for them
     /// @todo model parallel implementation
-    m_kernel_weights_v                = new StarMat(this->m_comm->get_model_grid());
-    m_kernel_weights_gradient_v       = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_v                  = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_gradient_v         = new StarMat(this->m_comm->get_model_grid());
+    El::Grid& grid = m_comm->get_model_grid();
+    m_kernel_weights_v          = m_weights->Construct(grid, m_weights->Root());
+    m_bias_weights_v            = m_weights->Construct(grid, m_weights->Root());
+    m_kernel_weights_gradient_v = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
+    m_bias_weights_gradient_v   = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
   #ifdef __LIB_CUDNN
-    m_kernel_weights_gradient_per_gpu = new StarMat(this->m_comm->get_model_grid());
-    m_bias_weights_gradient_per_gpu   = new StarMat(this->m_comm->get_model_grid());
+    m_kernel_weights_gradient_per_gpu = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
+    m_bias_weights_gradient_per_gpu   = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
   #endif // #ifdef __LIB_CUDNN
   }
 

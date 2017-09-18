@@ -556,7 +556,7 @@ class lbann_comm {
     return count <= (size_t) std::numeric_limits<int>::max();
   }
   /** Return true if the local portion of dist_mat can be transmitted. */
-  static inline bool is_sendable(const ElMat& dist_mat) {
+  static inline bool is_sendable(const AbsDistMat& dist_mat) {
     return is_sendable(dist_mat.LockedMatrix());
   }
 

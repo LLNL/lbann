@@ -50,7 +50,7 @@ lbann_summary::~lbann_summary() {
 }
 
 void lbann_summary::reduce_mean(const std::string tag,
-                                const ElMat& mat,
+                                const AbsDistMat& mat,
                                 int step) {
   // Local sum
   DataType sum = 0.0;
@@ -75,21 +75,21 @@ void lbann_summary::reduce_mean(const std::string tag,
 }
 
 void lbann_summary::reduce_min(const std::string tag,
-                               const ElMat& mat,
+                               const AbsDistMat& mat,
                                int step) {
   DataType local_min = El::Min(mat.LockedMatrix());
   m_pending_mins.emplace_back(tag, step, local_min);
 }
 
 void lbann_summary::reduce_max(const std::string tag,
-                               const ElMat& mat,
+                               const AbsDistMat& mat,
                                int step) {
   DataType local_max = El::Max(mat.LockedMatrix());
   m_pending_maxes.emplace_back(tag, step, local_max);
 }
 
 void lbann_summary::reduce_stdev(const std::string tag,
-                                 const ElMat& mat,
+                                 const AbsDistMat& mat,
                                  int step) {
   // Local sum and squared sum
   DataType sum = 0.0;
@@ -131,7 +131,7 @@ void lbann_summary::sum_reduce_scalar(const std::string tag,
 }
 
 void lbann_summary::reduce_histogram(const std::string tag,
-                                     const ElMat& mat,
+                                     const AbsDistMat& mat,
                                      int step) {
   DataType local_min = El::Min(mat.LockedMatrix());
   DataType local_max = El::Max(mat.LockedMatrix());

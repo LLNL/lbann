@@ -36,7 +36,7 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
   if (l->get_index() == (int) m->get_layers().size() - 1) {
     return;
   }
-  ElMat& acts = l->get_activations();
+  AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
@@ -57,7 +57,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
     return;
   }
 
-  ElMat& grad = learning_layer->get_weights_gradient();
+  AbsDistMat& grad = learning_layer->get_weights_gradient();
   if (!is_good(grad)) {
     lbann_comm *comm = m->get_comm();
     std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
@@ -78,7 +78,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
     if(learning_layer == NULL) {
       continue;
     }
-    ElMat& weights = learning_layer->get_weights();
+    AbsDistMat& weights = learning_layer->get_weights();
     if (!is_good(weights)) {
       lbann_comm *comm = m->get_comm();
       std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
@@ -89,7 +89,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
   }
 }
 
-bool lbann_callback_checksmall::is_good(const ElMat& m) {
+bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
   const Mat& local_mat = m.LockedMatrix();
   const Int height = local_mat.Height();
   const Int width = local_mat.Width();

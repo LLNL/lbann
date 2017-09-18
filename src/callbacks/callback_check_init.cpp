@@ -57,7 +57,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
     }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const ElMat& weights = learning_layer->get_weights();
+    const AbsDistMat& weights = learning_layer->get_weights();
     const Mat& local_weights = weights.LockedMatrix();
     for (int model = 1; model < comm->get_num_models(); ++model) {
       comm->global_barrier();

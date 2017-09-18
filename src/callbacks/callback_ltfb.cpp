@@ -144,8 +144,8 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
       learning *layer = dynamic_cast<learning*>(layers[i]);
       learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
       // TODO: Support sending optimizer state.
-      ElMat& weights = layer->get_weights();
-      ElMat& remote_weights = remote_layer->get_weights();
+      AbsDistMat& weights = layer->get_weights();
+      AbsDistMat& remote_weights = remote_layer->get_weights();
       if (weights.Height() > 0) {
         m_comm->sendrecv(weights.LockedBuffer(),
                          weights.LocalHeight()*weights.LocalWidth(),

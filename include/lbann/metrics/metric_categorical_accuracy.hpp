@@ -85,7 +85,7 @@ class categorical_accuracy : public metric {
              El::IR(0, cur_mini_batch_size), El::IR(0, m_reduced_max_indices.Width()));
   }
 
-  double compute_metric(ElMat& predictions_v, ElMat& groundtruth_v) {
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
     // Clear the contents of the intermediate matrices
     El::Zeros(m_prediction_col_maxes, m_max_mini_batch_size, 1);
     El::Zeros(m_replicated_prediction_col_maxes, m_max_mini_batch_size, 1);
