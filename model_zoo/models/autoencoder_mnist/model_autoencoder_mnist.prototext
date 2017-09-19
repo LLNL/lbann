@@ -21,7 +21,6 @@ model {
   }
 #  callback {
 #    timer {
-#      dir: "none"
 #    }
 #  }
 #  callback {

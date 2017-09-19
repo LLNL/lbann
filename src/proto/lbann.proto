@@ -218,12 +218,12 @@ message CallbackProfiler {
 }
 
 message CallbackTimer {
-  string dir = 1; //directory for the lbann_summary
 }
 
 message CallbackSummary {
   string dir = 1; //directory for the lbann_summary
-  int64 interval = 2; //default in lbann_callback_summary.hpp is 1
+  int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
+  int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
 }
 
 message CallbackDumpWeights {
@@ -253,7 +253,6 @@ message CallbackDispIOStats {
 message CallbackImComm {
   string intermodel_comm_method = 1;
   string layers = 2; //e.g: "2 4 5"; use "10000" to apply to all layers
-  string summary_dir = 3;
 }
 
 message CallbackDebug {

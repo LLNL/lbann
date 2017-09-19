@@ -9,6 +9,7 @@
 #include <google/protobuf/text_format.h>
 
 #include <unordered_map>
+#include <sys/stat.h>
 
 using namespace lbann;
 
@@ -921,6 +922,31 @@ void add_layers(
   finish_transform_layers(comm, t_layers, the_layers); 
 }
 
+lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
+  lbann_summary *summary = nullptr;
+  bool master = comm->am_world_master();
+  int size = m.callback_size();
+  for (int j=0; j<size; j++) {
+    const lbann_data::Callback& callback = m.callback(j);
+    if (callback.has_summary()) {
+      const lbann_data::CallbackSummary& c = callback.summary();
+      if (master) {
+        cout << "constructing summarizer with dir: " << c.dir() << endl;
+      }
+
+      //check to see if directory exists
+      struct stat sb;
+      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
+        throw lbann_exception(
+          std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+          "summary directory " + c.dir() + " does not exist");
+      }
+      summary = new lbann_summary(c.dir(), comm);
+    }
+  }
+  return summary;
+}
+
 void init_callbacks(
   lbann_comm *comm,
   lbann::sequential_model *model,
@@ -932,9 +958,13 @@ void init_callbacks(
   bool master = comm->am_world_master();
 
   const lbann_data::Model& m = p.model();
-  lbann_summary *summarizer = nullptr;
-
   if (master) cerr << endl << "starting init_callbacks; size: " << m.callback_size() << endl;
+
+  
+  //the same summarizer is passed to all call backs that take a summarizer;
+  //construct_summarizer returns this summarizer, which may be a nullptr
+  lbann_summary *summarizer = construct_summarizer(m, comm);
+
 
   //loop over the callbacks
   int size = m.callback_size();
@@ -971,13 +1001,6 @@ void init_callbacks(
     // CALLBACK: timer
     //////////////////////////////////////////////////////////////////
     if (callback.has_timer()) {
-      const lbann_data::CallbackTimer& c = callback.timer();
-      if (master) {
-        cout << "adding timer callback with dir: " << c.dir() << endl;
-      }
-      if (c.dir() != "none" && !summarizer) {
-        summarizer = new lbann_summary(c.dir(), comm);
-      }
       lbann_callback_timer *timer_cb = new lbann_callback_timer(summarizer);
       model->add_callback(timer_cb);
     }
@@ -987,18 +1010,7 @@ void init_callbacks(
     //////////////////////////////////////////////////////////////////
     if (callback.has_summary()) {
       const lbann_data::CallbackSummary& c = callback.summary();
-      if (master) {
-        cout << "adding summary callback with dir: " << c.dir() << endl;
-      }
-      if (c.dir() != "none" && !summarizer) {
-        summarizer = new lbann_summary(c.dir(), comm);
-      }
-      if (!summarizer) {
-        throw lbann_exception(
-          std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-          "summary callback requires a valid summarizer directory");
-      }
-      lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.interval());
+      lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.batch_interval(), c.mat_interval());
       model->add_callback(summary_cb);
     }
 
@@ -1103,9 +1115,6 @@ void init_callbacks(
       const lbann_data::CallbackImComm& c = callback.imcomm();
       if (master) {
         cout << "adding imcomm callback\n";
-      }
-      if (!summarizer) {
-        summarizer = new lbann_summary(".", comm);
       }
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
@@ -1212,11 +1221,11 @@ void init_callbacks(
       }
       lbann_callback_debug *debug_cb = nullptr;
       if(c.phase() == "train") {
-        debug_cb = new lbann_callback_debug(execution_mode::training);
+        debug_cb = new lbann_callback_debug(execution_mode::training, summarizer);
       } else if (c.phase() == "validation") {
-        debug_cb = new lbann_callback_debug(execution_mode::validation);
+        debug_cb = new lbann_callback_debug(execution_mode::validation, summarizer);
       } else if (c.phase() == "test") {
-        debug_cb = new lbann_callback_debug(execution_mode::testing);
+        debug_cb = new lbann_callback_debug(execution_mode::testing, summarizer);
       } else {
         debug_cb = new lbann_callback_debug();
       }
