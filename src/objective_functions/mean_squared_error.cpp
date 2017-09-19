@@ -43,13 +43,13 @@ void mean_squared_error::compute_value(const AbsDistMat& predictions,
 
   // Compute sum of squared errors
   double sum = 0;
-  const int block_size = std::max((int) (1024 / sizeof(DataType)), 1);
+  const El::Int block_size = std::max((int) (1024 / sizeof(DataType)), 1);
   #pragma omp parallel for collapse(2)
-  for(int col = 0; col < local_width; ++col) {
-    for(int block_start = 0; block_start < local_height; block_start += block_size) {
+  for(El::Int col = 0; col < local_width; ++col) {
+    for(El::Int block_start = 0; block_start < local_height; block_start += block_size) {
       double block_sum = 0;
-      const int block_end = std::min(block_start + block_size, local_height);
-      for(int row = block_start; row < block_end; ++row) {
+      const El::Int block_end = std::min(block_start + block_size, local_height);
+      for(El::Int row = block_start; row < block_end; ++row) {
         const double true_val = ground_truth_local(row, col);
         const double pred_val = predictions_local(row, col);
         const double error = true_val - pred_val;
