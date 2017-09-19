@@ -5,7 +5,7 @@ EXPERIMENT_NAME=lbann_alexnet
 LBANN_DIR=$(git rev-parse --show-toplevel)
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
-OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
+OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 DATASET_CLASSES=10 # default: 1000 (options: 10, 100, 300, 1000)
 
 # Hardware configuration

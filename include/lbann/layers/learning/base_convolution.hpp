@@ -73,8 +73,12 @@ class base_convolution_layer : public learning {
   /** Weight initialization scheme. */
   weight_initialization m_weight_initialization;
 
-  /** Scaling factor for bias term. */
+  /** Scaling factor for bias term.
+   *  If the scaling factor is zero, bias is not applied.
+   */
   DataType m_bias_scaling_factor;
+  /** Initial value for bias. */
+  DataType m_bias_initial_value;
 
 #ifdef __LIB_CUDNN
 
@@ -120,6 +124,7 @@ class base_convolution_layer : public learning {
                          weight_initialization init,
                          optimizer *opt,
                          bool has_bias,
+                         DataType bias_initial_value,
                          cudnn::cudnn_manager *cudnn)
     : learning(index, comm, opt) {
 
@@ -132,8 +137,9 @@ class base_convolution_layer : public learning {
     // Weight initialization scheme
     m_weight_initialization = init;
 
-    // Activate or disable bias
+    // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
+    m_bias_initial_value = bias_initial_value;
 
   #ifdef __LIB_CUDNN
 
@@ -237,14 +243,19 @@ class base_convolution_layer : public learning {
 
     /// Instantiate these view objects but do not allocate data for them
     /// @todo model parallel implementation
-    El::Grid& grid = m_comm->get_model_grid();
-    m_kernel_weights_v          = m_weights->Construct(grid, m_weights->Root());
-    m_bias_weights_v            = m_weights->Construct(grid, m_weights->Root());
-    m_kernel_weights_gradient_v = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
-    m_bias_weights_gradient_v   = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
+    m_kernel_weights_v          = m_weights->Construct(m_weights->Grid(),
+                                                       m_weights->Root());
+    m_bias_weights_v            = m_weights->Construct(m_weights->Grid(),
+                                                       m_weights->Root());
+    m_kernel_weights_gradient_v = m_weights_gradient->Construct(m_weights_gradient->Grid(),
+                                                                m_weights_gradient->Root());
+    m_bias_weights_gradient_v   = m_weights_gradient->Construct(m_weights_gradient->Grid(),
+                                                                m_weights_gradient->Root());
   #ifdef __LIB_CUDNN
-    m_kernel_weights_gradient_per_gpu = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
-    m_bias_weights_gradient_per_gpu   = m_weights_gradient->Construct(grid, m_weights_gradient->Root());
+    m_kernel_weights_gradient_per_gpu = m_weights_gradient->Construct(m_weights_gradient->Grid(),
+                                                                      m_weights_gradient->Root());
+    m_bias_weights_gradient_per_gpu   = m_weights_gradient->Construct(m_weights_gradient->Grid(),
+                                                                      m_weights_gradient->Root());
   #endif // #ifdef __LIB_CUDNN
   }
 
@@ -267,6 +278,7 @@ class base_convolution_layer : public learning {
                       this->m_weight_initialization,
                       m_kernel_size / this->m_neuron_dims[0],
                       m_kernel_size / this->m_prev_neuron_dims[0]);
+    El::Fill(*m_bias_weights_v, m_bias_initial_value);
 
     // Initialize optimizer
     if(this->m_optimizer != nullptr) {

@@ -480,10 +480,11 @@ message Sum {
 // learning Layers //
 /////////////////////
 message FullyConnected {
-  int64 num_neurons = 2;
-  string weight_initialization = 5;
-  bool has_bias = 6;
-  double l2_regularization_factor = 7;
+  int64 num_neurons = 1;
+  string weight_initialization = 2;
+  bool has_bias = 3;                   //default: true
+  double bias_initial_value = 4;       //default: 0
+  double l2_regularization_factor = 5; //default: 0
 }
 
 message Convolution {
@@ -502,10 +503,10 @@ message Convolution {
   int64 conv_pads_i = 60; 
   int64 conv_strides_i = 70; 
 
-
   string weight_initialization = 9;
-  bool has_bias = 10;
-  double l2_regularization_factor = 11;
+  bool has_bias = 10;                   //default: true
+  double bias_initial_value = 11;       //default: 0
+  double l2_regularization_factor = 12; //default: 0
 }
 
 message Deconvolution {
@@ -524,10 +525,10 @@ message Deconvolution {
   int64 conv_pads_i = 60; 
   int64 conv_strides_i = 70; 
 
-
   string weight_initialization = 9;
-  bool has_bias = 10;
-  double l2_regularization_factor = 11;
+  bool has_bias = 10;                   //default: true
+  double bias_initial_value = 11;       //default: 0
+  double l2_regularization_factor = 12; //default: 0
 }
 
 ///////////////////

@@ -305,6 +305,7 @@ void add_layers(
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias(),
+          ell.bias_initial_value(),
           cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
@@ -314,6 +315,7 @@ void add_layers(
           get_weight_initialization(ell.weight_initialization()),
           model->create_optimizer(),
           ell.has_bias(),
+          ell.bias_initial_value(),
           cudnn);
       }
       double l2_regularization_factor = ell.l2_regularization_factor();
@@ -507,6 +509,7 @@ void add_layers(
             get_weight_initialization(ell.weight_initialization()),
             model->create_optimizer(),
             ell.has_bias(),
+            ell.bias_initial_value(),
             cudnn
           );
         }
@@ -529,6 +532,7 @@ void add_layers(
             get_weight_initialization(ell.weight_initialization()),
             model->create_optimizer(),
             ell.has_bias(),
+            ell.bias_initial_value(),
             cudnn
           );
         }
@@ -586,6 +590,7 @@ void add_layers(
             get_weight_initialization(ell.weight_initialization()),
             model->create_optimizer(),
             ell.has_bias(),
+            ell.bias_initial_value(),
             cudnn
           );
         }
@@ -608,6 +613,7 @@ void add_layers(
             get_weight_initialization(ell.weight_initialization()),
             model->create_optimizer(),
             ell.has_bias(),
+            ell.bias_initial_value(),
             cudnn
           );
         }
