@@ -56,16 +56,20 @@ class learning : public Layer, public optimizable_layer {
       const int local_height = m_weights->LocalHeight();
       const int local_width = m_weights->LocalWidth();
 
-      // Compute sum of squares with Kahan summation
+      // Compute sum of squares
       DataType sum = 0;
-      DataType correction = 0;
-      for (int col = 0; col < local_width; ++col) {
-        for (int row = 0; row < local_height; ++row) {
-          const DataType x = weights_buffer[row + col * weights_ldim];
-          const DataType term = x * x + correction;
-          const double next_sum = sum + term;
-          correction = term - (next_sum - sum);
-          sum = next_sum;
+      const int block_size = std::max((int) (1024 / sizeof(DataType)), 1);
+      #pragma omp parallel for collapse(2)
+      for(int col = 0; col < local_width; ++col) {
+        for(int block_start = 0; block_start < local_height; block_start += block_size) {
+          double block_sum = 0;
+          const int block_end = std::min(block_start + block_size, local_height);
+          for(int row = block_start; row < block_end; ++row) {
+              const DataType x = weights_buffer[row + col * weights_ldim];
+              block_sum += x * x;
+          }
+          #pragma omp atomic
+          sum += block_sum;
         }
       }
       sum = El::mpi::AllReduce(sum, m_weights->DistComm());
