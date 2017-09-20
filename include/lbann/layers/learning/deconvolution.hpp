@@ -63,6 +63,7 @@ class deconvolution_layer : public base_convolution_layer {
                       weight_initialization init,
                       optimizer *opt,
                       bool has_bias = true,
+                      DataType bias_initial_value = DataType(0),
                       cudnn::cudnn_manager *cudnn = nullptr)
     : deconvolution_layer(index,
                           comm,
@@ -74,6 +75,7 @@ class deconvolution_layer : public base_convolution_layer {
                           init,
                           opt,
                           has_bias,
+                          bias_initial_value,
                           cudnn) {}
 
   deconvolution_layer(int index,
@@ -86,6 +88,7 @@ class deconvolution_layer : public base_convolution_layer {
                       weight_initialization init,
                       optimizer *opt,
                       bool has_bias = true,
+                      DataType bias_initial_value = DataType(0),
                       cudnn::cudnn_manager *cudnn = nullptr)
     : base_convolution_layer(index,
                              comm,
@@ -97,6 +100,7 @@ class deconvolution_layer : public base_convolution_layer {
                              init,
                              opt,
                              has_bias,
+                             bias_initial_value,
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
@@ -129,6 +133,7 @@ class deconvolution_layer : public base_convolution_layer {
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
       << " has_bias: " << this->m_bias_scaling_factor
+      << " bias_initial_value: " << this->m_bias_initial_value
       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }

@@ -80,7 +80,7 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
   srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \
 --model=model_zoo/historical/prototext/model_mnist_multi.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
---optimizer=model_zoo/optimizer/opt_adagrad.prototext
+--optimizer=model_zoo/optimizers/opt_adagrad.prototext
 ```
   This should produce the following final results on Catalyst:
   ```
@@ -106,6 +106,6 @@ Launch an MPI job using the proper command for your system (srun, mpirun, mpiexe
 srun -n2 catalyst.llnl.gov/model_zoo/lbann
 --model=../model_zoo/historical/prototext/model_mnist_multi.prototext
 --reader=../model_zoo/data_readers/data_reader_mnist.prototext
---optimizer=../model_zoo/optimizer/opt_adagrad.prototext
+--optimizer=../model_zoo/optimizers/opt_adagrad.prototext
 ```
 

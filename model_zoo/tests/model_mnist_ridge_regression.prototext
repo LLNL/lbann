@@ -8,7 +8,7 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 32
   block_size: 256
-  num_epochs: 10
+  num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
   use_cudnn: true
@@ -24,19 +24,20 @@ model {
   }
   callback {
     timer {
-      dir: "none"
     }
   }
   callback {
     summary {
       dir: "."
-      interval: 1
+      batch_interval: 1
+      mat_interval: 25
     }
   }
   callback {
     gradient_check {
       step_size: 0
       verbose: false
+      fail_on_error: true
     }
   }
 

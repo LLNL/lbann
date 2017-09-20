@@ -4,8 +4,9 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
-  num_epochs: 4
+  num_epochs: 10
   num_parallel_readers: 1
+  #procs_per_model: 12
   procs_per_model: 0 
   use_cudnn: false
   num_gpus: -1
@@ -22,12 +23,12 @@ model {
     timer {
     }
   }
-  callback {
-    save_images {
-      image_dir: "images_"
-      extension: "pgm"
-    }
-  }
+ # callback {
+ #   save_images {
+ #     image_dir: "images_"
+ #     extension: "pgm"
+ #   }
+ # }
 
   ###################################################
   # start of layers
@@ -57,7 +58,7 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -105,7 +106,7 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -153,7 +154,7 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -214,7 +215,7 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -258,7 +259,7 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -298,11 +299,11 @@ model {
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
-      num_output_channels: 1
+      num_output_channels: 3
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
+      weight_initialization: "glorot_uniform"
       has_bias: true
       has_vectors: true
       l2_regularization_factor: 0.0005
@@ -330,6 +331,7 @@ model {
     data_layout: "data_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
+      num_neurons: 784
       weight_initialization: "glorot_uniform"
       has_bias: true
     }

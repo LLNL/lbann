@@ -26,7 +26,6 @@ model {
     imcomm {
       intermodel_comm_method: "normal"
       layers: "2 6 10 12 14 17 20 23"
-      summary_dir: "."
     }  
   }
   callback {
@@ -36,13 +35,13 @@ model {
   }
   callback {
     timer {
-      dir: "none"
     }
   }
   callback {
     summary {
       dir: "."
-      interval: 1
+      batch_interval: 1
+      mat_interval: 25
     }
   }
   # callback {
@@ -167,6 +166,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }
@@ -262,6 +262,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }
@@ -293,6 +294,7 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
+      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }

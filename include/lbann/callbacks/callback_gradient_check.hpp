@@ -42,7 +42,8 @@ class lbann_callback_gradient_check : public lbann_callback {
    *  @param verbose    Whether to print results for each parameter.
    */
   lbann_callback_gradient_check(DataType step_size = DataType(0),
-                                bool verbose = false);
+                                bool verbose = false,
+                                bool fail_on_error = false);
 
   lbann_callback_gradient_check(const lbann_callback_gradient_check&) = default;
   lbann_callback_gradient_check& operator=(const lbann_callback_gradient_check&) = default;
@@ -61,6 +62,8 @@ private:
   DataType m_step_size;
   /** Whether to print results for each parameter. */
   bool m_verbose;
+  /** Whether to throw an exception for large gradient errors. */
+  bool m_fail_on_error;
 
 };
 

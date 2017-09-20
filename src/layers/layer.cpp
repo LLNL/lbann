@@ -42,33 +42,37 @@ namespace lbann {
 
 template <>
 void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-  El::Grid& grid = m_comm->get_model_grid();
 
   // Instantiate matrices with MC,MR distribution
+  El::Grid& grid = m_comm->get_model_grid();
   m_prev_activations  = new DistMat(grid);
   m_activations       = new DistMat(grid);
   m_prev_error_signal = new DistMat(grid);
   m_error_signal      = new DistMat(grid);
 
   // Construct matrix views
-  m_activations_v = m_activations->Construct(grid, m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(grid, m_error_signal->Root());
+  m_activations_v = m_activations->Construct(m_activations->Grid(),
+                                             m_activations->Root());
+  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
+                                               m_error_signal->Root());
 
 }
 
 template<>
 void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-  El::Grid& grid = m_comm->get_model_grid();
 
   // Instantiate matrices with STAR,VC distribution
+  El::Grid& grid = m_comm->get_model_grid();
   m_prev_activations  = new StarVCMat(grid);
   m_activations       = new StarVCMat(grid);
   m_prev_error_signal = new StarVCMat(grid);
   m_error_signal      = new StarVCMat(grid);
 
   // Construct matrix views
-  m_activations_v = m_activations->Construct(grid, m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(grid, m_error_signal->Root());
+  m_activations_v = m_activations->Construct(m_activations->Grid(),
+                                             m_activations->Root());
+  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
+                                               m_error_signal->Root());
 
 }
 
