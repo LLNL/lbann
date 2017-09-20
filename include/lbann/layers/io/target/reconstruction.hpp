@@ -83,7 +83,7 @@ class reconstruction_layer : public target_layer {
 
     //view of original layer
     AbsDistMat& orig_acts = m_original_layer->get_activations();
-    original_layer_act_v = orig_acts.Construct(this->m_comm->get_model_grid(),this->m_comm->get_model_master());
+    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
     El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 

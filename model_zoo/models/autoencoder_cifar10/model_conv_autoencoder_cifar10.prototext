@@ -1,0 +1,367 @@
+model {
+  name: "dnn"
+  objective_function: "mean_squared_error"
+  data_layout: "data_parallel"
+  mini_batch_size: 128
+  block_size: 256
+  num_epochs: 10
+  num_parallel_readers: 1
+  #procs_per_model: 12
+  procs_per_model: 0 
+  use_cudnn: false
+  num_gpus: -1
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+ # callback {
+ #   save_images {
+ #     image_dir: "images_"
+ #     extension: "pgm"
+ #   }
+ # }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    index: 1
+    parent: 1
+    data_layout: "data_parallel"
+    input_distributed_minibatch {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    index: 2
+    parent: 1
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 16
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    index: 3
+    parent: 2
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # POOLING 1
+  #########
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "1 1"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  #############
+  # CONVOLUTION 2
+  #############
+  layer {
+    index: 5
+    parent: 4
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 8
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 2
+  ######
+  layer {
+    index: 6
+    parent: 5
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # POOLING 2
+  #########
+  layer {
+    index: 7
+    parent: 6
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "1 1"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  #############
+  # CONVOLUTION 3
+  #############
+  layer {
+    index: 8
+    parent: 7
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 8
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 3
+  ######
+  layer {
+    index: 9
+    parent: 8
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # POOLING 3
+  #########
+  layer {
+    index: 10
+    parent: 9
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "1 1"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+  
+ #########
+  # UNPOOLING 3
+  #########
+  layer {
+    index: 11
+    parent: 10
+    data_layout: "data_parallel"
+    unpooling {
+      num_dims: 2
+      pooling_layer: 10
+    }
+  }
+ 
+  #############
+  # DECONVOLUTION 3
+  #############
+  layer {
+    index: 12 
+    parent: 11
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 2
+      num_output_channels: 8
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 4
+  ######
+  layer {
+    index: 13
+    parent: 12
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # UNPOOLING 2
+  #########
+  layer {
+    index: 14 
+    parent: 13
+    data_layout: "data_parallel"
+    unpooling {
+      num_dims: 2
+      pooling_layer: 7
+    }
+  }
+
+  #############
+  # DECONVOLUTION 2
+  #############
+  layer {
+    index: 15
+    parent: 14
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 2
+      num_output_channels: 16
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 5 
+  ######
+  layer {
+    index: 16 
+    parent: 15
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # UNPOOLING 1
+  #########
+  layer {
+    index: 17
+    parent: 16
+    data_layout: "data_parallel"
+    unpooling {
+      num_dims: 2
+      pooling_layer: 4
+    }
+  }
+
+  #############
+  # DECONVOLUTION 1
+  #############
+  layer {
+    index: 18
+    parent: 17
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 2
+      num_output_channels: 3
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 6
+  ######
+  layer {
+    index: 19
+    parent: 18
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    index: 20
+    parent: 19
+    data_layout: "data_parallel"
+    num_neurons_from_data_reader: true
+    fully_connected {
+      num_neurons: 784
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # SIGMOID sigmoid
+  #######
+  layer {
+    index: 21
+    parent: 20
+    data_layout: "data_parallel"
+    sigmoid {
+    }
+  }
+
+  
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    index: 22 
+    parent: 21
+    data_layout: "data_parallel"
+    reconstruction {
+      original_layer: 1
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}
