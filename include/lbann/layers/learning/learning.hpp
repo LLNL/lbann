@@ -87,6 +87,95 @@ class learning : public Layer, public optimizable_layer {
     }
   }
 
+  /** Factor for group lasso regularization */ 
+  DataType m_group_lasso_regularization_factor = DataType(0);
+
+  /** Add group lasso regularization term to objective function. */
+  virtual void group_lasso_regularize_objective_function() {
+    if (m_group_lasso_regularization_factor != DataType(0)) {
+
+      // Get local weight data
+      const DataType *weights_buffer = m_weights->LockedBuffer();
+      const int weights_ldim = m_weights->LDim();
+      const int width = m_weights->Width();
+      const int local_height = m_weights->LocalHeight();
+      const int local_width = m_weights->LocalWidth();
+
+      // Compute sum of squares with Kahan summation
+      Mat colSumSqrs = Mat(1, width);
+      El::Zero(colSumSqrs);
+      for (int col = 0; col < local_width; ++col) {
+        DataType sum = 0;
+        DataType correction = 0;
+        for (int row = 0; row < local_height; ++row) {
+          const DataType x = weights_buffer[row + col * weights_ldim];
+          const DataType term = x * x + correction;
+          const double next_sum = sum + term;
+          correction = term - (next_sum - sum);
+          sum = next_sum;
+        }
+        colSumSqrs(0, m_weights->GlobalCol(col)) = sum;
+      }
+      El::AllReduce(colSumSqrs, m_weights->DistComm(), El::mpi::SUM);
+    
+      // Add regularization term to objective function
+      DataType sumColL2Norms = 0;
+      for (int i = width - 1; i >= 0; --i) sumColL2Norms += std::sqrt(colSumSqrs(0, i)); 
+      const DataType regularization_term = m_group_lasso_regularization_factor * sumColL2Norms;
+      this->m_neural_network_model->m_obj_fn->add_to_value(regularization_term);
+    }
+  }
+
+  /** Add group lasso regularization term to gradient. */
+  virtual void group_lasso_regularize_gradient() {
+    if (m_group_lasso_regularization_factor != DataType(0)) {
+      //Group lasso gradient will be m_weights where each column c of m_weights is normalized by $||c||_{2}$.
+      //So first we compute $L_2$ norm of each column of m_weights as in group_lasso_regularize_objective_function. 
+      const DataType *weights_buffer = m_weights->LockedBuffer();
+      const int weights_ldim = m_weights->LDim();
+      const int width = m_weights->Width();
+      const int local_height = m_weights->LocalHeight();
+      const int local_width = m_weights->LocalWidth();
+
+      // Compute sum of squares with Kahan summation
+      Mat colSumSqrs = Mat(1, width);
+      for (int col = 0; col < local_width; ++col) {
+        DataType sum = 0;
+        DataType correction = 0;
+        for (int row = 0; row < local_height; ++row) {
+          const DataType x = weights_buffer[row + col * weights_ldim];
+          const DataType term = x * x + correction;
+          const double next_sum = sum + term;
+          correction = term - (next_sum - sum);
+          sum = next_sum;
+        }
+        colSumSqrs(0, m_weights->GlobalCol(col)) = sum;
+      }
+      El::AllReduce(colSumSqrs, m_weights->DistComm(), El::mpi::SUM);
+      El::EntrywiseMap(colSumSqrs, std::function<DataType(const DataType&)>(
+									   [](const DataType& x) {
+									     return std::sqrt(x);
+									   }));
+   
+      //update m_weights_graident using colSumSqrs.
+      Mat& m_weights_gradient_local = m_weights_gradient->Matrix();
+      Mat& m_weights_local = m_weights->Matrix();
+      AbsDistMat& boo = *m_weights_gradient;
+
+      El::IndexDependentMap(m_weights_gradient_local, 
+			    (std::function<DataType(El::Int,El::Int,const DataType&)>)
+			    ([&colSumSqrs, &m_weights_local, &boo](El::Int r, El::Int c, const DataType& x)
+			     -> DataType {
+			      const DataType colL2Norm = colSumSqrs(0, boo.GlobalCol(c));
+                              if (colL2Norm != DataType(0)) {
+                                return x + m_weights_local(r, c)/colL2Norm;
+			      } else {
+                                return x;			
+			      };  
+			    }));
+    }
+  }
+
  public:
   learning(int index, 
            lbann_comm *comm,
