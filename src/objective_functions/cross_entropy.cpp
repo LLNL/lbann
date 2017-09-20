@@ -69,8 +69,8 @@ void cross_entropy::compute_value(const AbsDistMat& predictions,
 
   // Compute sum of cross entropy terms
   double sum = 0;
-  const int block_size = std::max((int) (1024 / sizeof(DataType)), 1);
-  #pragma omp parallel for collapse(2)
+  const int block_size = std::max((int) (64 / sizeof(DataType)), 1);
+  #pragma omp parallel for reduction(+:sum) collapse(2)
   for(int col = 0; col < local_width; ++col) {
     for(int block_start = 0; block_start < local_height; block_start += block_size) {
       double block_sum = 0;
@@ -80,7 +80,6 @@ void cross_entropy::compute_value(const AbsDistMat& predictions,
         const double pred_val = predictions_local(row, col);
         block_sum += - true_val * std::log(pred_val);
       }
-      #pragma omp atomic
       sum += block_sum;
     }
   }

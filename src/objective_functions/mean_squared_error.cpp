@@ -43,8 +43,8 @@ void mean_squared_error::compute_value(const AbsDistMat& predictions,
 
   // Compute sum of squared errors
   double sum = 0;
-  const El::Int block_size = std::max((int) (1024 / sizeof(DataType)), 1);
-  #pragma omp parallel for collapse(2)
+  const El::Int block_size = std::max((int) (64 / sizeof(DataType)), 1);
+  #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int block_start = 0; block_start < local_height; block_start += block_size) {
       double block_sum = 0;
@@ -55,7 +55,6 @@ void mean_squared_error::compute_value(const AbsDistMat& predictions,
         const double error = true_val - pred_val;
         block_sum += error * error;
       }
-      #pragma omp atomic
       sum += block_sum;
     }
   }
