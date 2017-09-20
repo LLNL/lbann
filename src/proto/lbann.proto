@@ -187,6 +187,11 @@ message Callback {
    CallbackProfiler profiler = 21;
    CallbackStepMinibatch step_minibatch = 22;
    CallbackGradientCheck gradient_check = 23;
+   CallbackLTFB ltfb = 24;
+}
+
+message CallbackLTFB {
+  int64 round_size = 1;
 }
 
 message CallbackStepLearningRate {

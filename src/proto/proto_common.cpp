@@ -978,6 +978,15 @@ void init_callbacks(
     const lbann_data::Callback& callback = m.callback(j);
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: ltfb
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_ltfb()) {
+      const lbann_data::CallbackLTFB &c = callback.ltfb();
+      lbann_callback_ltfb *ltfb_cb = new lbann_callback_ltfb(c.round_size(), summarizer);
+      model->add_callback(ltfb_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: save_images
     //////////////////////////////////////////////////////////////////
     if (callback.has_save_images()) {
