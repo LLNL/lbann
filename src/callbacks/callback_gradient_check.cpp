@@ -31,8 +31,11 @@
 namespace lbann {
 
 lbann_callback_gradient_check::lbann_callback_gradient_check(DataType step_size,
-                                                             bool verbose)
-  : m_step_size(step_size), m_verbose(verbose) {}
+                                                             bool verbose,
+                                                             bool fail_on_error)
+  : m_step_size(step_size),
+    m_verbose(verbose),
+    m_fail_on_error(fail_on_error) {}
 
 void lbann_callback_gradient_check::on_test_begin(model *m) {
 
@@ -123,9 +126,20 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         }
         
         // Print warning if relative error is large
-        if ((error > expected_error || m_verbose)
-            && comm->am_world_master()) {
-          std::cout << "  Gradient error in layer " << layer_index << ", "
+        if (error > expected_error && comm->am_world_master()) {
+          std::cout << "  GRADIENT ERROR: Layer " << layer_index << ", "
+                    << "entry (" << row << "," << col << ")" << std::endl;
+          std::cout << "    Weight              = " << initial_weight << std::endl
+                    << "    Analytical gradient = " << analytical_gradient << std::endl
+                    << "    Numerical gradient  = " << numerical_gradient << std::endl
+                    << "    Error               = " << error << std::endl
+                    << "    Relative error      = " << relative_error << std::endl;
+          if (m_fail_on_error) {
+            throw lbann_exception("callback_gradient_check: found large error in gradient");
+          }
+        }
+        else if (m_verbose && comm->am_world_master()) {
+          std::cout << "  Layer " << layer_index << ", "
                     << "entry (" << row << "," << col << ")" << std::endl;
           std::cout << "    Weight              = " << initial_weight << std::endl
                     << "    Analytical gradient = " << analytical_gradient << std::endl

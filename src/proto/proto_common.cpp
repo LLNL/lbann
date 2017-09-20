@@ -1355,7 +1355,7 @@ void init_callbacks(
         std::cout << "adding gradient_check callback" << std::endl;
       }
       lbann_callback_gradient_check *gradient_check_cb = new
-      lbann_callback_gradient_check(c.step_size(), c.verbose());
+      lbann_callback_gradient_check(c.step_size(), c.verbose(), c.fail_on_error());
       model->add_callback(gradient_check_cb);
     }
 

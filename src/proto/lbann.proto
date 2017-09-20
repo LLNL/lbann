@@ -293,6 +293,7 @@ message CallbackStepMinibatch {
 message CallbackGradientCheck {
   double step_size = 1;
   bool verbose = 2;
+  bool fail_on_error = 3;
 }
 
 //========================================================================
