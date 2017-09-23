@@ -72,7 +72,8 @@ void lbann_callback_ltfb::setup(model *m) {
 }
 
 void lbann_callback_ltfb::on_batch_end(model *m) {
-  if (m->get_cur_step() % m_round_size != 0) {
+  if (m->get_cur_step() % m_round_size != 0 ||
+      m->get_cur_step() == 0) {
     return;  // Not the end of a round.
   }
 
