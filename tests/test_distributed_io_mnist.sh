@@ -29,7 +29,7 @@ echo "Clearing /l/ssd for batch execution"
 srun -N${SLURM_NNODES} --clear-ssd hostname
 
 MAX_MB=300
-STD_OPTS="--model=../model_zoo/prototext/model_mnist_multi.prototext --reader=../model_zoo/prototext/data_reader_mnist.prototext --optimizer=../model_zoo/prototext/opt_adagrad.prototext"
+STD_OPTS="--model=../model_zoo/tests/model_mnist_distributed_io.prototext --reader=../model_zoo/data_readers/data_reader_mnist.prototext --optimizer=../model_zoo/optimizers/opt_adagrad.prototext"
 echo "################################################################################"
 for b in 300 150 100 75 60 50; do
   for k in 1 2 3 4 5 6; do
