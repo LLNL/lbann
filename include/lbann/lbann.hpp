@@ -101,6 +101,7 @@
 #include "lbann/callbacks/callback_timer.hpp"
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include "lbann/callbacks/callback_debug.hpp"
+#include "lbann/callbacks/callback_debug_io.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
