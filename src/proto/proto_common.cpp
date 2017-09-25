@@ -1248,6 +1248,27 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: debug_io
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_debug_io()) {
+      const lbann_data::CallbackDebugIO& c = callback.debug_io();
+      if (master) {
+        cout << "adding debugging I/O callback for phase: " << c.phase() << endl;
+      }
+      lbann_callback_debug_io *debug_cb = nullptr;
+      if(c.phase() == "train") {
+        debug_cb = new lbann_callback_debug_io(execution_mode::training);
+      } else if (c.phase() == "validation") {
+        debug_cb = new lbann_callback_debug_io(execution_mode::validation);
+      } else if (c.phase() == "test") {
+        debug_cb = new lbann_callback_debug_io(execution_mode::testing);
+      } else {
+        debug_cb = new lbann_callback_debug_io();
+      }
+      model->add_callback(debug_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: check_small
     //////////////////////////////////////////////////////////////////
     if (callback.has_check_small()) {

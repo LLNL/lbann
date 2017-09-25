@@ -188,6 +188,7 @@ message Callback {
    CallbackStepMinibatch step_minibatch = 22;
    CallbackGradientCheck gradient_check = 23;
    CallbackLTFB ltfb = 24;
+   CallbackDebugIO debug_io = 25;
 }
 
 message CallbackLTFB {
@@ -261,6 +262,10 @@ message CallbackImComm {
 }
 
 message CallbackDebug {
+  string phase = 1;
+}
+
+message CallbackDebugIO {
   string phase = 1;
 }
 
