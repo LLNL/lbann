@@ -942,7 +942,9 @@ void lbann_comm::setup_threads() {
 }
 
 void lbann_comm::reset_threads() {
-  omp_set_num_threads(threads_per_proc);
+  if (threads_per_proc != omp_get_num_threads()) {
+    omp_set_num_threads(threads_per_proc);
+  }
 }
 
 uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
