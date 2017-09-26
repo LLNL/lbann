@@ -640,9 +640,21 @@ class base_convolution_layer : public learning {
     Mat& output_local = output->Matrix();
 
     // Initialize matrices
-    Mat im2col_matrix(m_kernel_size / output_dims[0],
-                      output_size / output_dims[0]);
+    const int m = output_size / output_dims[0];
+    const int n = output_dims[0];
+    const int k = m_kernel_size / output_dims[0];
+    Mat im2col_matrix(k, m);
     Mat input_col, output_col;
+
+    // Change number of OpenMP threads if matrices are small
+    int threads = m_comm->get_default_threads_per_proc();
+    if(m < 4 * threads || n < 4 * threads) {
+      threads = std::min(m/4, n/4);
+    }
+    if(threads < 2) {
+      threads = m_comm->get_default_threads_per_proc();
+    }
+    omp_set_num_threads(threads);
 
     // Iterate through input columns
     El::Int width_local = input_local.Width();
@@ -660,15 +672,15 @@ class base_convolution_layer : public learning {
              m_conv_strides.data());
 
       // Apply convolution to current input column
-      output_col.Attach(output_size / output_dims[0],
-                        output_dims[0],
-                        output_local.Buffer(0, col),
-                        output_size / output_dims[0]);
+      output_col.Attach(m, n, output_local.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
                DataType(1), im2col_matrix, kernel_weights_local,
                DataType(0), output_col);
 
     }
+
+    // Reset number of OpenMP threads
+    m_comm->reset_threads();
 
   }
 
@@ -700,19 +712,28 @@ class base_convolution_layer : public learning {
     Mat& output_local = output->Matrix();
 
     // Initialize matrices
-    Mat im2col_matrix(m_kernel_size / input_dims[0],
-                      input_size / input_dims[0]);
+    const int m = m_kernel_size / input_dims[0];
+    const int n = input_size / input_dims[0];
+    const int k = input_dims[0];
+    Mat im2col_matrix(m, n);
     Mat input_col, output_col;
+
+    // Change number of OpenMP threads if matrices are small
+    int threads = m_comm->get_default_threads_per_proc();
+    if(m < 4 * threads || n < 4 * threads) {
+      threads = std::min(m/4, n/4);
+    }
+    if(threads < 2) {
+      threads = m_comm->get_default_threads_per_proc();
+    }
+    omp_set_num_threads(threads);
 
     // Iterate through input columns
     El::Int width_local = input_local.Width();
     for(El::Int col = 0; col < width_local; ++col) {
 
       // Apply transposed convolution to current input column
-      input_col.LockedAttach(input_size / input_dims[0],
-                             input_dims[0],
-                             input_local.LockedBuffer(0, col),
-                             input_size / input_dims[0]);
+      input_col.LockedAttach(n, k, input_local.LockedBuffer(0, col), n);
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                DataType(1), kernel_weights_local, input_col,
                DataType(0), im2col_matrix);
@@ -730,6 +751,9 @@ class base_convolution_layer : public learning {
              m_conv_strides.data());
 
     }
+
+    // Reset number of OpenMP threads
+    m_comm->reset_threads();
 
   }
 

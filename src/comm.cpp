@@ -31,6 +31,7 @@
 #include "lbann/utils/exception.hpp"
 #include "mpi.h"
 #include <sstream>
+#include <thread>
 
 namespace lbann {
 
@@ -56,13 +57,17 @@ lbann_comm::lbann_comm(int ppm) :
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 
-  // Set up the initial model split.
+  // Set up the initial model split
   split_models(procs_per_model);
 
   // Initialize node communicators
   setup_node_comm();
   procs_per_node = El::mpi::Size(node_comm);
   rank_in_node = El::mpi::Rank(node_comm);
+
+  // Setup threads
+  setup_threads();
+  
 }
 
 lbann_comm::~lbann_comm() {
@@ -923,6 +928,21 @@ void lbann_comm::setup_node_comm() {
     world_ranks_on_node.push_back(
       El::mpi::Translate(node_comm, i, El::mpi::COMM_WORLD));
   }
+}
+
+void lbann_comm::setup_threads() {
+  const char* env_num_threads = getenv("OMP_NUM_THREADS");
+  if (env_num_threads != nullptr){
+    threads_per_proc = std::atoi(env_num_threads);
+  }
+  else {
+    threads_per_proc = std::thread::hardware_concurrency() / procs_per_node;
+  }
+  reset_threads();
+}
+
+void lbann_comm::reset_threads() {
+  omp_set_num_threads(threads_per_proc);
 }
 
 uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
