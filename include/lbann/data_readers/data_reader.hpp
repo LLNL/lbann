@@ -63,11 +63,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param shuffle Whether to shuffle data (default true).
    */
   generic_data_reader(int batch_size, bool shuffle = true) :
-    m_mini_batch_size(batch_size), m_current_pos(0),
-    m_mini_batch_stride(batch_size), m_base_offset(0), m_model_offset(0),
+    m_mini_batch_size(0), m_current_pos(0),
+    m_mini_batch_stride(0), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
-    m_last_mini_batch_size(batch_size),
-    m_last_mini_batch_stride(batch_size),
+    m_last_mini_batch_size(0),
+    m_last_mini_batch_stride(0),
     m_reset_mini_batch_index(0),
     m_current_mini_batch_idx(0),
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
@@ -399,6 +399,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Return the starting mini-batch index for the epoch
   int get_reset_mini_batch_index() const {
     return m_reset_mini_batch_index;
+  }
+  /// Return the current mini-batch index for the epoch
+  int get_current_mini_batch_index() const {
+    return m_current_mini_batch_idx;
   }
   /// Set the current position based on the base and model offsets
   void set_initial_position() {

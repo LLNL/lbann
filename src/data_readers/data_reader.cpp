@@ -228,8 +228,9 @@ int generic_data_reader::get_current_global_mini_batch_size() const {
 }
 
 int generic_data_reader::get_next_position() const {
-  /// Is the mini-batch that is about to finish the last mini-batch
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-1)) {
+  /// Is the mini-batch that is about to finish the second to last mini-batch
+  /// If so, get the last mini-batch stride
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-2)) {
     return m_current_pos + m_last_mini_batch_stride;
   } else {
     return m_current_pos + m_mini_batch_stride;

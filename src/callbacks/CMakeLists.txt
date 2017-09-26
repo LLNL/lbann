@@ -7,6 +7,7 @@ add_sources(
   callback_early_stopping.cpp
   callback_io.cpp
   callback_debug.cpp
+  callback_debug_io.cpp
   callback_dump_weights.cpp
   callback_dump_activations.cpp
   callback_dump_gradients.cpp

@@ -46,6 +46,7 @@ public:
   virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {}
   virtual bool is_data_set_processed() { return false; }
   virtual generic_data_reader *get_data_reader(execution_mode mode);
+  virtual generic_data_reader *get_data_reader();
   virtual int get_num_parallel_readers(execution_mode mode);
   virtual int get_num_parallel_readers();
   virtual int get_num_iterations_per_epoch(execution_mode mode);

@@ -1,0 +1,32 @@
+data_reader {
+  reader {
+    name: "imagenet_cv"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
+    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train_c0-9_01.txt"
+    train_or_test_percent: 1
+    validation_percent: 0.2
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: false
+      no_colorize: false
+    }
+  }
+  reader {
+    name: "imagenet_cv"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
+    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val_c0-9_01.txt"
+    train_or_test_percent: 1
+    validation_percent: 1
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: false
+      no_colorize: false
+    }
+  }
+}
