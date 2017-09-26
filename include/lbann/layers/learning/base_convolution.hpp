@@ -640,9 +640,20 @@ class base_convolution_layer : public learning {
     Mat& output_local = output->Matrix();
 
     // Initialize matrices
-    Mat im2col_matrix(m_kernel_size / output_dims[0],
-                      output_size / output_dims[0]);
+    const int m = output_size / output_dims[0];
+    const int n = output_dims[0];
+    const int k = m_kernel_size / output_dims[0];
+    Mat im2col_matrix(k, m);
     Mat input_col, output_col;
+
+    // Change number of OpenMP threads if matrices are small
+    int num_threads = m_comm->get_default_threads_per_proc();
+    if(m < 4 * num_threads || n < 4 * num_threads) {
+        num_threads = std::min(m/4, n/4);
+    }
+    if(num_threads > 1 && num_threads != omp_get_num_threads()) {
+      omp_set_num_threads(num_threads);
+    }
 
     // Iterate through input columns
     El::Int width_local = input_local.Width();
@@ -660,15 +671,15 @@ class base_convolution_layer : public learning {
              m_conv_strides.data());
 
       // Apply convolution to current input column
-      output_col.Attach(output_size / output_dims[0],
-                        output_dims[0],
-                        output_local.Buffer(0, col),
-                        output_size / output_dims[0]);
+      output_col.Attach(m, n, output_local.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
                DataType(1), im2col_matrix, kernel_weights_local,
                DataType(0), output_col);
 
     }
+
+    // Reset number of OpenMP threads
+    m_comm->reset_threads();
 
   }
 
@@ -700,19 +711,27 @@ class base_convolution_layer : public learning {
     Mat& output_local = output->Matrix();
 
     // Initialize matrices
-    Mat im2col_matrix(m_kernel_size / input_dims[0],
-                      input_size / input_dims[0]);
+    const int m = m_kernel_size / input_dims[0];
+    const int n = input_size / input_dims[0];
+    const int k = input_dims[0];
+    Mat im2col_matrix(m, n);
     Mat input_col, output_col;
+
+    // Change number of OpenMP threads if matrices are small
+    int num_threads = m_comm->get_default_threads_per_proc();
+    if(m < 4 * num_threads || n < 4 * num_threads) {
+        num_threads = std::min(m/4, n/4);
+    }
+    if(num_threads > 1 && num_threads != omp_get_num_threads()) {
+      omp_set_num_threads(num_threads);
+    }
 
     // Iterate through input columns
     El::Int width_local = input_local.Width();
     for(El::Int col = 0; col < width_local; ++col) {
 
       // Apply transposed convolution to current input column
-      input_col.LockedAttach(input_size / input_dims[0],
-                             input_dims[0],
-                             input_local.LockedBuffer(0, col),
-                             input_size / input_dims[0]);
+      input_col.LockedAttach(n, k, input_local.LockedBuffer(0, col), n);
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                DataType(1), kernel_weights_local, input_col,
                DataType(0), im2col_matrix);
@@ -730,6 +749,9 @@ class base_convolution_layer : public learning {
              m_conv_strides.data());
 
     }
+
+    // Reset number of OpenMP threads
+    m_comm->reset_threads();
 
   }
 
@@ -803,23 +825,30 @@ class base_convolution_layer : public learning {
     }
 
     // Initialize im2col matrix
-    Mat im2col_matrix;
-    if(using_transposed_convolution) {
-      im2col_matrix.Resize(m_kernel_size / num_input_channels,
-                           this->m_num_prev_neurons / num_input_channels);
+    const int m = (using_transposed_convolution ?
+                   m_kernel_size / num_input_channels :
+                   m_kernel_size / num_output_channels);
+    const int n = (using_transposed_convolution ?
+                   num_input_channels :
+                   num_output_channels);
+    const int k = (using_transposed_convolution ?
+                   this->m_num_prev_neurons / num_input_channels :
+                   this->m_num_neurons / num_output_channels);
+    Mat im2col_matrix(m, k);
+
+    // Change number of OpenMP threads if matrices are small
+    int num_threads = m_comm->get_default_threads_per_proc();
+    if(m < 4 * num_threads || n < 4 * num_threads) {
+        num_threads = std::min(m/4, n/4);
     }
-    else {
-      im2col_matrix.Resize(m_kernel_size / num_output_channels,
-                           this->m_num_neurons / num_output_channels);
+    if(num_threads > 1 && num_threads != omp_get_num_threads()) {
+      omp_set_num_threads(num_threads);
     }
 
     // Compute kernel gradient contributions from each data sample
     for(El::Int col = 0; col < width_local; ++col) {
       if(using_transposed_convolution) {
-        const Mat prev_activations_col(this->m_num_prev_neurons / num_input_channels,
-                                       num_input_channels,
-                                       prev_activations_local.LockedBuffer(0,col),
-                                       this->m_num_prev_neurons / num_input_channels);
+        const Mat prev_activations_col(k, n, prev_activations_local.LockedBuffer(0,col), k);
         const Mat prev_error_signal_col
           = El::LockedView(prev_error_signal_local, El::ALL, El::IR(col));
         im2col(prev_error_signal_col,
@@ -837,10 +866,7 @@ class base_convolution_layer : public learning {
       else {
         const Mat prev_activations_col
           = El::LockedView(prev_activations_local, El::ALL, El::IR(col));
-        const Mat prev_error_signal_col(this->m_num_neurons / num_output_channels,
-                                        num_output_channels,
-                                        prev_error_signal_local.LockedBuffer(0,col),
-                                        this->m_num_neurons / num_output_channels);
+        const Mat prev_error_signal_col(k, n, prev_error_signal_local.LockedBuffer(0,col), k);
         im2col(prev_activations_col,
                im2col_matrix,
                num_input_channels,
@@ -854,6 +880,9 @@ class base_convolution_layer : public learning {
                  DataType(1), kernel_weights_gradient_local);
       }
     }
+
+    // Reset number of OpenMP threads
+    m_comm->reset_threads();
 
     // Scale and accumulate gradients
     *this->m_weights_gradient *= 

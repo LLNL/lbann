@@ -1522,17 +1522,53 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
-      /*
-      } else if (name == "imagenet_cv") {
+    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
+      // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+
+      // set up the normalizer
+      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+      normalizer->unit_scale(preprocessor.scale());
+      normalizer->subtract_mean(preprocessor.subtract_mean());
+      normalizer->unit_variance(preprocessor.unit_variance());
+      normalizer->z_score(preprocessor.z_score());
       pp->set_normalizer(std::move(normalizer));
-      pp->set_custom_transform2(std::move(colorizer));
-      reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-      } else if (name == "imagenet_single") {
-      reader = new imagenet_reader_single(mini_batch_size, shuffle);
-      } else if (name == "imagenet_single_cv") {
-      reader = new imagenet_reader_single_cv(mini_batch_size, shuffle);
-      */
+      //if (master) cout << "normalizer is set" << endl;
+
+      // set up a custom transform (colorizer)
+      if (!preprocessor.no_colorize()) {
+        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+        pp->set_custom_transform2(std::move(colorizer));
+        //if (master) cout << "colorizer is set" << endl;
+      }
+
+      // set up augmenter if necessary
+      if (!preprocessor.disable_augmentation() &&
+          (preprocessor.horizontal_flip() ||
+           preprocessor.vertical_flip() ||
+           preprocessor.rotation() != 0.0 ||
+           preprocessor.horizontal_shift() != 0.0 ||
+           preprocessor.vertical_shift() != 0.0 ||
+           preprocessor.shear_range() != 0.0))
+      {
+        std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
+        augmenter->set(preprocessor.horizontal_flip(),
+                       preprocessor.vertical_flip(),
+                       preprocessor.rotation(),
+                       preprocessor.horizontal_shift(),
+                       preprocessor.vertical_shift(),
+                       preprocessor.shear_range());
+        pp->set_augmenter(std::move(augmenter));
+        //if (master) cout << "augmenter is set" << endl;
+      }
+
+      if (name == "imagenet_cv") {
+        reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
+        //if (master) cout << "imagenet_reader_cv is set" << endl;
+      } else {
+        reader = new imagenet_reader_single_cv(mini_batch_size, pp, shuffle);
+        //if (master) cout << "imagenet_reader_single_cv is set" << endl;
+      }
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "csv") {
@@ -1575,19 +1611,21 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     }
     reader->set_use_percent( readme.train_or_test_percent() );
 
-    reader->horizontal_flip( preprocessor.horizontal_flip() );
-    reader->vertical_flip( preprocessor.vertical_flip() );
-    reader->rotation( preprocessor.rotation() );
-    reader->horizontal_shift( preprocessor.horizontal_shift() );
-    reader->vertical_shift( preprocessor.vertical_shift() );
-    reader->shear_range( preprocessor.shear_range() );
-    reader->subtract_mean( preprocessor.subtract_mean() );
-    reader->unit_variance( preprocessor.unit_variance() );
-    reader->scale( preprocessor.scale() );
-    reader->z_score( preprocessor.z_score() );
-    reader->add_noise( preprocessor.noise_factor() );
-    if (preprocessor.disable_augmentation()) {
-      reader->disable_augmentation();
+    if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
+      reader->horizontal_flip( preprocessor.horizontal_flip() );
+      reader->vertical_flip( preprocessor.vertical_flip() );
+      reader->rotation( preprocessor.rotation() );
+      reader->horizontal_shift( preprocessor.horizontal_shift() );
+      reader->vertical_shift( preprocessor.vertical_shift() );
+      reader->shear_range( preprocessor.shear_range() );
+      reader->subtract_mean( preprocessor.subtract_mean() );
+      reader->unit_variance( preprocessor.unit_variance() );
+      reader->scale( preprocessor.scale() );
+      reader->z_score( preprocessor.z_score() );
+      reader->add_noise( preprocessor.noise_factor() );
+      if (preprocessor.disable_augmentation()) {
+        reader->disable_augmentation();
+      }
     }
     if (readme.role() == "train") {
       reader->set_role("train");
@@ -1617,6 +1655,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(mini_batch_size, shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+      } else if (name == "imagenet_cv") {
+        reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
+      } else if (name == "imagenet_single_cv") {
+        reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(mini_batch_size, shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
