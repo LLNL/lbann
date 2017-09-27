@@ -25,13 +25,13 @@ model {
   }
   callback {
     timer {
-      dir: "."
     }
   }
   callback {
     summary {
       dir: "."
-      interval: 1
+      batch_interval: 1
+      mat_interval: 25
     }
   }
   # callback {

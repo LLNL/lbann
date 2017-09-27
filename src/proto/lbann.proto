@@ -55,6 +55,7 @@ message ImagePreprocessor {
   double shear_range = 21;
   bool disable_augmentation = 22;
   float noise_factor = 23;
+  bool no_colorize = 24; // not to use colorizer in cv_process
 }
 
 //========================================================================
