@@ -28,106 +28,136 @@
 
 #include "lbann/callbacks/callback_debug_io.hpp"
 
-void lbann::lbann_callback_debug_io::on_batch_begin(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
+void lbann::lbann_callback_debug_io::on_epoch_begin(model *m) {
+  if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::training) {
+    print_phase_start(m, execution_mode::training);
   }
 }
 
 void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  if (!dynamic_cast<input_layer*>(l) || l->get_index() != 0) {
+  if (!dynamic_cast<input_layer*>(l) || l->get_index() != 0 || m_debug_lvl < 1) {
     return;
   }
 
   input_layer *input = dynamic_cast<input_layer*>(l);
 
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->get_index() << " name: " << l->get_name() 
-              << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
-              << " of " << input->get_num_iterations_per_epoch()
-              << " bs=" << input->get_current_mini_batch_size() << "/"
-              << input->get_current_global_mini_batch_size() 
-              << " @" << input->get_data_reader()->get_position()
-      //              << " %" << input->get_data_reader()->get_batch_stride()
-              << " ^" << input->get_data_reader()->get_sample_stride()
-              << std::endl;
+  if(input->current_root_rank() == 0) {
+    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {
+      if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+        print_fp_start(m, input);
+      }
+    }
   }
-
   /// BVE Note - what is hte role of hte current mini-batch index
   /// versus the current position
   /// I think that the reset mini batch index may be off
 }
 
-#if 0
+void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input) {
+  int64_t step;
+  switch(m->get_execution_mode()) {
+  case execution_mode::training:
+    step = m->get_cur_step();
+    break;
+  case execution_mode::validation:
+    step = m->get_cur_validation_step();
+    break;
+  case execution_mode::testing:
+    step = m->get_cur_testing_step();
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate forward prop function");
+  }
+  std::cout << "[" << m->get_comm()->get_model_rank() 
+            << "." << m->get_comm()->get_rank_in_model() 
+            << "] @" << m->get_cur_epoch() << "." << step 
+            << " Phase: " << _to_string(m->get_execution_mode()) 
+            << " starting forward propagation for layer " << input->get_index() 
+            << " name: " << input->get_name() 
+            << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
+            << " of " << input->get_num_iterations_per_epoch()
+            << " loading idx " << input->get_data_reader()->get_loaded_mini_batch_index()
+            << " bs=" << input->get_current_mini_batch_size() << "/"
+            << input->get_current_global_mini_batch_size() 
+            << " @" << input->get_data_reader()->get_position()
+    //              << " %" << input->get_data_reader()->get_batch_stride()
+            << " ^" << input->get_data_reader()->get_sample_stride()
+            << " root=" << input->current_root_rank()
+            << std::endl;
+}
+
+//  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
+void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
+  std::vector<Layer *>layers = m->get_layers();
+  input_layer *input = dynamic_cast<input_layer*>(layers[0]);
+  generic_data_reader *data_reader=input->get_data_reader(mode);
+
+  int64_t step;
+  switch(mode) {
+  case execution_mode::training:
+    step = m->get_cur_step();
+    break;
+  case execution_mode::validation:
+    step = m->get_cur_validation_step();
+    break;
+  case execution_mode::testing:
+    step = m->get_cur_testing_step();
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate forward prop function");
+  }
+
+  std::cout << "[" << m->get_comm()->get_model_rank() 
+            << "." << m->get_comm()->get_rank_in_model() 
+            << "] @" << 0 << "." << step 
+            << " Starting Phase: " << _to_string(mode) 
+            << " " << (data_reader->get_num_iterations_per_epoch() - 1)
+            << "i @ " << data_reader->get_global_mini_batch_size()
+            << "s (=" << m->get_comm()->get_num_models()
+            << "m *" << data_reader->get_mini_batch_size()
+            << "s [+" << data_reader->get_mini_batch_stride()
+            << "s]) + 1i @ " << data_reader->get_global_last_mini_batch_size()
+            << "s (=" << m->get_comm()->get_num_models()
+            << "m *" << data_reader->get_last_mini_batch_size()
+            << "s [+" << data_reader->get_last_mini_batch_stride()
+            << "s]):" 
+            <<" base ofset "<< data_reader->get_base_offset() 
+            << " model offset " << data_reader->get_model_offset() 
+            << " par. readers = " << data_reader->get_num_parallel_readers()
+            << "r"
+            << std::endl;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Evaluation phase debugging
 ////////////////////////////////////////////////////////////////////////////////
-void lbann::lbann_callback_debug_io::on_batch_evaluate_begin(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
-  }
-}
-
-void lbann::lbann_callback_debug_io::on_batch_evaluate_end(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " ending batch" << std::endl;
+void lbann::lbann_callback_debug_io::on_validation_begin(model *m) {
+  if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::validation) {
+    print_phase_start(m, execution_mode::validation);
   }
 }
 
 void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
+  if (!dynamic_cast<input_layer*>(l) || l->get_index() != 0 || m_debug_lvl < 1) {
+    return;
+  }
+
+  input_layer *input = dynamic_cast<input_layer*>(l);
+
+  if(input->current_root_rank() == 0) {
+    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {      
+      if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+        print_fp_start(m, input);
+      }
     }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->get_index() << " name: " << l->get_name() << std::endl;
   }
 }
 
-void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->get_index() << " name: " << l->get_name() << std::endl;
+////////////////////////////////////////////////////////////////////////////////
+// Testing phase debugging
+////////////////////////////////////////////////////////////////////////////////
+void lbann::lbann_callback_debug_io::on_test_begin(model *m) {
+  if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::testing) {
+    print_phase_start(m, execution_mode::testing);
   }
 }
-#endif

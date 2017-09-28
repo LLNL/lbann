@@ -51,32 +51,36 @@ class lbann_callback_debug_io : public lbann_callback {
    * Debug a particular phase; use invalid to debug every phase.
    */
   lbann_callback_debug_io(execution_mode phase = execution_mode::invalid,
-                       lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_debug_phase(phase) {}
+                          int debug_lvl = 0,
+                          lbann_summary *summarizer = nullptr) :
+    lbann_callback(1, summarizer), m_debug_phase(phase), m_debug_lvl(debug_lvl) {}
   lbann_callback_debug_io(const lbann_callback_debug_io&) = default;
   lbann_callback_debug_io& operator=(
     const lbann_callback_debug_io&) = default;
   lbann_callback_debug_io* copy() const { return new lbann_callback_debug_io(*this); }
-  /** Print that a batch is being started. */
-  void on_batch_begin(model *m);
+  /** Print that a training epoch is being started. */
+  void on_epoch_begin(model *m);
   /** Print that forward prop for a layer is beginning. */
   void on_forward_prop_begin(model *m, Layer *l);
 
-#if 0
-  /** Print that an evaluation batch is being started. */
-  void on_batch_evaluate_begin(model *m);
-  /** Print that an evaluation batch has completed. */
-  void on_batch_evaluate_end(model *m);
+  /** Print I/O details at the beginning of validation. */
+  void on_validation_begin(model *m);
   /** Print that an evaluation forward prop is beginning. */
   void on_evaluate_forward_prop_begin(model *m, Layer *l);
-  /** Print that an evaluation forward prop has completed. */
-  void on_evaluate_forward_prop_end(model *m, Layer *l);
-#endif
+
+  /** Print I/O details at the beginning of testing. */
+  void on_test_begin(model *m);
+
+  /** Common format for printing I/O stats at the start of a mini-batch */
+  void print_fp_start(model *m, input_layer *input);
+  /** Common format for printing I/O stats at the start of a phase */
+  void print_phase_start(model *m, execution_mode mode);
 
   std::string name() const { return "debug"; }
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;
+  int m_debug_lvl; /** Debugging level: 0 - epoch begin, 1 - fwd prop */
 };
 
 }  // namespace lbann

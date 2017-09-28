@@ -1235,11 +1235,11 @@ void init_callbacks(
         cout << "adding debugging callback for phase: " << c.phase() << endl;
       }
       lbann_callback_debug *debug_cb = nullptr;
-      if(c.phase() == "train") {
+      if(c.phase() == "train" || c.phase() == "training") {
         debug_cb = new lbann_callback_debug(execution_mode::training, summarizer);
       } else if (c.phase() == "validation") {
         debug_cb = new lbann_callback_debug(execution_mode::validation, summarizer);
-      } else if (c.phase() == "test") {
+      } else if (c.phase() == "test" || c.phase() == "testing") {
         debug_cb = new lbann_callback_debug(execution_mode::testing, summarizer);
       } else {
         debug_cb = new lbann_callback_debug();
@@ -1256,12 +1256,12 @@ void init_callbacks(
         cout << "adding debugging I/O callback for phase: " << c.phase() << endl;
       }
       lbann_callback_debug_io *debug_cb = nullptr;
-      if(c.phase() == "train") {
-        debug_cb = new lbann_callback_debug_io(execution_mode::training);
+      if(c.phase() == "train" || c.phase() == "training") {
+        debug_cb = new lbann_callback_debug_io(execution_mode::training, c.lvl());
       } else if (c.phase() == "validation") {
-        debug_cb = new lbann_callback_debug_io(execution_mode::validation);
-      } else if (c.phase() == "test") {
-        debug_cb = new lbann_callback_debug_io(execution_mode::testing);
+        debug_cb = new lbann_callback_debug_io(execution_mode::validation, c.lvl());
+      } else if (c.phase() == "test" || c.phase() == "testing") {
+        debug_cb = new lbann_callback_debug_io(execution_mode::testing, c.lvl());
       } else {
         debug_cb = new lbann_callback_debug_io();
       }
