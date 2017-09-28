@@ -72,8 +72,8 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
     preprocess_data_source(omp_get_thread_num());
   }
 
-  int current_batch_size = get_current_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+  int loaded_batch_size = get_loaded_mini_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
@@ -118,8 +118,8 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = get_current_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+  int loaded_batch_size = get_loaded_mini_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
@@ -155,8 +155,8 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
       " :: generic data reader load error: !position_valid");
   }
 
-  int current_batch_size = get_current_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+current_batch_size),
+  int loaded_batch_size = get_loaded_mini_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
@@ -185,29 +185,53 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
   return mb_size;
 }
 
-bool generic_data_reader::update() {
-  m_current_pos = get_next_position();
+bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
+  bool reader_not_done = true;
+  if(is_active_reader) {
+    reader_not_done = !((m_loaded_mini_batch_idx + m_iteration_stride) >= m_num_iterations_per_epoch);
+  }else {
+    reader_not_done = !(m_loaded_mini_batch_idx >= m_num_iterations_per_epoch);
+  }
+  return reader_not_done;
+}
 
-  /// Maintain the current width of the matrix
-  El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
+bool generic_data_reader::update(bool is_active_reader) {
+  bool reader_not_done = true; // BVE The sense of this should be fixed
+  m_current_mini_batch_idx++;
 
-  m_current_mini_batch_idx += m_iteration_stride;
-  if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
+  if(is_active_reader) {
+    m_current_pos = get_next_position();
+
+    /// Maintain the current width of the matrix
+    El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
+
+    m_loaded_mini_batch_idx += m_iteration_stride;
+  }
+  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
+    reader_not_done = false;
+  }
+  if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     if (m_current_pos < (int)m_shuffled_indices.size()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"
         + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
-                        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
     }
     if (not m_first_n) {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
     set_initial_position();
-    return false;
-  }else {
-    return true;
+  }
+  return reader_not_done;
+}
+
+int generic_data_reader::get_loaded_mini_batch_size() const {
+  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch-1)) {
+    return m_last_mini_batch_size;
+  } else {
+    return m_mini_batch_size;
   }
 }
 
@@ -228,9 +252,9 @@ int generic_data_reader::get_current_global_mini_batch_size() const {
 }
 
 int generic_data_reader::get_next_position() const {
-  /// Is the mini-batch that is about to finish the second to last mini-batch
+  /// Is the mini-batch being loaded corresponds to the second to last mini-batch
   /// If so, get the last mini-batch stride
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch-2)) {
+  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch-2)) {
     return m_current_pos + m_last_mini_batch_stride;
   } else {
     return m_current_pos + m_mini_batch_stride;

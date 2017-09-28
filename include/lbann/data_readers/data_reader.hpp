@@ -69,6 +69,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_last_mini_batch_size(0),
     m_last_mini_batch_stride(0),
     m_reset_mini_batch_index(0),
+    m_loaded_mini_batch_idx(0),
     m_current_mini_batch_idx(0),
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
@@ -254,13 +255,13 @@ class generic_data_reader : public lbann_image_preprocessor {
                           bool do_scale = true) {
     NOT_IMPLEMENTED("save_image");
   }
-
+  bool is_data_reader_done(bool is_active_reader);
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
    * around, then reshuffle the data indicies.
    */
-  virtual bool update();
+  virtual bool update(bool is_active_reader);
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
@@ -294,7 +295,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool at_new_epoch() const {
     /// Note that data readers can start at a non-zero index if there
     /// are parallel data readers in a model
-    return (m_current_mini_batch_idx == m_reset_mini_batch_index);
+    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index) 
+            && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
   void set_mini_batch_size(const int s) {
@@ -304,6 +306,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   int get_mini_batch_size() const {
     return m_mini_batch_size;
   }
+  /// Get the loaded mini-batch size
+  int get_loaded_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_mini_batch_size() const;
   /// Get the current global mini-batch size.
@@ -325,7 +329,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_mini_batch_stride = s;
   }
   /// Return the mini batch stride.
-  int get_batch_stride() const {
+  int get_mini_batch_stride() const {
     return m_mini_batch_stride;
   }
   /// Set the sample stride
@@ -401,13 +405,18 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_reset_mini_batch_index;
   }
   /// Return the current mini-batch index for the epoch
+  int get_loaded_mini_batch_index() const {
+    return m_loaded_mini_batch_idx;
+  }
+  /// Return the current mini-batch index for the epoch
   int get_current_mini_batch_index() const {
     return m_current_mini_batch_idx;
   }
   /// Set the current position based on the base and model offsets
   void set_initial_position() {
     m_current_pos = m_base_offset + m_model_offset;
-    m_current_mini_batch_idx = m_reset_mini_batch_index;
+    m_loaded_mini_batch_idx = m_reset_mini_batch_index;
+    m_current_mini_batch_idx = 0;
   }
   /// Get the current position in the data reader.
   int get_position() const {
@@ -550,6 +559,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// The index at which this data reader starts its epoch
   int m_reset_mini_batch_index;
   /// The index of the current mini-batch that has been loaded
+  int m_loaded_mini_batch_idx;
+  /// The index of the current mini-batch that is being processed (train/test/validate)
   int m_current_mini_batch_idx;
   int m_num_iterations_per_epoch; /// How many iterations all readers will execute
 

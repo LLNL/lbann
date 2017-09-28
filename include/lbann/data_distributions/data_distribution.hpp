@@ -74,16 +74,24 @@ public:
     return 0;
   }
   virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
-  virtual bool update_data_reader() {
+  virtual bool update_data_reader(bool is_active_reader) {
     return false;
   }
   virtual execution_mode get_execution_mode() const {
     return execution_mode::invalid;
   }
+  /// Return the rank of the current root node for the Elemental Distribution
+  virtual int current_root_rank() {
+    return m_root;
+  }
 
   /// Is this rank the current root node for the Elemental Distribution
   virtual bool is_current_root() {
     return (m_comm->get_rank_in_model() == m_root);
+  }
+  /// Is the local reader done
+  virtual bool is_local_reader_done() {
+    return m_local_reader_done;
   }
 
  protected:
