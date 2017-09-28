@@ -1,0 +1,157 @@
+model {
+  name: "dnn"
+  objective_function: "mean_squared_error"
+  data_layout: "data_parallel"
+  mini_batch_size: 128
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 1
+  procs_per_model: 0
+  use_cudnn: false
+  num_gpus: -1
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    save_images {
+      image_dir: "images_"
+      extension: "pgm"
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    index: 1
+    parent: 1
+    data_layout: "data_parallel"
+    input_distributed_minibatch {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    index: 2
+    parent: 1
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 16
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    index: 3
+    parent: 2
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # POOLING 1
+  #########
+  layer {
+    index: 4
+    parent: 3
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "1 1"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+#DECODER
+
+  #########
+  # UNPOOLING 1
+  #########
+  layer {
+    index: 5 
+    parent: 4
+    data_layout: "data_parallel"
+    unpooling {
+      num_dims: 2
+      pooling_layer: 4
+    }
+  }
+
+  #############
+  # DECONVOLUTION 1
+  #############
+  layer {
+    index: 6
+    parent: 4
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 2
+      num_output_channels: 3
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+      l2_regularization_factor: 0.0005
+    }
+  }
+
+  #######
+  # SIGMOID sigmoid
+  #######
+  layer {
+    index: 7
+    parent: 6
+    data_layout: "data_parallel"
+    sigmoid {
+    }
+  }
+
+  
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    index: 10 
+    parent: 9
+    data_layout: "data_parallel"
+    reconstruction {
+      original_layer: 1
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

@@ -217,6 +217,7 @@ class deconvolution_layer : public base_convolution_layer {
              El::ALL, El::IR(0,this->m_prev_neuron_dims[0]));
     El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
              El::ALL, El::IR(0,this->m_prev_neuron_dims[0]));
+
     if(m_bias_scaling_factor != DataType(0)) {
       ElMat *bias_weights_v = dynamic_cast<ElMat*>(m_bias_weights_v);
       ElMat *bias_weights_gradient_v = dynamic_cast<ElMat*>(m_bias_weights_gradient_v);

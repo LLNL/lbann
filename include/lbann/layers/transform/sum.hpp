@@ -41,9 +41,6 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class sum_layer : public transform {
  private:
 
-  /// List of parent layers
-  std::vector<const Layer*> m_parents;
-
  public:
   /// Constructor
   sum_layer(int index,

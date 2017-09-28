@@ -220,6 +220,7 @@ class convolution_layer : public base_convolution_layer {
              El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
     El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
              El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
+
     if(m_bias_scaling_factor != DataType(0)) {
       El::View(*m_bias_weights_v, *this->m_weights,
                El::IR(kernel_size_per_channel), El::ALL);
