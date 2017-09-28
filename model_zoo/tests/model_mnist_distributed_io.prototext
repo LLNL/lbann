@@ -36,7 +36,13 @@ model {
   }
   # callback {
   #   debug {
-  #     phase: "train"
+  #     phase: "test"
+  #   }
+  # }
+  # callback {
+  #   debug_io {
+  #     phase: "test"
+  #     lvl: 1
   #   }
   # }
   callback {
