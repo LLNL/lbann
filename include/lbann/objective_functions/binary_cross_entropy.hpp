@@ -33,7 +33,7 @@ namespace lbann {
 
 namespace objective_functions {
 
-/** Mean squared error objective function. */
+/** Binary cross entropy objective function. */
 class binary_cross_entropy : public objective_function {
 
  public:
@@ -48,23 +48,23 @@ class binary_cross_entropy : public objective_function {
   /** Copy function. */
   binary_cross_entropy* copy() const { return new binary_cross_entropy(*this); }
 
-  /** Compute the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  mean squared error is
+  /** Compute the binary cross entropy objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$yf$, the
+   *  binary cross entropy is
    *    \f[
-   *    MSE(y,\hat{y}) = \frac{1}{n} \lVert y - \hat{y} \rVert^2_2
+   *    CE(\hat{y}, y) = -[y \log(\hat{y}) + (1-y) \log(1-\hat{y})]
    *    \f]
    *  This function updates the objective function value with the mean
-   *  value of the mean squared error across the mini-batch.
+   *  value of the binary cross entropy across the mini-batch.
    */
   void compute_value(const AbsDistMat& predictions,
                      const AbsDistMat& ground_truth);
 
-  /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  gradient of the mean squared error is
+  /** Compute the gradient of the binary cross entropy objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
+   *  gradient of the binary cross entropy is
    *    \f[
-   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
+   *    \nabla_{\hat{y}} CE(\hat{y}, y) = -y/\hat{y}  + (1-y)/(1-\hat{y}) 
    *    \f]
    */
   void compute_gradient(const AbsDistMat& predictions,

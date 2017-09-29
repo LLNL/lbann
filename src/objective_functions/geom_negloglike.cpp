@@ -36,20 +36,17 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
   // Get local matrices and matrix parameters
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  //const El::Int height = predictions.Height();
   const El::Int width = predictions.Width();
   const El::Int local_height = predictions_local.Height();
   const El::Int local_width = predictions_local.Width();
 
-  // Compute sum of squared errors with Kahan summation
+  // Compute sum of Geometric negative log-likelihood with Kahan summation
   double sum = 0;
   double correction = 0;
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const double true_val = ground_truth_local(row, col);
       const double pred_val = predictions_local(row, col);
-      //const double error = pred_val - true_val;
-      //double term = error * error;
       double term = -(true_val*std::log(1-pred_val) + std::log(pred_val))
       term += correction;
       const double next_sum = sum + term;
@@ -58,10 +55,8 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
     }
   }
   
-  // Compute mean squared error
-  //double mse = sum / (height * width);
+  // Compute Geometric negative log-likelihood error
   double geom_nll = sum / height;
-  //mse = El::mpi::AllReduce(mse, predictions.DistComm());
   geom_nll = El::mpi::AllReduce(geom_nll, predictions.DistComm());
 
   // Update objective function value
@@ -69,7 +64,7 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
 
 }
 
-/// Compute derivative of mean squared error objective function
+/// Compute derivative of Geometric negative log-likelihood objective function
 void geom_negloglike::compute_gradient(const AbsDistMat& predictions,
                                           const AbsDistMat& ground_truth,
                                           AbsDistMat& gradient) {
@@ -78,17 +73,14 @@ void geom_negloglike::compute_gradient(const AbsDistMat& predictions,
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
   Mat& gradient_local = gradient.Matrix();
-  //const int height = predictions.Height();
 
   // Compute gradient
   El::IndexDependentFill(gradient_local,
                          (std::function<DataType(El::Int,El::Int)>)
-                         //([&predictions_local, &ground_truth_local, height]
                          ([&predictions_local, &ground_truth_local]
                           (El::Int r, El::Int c) -> DataType {
                            const DataType pred_val = predictions_local(r,c);
                            const DataType true_val = ground_truth_local(r,c);
-                           //return 2 * (pred_val - true_val) / height;
                            return true_val/(1 - pred_val) - 1/pred_val;
                          }));
 

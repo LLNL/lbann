@@ -33,7 +33,7 @@ namespace lbann {
 
 namespace objective_functions {
 
-/** Mean squared error objective function. */
+/** Poisson negative log-likelihood objective function. */
 class poisson_negloglike : public objective_function {
 
  public:
@@ -48,23 +48,23 @@ class poisson_negloglike : public objective_function {
   /** Copy function. */
   poisson_negloglike* copy() const { return new poisson_negloglike(*this); }
 
-  /** Compute the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  mean squared error is
+  /** Compute the Poisson negative log-likelihood objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
+   *  Poisson negative log-likelihood is
    *    \f[
-   *    MSE(y,\hat{y}) = \frac{1}{n} \lVert y - \hat{y} \rVert^2_2
+   *    Pois_nll(\hat{y}, y) = \hat{y} - y\log(\hat{y}) + \log(\Gamma(y + 1))
    *    \f]
    *  This function updates the objective function value with the mean
-   *  value of the mean squared error across the mini-batch.
+   *  value of the Poisson negative log-likelihood across the mini-batch.
    */
   void compute_value(const AbsDistMat& predictions,
                      const AbsDistMat& ground_truth);
 
-  /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  gradient of the mean squared error is
+  /** Compute the gradient of the Poisson negative log-likelihood objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
+   *  gradient of the Poisson negative log-likelihood is
    *    \f[
-   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
+   *    \nabla_y Pois_nll(\hat{y},y) = 1 - y/\hat{y}
    *    \f]
    */
   void compute_gradient(const AbsDistMat& predictions,
