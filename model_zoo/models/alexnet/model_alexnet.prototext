@@ -66,11 +66,12 @@ model {
   #     phase: "train"
   #   }
   # }
-  callback {
-    debug_io {
-      phase: "train"
-    }
-  }
+  # callback {
+  #   debug_io {
+  #     phase: "train"
+  #     lvl: 1
+  #   }
+  # }
   # callback {
   #   gradient_check {
   #     step_size: 0
