@@ -67,6 +67,12 @@ model {
   #   }
   # }
   # callback {
+  #   debug_io {
+  #     phase: "train"
+  #     lvl: 1
+  #   }
+  # }
+  # callback {
   #   gradient_check {
   #     step_size: 0
   #     verbose: false
@@ -340,6 +346,7 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
+      bias_initial_value: 0.1
       l2_regularization_factor: 0.0005
     }
   }
@@ -378,6 +385,7 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
+      bias_initial_value: 0.1
       l2_regularization_factor: 0.0005
     }
   }

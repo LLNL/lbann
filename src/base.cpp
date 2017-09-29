@@ -26,7 +26,6 @@
 // lbann_base .cpp - Basic definitions, functions
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <thread>
 #include <omp.h>
 #include <hwloc.h>
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
@@ -68,16 +67,6 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
     }
   }
   hwloc_topology_destroy(topo);
-#ifdef _OPENMP
-  // Initialize the default number of threads to use for parallel regions.
-  // Note the num_threads directive can override this if specifically set.
-  // Further, if the OMP_NUM_THREADS environment variable is set, we don't
-  // change it.
-  if (getenv("OMP_NUM_THREADS") == NULL) {
-    const int threads_per_rank = std::thread::hardware_concurrency() / ppn;
-    omp_set_num_threads(threads_per_rank);
-  }
-#endif  // _OPENMP
   // Initialize local random number generators.
   init_random(seed);
   init_data_seq_random(seed);

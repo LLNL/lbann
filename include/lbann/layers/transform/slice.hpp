@@ -41,8 +41,6 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class slice_layer : public transform {
  private:
 
-  /** List of child layers. */
-  std::vector<const Layer*> m_children;
   /** Tensor dimension to slice. */
   int m_slice_axis;
   /** Slice points for each child layer. */

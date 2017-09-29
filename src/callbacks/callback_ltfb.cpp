@@ -72,7 +72,8 @@ void lbann_callback_ltfb::setup(model *m) {
 }
 
 void lbann_callback_ltfb::on_batch_end(model *m) {
-  if (m->get_cur_step() % m_round_size != 0) {
+  if (m->get_cur_step() % m_round_size != 0 ||
+      m->get_cur_step() == 0) {
     return;  // Not the end of a round.
   }
 
@@ -136,12 +137,10 @@ int lbann_callback_ltfb::select_partner() {
 void lbann_callback_ltfb::exchange(model *m, int partner) {
   std::vector<Layer *>& layers = m->get_layers();
   std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  const std::type_info& learning_type = typeid(learning);
   for (size_t i = 0; i < layers.size(); ++i) {
     // Only exchange learning layers.
-    if (std::type_index(learning_type) ==
-        std::type_index(typeid(*layers[i]))) {
-      learning *layer = dynamic_cast<learning*>(layers[i]);
+    learning *layer = dynamic_cast<learning*>(layers[i]);
+    if (layer) {
       learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
       // TODO: Support sending optimizer state.
       AbsDistMat& weights = layer->get_weights();
@@ -180,11 +179,9 @@ double lbann_callback_ltfb::evaluate(deep_neural_network *m) {
 void lbann_callback_ltfb::replace_with_remote(model *m) {
   std::vector<Layer *>& layers = m->get_layers();
   std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  const std::type_info& learning_type = typeid(learning);
   for (size_t i = 0; i < layers.size(); ++i) {
-    if (std::type_index(learning_type) ==
-        std::type_index(typeid(*layers[i]))) {
-      learning *layer = dynamic_cast<learning*>(layers[i]);
+    learning *layer = dynamic_cast<learning*>(layers[i]);
+    if (layer) {
       learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
       // TODO: Update optimizers.
       layer->get_weights().Matrix() =

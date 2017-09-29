@@ -131,6 +131,18 @@ class lbann_comm {
                      rank) != world_ranks_on_node.end();
   }
 
+  /** Get default number of threads per process. 
+   *  This is the number of OpenMP threads to use for parallel
+   *  regions, provided omp_set_num_threads has not been called or the
+   *  num_threads directive has not been provided.
+   */
+  inline int get_default_threads_per_proc() const {
+    return threads_per_proc;
+  }
+
+  /** Reset the number of threads per process to the default. */
+  void reset_threads();
+
   /** Perform a sum reduction of mat over the inter-model communicator. */
   void intermodel_sum_matrix(Mat& mat);
   void intermodel_sum_matrix(DistMat& mat);
@@ -713,6 +725,12 @@ class lbann_comm {
   int rank_in_node;
   /** The list of world ranks that are on this compute node. */
   std::vector<int> world_ranks_on_node;
+  /** Default number of threads per process. 
+   *  This is the number of OpenMP threads to use for parallel
+   *  regions, provided omp_set_num_threads has not been called or the
+   *  num_threads directive has not been provided.
+   */
+  int threads_per_proc;
   /** Pre-allocated buffers for collectives. */
   std::unordered_map<size_t, std::vector<uint8_t *>> collective_bufs;
   /** Current default allreduce algorithm. */
@@ -745,12 +763,18 @@ class lbann_comm {
   double ar_ag_send_time;
   double ar_ag_recv_time;
 
-  /** Setup communicator for processes in the same compute node.
-   *  We obtain a string specifying the compute node. The string is
-   *  hashed (with salt) and used to split the communicators. To
-   *  avoid hash collisions, the splitting procedure is repeated
-   *  with a different salt. */
+  /** Setup communicator for processes in the same compute node. */
   void setup_node_comm();
+
+  /** Initialize the default number of threads per process.
+   *  This is the number of OpenMP threads to use for parallel
+   *  regions, provided omp_set_num_threads has not been called or the
+   *  num_threads directive has not been provided. If the environment
+   *  variable OMP_NUM_THREADS is defined, it's value is used for the
+   *  default. Otherwise, then the default is the number of hardware
+   *  cores per node divided by the number of processes per node.
+   */
+  void setup_threads();
 
   /**
    * Return a buffer from collective_bufs, allocating it if needed.

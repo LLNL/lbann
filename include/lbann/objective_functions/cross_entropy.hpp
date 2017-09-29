@@ -56,7 +56,7 @@ class cross_entropy : public objective_function {
    *  Given a predicted distribution \f$y\f$ and ground truth
    *  distribution \f$\hat{y}\f$, the cross entropy is
    *    \f[
-   *    CE(y,\hat{y}) = - \sigma\limits_{i} \hat{y}_i \log y_i
+   *    CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i
    *    \f]
    *  This function updates the objective function value with the mean
    *  cross entropy across the mini-batch. Note that each column of
@@ -71,7 +71,7 @@ class cross_entropy : public objective_function {
    *  distribution \f$\hat{y}\f$, the gradient of the cross entropy
    *  is
    *    \f[
-   *    \nabla_y CE (y,\hat{y}) = - \frac{y} ./ y
+   *    \nabla_y CE (y,\hat{y}) = - \hat{y} . / y
    *    \f]
    *  If the softmax-cross-entropy shortcut is activated (see
    *  description for m_shortcut_softmax_layer), the returned gradient

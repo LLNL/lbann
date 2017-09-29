@@ -46,6 +46,7 @@ public:
   virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {}
   virtual bool is_data_set_processed() { return false; }
   virtual generic_data_reader *get_data_reader(execution_mode mode);
+  virtual generic_data_reader *get_data_reader();
   virtual int get_num_parallel_readers(execution_mode mode);
   virtual int get_num_parallel_readers();
   virtual int get_num_iterations_per_epoch(execution_mode mode);
@@ -73,16 +74,24 @@ public:
     return 0;
   }
   virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
-  virtual bool update_data_reader() {
+  virtual bool update_data_reader(bool is_active_reader) {
     return false;
   }
   virtual execution_mode get_execution_mode() const {
     return execution_mode::invalid;
   }
+  /// Return the rank of the current root node for the Elemental Distribution
+  virtual int current_root_rank() {
+    return m_root;
+  }
 
   /// Is this rank the current root node for the Elemental Distribution
   virtual bool is_current_root() {
     return (m_comm->get_rank_in_model() == m_root);
+  }
+  /// Is the local reader done
+  virtual bool is_local_reader_done() {
+    return m_local_reader_done;
   }
 
  protected:

@@ -55,6 +55,7 @@ message ImagePreprocessor {
   double shear_range = 21;
   bool disable_augmentation = 22;
   float noise_factor = 23;
+  bool no_colorize = 24; // not to use colorizer in cv_process
 }
 
 //========================================================================
@@ -188,6 +189,7 @@ message Callback {
    CallbackStepMinibatch step_minibatch = 22;
    CallbackGradientCheck gradient_check = 23;
    CallbackLTFB ltfb = 24;
+   CallbackDebugIO debug_io = 25;
 }
 
 message CallbackLTFB {
@@ -262,6 +264,11 @@ message CallbackImComm {
 
 message CallbackDebug {
   string phase = 1;
+}
+
+message CallbackDebugIO {
+  string phase = 1;
+  int32 lvl = 2;
 }
 
 message CallbackCheckSmall {

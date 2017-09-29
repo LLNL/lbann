@@ -43,6 +43,7 @@ class learning : public Layer, public optimizable_layer {
   AbsDistMat *m_weights;             ///< Weight matrix (computes weight sum of inputs ((# neurons) x (# previous layer's neurons))
   AbsDistMat *m_weights_gradient;    ///< Gradient w.r.t. weight matrix ((# neurons) x (# previous layer's neurons))
 
+
   /** Factor for L2 regularization; 0 to disable. */
   DataType m_l2_regularization_factor = DataType(0);
 
@@ -218,6 +219,9 @@ class learning : public Layer, public optimizable_layer {
   virtual AbsDistMat& get_weights() const { return *m_weights; }
   /** Return the gradients associated with this layer. */
   virtual AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
+
+  /// Following function tells this layer has weights
+  bool is_learning_layer() { return true; }
 
   template <data_layout T_layout>
   inline void initialize_distributed_matrices();

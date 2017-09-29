@@ -162,6 +162,9 @@ class Layer {
     return m_using_gpus;
   }
 
+  /// Following function tells whether a layer has weights; default is false
+  virtual bool is_learning_layer() { return false; }
+
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {
     return m_neural_network_model;
@@ -195,6 +198,12 @@ class Layer {
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
  protected:
+
+  /** List of child layers. */
+  std::vector<const Layer*> m_children;
+  /** List of parent layers. */
+  std::vector<const Layer*> m_parents;
+
   int m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;

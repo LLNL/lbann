@@ -135,16 +135,16 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     return;
   }
 
-  bool update_data_reader() {
+  bool update_data_reader(bool is_active_reader) {
     generic_data_reader *data_reader = target_layer::select_data_reader();
     if(this->m_shared_data_reader) {
       /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
       /// or will be done on the next update of the input layer (which includes adding the stride).
       /// Note that target layers are always update before input layers, which is why the position
       /// is not up to date yet.
-      return (data_reader->get_next_position() < data_reader->get_num_data());
+      return (data_reader->is_data_reader_done(is_active_reader));
     } else {
-      return data_reader->update();
+      return data_reader->update(is_active_reader);
     }
   }
 

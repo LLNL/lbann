@@ -41,8 +41,6 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class concatenation_layer : public transform {
  private:
 
-  /** List of parent layers. */
-  std::vector<const Layer*> m_parents;
   /** Tensor dimension to concatenate. */
   int m_concatenation_axis;
   /** Concatenation points for each parent layer. */

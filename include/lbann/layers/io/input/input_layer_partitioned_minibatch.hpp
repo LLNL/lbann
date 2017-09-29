@@ -114,9 +114,9 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return;
   }
 
-  bool update_data_reader() {
+  bool update_data_reader(bool is_active_reader) {
     generic_data_reader *data_reader = input_layer::select_data_reader();
-    return data_reader->update();
+    return data_reader->update(is_active_reader);
   }
 
   execution_mode get_execution_mode() const {

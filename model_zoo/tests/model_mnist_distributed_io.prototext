@@ -25,18 +25,24 @@ model {
   }
   callback {
     timer {
-      dir: "."
     }
   }
   callback {
     summary {
       dir: "."
-      interval: 1
+      batch_interval: 1
+      mat_interval: 25
     }
   }
   # callback {
   #   debug {
-  #     phase: "train"
+  #     phase: "test"
+  #   }
+  # }
+  # callback {
+  #   debug_io {
+  #     phase: "test"
+  #     lvl: 1
   #   }
   # }
   callback {

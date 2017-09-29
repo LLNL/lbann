@@ -41,9 +41,6 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class split_layer : public transform {
  private:
 
-  /// List of child layers
-  std::vector<const Layer*> m_children;
-
  public:
   /// Constructor
   split_layer(int index,

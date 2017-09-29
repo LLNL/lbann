@@ -33,29 +33,29 @@
 
 namespace lbann {
 
-imagenet_readerSingle_cv::imagenet_readerSingle_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle)
+imagenet_reader_single_cv::imagenet_reader_single_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle)
   : imagenet_reader_cv(batchSize, pp, shuffle) {
 }
 
-imagenet_readerSingle_cv::imagenet_readerSingle_cv(const imagenet_readerSingle_cv& source)
+imagenet_reader_single_cv::imagenet_reader_single_cv(const imagenet_reader_single_cv& source)
   : imagenet_reader_cv(source) {
   m_offsets = source.m_offsets;
   open_data_stream();
 }
 
 
-imagenet_readerSingle_cv::~imagenet_readerSingle_cv() {
+imagenet_reader_single_cv::~imagenet_reader_single_cv() {
   m_data_filestream.close();
 }
 
 
-bool imagenet_readerSingle_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   const int label = m_offsets[data_id+1].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
-void imagenet_readerSingle_cv::load() {
+void imagenet_reader_single_cv::load() {
   const std::string image_dir = get_file_dir();
   const std::string base_filename = get_data_filename();
 
@@ -111,7 +111,7 @@ void imagenet_readerSingle_cv::load() {
 }
 
 
-bool imagenet_readerSingle_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   std::stringstream err;
 
@@ -157,7 +157,7 @@ bool imagenet_readerSingle_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int 
 }
 
 // Assignment operator
-imagenet_readerSingle_cv& imagenet_readerSingle_cv::operator=(const imagenet_readerSingle_cv& source) {
+imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_reader_single_cv& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
@@ -172,7 +172,7 @@ imagenet_readerSingle_cv& imagenet_readerSingle_cv::operator=(const imagenet_rea
   return (*this);
 }
 
-void imagenet_readerSingle_cv::open_data_stream() {
+void imagenet_reader_single_cv::open_data_stream() {
   const std::string image_dir = get_file_dir();
   const std::string base_filename = get_data_filename();
 
