@@ -75,18 +75,18 @@ int main(int argc, char *argv[]) {
     } else if (opts->has_string("loadme")) {
       prototext_model_fn = opts->get_string("loadme");
     } 
-    read_prototext_file(prototext_model_fn.c_str(), pb);
+    read_prototext_file(prototext_model_fn.c_str(), pb, master);
 
     if (opts->has_string("reader")) {
       lbann_data::LbannPB pb_reader;
-      read_prototext_file(opts->get_string("reader").c_str(), pb_reader);
+      read_prototext_file(opts->get_string("reader").c_str(), pb_reader, master);
       pb.MergeFrom(pb_reader);
     }
 
     if (opts->has_string("optimizer")) {
       string prototext_opt_fn;
       lbann_data::LbannPB pb_optimizer;
-      read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer);
+      read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer, master);
       pb.MergeFrom(pb_optimizer);
     }
 
