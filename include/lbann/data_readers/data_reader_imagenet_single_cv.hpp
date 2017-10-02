@@ -32,6 +32,7 @@
 #include "data_reader_imagenet_cv.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
+#include <vector>
 
 namespace lbann {
 class imagenet_reader_single_cv : public imagenet_reader_cv {
@@ -50,9 +51,9 @@ class imagenet_reader_single_cv : public imagenet_reader_cv {
   virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
  private:
-  std::ifstream m_data_filestream;
+  std::vector<std::ifstream*> m_data_filestream;
   size_t m_file_size;
-  std::vector<unsigned char> m_work_buffer;
+  std::vector<std::vector<unsigned char> > m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
 
   void open_data_stream();
