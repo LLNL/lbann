@@ -81,7 +81,7 @@ void imagenet_reader_single_cv::load() {
     std::cout << "num images: " << num_images << std::endl;
   }
 
-  m_offsets.reserve(num_images);
+  m_offsets.reserve(num_images+1);
   m_offsets.push_back(std::make_pair(0,0));
   size_t last_offset = 0u;
   size_t offset = 0u;
@@ -102,8 +102,8 @@ void imagenet_reader_single_cv::load() {
 
   open_data_stream();
 
-  m_shuffled_indices.resize(m_offsets.size());
-  for (size_t n = 0; n < m_offsets.size()-1; n++) {
+  m_shuffled_indices.resize(num_images);
+  for (size_t n = 0; n < num_images; n++) {
     m_shuffled_indices[n] = n;
   }
 
@@ -182,7 +182,7 @@ void imagenet_reader_single_cv::open_data_stream() {
     std::cout << "opening: " << b.str() << " " << std::endl;
   }
   m_data_filestream.open(b.str().c_str(), std::ios::in | std::ios::binary);
-  if (not m_data_filestream.is_open() and m_data_filestream.good()) {
+  if (not m_data_filestream.is_open() or not m_data_filestream.good()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " ::  failed to open " << b.str() << " for reading";

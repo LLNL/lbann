@@ -81,7 +81,7 @@ void imagenet_readerSingle::load() {
   if (is_master()) {
     cout << "num images: " << num_images << endl;
   }
-  m_offsets.reserve(num_images);
+  m_offsets.reserve(num_images+1);
   m_offsets.push_back(make_pair(0,0));
   size_t last_offset = 0;
   size_t offset;
@@ -101,8 +101,8 @@ void imagenet_readerSingle::load() {
 
   open_data_stream();
 
-  m_shuffled_indices.resize(m_offsets.size());
-  for (size_t n = 0; n < m_offsets.size()-1; n++) {
+  m_shuffled_indices.resize(num_images);
+  for (size_t n = 0; n < num_images; n++) {
     m_shuffled_indices[n] = n;
   }
 
@@ -186,7 +186,7 @@ void imagenet_readerSingle::open_data_stream() {
     cout << "opening: " << b.str() << " " << endl;
   }
   m_data_filestream.open(b.str().c_str(), ios::in | ios::binary);
-  if (not m_data_filestream.is_open() and m_data_filestream.good()) {
+  if (not m_data_filestream.is_open() or not m_data_filestream.good()) {
     stringstream err;
     err << __FILE__ << " " << __LINE__
         << " ::  failed to open " << b.str() << " for reading";

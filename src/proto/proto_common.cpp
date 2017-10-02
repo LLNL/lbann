@@ -1546,6 +1546,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
+    } else if (name == "imagenet_single") {
+      reader = new imagenet_readerSingle(mini_batch_size, shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
@@ -1681,6 +1683,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(mini_batch_size, shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+      } else if (name == "imagenet_single") {
+        reader_validation = new imagenet_readerSingle(mini_batch_size, shuffle);
+        (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
       } else if (name == "imagenet_cv") {
         reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
       } else if (name == "imagenet_single_cv") {

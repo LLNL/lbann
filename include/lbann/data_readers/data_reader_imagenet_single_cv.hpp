@@ -56,9 +56,6 @@ class imagenet_reader_single_cv : public imagenet_reader_cv {
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
 
   void open_data_stream();
-
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
 };
 
 }  // namespace lbann
