@@ -1,0 +1,32 @@
+data_reader {
+  reader {
+    name: "imagenet_single_cv"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
+    data_filename: "Single_train_c0-9_01"
+    train_or_test_percent: 1
+    validation_percent: 0.2
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: false
+      no_colorize: false
+    }
+  }
+  reader {
+    name: "imagenet_single_cv"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
+    data_filename: "Single_val_c0-9_01"
+    train_or_test_percent: 1
+    validation_percent: 1
+    image_preprocessor {
+      scale: true
+      subtract_mean: true
+      unit_variance: false
+      no_colorize: false
+    }
+  }
+}
