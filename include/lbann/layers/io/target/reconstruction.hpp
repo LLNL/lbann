@@ -90,7 +90,7 @@ class reconstruction_layer : public target_layer {
 
   void fp_compute() {
      //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*this->m_prev_activations,*this->m_activations);
+    El::Copy(*this->m_prev_activations,*this->m_activations_v);
     // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
     // and original layer fp_input/original input
     this->m_neural_network_model->m_obj_fn->compute_value(*this->m_prev_activations,
