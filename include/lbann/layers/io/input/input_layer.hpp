@@ -98,12 +98,15 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     // in case that target_layer gets initialized beforehand
     if(m_training_dataset.m_data_reader != nullptr) {
       m_training_dataset.m_data_reader->setup();
+      m_training_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_validation_dataset.m_data_reader != nullptr) {
       m_validation_dataset.m_data_reader->setup();
+      m_validation_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_testing_dataset.m_data_reader != nullptr) {
       m_testing_dataset.m_data_reader->setup();
+      m_testing_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
     }
   }
 

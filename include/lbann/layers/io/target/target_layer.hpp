@@ -121,12 +121,15 @@ class target_layer : public io_layer {
     if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
       if(m_training_dataset.m_data_reader != nullptr) {
         m_training_dataset.m_data_reader->setup();
+        m_training_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
       }
       if(m_validation_dataset.m_data_reader != nullptr) {
         m_validation_dataset.m_data_reader->setup();
+        m_validation_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
       }
       if(m_testing_dataset.m_data_reader != nullptr) {
         m_testing_dataset.m_data_reader->setup();
+        m_testing_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
       }
     }
 
