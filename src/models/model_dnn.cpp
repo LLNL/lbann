@@ -104,13 +104,11 @@ void deep_neural_network::train(int num_epochs) {
       }
     }
 
-    if (is_execution_mode_valid(execution_mode::validation)) {
-      // Evaluate model on validation set
-      // TODO: do we need validation callbacks here?
-      // do_validation_begin_cbs();
-      evaluate(execution_mode::validation);
-      // do_validation_end_cbs();
-    }
+    // Evaluate model on validation set
+    // TODO: do we need validation callbacks here?
+    // do_validation_begin_cbs();
+    evaluate(execution_mode::validation);
+    // do_validation_end_cbs();
 
     do_epoch_end_cbs();
 
@@ -168,6 +166,10 @@ void deep_neural_network::evaluate(execution_mode mode) {
     break;
   default:
     throw lbann_exception("Illegal execution mode in evaluate function");
+  }
+
+  if (!is_execution_mode_valid(mode)) {
+    return;
   }
 
   // Set the execution mode
