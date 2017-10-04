@@ -30,6 +30,7 @@ option(WITH_TBINF "Include Tensorboard interface"          ON)
 option(WITH_VTUNE "Link the Intel VTune profiling library" OFF)
 option(WITH_NVPROF "Enable NVTX-based instrumentation for nvprof" OFF)
 option(WITH_FULLY_CONNECTED_CUDA "Enable CUDA-based fully connected layer" ON)
+option(WITH_TOPO_AWARE "Enable topology-aware profiling (HWLOC)" ON)
 if(NOT DATATYPE)
   set(DATATYPE 4)
 endif()
@@ -40,8 +41,11 @@ endif()
 if(NOT LIBRARY_TYPE)
   set(LIBRARY_TYPE SHARED)
 endif()
-if (WITH_FULLY_CONNECTED_CUDA)
+if(WITH_FULLY_CONNECTED_CUDA)
   add_definitions(-DLBANN_FULLY_CONNECTED_CUDA)
+endif()
+if(WITH_TOPO_AWARE)
+  add_definitions(-DLBANN_TOPO_AWARE)
 endif()
 
 
@@ -335,6 +339,9 @@ install(
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
 )
 
+# Display all of the accumulated compiler definitions
+get_directory_property( DirDefs COMPILE_DEFINITIONS )
+
 ################################################################
 # Configuration summary
 ################################################################
@@ -353,6 +360,7 @@ elseif(CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
   message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 endif()
+message("  COMPILE_DEFINITIONS:= ${DirDefs}" )
 message("  LBANN_HAS_MPI:        ${LBANN_HAS_MPI}")
 message("  LBANN_HAS_ELEMENTAL:  ${LBANN_HAS_ELEMENTAL}")
 message("  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}")

@@ -56,6 +56,7 @@ BUILD_SUFFIX=
 SEQ_INIT=OFF
 WITH_CUDA=
 WITH_FULLY_CONNECTED_CUDA=OFF
+WITH_TOPO_AWARE=ON
 
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
@@ -105,8 +106,9 @@ Options:
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
-  ${C}--disable-cuda              Disable CUDA
+  ${C}--disable-cuda${N}          Disable CUDA
   ${C}--fully-connected-cuda${N}  Enable use of CUDA in the fully connected layer.
+  ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
 EOF
 }
 
@@ -217,6 +219,9 @@ while :; do
             ;;
         --fully-connected-cuda)
             WITH_FULLY_CONNECTED_CUDA=ON
+            ;;
+        --disable-topo-aware)
+            WITH_TOPO_AWARE=OFF
             ;;
         -?*)
             # Unknown option
@@ -547,6 +552,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_FULLY_CONNECTED_CUDA
+    print_variable WITH_TOPO_AWARE
     echo ""
 fi
 
@@ -607,6 +613,7 @@ cmake \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
 -D WITH_FULLY_CONNECTED_CUDA=${WITH_FULLY_CONNECTED_CUDA} \
+-D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D IPPROOT=${IPPROOT} \
 ${ROOT_DIR}
 EOF

@@ -27,9 +27,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <omp.h>
+#if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#endif
 #endif
 
 #include "lbann/base.hpp"
@@ -44,6 +46,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   // Create a new comm object.
   // Initial creation with every process in one model.
   lbann_comm* comm = new lbann_comm(0);
+#if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
   hwloc_topology_init(&topo);
@@ -67,6 +70,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
     }
   }
   hwloc_topology_destroy(topo);
+#endif
   // Initialize local random number generators.
   init_random(seed);
   init_data_seq_random(seed);
