@@ -157,6 +157,7 @@ bool deep_neural_network::train_mini_batch() {
 }
 
 void deep_neural_network::evaluate(execution_mode mode) {
+  if (!is_execution_mode_valid(mode)) { return; }
   switch(mode) {
   case execution_mode::validation:
     do_validation_begin_cbs();
@@ -166,10 +167,6 @@ void deep_neural_network::evaluate(execution_mode mode) {
     break;
   default:
     throw lbann_exception("Illegal execution mode in evaluate function");
-  }
-
-  if (!is_execution_mode_valid(mode)) {
-    return;
   }
 
   // Set the execution mode

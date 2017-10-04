@@ -458,13 +458,11 @@ void planar_model::train(int num_epochs) {
       }
     }
 
-    if (is_execution_mode_valid(execution_mode::validation)) {
-      // Evaluate model on validation set
-      // TODO: do we need validation callbacks here?
-      // do_validation_begin_cbs();
-      evaluate(execution_mode::validation);
-      // do_validation_end_cbs();
-    }
+    // Evaluate model on validation set
+    // TODO: do we need validation callbacks here?
+    // do_validation_begin_cbs();
+    evaluate(execution_mode::validation);
+    // do_validation_end_cbs();
 
     /// Igroring callback
     // do_epoch_end_cbs();
@@ -612,6 +610,7 @@ void planar_model::sum_up_gradients()
 
 
 void planar_model::evaluate(execution_mode mode) {
+  if (!is_execution_mode_valid(mode)) { return; }
   switch(mode) {
   case execution_mode::validation:
     /// Igonoring callbacks for now
