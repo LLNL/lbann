@@ -33,7 +33,7 @@ namespace lbann {
 
 namespace objective_functions {
 
-/** Mean squared error objective function. */
+/** Geometric negative log-likelihood objective function. */
 class geom_negloglike : public objective_function {
 
  public:
@@ -48,11 +48,11 @@ class geom_negloglike : public objective_function {
   /** Copy function. */
   geom_negloglike* copy() const { return new geom_negloglike(*this); }
 
-  /** Compute the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  mean squared error is
+  /** Compute the Geometric negative log-likelihood objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
+   *  Geometric negative log-likelihood is
    *    \f[
-   *    MSE(y,\hat{y}) = \frac{1}{n} \lVert y - \hat{y} \rVert^2_2
+   *    Geom_nll(\hat{y},y) = -y \log(1-\hat{y}) + \log(\hat{y})  
    *    \f]
    *  This function updates the objective function value with the mean
    *  value of the mean squared error across the mini-batch.
@@ -60,11 +60,11 @@ class geom_negloglike : public objective_function {
   void compute_value(const AbsDistMat& predictions,
                      const AbsDistMat& ground_truth);
 
-  /** Compute the gradient of the mean squared error objective function.
+  /** Compute the gradient of the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  gradient of the mean squared error is
+   *  gradient of the Geometric negative log-likelihood is
    *    \f[
-   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
+   *    \nabla_\hat{y} Geom_nll (\hat{y},y) = y/(1-\hat{y}) + 1/\hat{y}
    *    \f]
    */
   void compute_gradient(const AbsDistMat& predictions,

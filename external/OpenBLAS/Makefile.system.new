@@ -242,6 +242,10 @@ EXTRALIB	+= -lm
 NO_EXPRECISION = 1
 endif
 
+ifeq ($(OSNAME), Android)
+EXTRALIB	+= -lm
+endif
+
 ifeq ($(OSNAME), AIX)
 EXTRALIB	+= -lm
 endif
@@ -683,7 +687,7 @@ FCOMMON_OPT += -i8
 endif
 endif
 ifeq ($(USE_OPENMP), 1)
-FCOMMON_OPT += -openmp
+FCOMMON_OPT += -qopenmp
 endif
 endif
 

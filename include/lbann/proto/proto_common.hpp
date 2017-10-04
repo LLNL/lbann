@@ -57,7 +57,8 @@ void init_callbacks(
 ///
 void read_prototext_file(
   string fn,
-  lbann_data::LbannPB& pb);
+  lbann_data::LbannPB& pb,
+  bool master);
 
 ///
 void write_prototext_file(

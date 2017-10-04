@@ -1,5 +1,5 @@
---- Makefile.power	2017-08-27 21:49:26.000000000 -0700
-+++ ./Makefile.power.new	2017-08-27 20:23:50.000000000 -0700
+--- Makefile.power	2017-10-03 13:34:06.000000000 -0700
++++ ./Makefile.power.new	2017-10-02 15:15:02.000000000 -0700
 @@ -13,11 +13,11 @@
  
  ifeq ($(CORE), POWER8)
@@ -16,9 +16,9 @@
  endif
  endif
  
---- Makefile.system	2017-08-27 21:49:26.000000000 -0700
-+++ ./Makefile.system.new	2017-08-27 20:23:50.000000000 -0700
-@@ -418,7 +418,7 @@
+--- Makefile.system	2017-10-03 13:34:06.000000000 -0700
++++ ./Makefile.system.new	2017-10-03 13:41:05.000000000 -0700
+@@ -422,7 +422,7 @@
  endif
  
  ifeq ($(C_COMPILER), INTEL)
@@ -27,8 +27,17 @@
  endif
  
  ifeq ($(C_COMPILER), PGI)
---- c_check	2017-08-27 21:49:29.000000000 -0700
-+++ ./c_check.new	2017-08-27 20:23:50.000000000 -0700
+@@ -687,7 +687,7 @@
+ endif
+ endif
+ ifeq ($(USE_OPENMP), 1)
+-FCOMMON_OPT += -openmp
++FCOMMON_OPT += -qopenmp
+ endif
+ endif
+ 
+--- c_check	2017-10-03 13:34:06.000000000 -0700
++++ ./c_check.new	2017-10-02 15:15:02.000000000 -0700
 @@ -133,7 +133,7 @@
  }
  

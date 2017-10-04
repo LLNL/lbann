@@ -393,6 +393,7 @@ class fully_connected_layer : public learning {
       fp_compute_cpu();
     }
     l2_regularize_objective_function();
+    group_lasso_regularize_objective_function();
 #ifdef __LBANN_DEBUG
     if(this->m_using_gpus) {
       this->m_cudnn->synchronize_all();
@@ -482,6 +483,7 @@ class fully_connected_layer : public learning {
       bp_compute_cpu();
     }
     this->l2_regularize_gradient();
+    this->group_lasso_regularize_gradient();
   }
 
   void bp_compute_cpu() {

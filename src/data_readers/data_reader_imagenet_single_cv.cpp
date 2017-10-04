@@ -45,7 +45,9 @@ imagenet_reader_single_cv::imagenet_reader_single_cv(const imagenet_reader_singl
 
 
 imagenet_reader_single_cv::~imagenet_reader_single_cv() {
-  m_data_filestream.close();
+  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
+    if (m_data_filestream[i]) delete m_data_filestream[i];
+  }
 }
 
 
@@ -81,7 +83,7 @@ void imagenet_reader_single_cv::load() {
     std::cout << "num images: " << num_images << std::endl;
   }
 
-  m_offsets.reserve(num_images);
+  m_offsets.reserve(num_images+1);
   m_offsets.push_back(std::make_pair(0,0));
   size_t last_offset = 0u;
   size_t offset = 0u;
@@ -102,8 +104,8 @@ void imagenet_reader_single_cv::load() {
 
   open_data_stream();
 
-  m_shuffled_indices.resize(m_offsets.size());
-  for (size_t n = 0; n < m_offsets.size()-1; n++) {
+  m_shuffled_indices.resize(num_images);
+  for (size_t n = 0; n < num_images; n++) {
     m_shuffled_indices[n] = n;
   }
 
@@ -134,15 +136,15 @@ bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int
     throw lbann_exception(err.str());
   }
 
-  m_work_buffer.resize(ssz);
-  m_data_filestream.seekg(start);
-  m_data_filestream.read((char *)&m_work_buffer[0], ssz);
+  m_work_buffer[tid].resize(ssz);
+  m_data_filestream[tid]->seekg(start);
+  m_data_filestream[tid]->read((char *)&m_work_buffer[tid][0], ssz);
 
   int width=0, height=0, img_type=0;
   ::Mat X_v;
   El::View(X_v, X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 
-  const bool ret = image_utils::import_image(m_work_buffer, width, height, img_type, *(m_pps[tid]), X_v);
+  const bool ret = image_utils::import_image(m_work_buffer[tid], width, height, img_type, *(m_pps[tid]), X_v);
 
   if(!ret) {
     err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::import_image failed to load index: " << data_id;
@@ -181,16 +183,32 @@ void imagenet_reader_single_cv::open_data_stream() {
   if (is_master()) {
     std::cout << "opening: " << b.str() << " " << std::endl;
   }
-  m_data_filestream.open(b.str().c_str(), std::ios::in | std::ios::binary);
-  if (not m_data_filestream.is_open() and m_data_filestream.good()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " ::  failed to open " << b.str() << " for reading";
-    throw lbann_exception(err.str());
+
+  const int nthreads = omp_get_max_threads();
+  m_work_buffer.resize(nthreads);
+
+  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
+    if (m_data_filestream[i]) delete m_data_filestream[i];
   }
-  m_data_filestream.seekg(0, m_data_filestream.end);
-  m_file_size = m_data_filestream.tellg();
-  m_data_filestream.seekg(0, m_data_filestream.beg);
+  m_data_filestream.clear();
+  m_data_filestream.resize(nthreads);
+
+  #pragma omp parallel for schedule(static, 1)
+  for(int i=0; i < nthreads; ++i) {
+    m_data_filestream[i] = new std::ifstream(b.str().c_str(), std::ios::in | std::ios::binary);
+    if (m_data_filestream[i] && (not m_data_filestream[i]->is_open() or not m_data_filestream[i]->good())) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " ::  failed to open " << b.str() << " for reading";
+      throw lbann_exception(err.str());
+    }
+    m_data_filestream[i]->unsetf(std::ios::skipws);
+    if (i==0) {
+      m_data_filestream[i]->seekg(0, m_data_filestream[i]->end);
+      m_file_size = m_data_filestream[i]->tellg();
+    }
+    m_data_filestream[i]->seekg(0, m_data_filestream[i]->beg);
+  }
 }
 
 }  // namespace lbann

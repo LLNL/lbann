@@ -13,7 +13,7 @@
 
 using namespace lbann;
 
-lbann_callback_imcomm::comm_type get_comm_type(const string &s)
+lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
 {
   if (s == "none") {
     return lbann_callback_imcomm::comm_type::NONE;
@@ -26,15 +26,19 @@ lbann_callback_imcomm::comm_type get_comm_type(const string &s)
   } else if (s == "adaptive_quantization") {
     return lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
   } else {
-    std::stringstream err;
-    err << __FILE__ << " " <<__LINE__
-        << " :: unkown comm_type: " << s
-        << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
-    throw lbann_exception(err.str());
+    if (master) {
+      std::stringstream err;
+      err << __FILE__ << " " <<__LINE__
+         << " :: unkown comm_type: " << s
+          << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
+      throw lbann_exception(err.str());
+    } else {
+      return lbann_callback_imcomm::comm_type::NONE; //keep compiler happy, and have only one proc throw exception
+    }
   }
 }
 
-pool_mode get_pool_mode(const string& s)
+pool_mode get_pool_mode(const string& s, bool master)
 {
   if (s == "max") {
     return pool_mode::max;
@@ -43,11 +47,15 @@ pool_mode get_pool_mode(const string& s)
   } else if (s == "average_no_pad") {
     return pool_mode::average_no_pad;
   } else {
-    std::stringstream err;
-    err << __FILE__ << " " <<__LINE__
-        << " :: unkown pool_mode: " << s
-        << " should be one of: max, average, average_no_pad";
-    throw lbann_exception(err.str());
+    if (master) {
+      std::stringstream err;
+      err << __FILE__ << " " <<__LINE__
+          << " :: unkown pool_mode: " << s
+          << " should be one of: max, average, average_no_pad";
+      throw lbann_exception(err.str());
+    } else {
+    return pool_mode::max; //keep compiler happy, and have only one proc throw exception
+    }
   }
 }
 
@@ -62,7 +70,7 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
   cur_index = layers.size();
 }
 
-weight_initialization get_weight_initialization(const string& s)
+weight_initialization get_weight_initialization(const string& s, bool master)
 {
   if (s == "zero") {
     return weight_initialization::zero;
@@ -79,26 +87,35 @@ weight_initialization get_weight_initialization(const string& s)
   } else if (s == "he_uniform") {
     return weight_initialization::he_uniform;
   } else {
-    std::stringstream err;
-    err << __FILE__ << " " <<__LINE__
-        << " :: unkown weight_initialization: " << s
-        << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
-    throw lbann_exception(err.str());
+    if (master) {
+      std::stringstream err;
+      err << __FILE__ << " " <<__LINE__
+          << " :: unkown weight_initialization: " << s
+          << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
+      throw lbann_exception(err.str());
+    } else {
+      return weight_initialization::zero;  //keep compiler happy, and have only one proc throw exception
+
+    }
   }
 }
 
-data_layout get_data_layout(const string& s, const char *file, int line)
+data_layout get_data_layout(const string& s, const char *file, int line, bool master)
 {
   if (s == "model_parallel") {
     return data_layout::MODEL_PARALLEL;
   } else if (s == "data_parallel") {
     return data_layout::DATA_PARALLEL;
-  } else {
-    std::stringstream err;
-    err << file << " " << line
-        << " :: unknown value for data_layout; should be model_parallel"
-        << " or data_parallel; we got: " << s;
-    throw lbann_exception(err.str());
+  } else {  
+    if (master) {
+      std::stringstream err;
+      err << file << " " << line
+          << " :: unknown value for data_layout; should be model_parallel"
+          << " or data_parallel; we got: " << s;
+      throw lbann_exception(err.str());
+    } else {
+      return data_layout::MODEL_PARALLEL; //keep compiler happy, and have only one proc throw exception
+    }
   }
 }
 
@@ -195,7 +212,7 @@ void add_layers(
     int layer_id = model->get_layers().size();
     layer_mapping[layer.index()] = layer_id;
 
-    data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__);
+    data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__, master);
     bool num_neurons_from_data_reader = layer.num_neurons_from_data_reader();
 
 
@@ -229,7 +246,7 @@ void add_layers(
     else if (layer.has_reconstruction()) {
       const lbann_data::TargetReconstruction & ell = layer.reconstruction();
       int original_layer = ell.original_layer();
-      if (the_layers.find(original_layer) == the_layers.end()) {
+      if (the_layers.find(original_layer) == the_layers.end() and master) {
         err << __FILE__ << " " << __LINE__ << " :: the original_field in the "
             << " Reconstruction layer has index " << original_layer
             << " but we don't have a layer with that index. Something may be "
@@ -274,7 +291,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_partitioned_minibatch()) {
       //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -302,7 +319,7 @@ void add_layers(
           layer_id,
           comm,
           num_neurons,
-          get_weight_initialization(ell.weight_initialization()),
+          get_weight_initialization(ell.weight_initialization(), master),
           model->create_optimizer(),
           ell.has_bias(),
           ell.bias_initial_value(),
@@ -312,7 +329,7 @@ void add_layers(
           layer_id,
           comm,
           num_neurons,
-          get_weight_initialization(ell.weight_initialization()),
+          get_weight_initialization(ell.weight_initialization(), master),
           model->create_optimizer(),
           ell.has_bias(),
           ell.bias_initial_value(),
@@ -408,7 +425,7 @@ void add_layers(
         while (ss >> i) {
           pool_strides.push_back(i);
         }
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -420,12 +437,12 @@ void add_layers(
             &pool_dims[0],
             &pool_pads[0],
             &pool_strides[0],
-            get_pool_mode(ell.pool_mode()),
+            get_pool_mode(ell.pool_mode(), master),
             cudnn
           );
         }
       } else {
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -437,7 +454,7 @@ void add_layers(
             ell.pool_dims_i(),
             ell.pool_pads_i(),
             ell.pool_strides_i(),
-            get_pool_mode(ell.pool_mode()),
+            get_pool_mode(ell.pool_mode(), master),
             cudnn
           );
         }
@@ -450,7 +467,7 @@ void add_layers(
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
       pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)the_layers[ell.pooling_layer()];
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -493,7 +510,7 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: convolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -506,7 +523,7 @@ void add_layers(
             &conv_dims[0],
             &conv_pads[0],
             &conv_strides[0],
-            get_weight_initialization(ell.weight_initialization()),
+            get_weight_initialization(ell.weight_initialization(), master),
             model->create_optimizer(),
             ell.has_bias(),
             ell.bias_initial_value(),
@@ -516,7 +533,7 @@ void add_layers(
       }
 
       else {
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: convolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -529,7 +546,7 @@ void add_layers(
             ell.conv_dims_i(),
             ell.conv_pads_i(),
             ell.conv_strides_i(),
-            get_weight_initialization(ell.weight_initialization()),
+            get_weight_initialization(ell.weight_initialization(), master),
             model->create_optimizer(),
             ell.has_bias(),
             ell.bias_initial_value(),
@@ -574,7 +591,7 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -587,7 +604,7 @@ void add_layers(
             &conv_dims[0],
             &conv_pads[0],
             &conv_strides[0],
-            get_weight_initialization(ell.weight_initialization()),
+            get_weight_initialization(ell.weight_initialization(), master),
             model->create_optimizer(),
             ell.has_bias(),
             ell.bias_initial_value(),
@@ -597,7 +614,7 @@ void add_layers(
       }
 
       else {
-        if (dl == data_layout::MODEL_PARALLEL) {
+        if (dl == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -610,7 +627,7 @@ void add_layers(
             ell.conv_dims_i(),
             ell.conv_pads_i(),
             ell.conv_strides_i(),
-            get_weight_initialization(ell.weight_initialization()),
+            get_weight_initialization(ell.weight_initialization(), master),
             model->create_optimizer(),
             ell.has_bias(),
             ell.bias_initial_value(),
@@ -635,7 +652,7 @@ void add_layers(
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
       int window_width = ell.window_width();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -680,7 +697,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_batch_normalization()) {
       const lbann_data::BatchNormalization& ell = layer.batch_normalization();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: batch_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -873,7 +890,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_target_partitioned_minibatch()) {
       const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: target_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -943,9 +960,11 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
       //check to see if directory exists
       struct stat sb;
       if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-        throw lbann_exception(
-          std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-          "summary directory " + c.dir() + " does not exist");
+        if (master) {
+          throw lbann_exception(
+            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+            "summary directory " + c.dir() + " does not exist");
+        }    
       }
       summary = new lbann_summary(c.dir(), comm);
     }
@@ -1106,7 +1125,7 @@ void init_callbacks(
         if (a == 10000) {
           //all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end()) {
+          if (layer_mapping.find(a) == layer_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback disp_io_stats: you specified the layer index " << a
                 << " wrt the prototext file, but we don't have a layer with that"
@@ -1139,7 +1158,7 @@ void init_callbacks(
         if (a == 10000) {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end()) {
+          if (layer_mapping.find(a) == layer_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback imcomm: you specified the layer index " << a
                 << " wrt the prototext file, but we don't have a layer with that"
@@ -1152,7 +1171,7 @@ void init_callbacks(
           }
         }
       }
-      lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method());
+      lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method(), master);
       lbann_callback_imcomm *im;
       if (all_layers) {
         im = new lbann_callback_imcomm(c_type, summarizer);
@@ -1175,7 +1194,7 @@ void init_callbacks(
         if (a == 10000) {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end()) {
+          if (layer_mapping.find(a) == layer_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback step_learning_rate: you specified the layer index "
                 << a << " wrt the prototext file, but we don't have a layer with that"
@@ -1207,7 +1226,7 @@ void init_callbacks(
         if (a == 10000) {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end()) {
+          if (layer_mapping.find(a) == layer_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback adaptive_learning_rate: you specified the layer index "
                 << a << " wrt the prototext file, but we don't have a layer with that"
@@ -1397,8 +1416,9 @@ void init_callbacks(
 sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p)
 {
   std::stringstream err;
+  bool master = comm->am_world_master();
 
-  sequential_model *model;
+  sequential_model *model = 0;
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();
@@ -1406,16 +1426,18 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
-  objective_functions::objective_function *obj;
+  objective_functions::objective_function *obj = 0;
   if (obj_fn_name == "cross_entropy") {
     obj = new objective_functions::cross_entropy();
   } else if (obj_fn_name == "mean_squared_error") {
     obj = new objective_functions::mean_squared_error();
   } else {
-    err << __FILE__ << " " << __LINE__
-        << " :: init_model() - unknown objective function name: " << obj_fn_name
-        << std::endl << "; should be one of: cross_entropy, mean_squared_error";
-    throw lbann_exception(err.str());
+    if (master) {
+      err << __FILE__ << " " << __LINE__
+          << " :: init_model() - unknown objective function name: " << obj_fn_name
+          << std::endl << "; should be one of: cross_entropy, mean_squared_error";
+      throw lbann_exception(err.str());
+    }
   }
 
   //instantiate the network; layers will be added in a separate function call
@@ -1424,14 +1446,16 @@ sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac,
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else {
-    err << __FILE__ << " " << __LINE__
-        << " :: init_model() - unknown model name: " << name << endl
-        << "; should be one of: dnn, greedy_layerwise_autoencoder";
-    throw lbann_exception(err.str());
+    if (master) {
+      err << __FILE__ << " " << __LINE__
+          << " :: init_model() - unknown model name: " << name << endl
+          << "; should be one of: dnn, greedy_layerwise_autoencoder";
+      throw lbann_exception(err.str());
+    }
   }
 
   //add the metrics
-  data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__);
+  data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__, master);
   int size = m.metric_size();
 
   for (int j=0; j<size; j++) {
@@ -1522,6 +1546,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
+    } else if (name == "imagenet_single") {
+      reader = new imagenet_readerSingle(mini_batch_size, shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
@@ -1589,9 +1615,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(mini_batch_size, readme.num_samples(), readme.num_features(), shuffle);
     } else {
-      err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
-          << name;
-      throw lbann_exception(err.str());
+      if (master) {
+        err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
+            << name;
+        throw lbann_exception(err.str());
+      }
     }
 
     reader->set_data_filename( readme.data_filename() );
@@ -1655,6 +1683,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(mini_batch_size, shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+      } else if (name == "imagenet_single") {
+        reader_validation = new imagenet_readerSingle(mini_batch_size, shuffle);
+        (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
       } else if (name == "imagenet_cv") {
         reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
       } else if (name == "imagenet_single_cv") {
@@ -1706,19 +1737,23 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
   }
 }
 
-void read_prototext_file(string fn, lbann_data::LbannPB& pb)
+void read_prototext_file(string fn, lbann_data::LbannPB& pb, bool master)
 {
   std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
-    err <<  __FILE__ << " " << __LINE__ << " :: failed to open " << fn << " for reading";
-    throw lbann_exception(err.str());
+    if (master) {
+      err <<  __FILE__ << " " << __LINE__ << " :: failed to open " << fn << " for reading";
+      throw lbann_exception(err.str());
+    }
   }
   google::protobuf::io::FileInputStream *input = new google::protobuf::io::FileInputStream(fd);
   bool success = google::protobuf::TextFormat::Parse(input, &pb);
   if (not success) {
-    err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
-    throw lbann_exception(err.str());
+    if (master) {
+      err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
+      throw lbann_exception(err.str());
+    }
   }
   input->Close();
   delete input;
