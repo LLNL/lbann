@@ -307,8 +307,10 @@ if(LBANN_HAS_LBANN_PROTO)
   target_link_libraries(lbann LbannProto)
 endif()
 
-# LBANN also requires HWLOC. This seems sufficient for now.
-target_link_libraries(lbann hwloc)
+if(WITH_TOPO_AWARE)
+  # LBANN also requires HWLOC. This seems sufficient for now.
+  target_link_libraries(lbann hwloc)
+endif()
 
 target_compile_options(src PUBLIC "-Werror")
 target_compile_options(lbann PUBLIC "-Werror")
