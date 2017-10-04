@@ -875,12 +875,14 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
-          comm
+          comm,
+          cudnn
         );
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(
           layer_id,
-          comm
+          comm,
+          cudnn
         );
       }
     }

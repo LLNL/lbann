@@ -35,10 +35,17 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/objective_functions/cross_entropy.hpp"
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#include "lbann/layers/activations/softmax_cuda.hpp"
+#endif
 #include <unistd.h>
 #include <string>
 #include <typeinfo>
 #include <typeindex>
+
+#include <assert.h>
+
+#define LBANN_ENABLE_SOFTMAX_CUTOFF
 
 namespace lbann {
 
@@ -58,12 +65,23 @@ class softmax_layer : public activation_layer {
    */
   DataType m_min_output;
 
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+  cudnnTensorDescriptor_t m_cudnn_desc = nullptr;
+#endif
+
  public:
   softmax_layer(int index,
-                lbann_comm *comm)
-    : activation_layer(index, comm) {
+                lbann_comm *comm,
+                cudnn::cudnn_manager *cudnn=nullptr)
+      : activation_layer(index, comm) {
     initialize_distributed_matrices();
     m_min_output = std::sqrt(std::numeric_limits<DataType>::min());
+    this->m_cudnn = cudnn;
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+    if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
+      this->m_using_gpus = true;
+    }
+#endif
   }
 
   softmax_layer(const softmax_layer& other) :
@@ -87,6 +105,13 @@ class softmax_layer : public activation_layer {
   ~softmax_layer() {
     delete m_workspace;
     delete m_workspace_v;
+
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+    if (m_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_cudnn_desc));
+    }
+#endif
+    
   }
 
   softmax_layer* copy() const { return new softmax_layer(*this); }
@@ -107,13 +132,30 @@ class softmax_layer : public activation_layer {
       1, this->m_neural_network_model->get_max_mini_batch_size());
   }
 
+  virtual void setup_gpu() {
+    activation_layer::setup_gpu();
+#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+    throw lbann_exception("softmax: CUDA not detected");
+#else
+    FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_cudnn_desc));    
+#endif
+  }  
+
   void fp_set_std_matrix_view() {
     Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
   }
-
+  
   void fp_compute() {
+    if(this->m_using_gpus) {
+      fp_compute_cuda();
+    } else {
+      fp_compute_cpu();
+    }
+  }
+  
+  void fp_compute_cpu() {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
@@ -159,40 +201,85 @@ class softmax_layer : public activation_layer {
                            ->DataType {
                             const DataType sum = workspace_local(0, c);
                             const DataType y = x / sum;
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
                             return y > m_min_output ? y : m_min_output;
+#else
+                            return y;
+#endif
                           }));
 
   }
 
-  void bp_compute() {
+  void fp_compute_cuda();
 
+  void bp_compute() {
+    objective_functions::cross_entropy* obj
+        = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
+    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
+      bp_compute_cross_entropy_shortcut();
+      return;
+    }
+    
+    if(this->m_using_gpus) {
+      bp_compute_cuda();
+    } else {
+      bp_compute_cpu();
+    }
+  }
+  
+  void bp_compute_cross_entropy_shortcut() {
+    if(this->m_using_gpus) {
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+      Mat& error_signal_local = this->m_error_signal_v->Matrix();
+      int height = error_signal_local.Height();
+      int width = this->m_mini_batch_size_per_gpu;
+      softmax_cuda::bp_compute_cross_entropy_shortcut(*this->m_cudnn,
+                                                      this->m_activations_d,
+                                                      this->m_prev_error_signal_d,
+                                                      this->m_error_signal_d,
+                                                      height, width,
+                                                      m_min_output);
+#else
+      throw lbann_exception("softmax: CUDA not detected");
+#endif
+    } else {
+      bp_compute_cross_entropy_shortcut_cpu();
+    }
+  }
+
+  void bp_compute_cross_entropy_shortcut_cpu() {  
     // Get local matrices and parameters
+    const Mat& activations_local = this->m_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    Mat& error_signal_local = this->m_error_signal_v->Matrix();
+
+    El::IndexDependentFill(error_signal_local,
+                           (std::function<DataType(El::Int,El::Int)>)
+                           ([this,&activations_local,&prev_error_signal_local]
+                            (El::Int r, El::Int c)->DataType {
+                             const DataType activations_entry = activations_local(r,c);
+                             const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF                               
+                             if(activations_entry > m_min_output) {
+                               return activations_entry - prev_error_signal_entry;
+                             }
+                             else {
+                               return DataType(0);
+                             }
+#else
+                             return activations_entry - prev_error_signal_entry;
+#endif
+                           }));
+    return;
+  }
+
+  void bp_compute_cpu() {    
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     Mat& workspace_local = m_workspace_v->Matrix();
     const El::Int local_width = activations_local.Width();
-
-    // Apply softmax-cross-entropy shortcut if activated
-    objective_functions::cross_entropy* obj
-      = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
-    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
-      El::IndexDependentFill(error_signal_local,
-                             (std::function<DataType(El::Int,El::Int)>)
-                             ([this,&activations_local,&prev_error_signal_local]
-                              (El::Int r, El::Int c)->DataType {
-                               const DataType activations_entry = activations_local(r,c);
-                               const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
-                               if(activations_entry > m_min_output) {
-                                 return activations_entry - prev_error_signal_entry;
-                               }
-                               else {
-                                 return DataType(0);
-                               }
-                             }));
-      return;
-    }
-
+    
     // Compute dot products
     // Note: prev_error_signal^T activations
     for(El::Int c=0; c<local_width; ++c) {
@@ -210,6 +297,7 @@ class softmax_layer : public activation_layer {
                              const DataType activations_entry = activations_local(r,c);
                              const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
                              const DataType dot_product_entry = workspace_local(Int(0),c);
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF                            
                              if(activations_entry > m_min_output) {
                                return activations_entry * (prev_error_signal_entry
                                                            - dot_product_entry);
@@ -217,9 +305,15 @@ class softmax_layer : public activation_layer {
                              else {
                                return DataType(0);
                              }
+#else
+                               return activations_entry * (prev_error_signal_entry
+                                                           - dot_product_entry);
+#endif
                            }));
 
   }
+
+  void bp_compute_cuda();
 
   bool update_compute() {
     return true;
@@ -254,6 +348,91 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
   activation_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_workspace = new StarVCMat(this->m_comm->get_model_grid());
   m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
+}
+
+template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cuda() {
+#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+    throw lbann_exception("softmax: CUDA not detected");
+#else
+    const DataType one = 1;
+    const DataType zero = 0;
+
+    Mat& activations_local = this->m_activations_v->Matrix();
+    const Int local_height = activations_local.Height();
+    CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_cudnn_desc,
+                                           CUDNN_TENSOR_NCHW,
+                                           this->m_cudnn->get_cudnn_data_type(),                                           
+                                           this->m_mini_batch_size_per_gpu,
+                                           local_height, 1, 1));
+
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
+      FORCE_CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      FORCE_CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                       this->m_cudnn->get_stream(i)));
+      FORCE_CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(i),
+                                            CUDNN_SOFTMAX_ACCURATE,
+                                            CUDNN_SOFTMAX_MODE_CHANNEL,
+                                            &one,
+                                            m_cudnn_desc,
+                                            this->m_prev_activations_d[i],
+                                            &zero,
+                                            m_cudnn_desc,
+                                            this->m_activations_d[i]));
+    }
+    softmax_cuda::fp_cutoff(*this->m_cudnn, this->m_activations_d,
+                            local_height, this->m_mini_batch_size_per_gpu,
+                            this->m_min_output);
+#endif
+}
+
+template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::fp_compute_cuda() {
+#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+    throw lbann_exception("softmax: CUDA not detected");
+#else
+    throw lbann_exception("softmax: model-parallel CUDA not implemented");
+#endif
+}
+
+template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::bp_compute_cuda() {
+#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+    throw lbann_exception("softmax: CUDA not detected");
+#else
+    const DataType one = 1;
+    const DataType zero = 0;
+
+    const int num_gpus = this->m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                 this->m_cudnn->get_stream(i)));
+      FORCE_CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(i),
+                                             CUDNN_SOFTMAX_ACCURATE,
+                                             CUDNN_SOFTMAX_MODE_CHANNEL,
+                                             &one,
+                                             m_cudnn_desc,
+                                             this->m_activations_d[i],
+                                             m_cudnn_desc,
+                                             this->m_prev_error_signal_d[i],
+                                             &zero,
+                                             m_cudnn_desc,
+                                             this->m_error_signal_d[i]));
+    }
+    softmax_cuda::bp_cutoff(*this->m_cudnn, this->m_activations_d,
+                            this->m_error_signal_d,
+                            this->m_activations_v->Matrix().Height(),
+                            this->m_mini_batch_size_per_gpu,
+                            this->m_min_output);
+    
+#endif
+}
+
+template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::bp_compute_cuda() {
+#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+    throw lbann_exception("softmax: CUDA not detected");
+#else
+    throw lbann_exception("softmax: model-parallel CUDA not implemented");    
+#endif
 }
 
 }  // namespace lbann
