@@ -244,7 +244,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_mod
   }
   data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_last_mini_batch_stride(last_mini_batch_size);
+  data_reader->set_last_mini_batch_stride(data_reader->get_mini_batch_stride());
 
   data_reader->set_global_mini_batch_size(max_mini_batch_size);
   data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
