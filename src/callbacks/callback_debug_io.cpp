@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/callback_debug_io.hpp"
 
+/// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered
 void lbann::lbann_callback_debug_io::on_epoch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::training) {
     print_phase_start(m, execution_mode::training);
@@ -107,25 +108,37 @@ void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode 
     throw lbann_exception("Illegal execution mode in evaluate forward prop function");
   }
 
-  std::cout << "[" << m->get_comm()->get_model_rank() 
-            << "." << m->get_comm()->get_rank_in_model() 
-            << "] @" << 0 << "." << step 
-            << " Starting Phase: " << _to_string(mode) 
-            << " " << (data_reader->get_num_iterations_per_epoch() - 1)
-            << "i @ " << data_reader->get_global_mini_batch_size()
-            << "s (=" << m->get_comm()->get_num_models()
-            << "m *" << data_reader->get_mini_batch_size()
-            << "s [+" << data_reader->get_mini_batch_stride()
-            << "s]) + 1i @ " << data_reader->get_global_last_mini_batch_size()
-            << "s (=" << m->get_comm()->get_num_models()
-            << "m *" << data_reader->get_last_mini_batch_size()
-            << "s [+" << data_reader->get_last_mini_batch_stride()
-            << "s]):" 
-            <<" base ofset "<< data_reader->get_base_offset() 
-            << " model offset " << data_reader->get_model_offset() 
-            << " par. readers = " << data_reader->get_num_parallel_readers()
-            << "r"
-            << std::endl;
+  if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
+    std::cout << "[" << m->get_comm()->get_model_rank() 
+              << "." << m->get_comm()->get_rank_in_model() 
+              << "] @" << 0 << "." << step 
+              << " Starting Phase: " << _to_string(mode) 
+              << " " << (data_reader->get_num_iterations_per_epoch() - 1)
+              << "i @ " << data_reader->get_global_mini_batch_size()
+              << "s (=" << m->get_comm()->get_num_models()
+              << "m *" << data_reader->get_mini_batch_size()
+              << "s [+" << data_reader->get_stride_to_next_mini_batch()
+              << "s]) + 1i @ " << data_reader->get_global_last_mini_batch_size()
+              << "s (=" << m->get_comm()->get_num_models()
+              << "m *" << data_reader->get_last_mini_batch_size()
+              << "s [+" << data_reader->get_stride_to_last_mini_batch()
+              << "s]):" 
+              <<" base offset "<< data_reader->get_base_offset() 
+              << " model offset " << data_reader->get_model_offset() 
+              << " par. readers = " << data_reader->get_num_parallel_readers()
+              << "r"
+              << std::endl;
+  }else {
+    std::cout << "[" << m->get_comm()->get_model_rank() 
+              << "." << m->get_comm()->get_rank_in_model() 
+              << "] @" << 0 << "." << step 
+              << " Starting Phase: " << _to_string(mode) 
+              << " " << (data_reader->get_num_iterations_per_epoch())
+              << "i "
+              << " par. readers = " << data_reader->get_num_parallel_readers()
+              << "r (Inactive Reader)"
+              << std::endl;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +158,7 @@ void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, La
   input_layer *input = dynamic_cast<input_layer*>(l);
 
   if(input->current_root_rank() == 0) {
-    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {      
+    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {
       if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
         print_fp_start(m, input);
       }

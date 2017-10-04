@@ -137,7 +137,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   int model_offset = m_comm->get_model_rank() * max_mini_batch_size;
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
-  data_reader->set_mini_batch_stride(batch_stride);
+  data_reader->set_stride_to_next_mini_batch(batch_stride);
   data_reader->set_sample_stride(num_parallel_readers_per_model);
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
@@ -188,19 +188,19 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   /// Given the data readers model rank, how many models have a higher rank
 
   /// By default the last stride of each reader is part of a regular (full) round
-  data_reader->set_last_mini_batch_stride(data_reader->get_mini_batch_stride());
+  data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
 
   /// BVE FIXME - I feel like this is wrong  I don't think that the -1
   /// should be there
-  int last_mini_batch_offset = max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_mini_batch_stride();
+  int last_mini_batch_offset = max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_stride_to_next_mini_batch();
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
-    data_reader->set_last_mini_batch_stride((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_model_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_model());
+    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_model_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_model());
   }
 
-  //  cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_model_rank() << " model rank, "<< m_comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " with a last stride of " << data_reader->get_last_mini_batch_stride() << " and stride of " << data_reader->get_mini_batch_stride() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
-//cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_model_rank() << " model rank, "<< m_comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " num_whole_mini_batches_per_reader " << num_whole_mini_batches_per_reader << "(m_num_mini_batches_per_reader=" << data_reader->get_num_mini_batches_per_reader() << ") parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << data_reader->get_last_mini_batch_threshold() << " with a last stride of " << data_reader->get_last_mini_batch_stride() << " and stride of " << data_reader->get_batch_stride() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
+  //  cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_model_rank() << " model rank, "<< m_comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " with a last stride of " << data_reader->get_stride_to_last_mini_batch() << " and stride of " << data_reader->get_stride_to_next_mini_batch() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
+//cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_model_rank() << " model rank, "<< m_comm->get_rank_in_model() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " num_whole_mini_batches_per_reader " << num_whole_mini_batches_per_reader << "(m_num_mini_batches_per_reader=" << data_reader->get_num_mini_batches_per_reader() << ") parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << data_reader->get_last_mini_batch_threshold() << " with a last stride of " << data_reader->get_stride_to_last_mini_batch() << " and stride of " << data_reader->get_batch_stride() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
   return;
 }
 
@@ -228,7 +228,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_mod
   int base_offset  = m_comm->get_rank_in_model();
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
-  data_reader->set_mini_batch_stride(batch_stride);
+  data_reader->set_stride_to_next_mini_batch(batch_stride);
   data_reader->set_sample_stride(num_parallel_readers_per_model);
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
@@ -244,7 +244,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_mod
   }
   data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_last_mini_batch_stride(data_reader->get_mini_batch_stride());
+  data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
 
   data_reader->set_global_mini_batch_size(max_mini_batch_size);
   data_reader->set_global_last_mini_batch_size(last_mini_batch_size);

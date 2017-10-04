@@ -64,10 +64,10 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   generic_data_reader(int batch_size, bool shuffle = true) :
     m_mini_batch_size(0), m_current_pos(0),
-    m_mini_batch_stride(0), m_base_offset(0), m_model_offset(0),
+    m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
     m_last_mini_batch_size(0),
-    m_last_mini_batch_stride(0),
+    m_stride_to_last_mini_batch(0),
     m_reset_mini_batch_index(0),
     m_loaded_mini_batch_idx(0),
     m_current_mini_batch_idx(0),
@@ -326,12 +326,12 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_global_mini_batch_size;
   }
   /// Set the mini batch stride
-  void set_mini_batch_stride(const int s) {
-    m_mini_batch_stride = s;
+  void set_stride_to_next_mini_batch(const int s) {
+    m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
-  int get_mini_batch_stride() const {
-    return m_mini_batch_stride;
+  int get_stride_to_next_mini_batch() const {
+    return m_stride_to_next_mini_batch;
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
@@ -382,12 +382,12 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_global_last_mini_batch_size;
   }
   /// Set the last mini batch stride
-  void set_last_mini_batch_stride(const int s) {
-    m_last_mini_batch_stride = s;
+  void set_stride_to_last_mini_batch(const int s) {
+    m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
-  int get_last_mini_batch_stride() const {
-    return m_last_mini_batch_stride;
+  int get_stride_to_last_mini_batch() const {
+    return m_stride_to_last_mini_batch;
   }
   /// Set the number of parallel readers per model
   void set_num_parallel_readers(const int s) {
@@ -537,7 +537,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_mini_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
-  int m_mini_batch_stride;
+  int m_stride_to_next_mini_batch;
   /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;
@@ -556,7 +556,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::vector<int> m_unused_indices;
 
   int m_last_mini_batch_size;
-  int m_last_mini_batch_stride;
+  int m_stride_to_last_mini_batch;
   /// The index at which this data reader starts its epoch
   int m_reset_mini_batch_index;
   /// The index of the current mini-batch that has been loaded
