@@ -132,34 +132,15 @@ class concatenation_layer : public transform {
     }
 
     // Add parent layer if it isn't in list of parents
-    auto parent_pos = std::find(m_parents.begin(), m_parents.end(), parent);
-    if(parent_pos == m_parents.end()) {
-      m_parents.push_back(parent);
+    auto parent_pos = std::find(this->m_parent_layers.begin(),
+                                this->m_parent_layers.end(),
+                                parent);
+    if(parent_pos == this->m_parent_layers.end()) {
+      this->m_parent_layers.push_back(parent);
     }
     else {
       throw lbann_exception("concatenation_layer: could not add parent layer since it is already in list of parents");
     }
-
-  }
-
-  void pop_back_parent() {
-    if(m_parents.empty()) {
-      throw lbann_exception("concatenation_layer: could not remove parent since this layer has no parents");
-    }
-    m_parents.pop_back();
-    m_concatenation_points.pop_back();
-  }
-
-  void setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
-    transform::setup_pointers(prev_layer, next_layer);
-
-    // Add "previous" layer to list of parents
-    if(this->m_prev_layer != NULL) {
-      push_back_parent(this->m_prev_layer);
-    }
-
-    // Make the first parent layer the "previous" layer
-    this->m_prev_layer = m_parents.front();
 
   }
 
@@ -178,10 +159,10 @@ class concatenation_layer : public transform {
     m_concatenation_points.empty();
     m_concatenation_points.push_back(0);
     m_concatenation_points.push_back(this->m_neuron_dims[m_concatenation_axis]);
-    for(size_t i=1; i<m_parents.size(); ++i) {
+    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
 
       // Get parent layer dimensions
-      std::vector<int> parent_dims = m_parents[i]->fp_output_dims(this);
+      std::vector<int> parent_dims = this->m_parent_layers[i]->fp_output_dims(this);
 
       // Check if parent layer has valid dimensions
       if((int) parent_dims.size() != this->m_num_neuron_dims) {
@@ -217,8 +198,8 @@ class concatenation_layer : public transform {
 
     // Copy backward propagation output from GPUs if a parent layer is
     // not using GPU implementation
-    for(size_t i=1; i<m_parents.size(); ++i) {
-      if(!m_parents[i]->using_gpus()) {
+    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
+      if(!this->m_parent_layers[i]->using_gpus()) {
         m_copy_bp_output_from_gpus = true;
       }
     }
@@ -226,8 +207,10 @@ class concatenation_layer : public transform {
     // Allocate workspace if needed
     if(m_copy_bp_output_from_gpus) {
       int max_slice_dim = 0;
-      for(size_t parent_index=1; parent_index<m_parents.size(); ++parent_index) {
-        if(!m_parents[parent_index]->using_gpus()) {
+      for(size_t parent_index = 1;
+          parent_index < this->m_parent_layers.size();
+          ++parent_index) {
+        if(!this->m_parent_layers[parent_index]->using_gpus()) {
           max_slice_dim = std::max(max_slice_dim,
                                    m_concatenation_points[parent_index+1]
                                    - m_concatenation_points[parent_index]);
@@ -297,8 +280,10 @@ class concatenation_layer : public transform {
 
     // Copy entries in each child to error signal tensor
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t parent_index = 0; parent_index < m_parents.size(); ++parent_index) {
-      const Layer* parent = m_parents[parent_index];
+    for(size_t parent_index = 0;
+        parent_index < this->m_parent_layers.size();
+        ++parent_index) {
+      const Layer* parent = this->m_parent_layers[parent_index];
 
       // Get child error signal on GPUs
       std::vector<DataType*> input;
@@ -365,10 +350,10 @@ class concatenation_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
 
     // Copy entries in each parent to neuron tensor
-    for(size_t i = 0; i < m_parents.size(); ++i) {
+    for(size_t i = 0; i < this->m_parent_layers.size(); ++i) {
 
       // Split previous neuron tensor into slices
-      m_parents[i]->get_fp_output(*this->m_prev_activations, this);
+      this->m_parent_layers[i]->get_fp_output(*this->m_prev_activations, this);
       const int input_slice_dim = m_concatenation_points[i+1] - m_concatenation_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_concatenation_points[i] * slice_unit_size;
@@ -396,11 +381,11 @@ class concatenation_layer : public transform {
   void get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
 
     // Check if input is in the list of parent layers
-    const int parent_index = (std::find(m_parents.begin(),
-                                        m_parents.end(),
+    const int parent_index = (std::find(this->m_parent_layers.begin(),
+                                        this->m_parent_layers.end(),
                                         prev_layer)
-                              - m_parents.begin());
-    if(parent_index >= (int) m_parents.size()) {
+                              - this->m_parent_layers.begin());
+    if(parent_index >= (int) this->m_parent_layers.size()) {
       transform::get_bp_output(bp_output, prev_layer);
     }
 
@@ -459,11 +444,11 @@ class concatenation_layer : public transform {
   void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
 
     // Check if input is in the list of child layers
-    const int parent_index = (std::find(m_parents.begin(),
-                                        m_parents.end(),
+    const int parent_index = (std::find(this->m_parent_layers.begin(),
+                                        this->m_parent_layers.end(),
                                         prev_layer)
-                              - m_parents.begin());
-    if(parent_index >= (int) m_parents.size()) {
+                              - this->m_parent_layers.begin());
+    if(parent_index >= (int) this->m_parent_layers.size()) {
       transform::get_gpu_bp_output(bp_output, prev_layer);
     }
 

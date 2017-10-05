@@ -131,8 +131,8 @@ class slice_layer : public transform {
     std::stringstream s;
     s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
-    for (size_t h=0; h<this->m_children.size(); h++) {
-      s << this->m_children[h]->get_index() << " " << this->m_children[h]->get_name() << " ";
+    for (size_t h=0; h<this->m_child_layers.size(); h++) {
+      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_name() << " ";
     }
     s << " slice_points: ";
     for (size_t h=0; h<this->m_slice_points.size(); h++) {
@@ -162,21 +162,21 @@ class slice_layer : public transform {
     }
 
     // Add first child
-    if(m_children.empty()) {
+    if(this->m_child_layers.empty()) {
       if(m_comm->am_world_master()) {
         if(slice_point > 0) {
           err << __FILE__ << " " << __LINE__ << " :: slice_layer: first child should have a slice point of zero";
           throw lbann_exception(err.str());
         }
       }
-      m_children.push_back(child);
+      this->m_child_layers.push_back(child);
       m_slice_points.push_back(0);
     }
 
     // Add subsequent children
     else {
-      auto child_pos = std::find(m_children.begin(), m_children.end(), child);
-      if(child_pos != m_children.end()) {
+      auto child_pos = std::find(this->m_child_layers.begin(), this->m_child_layers.end(), child);
+      if(child_pos != this->m_child_layers.end()) {
         err << __FILE__ << " " << __LINE__ << " :: slice_layer:  number of slice points should be one less than number of children";
         throw lbann_exception(err.str());
       }
@@ -184,41 +184,10 @@ class slice_layer : public transform {
         err << __FILE__ << " " << __LINE__ << " :: slice_layer:  invalid slice point";
         throw lbann_exception(err.str());
       }
-      m_children.push_back(child);
+      this->m_child_layers.push_back(child);
       m_slice_points.push_back(slice_point);
     }
 
-  }
-
-  void pop_back_child() {
-    if(m_children.empty()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: could not remove child since this layer has no children";
-      throw lbann_exception(err.str());
-    }
-    m_children.pop_back();
-    m_slice_points.pop_back();
-  }
-
-  void setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
-    transform::setup_pointers(prev_layer, next_layer);
-    std::stringstream err;
-
-    // Error if "next" layer isn't already in list of children
-    if(next_layer != NULL
-       && (std::find(m_children.begin(), m_children.end(), this->m_next_layer)
-           == m_children.end())) {
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: can not add child layer during setup phase";
-      throw lbann_exception(err.str());
-    }
-    if(m_children.empty()) {
-      throw lbann_exception("slice_layer: can not setup layer since it has no children");
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: can not setup layer since it has no children";
-      throw lbann_exception(err.str());
-    }
-
-    // Make the first child layer the "next" layer
-    this->m_next_layer = m_children.front();
   }
 
   void setup_dims() {
@@ -252,8 +221,8 @@ class slice_layer : public transform {
 
     // Copy forward propagation output from GPUs if a child layer is
     // not using GPU implementation
-    for(size_t i=1; i<m_children.size(); ++i) {
-      if(!m_children[i]->using_gpus()) {
+    for(size_t i=1; i<this->m_child_layers.size(); ++i) {
+      if(!this->m_child_layers[i]->using_gpus()) {
         m_copy_fp_output_from_gpus = true;
       }
     }
@@ -261,8 +230,10 @@ class slice_layer : public transform {
     // Allocate workspace if needed
     if(m_copy_fp_output_from_gpus) {
       int max_slice_dim = 0;
-      for(size_t child_index=1; child_index<m_children.size(); ++child_index) {
-        if(!m_children[child_index]->using_gpus()) {
+      for(size_t child_index = 1;
+          child_index < this->m_child_layers.size();
+          ++child_index) {
+        if(!this->m_child_layers[child_index]->using_gpus()) {
           max_slice_dim = std::max(max_slice_dim,
                                    m_slice_points[child_index+1]
                                    - m_slice_points[child_index]);
@@ -336,8 +307,8 @@ class slice_layer : public transform {
 
     // Copy entries in each child to error signal tensor
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t child_index = 0; child_index < m_children.size(); ++child_index) {
-      const Layer* child = m_children[child_index];
+    for(size_t child_index = 0; child_index < this->m_child_layers.size(); ++child_index) {
+      const Layer* child = this->m_child_layers[child_index];
 
       // Get child error signal on GPUs
       std::vector<DataType*> input;
@@ -404,10 +375,10 @@ class slice_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
 
     // Copy entries in each child to error signal tensor
-    for(size_t i = 0; i < m_children.size(); ++i) {
+    for(size_t i = 0; i < this->m_child_layers.size(); ++i) {
 
       // Split previous error signal tensor into slices
-      m_children[i]->get_bp_output(*this->m_prev_error_signal, this);
+      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal, this);
       const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_slice_points[i] * slice_unit_size;
@@ -435,11 +406,11 @@ class slice_layer : public transform {
   void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
 
     // Check if input is in the list of child layers
-    const int child_index = (std::find(m_children.begin(),
-                                       m_children.end(),
+    const int child_index = (std::find(this->m_child_layers.begin(),
+                                       this->m_child_layers.end(),
                                        next_layer)
-                             - m_children.begin());
-    if(child_index >= (int) m_children.size()) {
+                             - this->m_child_layers.begin());
+    if(child_index >= (int) this->m_child_layers.size()) {
       transform::get_fp_output(fp_output, next_layer);
     }
 
@@ -498,11 +469,11 @@ class slice_layer : public transform {
   void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
 
     // Check if input is in the list of child layers
-    const int child_index = (std::find(m_children.begin(),
-                                       m_children.end(),
+    const int child_index = (std::find(this->m_child_layers.begin(),
+                                       this->m_child_layers.end(),
                                        next_layer)
-                             - m_children.begin());
-    if(child_index >= (int) m_children.size()) {
+                             - this->m_child_layers.begin());
+    if(child_index >= (int) this->m_child_layers.size()) {
       transform::get_gpu_fp_output(fp_output, next_layer);
     }
 
@@ -552,11 +523,11 @@ class slice_layer : public transform {
     }
 
     // Check if input is in the list of child layers
-    const int child_index = (std::find(m_children.begin(),
-                                       m_children.end(),
+    const int child_index = (std::find(this->m_child_layers.begin(),
+                                       this->m_child_layers.end(),
                                        next_layer)
-                             - m_children.begin());
-    if(child_index >= (int) m_children.size()) {
+                             - this->m_child_layers.begin());
+    if(child_index >= (int) this->m_child_layers.size()) {
       return m_neuron_dims;
     }
 

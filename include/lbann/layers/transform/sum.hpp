@@ -80,8 +80,8 @@ class sum_layer : public transform {
   std::string get_description() const {
     std::stringstream s;
      s << " sum; parents: ";
-     for (size_t i=0; i<m_parents.size(); i++) {
-       s << m_parents[i]->get_index() << " " << m_parents[i]->get_name() << " ";
+     for (size_t i=0; i<this->m_parent_layers.size(); i++) {
+       s << this->m_parent_layers[i]->get_index() << " " << this->m_parent_layers[i]->get_name() << " ";
      }
      s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
@@ -107,9 +107,11 @@ class sum_layer : public transform {
     }
 
     // Add parent layer if it isn't in list of parents
-    auto parent_pos = std::find(m_parents.begin(), m_parents.end(), parent);
-    if(parent_pos == m_parents.end()) {
-      m_parents.push_back(parent);
+    auto parent_pos = std::find(this->m_parent_layers.begin(),
+                                this->m_parent_layers.end(),
+                                parent);
+    if(parent_pos == this->m_parent_layers.end()) {
+      this->m_parent_layers.push_back(parent);
     }
     else {
       if(m_comm->am_world_master()) {
@@ -119,7 +121,7 @@ class sum_layer : public transform {
           << "my index: " << this->get_index()
           << " parent index: " << parent->get_index() << " name: " << parent->get_name() << "\n"
           << "existing parent list: ";
-      for (auto t : m_parents) {
+      for (auto t : this->m_parent_layers) {
         err << " index: " << t->get_index() << " name: " << t->get_name();
       }
       throw lbann_exception(err.str());
@@ -139,26 +141,15 @@ class sum_layer : public transform {
     }
 
     // Remove parent layer if it is in list of parents
-    auto parent_pos = std::find(m_parents.begin(), m_parents.end(), parent);
-    if(parent_pos != m_parents.end()) {
-      m_parents.erase(parent_pos);
+    auto parent_pos = std::find(this->m_parent_layers.begin(),
+                                this->m_parent_layers.end(),
+                                parent);
+    if(parent_pos != this->m_parent_layers.end()) {
+      this->m_parent_layers.erase(parent_pos);
     }
     else {
       throw lbann_exception("sum_layer: could not remove parent layer since it isn't in list of parents");
     }
-
-  }
-
-  void setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
-    transform::setup_pointers(prev_layer, next_layer);
-
-    // Add "previous" layer to list of parents
-    if(this->m_prev_layer != NULL) {
-      add_parent(this->m_prev_layer);
-    }
-
-    // Make the first parent layer the "previous" layer
-    this->m_prev_layer = m_parents.front();
 
   }
 
@@ -170,8 +161,8 @@ class sum_layer : public transform {
 
     // Copy backward propagation output from GPUs if a parent layer is
     // not using GPU implementation
-    for(size_t i=1; i<m_parents.size(); ++i) {
-      if(!m_parents[i]->using_gpus()) {
+    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
+      if(!this->m_parent_layers[i]->using_gpus()) {
         m_copy_bp_output_from_gpus = true;
       }
     }
@@ -221,8 +212,10 @@ class sum_layer : public transform {
 
     // Iterate through child layers
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t parent_index=1; parent_index<m_parents.size(); ++parent_index) {
-      const Layer* parent = m_parents[parent_index];
+    for(size_t parent_index = 1;
+        parent_index < this->m_parent_layers.size();
+        ++parent_index) {
+      const Layer* parent = this->m_parent_layers[parent_index];
 
       // Get child error signal on GPUs
       if(parent->using_gpus()) {
@@ -256,8 +249,8 @@ class sum_layer : public transform {
 
   void fp_compute_cpu() {
     El::Copy(*this->m_prev_activations, *this->m_activations_v);
-    for(size_t i=1; i<m_parents.size(); ++i) {
-      m_parents[i]->get_fp_output(*this->m_prev_activations, this);
+    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
+      this->m_parent_layers[i]->get_fp_output(*this->m_prev_activations, this);
       El::Axpy(DataType(1),
                *this->m_prev_activations,
                *this->m_activations_v);

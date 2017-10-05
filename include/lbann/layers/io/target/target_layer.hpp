@@ -151,7 +151,7 @@ class target_layer : public io_layer {
     }
     
     // Initialize objective function
-    this->m_neural_network_model->m_obj_fn->setup(*this->m_prev_layer);
+    this->m_neural_network_model->m_obj_fn->setup(*this->m_parent_layers[0]);
 
   }
 
