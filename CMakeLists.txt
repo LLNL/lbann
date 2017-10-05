@@ -10,12 +10,12 @@ execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_
 if(GIT_REPO)
   # Get the git version so that we can embed it into the executable
   execute_process(COMMAND git --git-dir ${LBANN_HOME}/.git describe --abbrev=7 --dirty --always --tags OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-  add_definitions(-DLBANN_VERSION=\"${GIT_VERSION}\")
+  add_definitions(-DLBANN_VERSION=${GIT_VERSION})
 else()
   if(LBANN_VER)
-    add_definitions(-DLBANN_VERSION=\"${LBANN_VER}\")
+    add_definitions(-DLBANN_VERSION=${LBANN_VER})
   else()
-    add_definitions(-DLBANN_VERSION=\"v0.UKWN\")
+    add_definitions(-DLBANN_VERSION=v0.UKWN)
   endif()
 endif()
 

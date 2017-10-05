@@ -162,4 +162,7 @@ static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
 #define log_simple_msg(...)
 #endif
 
+#define LBANN_MAKE_STR(x) _LBANN_MAKE_STR(x)
+#define _LBANN_MAKE_STR(x) #x
+
 #endif // LBANN_BASE_HPP

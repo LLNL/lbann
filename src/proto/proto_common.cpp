@@ -2169,7 +2169,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   std::string lbann_version("unknown: LBANN_VERSION is not defined");
 
 #ifdef LBANN_VERSION
-  lbann_version = LBANN_VERSION;
+  lbann_version = LBANN_MAKE_STR(LBANN_VERSION);
 #endif
 
   int size;
