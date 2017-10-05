@@ -38,7 +38,9 @@
 #include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
 
 /// Activation Layers
+#include "lbann/layers/activations/atan.hpp"
 #include "lbann/layers/activations/elu.hpp"
+#include "lbann/layers/activations/exponential.hpp"
 #include "lbann/layers/activations/id.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
@@ -126,12 +128,18 @@
 #include "lbann/optimizers/optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
+#include "lbann/objective_functions/binary_cross_entropy.hpp"
 #include "lbann/objective_functions/cross_entropy.hpp"
+#include "lbann/objective_functions/geom_negloglike.hpp"
+#include "lbann/objective_functions/mean_absolute_deviation.hpp"
 #include "lbann/objective_functions/mean_squared_error.hpp"
+#include "lbann/objective_functions/poisson_negloglike.hpp"
+
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"
 #include "lbann/metrics/metric_top_k_categorical_accuracy.hpp"
+#include "lbann/metrics/metric_mean_absolute_deviation.hpp"
 #include "lbann/metrics/metric_mean_squared_error.hpp"
 
 /// Utilities, exceptions, etc.
