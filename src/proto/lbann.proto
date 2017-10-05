@@ -331,6 +331,7 @@ message Layer {
    InputPartitionedMiniBatch input_partitioned_minibatch = 3;
 
    // transform Layers
+   Reshape reshape = 306;
    Pooling pooling = 12;
    Concatenation concatenation = 300;
    Slice slice = 301;
@@ -444,6 +445,11 @@ message InputPartitionedMiniBatch {
 //////////////////////
 // transform Layers //
 //////////////////////
+message Reshape {
+  int64 num_dims = 1;
+  string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+}
+
 message Pooling {
   int64 num_dims = 1;
 

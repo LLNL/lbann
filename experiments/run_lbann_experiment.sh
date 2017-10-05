@@ -170,7 +170,8 @@ case ${REBOOT_NODES} in
 esac
 echo "#SBATCH --time=${TIME_LIMIT}"                     >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
-echo "# ======== Print node name ========"              >> ${SLURM_SCRIPT}
+echo "# ======== Print time and node names ========"    >> ${SLURM_SCRIPT}
+echo "date"                                             >> ${SLURM_SCRIPT}
 SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
 echo "${SRUN_COMMAND} hostname"                         >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}

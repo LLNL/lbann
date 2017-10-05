@@ -342,6 +342,24 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: reshape
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_reshape()) {
+      const lbann_data::Reshape &ell = layer.reshape();
+      int i;
+      std::stringstream s(ell.dims());
+      vector<int> dims;
+      while (s >> i) {
+        dims.push_back(i);
+      }
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new reshape_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, ell.num_dims(), dims.data());
+      } else {
+        d = new reshape_layer<data_layout::DATA_PARALLEL>(layer_id, comm, ell.num_dims(), dims.data());
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: slice
     //////////////////////////////////////////////////////////////////
     else if (layer.has_slice()) {
