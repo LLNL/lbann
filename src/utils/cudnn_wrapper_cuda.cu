@@ -83,7 +83,7 @@ void cudnn_manager::allreduce(const std::vector<DataType*>& gpu_data,
         DataType *src_buf = j == 0 ? gpu_data[src_dev] + offset : bufs[sbuf_idx][src_dev];
         DataType *dst_buf = bufs[dbuf_idx][dst_dev];
         // copy to the next device in the ring
-        FORCE_CHECK_CUDA(cudaMemcpyPeerAsync(dst_buf, i, src_buf, src_dev,
+        FORCE_CHECK_CUDA(cudaMemcpyPeerAsync(dst_buf, dst_dev, src_buf, src_dev,
                                              len * sizeof(DataType), get_stream(src_dev)));
       }
       synchronize();
