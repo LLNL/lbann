@@ -65,14 +65,21 @@ class reshape_layer : public transform {
     this->m_num_neuron_dims = num_neuron_dims;
     this->m_neuron_dims = neuron_dims;
 
-#if 0
-    int 
-    for(int i = 0; i < this->m_num_neuron_dims; ++i) {
-      if(this->m_neuron_dims[i] <= 0) {
-        
+    // Determine any unspecified dimensions
+    int unspecified_dim = -1;
+    for(int dim = 0; dim < this->m_num_neuron_dims; ++dim) {
+      if(this->m_neuron_dims[dim] <= 0) {
+        unspecified_dim = dim;
+        this->m_neuron_dims[dim] = 1;
       }
     }
-#endif
+    if(unspecified_dim >= 0) {
+      const int specified_size = std::accumulate(this->m_neuron_dims.begin(),
+                                                 this->m_neuron_dims.end(),
+                                                 1,
+                                                 std::multiplies<int>());
+      this->m_neuron_dims[unspecified_dim] = this->m_num_neurons / specified_size;
+    }
 
     // Check that reshape is valid
     if(this->m_num_neurons != std::accumulate(this->m_neuron_dims.begin(),
