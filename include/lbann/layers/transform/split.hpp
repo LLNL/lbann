@@ -51,6 +51,9 @@ class split_layer : public transform {
     // Setup the data distribution
     initialize_distributed_matrices();
 
+    // Split layer has no limit on children
+    m_max_num_child_layers = -1;
+
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
     if(cudnn) {

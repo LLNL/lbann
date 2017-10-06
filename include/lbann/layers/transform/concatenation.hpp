@@ -69,6 +69,9 @@ class concatenation_layer : public transform {
     // Setup the data distribution
     initialize_distributed_matrices();
 
+    // Concatenation layer has no limit on parents
+    m_max_num_parent_layers = -1;
+
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
     if(cudnn) {

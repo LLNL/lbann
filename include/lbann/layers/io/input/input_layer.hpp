@@ -36,7 +36,10 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
  public:
   input_layer(lbann_comm *comm, int num_parallel_readers,  std::map<execution_mode, generic_data_reader *> data_readers)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      io_layer(comm, data_readers) {}
+      io_layer(comm, data_readers) {
+    // Input layers have no parents
+    m_max_num_parent_layers = 0;
+  }
 
   virtual ~input_layer() {
     // Input layer always frees data readers.

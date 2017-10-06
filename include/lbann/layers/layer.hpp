@@ -236,6 +236,15 @@ class Layer {
   /** List of child layers. */
   std::vector<const Layer*> m_child_layers;
 
+  /** Maximum number of parent layers.
+   *  A negative value indicates no limit.
+   */
+  int m_max_num_parent_layers;
+  /** Maximum number of child layers.
+   *  A negative value indicates no limit.
+   */
+  int m_max_num_child_layers;
+
   execution_mode  m_execution_mode;
   model *m_neural_network_model;
 
