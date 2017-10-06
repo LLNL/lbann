@@ -56,12 +56,13 @@ class lbann_callback_save_images : public lbann_callback {
   }
   void on_epoch_end(model *m);
   void on_phase_end(model *m);
+  void on_test_end(model *m);
   std::string name() const { return "save images"; }
  private:
   std::string m_image_dir; //directory to save image
   std::string m_extension; //image extension; pgm, jpg, png etc
   generic_data_reader *m_reader;
-  void save_image(model& m, AbsDistMat& input, AbsDistMat& output, int index);
+  void save_image(model& m, AbsDistMat& input, AbsDistMat& output, std::string tag);
 };
 
 }  // namespace lbann

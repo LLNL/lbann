@@ -34,33 +34,40 @@ namespace lbann {
 
 
 void lbann_callback_save_images::on_epoch_end(model *m) {
-  auto epoch = m->get_cur_epoch();
   auto layers = m->get_layers();
+  auto tag = "epoch" + std::to_string(m->get_cur_epoch());
   //@todo: generalize to two matching layers
   //@todo: use view so we can save arbitrary number of valid images
   //using layer just before reconstruction layer because prev_layer_act is protected
   save_image(*m,
              layers[0]->get_activations(),
              layers[layers.size()-2]->get_activations(),
-             epoch);
+             tag);
 }
 
 
 void lbann_callback_save_images::on_phase_end(model *m) {
   auto layers = m->get_layers();
   auto phase = m->get_current_phase();
-  auto epoch = m->get_cur_epoch();
-  auto index = phase*epoch + epoch;
+  auto tag = "phase" + std::to_string(phase);
   save_image(*m,
              layers[phase]->get_activations(),
              layers[phase+2]->get_activations(),
-             index);
+             tag);
+}
+
+void lbann_callback_save_images::on_test_end(model *m) {
+  auto layers = m->get_layers();
+  save_image(*m,
+             layers[0]->get_activations(),
+             layers[layers.size()-2]->get_activations(),
+             "test");
 }
 
 void lbann_callback_save_images::save_image(model& m,
                                             AbsDistMat& input,
                                             AbsDistMat& output,
-                                            int index) {
+                                            std::string tag) {
 
   // Save input image
   AbsDistMat* input_col = input.Construct(input.Grid(),
@@ -69,7 +76,7 @@ void lbann_callback_save_images::save_image(model& m,
   CircMat input_circ = *input_col;
   delete input_col;
   if(m.get_comm()->am_world_master()) {
-    m_reader->save_image(input_circ.Matrix(), m_image_dir+"input_"+ std::to_string(index)+"."+m_extension);
+    m_reader->save_image(input_circ.Matrix(), m_image_dir+"input_"+tag+"."+m_extension);
   }
   
   // Save output image if it is a reconstruction
@@ -80,7 +87,7 @@ void lbann_callback_save_images::save_image(model& m,
     CircMat output_circ = *output_col;
     delete output_col;
     if(m.get_comm()->am_world_master()) {
-      m_reader->save_image(output_circ.Matrix(), m_image_dir+"output_"+ std::to_string(index)+"."+m_extension);
+      m_reader->save_image(output_circ.Matrix(), m_image_dir+"output_"+tag+"."+m_extension);
     }
   }
 
