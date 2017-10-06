@@ -62,30 +62,15 @@ class slice_layer : public transform {
   /// Constructor
   slice_layer(int index,
               lbann_comm *comm,
-              std::vector<const Layer*> children,
               int slice_axis,
               std::vector<int> slice_points,
               cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm),
-      m_slice_axis(slice_axis) {
+      m_slice_axis(slice_axis),
+      m_slice_points(slice_points) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
-
-    // Check that number of slice points is valid
-    if(!children.empty() && children.size()-1 != slice_points.size()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer:  number of slice points should be one less than number of children";
-      throw lbann_exception(err.str());
-    }
-
-    // Initialize list of children
-    if(!children.empty()) {
-      push_back_child(children.front(), 0);
-    }
-    for(size_t i=1; i<children.size(); ++i) {
-      push_back_child(children[i], slice_points[i-1]);
-    }
 
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
@@ -149,52 +134,16 @@ class slice_layer : public transform {
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
 
-  void push_back_child(const Layer *child, int slice_point) {
-    std::stringstream err;
-
-    // Check if child layer is null pointer
-    if(child == NULL) {
-      if(m_comm->am_world_master()) {
-        err << __FILE__ << " " << __LINE__ << " :: slice_layer: could not add child layer since pointer is null";
-        throw lbann_exception(err.str());
-      }
-      return;
-    }
-
-    // Add first child
-    if(this->m_child_layers.empty()) {
-      if(m_comm->am_world_master()) {
-        if(slice_point > 0) {
-          err << __FILE__ << " " << __LINE__ << " :: slice_layer: first child should have a slice point of zero";
-          throw lbann_exception(err.str());
-        }
-      }
-      this->m_child_layers.push_back(child);
-      m_slice_points.push_back(0);
-    }
-
-    // Add subsequent children
-    else {
-      auto child_pos = std::find(this->m_child_layers.begin(), this->m_child_layers.end(), child);
-      if(child_pos != this->m_child_layers.end()) {
-        err << __FILE__ << " " << __LINE__ << " :: slice_layer:  number of slice points should be one less than number of children";
-        throw lbann_exception(err.str());
-      }
-      if(slice_point <= m_slice_points.back()) {
-        err << __FILE__ << " " << __LINE__ << " :: slice_layer:  invalid slice point";
-        throw lbann_exception(err.str());
-      }
-      this->m_child_layers.push_back(child);
-      m_slice_points.push_back(slice_point);
-    }
-
-  }
-
   void setup_dims() {
     std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
+
+    // Check that slice points are valid
+    if(!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+      throw lbann_exception("slice_layer: list of slice points must be sorted");
+    }
 
     // Check if slice axis and slice points are valid
     if(m_slice_axis < 0 || m_slice_axis >= this->m_num_neuron_dims) {
@@ -205,6 +154,7 @@ class slice_layer : public transform {
       err << __FILE__ << " " << __LINE__ << " :: slice_layer: slice points are greater than slice axis dimensions";
       throw lbann_exception(err.str());
     }
+
 
     // Add slice axis dimension to slice point list
     m_slice_points.push_back(this->m_neuron_dims[m_slice_axis]);
@@ -358,6 +308,9 @@ class slice_layer : public transform {
   }
 
   void bp_compute_cpu() {
+    
+    // Clear error signal
+    El::Zero(*this->m_error_signal_v);
 
     // Split the error signal tensor into slices of width 1 along the
     // slice axis

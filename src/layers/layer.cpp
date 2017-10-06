@@ -346,18 +346,8 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
 
 void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
   // Set adjacent layers
-  auto parent_pos = std::find(m_parent_layers.begin(),
-                              m_parent_layers.end(),
-                              prev_layer);
-  if(prev_layer != nullptr && parent_pos == m_parent_layers.end()) {
-    m_parent_layers.push_back(prev_layer);
-  }
-  auto child_pos = std::find(m_child_layers.begin(),
-                             m_child_layers.end(),
-                             next_layer);
-  if(next_layer != nullptr && child_pos == m_child_layers.end()) {
-    m_child_layers.push_back(next_layer);
-  }
+  add_parent_layer(prev_layer);
+  add_child_layer(next_layer);
 }
 
 void Layer::setup_dims() {
@@ -691,6 +681,40 @@ std::string Layer::get_data_layout_string(data_layout d) const {
 
 const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
+}
+
+std::vector<const Layer*>& Layer::get_parent_layers() {
+  return m_parent_layers;
+}
+
+const std::vector<const Layer*>& Layer::get_parent_layers() const {
+  return m_parent_layers;
+}
+
+std::vector<const Layer*>& Layer::get_child_layers() {
+  return m_child_layers;
+}
+
+const std::vector<const Layer*>& Layer::get_child_layers() const {
+  return m_child_layers;
+}
+
+void Layer::add_parent_layer(const Layer* parent) {
+  auto parent_pos = std::find(m_parent_layers.begin(),
+                              m_parent_layers.end(),
+                              parent);
+  if(parent != nullptr && parent_pos == m_parent_layers.end()) {
+    m_parent_layers.push_back(parent);
+  }
+}
+
+void Layer::add_child_layer(const Layer* child) {
+  auto child_pos = std::find(m_child_layers.begin(),
+                             m_child_layers.end(),
+                             child);
+  if(child != nullptr && child_pos == m_child_layers.end()) {
+    m_child_layers.push_back(child);
+  }
 }
 
 }  // namespace lbann

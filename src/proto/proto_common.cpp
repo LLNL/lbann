@@ -120,15 +120,11 @@ data_layout get_data_layout(const string& s, const char *file, int line, bool ma
 }
 
 struct transform_layers {
-  transform_layers(Layer* layer, std::vector<int> &childs, std::vector<int> &points) 
-    : slice(layer), children(childs), slice_points(points) {}
-
   transform_layers(Layer* layer, std::vector<int> &childs)
     : slice(layer), children(childs) {}
 
   Layer * slice;
   std::vector<int> children;  //may also be parents
-  std::vector<int> slice_points;
 };
 
 
@@ -141,10 +137,9 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
       assert(layers[h].children.size() == layers[h].slice_points.size());
       for (size_t k = 0; k<layers[h].children.size(); k++) {
         int child_id = layers[h].children[k];
-        int slice_pt = layers[h].slice_points[k];
         assert(the_layers.find(child_id) != the_layers.end());
         Layer * child = the_layers[child_id];
-        s->push_back_child(child, slice_pt);
+        s->add_child_layer(child);
       }
     } else if (name == "split") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
@@ -152,7 +147,7 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
         int child_id = layers[h].children[k];
         assert(the_layers.find(child_id) != the_layers.end());
         Layer * child = the_layers[child_id];
-        s->add_child(child);
+        s->add_child_layer(child);
       }
     } else if (name == "sum") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
@@ -160,7 +155,7 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
         int parent_id = layers[h].children[k];
         assert(the_layers.find(parent_id) != the_layers.end());
         Layer * parent = the_layers[parent_id];
-        s->add_parent(parent);
+        s->add_parent_layer(parent);
       }
     } else {
       if (master) {
@@ -377,8 +372,8 @@ void add_layers(
       while (s >> i) {
         slice_points.push_back(i);
       }
-      d = new slice_layer<>(layer_id, comm, {}, ell.slice_axis(), {}, cudnn);
-      transform_layers record(d, children, slice_points);
+      d = new slice_layer<>(layer_id, comm, ell.slice_axis(), slice_points, cudnn);
+      transform_layers record(d, children);
       t_layers.push_back(record);
     }
 
@@ -393,7 +388,7 @@ void add_layers(
       while (s >> i) {
         parents.push_back(i);
       }
-      d = new sum_layer<>(layer_id, comm, {}, cudnn);
+      d = new sum_layer<>(layer_id, comm, cudnn);
       transform_layers record(d, parents);
       t_layers.push_back(record);
     }
@@ -409,7 +404,7 @@ void add_layers(
       while (s >> i) {
         children.push_back(i);
       }
-      d = new split_layer<>(layer_id, comm, {}, cudnn);
+      d = new split_layer<>(layer_id, comm, cudnn);
       transform_layers record(d, children);
       t_layers.push_back(record);
     }

@@ -197,6 +197,20 @@ class Layer {
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
+  /** Get list of parent layers. */
+  std::vector<const Layer*>& get_parent_layers();
+  /** Get list of parent layers (const). */
+  const std::vector<const Layer*>& get_parent_layers() const;
+  /** Get list of child layers. */
+  std::vector<const Layer*>& get_child_layers();
+  /** Get list of child layers (const). */
+  const std::vector<const Layer*>& get_child_layers() const;
+
+  /** Add a parent layer. */
+  void add_parent_layer(const Layer* parent);
+  /** Add a child layer. */
+  void add_child_layer(const Layer* child);
+
  protected:
 
   int m_index;                 ///< Layer index (start with 0)

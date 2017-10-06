@@ -61,7 +61,6 @@ class concatenation_layer : public transform {
   /// Constructor
   concatenation_layer(int index,
                       lbann_comm *comm,
-                      std::vector<const Layer*> parents,
                       int concatenation_axis,
                       cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm),
@@ -69,11 +68,6 @@ class concatenation_layer : public transform {
 
     // Setup the data distribution
     initialize_distributed_matrices();
-
-    // Initialize list of parents
-    for(size_t i=0; i<parents.size(); ++i) {
-      push_back_parent(parents[i]);
-    }
 
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
@@ -120,29 +114,6 @@ class concatenation_layer : public transform {
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
-
-  void push_back_parent(const Layer *parent) {
-
-    // Check if parent layer is null pointer
-    if(parent == NULL) {
-      if(m_comm->am_world_master()) {
-        std::cerr << "concatenation_layer: could not add parent layer since pointer is null" << "\n";
-      }
-      return;
-    }
-
-    // Add parent layer if it isn't in list of parents
-    auto parent_pos = std::find(this->m_parent_layers.begin(),
-                                this->m_parent_layers.end(),
-                                parent);
-    if(parent_pos == this->m_parent_layers.end()) {
-      this->m_parent_layers.push_back(parent);
-    }
-    else {
-      throw lbann_exception("concatenation_layer: could not add parent layer since it is already in list of parents");
-    }
-
-  }
 
   void setup_dims() {
 
