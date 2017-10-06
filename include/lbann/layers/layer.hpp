@@ -199,11 +199,6 @@ class Layer {
 
  protected:
 
-  /** List of child layers. */
-  std::vector<const Layer*> m_children;
-  /** List of parent layers. */
-  std::vector<const Layer*> m_parents;
-
   int m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;
@@ -215,22 +210,20 @@ class Layer {
   int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
   std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
+  AbsDistMat *m_prev_activations;   ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
+  AbsDistMat *m_activations;        ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
+  AbsDistMat *m_activations_v;      ///< View of active columns in activations matrix
+  AbsDistMat *m_prev_error_signal;  ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
+  AbsDistMat *m_error_signal;       ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
+  AbsDistMat *m_error_signal_v;     ///< View of active columns in error signal matrix
+
+  /** List of parent layers. */
+  std::vector<const Layer*> m_parent_layers;
+  /** List of child layers. */
+  std::vector<const Layer*> m_child_layers;
+
   execution_mode  m_execution_mode;
-
-  AbsDistMat *m_prev_error_signal;    ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
-
-  AbsDistMat *m_activations;          ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
-  AbsDistMat *m_activations_v;        ///< View of active columns in activations matrix
-
   model *m_neural_network_model;
-
-  const Layer *m_prev_layer;  ///< Pointer to previous layer
-  const Layer *m_next_layer;  ///< Pointer to next layer
-
-  AbsDistMat *m_error_signal;        ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
-  AbsDistMat *m_error_signal_v;      ///< View of active columns in error signal matrix
-
-  AbsDistMat *m_prev_activations;    ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();
