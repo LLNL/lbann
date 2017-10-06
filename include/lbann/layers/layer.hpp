@@ -77,17 +77,14 @@ class Layer {
     return 0.0;
   };
 
-  /**
-   * This is called on every layer to set up its prev/next layer pointers,
-   * dimensions, and allocate data. By default, it calls the setup_dims,
-   * setup_data, setup_views, and setup_gpu (if needed) methods.
+  /** Setup layer dimensions and data.
+   *  By default, this calls the setup_pointers, setup_dims,
+   *  setup_data, setup_views, and setup_gpu (if needed)
+   *  methods. Unless the setup_pointers function has been replaced in
+   *  an inherited class, it is assumed that pointers to parent/child
+   *  layers have already been initialized.
    */
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer);
-  /**
-   * This is called by setup to actually set up prev/next layer pointers.
-   * This is public because models also use this to adjust pointers as needed.
-   */
-  virtual void setup_pointers(const Layer *prev_layer, const Layer *next_layer);
+  virtual void setup();
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 
@@ -257,39 +254,41 @@ class Layer {
   virtual void pin_data();
 #endif // __LIB_CUDNN
 
-  /**
-   * Called by setup(), each layer should override this to call its parent and
-   * set up the layer's m_num_neurons and m_neuron_dims. This base method sets
-   * up m_num_prev_neurons and related methods.
+  /** Setup pointers to parent and child layers.
+   *  Called by the setup function. This base method just checks that
+   *  the number of parents and children are valid. Pointers to the
+   *  parent/child layers are assumed to be initialized already.
+   */
+  virtual void setup_pointers();
+  /** Setup neuron tensor dimensions
+   *  Called by the setup function. This base method initializes the
+   *  input neuron tensor dimensions and sets the output neuron tensor
+   *  dimensions equal to the input.
    */
   virtual void setup_dims();
-  /**
-   * Called by setup(), each layer should override to call its parent and
-   * set up the layer's data (e.g. weights). This base method sets up the
-   * activations and error signal matrices. This is always called after
-   * setup_dims.
+  /** Setup layer data.
+   *  Called by the setup function. This base method initializes the
+   *  activations and error signal matrices.
    */
   virtual void setup_data();
-  /**
-   * Called by setup(), each layer using GPU should override this to
-   * call its parent and set up the layer's GPU data
-   * (e.g. weights). This base method sets up the activations and
-   * error signal matrices. This is always called after setup_data.
+  /** Setup GPU objects.
+   *  Called by the setup function if GPUs are enabled. This base
+   *  method initializes the activations and error signal matrices on
+   *  GPUs.
    */
   virtual void setup_gpu();
-  /**
-   * Called by setup(), each layer should override to call its parent and set
-   * up any views of the layer's data. This is always called after setup_data.
+  /** Setup matrix views.
+   *  Called by the setup function.
    */
   virtual void setup_views() {}
-  /** Perform the layers work / main function for forward propagation */
+  /** Perform the main computation for a forward propagation step. */
   virtual void fp_compute() {}
-  /** Perform the layers work / main function for backward propagation */
+  /** Perform the main computation for a backward propagation step. */
   virtual void bp_compute() {}
-  /** Perform the layers work / main function for the update step */
+  /** Perform the main computation for an update step. */
   virtual bool update_compute() { return true; }
 
-  /** Current layer is using GPUs. */
+  /** Whether current layer is using GPUs. */
   bool m_using_gpus;
 
   /// cuDNN manager

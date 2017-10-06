@@ -55,9 +55,12 @@ sequential_model::sequential_model(const sequential_model& other) :
   // Update pointers for each layer.
   for (size_t l = 0; l < m_layers.size(); ++l) {
     m_layers[l]->set_neural_network_model(this);
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->setup_pointers(prev_layer, next_layer);
+    if (l > 0) {
+      m_layers[l]->get_parent_layers().front() = m_layers[l-1];
+    }
+    if (l < m_layers.size() - 1) {
+      m_layers[l]->get_child_layers().front() = m_layers[l+1];
+    }
   }
   // Update target layer data readers.
   io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
@@ -77,9 +80,12 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
   // Update pointers for each layer.
   for (size_t l = 0; l < m_layers.size(); ++l) {
     m_layers[l]->set_neural_network_model(this);
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->setup_pointers(prev_layer, next_layer);
+    if (l > 0) {
+      m_layers[l]->get_parent_layers().front() = m_layers[l-1];
+    }
+    if (l < m_layers.size() - 1) {
+      m_layers[l]->get_child_layers().front() = m_layers[l+1];
+    }
   }
   // Update target layer data readers.
   io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
@@ -314,9 +320,11 @@ void sequential_model::setup(int start_index, int end_index) {
   // Setup each layer
   for (int l=start_index; l<end_index; ++l) {
     m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    Layer* next_layer = l < end_index-1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->setup(prev_layer, next_layer);
+    const Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
+    const Layer* next_layer = l < end_index-1 ? m_layers[l+1] : nullptr;
+    m_layers[l]->add_parent_layer(prev_layer);
+    m_layers[l]->add_child_layer(next_layer);
+    m_layers[l]->setup();
     m_layers[l]->check_setup();
     m_layers[l]->set_index(l);
     if (m_comm->am_world_master()) {

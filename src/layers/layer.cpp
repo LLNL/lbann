@@ -348,8 +348,8 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
 }
 
-void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
-  setup_pointers(prev_layer, next_layer);
+void Layer::setup() {
+  setup_pointers();
   setup_dims();
   setup_data();
   setup_views();
@@ -358,10 +358,8 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
   }
 }
 
-void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
-  // Set adjacent layers
-  add_parent_layer(prev_layer);
-  add_child_layer(next_layer);
+void Layer::setup_pointers() {
+  // Check if the number of parents/children are valid
   if(m_max_num_parent_layers >= 0
      && (int)m_parent_layers.size() > m_max_num_parent_layers) {
     throw lbann_exception("Layer: too many parent layers");
