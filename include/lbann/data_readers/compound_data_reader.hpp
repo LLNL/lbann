@@ -70,16 +70,7 @@ class generic_compound_data_reader : public generic_data_reader {
       delete reader;
     }
   }
-  generic_compound_data_reader* copy() const {
-    return new generic_compound_data_reader(*this);
-  }
-
-  virtual void load() {
-    // Load each subsidiary data reader.
-    for (auto&& reader : m_data_readers) {
-      reader->load();
-    }
-  }
+  virtual generic_compound_data_reader* copy() const = 0;
 
   //************************************************************************
   /// Apply operations to subsidiary data readers
