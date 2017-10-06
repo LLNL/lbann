@@ -181,7 +181,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Sets the percentage of the dataset to be used for validation.
    * @param s The percentage used, in the range [0, 1].
    */
-  void set_validation_percent(double s);
+  virtual void set_validation_percent(double s);
 
   /**
    * True if set_validation_percent was called.
@@ -197,7 +197,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
-  void set_role(std::string role) {
+  virtual void set_role(std::string role) {
     m_role = role;
   }
 
@@ -206,7 +206,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * with the heldout percentage.
    * Typically this changes from "train" to "validate".
    */
-  void swap_role(std::string role) {
+  virtual void swap_role(std::string role) {
     m_role = role;
     if(m_validation_percent == -1) {
       throw lbann_exception(
@@ -455,7 +455,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// only the master may write to cerr or cout; primarily for use in debugging during development
-  void set_master(bool m) {
+  virtual void set_master(bool m) {
     m_master = m;
   }
 
@@ -465,7 +465,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// Allow the reader to know where it is in the model hierarchy
-  void set_rank(int rank) {
+  virtual void set_rank(int rank) {
     m_model_rank = rank;
   }
 

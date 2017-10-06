@@ -29,7 +29,7 @@
 #ifndef LBANN_DATA_READER_MERGE_FEATURES_HPP
 #define LBANN_DATA_READER_MERGE_FEATURES_HPP
 
-#include "data_reader.hpp"
+#include "compound_data_reader.hpp"
 
 namespace lbann {
 
@@ -40,7 +40,7 @@ namespace lbann {
  * provide the label. This data reader uses the fetch_datum method of its
  * subsidiary data readers to fetch all data, including the labels.
  */
-class data_reader_merge_features : public generic_data_reader {
+class data_reader_merge_features : public generic_compound_data_reader {
  public:
   data_reader_merge_features(int batch_size,
                              std::vector<generic_data_reader*> data_readers,
@@ -70,8 +70,6 @@ class data_reader_merge_features : public generic_data_reader {
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
   bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
 
-  /// List of readers providing data.
-  std::vector<generic_data_reader*> m_data_readers;
   /// Reader providing label data.
   generic_data_reader *m_label_reader;
   /// Sum of the size of data from all the data readers.

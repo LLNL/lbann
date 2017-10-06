@@ -33,48 +33,28 @@ namespace lbann {
 data_reader_merge_features::data_reader_merge_features(
   int batch_size, std::vector<generic_data_reader*> data_readers,
   generic_data_reader *label_reader, bool shuffle) :
-  generic_data_reader(batch_size, shuffle),
-  m_data_readers(data_readers), m_label_reader(label_reader) {
-  if (m_data_readers.empty()) {
-    throw lbann_exception(
-      "data_reader_merge_features: data reader list is empty");
-  }
-}
+  generic_compound_data_reader(batch_size, data_readers, shuffle),
+  m_label_reader(label_reader) {}
 
 data_reader_merge_features::data_reader_merge_features(
   const data_reader_merge_features& other) :
-  generic_data_reader(other),
+  generic_compound_data_reader(other),
   m_data_size(other.m_data_size) {
-  for (auto&& reader : other.m_data_readers) {
-    m_data_readers.push_back(reader->copy());
-  }
   m_label_reader = other.m_label_reader->copy();
 }
 
 data_reader_merge_features& data_reader_merge_features::operator=(
   const data_reader_merge_features& other) {
-  generic_data_reader::operator=(other);
+  generic_compound_data_reader::operator=(other);
   m_data_size = other.m_data_size;
-  if (!m_data_readers.empty()) {
-    for (auto&& reader : m_data_readers) {
-      delete reader;
-    }
-    m_data_readers.clear();
-  }
   if (m_label_reader) {
     delete m_label_reader;
-  }
-  for (auto&& reader : other.m_data_readers) {
-    m_data_readers.push_back(reader->copy());
   }
   m_label_reader = other.m_label_reader->copy();
   return *this;
 }
 
 data_reader_merge_features::~data_reader_merge_features() {
-  for (auto&& reader : m_data_readers) {
-    delete reader;
-  }
   delete m_label_reader;
 }
 

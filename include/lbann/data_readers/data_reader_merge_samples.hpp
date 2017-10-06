@@ -29,7 +29,7 @@
 #ifndef LBANN_DATA_READER_MERGE_SAMPLES_HPP
 #define LBANN_DATA_READER_MERGE_SAMPLES_HPP
 
-#include "data_reader.hpp"
+#include "compound_data_reader.hpp"
 
 namespace lbann {
 
@@ -37,7 +37,7 @@ namespace lbann {
  * Data reader for merging the samples from multiple data readers into a
  * single dataset.
  */
-class data_reader_merge_samples : public generic_data_reader {
+class data_reader_merge_samples : public generic_compound_data_reader {
  public:
   data_reader_merge_samples(int batch_size,
                             std::vector<generic_data_reader*> data_readers,
@@ -62,13 +62,12 @@ class data_reader_merge_samples : public generic_data_reader {
   const std::vector<int> get_data_dims() const {
     return m_data_readers[0]->get_data_dims();
   }
+
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
   bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
 
-  /// List of readers providing data.
-  std::vector<generic_data_reader*> m_data_readers;
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;
 };

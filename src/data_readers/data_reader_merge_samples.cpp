@@ -33,42 +33,21 @@ namespace lbann {
 data_reader_merge_samples::data_reader_merge_samples(
   int batch_size, std::vector<generic_data_reader*> data_readers,
   bool shuffle) :
-  generic_data_reader(batch_size, shuffle),
-  m_data_readers(data_readers) {
-  if (m_data_readers.empty()) {
-    throw lbann_exception(
-      "data_reader_merge_samples: data reader list empty");
-  }
-}
+  generic_compound_data_reader(batch_size, data_readers, shuffle) {}
 
 data_reader_merge_samples::data_reader_merge_samples(
   const data_reader_merge_samples& other) :
-  generic_data_reader(other),
-  m_num_samples_psum(other.m_num_samples_psum) {
-  for (auto&& reader : other.m_data_readers) {
-    m_data_readers.push_back(reader->copy());
-  }
-}
+  generic_compound_data_reader(other),
+  m_num_samples_psum(other.m_num_samples_psum) {}
 
 data_reader_merge_samples& data_reader_merge_samples::operator=(
   const data_reader_merge_samples& other) {
-  generic_data_reader::operator=(other);
+  generic_compound_data_reader::operator=(other);
   m_num_samples_psum = other.m_num_samples_psum;
-  for (auto&& reader : m_data_readers) {
-    delete reader;
-  }
-  m_data_readers.clear();
-  for (auto&& reader : other.m_data_readers) {
-    m_data_readers.push_back(reader->copy());
-  }
   return *this;
 }
 
-data_reader_merge_samples::~data_reader_merge_samples() {
-  for (auto&& reader : m_data_readers) {
-    delete reader;
-  }
-}
+data_reader_merge_samples::~data_reader_merge_samples() {}
 
 void data_reader_merge_samples::load() {
   // Load each subsidiary data reader.
