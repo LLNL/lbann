@@ -17,7 +17,7 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic
+  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic, merge_samples
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
@@ -39,7 +39,9 @@ message Reader {
   int32 label_col = 106;
   int32 response_col = 107;
   bool disable_labels = 108;
-  bool disable_reponses = 109;
+  bool disable_responses = 109;
+  string format = 110; // numpy, csv
+  string data_file_pattern = 111;
 }
 
 message ImagePreprocessor {

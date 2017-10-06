@@ -1622,14 +1622,47 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_csv->set_label_col(readme.label_col());
       reader_csv->set_response_col(readme.response_col());
       reader_csv->disable_labels(readme.disable_labels()); 
-      reader_csv->enable_responses(readme.disable_reponses());
+      reader_csv->enable_responses(readme.disable_responses());
       reader_csv->set_separator(readme.separator()[0]);
       reader_csv->set_skip_cols(readme.skip_cols());
       reader_csv->set_skip_rows(readme.skip_rows());
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
     } else if (name == "numpy") {
-      reader = new numpy_reader(mini_batch_size, shuffle);
+      numpy_reader* reader_numpy = new numpy_reader(mini_batch_size, shuffle);
+      reader_numpy->set_has_labels(!readme.disable_labels());
+      reader_numpy->set_has_responses(!readme.disable_responses());
+      reader = reader_numpy;
+    } else if (name == "merge_samples") {
+      auto paths = glob(readme.data_file_pattern());
+      std::vector<generic_data_reader*> npy_readers;
+      for (const auto path : paths) {
+        if (readme.format() == "numpy") {
+          numpy_reader *reader_numpy = new numpy_reader(mini_batch_size, false);
+          reader_numpy->set_data_filename(path);
+          reader_numpy->set_has_labels(!readme.disable_labels());
+          reader_numpy->set_has_responses(!readme.disable_responses());
+          npy_readers.push_back(reader_numpy);
+        }else if (readme.format() == "csv") {
+          csv_reader* reader_csv = new csv_reader(mini_batch_size, shuffle);
+          reader_csv->set_data_filename(path);
+          reader_csv->set_label_col(readme.label_col());
+          reader_csv->set_response_col(readme.response_col());
+          reader_csv->disable_labels(readme.disable_labels());
+          reader_csv->enable_responses(readme.disable_responses());
+          reader_csv->set_separator(readme.separator()[0]);
+          reader_csv->set_skip_cols(readme.skip_cols());
+          reader_csv->set_skip_rows(readme.skip_rows());
+          reader_csv->set_has_header(readme.has_header());
+          npy_readers.push_back(reader_csv);
+        }else {
+          err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
+              << name;
+          throw lbann_exception(err.str());
+        }
+      }
+      data_reader_merge_samples* merged_reader = new data_reader_merge_samples(mini_batch_size, npy_readers, shuffle);
+      reader = merged_reader;
     } else if (name == "cifar10") {
       reader = new cifar10_reader(mini_batch_size, shuffle);
     } else if (name == "synthetic") {
@@ -1642,7 +1675,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       }
     }
 
-    reader->set_data_filename( readme.data_filename() );
+    if (readme.data_filename() != "") {
+      reader->set_data_filename( readme.data_filename() );
+    }
     if (readme.label_filename() != "") {
       reader->set_label_filename( readme.label_filename() );
     }
@@ -1719,6 +1754,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "numpy") {
         reader_validation = new numpy_reader(mini_batch_size, shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
+      } else if (name == "merge_samples") {
+        reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(mini_batch_size, shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
