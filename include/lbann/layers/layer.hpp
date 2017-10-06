@@ -98,6 +98,8 @@ class Layer {
   virtual std::string get_description() const { 
     return std::string {} + get_name() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER";
   }
+  /** Returns a description of the topology */
+  virtual std::string get_topo_description() const { return ""; };
 
   /** Returns a string description of the data_layout */
   std::string get_data_layout_string(data_layout d) const; 

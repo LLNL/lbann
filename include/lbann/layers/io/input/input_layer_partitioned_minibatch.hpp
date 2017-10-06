@@ -60,10 +60,10 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
 
   /** Returns description of ctor params */
   std::string get_description() const {
-    std::string s = input_layer::get_description();
+    std::string s = get_topo_description();
     return std::string {} + " input_layer_partitioned_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-           + " - " + s;
+           + " (" + s + ")";
   }
 
   virtual inline void initialize_distributed_matrices() {

@@ -194,6 +194,17 @@ class io_layer : public Layer {
     return std::vector<int>(1, 0);
   }
 
+  virtual std::string get_topo_description() const {
+    std::stringstream s;
+    for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
+      s << this->m_neuron_dims[i];
+      if ( i != this->m_neuron_dims.size()-1) {
+        s << " x ";
+      }
+    }
+    return s.str();;
+  }
+
   /**
    * Get the linearized size of the underlying data.
    */

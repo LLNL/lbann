@@ -52,13 +52,17 @@ class convolution_layer : public base_convolution_layer {
 
   public:
 
+  /// kernel tensor is output channels, input channels, conv dimension (w x h)
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;
     s << " convolution; conv_dims: ";
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      s << this->m_kernel_dims[h] << " ";
-    }
+    // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
+    //   if (h == 0) { s << " channels (out x in) "; }
+    //   if (h == 2) { s << " filters (w x h) "; }
+    //   s << this->m_kernel_dims[h] << " ";
+    // }
+    s << get_topo_description();
     s << " conv_pads: ";
     for (size_t h=0; h<this->m_conv_pads.size(); h++) {
       s << this->m_conv_pads[h] << " ";
@@ -73,6 +77,27 @@ class convolution_layer : public base_convolution_layer {
       << " bias_initial_value: " << this->m_bias_initial_value
       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
+  }
+
+  virtual std::string get_topo_description() const {
+    std::stringstream s;
+    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
+      if (h == 0) { s << "C="; }
+      s << this->m_kernel_dims[h] ;
+      if (h == 0) { s << "o "; }
+      if (h == 1) { s << "i F="; }
+      if (this->m_kernel_dims.size() == 3) {
+        if (h == 2) { s << "w "; }
+      }else if (this->m_kernel_dims.size() == 4) {
+        if (h == 2) { s << "w x "; }
+        if (h == 3) { s << "h"; }
+      }else {
+        if (h > 1) {
+          s << " ";
+        }
+      }
+    }
+    return s.str();;
   }
 
   convolution_layer(int index,
