@@ -1,0 +1,29 @@
+data_reader {
+  reader {
+    name: "merge_samples"
+    format: "numpy"
+    role: "train"
+    shuffle: true
+    data_file_pattern: "/p/lscratchf/brainusr/datasets/cancer/pilot2/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20-f20.dir/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20_chunk_*_outof_29.npy"
+    train_or_test_percent: 1.0
+    validation_percent: 0.1
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    disable_labels: true
+    disable_responses: true
+  }
+  reader {
+    name: "numpy"
+    role: "test"
+    shuffle: true
+    data_filename: "/p/lscratchf/brainusr/datasets/cancer/pilot2/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20-f20.dir/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20_chunk_01_outof_29.npy"
+    train_or_test_percent: 1.0
+    validation_percent: 1.0
+    firstN: false
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+    disable_labels: true
+    disable_responses: true
+  }
+}

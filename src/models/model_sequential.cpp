@@ -320,7 +320,13 @@ void sequential_model::setup(int start_index, int end_index) {
     m_layers[l]->check_setup();
     m_layers[l]->set_index(l);
     if (m_comm->am_world_master()) {
-      cout << std::setw(3) << l << ":[" << std::setw(18) << m_layers[l]->get_name() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons."  << endl;
+      string description = m_layers[l]->get_description();
+      std::cout << std::setw(3) << l << ":[" << std::setw(18) << m_layers[l]->get_name() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons.";
+      std::string s = m_layers[l]->get_topo_description();
+      if(s != "") {
+        std::cout << " (" << s << ")";
+      }
+      std::cout << std::endl;
     }
   }
 

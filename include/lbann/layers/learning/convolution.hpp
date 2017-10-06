@@ -84,7 +84,7 @@ class convolution_layer : public base_convolution_layer {
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       if (h == 0) { s << "C="; }
       s << this->m_kernel_dims[h] ;
-      if (h == 0) { s << "o "; }
+      if (h == 0) { s << "o,"; }
       if (h == 1) { s << "i F="; }
       if (this->m_kernel_dims.size() == 3) {
         if (h == 2) { s << "w "; }
