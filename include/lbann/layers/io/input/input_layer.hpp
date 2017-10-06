@@ -82,6 +82,17 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return *this;
   }
 
+  std::string get_description() const {
+    std::stringstream s;
+    for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
+      s << this->m_neuron_dims[i];
+      if ( i != this->m_neuron_dims.size()-1) {
+        s << " x ";
+      }
+    }
+    return s.str();;
+  }
+
   void setup_dims() {
     io_layer::setup_dims();
     this->m_neuron_dims = io_layer::get_data_dims();
