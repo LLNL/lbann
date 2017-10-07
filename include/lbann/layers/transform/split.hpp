@@ -45,17 +45,14 @@ class split_layer : public transform {
   /// Constructor
   split_layer(int index,
               lbann_comm *comm,
-              std::vector<const Layer*> children,
               cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    // Initialize list of children
-    for(size_t i=0; i<children.size(); ++i) {
-      add_child(children[i]);
-    }
+    // Split layer has no limit on children
+    m_max_num_child_layers = -1;
 
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
@@ -95,54 +92,6 @@ class split_layer : public transform {
     transform::initialize_distributed_matrices<T_layout>();
   }
   virtual data_layout get_data_layout() const { return T_layout; }
-
-  void add_child(const Layer *child) {
-
-    // Check if child layer is null pointer
-    if(child == NULL) {
-      if(m_comm->am_world_master()) {
-        std::cerr << "split_layer: could not add child layer since pointer is null" << "\n";
-      }
-      return;
-    }
-
-    // Add child layer if it isn't in list of children
-    auto child_pos = std::find(this->m_child_layers.begin(),
-                               this->m_child_layers.end(),
-                               child);
-    if(child_pos == this->m_child_layers.end()) {
-      this->m_child_layers.push_back(child);
-    }
-    else {
-      if(m_comm->am_world_master()) {
-        std::cerr << "split_layer: could not add child layer since it is already in list of children" << "\n";
-      }
-    }
-
-  }
-
-  void remove_child(const Layer *child) {
-    
-    // Check if child layer is null pointer
-    if(child == NULL) {
-      if(m_comm->am_world_master()) {
-        std::cerr << "split_layer: could not remove child layer since pointer is null" << "\n";
-      }
-      return;
-    }
-
-    // Remove child layer if it is in list of children
-    auto child_pos = std::find(this->m_child_layers.begin(),
-                               this->m_child_layers.end(),
-                               child);
-    if(child_pos != this->m_child_layers.end()) {
-      this->m_child_layers.erase(child_pos);
-    }
-    else {
-      throw lbann_exception("split_layer: could not remove child layer since it isn't in list of children");
-    }
-
-  }
 
   void setup_gpu() {
     transform::setup_gpu();

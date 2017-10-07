@@ -45,17 +45,14 @@ class sum_layer : public transform {
   /// Constructor
   sum_layer(int index,
             lbann_comm *comm,
-            std::vector<const Layer*> parents,
             cudnn::cudnn_manager *cudnn = NULL)
     : transform(index, comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    // Initialize list of parents
-    for(size_t i=0; i<parents.size(); ++i) {
-      add_parent(parents[i]);
-    }
+    // Sum layer has no limit on parents
+    m_max_num_parent_layers = -1;
 
   #ifdef __LIB_CUDNN
     // Initialize GPU if available
@@ -95,63 +92,6 @@ class sum_layer : public transform {
     transform::initialize_distributed_matrices<T_layout>();
   }
   virtual data_layout get_data_layout() const { return T_layout; }
-
-  void add_parent(const Layer *parent) {
-
-    // Check if parent layer is null pointer
-    if(parent == NULL) {
-      if(m_comm->am_world_master()) {
-        std::cerr << "sum_layer: could not add parent layer since pointer is null" << "\n";
-      }
-      return;
-    }
-
-    // Add parent layer if it isn't in list of parents
-    auto parent_pos = std::find(this->m_parent_layers.begin(),
-                                this->m_parent_layers.end(),
-                                parent);
-    if(parent_pos == this->m_parent_layers.end()) {
-      this->m_parent_layers.push_back(parent);
-    }
-    else {
-      if(m_comm->am_world_master()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
-          << " :: sum_layer: could not add parent layer since it is already in list of parents;\n"
-          << "my index: " << this->get_index()
-          << " parent index: " << parent->get_index() << " name: " << parent->get_name() << "\n"
-          << "existing parent list: ";
-      for (auto t : this->m_parent_layers) {
-        err << " index: " << t->get_index() << " name: " << t->get_name();
-      }
-      throw lbann_exception(err.str());
-      }
-    }
-
-  }
-
-  void remove_parent(const Layer *parent) {
-    
-    // Check if parent layer is null pointer
-    if(parent == NULL) {
-      if(m_comm->am_world_master()) {
-        std::cerr << "sum_layer: could not remove parent layer since pointer is null" << "\n";
-      }
-      return;
-    }
-
-    // Remove parent layer if it is in list of parents
-    auto parent_pos = std::find(this->m_parent_layers.begin(),
-                                this->m_parent_layers.end(),
-                                parent);
-    if(parent_pos != this->m_parent_layers.end()) {
-      this->m_parent_layers.erase(parent_pos);
-    }
-    else {
-      throw lbann_exception("sum_layer: could not remove parent layer since it isn't in list of parents");
-    }
-
-  }
 
   void setup_gpu() {
     transform::setup_gpu();

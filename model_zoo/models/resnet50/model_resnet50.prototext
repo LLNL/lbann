@@ -134,7 +134,7 @@ model {
     slice {
       slice_axis: 0
       children: "14 8"
-      slice_points: "0 256"
+      slice_points: "0 256 320"
     }
   }
   layer {
@@ -481,7 +481,7 @@ model {
     slice {
       slice_axis: 0
       children: "47 41"
-      slice_points: "0 512"
+      slice_points: "0 512 640"
     }
   }
   layer {
@@ -943,7 +943,7 @@ model {
     slice {
       slice_axis: 0
       children: "91 85"
-      slice_points: "0 1024"
+      slice_points: "0 1024 1280"
     }
   }
   layer {
@@ -1635,7 +1635,7 @@ model {
     slice {
       slice_axis: 0
       children: "157 151"
-      slice_points: "0 2048"
+      slice_points: "0 2048 2560"
     }
   }
   layer {

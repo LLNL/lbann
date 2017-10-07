@@ -90,6 +90,10 @@ Layer::Layer(const int index, lbann_comm *comm)
   m_num_prev_neuron_dims = 1;
   m_neuron_dims = std::vector<int>(1, 0);
 
+  // Default number of parent and child layers
+  m_max_num_parent_layers = 1;
+  m_max_num_child_layers = 1;
+
   // Initialize model
   m_neural_network_model = nullptr;
 
@@ -118,6 +122,8 @@ Layer::Layer(const Layer& other) :
   m_prev_neuron_dims(other.m_prev_neuron_dims),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
+  m_max_num_parent_layers(other.m_max_num_parent_layers),
+  m_max_num_child_layers(other.m_max_num_child_layers),
   m_execution_mode(other.m_execution_mode),
   m_neural_network_model(other.m_neural_network_model),
   m_using_gpus(other.m_using_gpus),
@@ -154,6 +160,8 @@ Layer& Layer::operator=(const Layer& other) {
   m_prev_neuron_dims = other.m_prev_neuron_dims;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
+  m_max_num_parent_layers = other.m_max_num_parent_layers;
+  m_max_num_child_layers = other.m_max_num_child_layers;
   m_execution_mode = other.m_execution_mode;
   m_neural_network_model = other.m_neural_network_model;
   m_using_gpus = other.m_using_gpus;
@@ -216,13 +224,16 @@ Layer::~Layer() {
 void Layer::forward_prop() {
   double fp_start = get_time();
 
-  // Get incoming activations and convert matrix distribution if necessary
-  if(!m_parent_layers.empty()) {
-    m_parent_layers[0]->get_fp_output(*m_prev_activations, this);
-  }
-
   // Set matrix views based on current mini-batch size
   fp_set_std_matrix_view();
+
+  // Get incoming activations and convert matrix distribution if necessary
+  if(!m_parent_layers.empty()) {
+    m_parent_layers.front()->get_fp_output(*m_prev_activations, this);
+  } else {
+    const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Zeros(*m_prev_activations, m_num_prev_neurons, cur_mini_batch_size);
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
@@ -233,7 +244,7 @@ void Layer::forward_prop() {
                                m_mini_batch_size_per_gpu);
     } else {
       if(!m_parent_layers.empty()) {
-        m_parent_layers[0]->get_gpu_fp_output(m_prev_activations_d, this);
+        m_parent_layers.front()->get_gpu_fp_output(m_prev_activations_d, this);
       }
     }
   }
@@ -260,14 +271,17 @@ void Layer::forward_prop() {
 void Layer::back_prop() {
   double bp_start = get_time();
 
-  // Get incoming error signal and convert matrix distribution if necessary
-  if(!m_child_layers.empty()) {
-    m_child_layers[0]->get_bp_output(*m_prev_error_signal, this);
-  }
-
   // Set the view for all of the standard matrices based on the
   // current mini-batch size
   bp_set_std_matrix_view();
+
+  // Get incoming error signal and convert matrix distribution if necessary
+  if(!m_child_layers.empty()) {
+    m_child_layers.front()->get_bp_output(*m_prev_error_signal, this);
+  } else {
+    const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Zeros(*m_prev_error_signal, m_num_neurons, cur_mini_batch_size);
+  }
 
 #ifdef __LIB_CUDNN
   // Transfer inputs from CPU to GPUs if needed
@@ -278,7 +292,7 @@ void Layer::back_prop() {
                                m_mini_batch_size_per_gpu);
     } else {
       if(!m_child_layers.empty()) {
-        m_child_layers[0]->get_gpu_bp_output(m_prev_error_signal_d, this);
+        m_child_layers.front()->get_gpu_bp_output(m_prev_error_signal_d, this);
       }
     }
   }
@@ -334,8 +348,8 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
 }
 
-void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
-  setup_pointers(prev_layer, next_layer);
+void Layer::setup() {
+  setup_pointers();
   setup_dims();
   setup_data();
   setup_views();
@@ -344,19 +358,15 @@ void Layer::setup(const Layer *prev_layer, const Layer *next_layer) {
   }
 }
 
-void Layer::setup_pointers(const Layer *prev_layer, const Layer *next_layer) {
-  // Set adjacent layers
-  auto parent_pos = std::find(m_parent_layers.begin(),
-                              m_parent_layers.end(),
-                              prev_layer);
-  if(prev_layer != nullptr && parent_pos == m_parent_layers.end()) {
-    m_parent_layers.push_back(prev_layer);
+void Layer::setup_pointers() {
+  // Check if the number of parents/children are valid
+  if(m_max_num_parent_layers >= 0
+     && (int)m_parent_layers.size() > m_max_num_parent_layers) {
+    throw lbann_exception("Layer: too many parent layers");
   }
-  auto child_pos = std::find(m_child_layers.begin(),
-                             m_child_layers.end(),
-                             next_layer);
-  if(next_layer != nullptr && child_pos == m_child_layers.end()) {
-    m_child_layers.push_back(next_layer);
+  if(m_max_num_child_layers >= 0
+     && (int)m_child_layers.size() > m_max_num_child_layers) {
+    throw lbann_exception("Layer: too many child layers");
   }
 }
 
@@ -366,7 +376,7 @@ void Layer::setup_dims() {
   if(m_parent_layers.empty()) {
     m_prev_neuron_dims.assign(1, 0);
   } else {
-    m_prev_neuron_dims = m_parent_layers[0]->fp_output_dims(this);
+    m_prev_neuron_dims = m_parent_layers.front()->fp_output_dims(this);
   }
   m_num_prev_neuron_dims = m_prev_neuron_dims.size();
   m_num_prev_neurons = std::accumulate(m_prev_neuron_dims.begin(),
@@ -414,11 +424,11 @@ void Layer::setup_gpu() {
   }
 
   // Determine whether to transfer data between CPU and GPUs
-  if(m_parent_layers.empty() || !m_parent_layers[0]->using_gpus()) {
+  if(m_parent_layers.empty() || !m_parent_layers.front()->using_gpus()) {
     m_copy_fp_input_to_gpus = true;
     m_copy_bp_output_from_gpus = true;
   }
-  if(m_child_layers.empty() || !m_child_layers[0]->using_gpus()) {
+  if(m_child_layers.empty() || !m_child_layers.front()->using_gpus()) {
     m_copy_fp_output_from_gpus = true;
     m_copy_bp_input_to_gpus = true;
   }
@@ -546,9 +556,9 @@ void Layer::pin_data() {
   // Pin fp input if input layer does not use GPUs, this layer uses
   // GPUs, and input layer has different distribution
   if(!m_parent_layers.empty()
-     && !m_parent_layers[0]->using_gpus()
+     && !m_parent_layers.front()->using_gpus()
      && m_using_gpus) {
-    if(m_parent_layers[0]->m_activations->DistData()
+    if(m_parent_layers.front()->m_activations->DistData()
        != m_prev_activations->DistData()) {
       pin_fp_input = true;
     }
@@ -558,8 +568,8 @@ void Layer::pin_data() {
   // GPUs, and output layer has same distribution
   if(!m_using_gpus
      && !m_parent_layers.empty()
-     && m_parent_layers[0]->using_gpus()) {
-    if(m_parent_layers[0]->m_prev_activations->DistData()
+     && m_parent_layers.front()->using_gpus()) {
+    if(m_parent_layers.front()->m_prev_activations->DistData()
        != m_activations->DistData()) {
       pin_fp_output = true;
     }
@@ -569,7 +579,7 @@ void Layer::pin_data() {
   // use GPUs
   if(m_using_gpus
      && !m_child_layers.empty()
-     && !m_child_layers[0]->using_gpus()) {
+     && !m_child_layers.front()->using_gpus()) {
     pin_fp_output = true;
   }
 
@@ -586,9 +596,9 @@ void Layer::pin_data() {
   // Pin bp input if input layer does not use GPUs, this layer uses
   // GPUs, and input layer has different distribution
   if(!m_child_layers.empty()
-     && !m_child_layers[0]->using_gpus()
+     && !m_child_layers.front()->using_gpus()
      && m_using_gpus) {
-    if(m_child_layers[0]->m_error_signal->DistData()
+    if(m_child_layers.front()->m_error_signal->DistData()
        != m_prev_error_signal->DistData()) {
       pin_bp_input = true;
     }
@@ -598,8 +608,8 @@ void Layer::pin_data() {
   // GPUs, and output layer has same distribution
   if(!m_using_gpus
      && !m_parent_layers.empty()
-     && m_parent_layers[0]->using_gpus()) {
-    if(m_parent_layers[0]->m_prev_error_signal->DistData()
+     && m_parent_layers.front()->using_gpus()) {
+    if(m_parent_layers.front()->m_prev_error_signal->DistData()
        != m_error_signal->DistData()) {
       pin_bp_output = true;
     }
@@ -609,7 +619,7 @@ void Layer::pin_data() {
   // use GPUs
   if(m_using_gpus
      && !m_parent_layers.empty()
-     && !m_parent_layers[0]->using_gpus()) {
+     && !m_parent_layers.front()->using_gpus()) {
     pin_bp_output = true;
   }
 
@@ -691,6 +701,40 @@ std::string Layer::get_data_layout_string(data_layout d) const {
 
 const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
+}
+
+std::vector<const Layer*>& Layer::get_parent_layers() {
+  return m_parent_layers;
+}
+
+const std::vector<const Layer*>& Layer::get_parent_layers() const {
+  return m_parent_layers;
+}
+
+std::vector<const Layer*>& Layer::get_child_layers() {
+  return m_child_layers;
+}
+
+const std::vector<const Layer*>& Layer::get_child_layers() const {
+  return m_child_layers;
+}
+
+void Layer::add_parent_layer(const Layer* parent) {
+  auto parent_pos = std::find(m_parent_layers.begin(),
+                              m_parent_layers.end(),
+                              parent);
+  if(parent != nullptr && parent_pos == m_parent_layers.end()) {
+    m_parent_layers.push_back(parent);
+  }
+}
+
+void Layer::add_child_layer(const Layer* child) {
+  auto child_pos = std::find(m_child_layers.begin(),
+                             m_child_layers.end(),
+                             child);
+  if(child != nullptr && child_pos == m_child_layers.end()) {
+    m_child_layers.push_back(child);
+  }
 }
 
 }  // namespace lbann
