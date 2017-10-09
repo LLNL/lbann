@@ -16,8 +16,8 @@ model {
   layer {
     input_partitioned_minibatch {
     }
-    index: 1
-    parent: 1
+    name: "1"
+    parent: "1"
     data_layout: "data_parallel"
   }
   #############################################
@@ -29,23 +29,23 @@ model {
       has_bias: true
   #    l2_regularization_factor: 0.0005
     }
-    index: 2
-    parent: 1
+    name: "2"
+    parent: "1"
     data_layout: "model_parallel"
   }
   layer {
     relu {
     }
-    index: 3
-    parent: 2
+    name: "3"
+    parent: "2"
     data_layout: "model_parallel"
   }
   layer {
     dropout {
       keep_prob: 0.9
     }
-    index: 4
-    parent: 3
+    name: "4"
+    parent: "3"
     data_layout: "model_parallel"
   }
   #############################################
@@ -55,21 +55,21 @@ model {
       weight_initialization: "he_normal"
       l2_regularization_factor: 0.0005
     }
-    index: 5
-    parent: 4
+    name: "5"
+    parent: "4"
     data_layout: "model_parallel"
   }
   layer {
-    index: 6
-    parent: 5
+    name: "6"
+    parent: "5"
     data_layout: "model_parallel"
     softmax {
     }
   }
   #############################################
   layer {
-    index: 7
-    parent: 6
+    name: "7"
+    parent: "6"
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true

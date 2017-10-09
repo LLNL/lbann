@@ -320,8 +320,8 @@ message CallbackGradientCheck {
 //
 
 message Layer {
-   int64 index = 50; 
-   int64 parent = 51;
+   string name = 50; 
+   string parent = 51;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
 
