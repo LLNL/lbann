@@ -6,6 +6,8 @@
 *.o
 
 data.prototext*
+*.bak
+*.pyc
 
 # Can also ignore all directories and files in a directory.
 # tmp/**/* 
