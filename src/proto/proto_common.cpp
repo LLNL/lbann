@@ -134,7 +134,7 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
     std::string name = layers[h].slice->get_name();
     if (name == "slice") {
       slice_layer<> *s = (slice_layer<>*)layers[h].slice;
-      assert(layers[h].children.size() == layers[h].slice_points.size());
+      //assert(layers[h].children.size() == layers[h].slice_points.size());
       for (size_t k = 0; k<layers[h].children.size(); k++) {
         int child_id = layers[h].children[k];
         assert(the_layers.find(child_id) != the_layers.end());
@@ -168,8 +168,17 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
   }
 }
 
-  //maps: index (wrt prototext) to the Layer
-  std::unordered_map<int, Layer*> the_layers;
+//maps: index (wrt prototext) to the Layer
+std::unordered_map<int, Layer*> the_layers;
+
+void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m) {
+  int size = m.layer_size();
+  for (int j=0; j<size; j++) {
+    const lbann_data::Layer& layer = m.layer(j);
+    proto_layers.push_back(layer);
+  }
+}
+
 
 void add_layers(
   lbann::sequential_model *model,
@@ -188,11 +197,14 @@ void add_layers(
 
 
   //maps: index (wrt model) to the Layer
-  std::unordered_map<int, Layer*> model_layers;
+  //xxx std::unordered_map<int, Layer*> model_layers;
 
   const lbann_data::Model& m = p.model();
   //int mb_size = m.mini_batch_size();
-  int size = m.layer_size();
+  //xxx int size = m.layer_size();
+
+  std::vector<lbann_data::Layer> proto_layers;
+  get_proto_layers(proto_layers, m);
 
   Layer *d = 0;
 
@@ -200,12 +212,15 @@ void add_layers(
   //their children after all layers have been added
   std::vector<transform_layers> t_layers;
 
-  for (int j=0; j<size; j++) {
-    const lbann_data::Layer& layer = m.layer(j);
+  //for (int j=0; j<size; j++) {
+  for (size_t j=0; j<proto_layers.size(); j++) {
+    //const lbann_data::Layer& layer = m.layer(j);
+    const lbann_data::Layer& layer = proto_layers[j];
 
     //map: layer index, wrt prototext, to index wrt model
     int layer_id = model->get_layers().size();
-    layer_mapping[layer.index()] = layer_id;
+    //xxx layer_mapping[layer.index()] = layer_id;
+    layer_mapping[j] = layer_id;
 
     data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__, master);
     bool num_neurons_from_data_reader = layer.num_neurons_from_data_reader();
@@ -239,8 +254,9 @@ void add_layers(
     // LAYER: reconstruction
     //////////////////////////////////////////////////////////////////
     else if (layer.has_reconstruction()) {
-      const lbann_data::TargetReconstruction & ell = layer.reconstruction();
-      int original_layer = ell.original_layer();
+      //xxx const lbann_data::TargetReconstruction & ell = layer.reconstruction();
+      /*
+      std::string original_layer = ell.original_layer();
       if (the_layers.find(original_layer) == the_layers.end() and master) {
         err << __FILE__ << " " << __LINE__ << " :: the original_field in the "
             << " Reconstruction layer has index " << original_layer
@@ -248,17 +264,20 @@ void add_layers(
             << " wrong in your prototext file";
         throw lbann_exception(err.str());
       }
+      */
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          the_layers[original_layer]
+          the_layers[0]
+          //xxx the_layers[original_layer]
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          the_layers[original_layer]
+          the_layers[0]
+          //xxx the_layers[original_layer]
         );
       }
     }
@@ -952,8 +971,9 @@ void add_layers(
       }
     }
 
-    the_layers[layer.index()] = d;
-    model_layers[d->get_index()] = d;
+    the_layers[j] = d;
+    //xxx the_layers[layer.index()] = d;
+    //xxx model_layers[d->get_index()] = d;
     model->add(d);
   }
 

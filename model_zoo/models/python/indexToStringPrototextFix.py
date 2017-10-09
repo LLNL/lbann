@@ -14,11 +14,13 @@ if len(argv) != 2 :
   print usage
   exit(9)
 
+'''
 if argv[1][:6] != 'model_' :
   print usage
   print '======================================================================='
   print 'ERROR: input_fn must be of the form: model_*.prototext'
   exit(9)
+'''
 
 #write backup file of original
 a = open(argv[1]).readlines()
@@ -35,7 +37,7 @@ for line in a :
     whitespace = line.find('index')
     n = line.split()
     out.write(' ' * whitespace + 'name: "' + n[1] + '"\n')
-  elif line.find('parent:') != -1 :
+  elif line.find('parent:') != -1 and line.find('"') == -1 :
     whitespace = line.find('parent')
     n = line.split()
     out.write(' ' * whitespace + 'parent: "' + n[1] + '"\n')
