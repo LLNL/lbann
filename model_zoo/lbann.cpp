@@ -200,6 +200,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if (not opts->has_string("exit_after_setup")) {
+
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
@@ -211,12 +213,10 @@ int main(int argc, char *argv[]) {
     init_random(lbann_random_seed + comm->get_rank_in_world());
 #else
     if(comm->am_world_master()) {
-      std::cout << "--------------------------------------------------------------------------------"
-                << std::endl;
-      std::cout << "ALERT: executing in sequentially consistent mode -- performance will suffer"
-                << std::endl;
-      std::cout << "--------------------------------------------------------------------------------"
-                << std::endl;
+      std::cout << 
+        "--------------------------------------------------------------------------------\n"
+        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+        "--------------------------------------------------------------------------------\n";
     }
 #endif
 
@@ -225,6 +225,18 @@ int main(int argc, char *argv[]) {
 
     // Evaluate model on test set
     model->evaluate(execution_mode::testing);
+
+    } 
+
+    else {
+      if (comm->am_world_master()) {
+        std::cout << 
+          "--------------------------------------------------------------------------------\n"
+          "ALERT: model has been setup; we are now exiting due to command\n"
+          "       line option: --exit_after_setup\n"
+          "--------------------------------------------------------------------------------\n";
+      }
+    }
 
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory
