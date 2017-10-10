@@ -1,16 +1,17 @@
-####Directory Structure:####
+### Directory Structure:
 
-model_zoo
-       |models
-       | |alexnet
-       | |mnist
-       | |resnet50
-       | |etc.
-       |
-       |data_readers
-       |optimizers
-       |historical  
-       |tests 
+```
+model_zoo   
+└─── models
+│   └─── alexnet
+│   └─── mnist
+│   └─── resnet50
+│   └─── etc
+└─── data_readers      
+└─── optimizers      
+└─── historical      
+└─── tests  
+```
 
 Users should primarily be interested in the __models__ directory.
 Each __models__ subdirectory contains an LBANN prototext file,
