@@ -120,41 +120,53 @@ data_layout get_data_layout(const string& s, const char *file, int line, bool ma
 }
 
 struct transform_layers {
-  transform_layers(Layer* layer, std::vector<int> &childs)
-    : slice(layer), children(childs) {}
+  transform_layers(Layer* layer, std::vector<std::string> &childs)
+    : the_layer(layer), children(childs) {}
 
-  Layer * slice;
-  std::vector<int> children;  //may also be parents
+  Layer * the_layer;
+  std::vector<std::string> children;  //may also be parents
 };
 
 
-void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers, std::unordered_map<int, Layer*> the_layers) {
+void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers, std::unordered_map<std::string, Layer*> name_mapping) {
   bool master = comm->am_world_master();
-  for (size_t h=0; h<layers.size(); h++) {
-    std::string name = layers[h].slice->get_name();
-    if (name == "slice") {
-      slice_layer<> *s = (slice_layer<>*)layers[h].slice;
-      //assert(layers[h].children.size() == layers[h].slice_points.size());
+  
+  if (master) {
+    for (size_t h=0; h<layers.size(); h++) {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
-        int child_id = layers[h].children[k];
-        assert(the_layers.find(child_id) != the_layers.end());
-        Layer * child = the_layers[child_id];
+        std::string name = layers[h].children[k];
+        if (name_mapping.find(name) == name_mapping.end()) {
+          std::stringstream err;
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << " failed to find layer with the prototext name: "
+              << name << " which is either a child or a parent in a transform layer";
+          throw lbann_exception(err.str());
+        }
+      }
+    }
+  }
+
+  for (size_t h=0; h<layers.size(); h++) {
+    std::string name = layers[h].the_layer->get_name();
+    if (name == "slice") {
+      slice_layer<> *s = (slice_layer<>*)layers[h].the_layer;
+      for (size_t k = 0; k<layers[h].children.size(); k++) {
+        std::string child_id = layers[h].children[k];
+        Layer * child = name_mapping[child_id];
         s->add_child_layer(child);
       }
     } else if (name == "split") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
-        split_layer<> *s = (split_layer<>*)layers[h].slice;
-        int child_id = layers[h].children[k];
-        assert(the_layers.find(child_id) != the_layers.end());
-        Layer * child = the_layers[child_id];
+        split_layer<> *s = (split_layer<>*)layers[h].the_layer;
+        std::string child_id = layers[h].children[k];
+        Layer * child = name_mapping[child_id];
         s->add_child_layer(child);
       }
     } else if (name == "sum") {
       for (size_t k = 0; k<layers[h].children.size(); k++) {
-        sum_layer<> *s = (sum_layer<>*)layers[h].slice;
-        int parent_id = layers[h].children[k];
-        assert(the_layers.find(parent_id) != the_layers.end());
-        Layer * parent = the_layers[parent_id];
+        sum_layer<> *s = (sum_layer<>*)layers[h].the_layer;
+        std::string parent_id = layers[h].children[k];
+        Layer * parent = name_mapping[parent_id];
         s->add_parent_layer(parent);
       }
     } else {
@@ -167,9 +179,6 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
     }
   }
 }
-
-//maps: index (wrt prototext) to the Layer
-std::unordered_map<int, Layer*> the_layers;
 
 void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m) {
   int size = m.layer_size();
@@ -185,7 +194,9 @@ void add_layers(
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p,
-  std::unordered_map<uint,uint> &layer_mapping)
+  std::unordered_map<std::string,Layer*> &name_mapping,
+  std::unordered_map<uint,Layer*> &index_mapping,
+  std::unordered_map<std::string, uint> &name_to_index)
 {
   lbann_comm *comm = model->get_comm();
   bool master = comm->am_world_master();
@@ -194,15 +205,11 @@ void add_layers(
   }
 
   std::stringstream err;
-
-
-  //maps: index (wrt model) to the Layer
-  //xxx std::unordered_map<int, Layer*> model_layers;
+  name_mapping.clear(); //shouldn't need this, but just in case ...
+  index_mapping.clear(); //shouldn't need this, but just in case ...
+  name_to_index.clear(); //shouldn't need this, but just in case ...
 
   const lbann_data::Model& m = p.model();
-  //int mb_size = m.mini_batch_size();
-  //xxx int size = m.layer_size();
-
   std::vector<lbann_data::Layer> proto_layers;
   get_proto_layers(proto_layers, m);
 
@@ -212,19 +219,11 @@ void add_layers(
   //their children after all layers have been added
   std::vector<transform_layers> t_layers;
 
-  //for (int j=0; j<size; j++) {
-  for (size_t j=0; j<proto_layers.size(); j++) {
-    //const lbann_data::Layer& layer = m.layer(j);
-    const lbann_data::Layer& layer = proto_layers[j];
-
-    //map: layer index, wrt prototext, to index wrt model
-    int layer_id = model->get_layers().size();
-    //xxx layer_mapping[layer.index()] = layer_id;
-    layer_mapping[j] = layer_id;
+  for (size_t layer_id = 0; layer_id < proto_layers.size(); layer_id++) {
+    const lbann_data::Layer& layer = proto_layers[layer_id];
 
     data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__, master);
     bool num_neurons_from_data_reader = layer.num_neurons_from_data_reader();
-
 
     //////////////////////////////////////////////////////////////////
     // LAYER: Relu
@@ -269,15 +268,13 @@ void add_layers(
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           layer_id,
           comm,
-          the_layers[0]
-          //xxx the_layers[original_layer]
+          index_mapping[0]
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           layer_id,
           comm,
-          the_layers[0]
-          //xxx the_layers[original_layer]
+          index_mapping[0]
         );
       }
     }
@@ -378,9 +375,9 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_slice()) {
       const lbann_data::Slice &ell = layer.slice();
-      int i;
+      std::string i;
       std::stringstream s(ell.children());
-      vector<int> children;
+      vector<std::string> children;
       while (s >> i) {
         children.push_back(i);
       }
@@ -388,8 +385,9 @@ void add_layers(
       s.clear();
       s.str(ell.slice_points());
       vector<int> slice_points;
-      while (s >> i) {
-        slice_points.push_back(i);
+      int ii;
+      while (s >> ii) {
+        slice_points.push_back(ii);
       }
       d = new slice_layer<>(layer_id, comm, ell.slice_axis(), slice_points, cudnn);
       transform_layers record(d, children);
@@ -401,8 +399,8 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
       const lbann_data::Sum &ell = layer.sum();
-      int i;
-      std::vector<int> parents;
+      std::string i;
+      std::vector<std::string> parents;
       std::stringstream s(ell.parents());
       while (s >> i) {
         parents.push_back(i);
@@ -417,8 +415,8 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
       const lbann_data::Split &ell = layer.split();
-      int i;
-      vector<int> children;
+      std::string i;
+      vector<std::string> children;
       std::stringstream s(ell.children());
       while (s >> i) {
         children.push_back(i);
@@ -498,7 +496,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
-      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)the_layers[ell.pooling_layer()];
+      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)name_mapping[ell.pooling_layer()];
       if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
@@ -971,13 +969,13 @@ void add_layers(
       }
     }
 
-    the_layers[j] = d;
-    //xxx the_layers[layer.index()] = d;
-    //xxx model_layers[d->get_index()] = d;
     model->add(d);
+    name_mapping[layer.name()] = d;
+    index_mapping[layer_id] = d;
+    name_to_index[layer.name()] = layer_id;
   }
 
-  finish_transform_layers(comm, t_layers, the_layers); 
+  finish_transform_layers(comm, t_layers, name_mapping); 
 }
 
 lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
@@ -1012,7 +1010,9 @@ void init_callbacks(
   lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p,
-  const std::unordered_map<uint,uint> &layer_mapping)
+  const std::unordered_map<std::string,Layer*> &name_mapping,
+  const std::unordered_map<uint,Layer*> &index_mapping,
+  const std::unordered_map<std::string, uint> &name_to_index)
 {
   std::stringstream err;
   bool master = comm->am_world_master();
@@ -1154,22 +1154,22 @@ void init_callbacks(
       const lbann_data::CallbackDispIOStats& c = callback.disp_io_stats();
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
-      uint a;
+      std::string a;
       //bool all_layers = false;
       while (s >> a) {
-        if (a == 10000) {
+        if (a == "10000") {
           //all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end() and master) {
+          if (name_mapping.find(a) == name_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback disp_io_stats: you specified the layer index " << a
                 << " wrt the prototext file, but we don't have a layer with that"
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(layer_mapping.find(a)->second);
+          which.insert(name_to_index.find(a)->second);
           if (master) {
-            cout << "adding display I/O stats callback: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << endl;
+            cout << "adding display I/O stats callback: index " << a << " from prototext file maps to model layer " << name_mapping.find(a)->second << endl;
           }
         }
       }
@@ -1187,23 +1187,25 @@ void init_callbacks(
       }
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
-      uint a;
+      std::string a;
       bool all_layers = false;
       while (s >> a) {
-        if (a == 10000) {
+        if (a == "10000") {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end() and master) {
+          if (name_mapping.find(a) == name_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
-                << " :: callback imcomm: you specified the layer index " << a
+                << " :: callback imcomm: you specified the layer name " << a
                 << " wrt the prototext file, but we don't have a layer with that"
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(layer_mapping.find(a)->second);
+          which.insert(name_to_index.find(a)->second);
+          /*
           if (master) {
-            cout << "CALLBACK: imcomm: index " << a << " from prototext file maps to model layer " << layer_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_name() << std::endl;
+            cout << "CALLBACK: imcomm: prototext layer name " << a << " maps to model layer " << name_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_name() << std::endl;
           }
+          */
         }
       }
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method(), master);
@@ -1223,20 +1225,20 @@ void init_callbacks(
       const lbann_data::CallbackStepLearningRate &c = callback.step_learning_rate();
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
-      uint a;
+      std::string a;
       bool all_layers = false;
       while (s >> a) {
-        if (a == 10000) {
+        if (a == "10000") {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end() and master) {
+          if (name_mapping.find(a) == name_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback step_learning_rate: you specified the layer index "
                 << a << " wrt the prototext file, but we don't have a layer with that"
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(layer_mapping.find(a)->second);
+          which.insert(name_to_index.find(a)->second);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;
@@ -1255,20 +1257,20 @@ void init_callbacks(
       const lbann_data::CallbackAdaptiveLearningRate &c = callback.adaptive_learning_rate();
       std::stringstream s(c.layers());
       std::unordered_set<uint> which;
-      uint a;
+      string a;
       bool all_layers = false;
       while (s >> a) {
-        if (a == 10000) {
+        if (a == "10000") {
           all_layers = true;
         } else {
-          if (layer_mapping.find(a) == layer_mapping.end() and master) {
+          if (name_mapping.find(a) == name_mapping.end() and master) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback adaptive_learning_rate: you specified the layer index "
                 << a << " wrt the prototext file, but we don't have a layer with that"
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(layer_mapping.find(a)->second);
+          which.insert(name_to_index.find(a)->second);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;

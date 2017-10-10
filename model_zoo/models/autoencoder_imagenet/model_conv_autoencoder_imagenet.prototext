@@ -103,7 +103,7 @@ model {
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: 4
+      pooling_layer: "4"
     }
   }
 

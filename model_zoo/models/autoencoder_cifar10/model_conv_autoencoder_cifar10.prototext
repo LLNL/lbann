@@ -198,7 +198,7 @@ model {
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: 10
+      pooling_layer: "10"
     }
   }
  
@@ -242,7 +242,7 @@ model {
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: 7
+      pooling_layer: "7"
     }
   }
 
@@ -286,7 +286,7 @@ model {
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: 4
+      pooling_layer: "4"
     }
   }
 

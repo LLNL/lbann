@@ -474,7 +474,7 @@ message Pooling {
 
 message Unpooling {
   int64 num_dims = 1;
-  int64 pooling_layer = 13; //should be index of pooling layer
+  string pooling_layer = 13; //should be name of the pooling layer
 }
 
 
