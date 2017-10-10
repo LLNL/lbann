@@ -80,6 +80,11 @@ template<> struct cv_depth_type<CV_64F> {
  */
 template<typename T, int NCh> struct cv_image_type {};
 
+/** A template structure to map a standard c++ type of channel
+ *  into the corresponding OpenCV type identifier.
+ */
+template<typename T> struct cv_channel_type {};
+
 /** Define a template struct cv_image_type<_T_,_C_> that contains a static member
  * function T() which returns an OpenCV image type based on the macro arguments:
  * - _B_: The number of bits of a color depth (i.e., the number of bits for _T_)
@@ -91,8 +96,19 @@ template<typename T, int NCh> struct cv_image_type {};
 template<> struct cv_image_type< _T_ , _C_ > \
 { static int T() { return CV_ ## _B_ ## _S_ ## C ## _C_; } }
 
-/// Define cv_image_type<_T_,*> for various number of channels
+/** Define a template struct cv_channel_type<_T_> that contains a static member
+ * function T() which returns an OpenCV channel type based on the macro arguments:
+ * - _B_: The number of bits of a color depth (i.e., the number of bits for _T_)
+ * - _S_: S/U/F for signed/unsigned/floating point respectively
+ * - _T_: The intensity value type
+ */
+#define _def_cv_channel_type(_B_, _S_, _T_) \
+template<> struct cv_channel_type< _T_ > \
+{ static int T() { return CV_ ## _B_ ## _S_; } }
+
+/// Define cv_image_type<_T_,*> for various number of channels and cv_channel_type<_T_>
 #define _def_cv_image_type_B_U(_B_,_S_,_T_) \
+        _def_cv_channel_type(_B_, _S_, _T_); \
         _def_cv_image_type(_B_, _S_, _T_, 3); \
         _def_cv_image_type(_B_, _S_, _T_, 1); \
         _def_cv_image_type(_B_, _S_, _T_, 2); \

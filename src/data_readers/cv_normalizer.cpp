@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/cv_normalizer.hpp"
 #include "lbann/utils/mild_exception.hpp"
+#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include <cmath> //fabs
 
 #ifdef __LIB_OPENCV
@@ -159,6 +160,11 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
     if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size())) {
       return false;
     }
+  #if 0
+    for (int ch = 0; ch < image.channels(); ++ch) {
+      std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
+    }
+  #endif
   }
 
   m_trans.resize(NCh);
@@ -289,18 +295,30 @@ bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& tr
 
 
 bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
-                                        std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask) {
+                                        std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev,
+                                        cv::InputArray mask) {
   if (image.empty()) {
     return false;
   }
-#if 0
-  cv::meanStdDev(image, mean, stddev, mask);
-  mean.resize(image.channels());
-  stddev.resize(image.channels());
-#else
-  _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
-                          compute_mean_stddev_with_known_type, image, mean, stddev, mask)
-#endif
+  if (image.channels() > 4) {
+    _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
+                            compute_mean_stddev_with_known_type, image, mean, stddev, mask)
+  } else {
+    // cv::meanStdDev() currently only works with double type for mean and stddev and images of 1-4 channels
+    typedef double Ch_T;
+    //typedef ComputeType Ch_T;
+    typedef patchworks::cv_channel_type<Ch_T> Output_T;
+    cv::Mat _mean(1, 4, Output_T::T());
+    cv::Mat _stddev(1, 4, Output_T::T());
+    cv::meanStdDev(image, _mean, _stddev, mask);
+    mean.resize(image.channels());
+    stddev.resize(image.channels());
+    for (int c=0; c < image.channels(); ++c) {
+      mean[c] = static_cast<ComputeType>(_mean.at<Ch_T>(0,c));
+      stddev[c] = static_cast<ComputeType>(_stddev.at<Ch_T>(0,c));
+    }
+    return true;
+  }
   return false;
 }
 
