@@ -20,6 +20,7 @@ Include: build-essential  autotools-dev autoconf automake gcc g++ gfortran wget 
         export FORCE_UNSAFE_CONFIGURE=1
         git clone https://github.com/DylanMcKinney/lbann
         cd lbann
+        git checkout singularity
         mkdir spack_builds
         cd spack_builds
         spack -k setup lbann@local build_type=Release dtype=4 cflags="-O3 -g -march=haswell -mtune=haswell" cxxflags="-O3 -g -march=haswell -mtune=haswell" fflags="-O3 -g -march=haswell -mtune=haswell" ^elemental@develop blas=openblas ^openmpi@2.0.2 +thread_multiple ^protobuf@3.1.0
