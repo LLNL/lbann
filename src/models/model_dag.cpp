@@ -44,14 +44,66 @@ dag_model::dag_model(int mini_batch_size,
 
 dag_model::dag_model(const dag_model& other) :
   model(other) {
-  // TODO
-  lbann_exception("NOT YET IMPLEMENTED");
+
+  // Copy layers from the other model's layer list
+  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
+  for (const Layer* old_layer : other.m_layers) {
+    Layer* new_layer = old_layer->copy();
+    old_to_new_layer[old_layer] = new_layer;
+    m_layers.push_back(new_layer);
+  }
+
+  // Fix layer pointers
+  for (Layer* layer : m_layers) {
+    for (const Layer*& parent : layer->get_parent_layers()) {
+      const Layer* new_parent = old_to_new_layer[parent];
+      if (new_parent != nullptr) {
+        parent = new_parent;
+      }
+    }
+    for (const Layer*& child : layer->get_child_layers()) {
+      const Layer* new_child = old_to_new_layer[child];
+      if (new_child != nullptr) {
+        child = new_child;
+      }
+    }
+  }
+
 }
 
 dag_model& dag_model::operator=(const dag_model& other) {
   model::operator=(other);
-  // TODO
-  lbann_exception("NOT YET IMPLEMENTED");
+
+  // Clear list of layers
+  for (Layer* layer : m_layers) {
+    delete layer;
+  }
+  m_layers.clear();
+
+  // Copy layers from the other model's layer list
+  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
+  for (const Layer* old_layer : other.m_layers) {
+    Layer* new_layer = old_layer->copy();
+    old_to_new_layer[old_layer] = new_layer;
+    m_layers.push_back(new_layer);
+  }
+
+  // Fix layer pointers
+  for (Layer* layer : m_layers) {
+    for (const Layer*& parent : layer->get_parent_layers()) {
+      const Layer* new_parent = old_to_new_layer[parent];
+      if (new_parent != nullptr) {
+        parent = new_parent;
+      }
+    }
+    for (const Layer*& child : layer->get_child_layers()) {
+      const Layer* new_child = old_to_new_layer[child];
+      if (new_child != nullptr) {
+        child = new_child;
+      }
+    }
+  }
+
   return *this;
 }
 
@@ -85,6 +137,9 @@ void dag_model::setup() {
 }
 
 void dag_model::topologically_sort_layers() {
+  /* Note: This sort must be deterministic so that it produces
+   * identical orderings when applied on different MPI processes.
+   */
 
   // Initialize data structures for topological sort
   std::stack<const Layer*> sorted_stack;
