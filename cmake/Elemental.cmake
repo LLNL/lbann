@@ -36,7 +36,7 @@ if (NOT Elemental_FOUND)
   endif()
   if(NOT ELEMENTAL_TAG)
      # Latest development version.
-     set(ELEMENTAL_TAG "ba7780b6a3e580aba470a7674f3882a3d827b64c")
+     set(ELEMENTAL_TAG "ca171b964a02d7a7c52d019fdf18cf01986e3de6")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
