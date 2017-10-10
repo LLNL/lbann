@@ -49,8 +49,8 @@ model {
   # INPUT
   #######
   layer {
-    index: 1
-    parent: 1
+    name: "1"
+    parent: "1"
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
@@ -60,8 +60,8 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
-    index: 2
-    parent: 1
+    name: "2"
+    parent: "1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -75,8 +75,8 @@ model {
   # TARGET
   ########
   layer {
-    index: 3
-    parent: 2
+    name: "3"
+    parent: "2"
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true
