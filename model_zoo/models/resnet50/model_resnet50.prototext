@@ -51,7 +51,7 @@ model {
 
   layer {
     name: "0"
-    parent: "-1"
+    parent: "0"
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }

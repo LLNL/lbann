@@ -5,7 +5,7 @@ import common
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
 
-os.system('find ' + this_dir + '/.. -name runme.py > ok_to_erase_me')
+os.system('find ' + this_dir + '/.. -name "runme*.py" > ok_to_erase_me')
 a = open('ok_to_erase_me').readlines()
 os.system('rm -f ok_to_erase_me')
 
@@ -43,7 +43,7 @@ for line in a :
   os.system('rm -f ok_to_erase_me')
 
   #sys.stderr.write('\n============================================================\n') 
-  #sys.stderr.write('about to run: ' + cmd + '\n\n')
+  sys.stderr.write('echo "about to run: ' + cmd + '"\n\n')
   sys.stderr.write(cmd + '\n\n')
   #sys.stderr.write('about to run: ' + e + '\n\n')
   #os.system(e)

@@ -180,12 +180,103 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
   }
 }
 
-void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m) {
+void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m, lbann_comm *comm) {
+  bool master = comm->am_world_master();
+  std::stringstream err;
+  proto_layers.clear();
   int size = m.layer_size();
+  std::set<std::string> n;
+
+  //fill in name_to_parent map, name_to_layer map, and check for duplicate names
+  std::unordered_map<std::string, std::string> name_to_parent;
+  std::unordered_map<std::string, lbann_data::Layer> name_to_layer;
   for (int j=0; j<size; j++) {
     const lbann_data::Layer& layer = m.layer(j);
-    proto_layers.push_back(layer);
+    std::string name = layer.name();
+    std::string parent = layer.parent();
+    name_to_layer[name] = layer;
+    if (n.find(name) != n.end()) {
+      if (master) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " duplicate layer name: " << name;
+        throw lbann_exception(err.str());
+      }
+    }
+    n.insert(name);
+    name_to_parent[name] = parent;
   }
+
+  //find the input layer (first layer)
+  std::string input("none");
+  for (auto it : name_to_parent) {
+    if (it.first == it.second) {
+      if (input != "none") {
+       if (master) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " there are at least two layers where name = parent;"
+            << " there should be exactly one, which is the input layer";
+        throw lbann_exception(err.str());
+       }  
+      }
+      input = it.first;
+    }
+  }
+  if (input == "none") {
+    if (master) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "there should be exactly one layer -- the input layer --"
+          << " with name = parent; we didn't find any";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  //find the output layer (final layer)
+  std::unordered_set<std::string> parents;
+  for (auto it : name_to_parent) {
+    parents.insert(it.second);
+  }
+  std::string tail = "none";
+  for (auto it : name_to_parent) {
+    if (parents.find(it.first) == parents.end()) {
+      if (tail != "none") {
+        if (master) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "there should be exactly one layer that is not a parent"
+              << " to any other layer; we found two: "
+              << tail << " " << it.first;
+          throw lbann_exception(err.str());
+        }
+      }
+      tail = it.first;
+    }
+  }
+  if (tail == "none") {
+    if (master) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "there should be exactly one layer that is not a parent;"
+          << " we didn't find any";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  std::string cur = tail;
+  proto_layers.push_back(name_to_layer[cur]);
+  do {
+    cur = name_to_parent[cur];
+    proto_layers.push_back(name_to_layer[cur]);
+  } while (name_to_parent[cur] != cur);
+
+  if (proto_layers.size() != name_to_parent.size()) {
+    if (master) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "there are layers in your prototext file that were not added"
+          << " to the model; please check your 'name' and 'parent' fields.\n"
+          << " proto_layers.size(): " << proto_layers.size()
+          << " name_to_parent.size(): " << name_to_parent.size();
+      throw lbann_exception(err.str());
+    }
+  }
+  std::reverse(proto_layers.begin(), proto_layers.end());
 }
 
 
@@ -211,7 +302,7 @@ void add_layers(
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
-  get_proto_layers(proto_layers, m);
+  get_proto_layers(proto_layers, m, comm);
 
   Layer *d = 0;
 
