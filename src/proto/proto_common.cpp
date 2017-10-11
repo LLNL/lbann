@@ -193,6 +193,25 @@ void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_
   for (int j=0; j<size; j++) {
     const lbann_data::Layer& layer = m.layer(j);
     std::string name = layer.name();
+
+    //ensure no whitespace in name
+    std::stringstream s;
+    s << name;
+    std::string testme;
+    int sanity = 0;
+    while (s >> testme) {
+      ++sanity;
+    }
+    if (sanity != 1) {
+      if (master) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " error in layer name: " << name
+            << ". Must be a single token (no whitespace);"
+            << " token count: " << sanity << " name: " << name;
+        throw lbann_exception(err.str());
+      }
+    }
+
     std::string parent = layer.parent();
     name_to_layer[name] = layer;
     if (n.find(name) != n.end()) {
