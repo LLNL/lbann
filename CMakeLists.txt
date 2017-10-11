@@ -165,6 +165,7 @@ if(CUDA_FOUND)
   if(WITH_CUDNN)
     include(cuDNN)
   endif()
+  set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 endif()
 
 include(Elemental)
