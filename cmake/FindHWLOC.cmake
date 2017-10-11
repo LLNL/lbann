@@ -11,7 +11,7 @@ find_library(HWLOC_LIBRARY hwloc
   HINTS ${HWLOC_DIR} $ENV{HWLOC_DIR}
   PATH_SUFFIXES lib64 lib
   NO_DEFAULT_PATH)
-find_library(HWLOC_LIBRARIES hwloc)
+find_library(HWLOC_LIBRARY hwloc)
 
 # Find the header
 find_path(HWLOC_INCLUDE_PATH hwloc.h
