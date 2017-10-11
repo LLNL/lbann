@@ -132,7 +132,7 @@ model {
   #################
   layer {
     name: "11"
-    parent: "9"
+    parent: "10"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
@@ -216,7 +216,7 @@ model {
   #######
   layer {
     name: "18"
-    parent: "16"
+    parent: "17"
     data_layout: "model_parallel"
     sigmoid {
     }
