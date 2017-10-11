@@ -58,7 +58,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = DoxOut
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIR@
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -760,15 +760,15 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
- INPUT                  = mainpage.dox \
-                          getting_started.dox \
-                          callbacks.dox \
-                          layers.dox \
-                          metrics.dox \
-                          objective_functions.dox \
-                          optimizers.dox \
-                          ../src \
-                          ../include
+ INPUT                  = @PROJECT_SOURCE_DIR@/doc/mainpage.dox \
+                          @PROJECT_SOURCE_DIR@/doc/getting_started.dox \
+                          @PROJECT_SOURCE_DIR@/doc/callbacks.dox \
+                          @PROJECT_SOURCE_DIR@/doc/layers.dox \
+                          @PROJECT_SOURCE_DIR@/doc/metrics.dox \
+                          @PROJECT_SOURCE_DIR@/doc/objective_functions.dox \
+                          @PROJECT_SOURCE_DIR@/doc/optimizers.dox \
+                          @PROJECT_SOURCE_DIR@/src \
+                          @PROJECT_SOURCE_DIR@/include
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1568,7 +1568,7 @@ EXTRA_SEARCH_MAPPINGS  =
 # If the GENERATE_LATEX tag is set to YES, doxygen will generate LaTeX output.
 # The default value is: YES.
 
-GENERATE_LATEX         = NO
+GENERATE_LATEX         = YES
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -1620,7 +1620,7 @@ PAPER_TYPE             = a4wide
 # If left blank no extra packages will be included.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
-EXTRA_PACKAGES         =
+EXTRA_PACKAGES         = amsmath
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for the
 # generated LaTeX document. The header should contain everything until the first
@@ -2370,3 +2370,4 @@ GENERATE_LEGEND        = YES
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 DOT_CLEANUP            = YES
+

@@ -1,0 +1,31 @@
+Bootstrap: debootstrap
+MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+OSVersion: xenial
+Include: build-essential  autotools-dev autoconf automake gcc g++ gfortran wget git curl python vim unzip
+
+%post -c /bin/bash
+        echo "Running post section"
+        cd /
+            umask 022
+        export GIT_SSL_NO_VERIFY=true
+        # Grab my fork for now cause I merged needed PRs
+        git clone https://github.com/DylanMcKinney/spack
+        cd spack
+        git checkout setup-dirty
+        cd ..
+        export SPACK_ROOT=/spack
+        . $SPACK_ROOT/share/spack/setup-env.sh
+
+        # install LBANN + openmpi
+        export FORCE_UNSAFE_CONFIGURE=1
+        git clone https://github.com/DylanMcKinney/lbann
+        cd lbann
+        git checkout singularity
+        mkdir spack_builds
+        cd spack_builds
+        spack -k setup lbann@local build_type=Release dtype=4 cflags="-O3 -g -march=haswell -mtune=haswell" cxxflags="-O3 -g -march=haswell -mtune=haswell" fflags="-O3 -g -march=haswell -mtune=haswell" ^elemental@develop blas=openblas ^openmpi@2.0.2 +thread_multiple ^protobuf@3.1.0
+        mkdir singularity_build
+        cd singularity_build
+        ../spconfig.py ../../
+        make -j2 all
+        spack uninstall -y lbann
