@@ -135,7 +135,9 @@ Layer::Layer(const Layer& other) :
   update_time(other.update_time) {
   // No cuDNN support yet.
 #ifdef __LIB_CUDNN
-  throw lbann_exception("cannot copy layers with cuDNN enabled");
+  throw lbann_exception(
+    std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+    "cannot copy layers with cuDNN enabled");
 #endif // __LIB_CUDNN
   m_prev_activations = other.m_prev_activations->Copy();
   m_activations = other.m_activations->Copy();
@@ -148,7 +150,9 @@ Layer::Layer(const Layer& other) :
 Layer& Layer::operator=(const Layer& other) {
   // No cuDNN support yet.
 #ifdef __LIB_CUDNN
-  throw lbann_exception("cannot copy layers with cuDNN enabled");
+  throw lbann_exception(
+    std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+    "cannot copy layers with cuDNN enabled");
 #endif // __LIB_CUDNN
   m_index = other.m_index;
   m_comm = other.m_comm;
@@ -362,11 +366,15 @@ void Layer::setup_pointers() {
   // Check if the number of parents/children are valid
   if(m_max_num_parent_layers >= 0
      && (int)m_parent_layers.size() > m_max_num_parent_layers) {
-    throw lbann_exception("Layer: too many parent layers");
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: too many parent layers");
   }
   if(m_max_num_child_layers >= 0
      && (int)m_child_layers.size() > m_max_num_child_layers) {
-    throw lbann_exception("Layer: too many child layers");
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: too many child layers");
   }
 }
 
@@ -396,7 +404,9 @@ void Layer::setup_data() {
   // Initialize matrices
   const int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
   if(max_mini_batch_size <= 0) {
-    throw lbann_exception("Layer: max mini-batch size is invalid");
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: max mini-batch size is invalid");
   }
   if(m_num_prev_neurons > 0) {
     El::Zeros(*m_error_signal, m_num_prev_neurons, max_mini_batch_size);
@@ -414,13 +424,17 @@ void Layer::setup_data() {
 
 void Layer::setup_gpu() {
 #ifndef __LIB_CUDNN
-  throw lbann_exception("Layer: cuDNN not detected");
+  throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: cuDNN not detected");
 #else
 
   // Throw error is data layout is not data parallel
   // TODO: Design a more general interface
   if(get_data_layout() != data_layout::DATA_PARALLEL) {
-    throw lbann_exception("Layer: GPUs are currently only supported for data parallel layers");
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: GPUs are currently only supported for data parallel layers");
   }
 
   // Determine whether to transfer data between CPU and GPUs
@@ -695,7 +709,9 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   case data_layout::MODEL_PARALLEL:
     return "model_parallel";
   default:
-    throw lbann_exception("Layer: invalid data layout");
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: invalid data layout");
   }
 }
 
