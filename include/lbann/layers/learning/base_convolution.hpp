@@ -315,7 +315,7 @@ class base_convolution_layer : public learning {
                                                 m_conv_pads.data(),
                                                 m_conv_strides.data(),
                                                 conv_upscales.data(),
-                                                CUDNN_CONVOLUTION,
+                                                CUDNN_CROSS_CORRELATION,
                                                 this->m_cudnn->get_cudnn_data_type()));
 
     // Set bias tensor descriptor
