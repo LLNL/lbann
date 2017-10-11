@@ -30,6 +30,7 @@
 #define LBANN_LAYER_BASE_CONVOLUTION_HPP_INCLUDED
 
 #include <vector>
+#include <omp.h>
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"

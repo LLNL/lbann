@@ -30,6 +30,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "mpi.h"
+#include "omp.h"
 #include <sstream>
 #include <thread>
 

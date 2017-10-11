@@ -134,7 +134,7 @@ void greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
 
   //call base model set up at each phase to reindex and set appropriate matrices, fp and bp input
   //assume that necessary layer parameters are set e.g., m_num_neurons when layers were constructed
-  setup(layer_index, mirror_index+1);  //set up  all active layers
+  setup_subset(layer_index, mirror_index+1);  //set up  all active layers
 
   // set flag to indicate that we have a mirror layer inserted
   m_have_mirror = 1;

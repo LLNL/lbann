@@ -57,6 +57,12 @@ endif()
 # Initialize build
 ################################################################
 
+# Temporary workaround to force CMake to recognize the XL compiler. The latest beta XL compiler is recognized as Clang. 
+if (CMAKE_CXX_COMPILER MATCHES "xlc" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_COMPILER_ID "XL")
+endif()
+
+
 # Add CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 

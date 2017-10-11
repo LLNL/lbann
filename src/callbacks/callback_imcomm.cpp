@@ -249,7 +249,7 @@ static std::vector<std::string> comm_type_names  =
 
 /** returns a string representation of the weight_initialization */
 std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
-  if ((int)m < 0 or (int)m >= comm_type_names.size()) {
+  if ((int)m < 0 or (int)m >= (int)comm_type_names.size()) {
     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
            + " Invalid comm_type");
   }

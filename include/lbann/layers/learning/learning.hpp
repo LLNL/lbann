@@ -221,7 +221,7 @@ class learning : public Layer, public optimizable_layer {
   virtual AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
 
   /// Following function tells this layer has weights
-  bool is_learning_layer() { return true; }
+  bool is_learning_layer() override { return true; }
 
   template <data_layout T_layout>
   inline void initialize_distributed_matrices();
@@ -259,7 +259,7 @@ class learning : public Layer, public optimizable_layer {
     }
   }
 
-  virtual void summarize_matrices(lbann_summary& summarizer, int step) {
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) override {
     Layer::summarize_matrices(summarizer, step);
     std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
     const AbsDistMat& wb = get_weights();
@@ -276,7 +276,7 @@ class learning : public Layer, public optimizable_layer {
   }
 
   /** Validate that the setup is reasonable. */
-  virtual void check_setup() {
+  virtual void check_setup() override {
     Layer::check_setup();
     // If these two are sendable, the other matrices should be fine.
     if (!lbann::lbann_comm::is_sendable(*m_weights)) {
@@ -297,7 +297,7 @@ class learning : public Layer, public optimizable_layer {
     m_l2_regularization_factor = f;
   }
 
-  bool saveToFile(int fd, const char *dirname) {
+  bool saveToFile(int fd, const char *dirname) override {
     Layer::loadFromFile(fd, dirname);
     char filepath[512];
     sprintf(filepath, "%s/weights_L%d_%03lldx%03lld", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
@@ -306,7 +306,7 @@ class learning : public Layer, public optimizable_layer {
     return lbann::write_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
   }
   
-  bool loadFromFile(int fd, const char *dirname) {
+  bool loadFromFile(int fd, const char *dirname) override {
     Layer::loadFromFile(fd, dirname);
     char filepath[512];
     sprintf(filepath, "%s/weights_L%d_%03lldx%03lld.bin", dirname, m_index, m_weights->Height()-1, m_weights->Width()-1);
@@ -315,7 +315,7 @@ class learning : public Layer, public optimizable_layer {
     return lbann::read_distmat(-1, filepath, (DistMat *)m_weights, &bytes);
   }
 
-  virtual bool saveToCheckpointShared(lbann::persist& p) {
+  virtual bool saveToCheckpointShared(lbann::persist& p) override {
     Layer::saveToCheckpointShared(p);
     // define name to store our parameters
     char name[512];
@@ -330,7 +330,7 @@ class learning : public Layer, public optimizable_layer {
     return true;
   }
 
-  virtual bool loadFromCheckpointShared(lbann::persist& p) {
+  virtual bool loadFromCheckpointShared(lbann::persist& p) override {
     Layer::loadFromCheckpointShared(p);
     // define name to store our parameters
     char name[512];

@@ -312,7 +312,11 @@ Layer *sequential_model::swap(int index, Layer *new_layer) {
   return tmp;
 }
 
-void sequential_model::setup(int start_index, int end_index) {
+void sequential_model::setup() {
+  setup_subset(0, 0);
+}
+
+void sequential_model::setup_subset(int start_index, int end_index) {
   if(end_index <= 0) {
     end_index = m_layers.size();
   }

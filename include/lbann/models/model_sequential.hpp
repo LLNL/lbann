@@ -67,11 +67,11 @@ class sequential_model : public model {
   /** @todo This is old and likely broken */
   bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
 
-  bool save_to_checkpoint_shared(persist& p);
-  bool load_from_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p) override;
+  bool load_from_checkpoint_shared(persist& p) override;
 
   /// Get list of layers
-  virtual std::vector<Layer *>& get_layers() {
+  virtual std::vector<Layer *>& get_layers() override {
     return m_layers;
   }
 
@@ -102,7 +102,8 @@ class sequential_model : public model {
   virtual Layer *swap(int index, Layer *new_layer);
 
   /// Setup sequential model
-  virtual void setup(int start_index=0, int end_index=0);
+  virtual void setup() override;
+  virtual void setup_subset(int start_index, int end_index);  
 
   /// Train model
   virtual void train(int num_epochs) = 0;
@@ -110,7 +111,7 @@ class sequential_model : public model {
   virtual bool train_mini_batch() = 0;
 
   /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start();
+  virtual bool at_epoch_start() override;
 
   /** Check if the model has a valid data set for the execution mode */
   virtual bool is_execution_mode_valid(execution_mode mode);
