@@ -90,13 +90,6 @@ class base_convolution_layer : public learning {
   /** Convolution cuDNN descriptor. */
   cudnnConvolutionDescriptor_t m_convolution_cudnn_desc;
 
-  /** cuDNN algorithm for convolution. */
-  cudnnConvolutionFwdAlgo_t m_convolution_cudnn_algorithm;
-  /** cuDNN algorithm for transposed convolution. */
-  cudnnConvolutionBwdDataAlgo_t m_transposed_convolution_cudnn_algorithm;
-  /** cuDNN algorithm for computing convolution kernel gradient. */
-  cudnnConvolutionBwdFilterAlgo_t m_kernel_gradient_cudnn_algorithm;
-
   /** GPU memory for convolution kernel. */
   std::vector<DataType*> m_kernel_weights_d;
   /** GPU memory for convolution kernel gradient. */
@@ -149,9 +142,6 @@ class base_convolution_layer : public learning {
     m_bias_cudnn_desc = nullptr;
     m_kernel_cudnn_desc = nullptr;
     m_convolution_cudnn_desc = nullptr;
-    m_convolution_cudnn_algorithm = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-    m_transposed_convolution_cudnn_algorithm = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-    m_kernel_gradient_cudnn_algorithm = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
 
   #endif // #ifdef __LIB_CUDNN
 
@@ -165,14 +155,7 @@ class base_convolution_layer : public learning {
     m_kernel_size(other.m_kernel_size),
     m_weight_initialization(other.m_weight_initialization),
     m_bias_scaling_factor(other.m_bias_scaling_factor),
-    m_bias_initial_value(other.m_bias_initial_value)
-  #ifdef __LIB_CUDNN
-    ,
-    m_convolution_cudnn_algorithm(other.m_convolution_cudnn_algorithm),
-    m_transposed_convolution_cudnn_algorithm(other.m_transposed_convolution_cudnn_algorithm),
-    m_kernel_gradient_cudnn_algorithm(other.m_kernel_gradient_cudnn_algorithm)
-  #endif // __LIB_CUDNN
-  {
+    m_bias_initial_value(other.m_bias_initial_value) {
 
     // Copy matrices
     m_kernel_weights_v = other.m_kernel_weights_v->Copy();
@@ -232,11 +215,6 @@ class base_convolution_layer : public learning {
     m_weight_initialization = other.m_weight_initialization;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
     m_bias_initial_value = other.m_bias_initial_value;
-  #ifdef __LIB_CUDNN
-    m_convolution_cudnn_algorithm = other.m_convolution_cudnn_algorithm;
-    m_transposed_convolution_cudnn_algorithm = other.m_transposed_convolution_cudnn_algorithm;
-    m_kernel_gradient_cudnn_algorithm = other.m_kernel_gradient_cudnn_algorithm;
-  #endif // __LIB_CUDNN
 
     // Copy matrices
   #define COPY_MATRIX(src, dst)                 \
@@ -498,6 +476,28 @@ class base_convolution_layer : public learning {
     // Perform convolution on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i=0; i<num_gpus; ++i) {
+
+      // Get work space
+      size_t work_space_size = this->m_cudnn->get_work_space_size(i);
+      if(work_space_size == 0) {
+        this->m_cudnn->set_maximum_work_space_size(i);
+        work_space_size = this->m_cudnn->get_work_space_size(i);
+      }
+      void *work_space = this->m_cudnn->get_work_space(i);
+
+      // Determine convolution algorithm
+      cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm
+        = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+      CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(this->m_cudnn->get_handle(i),
+                                                      input_cudnn_desc,
+                                                      m_kernel_cudnn_desc,
+                                                      m_convolution_cudnn_desc,
+                                                      output_cudnn_desc,
+                                                      CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+                                                      work_space_size,
+                                                      &convolution_cudnn_algorithm));
+
+      // Apply convolution
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
@@ -508,12 +508,13 @@ class base_convolution_layer : public learning {
                                           m_kernel_cudnn_desc,
                                           m_kernel_weights_d[i],
                                           m_convolution_cudnn_desc,
-                                          m_convolution_cudnn_algorithm,
-                                          this->m_cudnn->get_work_space(i),
-                                          this->m_cudnn->get_work_space_size(i),
+                                          convolution_cudnn_algorithm,
+                                          work_space,
+                                          work_space_size,
                                           &zero,
                                           output_cudnn_desc,
                                           output_d[i]));
+
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -549,9 +550,31 @@ class base_convolution_layer : public learning {
     this->m_cudnn->broadcast_to_gpus(m_kernel_weights_d,
                                      this->m_kernel_weights_v->LockedMatrix());
 
-    // Perform convolution on each GPU
+    // Perform transposed convolution on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i=0; i<num_gpus; ++i) {
+
+      // Get work space
+      size_t work_space_size = this->m_cudnn->get_work_space_size(i);
+      if(work_space_size == 0) {
+        this->m_cudnn->set_maximum_work_space_size(i);
+        work_space_size = this->m_cudnn->get_work_space_size(i);
+      }
+      void *work_space = this->m_cudnn->get_work_space(i);
+
+      // Determine transposed convolution algorithm
+      cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
+        = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+      CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(i),
+                                                           m_kernel_cudnn_desc,
+                                                           input_cudnn_desc,
+                                                           m_convolution_cudnn_desc,
+                                                           output_cudnn_desc,
+                                                           CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+                                                           work_space_size,
+                                                           &transposed_convolution_cudnn_algorithm));
+
+      // Perform transposed convolution
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
@@ -562,12 +585,13 @@ class base_convolution_layer : public learning {
                                                input_cudnn_desc,
                                                input_d[i],
                                                m_convolution_cudnn_desc,
-                                               m_transposed_convolution_cudnn_algorithm,
-                                               this->m_cudnn->get_work_space(i),
-                                               this->m_cudnn->get_work_space_size(i),
+                                               transposed_convolution_cudnn_algorithm,
+                                               work_space,
+                                               work_space_size,
                                                &zero,
                                                output_cudnn_desc,
                                                output_d[i]));
+
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -627,6 +651,8 @@ class base_convolution_layer : public learning {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
+
+      // Compute bias gradient
       if(m_bias_scaling_factor != DataType(0)) {
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
                                                  &m_bias_scaling_factor,
@@ -636,7 +662,27 @@ class base_convolution_layer : public learning {
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
       }
+
+      // Get work space
+      size_t work_space_size = this->m_cudnn->get_work_space_size(i);
+      if(work_space_size == 0) {
+        this->m_cudnn->set_maximum_work_space_size(i);
+        work_space_size = this->m_cudnn->get_work_space_size(i);
+      }
+      void *work_space = this->m_cudnn->get_work_space(i);
+      
+      // Determine algorithm and compute kernel gradient
+      cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+        = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
       if(using_transposed_convolution) {
+        CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(i),
+                                                               this->m_neurons_cudnn_desc,
+                                                               this->m_prev_neurons_cudnn_desc,
+                                                               m_convolution_cudnn_desc,
+                                                               m_kernel_cudnn_desc,
+                                                               CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                               work_space_size,
+                                                               &kernel_gradient_cudnn_algorithm));
         CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                    &one,
                                                    this->m_neurons_cudnn_desc,
@@ -644,14 +690,22 @@ class base_convolution_layer : public learning {
                                                    this->m_prev_neurons_cudnn_desc,
                                                    this->m_prev_activations_d[i],
                                                    m_convolution_cudnn_desc,
-                                                   m_kernel_gradient_cudnn_algorithm,
-                                                   this->m_cudnn->get_work_space(i),
-                                                   this->m_cudnn->get_work_space_size(i),
+                                                   kernel_gradient_cudnn_algorithm,
+                                                   work_space,
+                                                   work_space_size,
                                                    &zero,
                                                    m_kernel_cudnn_desc,
                                                    m_kernel_weights_gradient_d[i]));
       }
       else {
+        CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(i),
+                                                               this->m_prev_neurons_cudnn_desc,
+                                                               this->m_neurons_cudnn_desc,
+                                                               m_convolution_cudnn_desc,
+                                                               m_kernel_cudnn_desc,
+                                                               CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                               work_space_size,
+                                                               &kernel_gradient_cudnn_algorithm));
         CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                    &one,
                                                    this->m_prev_neurons_cudnn_desc,
@@ -659,13 +713,14 @@ class base_convolution_layer : public learning {
                                                    this->m_neurons_cudnn_desc,
                                                    this->m_prev_error_signal_d[i],
                                                    m_convolution_cudnn_desc,
-                                                   m_kernel_gradient_cudnn_algorithm,
-                                                   this->m_cudnn->get_work_space(i),
-                                                   this->m_cudnn->get_work_space_size(i),
+                                                   kernel_gradient_cudnn_algorithm,
+                                                   work_space,
+                                                   work_space_size,
                                                    &zero,
                                                    m_kernel_cudnn_desc,
                                                    m_kernel_weights_gradient_d[i]));
       }
+
     }
 
     // Transfer gradients from GPUs to CPU and reduce

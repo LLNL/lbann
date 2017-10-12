@@ -118,12 +118,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
 
 cudnn_manager::~cudnn_manager() {
   // Free work spaces
-  for(size_t i=0u; i<m_gpus.size(); ++i) {
-    if(m_work_space_sizes[i]) {
-      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaFree(m_work_spaces[i]));
-    }
-  }
+  free_work_spaces();
 
   // Destroy cuDNN handles
   for(size_t i=0u; i<m_gpus.size(); ++i) {
@@ -143,6 +138,9 @@ cudnn_manager::~cudnn_manager() {
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
                                                     int height,
                                                     int width_per_gpu) {
+
+  // Free work spaces
+  free_work_spaces();
 
   if(!gpu_data.empty()) {
     // Check that list of pointers has valid number of entries
@@ -171,6 +169,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 }
 
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
+
+  // Free work spaces
+  free_work_spaces();
 
   // Stop if list of pointers is empty
   if(gpu_data.empty()) {
@@ -495,14 +496,11 @@ const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
 }
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
+  std::vector<void *> work_spaces;
   for(int i=0; i<m_num_gpus; ++i) {
-    if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
-      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                                  m_work_space_sizes[i]));
-    }
+    work_spaces.push_back(get_work_space(i));
   }
-  return m_work_spaces;
+  return work_spaces;
 }
 
 void *cudnn_manager::get_work_space(int i) {
@@ -523,19 +521,49 @@ size_t cudnn_manager::get_work_space_size(int i) const {
 }
 
 void cudnn_manager::set_work_space_size(int i, size_t size) {
-  if(m_work_spaces.empty()) {
-    m_work_spaces.assign(m_num_gpus, nullptr);
-  }
-  if(m_work_space_sizes.empty()) {
-    m_work_space_sizes.assign(m_num_gpus, 0);
-  }
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != nullptr) {
       CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       CHECK_CUDA(cudaFree(m_work_spaces[i]));
-      m_work_spaces[i] = nullptr;
     }
+    m_work_spaces[i] = nullptr;
+  }
+}
+
+void cudnn_manager::set_maximum_work_space_size(int i) {
+
+  // Search parameters for work space size
+  const size_t min_work_space_size = 1024;
+  const double decay_factor = 0.8;
+  size_t free_memory, total_memory;
+  CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
+
+  // Clear work space
+  set_work_space_size(i, 0);
+
+  // Try allocating work spaces until we find a valid size
+  size_t work_space_size = free_memory;
+  void* work_space = nullptr;
+  while(work_space_size > min_work_space_size && work_space == nullptr) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    cudaError_t status = cudaMalloc(&work_space, work_space_size);
+    if(status != cudaErrorMemoryAllocation) {
+      FORCE_CHECK_CUDA(status);
+      m_work_spaces[i] = work_space;
+      m_work_space_sizes[i] = work_space_size;
+    }
+    else {
+      work_space = nullptr;
+    }
+    work_space_size = decay_factor * work_space_size;
+  }
+
+}
+
+void cudnn_manager::free_work_spaces() {
+  for(int i=0; i<m_num_gpus; ++i) {
+    set_work_space_size(i, 0);
   }
 }
 
@@ -543,6 +571,7 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
                                            int height,
                                            int width_per_gpu,
                                            int leading_dim) {
+  free_work_spaces();
   leading_dim = std::max(leading_dim, height);
   std::vector<DataType*> output_gpu_data;
   if(!gpu_data.empty()) {

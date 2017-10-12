@@ -114,43 +114,47 @@ class cudnn_manager {
   /** Get GPUs (const). */
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
-  int get_gpu(int i=0) const;
+  int get_gpu(int i) const;
   /** Get CUDA streams. */
   std::vector<cudaStream_t>& get_streams();
   /** Get CUDA streams (const). */
   const std::vector<cudaStream_t>& get_streams() const;
   /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(int i=0);
+  cudaStream_t& get_stream(int i);
   /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(int i=0) const;
+  const cudaStream_t& get_stream(int i) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
   const std::vector<cudnnHandle_t>& get_handles() const;
   /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(int i=0);
+  cudnnHandle_t& get_handle(int i);
   /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(int i=0) const;
+  const cudnnHandle_t& get_handle(int i) const;
   /** Get CUBLAS handles. */
   std::vector<cublasHandle_t>& get_cublas_handles();
   /** Get CUBLAS handles (const). */
   const std::vector<cublasHandle_t>& get_cublas_handles() const;
   /** Get ith CUBLAS handle. */
-  cublasHandle_t& get_cublas_handle(int i=0);
+  cublasHandle_t& get_cublas_handle(int i);
   /** Get ith CUBLAS handle (const). */
-  const cublasHandle_t& get_cublas_handle(int i=0) const;
+  const cublasHandle_t& get_cublas_handle(int i) const;
   /** Get GPU work spaces. */
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
-  void *get_work_space(int i=0);
+  void *get_work_space(int i);
   /** Get GPU work space sizes (in bytes). */
   std::vector<size_t> get_work_space_sizes();
   /** Get GPU work space sizes (in bytes) (const). */
   const std::vector<size_t> get_work_space_sizes() const;
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i=0) const;
+  size_t get_work_space_size(int i) const;
   /** Set ith GPU work space size (in bytes). */
   void set_work_space_size(int i, size_t size);
+  /** Set ith GPU work space to occupy all available GPU memory. */
+  void set_maximum_work_space_size(int i);
+  /** Free all GPU work spaces. */
+  void free_work_spaces();
 
   /** Allocate memory on GPUs. */
   void allocate_on_gpus(std::vector<DataType*>& gpu_data,
