@@ -161,7 +161,8 @@ int main(int argc, char *argv[]) {
 
     // Initalize model
     // @todo: not all callbacks code is in place
-    sequential_model *model = init_model(comm, optimizer_fac, pb);
+    model *model = init_model(comm, optimizer_fac, pb);
+    //sequential_model *model = init_model(comm, optimizer_fac, pb);
 
     //maps: layer name (from prototext) to the lbann::layer
     std::unordered_map<std::string, Layer*> name_mapping;
@@ -173,25 +174,6 @@ int main(int argc, char *argv[]) {
     add_layers(model, data_readers, cudnn, pb, name_mapping, index_mapping, name_to_index);
     init_callbacks(comm, model, data_readers, pb, name_mapping, index_mapping, name_to_index);
     model->setup();
-
-    // Optionally run ltfb
-    #if 0
-    sequential_model *model_2;
-    std::map<execution_mode, generic_data_reader *> data_readers_2;
-    //under development ...
-    if (ltfb) {
-      if (master) {
-        cerr << endl << "running ltfb\n\n";
-        throw lbann_exception("ltfb is not ready yet; coming soon!");
-      }
-      init_data_readers(master, pb, data_readers_2, pb_model->mini_batch_size());
-      optimizer_factory *optimizer_fac_2 = init_optimizer_factory(comm, pb);
-      model_2 = init_model(comm, optimizer_fac_2, pb);
-      model_2->setup();
-      //lbann_callback_ltfb ltfb(45, model_2);
-      //model->add_callback(&ltfb);
-    }
-    #endif
 
     // restart model from checkpoint if we have one
     //@todo

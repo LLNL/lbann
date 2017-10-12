@@ -82,10 +82,7 @@ class sequential_model : public model {
 
  
   /// Add layer to sequential model
-  /** @todo Consider removing this function. The destructor
-   *  deallocates all layers, so we might run into problems if a
-   *  layer is deallocated externally. */
-  virtual int add(Layer *new_layer);
+  virtual int add(Layer *new_layer) override;
 
   /// Remove layer from sequential model
   /** @todo This will mess up layer indices */
@@ -105,21 +102,11 @@ class sequential_model : public model {
   virtual void setup() override;
   virtual void setup_subset(int start_index, int end_index);  
 
-  /// Train model
-  virtual void train(int num_epochs) = 0;
-  /// Training step on one mini-batch
-  virtual bool train_mini_batch() = 0;
-
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start() override;
 
   /** Check if the model has a valid data set for the execution mode */
   virtual bool is_execution_mode_valid(execution_mode mode);
-
-  /// Evaluate model
-  virtual void evaluate(execution_mode mode) = 0;
-  /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() = 0;
 
   /// returns the number of neurons in the most recently added layer, or -1
   /// if there is none

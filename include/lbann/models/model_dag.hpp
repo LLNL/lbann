@@ -50,10 +50,10 @@ class dag_model : public model {
   dag_model& operator=(const dag_model& other);
 
   /** Destructor. */
-  virtual ~dag_model();
+  virtual ~dag_model() override;
 
   /** Get list of layers. */
-  std::vector<Layer*>& get_layers() {
+  virtual std::vector<Layer*>& get_layers() override {
     return m_layers;
   }
 
@@ -65,39 +65,39 @@ class dag_model : public model {
   /** Add layer to model.
    *  It is assumed that the layer's parent and child pointers are
    *  initialized externally. The model takes responsibility for
-   *  deallocating the layer.
+   *  deallocating the layer. The return value is meaningless.
    */
-  void add(Layer *new_layer);
+  virtual int add(Layer *new_layer) override;
 
   /** Setup model. */
-  void setup();
+  virtual void setup() override;
 
   /** Train model. */
-  void train(int num_epochs);
+  virtual void train(int num_epochs) override;
 
   /** Training step on one mini-batch.
    *  Returns true if epoch has completed.
    */
-  bool train_mini_batch();
+  virtual bool train_mini_batch() override;
 
   /** Evaluate model. */
-  void evaluate(execution_mode mode);
+  virtual void evaluate(execution_mode mode) override;
 
   /** Evaluation step on one mini-batch.
    *  Returns true if epoch has completed.
    */
-  bool evaluate_mini_batch();
+  virtual bool evaluate_mini_batch() override;
 
   /** Summarize statistics.
    *  E.g. timers, counters. These should be computable quickly.
    */
-  void summarize_stats(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer) override;
 
   /** Summarize matrices.
    *  E.g. means. These are called occasionally and can be moderately
    *  expensive.
    */
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_matrices(lbann_summary& summarizer) override;
 
  private:
   /** List of layers.

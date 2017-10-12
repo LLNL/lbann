@@ -59,6 +59,7 @@ pool_mode get_pool_mode(const string& s, bool master)
   }
 }
 
+/*
 void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index)
 {
   std::vector<Layer *>& layers = model->get_layers();
@@ -69,6 +70,7 @@ void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_n
   }
   cur_index = layers.size();
 }
+*/
 
 weight_initialization get_weight_initialization(const string& s, bool master)
 {
@@ -300,7 +302,8 @@ void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_
 
 
 void add_layers(
-  lbann::sequential_model *model,
+  lbann::model *model,
+  //lbann::sequential_model *model,
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p,
@@ -1117,7 +1120,8 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
 
 void init_callbacks(
   lbann_comm *comm,
-  lbann::sequential_model *model,
+  lbann::model *model,
+  //lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p,
   const std::unordered_map<std::string,Layer*> &name_mapping,
@@ -1560,12 +1564,13 @@ void init_callbacks(
 }
 
 
-sequential_model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p)
+model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p)
 {
   std::stringstream err;
   bool master = comm->am_world_master();
 
-  sequential_model *model = 0;
+  //sequential_model *model = 0;
+  model *model = 0;
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();

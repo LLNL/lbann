@@ -113,8 +113,9 @@ dag_model::~dag_model() {
   }
 }
 
-void dag_model::add(Layer *new_layer) {
+int dag_model::add(Layer *new_layer) {
   m_layers.push_back(new_layer);
+  return 0;
 }
 
 void dag_model::setup() {
